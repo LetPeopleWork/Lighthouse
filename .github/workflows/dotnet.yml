@@ -24,7 +24,16 @@ jobs:
       with:
         dotnet-version: 6.0.x
 
-    - name: SonarScanner for .NET 8 with pull request decoration support
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore
+    
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+
+    - name: SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
       with:
         sonarProjectKey: LetPeopleWork_CMFT
@@ -36,12 +45,3 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --no-restore
-    
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
