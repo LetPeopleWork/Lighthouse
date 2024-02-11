@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMFTAspNet", "CMFTAspNet.csproj", "{4BB1708D-1DC2-4F9A-87FC-CFC41527DFFA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMFTAspNet", "CMFTAspNet\CMFTAspNet.csproj", "{4BB1708D-1DC2-4F9A-87FC-CFC41527DFFA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CMFTAspNet.Tests", "..\CMFTAspNet.Tests\CMFTAspNet.Tests.csproj", "{EE279382-1046-48D9-95DE-2FCC68347C68}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CMFTAspNet.Tests", "CMFTAspNet.Tests\CMFTAspNet.Tests.csproj", "{EE279382-1046-48D9-95DE-2FCC68347C68}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
