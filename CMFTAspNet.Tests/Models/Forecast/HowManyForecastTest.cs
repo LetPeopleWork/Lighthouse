@@ -1,6 +1,6 @@
-﻿using CMFTAspNet.Models;
+﻿using CMFTAspNet.Models.Forecast;
 
-namespace CMFTAspNet.Tests.Models
+namespace CMFTAspNet.Tests.Models.Forecast
 {
     public class HowManyForecastTest
     {
@@ -15,11 +15,11 @@ namespace CMFTAspNet.Tests.Models
         {
             var simulationResult = new Dictionary<int, int>
             {
+                {9, 1 },
                 {3, 1 },
-                {4, 2 },
-                {5, 4 },
                 {7, 2 },
-                {9, 1 }
+                {5, 4 },
+                {4, 2 },
             };
 
             var subject = new HowManyForecast(simulationResult);

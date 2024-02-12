@@ -1,13 +1,15 @@
-﻿namespace CMFTAspNet.Models
+﻿namespace CMFTAspNet.Models.Forecast
 {
-    public class HowManyForecast
+    public class ForecastBase
     {
-        private readonly SortedDictionary<int, int> simulationResult;
-        private readonly int totalTrials;
+        protected readonly int totalTrials;
 
-        public HowManyForecast(Dictionary<int, int> simulationResult)
+        protected readonly SortedDictionary<int, int> simulationResult;
+
+        public ForecastBase(Dictionary<int, int> simulationResult, IComparer<int> comparer)
         {
-            this.simulationResult = new SortedDictionary<int, int>(simulationResult, Comparer<int>.Create((x, y) => y.CompareTo(x)));
+            this.simulationResult = new SortedDictionary<int, int>(simulationResult, comparer);
+            
             totalTrials = simulationResult.Values.Sum();
         }
 
@@ -17,7 +19,7 @@
 
             var trialCounter = 0;
 
-            foreach(var key in simulationResult.Keys)
+            foreach (var key in simulationResult.Keys)
             {
                 trialCounter += simulationResult[key];
 
