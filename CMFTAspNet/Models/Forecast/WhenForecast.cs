@@ -21,7 +21,7 @@ namespace CMFTAspNet.Models.Forecast
                 }
             }
 
-            return 100 / totalTrials * trialCounter;
+            return 100 / ((double)totalTrials) * trialCounter;
         }
     }
 }

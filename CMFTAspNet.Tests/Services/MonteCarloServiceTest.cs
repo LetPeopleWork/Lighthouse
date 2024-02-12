@@ -94,5 +94,35 @@ namespace CMFTAspNet.Tests.Services
             Assert.That(forecast.GetPercentile(85), Is.EqualTo(61));
             Assert.That(forecast.GetPercentile(95), Is.EqualTo(63));
         }
+
+        [Test]
+        public void HowMany_RealData_RunRealForecast_ExpectCorrectResults()
+        {
+            subject = new MonteCarloService(new RandomNumberService(), 100000);
+
+            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var forecast = subject.HowMany(throughput, 30);
+
+            Assert.That(forecast.GetPercentile(50), Is.InRange(31, 33));
+            Assert.That(forecast.GetPercentile(70), Is.InRange(27, 29));
+            Assert.That(forecast.GetPercentile(85), Is.InRange(23, 25));
+            Assert.That(forecast.GetPercentile(95), Is.InRange(19, 21));
+        }
+
+        [Test]
+        public void When_RealData_RunRealForecast_ExpectCorrectResults()
+        {
+            subject = new MonteCarloService(new RandomNumberService(), 100000);
+
+            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var forecast = subject.When(throughput, 28);
+
+            Assert.That(forecast.GetPercentile(50), Is.InRange(26, 28));
+            Assert.That(forecast.GetPercentile(70), Is.InRange(29, 31));
+            Assert.That(forecast.GetPercentile(85), Is.InRange(33, 35));
+            Assert.That(forecast.GetPercentile(95), Is.InRange(38, 40));
+
+            Assert.That(forecast.GetLikelihood(30), Is.InRange(70, 73));
+        }
     }
 }

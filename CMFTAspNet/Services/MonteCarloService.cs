@@ -9,9 +9,9 @@ namespace CMFTAspNet.Services
         private int trials;
         private readonly IRandomNumberService randomNumberService;
 
-        public MonteCarloService(IRandomNumberService randomNumberService)
+        public MonteCarloService(IRandomNumberService randomNumberService, int trials = 10000)
         {
-            trials = 10000;
+            this.trials = trials;
             this.randomNumberService = randomNumberService;
         }
 
