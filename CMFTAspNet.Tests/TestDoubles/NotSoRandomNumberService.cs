@@ -4,12 +4,14 @@ namespace CMFTAspNet.Tests.TestDoubles
 {
     internal class NotSoRandomNumberService : IRandomNumberService
     {
+        internal static readonly int[] defaultRandomNumberSequence = [0];
+
         private int[] numbers = [];
         private int currentIndex = 0;
 
         public NotSoRandomNumberService()
         {
-            InitializeRandomNumbers(new[] { 0 });
+            InitializeRandomNumbers(defaultRandomNumberSequence);
         }
 
         public void InitializeRandomNumbers(int[] numbers)

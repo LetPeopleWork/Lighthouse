@@ -6,7 +6,7 @@ namespace CMFTAspNet.Services
 {
     public class MonteCarloService
     {
-        private int trials;
+        private readonly int trials;
         private readonly IRandomNumberService randomNumberService;
 
         public MonteCarloService(IRandomNumberService randomNumberService, int trials = 10000)

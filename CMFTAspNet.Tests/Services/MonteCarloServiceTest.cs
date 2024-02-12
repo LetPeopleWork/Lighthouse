@@ -24,7 +24,7 @@ namespace CMFTAspNet.Tests.Services
         {
             var forecast = subject.HowMany(new Throughput([]), TimeSpan.FromHours(0).Days);
 
-            Assert.IsInstanceOf<HowManyForecast>(forecast);
+            Assert.That(forecast, Is.InstanceOf(typeof(HowManyForecast)));
         }
 
         [Test]
@@ -36,10 +36,13 @@ namespace CMFTAspNet.Tests.Services
         {
             var forecast = subject.HowMany(new Throughput([1]), TimeSpan.FromDays(timespan).Days);
 
-            Assert.That(forecast.GetPercentile(50), Is.EqualTo(timespan));
-            Assert.That(forecast.GetPercentile(70), Is.EqualTo(timespan));
-            Assert.That(forecast.GetPercentile(85), Is.EqualTo(timespan));
-            Assert.That(forecast.GetPercentile(95), Is.EqualTo(timespan));
+            Assert.Multiple(() =>
+            {
+                Assert.That(forecast.GetPercentile(50), Is.EqualTo(timespan));
+                Assert.That(forecast.GetPercentile(70), Is.EqualTo(timespan));
+                Assert.That(forecast.GetPercentile(85), Is.EqualTo(timespan));
+                Assert.That(forecast.GetPercentile(95), Is.EqualTo(timespan));
+            });
         }
 
         [Test]
@@ -47,7 +50,7 @@ namespace CMFTAspNet.Tests.Services
         {
             var forecast = subject.When(new Throughput([1]), 12);
 
-            Assert.IsInstanceOf<WhenForecast>(forecast);
+            Assert.That(forecast, Is.InstanceOf(typeof(WhenForecast)));
         }
 
         [Test]
@@ -59,10 +62,13 @@ namespace CMFTAspNet.Tests.Services
         {
             var forecast = subject.When(new Throughput([1]), remainingItems);
 
-            Assert.That(forecast.GetPercentile(50), Is.EqualTo(remainingItems));
-            Assert.That(forecast.GetPercentile(70), Is.EqualTo(remainingItems));
-            Assert.That(forecast.GetPercentile(85), Is.EqualTo(remainingItems));
-            Assert.That(forecast.GetPercentile(95), Is.EqualTo(remainingItems));
+            Assert.Multiple(() =>
+            {
+                Assert.That(forecast.GetPercentile(50), Is.EqualTo(remainingItems));
+                Assert.That(forecast.GetPercentile(70), Is.EqualTo(remainingItems));
+                Assert.That(forecast.GetPercentile(85), Is.EqualTo(remainingItems));
+                Assert.That(forecast.GetPercentile(95), Is.EqualTo(remainingItems));
+            });
         }
 
         [Test]
@@ -74,10 +80,13 @@ namespace CMFTAspNet.Tests.Services
 
             var forecast = subject.HowMany(throughput, 10);
 
-            Assert.That(forecast.GetPercentile(50), Is.EqualTo(6));
-            Assert.That(forecast.GetPercentile(70), Is.EqualTo(4));
-            Assert.That(forecast.GetPercentile(85), Is.EqualTo(4));
-            Assert.That(forecast.GetPercentile(95), Is.EqualTo(3));
+            Assert.Multiple(() =>
+            {
+                Assert.That(forecast.GetPercentile(50), Is.EqualTo(6));
+                Assert.That(forecast.GetPercentile(70), Is.EqualTo(4));
+                Assert.That(forecast.GetPercentile(85), Is.EqualTo(4));
+                Assert.That(forecast.GetPercentile(95), Is.EqualTo(3));
+            });
         }
 
         [Test]
@@ -89,10 +98,13 @@ namespace CMFTAspNet.Tests.Services
 
             var forecast = subject.When(throughput, 35);
 
-            Assert.That(forecast.GetPercentile(50), Is.EqualTo(59));
-            Assert.That(forecast.GetPercentile(70), Is.EqualTo(61));
-            Assert.That(forecast.GetPercentile(85), Is.EqualTo(61));
-            Assert.That(forecast.GetPercentile(95), Is.EqualTo(63));
+            Assert.Multiple(() =>
+            {
+                Assert.That(forecast.GetPercentile(50), Is.EqualTo(59));
+                Assert.That(forecast.GetPercentile(70), Is.EqualTo(61));
+                Assert.That(forecast.GetPercentile(85), Is.EqualTo(61));
+                Assert.That(forecast.GetPercentile(95), Is.EqualTo(63));
+            });
         }
 
         [Test]
@@ -103,10 +115,13 @@ namespace CMFTAspNet.Tests.Services
             var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
             var forecast = subject.HowMany(throughput, 30);
 
-            Assert.That(forecast.GetPercentile(50), Is.InRange(31, 33));
-            Assert.That(forecast.GetPercentile(70), Is.InRange(27, 29));
-            Assert.That(forecast.GetPercentile(85), Is.InRange(23, 25));
-            Assert.That(forecast.GetPercentile(95), Is.InRange(19, 21));
+            Assert.Multiple(() =>
+            {
+                Assert.That(forecast.GetPercentile(50), Is.InRange(31, 33));
+                Assert.That(forecast.GetPercentile(70), Is.InRange(27, 29));
+                Assert.That(forecast.GetPercentile(85), Is.InRange(23, 25));
+                Assert.That(forecast.GetPercentile(95), Is.InRange(19, 21));
+            });
         }
 
         [Test]
@@ -117,12 +132,15 @@ namespace CMFTAspNet.Tests.Services
             var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
             var forecast = subject.When(throughput, 28);
 
-            Assert.That(forecast.GetPercentile(50), Is.InRange(26, 28));
-            Assert.That(forecast.GetPercentile(70), Is.InRange(29, 31));
-            Assert.That(forecast.GetPercentile(85), Is.InRange(33, 35));
-            Assert.That(forecast.GetPercentile(95), Is.InRange(38, 40));
+            Assert.Multiple(() =>
+            {
+                Assert.That(forecast.GetPercentile(50), Is.InRange(26, 28));
+                Assert.That(forecast.GetPercentile(70), Is.InRange(29, 31));
+                Assert.That(forecast.GetPercentile(85), Is.InRange(33, 35));
+                Assert.That(forecast.GetPercentile(95), Is.InRange(38, 40));
 
-            Assert.That(forecast.GetLikelihood(30), Is.InRange(70, 73));
+                Assert.That(forecast.GetLikelihood(30), Is.InRange(70, 73));
+            });
         }
     }
 }
