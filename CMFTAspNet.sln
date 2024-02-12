@@ -5,7 +5,12 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMFTAspNet", "CMFTAspNet\CMFTAspNet.csproj", "{4BB1708D-1DC2-4F9A-87FC-CFC41527DFFA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CMFTAspNet.Tests", "CMFTAspNet.Tests\CMFTAspNet.Tests.csproj", "{EE279382-1046-48D9-95DE-2FCC68347C68}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMFTAspNet.Tests", "CMFTAspNet.Tests\CMFTAspNet.Tests.csproj", "{EE279382-1046-48D9-95DE-2FCC68347C68}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E0CD8BCE-F1A9-4C12-ADF5-7FDA93B33A1E}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

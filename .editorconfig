@@ -1,0 +1,10 @@
+﻿[*.cs]
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = none
+
+# IDE0290: Use primary constructor
+dotnet_diagnostic.IDE0290.severity = none
+
+# CA1854: Prefer the 'IDictionary.TryGetValue(TKey, out TValue)' method
+dotnet_diagnostic.CA1854.severity = none
