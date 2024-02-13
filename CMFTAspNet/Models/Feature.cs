@@ -4,15 +4,15 @@ namespace CMFTAspNet.Models
 {
     public class Feature
     {
-        public Feature(Throughput throughput, int remainingItems)
+        public Feature(Team team, int remainingItems)
         {
-            Throughput = throughput;
+            Team = team;
             RemainingItems = remainingItems;
         }
 
         public Guid Id { get; } = Guid.NewGuid();
-
-        public Throughput Throughput { get; }
+        
+        public Team Team { get; }
 
         public int RemainingItems { get; }
 
@@ -21,11 +21,6 @@ namespace CMFTAspNet.Models
         public void SetFeatureForecast(WhenForecast forecast)
         {
             Forecast = forecast;
-        }
-
-        public Feature Copy()
-        {
-            return new Feature(Throughput, RemainingItems);
         }
     }
 }

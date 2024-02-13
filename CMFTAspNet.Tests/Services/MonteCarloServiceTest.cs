@@ -144,9 +144,9 @@ namespace CMFTAspNet.Tests.Services
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var throughput = new Throughput([1]);
+            var team = new Team(1, new Throughput([1]));
 
-            var feature = new Feature(throughput, 35);
+            var feature = new Feature(team, 35);
 
             subject.ForecastFeatures(1, feature);
 
@@ -163,11 +163,11 @@ namespace CMFTAspNet.Tests.Services
         public void FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPOne()
         {
             var subject = CreateSubjectWithPersistentThroughput();
+            
+            var team = new Team(1, new Throughput([1]));
 
-            var throughput = new Throughput([1]);
-
-            var feature1 = new Feature(throughput, 35);
-            var feature2 = new Feature(throughput, 20);
+            var feature1 = new Feature(team, 35);
+            var feature2 = new Feature(team, 20);
 
             subject.ForecastFeatures(1, feature1, feature2);
 
@@ -190,8 +190,10 @@ namespace CMFTAspNet.Tests.Services
             var subject = CreateSubjectWithRealThroughput();
             var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
 
-            var feature1 = new Feature(throughput, 35);
-            var feature2 = new Feature(throughput, 15);
+            var team = new Team(1, throughput);
+
+            var feature1 = new Feature(team, 35);
+            var feature2 = new Feature(team, 15);
 
             subject.ForecastFeatures(2, feature1, feature2);
 
@@ -209,10 +211,11 @@ namespace CMFTAspNet.Tests.Services
         {
             var subject = CreateSubjectWithRealThroughput();
             var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var team = new Team(1, throughput);
 
-            var feature1 = new Feature(throughput, 35);
-            var feature2 = new Feature(throughput, 20);
-            var feature3 = new Feature(throughput, 20);
+            var feature1 = new Feature(team, 35);
+            var feature2 = new Feature(team, 20);
+            var feature3 = new Feature(team, 20);
 
             subject.ForecastFeatures(2, feature1, feature2, feature3);
 
@@ -240,10 +243,11 @@ namespace CMFTAspNet.Tests.Services
         {
             var subject = CreateSubjectWithRealThroughput();
             var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var team = new Team(1, throughput);
 
-            var feature1 = new Feature(throughput, 35);
-            var feature2 = new Feature(throughput, 20);
-            var feature3 = new Feature(throughput, 5);
+            var feature1 = new Feature(team, 35);
+            var feature2 = new Feature(team, 20);
+            var feature3 = new Feature(team, 5);
 
             subject.ForecastFeatures(3, feature1, feature2, feature3);
 

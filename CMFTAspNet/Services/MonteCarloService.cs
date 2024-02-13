@@ -36,7 +36,7 @@ namespace CMFTAspNet.Services
 
         public WhenForecast When(Throughput throughput, int remainingItems)
         {
-            var fakeFeature = new Feature(throughput, remainingItems);
+            var fakeFeature = new Feature(new Team(1, throughput), remainingItems);
             ForecastFeatures(1, fakeFeature);
 
             return fakeFeature.Forecast;
@@ -45,7 +45,7 @@ namespace CMFTAspNet.Services
         public void ForecastFeatures(int featureWIP, params Feature[] features)
         {
             var simulationResults = InitializeSimulationResults(features);
-            var throughput = features.First().Throughput;
+            var throughput = features.First().Team.Throughput;
 
             RunSimulations(() =>
             {
