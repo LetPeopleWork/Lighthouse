@@ -37,29 +37,35 @@ namespace CMFTAspNet.Services
         public WhenForecast When(Throughput throughput, int remainingItems)
         {
             var fakeFeature = new Feature(new Team(1, throughput), remainingItems);
-            ForecastFeatures(1, fakeFeature);
+            ForecastFeatures(fakeFeature);
 
             return fakeFeature.Forecast;
         }
 
-        public void ForecastFeatures(int featureWIP, params Feature[] features)
+        public void ForecastFeatures(params Feature[] features)
         {
             var simulationResults = InitializeSimulationResults(features);
-            var throughput = features.First().Team.Throughput;
 
-            RunSimulations(() =>
+            var featuresByTeam = features.GroupBy(f => f.Team);
+
+            foreach (var teamGroup in featuresByTeam)
             {
-                var simulatedDays = 1;
-                var remainingItems = InitializeRemainingItems(features);
+                var team = teamGroup.Key;
 
-                while (remainingItems.Sum(x => x.Value) > 0)
+                RunSimulations(() =>
                 {
-                    SimulateIndividualDayForFeatureForecast(featureWIP, simulationResults, throughput, simulatedDays, remainingItems);
+                    var simulatedDays = 1;
+                    var remainingItems = InitializeRemainingItems(teamGroup.ToList());
 
-                    simulatedDays++;
-                }
+                    while (remainingItems.Sum(x => x.Value) > 0)
+                    {
+                        SimulateIndividualDayForFeatureForecast(team.FeatureWIP, simulationResults, team.Throughput, simulatedDays, remainingItems);
 
-            });
+                        simulatedDays++;
+                    }
+
+                });
+            }
 
             foreach (var feature in features)
             {
@@ -105,7 +111,7 @@ namespace CMFTAspNet.Services
             return featureWorkedOnIndex;
         }
 
-        private Dictionary<Guid, int> InitializeRemainingItems(Feature[] features)
+        private Dictionary<Guid, int> InitializeRemainingItems(List<Feature> features)
         {
             var remainingItems = new Dictionary<Guid, int>();
             foreach (var feature in features)
