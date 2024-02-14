@@ -32,10 +32,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(forecast.GetPercentile(50), Is.EqualTo(timespan));
-                Assert.That(forecast.GetPercentile(70), Is.EqualTo(timespan));
-                Assert.That(forecast.GetPercentile(85), Is.EqualTo(timespan));
-                Assert.That(forecast.GetPercentile(95), Is.EqualTo(timespan));
+                Assert.That(forecast.GetProbability(50), Is.EqualTo(timespan));
+                Assert.That(forecast.GetProbability(70), Is.EqualTo(timespan));
+                Assert.That(forecast.GetProbability(85), Is.EqualTo(timespan));
+                Assert.That(forecast.GetProbability(95), Is.EqualTo(timespan));
             });
         }
 
@@ -62,10 +62,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(forecast.GetPercentile(50), Is.EqualTo(remainingItems));
-                Assert.That(forecast.GetPercentile(70), Is.EqualTo(remainingItems));
-                Assert.That(forecast.GetPercentile(85), Is.EqualTo(remainingItems));
-                Assert.That(forecast.GetPercentile(95), Is.EqualTo(remainingItems));
+                Assert.That(forecast.GetProbability(50), Is.EqualTo(remainingItems));
+                Assert.That(forecast.GetProbability(70), Is.EqualTo(remainingItems));
+                Assert.That(forecast.GetProbability(85), Is.EqualTo(remainingItems));
+                Assert.That(forecast.GetProbability(95), Is.EqualTo(remainingItems));
             });
         }
 
@@ -79,10 +79,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(forecast.GetPercentile(50), Is.InRange(9, 11));
-                Assert.That(forecast.GetPercentile(70), Is.InRange(7, 9));
-                Assert.That(forecast.GetPercentile(85), Is.InRange(5, 7));
-                Assert.That(forecast.GetPercentile(95), Is.InRange(3, 5));
+                Assert.That(forecast.GetProbability(50), Is.InRange(9, 11));
+                Assert.That(forecast.GetProbability(70), Is.InRange(7, 9));
+                Assert.That(forecast.GetProbability(85), Is.InRange(5, 7));
+                Assert.That(forecast.GetProbability(95), Is.InRange(3, 5));
             });
         }
 
@@ -96,10 +96,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(forecast.GetPercentile(50), Is.InRange(32, 34));
-                Assert.That(forecast.GetPercentile(70), Is.InRange(36, 38));
-                Assert.That(forecast.GetPercentile(85), Is.InRange(40, 42));
-                Assert.That(forecast.GetPercentile(95), Is.InRange(46, 48));
+                Assert.That(forecast.GetProbability(50), Is.InRange(32, 34));
+                Assert.That(forecast.GetProbability(70), Is.InRange(36, 38));
+                Assert.That(forecast.GetProbability(85), Is.InRange(40, 42));
+                Assert.That(forecast.GetProbability(95), Is.InRange(46, 48));
             });
         }
 
@@ -113,10 +113,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(forecast.GetPercentile(50), Is.InRange(31, 33));
-                Assert.That(forecast.GetPercentile(70), Is.InRange(27, 29));
-                Assert.That(forecast.GetPercentile(85), Is.InRange(23, 25));
-                Assert.That(forecast.GetPercentile(95), Is.InRange(19, 21));
+                Assert.That(forecast.GetProbability(50), Is.InRange(31, 33));
+                Assert.That(forecast.GetProbability(70), Is.InRange(27, 29));
+                Assert.That(forecast.GetProbability(85), Is.InRange(23, 25));
+                Assert.That(forecast.GetProbability(95), Is.InRange(19, 21));
             });
         }
 
@@ -130,10 +130,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(forecast.GetPercentile(50), Is.InRange(26, 28));
-                Assert.That(forecast.GetPercentile(70), Is.InRange(29, 31));
-                Assert.That(forecast.GetPercentile(85), Is.InRange(33, 35));
-                Assert.That(forecast.GetPercentile(95), Is.InRange(38, 40));
+                Assert.That(forecast.GetProbability(50), Is.InRange(26, 28));
+                Assert.That(forecast.GetProbability(70), Is.InRange(29, 31));
+                Assert.That(forecast.GetProbability(85), Is.InRange(33, 35));
+                Assert.That(forecast.GetProbability(95), Is.InRange(38, 40));
 
                 Assert.That(forecast.GetLikelihood(30), Is.InRange(70, 73));
             });
@@ -152,10 +152,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature.Forecast.GetPercentile(50), Is.EqualTo(35));
-                Assert.That(feature.Forecast.GetPercentile(70), Is.EqualTo(35));
-                Assert.That(feature.Forecast.GetPercentile(85), Is.EqualTo(35));
-                Assert.That(feature.Forecast.GetPercentile(95), Is.EqualTo(35));
+                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(35));
+                Assert.That(feature.Forecast.GetProbability(70), Is.EqualTo(35));
+                Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(35));
+                Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(35));
             });
         }
 
@@ -163,7 +163,7 @@ namespace CMFTAspNet.Tests.Services
         public void FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPOne()
         {
             var subject = CreateSubjectWithPersistentThroughput();
-            
+
             var team = new Team(1, new Throughput([1]));
 
             var feature1 = new Feature(team, 35);
@@ -173,14 +173,14 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature1.Forecast.GetPercentile(50), Is.EqualTo(35));
-                Assert.That(feature1.Forecast.GetPercentile(70), Is.EqualTo(35));
-                Assert.That(feature1.Forecast.GetPercentile(85), Is.EqualTo(35));
-                Assert.That(feature1.Forecast.GetPercentile(95), Is.EqualTo(35));
-                Assert.That(feature2.Forecast.GetPercentile(50), Is.EqualTo(55));
-                Assert.That(feature2.Forecast.GetPercentile(70), Is.EqualTo(55));
-                Assert.That(feature2.Forecast.GetPercentile(85), Is.EqualTo(55));
-                Assert.That(feature2.Forecast.GetPercentile(95), Is.EqualTo(55));
+                Assert.That(feature1.Forecast.GetProbability(50), Is.EqualTo(35));
+                Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(35));
+                Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(35));
+                Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(35));
+                Assert.That(feature2.Forecast.GetProbability(50), Is.EqualTo(55));
+                Assert.That(feature2.Forecast.GetProbability(70), Is.EqualTo(55));
+                Assert.That(feature2.Forecast.GetProbability(85), Is.EqualTo(55));
+                Assert.That(feature2.Forecast.GetProbability(95), Is.EqualTo(55));
             });
         }
 
@@ -199,10 +199,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature2.Forecast.GetPercentile(50), Is.LessThan(feature1.Forecast.GetPercentile(50)));
-                Assert.That(feature2.Forecast.GetPercentile(70), Is.LessThan(feature1.Forecast.GetPercentile(70)));
-                Assert.That(feature2.Forecast.GetPercentile(85), Is.LessThan(feature1.Forecast.GetPercentile(85)));
-                Assert.That(feature2.Forecast.GetPercentile(95), Is.LessThan(feature1.Forecast.GetPercentile(95)));
+                Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
+                Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
+                Assert.That(feature2.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
+                Assert.That(feature2.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
             });
         }
 
@@ -221,20 +221,20 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature2.Forecast.GetPercentile(50), Is.LessThan(feature1.Forecast.GetPercentile(50)));
-                Assert.That(feature2.Forecast.GetPercentile(70), Is.LessThan(feature1.Forecast.GetPercentile(70)));
-                Assert.That(feature2.Forecast.GetPercentile(85), Is.LessThan(feature1.Forecast.GetPercentile(85)));
-                Assert.That(feature2.Forecast.GetPercentile(95), Is.LessThan(feature1.Forecast.GetPercentile(95)));
+                Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
+                Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
+                Assert.That(feature2.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
+                Assert.That(feature2.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
 
-                Assert.That(feature2.Forecast.GetPercentile(50), Is.LessThan(feature3.Forecast.GetPercentile(50)));
-                Assert.That(feature2.Forecast.GetPercentile(70), Is.LessThan(feature3.Forecast.GetPercentile(70)));
-                Assert.That(feature2.Forecast.GetPercentile(85), Is.LessThan(feature3.Forecast.GetPercentile(85)));
-                Assert.That(feature2.Forecast.GetPercentile(95), Is.LessThan(feature3.Forecast.GetPercentile(95)));
+                Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature3.Forecast.GetProbability(50)));
+                Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature3.Forecast.GetProbability(70)));
+                Assert.That(feature2.Forecast.GetProbability(85), Is.LessThan(feature3.Forecast.GetProbability(85)));
+                Assert.That(feature2.Forecast.GetProbability(95), Is.LessThan(feature3.Forecast.GetProbability(95)));
 
-                Assert.That(feature1.Forecast.GetPercentile(50), Is.LessThan(feature3.Forecast.GetPercentile(50)));
-                Assert.That(feature1.Forecast.GetPercentile(70), Is.LessThan(feature3.Forecast.GetPercentile(70)));
-                Assert.That(feature1.Forecast.GetPercentile(85), Is.LessThan(feature3.Forecast.GetPercentile(85)));
-                Assert.That(feature1.Forecast.GetPercentile(95), Is.LessThan(feature3.Forecast.GetPercentile(95)));
+                Assert.That(feature1.Forecast.GetProbability(50), Is.LessThan(feature3.Forecast.GetProbability(50)));
+                Assert.That(feature1.Forecast.GetProbability(70), Is.LessThan(feature3.Forecast.GetProbability(70)));
+                Assert.That(feature1.Forecast.GetProbability(85), Is.LessThan(feature3.Forecast.GetProbability(85)));
+                Assert.That(feature1.Forecast.GetProbability(95), Is.LessThan(feature3.Forecast.GetProbability(95)));
             });
         }
 
@@ -253,20 +253,20 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature2.Forecast.GetPercentile(50), Is.LessThan(feature1.Forecast.GetPercentile(50)));
-                Assert.That(feature2.Forecast.GetPercentile(70), Is.LessThan(feature1.Forecast.GetPercentile(70)));
-                Assert.That(feature2.Forecast.GetPercentile(85), Is.LessThan(feature1.Forecast.GetPercentile(85)));
-                Assert.That(feature2.Forecast.GetPercentile(95), Is.LessThan(feature1.Forecast.GetPercentile(95)));
+                Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
+                Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
+                Assert.That(feature2.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
+                Assert.That(feature2.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
 
-                Assert.That(feature3.Forecast.GetPercentile(50), Is.LessThan(feature2.Forecast.GetPercentile(50)));
-                Assert.That(feature3.Forecast.GetPercentile(70), Is.LessThan(feature2.Forecast.GetPercentile(70)));
-                Assert.That(feature3.Forecast.GetPercentile(85), Is.LessThan(feature2.Forecast.GetPercentile(85)));
-                Assert.That(feature3.Forecast.GetPercentile(95), Is.LessThan(feature2.Forecast.GetPercentile(95)));
+                Assert.That(feature3.Forecast.GetProbability(50), Is.LessThan(feature2.Forecast.GetProbability(50)));
+                Assert.That(feature3.Forecast.GetProbability(70), Is.LessThan(feature2.Forecast.GetProbability(70)));
+                Assert.That(feature3.Forecast.GetProbability(85), Is.LessThan(feature2.Forecast.GetProbability(85)));
+                Assert.That(feature3.Forecast.GetProbability(95), Is.LessThan(feature2.Forecast.GetProbability(95)));
 
-                Assert.That(feature3.Forecast.GetPercentile(50), Is.LessThan(feature1.Forecast.GetPercentile(50)));
-                Assert.That(feature3.Forecast.GetPercentile(70), Is.LessThan(feature1.Forecast.GetPercentile(70)));
-                Assert.That(feature3.Forecast.GetPercentile(85), Is.LessThan(feature1.Forecast.GetPercentile(85)));
-                Assert.That(feature3.Forecast.GetPercentile(95), Is.LessThan(feature1.Forecast.GetPercentile(95)));
+                Assert.That(feature3.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
+                Assert.That(feature3.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
+                Assert.That(feature3.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
+                Assert.That(feature3.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
             });
         }
 
@@ -285,10 +285,10 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature2.Forecast.GetPercentile(50), Is.LessThan(feature1.Forecast.GetPercentile(50)));
-                Assert.That(feature2.Forecast.GetPercentile(70), Is.LessThan(feature1.Forecast.GetPercentile(70)));
-                Assert.That(feature2.Forecast.GetPercentile(85), Is.LessThan(feature1.Forecast.GetPercentile(85)));
-                Assert.That(feature2.Forecast.GetPercentile(95), Is.LessThan(feature1.Forecast.GetPercentile(95)));
+                Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
+                Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
+                Assert.That(feature2.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
+                Assert.That(feature2.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
             });
         }
 
@@ -308,15 +308,15 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature2.Forecast.GetPercentile(50), Is.LessThan(feature1.Forecast.GetPercentile(50)));
-                Assert.That(feature2.Forecast.GetPercentile(70), Is.LessThan(feature1.Forecast.GetPercentile(70)));
-                Assert.That(feature2.Forecast.GetPercentile(85), Is.LessThan(feature1.Forecast.GetPercentile(85)));
-                Assert.That(feature2.Forecast.GetPercentile(95), Is.LessThan(feature1.Forecast.GetPercentile(95)));
+                Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
+                Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
+                Assert.That(feature2.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
+                Assert.That(feature2.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
 
-                Assert.That(feature3.Forecast.GetPercentile(50), Is.LessThan(feature1.Forecast.GetPercentile(50)));
-                Assert.That(feature3.Forecast.GetPercentile(70), Is.LessThan(feature1.Forecast.GetPercentile(70)));
-                Assert.That(feature3.Forecast.GetPercentile(85), Is.LessThan(feature1.Forecast.GetPercentile(85)));
-                Assert.That(feature3.Forecast.GetPercentile(95), Is.LessThan(feature1.Forecast.GetPercentile(95)));
+                Assert.That(feature3.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
+                Assert.That(feature3.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
+                Assert.That(feature3.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
+                Assert.That(feature3.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
             });
         }
 
@@ -336,15 +336,36 @@ namespace CMFTAspNet.Tests.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature1.Forecast.GetPercentile(50), Is.LessThan(feature2.Forecast.GetPercentile(50)));
-                Assert.That(feature1.Forecast.GetPercentile(70), Is.LessThan(feature2.Forecast.GetPercentile(70)));
-                Assert.That(feature1.Forecast.GetPercentile(85), Is.LessThan(feature2.Forecast.GetPercentile(85)));
-                Assert.That(feature1.Forecast.GetPercentile(95), Is.LessThan(feature2.Forecast.GetPercentile(95)));
+                Assert.That(feature1.Forecast.GetProbability(50), Is.LessThan(feature2.Forecast.GetProbability(50)));
+                Assert.That(feature1.Forecast.GetProbability(70), Is.LessThan(feature2.Forecast.GetProbability(70)));
+                Assert.That(feature1.Forecast.GetProbability(85), Is.LessThan(feature2.Forecast.GetProbability(85)));
+                Assert.That(feature1.Forecast.GetProbability(95), Is.LessThan(feature2.Forecast.GetProbability(95)));
 
-                Assert.That(feature1.Forecast.GetPercentile(50), Is.LessThan(feature3.Forecast.GetPercentile(50)));
-                Assert.That(feature1.Forecast.GetPercentile(70), Is.LessThan(feature3.Forecast.GetPercentile(70)));
-                Assert.That(feature1.Forecast.GetPercentile(85), Is.LessThan(feature3.Forecast.GetPercentile(85)));
-                Assert.That(feature1.Forecast.GetPercentile(95), Is.LessThan(feature3.Forecast.GetPercentile(95)));
+                Assert.That(feature1.Forecast.GetProbability(50), Is.LessThan(feature3.Forecast.GetProbability(50)));
+                Assert.That(feature1.Forecast.GetProbability(70), Is.LessThan(feature3.Forecast.GetProbability(70)));
+                Assert.That(feature1.Forecast.GetProbability(85), Is.LessThan(feature3.Forecast.GetProbability(85)));
+                Assert.That(feature1.Forecast.GetProbability(95), Is.LessThan(feature3.Forecast.GetProbability(95)));
+            });
+        }
+
+        [Test]
+        public void FeatureForecast_MultiTeam_SingleFeatures_FeatureWIPOne()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            var team1 = new Team(1, new Throughput([1]));
+            var team2 = new Team(1, new Throughput([1]));
+
+            var feature1 = new Feature([(team1, 20), (team2, 15)]);
+
+            subject.ForecastFeatures(feature1);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(feature1.Forecast.GetProbability(50), Is.EqualTo(20));
+                Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(20));
+                Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(20));
+                Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(20));
             });
         }
 

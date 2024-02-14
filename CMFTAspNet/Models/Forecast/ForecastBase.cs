@@ -13,7 +13,7 @@
             totalTrials = simulationResult.Values.Sum();
         }
 
-        public int GetPercentile(int percentile)
+        public int GetProbability(int percentile)
         {
             var numberOfTrials = Math.Ceiling((double)totalTrials / 100 * percentile);
 

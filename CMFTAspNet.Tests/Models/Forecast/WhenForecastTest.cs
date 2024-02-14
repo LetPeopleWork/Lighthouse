@@ -26,7 +26,7 @@ namespace CMFTAspNet.Tests.Models.Forecast
 
             var subject = new WhenForecast(simulationResult);
 
-            var forecast = subject.GetPercentile(percentile);
+            var forecast = subject.GetProbability(percentile);
 
             Assert.That(forecast, Is.EqualTo(expectedResult));
         }

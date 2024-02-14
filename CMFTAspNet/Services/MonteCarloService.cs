@@ -44,22 +44,37 @@ namespace CMFTAspNet.Services
 
         public void ForecastFeatures(params Feature[] features)
         {
-            var simulationResults = InitializeSimulationResults(features);
+            var workByTeamAndFeature = new Dictionary<Team, List<(Guid featureId, int remainingWork)>>();
+            var simulationResults = new Dictionary<Team, Dictionary<Guid, Dictionary<int, int>>>();
 
-            var featuresByTeam = features.GroupBy(f => f.Team);
-
-            foreach (var teamGroup in featuresByTeam)
+            foreach (var feature in features)
             {
-                var team = teamGroup.Key;
+                foreach (var remainingWorkKey in feature.RemainingWork.Keys)
+                {
+                    if (!workByTeamAndFeature.ContainsKey(remainingWorkKey))
+                    {
+                        workByTeamAndFeature.Add(remainingWorkKey, new List<(Guid featureId, int remainingWork)>());
+                        simulationResults.Add(remainingWorkKey, new Dictionary<Guid, Dictionary<int, int>>());
+                    }
+
+                    workByTeamAndFeature[remainingWorkKey].Add((feature.Id, feature.RemainingWork[remainingWorkKey]));
+                    simulationResults[remainingWorkKey].Add(feature.Id, new Dictionary<int, int>());
+                }
+            }
+
+            foreach (var featureByTeam in workByTeamAndFeature)
+            {
+                var team = featureByTeam.Key;
+                var remainingWorkByTeam = featureByTeam.Value;
 
                 RunSimulations(() =>
                 {
                     var simulatedDays = 1;
-                    var remainingItems = InitializeRemainingItems(teamGroup.ToList());
+                    var remainingItems = InitializeRemainingItems(remainingWorkByTeam);
 
                     while (remainingItems.Sum(x => x.Value) > 0)
                     {
-                        SimulateIndividualDayForFeatureForecast(team.FeatureWIP, simulationResults, team.Throughput, simulatedDays, remainingItems);
+                        SimulateIndividualDayForFeatureForecast(team, simulationResults[team], simulatedDays, remainingItems);
 
                         simulatedDays++;
                     }
@@ -69,18 +84,23 @@ namespace CMFTAspNet.Services
 
             foreach (var feature in features)
             {
-                var featureForecast = simulationResults[feature.Id];
-                feature.SetFeatureForecast(new WhenForecast(featureForecast));
+                var simulationResultForFeature = simulationResults
+                    .SelectMany(teamDict => teamDict.Value)
+                    .Where(guidDict => guidDict.Key == feature.Id)
+                    .Select(pair => pair.Value);
+
+                var featureForecasts = simulationResultForFeature.Select(result => new WhenForecast(result));
+                feature.SetFeatureForecast(featureForecasts);
             }
         }
 
-        private void SimulateIndividualDayForFeatureForecast(int featureWIP, Dictionary<Guid, Dictionary<int, int>> simulationResults, Throughput throughput, int simulatedDays, Dictionary<Guid, int> remainingItems)
+        private void SimulateIndividualDayForFeatureForecast(Team team, Dictionary<Guid, Dictionary<int, int>> simulationResults, int simulatedDays, Dictionary<Guid, int> remainingItems)
         {
-            var simulatedThroughput = GetRandomThroughput(throughput);
+            var simulatedThroughput = GetRandomThroughput(team.Throughput);
 
             for (var closedItems = 0; closedItems < simulatedThroughput; closedItems++)
             {
-                var featureWorkedOnIndex = RecalculateFeatureWIP(featureWIP, remainingItems.Count);
+                var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP, remainingItems.Count);
                 var featureWorkedOn = randomNumberService.GetRandomNumber(featureWorkedOnIndex);
 
                 var featureToUpdateId = remainingItems.ElementAt(featureWorkedOn).Key;
@@ -111,12 +131,12 @@ namespace CMFTAspNet.Services
             return featureWorkedOnIndex;
         }
 
-        private Dictionary<Guid, int> InitializeRemainingItems(List<Feature> features)
+        private Dictionary<Guid, int> InitializeRemainingItems(IEnumerable<(Guid featureId, int remainingWork)> featureForTeam)
         {
             var remainingItems = new Dictionary<Guid, int>();
-            foreach (var feature in features)
+            foreach (var feature in featureForTeam)
             {
-                remainingItems.Add(feature.Id, feature.RemainingItems);
+                remainingItems.Add(feature.featureId, feature.remainingWork);
             }
 
             return remainingItems;
