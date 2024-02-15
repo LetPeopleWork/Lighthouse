@@ -11,9 +11,9 @@ namespace CMFTAspNet.Models
         public Feature(IEnumerable<(Team team, int remainingItems)> remainingWork)
         {
             RemainingWork = new Dictionary<Team, int>();
-            foreach (var item in remainingWork)
+            foreach (var (team, remainingItems) in remainingWork)
             {
-                RemainingWork.Add(item.team, item.remainingItems);
+                RemainingWork.Add(team, remainingItems);
             }
         }
 
