@@ -1,4 +1,6 @@
-﻿namespace CMFTAspNet.Models
+﻿using CMFTAspNet.Models.Teams;
+
+namespace CMFTAspNet.Models
 {
     public class SimulationResult
     {

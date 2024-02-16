@@ -1,6 +1,7 @@
 ﻿
 using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
+using CMFTAspNet.Models.Teams;
 
 namespace CMFTAspNet.Services
 {
@@ -36,7 +37,10 @@ namespace CMFTAspNet.Services
 
         public WhenForecast When(Throughput throughput, int remainingItems)
         {
-            var fakeFeature = new Feature(new Team(1, throughput), remainingItems);
+            var team = new Team(1);
+            team.UpdateThroughput(throughput);
+
+            var fakeFeature = new Feature(team, remainingItems);
             ForecastFeatures(fakeFeature);
 
             return fakeFeature.Forecast;
