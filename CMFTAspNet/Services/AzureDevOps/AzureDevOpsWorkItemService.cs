@@ -14,30 +14,42 @@ namespace CMFTAspNet.Services.AzureDevOps
             var connection = CreateConnection(teamConfiguration.AzureDevOpsConfiguration);
             var witClient = connection.GetClient<WorkItemTrackingHttpClient>();
 
-            return await GetClosedItemsPerDay(witClient, history, teamConfiguration.TeamProject, teamConfiguration.AreaPaths);
+            return await GetClosedItemsPerDay(witClient, history, teamConfiguration);
         }
 
-        private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, int numberOfDays, string teamProject, string[] areaPaths)
+        private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, int numberOfDays, AzureDevOpsTeamConfiguration teamConfiguration)
         {
             var closedItemsPerDay = new int[numberOfDays];
 
             var startDate = DateTime.UtcNow.Date.AddDays(- (numberOfDays - 1));
 
-            var areaPathQuery = string.Join(" OR ", areaPaths.Select(path => $"[System.AreaPath] UNDER '{path}'"));
-            var wiql = $"SELECT [System.Id], [System.State], [Microsoft.VSTS.Common.ClosedDate] FROM WorkItems WHERE [System.TeamProject] = '{teamProject}' AND [System.State] = 'Closed' AND ({areaPathQuery}) AND [Microsoft.VSTS.Common.ClosedDate] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
+            var areaPathQuery = string.Join(" OR ", teamConfiguration.AreaPaths.Select(path => $"[System.AreaPath] UNDER '{path}'"));
+            var workItemsQuery = string.Join(" OR ", teamConfiguration.WorkItemType.Select(type => $"[System.WorkItemType] = '{type}'"));
+            var ignoredTagsQuery = string.Join(" OR ", teamConfiguration.IgnoredTags.Select(tag => $"[System.Tags] NOT CONTAINS '{tag}'"));
+
+            var wiql = $"SELECT [System.Id], [System.State], [Microsoft.VSTS.Common.ClosedDate] FROM WorkItems WHERE [System.TeamProject] = '{teamConfiguration.TeamProject}' AND [System.State] = 'Closed' " +
+                $"AND ({areaPathQuery}) " +
+                $"AND ({workItemsQuery}) " +
+                $"AND ({ignoredTagsQuery}) " +
+                $"AND [Microsoft.VSTS.Common.ClosedDate] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
 
             var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
 
             foreach (WorkItemReference workItemRef in queryResult.WorkItems)
             {
                 var workItem = await witClient.GetWorkItemAsync(workItemRef.Id);
-                var changedDate = DateTime.Parse(workItem.Fields["Microsoft.VSTS.Common.ClosedDate"].ToString());
+                var closedDate = workItem.Fields["Microsoft.VSTS.Common.ClosedDate"].ToString();
 
-                int index = (changedDate.Date - startDate).Days;
-
-                if (index >= 0 && index < numberOfDays)
+                if (!string.IsNullOrEmpty(closedDate))
                 {
-                    closedItemsPerDay[index]++;
+                    var changedDate = DateTime.Parse(closedDate);
+
+                    int index = (changedDate.Date - startDate).Days;
+
+                    if (index >= 0 && index < numberOfDays)
+                    {
+                        closedItemsPerDay[index]++;
+                    }
                 }
             }
 

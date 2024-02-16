@@ -1,7 +1,6 @@
 ﻿using CMFTAspNet.Models.Connections;
 using CMFTAspNet.Models.Teams;
 using CMFTAspNet.Services.AzureDevOps;
-using Microsoft.TeamFoundation.Core.WebApi;
 
 namespace CMFTAspNet.Tests.Services.AzureDevOps
 {
@@ -29,9 +28,11 @@ namespace CMFTAspNet.Tests.Services.AzureDevOps
             var teamConfig = new AzureDevOpsTeamConfiguration
             {
                 AzureDevOpsConfiguration = azureDevOpsConfig,
-                TeamProject = "CMFTTestTeamProject",
-                AreaPaths = ["CMFTTestTeamProject"]
+                TeamProject = "CMFTTestTeamProject"
             };
+
+            teamConfig.AreaPaths.Add("CMFTTestTeamProject");
+            teamConfig.IgnoredTags.Add("ThroughputIgnore");
 
             return teamConfig;
         }
