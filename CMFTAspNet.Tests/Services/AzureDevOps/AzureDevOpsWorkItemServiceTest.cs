@@ -23,7 +23,7 @@ namespace CMFTAspNet.Tests.Services.AzureDevOps
         {
             var azureDevOpsConfig = new AzureDevOpsConfiguration();
             azureDevOpsConfig.Url = "https://dev.azure.com/huserben";
-            azureDevOpsConfig.PersonalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsCMFTIntegrationTestToken");
+            azureDevOpsConfig.PersonalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsCMFTIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'AzureDevOpsCMFTIntegrationTestToken' is set!");
 
             var teamConfig = new AzureDevOpsTeamConfiguration
             {
