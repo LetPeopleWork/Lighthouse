@@ -4,6 +4,6 @@ namespace CMFTAspNet.Services.AzureDevOps
 {
     public interface IAzureDevOpsWorkItemService
     {
-        int[] GetClosedWorkItemsForTeam(AzureDevOpsTeamConfiguration teamConfiguration, int history);
+        Task<int[]> GetClosedWorkItemsForTeam(AzureDevOpsTeamConfiguration teamConfiguration, int history);
     }
 }

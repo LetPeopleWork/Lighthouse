@@ -15,9 +15,9 @@ namespace CMFTAspNet.Services.ThroughputService
             this.azureDevOpsWorkItemService = azureDevOpsWorkItemService;
         }
 
-        public void UpdateThroughput(int historyInDays)
+        public async Task UpdateThroughput(int historyInDays)
         {
-            var throughput = azureDevOpsWorkItemService.GetClosedWorkItemsForTeam((AzureDevOpsTeamConfiguration)team.TeamConfiguration, historyInDays);
+            var throughput = await azureDevOpsWorkItemService.GetClosedWorkItemsForTeam((AzureDevOpsTeamConfiguration)team.TeamConfiguration, historyInDays);
             team.UpdateThroughput(new Throughput(throughput));
         }
     }
