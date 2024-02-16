@@ -23,15 +23,15 @@ namespace CMFTAspNet.Services.AzureDevOps
 
             var startDate = DateTime.UtcNow.Date.AddDays(- (numberOfDays - 1));
 
-            string areaPathQuery = string.Join(" OR ", areaPaths.Select(path => $"[System.AreaPath] UNDER '{path}'"));
-            string wiql = $"SELECT [System.Id], [System.State], [System.ChangedDate] FROM WorkItems WHERE [System.TeamProject] = '{teamProject}' AND [System.State] = 'Closed' AND ({areaPathQuery}) AND [System.ChangedDate] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
+            var areaPathQuery = string.Join(" OR ", areaPaths.Select(path => $"[System.AreaPath] UNDER '{path}'"));
+            var wiql = $"SELECT [System.Id], [System.State], [Microsoft.VSTS.Common.ClosedDate] FROM WorkItems WHERE [System.TeamProject] = '{teamProject}' AND [System.State] = 'Closed' AND ({areaPathQuery}) AND [Microsoft.VSTS.Common.ClosedDate] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
 
             var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
 
             foreach (WorkItemReference workItemRef in queryResult.WorkItems)
             {
                 var workItem = await witClient.GetWorkItemAsync(workItemRef.Id);
-                var changedDate = DateTime.Parse(workItem.Fields["System.ChangedDate"].ToString());
+                var changedDate = DateTime.Parse(workItem.Fields["Microsoft.VSTS.Common.ClosedDate"].ToString());
 
                 int index = (changedDate.Date - startDate).Days;
 

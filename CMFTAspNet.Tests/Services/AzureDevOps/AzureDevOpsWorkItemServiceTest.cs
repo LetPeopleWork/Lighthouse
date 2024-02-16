@@ -22,11 +22,9 @@ namespace CMFTAspNet.Tests.Services.AzureDevOps
 
         private AzureDevOpsTeamConfiguration CreateTeamConfiguration()
         {
-            var azureDevOpsConfig = new AzureDevOpsConfiguration
-            {
-                Url = "https://dev.azure.com/huserben",
-                PersonalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsCMFTIntegrationTestToken")
-            };
+            var azureDevOpsConfig = new AzureDevOpsConfiguration();
+            azureDevOpsConfig.Url = "https://dev.azure.com/huserben";
+            azureDevOpsConfig.PersonalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsCMFTIntegrationTestToken");
 
             var teamConfig = new AzureDevOpsTeamConfiguration
             {
