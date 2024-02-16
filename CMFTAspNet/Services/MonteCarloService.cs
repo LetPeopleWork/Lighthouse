@@ -97,7 +97,6 @@ namespace CMFTAspNet.Services
 
         private void SimulateIndividualDayForFeatureForecast(Team team, IEnumerable<SimulationResult> simulationResults, int simulatedDays)
         {
-            var remainingItems = simulationResults.Sum(x => x.RemainingItems);
             var simulatedThroughput = GetRandomThroughput(team.Throughput);
 
             for (var closedItems = 0; closedItems < simulatedThroughput; closedItems++)
