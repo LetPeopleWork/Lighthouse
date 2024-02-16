@@ -37,7 +37,7 @@ namespace CMFTAspNet.Services
 
         public WhenForecast When(Throughput throughput, int remainingItems)
         {
-            var team = new Team(1);
+            var team = new Team("Team", 1);
             team.UpdateThroughput(throughput);
 
             var fakeFeature = new Feature(team, remainingItems);

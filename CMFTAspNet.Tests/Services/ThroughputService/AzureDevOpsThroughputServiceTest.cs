@@ -15,7 +15,7 @@ namespace CMFTAspNet.Tests.Services.ThroughputService
             var azureDevOpsWorkItemServiceMock = new Mock<IAzureDevOpsWorkItemService>();
 
             var teamConfiguration = new AzureDevOpsTeamConfiguration();
-            var team = new Team(1);
+            var team = new Team("Team", 1);
             team.UpdateTeamConfiguration(teamConfiguration);
 
             azureDevOpsWorkItemServiceMock.Setup(x => x.GetClosedWorkItemsForTeam(teamConfiguration, 7)).Returns(Task.FromResult(closedItemsPerDay));

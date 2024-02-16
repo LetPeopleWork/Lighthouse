@@ -2,8 +2,9 @@
 {
     public class Team
     {
-        public Team(int featureWIP)
+        public Team(string teamName, int featureWIP)
         {
+            TeamName = teamName;
             FeatureWIP = featureWIP;
             Throughput = new Throughput([1]);
             TeamConfiguration = new DefaultTeamConfiguration();
@@ -13,7 +14,9 @@
 
         public ITeamConfiguration TeamConfiguration { get; private set; }
 
-        public int FeatureWIP { get; }
+        public string TeamName { get; set; }
+
+        public int FeatureWIP { get; set;  }
 
         public Throughput Throughput { get; private set; }
 

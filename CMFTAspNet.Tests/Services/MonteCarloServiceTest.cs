@@ -384,7 +384,7 @@ namespace CMFTAspNet.Tests.Services
 
         private Team CreateTeam(int featureWip, Throughput throughput)
         {
-            var team = new Team(featureWip);
+            var team = new Team("Team", featureWip);
             team.UpdateThroughput(throughput);
 
             return team;

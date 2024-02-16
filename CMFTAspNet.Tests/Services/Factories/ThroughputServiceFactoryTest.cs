@@ -12,7 +12,7 @@ namespace CMFTAspNet.Tests.Services.Factories
         public void CreateThroughputServiceFactoryForTeam_TeamConfigIsDefault_ThrowsNotSupportedException()
         {
             var subject = new ThroughputServiceFactory(Mock.Of<IAzureDevOpsWorkItemService>());
-            var team = new Team(1);
+            var team = new Team("Team", 1);
 
             Assert.Throws<NotSupportedException>(() => subject.CreateThroughputServiceForTeam(team));
         }
@@ -21,7 +21,7 @@ namespace CMFTAspNet.Tests.Services.Factories
         public void CreateThroughputServiceFactoryForTeam_AzureDevOpsTeamConfiguration_CreatesAzureDevOpsThroughputService()
         {
             var subject = new ThroughputServiceFactory(Mock.Of<IAzureDevOpsWorkItemService>());
-            var team = new Team(1);
+            var team = new Team("Team", 1);
             team.UpdateTeamConfiguration(new AzureDevOpsTeamConfiguration());
 
             var azureDevOpsThroughputService = subject.CreateThroughputServiceForTeam(team);
