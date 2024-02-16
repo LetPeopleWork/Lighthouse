@@ -24,7 +24,7 @@ namespace CMFTAspNet.Services
                 var simulatedThroughput = 0;
                 for (var day = 0; day < days; day++)
                 {
-                    simulatedThroughput += GetRandomThroughput(throughput);
+                    simulatedThroughput += GetSimulatedThroughput(throughput);
                 }
 
                 AddSimulationResult(simulationResults, simulatedThroughput);
@@ -46,7 +46,7 @@ namespace CMFTAspNet.Services
         {
             var simulationResults = InitializeSimulationResults(features);
             RunMonteCarloSimulation(simulationResults);
-            SetFeatureForecasts(features, simulationResults);
+            UpdateFeatureForecasts(features, simulationResults);
         }
 
         private void RunMonteCarloSimulation(List<SimulationResult> simulationResults)
@@ -68,7 +68,7 @@ namespace CMFTAspNet.Services
             }
         }
 
-        private void SetFeatureForecasts(Feature[] features, List<SimulationResult> simulationResults)
+        private void UpdateFeatureForecasts(Feature[] features, List<SimulationResult> simulationResults)
         {
             foreach (var feature in features)
             {
@@ -95,29 +95,35 @@ namespace CMFTAspNet.Services
             return simulationResults;
         }
 
-        private void SimulateIndividualDayForFeatureForecast(Team team, IEnumerable<SimulationResult> simulationResults, int simulatedDays)
+        private void SimulateIndividualDayForFeatureForecast(Team team, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay)
         {
-            var simulatedThroughput = GetRandomThroughput(team.Throughput);
+            var simulatedThroughput = GetSimulatedThroughput(team.Throughput);
 
-            for (var closedItems = 0; closedItems < simulatedThroughput; closedItems++)
+            for (var closedItems = 0; closedItems < simulatedThroughput && simulationResults.GetRemainingItems() > 0; closedItems++)
             {
-                var featuresRemaining = simulationResults.Where(x => x.HasWorkRemaining);
-                var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP, featuresRemaining.Count());
-                var featureWorkedOn = randomNumberService.GetRandomNumber(featureWorkedOnIndex);
-
-                var itemToUpdate = featuresRemaining.ElementAt(featureWorkedOn);
-                itemToUpdate.RemainingItems -= 1;
-
-                if (itemToUpdate.RemainingItems == 0)
-                {                    
-                    AddSimulationResult(itemToUpdate.SimulationResults, simulatedDays);
-
-                    if (simulationResults.GetRemainingItems() == 0)
-                    {
-                        break;
-                    }
-                }
+                var featureToUpdate = GetFeatureToUpdate(team, simulationResults);
+                ReduceRemainingWorkFromFeatureToUpdate(currentlySimulatedDay, featureToUpdate);
             }
+        }
+
+        private void ReduceRemainingWorkFromFeatureToUpdate(int simulatedDays, SimulationResult featureToUpdate)
+        {
+            featureToUpdate.RemainingItems -= 1;
+
+            if (!featureToUpdate.HasWorkRemaining)
+            {
+                AddSimulationResult(featureToUpdate.SimulationResults, simulatedDays);
+            }
+        }
+
+        private SimulationResult GetFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults)
+        {
+            var featuresRemaining = simulationResults.Where(x => x.HasWorkRemaining);
+            var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP, featuresRemaining.Count());
+            var featureWorkedOn = randomNumberService.GetRandomNumber(featureWorkedOnIndex);
+
+            var itemToUpdate = featuresRemaining.ElementAt(featureWorkedOn);
+            return itemToUpdate;
         }
 
         private int RecalculateFeatureWIP(int featureWIP, int remainingItems)
@@ -149,7 +155,7 @@ namespace CMFTAspNet.Services
             simulationResults[simulationResult]++;
         }
 
-        private int GetRandomThroughput(Throughput throughput)
+        private int GetSimulatedThroughput(Throughput throughput)
         {
             var randomDay = randomNumberService.GetRandomNumber(throughput.History - 1);
             return throughput.GetThroughputOnDay(randomDay);
