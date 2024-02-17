@@ -26,7 +26,20 @@ namespace CMFTAspNet.Services.WorkItemCollectorService
                 await GetRemainingWorkForFeatures(features);
             }
 
+            foreach (var feature in features.ToList())
+            {
+                RemoveDoneFeaturesFromList(features, feature);
+            }
+
             return features;
+        }
+
+        private static void RemoveDoneFeaturesFromList(List<Feature> features, Feature feature)
+        {
+            if (feature.RemainingWork.Sum(x => x.Value) == 0)
+            {
+                features.Remove(feature);
+            }
         }
 
         private async Task GetRemainingWorkForFeatures(List<Feature> featuresForRelease)
@@ -41,7 +54,7 @@ namespace CMFTAspNet.Services.WorkItemCollectorService
         {
             foreach (var team in featureForRelease.RemainingWork.Keys)
             {
-                var remainingWork = await azureDevOpsWorkItemService.GetRelatedWorkItems((AzureDevOpsTeamConfiguration)team.TeamConfiguration, featureForRelease.Id);
+                var remainingWork = await azureDevOpsWorkItemService.GetRemainingRelatedWorkItems((AzureDevOpsTeamConfiguration)team.TeamConfiguration, featureForRelease.Id);
                 featureForRelease.RemainingWork[team] = remainingWork;
             }
         }
@@ -84,7 +97,7 @@ namespace CMFTAspNet.Services.WorkItemCollectorService
                 }
             }
 
-            return featuresForRelease.Values.ToList();
+            return [.. featuresForRelease.Values];
         }
     }
 }

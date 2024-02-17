@@ -6,7 +6,7 @@ namespace CMFTAspNet.Services.AzureDevOps
     {
         Task<int[]> GetClosedWorkItemsForTeam(AzureDevOpsTeamConfiguration teamConfiguration, int history);
 
-        Task<int> GetRelatedWorkItems(AzureDevOpsTeamConfiguration teamConfiguration, int featureId);
+        Task<int> GetRemainingRelatedWorkItems(AzureDevOpsTeamConfiguration teamConfiguration, int featureId);
 
         Task<List<int>> GetWorkItemsByAreaPath(string workItemType, string areaPath, AzureDevOpsTeamConfiguration azureDevOpsTeamConfiguration);
 

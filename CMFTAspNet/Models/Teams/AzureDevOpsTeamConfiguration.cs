@@ -18,5 +18,7 @@ namespace CMFTAspNet.Models.Teams
         public List<string> WorkItemType { get; }
 
         public List<string> IgnoredTags { get; } = new List<string>();
+
+        public List<string> AdditionalRelatedFields { get; } = new List<string>();
     }
 }
