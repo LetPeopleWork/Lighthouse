@@ -25,7 +25,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
 
-            var itemsByTag = await subject.GetWorkItemsByTag("Feature", "NotExistingTag", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByTag(["Feature"], "NotExistingTag", teamConfiguration);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -36,7 +36,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
 
-            var itemsByTag = await subject.GetWorkItemsByTag("Feature", "Release1", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByTag(["Feature"], "Release1", teamConfiguration);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(1));
         }
@@ -47,7 +47,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
 
-            var itemsByTag = await subject.GetWorkItemsByTag("Bug", "Release1", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByTag(["Bug"], "Release1", teamConfiguration);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -58,7 +58,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
 
-            var itemsByTag = await subject.GetWorkItemsByAreaPath("Feature", "NotExistingAreaPath", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByAreaPath(["Feature"], "NotExistingAreaPath", teamConfiguration);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -69,7 +69,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
 
-            var itemsByTag = await subject.GetWorkItemsByAreaPath("Feature", "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByAreaPath(["Feature"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(1));
         }
@@ -80,7 +80,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
 
-            var itemsByTag = await subject.GetWorkItemsByAreaPath("Bug", "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByAreaPath(["Bug"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -103,7 +103,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
 
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
-            teamConfiguration.WorkItemType.Add("Feature");
+            teamConfiguration.WorkItemTypes.Add("Feature");
 
             var relatedItems = await subject.GetRemainingRelatedWorkItems(366, teamConfiguration);
 

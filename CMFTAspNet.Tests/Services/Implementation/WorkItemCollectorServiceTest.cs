@@ -20,6 +20,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
             workItemServiceFactoryMock.Setup(x => x.CreateWorkItemServiceForTeam(It.IsAny<ITeamConfiguration>())).Returns(workItemServiceMock.Object);
 
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int>()));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int>()));
+
             subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object);
         }
 
@@ -30,7 +33,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var release = CreateReleaseConfiguration(SearchBy.Tag, [team]);
             var feature = new Feature(team, 12) { Id = 12 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(release.WorkItemType, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(12));
 
             var features = await subject.CollectFeaturesForReleases([release]);
@@ -48,7 +51,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var release = CreateReleaseConfiguration(SearchBy.AreaPath, [team]);
             var feature = new Feature(team, 12) { Id = 12 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(12));
 
             var features = await subject.CollectFeaturesForReleases([release]);
@@ -67,7 +70,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             var feature = new Feature(team, 0) { Id = 42 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(0));
 
             var features = await subject.CollectFeaturesForReleases([release]);
@@ -84,7 +87,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var remainingWorkItems = 12;
             var feature = new Feature(team, remainingWorkItems) { Id = 42 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(remainingWorkItems));
 
             var features = await subject.CollectFeaturesForReleases([release]);
@@ -101,11 +104,12 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var team2 = CreateTeam();
             var release = CreateReleaseConfiguration(SearchBy.Tag, [team1, team2]);
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int>()));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int>()));
 
             _ = await subject.CollectFeaturesForReleases([release]);
 
-            workItemServiceMock.Verify(x => x.GetWorkItemsByTag(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ITeamConfiguration>()), Times.Exactly(2));
+            workItemServiceMock.Verify(x => x.GetWorkItemsByTag(release.WorkItemTypes, It.IsAny<string>(), team1.TeamConfiguration), Times.Exactly(1));
+            workItemServiceMock.Verify(x => x.GetWorkItemsByTag(release.WorkItemTypes, It.IsAny<string>(), team2.TeamConfiguration), Times.Exactly(1));
         }
 
         [Test]
@@ -120,10 +124,10 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature1 = new Feature(team1, remainingWorkItemsFeature1) { Id = 1 };
             var feature2 = new Feature(team2, remainingWorkItemsFeature1) { Id = 2 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, team1.TeamConfiguration)).Returns(Task.FromResult(new List<int> { feature1.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, team1.TeamConfiguration)).Returns(Task.FromResult(new List<int> { feature1.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.Id, team1.TeamConfiguration)).Returns(Task.FromResult(remainingWorkItemsFeature1));
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, team2.TeamConfiguration)).Returns(Task.FromResult(new List<int> { feature2.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, team2.TeamConfiguration)).Returns(Task.FromResult(new List<int> { feature2.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, team2.TeamConfiguration)).Returns(Task.FromResult(remainingWorkItemsFeature2));
 
             var features = await subject.CollectFeaturesForReleases([release]);
@@ -145,7 +149,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var remainingWorkItemsTeam2 = 7;
             var feature = new Feature(team1, remainingWorkItemsTeam1) { Id = 1 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, team1.TeamConfiguration)).Returns(Task.FromResult(remainingWorkItemsTeam1));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, team2.TeamConfiguration)).Returns(Task.FromResult(remainingWorkItemsTeam2));
 
@@ -159,10 +163,33 @@ namespace CMFTAspNet.Tests.Services.Implementation
             });
         }
 
+        [Test]
+        public async Task CollectFeaturesForRelease_UnparentedItems_CreatesDummyFeatureForUnparented()
+        {
+            var team = CreateTeam();
+            var release = CreateReleaseConfiguration(SearchBy.AreaPath, [team]);
+
+            var unparentedItems = new int[] { 12, 1337, 42 };
+            
+
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int>()));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<int>(), It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(0));
+
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(team.TeamConfiguration.WorkItemTypes, release.SearchTerm, team.TeamConfiguration)).Returns(Task.FromResult(new List<int>(unparentedItems)));
+
+            var features = await subject.CollectFeaturesForReleases([release]);
+
+            var actualFeature = features.Single();
+            Assert.That(actualFeature.RemainingWork[team], Is.EqualTo(unparentedItems.Length));
+        }
+
         private Team CreateTeam()
         {
             var team = new Team("InvolvedTeam", 1);
             team.UpdateTeamConfiguration(new AzureDevOpsTeamConfiguration());
+
+            team.TeamConfiguration.WorkItemTypes.Add("User Story");
+
             return team;
         }
 
@@ -173,8 +200,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
                 Name = "Release 1",
                 SearchBy = searchBy,
                 SearchTerm = "Release 1.33.7",
-                WorkItemType = "Feature"
             };
+
+            releaseConfig.WorkItemTypes.Add("Feature");
 
             foreach (var team in teams)
             {

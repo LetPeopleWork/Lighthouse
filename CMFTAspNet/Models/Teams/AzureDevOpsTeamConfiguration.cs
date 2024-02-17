@@ -6,7 +6,7 @@ namespace CMFTAspNet.Models.Teams
     {
         public AzureDevOpsTeamConfiguration()
         {
-            WorkItemType = ["User Story", "Bug"];
+            WorkItemTypes = ["User Story", "Bug"];
         }
 
         public AzureDevOpsConfiguration AzureDevOpsConfiguration { get; set; }
@@ -15,7 +15,7 @@ namespace CMFTAspNet.Models.Teams
 
         public List<string> AreaPaths { get; } = new List<string>();
 
-        public List<string> WorkItemType { get; }
+        public List<string> WorkItemTypes { get; }
 
         public List<string> IgnoredTags { get; } = new List<string>();
 

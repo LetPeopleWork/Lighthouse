@@ -8,6 +8,7 @@ namespace CMFTAspNet.Services.Implementation
     public class WorkItemCollectorService
     {
         private readonly IWorkItemServiceFactory workItemServiceFactory;
+        private readonly int UnparentedFeatureId = int.MaxValue - 1;
 
         public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory)
         {
@@ -52,6 +53,11 @@ namespace CMFTAspNet.Services.Implementation
 
         private async Task GetRemainingWorkForFeature(Feature featureForRelease)
         {
+            if (featureForRelease.Id == UnparentedFeatureId)
+            {
+                return;
+            }
+
             foreach (var team in featureForRelease.RemainingWork.Keys)
             {
                 var remainingWork = await GetWorkItemServiceForTeam(team.TeamConfiguration).GetRemainingRelatedWorkItems(featureForRelease.Id, team.TeamConfiguration);
@@ -66,38 +72,52 @@ namespace CMFTAspNet.Services.Implementation
                 case SearchBy.Tag:
                     return await GetFeaturesForReleaseConfiguration(
                         release,
-                        async (workItemType, tag, teamConfiguration) =>
-                            await GetWorkItemServiceForTeam(teamConfiguration).GetWorkItemsByTag(release.WorkItemType, release.SearchTerm, teamConfiguration));
+                        async (workItemTypes, teamConfiguration) =>
+                            await GetWorkItemServiceForTeam(teamConfiguration).GetWorkItemsByTag(workItemTypes, release.SearchTerm, teamConfiguration));
                 case SearchBy.AreaPath:
                     return await GetFeaturesForReleaseConfiguration(
                         release,
-                        async (workItemType, tag, teamConfiguration) =>
-                            await GetWorkItemServiceForTeam(teamConfiguration).GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, teamConfiguration));
+                        async (workItemTypes, teamConfiguration) =>
+                            await GetWorkItemServiceForTeam(teamConfiguration).GetWorkItemsByAreaPath(workItemTypes, release.SearchTerm, teamConfiguration));
                 default:
                     throw new NotSupportedException($"Search by {release.SearchBy} is not supported!");
             }
         }
 
-        private async Task<List<Feature>> GetFeaturesForReleaseConfiguration(ReleaseConfiguration release, Func<string, string, ITeamConfiguration, Task<List<int>>> getFeatureAction)
+        private async Task<List<Feature>> GetFeaturesForReleaseConfiguration(ReleaseConfiguration release, Func<IEnumerable<string>, ITeamConfiguration, Task<List<int>>> getFeatureAction)
         {
             var featuresForRelease = new Dictionary<int, Feature>();
 
             foreach (var team in release.InvolvedTeams)
             {
-                var foundFeatures = await getFeatureAction(release.WorkItemType, release.SearchTerm, team.TeamConfiguration);
+                var foundFeatures = await getFeatureAction(release.WorkItemTypes, team.TeamConfiguration);
 
                 foreach (var featureId in foundFeatures)
                 {
-                    if (!featuresForRelease.ContainsKey(featureId))
-                    {
-                        featuresForRelease[featureId] = new Feature() { Id = featureId };
-                    }
-
-                    featuresForRelease[featureId].RemainingWork.Add(team, 0);
+                    AddOrExtendFeature(featuresForRelease, team, featureId);
                 }
+
+
+                var unparentedItems = await getFeatureAction(team.TeamConfiguration.WorkItemTypes, team.TeamConfiguration);
+                if (!featuresForRelease.ContainsKey(UnparentedFeatureId))
+                {
+                    featuresForRelease[UnparentedFeatureId] = new Feature() { Id = UnparentedFeatureId };
+                }
+
+                featuresForRelease[UnparentedFeatureId].RemainingWork.Add(team, unparentedItems.Count);
             }
 
             return [.. featuresForRelease.Values];
+        }
+
+        private static void AddOrExtendFeature(Dictionary<int, Feature> featuresForRelease, Team team, int featureId)
+        {
+            if (!featuresForRelease.ContainsKey(featureId))
+            {
+                featuresForRelease[featureId] = new Feature() { Id = featureId };
+            }
+
+            featuresForRelease[featureId].RemainingWork.Add(team, 0);
         }
 
         private IWorkItemService GetWorkItemServiceForTeam(ITeamConfiguration teamConfiguration)

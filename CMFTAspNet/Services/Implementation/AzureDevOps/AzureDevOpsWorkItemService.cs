@@ -18,20 +18,20 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
             return await GetClosedItemsPerDay(witClient, history, azureDevOpsTeamConfiguration);
         }
 
-        public async Task<List<int>> GetWorkItemsByTag(string workItemType, string searchTerm, ITeamConfiguration teamConfiguration)
+        public async Task<List<int>> GetWorkItemsByTag(IEnumerable<string> workItemTypes, string searchTerm, ITeamConfiguration teamConfiguration)
         {
             var azureDevOpsTeamConfiguration = GetAzureDevOpsTeamConfiguration(teamConfiguration);
             var witClient = GetClientService<WorkItemTrackingHttpClient>(azureDevOpsTeamConfiguration);
 
-            return await GetWorkItemsByTag(witClient, searchTerm, workItemType, azureDevOpsTeamConfiguration);
+            return await GetWorkItemsByTag(witClient, searchTerm, workItemTypes, azureDevOpsTeamConfiguration);
         }
 
-        public async Task<List<int>> GetWorkItemsByAreaPath(string workItemType, string areaPath, ITeamConfiguration teamConfiguration)
+        public async Task<List<int>> GetWorkItemsByAreaPath(IEnumerable<string> workItemTypes, string areaPath, ITeamConfiguration teamConfiguration)
         {
             var azureDevOpsTeamConfiguration = GetAzureDevOpsTeamConfiguration(teamConfiguration);
             var witClient = GetClientService<WorkItemTrackingHttpClient>(azureDevOpsTeamConfiguration);
 
-            return await GetWorkItemsByAreaPath(witClient, areaPath, workItemType, azureDevOpsTeamConfiguration);
+            return await GetWorkItemsByAreaPath(witClient, areaPath, workItemTypes, azureDevOpsTeamConfiguration);
         }
 
         public async Task<int> GetRemainingRelatedWorkItems(int featureId, ITeamConfiguration teamConfiguration)
@@ -47,7 +47,7 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
             var remainingItems = 0;
 
             var areaPathQuery = string.Join(" OR ", teamConfiguration.AreaPaths.Select(path => $"[System.AreaPath] UNDER '{path}'"));
-            var workItemsQuery = string.Join(" OR ", teamConfiguration.WorkItemType.Select(type => $"[System.WorkItemType] = '{type}'"));
+            var workItemsQuery = string.Join(" OR ", teamConfiguration.WorkItemTypes.Select(type => $"[System.WorkItemType] = '{type}'"));
             var ignoredTagsQuery = string.Join(" OR ", teamConfiguration.IgnoredTags.Select(tag => $"[System.Tags] NOT CONTAINS '{tag}'"));
 
             var wiql = $"SELECT [System.Id], [System.State], [Microsoft.VSTS.Common.ClosedDate] FROM WorkItems WHERE [System.TeamProject] = '{teamConfiguration.TeamProject}' AND ([System.State] <> 'Closed' AND [System.State] <> 'Removed') " +
@@ -95,12 +95,12 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
             return false;
         }
 
-        private async Task<List<int>> GetWorkItemsByAreaPath(WorkItemTrackingHttpClient witClient, string areaPath, string workItemType, AzureDevOpsTeamConfiguration teamConfiguration)
+        private async Task<List<int>> GetWorkItemsByAreaPath(WorkItemTrackingHttpClient witClient, string areaPath, IEnumerable<string> workItemTypes, AzureDevOpsTeamConfiguration teamConfiguration)
         {
             var foundItemIds = new List<int>();
 
             var areaPathQuery = $"[System.AreaPath] UNDER '{areaPath}'";
-            var workItemsQuery = $"[System.WorkItemType] = '{workItemType}'";
+            var workItemsQuery = string.Join(" OR ", workItemTypes.Select(itemType => $"[System.WorkItemType] = '{itemType}'"));
 
             var wiql = $"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{teamConfiguration.TeamProject}' " +
                 $"AND ({areaPathQuery}) " +
@@ -122,12 +122,12 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
             return foundItemIds;
         }
 
-        private async Task<List<int>> GetWorkItemsByTag(WorkItemTrackingHttpClient witClient, string tag, string workItemType, AzureDevOpsTeamConfiguration teamConfiguration)
+        private async Task<List<int>> GetWorkItemsByTag(WorkItemTrackingHttpClient witClient, string tag, IEnumerable<string> workItemTypes, AzureDevOpsTeamConfiguration teamConfiguration)
         {
             var foundItemIds = new List<int>();
 
             var areaPathQuery = string.Join(" OR ", teamConfiguration.AreaPaths.Select(path => $"[System.AreaPath] UNDER '{path}'"));
-            var workItemsQuery = $"[System.WorkItemType] = '{workItemType}'";
+            var workItemsQuery = string.Join(" OR ", workItemTypes.Select(itemType => $"[System.WorkItemType] = '{itemType}'"));
             var tagQuery = $"[System.Tags] CONTAINS '{tag}'";
 
             var wiql = $"SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{teamConfiguration.TeamProject}' " +
@@ -151,7 +151,7 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
             var startDate = DateTime.UtcNow.Date.AddDays(-(numberOfDays - 1));
 
             var areaPathQuery = string.Join(" OR ", teamConfiguration.AreaPaths.Select(path => $"[System.AreaPath] UNDER '{path}'"));
-            var workItemsQuery = string.Join(" OR ", teamConfiguration.WorkItemType.Select(type => $"[System.WorkItemType] = '{type}'"));
+            var workItemsQuery = string.Join(" OR ", teamConfiguration.WorkItemTypes.Select(type => $"[System.WorkItemType] = '{type}'"));
             var ignoredTagsQuery = string.Join(" OR ", teamConfiguration.IgnoredTags.Select(tag => $"[System.Tags] NOT CONTAINS '{tag}'"));
 
             var wiql = $"SELECT [System.Id], [System.State], [Microsoft.VSTS.Common.ClosedDate] FROM WorkItems WHERE [System.TeamProject] = '{teamConfiguration.TeamProject}' AND [System.State] = 'Closed' " +

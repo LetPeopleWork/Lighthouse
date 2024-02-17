@@ -8,8 +8,8 @@ namespace CMFTAspNet.Services.Interfaces
 
         Task<int> GetRemainingRelatedWorkItems(int featureId, ITeamConfiguration teamConfiguration);
 
-        Task<List<int>> GetWorkItemsByAreaPath(string workItemType, string areaPath, ITeamConfiguration teamConfiguration);
+        Task<List<int>> GetWorkItemsByAreaPath(IEnumerable<string> workItemTypes, string areaPath, ITeamConfiguration teamConfiguration);
 
-        Task<List<int>> GetWorkItemsByTag(string workItemType, string tag, ITeamConfiguration teamConfiguration);
+        Task<List<int>> GetWorkItemsByTag(IEnumerable<string> workItemTypes, string tag, ITeamConfiguration teamConfiguration);
     }
 }

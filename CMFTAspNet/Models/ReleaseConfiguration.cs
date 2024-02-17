@@ -9,7 +9,7 @@ namespace CMFTAspNet.Models
         
         public SearchBy SearchBy { get; set; }
         
-        public string WorkItemType { get; set; }
+        public List<string> WorkItemTypes { get; set; } = new List<string>();
 
         public List<Team> InvolvedTeams { get; set; } = new List<Team>();
 
