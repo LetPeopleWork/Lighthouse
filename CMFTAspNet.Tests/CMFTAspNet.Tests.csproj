@@ -22,4 +22,8 @@
     <ProjectReference Include="..\CMFTAspNet\CMFTAspNet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\Factories\" />
+  </ItemGroup>
+
 </Project>

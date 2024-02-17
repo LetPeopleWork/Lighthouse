@@ -18,6 +18,8 @@ namespace CMFTAspNet.Models
         public DateTime TargetDate { get;set; }
 
         public List<Feature> Features { get; } = new List<Feature>();
+
+        public bool IncludeUnparentedItems { get; set; }
     }
 
     public enum SearchBy

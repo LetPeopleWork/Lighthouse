@@ -36,11 +36,11 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByTag(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(12));
 
-            var features = await subject.CollectFeaturesForReleases([release]);
+            await subject.CollectFeaturesForReleases([release]);
 
-            Assert.That(features.Count(), Is.EqualTo(1));
+            Assert.That(release.Features.Count(), Is.EqualTo(1));
 
-            var actualFeature = features.Single();
+            var actualFeature = release.Features.Single();
             Assert.That(actualFeature.Id, Is.EqualTo(feature.Id));
         }
 
@@ -54,11 +54,11 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(12));
 
-            var features = await subject.CollectFeaturesForReleases([release]);
+            await subject.CollectFeaturesForReleases([release]);
 
-            Assert.That(features.Count(), Is.EqualTo(1));
+            Assert.That(release.Features.Count(), Is.EqualTo(1));
 
-            var actualFeature = features.Single();
+            var actualFeature = release.Features.Single();
             Assert.That(actualFeature.Id, Is.EqualTo(feature.Id));
         }
 
@@ -73,9 +73,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(0));
 
-            var features = await subject.CollectFeaturesForReleases([release]);
+            await subject.CollectFeaturesForReleases([release]);
 
-            Assert.That(features.Count, Is.EqualTo(0));
+            Assert.That(release.Features.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -90,9 +90,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(remainingWorkItems));
 
-            var features = await subject.CollectFeaturesForReleases([release]);
+            await subject.CollectFeaturesForReleases([release]);
 
-            var actualFeature = features.Single();
+            var actualFeature = release.Features.Single();
             Assert.That(actualFeature.RemainingWork[team], Is.EqualTo(remainingWorkItems));
         }
 
@@ -106,7 +106,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int>()));
 
-            _ = await subject.CollectFeaturesForReleases([release]);
+            await subject.CollectFeaturesForReleases([release]);
 
             workItemServiceMock.Verify(x => x.GetWorkItemsByTag(release.WorkItemTypes, It.IsAny<string>(), team1.TeamConfiguration), Times.Exactly(1));
             workItemServiceMock.Verify(x => x.GetWorkItemsByTag(release.WorkItemTypes, It.IsAny<string>(), team2.TeamConfiguration), Times.Exactly(1));
@@ -130,11 +130,11 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, team2.TeamConfiguration)).Returns(Task.FromResult(new List<int> { feature2.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, team2.TeamConfiguration)).Returns(Task.FromResult(remainingWorkItemsFeature2));
 
-            var features = await subject.CollectFeaturesForReleases([release]);
+            await subject.CollectFeaturesForReleases([release]);
 
-            var actualFeature1 = features.First();
+            var actualFeature1 = release.Features.First();
             Assert.That(actualFeature1.RemainingWork[team1], Is.EqualTo(remainingWorkItemsFeature1));
-            var actualFeature2 = features.Last();
+            var actualFeature2 = release.Features.Last();
             Assert.That(actualFeature2.RemainingWork[team2], Is.EqualTo(remainingWorkItemsFeature2));
         }
 
@@ -153,9 +153,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, team1.TeamConfiguration)).Returns(Task.FromResult(remainingWorkItemsTeam1));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, team2.TeamConfiguration)).Returns(Task.FromResult(remainingWorkItemsTeam2));
 
-            var features = await subject.CollectFeaturesForReleases([release]);
+            await subject.CollectFeaturesForReleases([release]);
 
-            var actualFeature = features.Single();
+            var actualFeature = release.Features.Single();
             Assert.Multiple(() =>
             {
                 Assert.That(actualFeature.RemainingWork[team1], Is.EqualTo(remainingWorkItemsTeam1));
@@ -164,23 +164,53 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForRelease_UnparentedItems_CreatesDummyFeatureForUnparented()
+        public async Task CollectFeaturesForRelease_SearchByAreaPath_UnparentedItems_CreatesDummyFeatureForUnparented()
         {
             var team = CreateTeam();
             var release = CreateReleaseConfiguration(SearchBy.AreaPath, [team]);
 
-            var unparentedItems = new int[] { 12, 1337, 42 };
-            
+            release.IncludeUnparentedItems = true;
+
+            var unparentedItems = new int[] { 12, 1337, 42 };            
 
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int>()));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<int>(), It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(0));
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(team.TeamConfiguration.WorkItemTypes, release.SearchTerm, team.TeamConfiguration)).Returns(Task.FromResult(new List<int>(unparentedItems)));
+            workItemServiceMock.Setup(x => x.GetNotClosedWorkItemsByAreaPath(team.TeamConfiguration.WorkItemTypes, release.SearchTerm, team.TeamConfiguration)).Returns(Task.FromResult(new List<int>(unparentedItems)));
 
-            var features = await subject.CollectFeaturesForReleases([release]);
+            await subject.CollectFeaturesForReleases([release]);
 
-            var actualFeature = features.Single();
-            Assert.That(actualFeature.RemainingWork[team], Is.EqualTo(unparentedItems.Length));
+            var actualFeature = release.Features.Single();
+            Assert.Multiple(() =>
+            {
+                Assert.That(actualFeature.Name, Is.EqualTo("Unparented"));
+                Assert.That(actualFeature.RemainingWork[team], Is.EqualTo(unparentedItems.Length));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForRelease_SearchByTag_UnparentedItems_CreatesDummyFeatureForUnparented()
+        {
+            var team = CreateTeam();
+            var release = CreateReleaseConfiguration(SearchBy.Tag, [team]);
+
+            release.IncludeUnparentedItems = true;
+
+            var unparentedItems = new int[] { 12, 1337, 42 };            
+
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(release.WorkItemTypes, release.SearchTerm, It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(new List<int>()));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<int>(), It.IsAny<ITeamConfiguration>())).Returns(Task.FromResult(0));
+
+            workItemServiceMock.Setup(x => x.GetNotClosedWorkItemsByTag(team.TeamConfiguration.WorkItemTypes, release.SearchTerm, team.TeamConfiguration)).Returns(Task.FromResult(new List<int>(unparentedItems)));
+
+            await subject.CollectFeaturesForReleases([release]);
+
+            var actualFeature = release.Features.Single();
+            Assert.Multiple(() =>
+            {
+                Assert.That(actualFeature.Name, Is.EqualTo("Unparented"));
+                Assert.That(actualFeature.RemainingWork[team], Is.EqualTo(unparentedItems.Length));
+            });
         }
 
         private Team CreateTeam()

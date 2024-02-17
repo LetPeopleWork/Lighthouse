@@ -1,4 +1,5 @@
 ﻿using CMFTAspNet.Models.Teams;
+using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Services.Interfaces;
 using Moq;
@@ -11,7 +12,11 @@ namespace CMFTAspNet.Tests.Services.Implementation
         public async Task GetThroughput_GetsClosedItemsFromAzureDevops()
         {
             int[] closedItemsPerDay = [0, 0, 1, 3, 12, 3, 0];
+
+            var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
             var workItemServiceMock = new Mock<IWorkItemService>();
+
+            workItemServiceFactoryMock.Setup(x => x.CreateWorkItemServiceForTeam(It.IsAny<ITeamConfiguration>())).Returns(workItemServiceMock.Object);
 
             var teamConfiguration = new AzureDevOpsTeamConfiguration();
             var team = new Team("Team", 1);
@@ -19,9 +24,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             workItemServiceMock.Setup(x => x.GetClosedWorkItemsForTeam(7, teamConfiguration)).Returns(Task.FromResult(closedItemsPerDay));
 
-            var subject = new ThroughputService(team, workItemServiceMock.Object);
+            var subject = new ThroughputService(workItemServiceFactoryMock.Object);
 
-            await subject.UpdateThroughput(7);
+            await subject.UpdateThroughput(7, team);
 
             Assert.That(team.Throughput.History, Is.EqualTo(closedItemsPerDay.Length));
             for (var index = 0; index < closedItemsPerDay.Length; index++)

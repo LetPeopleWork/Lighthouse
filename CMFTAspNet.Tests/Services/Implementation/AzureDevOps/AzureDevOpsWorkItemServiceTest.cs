@@ -16,7 +16,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var closedItems = await subject.GetClosedWorkItemsForTeam(720, teamConfiguration);
 
             Assert.That(closedItems.Count, Is.EqualTo(720));
-            Assert.That(closedItems.Sum(), Is.EqualTo(2));
+            Assert.That(closedItems.Sum(), Is.EqualTo(4));
         }
 
         [Test]
@@ -120,6 +120,50 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var relatedItems = await subject.GetRemainingRelatedWorkItems(279, teamConfiguration);
 
             Assert.That(relatedItems, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task GetNotClosedWorkItemsByTag_ItemIsOpen_ReturnsItem()
+        {
+            var subject = new AzureDevOpsWorkItemService();
+            var teamConfiguration = CreateTeamConfiguration();            
+
+            var actualItems = await subject.GetNotClosedWorkItemsByTag(["User Story"], "Release1", teamConfiguration);
+
+            Assert.That(actualItems, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public async Task GetNotClosedWorkItemsByTag_ItemIsClosed_ReturnsEmpty()
+        {
+            var subject = new AzureDevOpsWorkItemService();
+            var teamConfiguration = CreateTeamConfiguration();            
+
+            var actualItems = await subject.GetNotClosedWorkItemsByTag(["User Story"], "PreviousRelease", teamConfiguration);
+
+            Assert.That(actualItems, Has.Count.EqualTo(0));
+        }
+
+        [Test]
+        public async Task GetNotClosedWorkItemsByAreaPath_ItemIsOpen_ReturnsItem()
+        {
+            var subject = new AzureDevOpsWorkItemService();
+            var teamConfiguration = CreateTeamConfiguration();            
+
+            var actualItems = await subject.GetNotClosedWorkItemsByAreaPath(["User Story"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
+
+            Assert.That(actualItems, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public async Task GetNotClosedWorkItemsByAreaPath_ItemIsClosed_ReturnsEmpty()
+        {
+            var subject = new AzureDevOpsWorkItemService();
+            var teamConfiguration = CreateTeamConfiguration();
+
+            var actualItems = await subject.GetNotClosedWorkItemsByAreaPath(["User Story"], "CMFTTestTeamProject\\PreviousReleaseAreaPath", teamConfiguration);
+
+            Assert.That(actualItems, Has.Count.EqualTo(0));
         }
 
         private AzureDevOpsTeamConfiguration CreateTeamConfiguration()

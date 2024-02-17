@@ -25,6 +25,8 @@ namespace CMFTAspNet.Models
         public int Id { get; set; }
 
         public string Name { get; set; }
+        
+        public int Order { get; set; }
 
         public WhenForecast Forecast { get; private set; }
 
