@@ -1,27 +1,22 @@
 ﻿using CMFTAspNet.Models.Teams;
-using CMFTAspNet.Services.AzureDevOps;
-using CMFTAspNet.Services.ThroughputService;
+using CMFTAspNet.Services.Interfaces;
+using CMFTAspNet.Services.Implementation;
 
 namespace CMFTAspNet.Services.Factories
 {
     public class ThroughputServiceFactory
     {
-        private readonly IAzureDevOpsWorkItemService azureDevOpsWorkItemService;
+        private readonly IWorkItemServiceFactory workItemServiceFactory;
 
-        public ThroughputServiceFactory(IAzureDevOpsWorkItemService azureDevOpsWorkItemService)
+        public ThroughputServiceFactory(IWorkItemServiceFactory workItemServiceFactory)
         {
-            this.azureDevOpsWorkItemService = azureDevOpsWorkItemService;
+            this.workItemServiceFactory = workItemServiceFactory;
         }
 
         public IThroughputService CreateThroughputServiceForTeam(Team team)
         {
-            switch (team.TeamConfiguration)
-            {
-                case AzureDevOpsTeamConfiguration:
-                    return new AzureDevOpsThroughputService(team, azureDevOpsWorkItemService);
-                default:
-                    throw new NotSupportedException();
-            }            
+            var workItemService = workItemServiceFactory.CreateWorkItemServiceForTeam(team.TeamConfiguration);
+            return new ThroughputService(team, workItemService);
         }
     }
 }

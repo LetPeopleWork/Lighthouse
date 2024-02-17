@@ -1,8 +1,8 @@
 ﻿using CMFTAspNet.Models.Connections;
 using CMFTAspNet.Models.Teams;
-using CMFTAspNet.Services.AzureDevOps;
+using CMFTAspNet.Services.Implementation.AzureDevOps;
 
-namespace CMFTAspNet.Tests.Services.AzureDevOps
+namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
 {
     [Category("Integration")]
     public class AzureDevOpsWorkItemServiceTest
@@ -13,7 +13,7 @@ namespace CMFTAspNet.Tests.Services.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
 
-            var closedItems = await subject.GetClosedWorkItemsForTeam(teamConfiguration, 720);
+            var closedItems = await subject.GetClosedWorkItemsForTeam(720, teamConfiguration);
 
             Assert.That(closedItems.Count, Is.EqualTo(720));
             Assert.That(closedItems.Sum(), Is.EqualTo(2));
@@ -92,7 +92,7 @@ namespace CMFTAspNet.Tests.Services.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeamConfiguration();
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems(teamConfiguration, 370);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems(370, teamConfiguration);
 
             Assert.That(relatedItems, Is.EqualTo(2));
         }
@@ -105,7 +105,7 @@ namespace CMFTAspNet.Tests.Services.AzureDevOps
             var teamConfiguration = CreateTeamConfiguration();
             teamConfiguration.WorkItemType.Add("Feature");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems(teamConfiguration, 366);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems(366, teamConfiguration);
 
             Assert.That(relatedItems, Is.EqualTo(0));
         }
@@ -117,7 +117,7 @@ namespace CMFTAspNet.Tests.Services.AzureDevOps
             var teamConfiguration = CreateTeamConfiguration();
             teamConfiguration.AdditionalRelatedFields.Add("Custom.RemoteFeatureID");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems(teamConfiguration, 279);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems(279, teamConfiguration);
 
             Assert.That(relatedItems, Is.EqualTo(1));
         }

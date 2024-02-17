@@ -14,3 +14,6 @@ dotnet_diagnostic.CS8618.severity = none
 
 # IDE0028: Simplify collection initialization
 dotnet_diagnostic.IDE0028.severity = none
+
+# IDE0066: Convert switch statement to expression
+dotnet_diagnostic.IDE0066.severity = none

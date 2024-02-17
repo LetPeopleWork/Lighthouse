@@ -1,17 +1,17 @@
-﻿
-using CMFTAspNet.Models;
+﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Teams;
-using CMFTAspNet.Services.AzureDevOps;
+using CMFTAspNet.Services.Factories;
+using CMFTAspNet.Services.Interfaces;
 
-namespace CMFTAspNet.Services.WorkItemCollectorService
+namespace CMFTAspNet.Services.Implementation
 {
-    public class AzureDevOpsWorkItemCollectorService
+    public class WorkItemCollectorService
     {
-        private readonly IAzureDevOpsWorkItemService azureDevOpsWorkItemService;
+        private readonly IWorkItemServiceFactory workItemServiceFactory;
 
-        public AzureDevOpsWorkItemCollectorService(IAzureDevOpsWorkItemService azureDevOpsWorkItemService)
+        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory)
         {
-            this.azureDevOpsWorkItemService = azureDevOpsWorkItemService;
+            this.workItemServiceFactory = workItemServiceFactory;
         }
 
         public async Task<IEnumerable<Feature>> CollectFeaturesForReleases(IEnumerable<ReleaseConfiguration> releases)
@@ -54,7 +54,7 @@ namespace CMFTAspNet.Services.WorkItemCollectorService
         {
             foreach (var team in featureForRelease.RemainingWork.Keys)
             {
-                var remainingWork = await azureDevOpsWorkItemService.GetRemainingRelatedWorkItems((AzureDevOpsTeamConfiguration)team.TeamConfiguration, featureForRelease.Id);
+                var remainingWork = await GetWorkItemServiceForTeam(team.TeamConfiguration).GetRemainingRelatedWorkItems(featureForRelease.Id, team.TeamConfiguration);
                 featureForRelease.RemainingWork[team] = remainingWork;
             }
         }
@@ -65,32 +65,32 @@ namespace CMFTAspNet.Services.WorkItemCollectorService
             {
                 case SearchBy.Tag:
                     return await GetFeaturesForReleaseConfiguration(
-                        release, 
-                        async (string workItemType, string tag, AzureDevOpsTeamConfiguration teamConfiguration) =>
-                            await azureDevOpsWorkItemService.GetWorkItemsByTag(release.WorkItemType, release.SearchTerm, teamConfiguration));
+                        release,
+                        async (workItemType, tag, teamConfiguration) =>
+                            await GetWorkItemServiceForTeam(teamConfiguration).GetWorkItemsByTag(release.WorkItemType, release.SearchTerm, teamConfiguration));
                 case SearchBy.AreaPath:
                     return await GetFeaturesForReleaseConfiguration(
                         release,
-                        async (string workItemType, string tag, AzureDevOpsTeamConfiguration teamConfiguration) =>
-                            await azureDevOpsWorkItemService.GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, teamConfiguration));
+                        async (workItemType, tag, teamConfiguration) =>
+                            await GetWorkItemServiceForTeam(teamConfiguration).GetWorkItemsByAreaPath(release.WorkItemType, release.SearchTerm, teamConfiguration));
                 default:
                     throw new NotSupportedException($"Search by {release.SearchBy} is not supported!");
             }
         }
 
-        private async Task<List<Feature>> GetFeaturesForReleaseConfiguration(ReleaseConfiguration release, Func<string, string, AzureDevOpsTeamConfiguration, Task<List<int>>> getFeatureAction)
+        private async Task<List<Feature>> GetFeaturesForReleaseConfiguration(ReleaseConfiguration release, Func<string, string, ITeamConfiguration, Task<List<int>>> getFeatureAction)
         {
             var featuresForRelease = new Dictionary<int, Feature>();
 
             foreach (var team in release.InvolvedTeams)
             {
-                var foundFeatures = await getFeatureAction(release.WorkItemType, release.SearchTerm, (AzureDevOpsTeamConfiguration)team.TeamConfiguration);
+                var foundFeatures = await getFeatureAction(release.WorkItemType, release.SearchTerm, team.TeamConfiguration);
 
                 foreach (var featureId in foundFeatures)
                 {
                     if (!featuresForRelease.ContainsKey(featureId))
                     {
-                        featuresForRelease[featureId] = new Feature() { Id =  featureId };
+                        featuresForRelease[featureId] = new Feature() { Id = featureId };
                     }
 
                     featuresForRelease[featureId].RemainingWork.Add(team, 0);
@@ -98,6 +98,11 @@ namespace CMFTAspNet.Services.WorkItemCollectorService
             }
 
             return [.. featuresForRelease.Values];
+        }
+
+        private IWorkItemService GetWorkItemServiceForTeam(ITeamConfiguration teamConfiguration)
+        {
+            return workItemServiceFactory.CreateWorkItemServiceForTeam(teamConfiguration);
         }
     }
 }

@@ -1,9 +1,9 @@
-﻿
-using CMFTAspNet.Models;
+﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
 using CMFTAspNet.Models.Teams;
+using CMFTAspNet.Services.Interfaces;
 
-namespace CMFTAspNet.Services
+namespace CMFTAspNet.Services.Implementation
 {
     public class MonteCarloService
     {

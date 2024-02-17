@@ -1,4 +1,4 @@
-﻿namespace CMFTAspNet.Services.ThroughputService
+﻿namespace CMFTAspNet.Services.Interfaces
 {
     public interface IThroughputService
     {

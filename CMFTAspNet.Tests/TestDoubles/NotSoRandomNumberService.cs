@@ -1,4 +1,4 @@
-﻿using CMFTAspNet.Services;
+﻿using CMFTAspNet.Services.Interfaces;
 
 namespace CMFTAspNet.Tests.TestDoubles
 {

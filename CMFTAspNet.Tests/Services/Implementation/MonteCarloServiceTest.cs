@@ -1,10 +1,10 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
 using CMFTAspNet.Models.Teams;
-using CMFTAspNet.Services;
+using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Tests.TestDoubles;
 
-namespace CMFTAspNet.Tests.Services
+namespace CMFTAspNet.Tests.Services.Implementation
 {
     public class MonteCarloServiceTest
     {

@@ -1,44 +1,45 @@
 ﻿using CMFTAspNet.Models.Connections;
 using CMFTAspNet.Models.Teams;
+using CMFTAspNet.Services.Interfaces;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 
-namespace CMFTAspNet.Services.AzureDevOps
+namespace CMFTAspNet.Services.Implementation.AzureDevOps
 {
-    public class AzureDevOpsWorkItemService : IAzureDevOpsWorkItemService
+    public class AzureDevOpsWorkItemService : IWorkItemService
     {
-        public async Task<int[]> GetClosedWorkItemsForTeam(AzureDevOpsTeamConfiguration teamConfiguration, int history)
+        public async Task<int[]> GetClosedWorkItemsForTeam(int history, ITeamConfiguration teamConfiguration)
         {
-            var connection = CreateConnection(teamConfiguration.AzureDevOpsConfiguration);
-            var witClient = connection.GetClient<WorkItemTrackingHttpClient>();
+            var azureDevOpsTeamConfiguration = GetAzureDevOpsTeamConfiguration(teamConfiguration);
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(azureDevOpsTeamConfiguration);
 
-            return await GetClosedItemsPerDay(witClient, history, teamConfiguration);
+            return await GetClosedItemsPerDay(witClient, history, azureDevOpsTeamConfiguration);
         }
 
-        public async Task<List<int>> GetWorkItemsByTag(string workItemType, string searchTerm, AzureDevOpsTeamConfiguration teamConfiguration)
+        public async Task<List<int>> GetWorkItemsByTag(string workItemType, string searchTerm, ITeamConfiguration teamConfiguration)
         {
-            var connection = CreateConnection(teamConfiguration.AzureDevOpsConfiguration);
-            var witClient = connection.GetClient<WorkItemTrackingHttpClient>();
+            var azureDevOpsTeamConfiguration = GetAzureDevOpsTeamConfiguration(teamConfiguration);
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(azureDevOpsTeamConfiguration);
 
-            return await GetWorkItemsByTag(witClient, searchTerm, workItemType, teamConfiguration);
+            return await GetWorkItemsByTag(witClient, searchTerm, workItemType, azureDevOpsTeamConfiguration);
         }
 
-        public async Task<List<int>> GetWorkItemsByAreaPath(string workItemType, string areaPath, AzureDevOpsTeamConfiguration teamConfiguration)
+        public async Task<List<int>> GetWorkItemsByAreaPath(string workItemType, string areaPath, ITeamConfiguration teamConfiguration)
         {
-            var connection = CreateConnection(teamConfiguration.AzureDevOpsConfiguration);
-            var witClient = connection.GetClient<WorkItemTrackingHttpClient>();
+            var azureDevOpsTeamConfiguration = GetAzureDevOpsTeamConfiguration(teamConfiguration);
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(azureDevOpsTeamConfiguration);
 
-            return await GetWorkItemsByAreaPath(witClient, areaPath, workItemType, teamConfiguration);
+            return await GetWorkItemsByAreaPath(witClient, areaPath, workItemType, azureDevOpsTeamConfiguration);
         }
 
-        public async Task<int> GetRemainingRelatedWorkItems(AzureDevOpsTeamConfiguration teamConfiguration, int featureId)
+        public async Task<int> GetRemainingRelatedWorkItems(int featureId, ITeamConfiguration teamConfiguration)
         {
-            var connection = CreateConnection(teamConfiguration.AzureDevOpsConfiguration);
-            var witClient = connection.GetClient<WorkItemTrackingHttpClient>();
+            var azureDevOpsTeamConfiguration = GetAzureDevOpsTeamConfiguration(teamConfiguration);
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(azureDevOpsTeamConfiguration);
 
-            return await GetRelatedWorkItems(witClient, teamConfiguration, featureId);
+            return await GetRelatedWorkItems(witClient, azureDevOpsTeamConfiguration, featureId);
         }
 
         private async Task<int> GetRelatedWorkItems(WorkItemTrackingHttpClient witClient, AzureDevOpsTeamConfiguration teamConfiguration, int relatedWorkItemId)
@@ -180,6 +181,22 @@ namespace CMFTAspNet.Services.AzureDevOps
             }
 
             return closedItemsPerDay;
+        }
+
+        private T GetClientService<T>(AzureDevOpsTeamConfiguration teamConfiguration) where T : VssHttpClientBase
+        {
+            var connection = CreateConnection(teamConfiguration.AzureDevOpsConfiguration);
+            return connection.GetClient<T>();
+        }
+
+        private AzureDevOpsTeamConfiguration GetAzureDevOpsTeamConfiguration(ITeamConfiguration teamConfiguration)
+        {
+            if (teamConfiguration is AzureDevOpsTeamConfiguration azureDevOpsTeamConfiguration)
+            {
+                return azureDevOpsTeamConfiguration;
+            }
+
+            throw new NotSupportedException("Only Azure DevOps Team Configuration supported");
         }
 
         private VssConnection CreateConnection(AzureDevOpsConfiguration azureDevOpsConfig)

@@ -1,9 +1,7 @@
-﻿namespace CMFTAspNet.Services
+﻿using CMFTAspNet.Services.Interfaces;
+
+namespace CMFTAspNet.Services.Implementation
 {
-    public interface IRandomNumberService
-    {
-        int GetRandomNumber(int maxValue);
-    }
 
     public class RandomNumberService : IRandomNumberService
     {
