@@ -5,6 +5,10 @@ namespace CMFTAspNet.Models
 {
     public class Feature
     {
+        public Feature() : this(Enumerable.Empty<(Team team, int remainingItems)>())
+        {            
+        }
+
         public Feature(Team team, int remainingItems) : this([(team, remainingItems)])
         {
         }
@@ -18,7 +22,9 @@ namespace CMFTAspNet.Models
             }
         }
 
-        public Guid Id { get; } = Guid.NewGuid();
+        public int Id { get; set; }
+
+        public string Name { get; set; }
 
         public WhenForecast Forecast { get; private set; }
 

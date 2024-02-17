@@ -77,7 +77,7 @@ namespace CMFTAspNet.Services
             foreach (var feature in features)
             {
                 var simulationResultForFeature = simulationResults
-                    .Where(x => x.Feature.Id == feature.Id);
+                    .Where(x => x.Feature == feature);
 
                 var featureForecasts = simulationResultForFeature.Select(result => new WhenForecast(result.SimulationResults));
                 feature.SetFeatureForecast(featureForecasts);

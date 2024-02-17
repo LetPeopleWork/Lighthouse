@@ -1,4 +1,5 @@
-﻿using CMFTAspNet.Models.Connections;
+﻿using CMFTAspNet.Models;
+using CMFTAspNet.Models.Connections;
 using CMFTAspNet.Models.Teams;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -15,6 +16,21 @@ namespace CMFTAspNet.Services.AzureDevOps
             var witClient = connection.GetClient<WorkItemTrackingHttpClient>();
 
             return await GetClosedItemsPerDay(witClient, history, teamConfiguration);
+        }
+
+        public Task<List<int>> GetWorkItemsByTag(string workItemType, string searchTerm, AzureDevOpsTeamConfiguration azureDevOpsTeamConfiguration)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<int>> GetWorkItemsByAreaPath(string workItemType, string areaPath, AzureDevOpsTeamConfiguration azureDevOpsTeamConfiguration)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> GetRelatedWorkItems(AzureDevOpsTeamConfiguration teamConfiguration, int featureId)
+        {
+            throw new NotImplementedException();
         }
 
         private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, int numberOfDays, AzureDevOpsTeamConfiguration teamConfiguration)
