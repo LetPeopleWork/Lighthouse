@@ -8,7 +8,7 @@ namespace CMFTAspNet.Tests.Models
         [Test]
         public void UpdateThroughput_SetsThroughput()
         {
-            var team = new Team("Team", 1);
+            var team = new Team("Team");
 
             var throughput = new Throughput([1, 3, 0, 0, 0, 1, 3]);
 
@@ -20,7 +20,7 @@ namespace CMFTAspNet.Tests.Models
         [Test]
         public void CreateNewTeam_InitializesWithDefaultConfig()
         {
-            var team = new Team("Team", 1);
+            var team = new Team("Team");
 
             Assert.That(team.TeamConfiguration, Is.InstanceOf<DefaultTeamConfiguration>());
         }
@@ -28,7 +28,7 @@ namespace CMFTAspNet.Tests.Models
         [Test]
         public void UpdateTeamConfiguration_SetsNewTeamConfiguration()
         {
-            var team = new Team("Team", 1);
+            var team = new Team("Team");
 
             var azureDevOpsTeamConfig = new AzureDevOpsTeamConfiguration();
 

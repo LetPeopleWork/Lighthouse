@@ -215,7 +215,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
         private Team CreateTeam()
         {
-            var team = new Team("InvolvedTeam", 1);
+            var team = new Team("InvolvedTeam");
             team.UpdateTeamConfiguration(new AzureDevOpsTeamConfiguration());
 
             team.TeamConfiguration.WorkItemTypes.Add("User Story");

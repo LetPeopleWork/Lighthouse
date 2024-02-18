@@ -19,7 +19,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceFactoryMock.Setup(x => x.CreateWorkItemServiceForTeam(It.IsAny<ITeamConfiguration>())).Returns(workItemServiceMock.Object);
 
             var teamConfiguration = new AzureDevOpsTeamConfiguration();
-            var team = new Team("Team", 1);
+            var team = new Team("Team");
             team.UpdateTeamConfiguration(teamConfiguration);
 
             workItemServiceMock.Setup(x => x.GetClosedWorkItemsForTeam(7, teamConfiguration)).Returns(Task.FromResult(closedItemsPerDay));
