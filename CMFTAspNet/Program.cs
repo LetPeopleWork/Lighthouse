@@ -1,7 +1,17 @@
+using Microsoft.EntityFrameworkCore;
+using CMFTAspNet.Data;
+using CMFTAspNet.Services.Interfaces;
+using CMFTAspNet.Services.Implementation;
+using CMFTAspNet.Services.Factories;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddDbContext<CMFTAspNetContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("CMFTAspNetContext") ?? throw new InvalidOperationException("Connection string 'CMFTAspNetContext' not found.")));
+
+builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
+builder.Services.AddScoped<IThroughputService, ThroughputService>();
 
 var app = builder.Build();
 

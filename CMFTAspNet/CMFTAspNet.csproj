@@ -21,8 +21,4 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Pages\Teams\" />
-  </ItemGroup>
-
 </Project>

@@ -1,0 +1,161 @@
+﻿@page
+@using CMFTAspNet.WorkTracking
+@model CMFTAspNet.Pages.Teams.CreateModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create Team</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Team.Name" class="control-label">Team Name:</label>
+                <input asp-for="Team.Name" class="form-control" />
+                <span asp-validation-for="Team.Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Team.ProjectName" class="control-label">Project Name:</label>
+                <input asp-for="Team.ProjectName" class="form-control" />
+                <span asp-validation-for="Team.ProjectName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Team.FeatureWIP" class="control-label">Feature WIP:</label>
+                <input asp-for="Team.FeatureWIP" class="form-control" />
+                <span asp-validation-for="Team.FeatureWIP" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Team.ThroughputHistory" class="control-label">History in Days:</label>
+                <input asp-for="Team.ThroughputHistory" class="form-control" />
+                <span asp-validation-for="Team.ThroughputHistory" class="text-danger"></span>
+            </div>
+
+            <!-- Dynamic input fields for AreaPaths -->
+            <div class="form-group">
+                <label>Area Paths:</label>
+                <div id="areaPathsContainer"></div>
+                <button type="button" id="addAreaPath" class="btn btn-primary mt-2">Add Area Path</button>
+            </div>
+
+            <!-- Dynamic input fields for WorkItemTypes -->
+            <div class="form-group">
+                <label>Work Item Types:</label>
+                <div id="workItemTypesContainer"></div>
+                <button type="button" id="addWorkItemType" class="btn btn-primary mt-2">Add Work Item Type</button>
+            </div>
+
+            <!-- Dynamic input fields for IgnoredTags -->
+            <div class="form-group">
+                <label>Ignored Tags:</label>
+                <div id="ignoredTagsContainer"></div>
+                <button type="button" id="addIgnoredTag" class="btn btn-primary mt-2">Add Ignored Tag</button>
+            </div>
+
+            <!-- Dynamic input fields for AdditionalRelatedFields -->
+            <div class="form-group">
+                <label>Additional Related Fields:</label>
+                <div id="additionalFieldsContainer"></div>
+                <button type="button" id="addAdditionalField" class="btn btn-primary mt-2">Add Additional Field</button>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Team.WorkTrackingSystem" class="control-label">Work Tracking System:</label>
+                <select asp-for="Team.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()">
+                    <option selected="selected" value="">Please select</option>
+                </select>
+                <span asp-validation-for="Team.WorkTrackingSystem" class="text-danger"></span>
+            </div>
+
+            <!-- Dynamic input fields for WorkTrackingSystemOptions -->
+            <div class="form-group">
+                <label>Work Tracking System Options:</label>
+                <div id="workTrackingOptionsContainer"></div>
+                <button type="button" id="addOption" class="btn btn-primary mt-2">Add Option</button>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            // Function to add AreaPath input field
+            $("#addAreaPath").click(function () {
+                $("#areaPathsContainer").append('<div class="input-group mt-2">' +
+                    '<input type="text" name="Team.AreaPaths" class="form-control" />' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-outline-danger remove-field" type="button">Remove</button>' +
+                    '</div>' +
+                    '</div>');
+            });
+
+            // Function to add WorkItemType input field
+            $("#addWorkItemType").click(function () {
+                $("#workItemTypesContainer").append('<div class="input-group mt-2">' +
+                    '<input type="text" name="Team.WorkItemTypes" class="form-control" />' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-outline-danger remove-field" type="button">Remove</button>' +
+                    '</div>' +
+                    '</div>');
+            });
+
+            // Function to add IgnoredTag input field
+            $("#addIgnoredTag").click(function () {
+                $("#ignoredTagsContainer").append('<div class="input-group mt-2">' +
+                    '<input type="text" name="Team.IgnoredTags" class="form-control" />' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-outline-danger remove-field" type="button">Remove</button>' +
+                    '</div>' +
+                    '</div>');
+            });
+
+            // Function to add AdditionalField input field
+            $("#addAdditionalField").click(function () {
+                $("#additionalFieldsContainer").append('<div class="input-group mt-2">' +
+                    '<input type="text" name="Team.AdditionalRelatedFields" class="form-control" />' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-outline-danger remove-field" type="button">Remove</button>' +
+                    '</div>' +
+                    '</div>');
+            });
+
+            // Function to add WorkTrackingSystemOption input fields
+            $("#addOption").click(function () {
+                var index = $("#workTrackingOptionsContainer").children().length;
+                var html = '<div class="input-group mt-2">' +
+                    '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Key" class="form-control" placeholder="Key" />' +
+                    '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Value" class="form-control" placeholder="Value" />' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-outline-danger remove-option" type="button">Remove</button>' +
+                    '</div>' +
+                    '</div>';
+                $("#workTrackingOptionsContainer").append(html);
+
+                $(".remove-option").click(function () {
+                    $(this).parent().parent().remove();
+                });
+            });
+
+            // Function to remove dynamically added input field
+            $(document).on("click", ".remove-field", function () {
+                $(this).parent().parent().remove();
+            });
+        });
+    </script>
+}

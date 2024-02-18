@@ -396,4 +396,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
 /CMFTAspNet.Tests/IntegrationTest.cs
+*.db
+*.db-shm
+*.db-wal
