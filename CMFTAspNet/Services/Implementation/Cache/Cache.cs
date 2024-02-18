@@ -1,6 +1,7 @@
 ﻿namespace CMFTAspNet.Services.Implementation.Cache
 {
-    public class Cache<TKey, TValue> where TKey : notnull
+    public class Cache<TKey, TValue>
+        where TKey : notnull
     {
         private readonly Dictionary<TKey, CacheItem<TValue>> cache = new Dictionary<TKey, CacheItem<TValue>>();
 
@@ -9,7 +10,7 @@
             cache[key] = new CacheItem<TValue>(value, expiresAfter);
         }
 
-        public TValue Get(TKey key)
+        public TValue? Get(TKey key)
         {
             if (!cache.ContainsKey(key))
             {

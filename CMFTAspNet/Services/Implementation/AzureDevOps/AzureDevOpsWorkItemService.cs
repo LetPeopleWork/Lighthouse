@@ -6,6 +6,7 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using System.Text;
 
 namespace CMFTAspNet.Services.Implementation.AzureDevOps
 {
@@ -75,15 +76,7 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
                 cache.Store(itemId, workItem, TimeSpan.FromMinutes(5));
             }
 
-            foreach (var featureId in featureIds)
-            {
-                if (IsWorkItemRelated(workItem, featureId, azureDevOpsTeamConfiguration.AdditionalRelatedFields))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return featureIds.Any(f => IsWorkItemRelated(workItem, f, azureDevOpsTeamConfiguration.AdditionalRelatedFields));
         }
 
         public async Task<(string name, int order)> GetWorkItemDetails(int itemId, ITeamConfiguration teamConfiguration)
@@ -288,14 +281,14 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
 
         private string PrepareAdditionalFieldsQuery(List<string> additionalFields)
         {
-            var additionalFieldsQuery = string.Empty;
+            var additionalFieldsQuery = new StringBuilder();
             
             foreach (var additionalField in additionalFields)
             {
-                additionalFieldsQuery += $", [{additionalField}] ";
+                additionalFieldsQuery.Append($", [{additionalField}] ");
             }
 
-            return additionalFieldsQuery;
+            return additionalFieldsQuery.ToString();
         }
 
         private string PrepareIgnoredTagsQuery(List<string> ignoredTags)
