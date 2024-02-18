@@ -1,6 +1,6 @@
 ﻿using CMFTAspNet.Models;
 
-namespace CMFTAspNet.Repositories
+namespace CMFTAspNet.Services.Implementation.Repositories
 {
     public class ReleaseRepository
     {

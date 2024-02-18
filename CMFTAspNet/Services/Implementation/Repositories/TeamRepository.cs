@@ -1,6 +1,6 @@
 ﻿using CMFTAspNet.Models.Teams;
 
-namespace CMFTAspNet.Repositories
+namespace CMFTAspNet.Services.Implementation.Repositories
 {
     public class TeamRepository
     {

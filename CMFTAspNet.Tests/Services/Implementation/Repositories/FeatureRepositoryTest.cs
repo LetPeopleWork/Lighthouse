@@ -1,7 +1,7 @@
 ﻿using CMFTAspNet.Models;
-using CMFTAspNet.Repositories;
+using CMFTAspNet.Services.Implementation.Repositories;
 
-namespace CMFTAspNet.Tests.Repositories
+namespace CMFTAspNet.Tests.Services.Implementation.Repositories
 {
     public class FeatureRepositoryTest
     {
