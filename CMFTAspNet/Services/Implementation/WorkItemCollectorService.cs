@@ -155,12 +155,9 @@ namespace CMFTAspNet.Services.Implementation
             {
                 var foundFeatures = await getFeatureAction(release.WorkItemTypes, team.TeamConfiguration);
 
-                foreach (var featureId in foundFeatures)
+                foreach (var featureId in foundFeatures.Where(f => AddOrExtendFeature(featuresForRelease, f)))
                 {
-                    if (AddOrExtendFeature(featuresForRelease, featureId))
-                    {
-                        await AddFeatureDetails(featuresForRelease, team, featureId);
-                    }
+                    await AddFeatureDetails(featuresForRelease, team, featureId);
                 }
             }
 

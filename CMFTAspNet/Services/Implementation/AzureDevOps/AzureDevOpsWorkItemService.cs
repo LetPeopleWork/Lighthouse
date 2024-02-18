@@ -1,6 +1,6 @@
-﻿using CMFTAspNet.Models.Connections;
+﻿using CMFTAspNet.Cache;
+using CMFTAspNet.Models.Connections;
 using CMFTAspNet.Models.Teams;
-using CMFTAspNet.Services.Implementation.Cache;
 using CMFTAspNet.Services.Interfaces;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -12,7 +12,7 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
 {
     public class AzureDevOpsWorkItemService : IWorkItemService
     {
-        private static readonly Cache<int, WorkItem> cache = new Cache<int, WorkItem>();
+        private readonly Cache<int, WorkItem> cache = new Cache<int, WorkItem>();
 
         public async Task<int[]> GetClosedWorkItemsForTeam(int history, ITeamConfiguration teamConfiguration)
         {

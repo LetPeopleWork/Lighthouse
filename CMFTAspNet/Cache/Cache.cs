@@ -1,4 +1,4 @@
-﻿namespace CMFTAspNet.Services.Implementation.Cache
+﻿namespace CMFTAspNet.Cache
 {
     public class Cache<TKey, TValue>
         where TKey : notnull
