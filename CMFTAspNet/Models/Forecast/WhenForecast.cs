@@ -3,6 +3,10 @@ namespace CMFTAspNet.Models.Forecast
 {
     public class WhenForecast : ForecastBase
     {
+        public WhenForecast() : base()
+        {            
+        }
+
         public WhenForecast(Dictionary<int, int> simulationResult) : base(simulationResult, Comparer<int>.Create((x, y) => x.CompareTo(y)))
         {
         }

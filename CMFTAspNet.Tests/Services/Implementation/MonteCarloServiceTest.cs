@@ -45,7 +45,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var forecast = subject.When(new Throughput([1]), 12);
+            var forecast = subject.When(CreateTeam(1, [1]), 12);
 
             Assert.That(forecast, Is.InstanceOf(typeof(WhenForecast)));
         }
@@ -59,7 +59,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var forecast = subject.When(new Throughput([1]), remainingItems);
+            var forecast = subject.When(CreateTeam(1, [1]), remainingItems);
 
             Assert.Multiple(() =>
             {
@@ -91,9 +91,10 @@ namespace CMFTAspNet.Tests.Services.Implementation
         public void When_FixedThroughputAndRemainingDays_ReturnsCorrectForecast()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            int[] throughput =  [ 2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
+            var team = CreateTeam(1, throughput);
 
-            var forecast = subject.When(throughput, 35);
+            var forecast = subject.When(team, 35);
 
             Assert.Multiple(() =>
             {
@@ -126,8 +127,8 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithRealThroughput();
 
-            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
-            var forecast = subject.When(throughput, 28);
+            int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
+            var forecast = subject.When(CreateTeam(1, throughput), 28);
 
             Assert.Multiple(() =>
             {
@@ -145,7 +146,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var team = CreateTeam(1, new Throughput([1]));
+            var team = CreateTeam(1, [1]);
 
             var feature = new Feature(team, 35);
 
@@ -165,7 +166,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var team = CreateTeam(1, new Throughput([1]));
+            var team = CreateTeam(1, [1]);
 
             var feature1 = new Feature(team, 35);
             var feature2 = new Feature(team, 20);
@@ -189,7 +190,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         public void FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPTwo()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
 
             var team = CreateTeam(2, throughput);
 
@@ -211,7 +212,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         public void FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPTwo()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
             var team = CreateTeam(2, throughput);
 
             var feature1 = new Feature(team, 35);
@@ -243,7 +244,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         public void FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPThree()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
             var team = CreateTeam(3, throughput);
 
             var feature1 = new Feature(team, 35);
@@ -276,8 +277,8 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithRealThroughput();
 
-            var team1 = CreateTeam(1, new Throughput([1]));
-            var team2 = CreateTeam(1, new Throughput([1]));
+            var team1 = CreateTeam(1, [1]);
+            var team2 = CreateTeam(1, [1]);
 
             var feature1 = new Feature(team1, 35);
             var feature2 = new Feature(team2, 20);
@@ -298,8 +299,8 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithRealThroughput();
 
-            var team1 = CreateTeam(1, new Throughput([1]));
-            var team2 = CreateTeam(1, new Throughput([1]));
+            var team1 = CreateTeam(1, [1]);
+            var team2 = CreateTeam(1, [1]);
 
             var feature1 = new Feature(team1, 50);
             var feature2 = new Feature(team2, 20);
@@ -326,8 +327,8 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithRealThroughput();
 
-            var team1 = CreateTeam(2, new Throughput([1]));
-            var team2 = CreateTeam(2, new Throughput([1]));
+            var team1 = CreateTeam(2, [1]);
+            var team2 = CreateTeam(2, [1]);
 
             var feature1 = new Feature(team1, 30);
             var feature2 = new Feature(team2, 20);
@@ -354,8 +355,8 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var team1 = CreateTeam(1, new Throughput([1]));
-            var team2 = CreateTeam(1, new Throughput([1]));
+            var team1 = CreateTeam(1, [1]);
+            var team2 = CreateTeam(1, [1]);
 
             var feature1 = new Feature([(team1, 20), (team2, 15)]);
 
@@ -382,14 +383,14 @@ namespace CMFTAspNet.Tests.Services.Implementation
             return new MonteCarloService(new RandomNumberService(), 10000);
         }
 
-        private Team CreateTeam(int featureWip, Throughput throughput)
+        private Team CreateTeam(int featureWip, int[] throughput)
         {
-            var team = new Team("Team")
+            var team = new Team
             {
-                FeatureWIP = featureWip
+                Name = "Team",
+                FeatureWIP = featureWip,
+                RawThroughput = throughput,
             };
-
-            team.UpdateThroughput(throughput);
 
             return team;
         }

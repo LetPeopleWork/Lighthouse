@@ -4,6 +4,10 @@
     {
         private readonly int[] throughputPerUnitOfTime;
 
+        public Throughput() : this([])
+        {
+        }
+
         public Throughput(int[] throughputPerUnitOfTime) 
         {
             this.throughputPerUnitOfTime = throughputPerUnitOfTime;

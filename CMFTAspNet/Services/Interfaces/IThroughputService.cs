@@ -4,6 +4,6 @@ namespace CMFTAspNet.Services.Interfaces
 {
     public interface IThroughputService
     {
-        Task UpdateThroughput(int historyInDays, Team team);
+        Task UpdateThroughput(Team team);
     }
 }

@@ -2,6 +2,7 @@
 using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Services.Interfaces;
+using CMFTAspNet.WorkTracking;
 using Moq;
 
 namespace CMFTAspNet.Tests.Services.Implementation
@@ -16,23 +17,51 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
             var workItemServiceMock = new Mock<IWorkItemService>();
 
-            workItemServiceFactoryMock.Setup(x => x.CreateWorkItemServiceForTeam(It.IsAny<ITeamConfiguration>())).Returns(workItemServiceMock.Object);
+            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
+            
+            var team = new Team
+            {
+                Name = "Team",
+                ThroughputHistory = 7,
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+            };
 
-            var teamConfiguration = new AzureDevOpsTeamConfiguration();
-            var team = new Team("Team");
-            team.UpdateTeamConfiguration(teamConfiguration);
-
-            workItemServiceMock.Setup(x => x.GetClosedWorkItemsForTeam(7, teamConfiguration)).Returns(Task.FromResult(closedItemsPerDay));
+            workItemServiceMock.Setup(x => x.GetClosedWorkItemsForTeam(7, team)).Returns(Task.FromResult(closedItemsPerDay));
 
             var subject = new ThroughputService(workItemServiceFactoryMock.Object);
 
-            await subject.UpdateThroughput(7, team);
+            await subject.UpdateThroughput(team);
 
             Assert.That(team.Throughput.History, Is.EqualTo(closedItemsPerDay.Length));
             for (var index = 0; index < closedItemsPerDay.Length; index++)
             {
                 Assert.That(team.Throughput.GetThroughputOnDay(index), Is.EqualTo(closedItemsPerDay[index]));
             }
+        }
+
+        [Test]
+        public async Task UpdateThroughput_UnknownWorkTrackingSystem_Throws()
+        {
+            var team = new Team
+            {
+                Name = "Team",
+                ThroughputHistory = 7,
+                WorkTrackingSystem = WorkTrackingSystems.Unknown,
+            };
+
+            var subject = new ThroughputService(Mock.Of<IWorkItemServiceFactory>());
+
+            var exceptionThrown = false;
+            try
+            {
+                await subject.UpdateThroughput(team);
+            }
+            catch (NotSupportedException)
+            {
+                exceptionThrown = true;
+            }
+
+            Assert.That(exceptionThrown, Is.True);
         }
     }
 }

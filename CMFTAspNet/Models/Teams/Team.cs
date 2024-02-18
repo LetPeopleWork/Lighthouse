@@ -1,33 +1,33 @@
-﻿namespace CMFTAspNet.Models.Teams
+﻿using CMFTAspNet.WorkTracking;
+
+namespace CMFTAspNet.Models.Teams
 {
     public class Team
     {
-        public Team(string teamName)
-        {
-            TeamName = teamName;
-            Throughput = new Throughput([1]);
-            FeatureWIP = 1;
-            TeamConfiguration = new DefaultTeamConfiguration();
-        }
+        public int Id { get; set; }
 
-        public Guid Id { get; } = Guid.NewGuid();
+        public string Name { get; set; }
 
-        public ITeamConfiguration TeamConfiguration { get; private set; }
+        public string ProjectName { get; set; }
 
-        public string TeamName { get; set; }
+        public WorkTrackingSystems WorkTrackingSystem { get; set; }
 
-        public int FeatureWIP { get; set; }
+        public Dictionary<string, string> WorkTrackingSystemOptions { get; set; } = new Dictionary<string, string>();
 
-        public Throughput Throughput { get; private set; }
+        public List<string> AreaPaths { get; set; } = new List<string>();
 
-        public void UpdateTeamConfiguration(ITeamConfiguration newTeamConfiguration)
-        {
-            TeamConfiguration = newTeamConfiguration;
-        }
+        public List<string> WorkItemTypes { get; set; } = new List<string> { "User Story", "Bug" };
 
-        public void UpdateThroughput(Throughput throughput)
-        {
-            Throughput = throughput;
-        }
+        public List<string> IgnoredTags { get; set; } = new List<string>();
+
+        public List<string> AdditionalRelatedFields { get; set; } = new List<string>();
+
+        public int FeatureWIP { get; set; } = 1;
+
+        public int[] RawThroughput { get; set; } = [1];
+
+        public int ThroughputHistory { get; set; } = 30;
+
+        public Throughput Throughput => new Throughput(RawThroughput);
     }
 }

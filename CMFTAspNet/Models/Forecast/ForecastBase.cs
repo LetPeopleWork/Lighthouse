@@ -6,6 +6,10 @@
 
         protected readonly SortedDictionary<int, int> simulationResult;
 
+        protected ForecastBase()
+        {            
+        }
+
         public ForecastBase(Dictionary<int, int> simulationResult, IComparer<int> comparer)
         {
             this.simulationResult = new SortedDictionary<int, int>(simulationResult, comparer);

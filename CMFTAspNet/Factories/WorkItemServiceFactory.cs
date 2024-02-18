@@ -1,31 +1,30 @@
 ﻿using CMFTAspNet.Cache;
-using CMFTAspNet.Models.Teams;
 using CMFTAspNet.Services.Implementation.AzureDevOps;
 using CMFTAspNet.Services.Interfaces;
+using CMFTAspNet.WorkTracking;
 
 namespace CMFTAspNet.Services.Factories
 {
     public class WorkItemServiceFactory : IWorkItemServiceFactory
     {
-        private readonly Cache<Type, IWorkItemService> cache = new Cache<Type, IWorkItemService>();
+        private readonly Cache<WorkTrackingSystems, IWorkItemService> cache = new Cache<WorkTrackingSystems, IWorkItemService>();
 
-        public IWorkItemService CreateWorkItemServiceForTeam(ITeamConfiguration teamConfiguration)
+        public IWorkItemService GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
-            var workItemSerivce = cache.Get(teamConfiguration.GetType());
+            var workItemSerivce = cache.Get(workTrackingSystem);
 
             if (workItemSerivce == null)
             {
-
-                switch (teamConfiguration)
+                switch (workTrackingSystem)
                 {
-                    case AzureDevOpsTeamConfiguration:
+                    case WorkTrackingSystems.AzureDevOps:
                         workItemSerivce = new AzureDevOpsWorkItemService();
                         break;
                     default:
                         throw new NotSupportedException();
                 }
 
-                cache.Store(teamConfiguration.GetType(), workItemSerivce, TimeSpan.FromMinutes(2));
+                cache.Store(workTrackingSystem, workItemSerivce, TimeSpan.FromMinutes(2));
             }
 
             return workItemSerivce;

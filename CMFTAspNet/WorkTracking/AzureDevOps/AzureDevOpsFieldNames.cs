@@ -1,4 +1,4 @@
-﻿namespace CMFTAspNet.Services.Implementation.AzureDevOps
+﻿namespace CMFTAspNet.WorkTracking.AzureDevOps
 {
     public static class AzureDevOpsFieldNames
     {

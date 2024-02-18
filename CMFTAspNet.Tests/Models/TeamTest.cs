@@ -1,5 +1,6 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Teams;
+using CMFTAspNet.WorkTracking;
 
 namespace CMFTAspNet.Tests.Models
 {
@@ -8,33 +9,23 @@ namespace CMFTAspNet.Tests.Models
         [Test]
         public void UpdateThroughput_SetsThroughput()
         {
-            var team = new Team("Team");
+            var team = new Team();
 
-            var throughput = new Throughput([1, 3, 0, 0, 0, 1, 3]);
+            var rawThroughput = new int[] { 1, 3, 0, 0, 0, 1, 3 };
+            team.RawThroughput = rawThroughput;
 
-            team.UpdateThroughput(throughput);
-
-            Assert.That(team.Throughput, Is.EqualTo(throughput));
+            Assert.That(team.RawThroughput, Is.EqualTo(rawThroughput));
         }
 
         [Test]
-        public void CreateNewTeam_InitializesWithDefaultConfig()
+        public void CreateNewTeam_InitializesWithUnknownWorkTrackingSystem()
         {
-            var team = new Team("Team");
+            var team = new Team
+            {
+                Name = "Test",
+            };
 
-            Assert.That(team.TeamConfiguration, Is.InstanceOf<DefaultTeamConfiguration>());
-        }
-
-        [Test]
-        public void UpdateTeamConfiguration_SetsNewTeamConfiguration()
-        {
-            var team = new Team("Team");
-
-            var azureDevOpsTeamConfig = new AzureDevOpsTeamConfiguration();
-
-            team.UpdateTeamConfiguration(azureDevOpsTeamConfig);
-
-            Assert.That(team.TeamConfiguration, Is.EqualTo(azureDevOpsTeamConfig));
+            Assert.That(team.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Unknown));
         }
     }
 }

@@ -35,11 +35,8 @@ namespace CMFTAspNet.Services.Implementation
             return new HowManyForecast(simulationResults);
         }
 
-        public WhenForecast When(Throughput throughput, int remainingItems)
+        public WhenForecast When(Team team, int remainingItems)
         {
-            var team = new Team("Team");
-            team.UpdateThroughput(throughput);
-
             var fakeFeature = new Feature(team, remainingItems);
             ForecastFeatures(fakeFeature);
 

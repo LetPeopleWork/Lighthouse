@@ -65,8 +65,8 @@ namespace CMFTAspNet.Services.Implementation
 
             foreach (var team in releaseConfiguration.InvolvedTeams)
             {
-                var notClosedItems = await GetNotClosedItemsBySearchCriteria(releaseConfiguration, team.TeamConfiguration);
-                var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team.TeamConfiguration, notClosedItems);
+                var notClosedItems = await GetNotClosedItemsBySearchCriteria(releaseConfiguration, team);
+                var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team, notClosedItems);
 
                 var unparentedFeature = releaseConfiguration.Features.SingleOrDefault(f => f.Id == UnparentedFeatureId);
 
@@ -80,13 +80,13 @@ namespace CMFTAspNet.Services.Implementation
             }
         }
 
-        private async Task<List<int>> ExtractItemsRelatedToFeature(IEnumerable<int> featureIds, ITeamConfiguration teamConfiguration, List<int> notClosedItems)
+        private async Task<List<int>> ExtractItemsRelatedToFeature(IEnumerable<int> featureIds, Team team, List<int> notClosedItems)
         {
             var unparentedItems = new List<int>();
 
             foreach (var itemId in notClosedItems)
             {
-                var isRelatedToFeature = await GetWorkItemServiceForTeam(teamConfiguration).IsRelatedToFeature(itemId, featureIds, teamConfiguration);
+                var isRelatedToFeature = await GetWorkItemServiceForTeam(team).IsRelatedToFeature(itemId, featureIds, team);
                 if (!isRelatedToFeature)
                 {
                     unparentedItems.Add(itemId);
@@ -96,16 +96,16 @@ namespace CMFTAspNet.Services.Implementation
             return unparentedItems;
         }
 
-        private async Task<List<int>> GetNotClosedItemsBySearchCriteria(ReleaseConfiguration releaseConfiguration, ITeamConfiguration teamConfiguration)
+        private async Task<List<int>> GetNotClosedItemsBySearchCriteria(ReleaseConfiguration releaseConfiguration, Team team)
         {
             List<int> unparentedItems;
             switch (releaseConfiguration.SearchBy)
             {
                 case SearchBy.Tag:
-                    unparentedItems = await GetWorkItemServiceForTeam(teamConfiguration).GetNotClosedWorkItemsByTag(teamConfiguration.WorkItemTypes, releaseConfiguration.SearchTerm, teamConfiguration);
+                    unparentedItems = await GetWorkItemServiceForTeam(team).GetNotClosedWorkItemsByTag(team.WorkItemTypes, releaseConfiguration.SearchTerm, team);
                     break;
                 case SearchBy.AreaPath:
-                    unparentedItems = await GetWorkItemServiceForTeam(teamConfiguration).GetNotClosedWorkItemsByAreaPath(teamConfiguration.WorkItemTypes, releaseConfiguration.SearchTerm, teamConfiguration);
+                    unparentedItems = await GetWorkItemServiceForTeam(team).GetNotClosedWorkItemsByAreaPath(team.WorkItemTypes, releaseConfiguration.SearchTerm, team);
                     break;
                 default:
                     throw new NotSupportedException($"Search by {releaseConfiguration.SearchBy} is not supported!");
@@ -123,7 +123,7 @@ namespace CMFTAspNet.Services.Implementation
 
             foreach (var team in involvedTeams)
             {
-                var remainingWork = await GetWorkItemServiceForTeam(team.TeamConfiguration).GetRemainingRelatedWorkItems(featureForRelease.Id, team.TeamConfiguration);
+                var remainingWork = await GetWorkItemServiceForTeam(team).GetRemainingRelatedWorkItems(featureForRelease.Id, team);
                 featureForRelease.RemainingWork[team] = remainingWork;
             }
         }
@@ -147,13 +147,13 @@ namespace CMFTAspNet.Services.Implementation
             }
         }
 
-        private async Task<List<Feature>> GetFeaturesForReleaseConfiguration(ReleaseConfiguration release, Func<IEnumerable<string>, ITeamConfiguration, Task<List<int>>> getFeatureAction)
+        private async Task<List<Feature>> GetFeaturesForReleaseConfiguration(ReleaseConfiguration release, Func<IEnumerable<string>, Team, Task<List<int>>> getFeatureAction)
         {
             var featuresForRelease = new Dictionary<int, Feature>();
 
             foreach (var team in release.InvolvedTeams)
             {
-                var foundFeatures = await getFeatureAction(release.WorkItemTypes, team.TeamConfiguration);
+                var foundFeatures = await getFeatureAction(release.WorkItemTypes, team);
 
                 foreach (var featureId in foundFeatures.Where(f => AddOrExtendFeature(featuresForRelease, f)))
                 {
@@ -166,7 +166,7 @@ namespace CMFTAspNet.Services.Implementation
 
         private async Task AddFeatureDetails(Dictionary<int, Feature> featuresForRelease, Team team, int featureId)
         {
-            var (name, order) = await GetWorkItemServiceForTeam(team.TeamConfiguration).GetWorkItemDetails(featureId, team.TeamConfiguration);
+            var (name, order) = await GetWorkItemServiceForTeam(team).GetWorkItemDetails(featureId, team);
             var featureToUpdate = featuresForRelease[featureId];
 
             featureToUpdate.Name = name;
@@ -184,9 +184,9 @@ namespace CMFTAspNet.Services.Implementation
             return false;
         }
 
-        private IWorkItemService GetWorkItemServiceForTeam(ITeamConfiguration teamConfiguration)
+        private IWorkItemService GetWorkItemServiceForTeam(Team team)
         {
-            return workItemServiceFactory.CreateWorkItemServiceForTeam(teamConfiguration);
+            return workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
         }
     }
 }

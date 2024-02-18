@@ -4,6 +4,10 @@ namespace CMFTAspNet.Models
 {
     public class SimulationResult
     {
+        public SimulationResult()
+        {            
+        }
+
         public SimulationResult(Team team, Feature feature, int remainingItems)
         {
             Team = team;

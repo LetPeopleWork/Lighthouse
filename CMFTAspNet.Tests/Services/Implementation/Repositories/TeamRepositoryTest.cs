@@ -19,7 +19,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         public void AddTeam_StoresTeam()
         {
             var subject = new TeamRepository();
-            var team = new Team("MyTeam");
+            var team = new Team();
 
             subject.AddTeam(team);
 
@@ -32,7 +32,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         public void GivenExistingTeam_RemoveTeam_RemovesFromList()
         {
             var subject = new TeamRepository();
-            var team = new Team("MyTeam");
+            var team = new Team();
 
             subject.AddTeam(team);
 
@@ -47,7 +47,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         public void UpdateTeam_GivenExistingTeam_PersistsChange()
         {
             var subject = new TeamRepository();
-            var team = new Team("MyTeam");
+            var team = new Team();
 
             subject.AddTeam(team);
 

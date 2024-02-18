@@ -1,7 +1,7 @@
-﻿using CMFTAspNet.Models;
-using CMFTAspNet.Models.Teams;
+﻿using CMFTAspNet.Models.Teams;
 using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Interfaces;
+using CMFTAspNet.WorkTracking;
 
 namespace CMFTAspNet.Services.Implementation
 {
@@ -14,11 +14,16 @@ namespace CMFTAspNet.Services.Implementation
             this.workItemServiceFactory = workItemServiceFactory;
         }
 
-        public async Task UpdateThroughput(int historyInDays, Team team)
+        public async Task UpdateThroughput(Team team)
         {
-            var workItemService = workItemServiceFactory.CreateWorkItemServiceForTeam(team.TeamConfiguration);
-            var throughput = await workItemService.GetClosedWorkItemsForTeam(historyInDays, team.TeamConfiguration);
-            team.UpdateThroughput(new Throughput(throughput));
+            if (team.WorkTrackingSystem == WorkTrackingSystems.Unknown)
+            {
+                throw new NotSupportedException("Cannot Update Throughput if Work Tracking System is not set!");
+            }
+
+            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+            var throughput = await workItemService.GetClosedWorkItemsForTeam(team.ThroughputHistory, team);
+            team.RawThroughput = throughput;
         }
     }
 }
