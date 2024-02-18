@@ -27,5 +27,27 @@ namespace CMFTAspNet.Tests.Models
 
             Assert.That(team.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Unknown));
         }
+
+        [Test]
+        public void GetWorkTrackingOptionByKey_ValidKey_ReturnsOption()
+        {
+            var team = new Team();
+            var workTrackingOption = new WorkTrackingSystemOption("Key", "Value");
+            team.WorkTrackingSystemOptions.Add(workTrackingOption);
+
+            var actualValue = team.GetWorkTrackingSystemOptionByKey("Key");
+
+            Assert.That(actualValue, Is.EqualTo("Value"));
+        }
+
+        [Test]
+        public void GetWorkTrackingOptionByKey_InvalidKey_Throws()
+        {
+            var team = new Team();
+            var workTrackingOption = new WorkTrackingSystemOption("Key", "Value");
+            team.WorkTrackingSystemOptions.Add(workTrackingOption);
+
+            Assert.Throws<ArgumentException>(() => team.GetWorkTrackingSystemOptionByKey("InvalidKey"));
+        }
     }
 }

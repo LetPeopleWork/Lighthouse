@@ -307,8 +307,8 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
 
         private (string azureDevOpsUrl, string personalAccessToken) GetAzureDevOpsConfiguration(Team team)
         {
-            var url = team.WorkTrackingSystemOptions[AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl];
-            var personalAccessToken = team.WorkTrackingSystemOptions[AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken];
+            var url = team.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl);
+            var personalAccessToken = team.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
 
             return (url, personalAccessToken);
         }

@@ -12,7 +12,7 @@ namespace CMFTAspNet.Models.Teams
 
         public WorkTrackingSystems WorkTrackingSystem { get; set; }
 
-        public Dictionary<string, string> WorkTrackingSystemOptions { get; set; } = new Dictionary<string, string>();
+        public List<WorkTrackingSystemOption> WorkTrackingSystemOptions { get; set; } = new List<WorkTrackingSystemOption>();
 
         public List<string> AreaPaths { get; set; } = new List<string>();
 
@@ -29,5 +29,17 @@ namespace CMFTAspNet.Models.Teams
         public int ThroughputHistory { get; set; } = 30;
 
         public Throughput Throughput => new Throughput(RawThroughput);
+
+        public string GetWorkTrackingSystemOptionByKey(string key)
+        {
+            var workTrackingOption = WorkTrackingSystemOptions.SingleOrDefault(x => x.Key == key);
+
+            if (workTrackingOption == null)
+            {
+                throw new ArgumentException($"Key {key} not found in Work Tracking Options");
+            }
+
+            return workTrackingOption.Value;
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using CMFTAspNet.Models.Teams;
 using CMFTAspNet.Services.Implementation.AzureDevOps;
+using CMFTAspNet.WorkTracking;
 using CMFTAspNet.WorkTracking.AzureDevOps;
 
 namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
@@ -177,8 +178,8 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var organizationUrl = "https://dev.azure.com/huserben";
             var personalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsCMFTIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'AzureDevOpsCMFTIntegrationTestToken' is set!");
             
-            team.WorkTrackingSystemOptions.Add(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl, organizationUrl);
-            team.WorkTrackingSystemOptions.Add(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, personalAccessToken);
+            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl, organizationUrl));
+            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, personalAccessToken));
 
             team.AreaPaths.Add("CMFTTestTeamProject");
             team.IgnoredTags.Add("ThroughputIgnore");
