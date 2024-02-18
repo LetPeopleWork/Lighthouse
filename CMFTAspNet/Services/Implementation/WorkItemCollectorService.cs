@@ -2,7 +2,6 @@
 using CMFTAspNet.Models.Teams;
 using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Interfaces;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 namespace CMFTAspNet.Services.Implementation
 {
@@ -22,7 +21,7 @@ namespace CMFTAspNet.Services.Implementation
             {
                 release.Features.Clear();
                 var featuresForRelease = await GetFeaturesForRelease(release);
-                release.Features.AddRange(featuresForRelease);
+                release.Features.AddRange(featuresForRelease.OrderBy(x => x.Order));
 
                 await GetRemainingWorkForFeatures(release);
 

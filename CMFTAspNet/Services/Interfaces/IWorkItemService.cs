@@ -8,7 +8,7 @@ namespace CMFTAspNet.Services.Interfaces
         
         Task<List<int>> GetNotClosedWorkItemsByAreaPath(IEnumerable<string> workItemTypes, string areaPath, ITeamConfiguration teamConfiguration);
         
-        Task<List<int>> GetNotClosedWorkItemsByTag(IEnumerable<string> workItemTypes, string searchTerm, ITeamConfiguration teamConfiguration);
+        Task<List<int>> GetNotClosedWorkItemsByTag(IEnumerable<string> workItemTypes, string tag, ITeamConfiguration teamConfiguration);
         
         Task<int> GetRemainingRelatedWorkItems(int featureId, ITeamConfiguration teamConfiguration);
         

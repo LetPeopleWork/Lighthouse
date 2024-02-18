@@ -38,7 +38,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             await subject.CollectFeaturesForReleases([release]);
 
-            Assert.That(release.Features.Count(), Is.EqualTo(1));
+            Assert.That(release.Features, Has.Count.EqualTo(1));
 
             var actualFeature = release.Features.Single();
             Assert.That(actualFeature.Id, Is.EqualTo(feature.Id));
@@ -56,7 +56,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             await subject.CollectFeaturesForReleases([release]);
 
-            Assert.That(release.Features.Count(), Is.EqualTo(1));
+            Assert.That(release.Features, Has.Count.EqualTo(1));
 
             var actualFeature = release.Features.Single();
             Assert.That(actualFeature.Id, Is.EqualTo(feature.Id));
@@ -75,7 +75,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             await subject.CollectFeaturesForReleases([release]);
 
-            Assert.That(release.Features.Count, Is.EqualTo(0));
+            Assert.That(release.Features, Is.Empty);
         }
 
         [Test]
