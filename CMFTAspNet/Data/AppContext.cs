@@ -35,6 +35,8 @@ namespace CMFTAspNet.Data
                 .HasMany(f => f.RemainingWork)
                 .WithOne(r => r.Feature)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            Database.Migrate();
         }
     }
 }

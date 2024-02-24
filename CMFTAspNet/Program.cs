@@ -20,14 +20,6 @@ namespace CMFTAspNet
             builder.Services.AddDbContext<Data.AppContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("AppContext") ?? throw new InvalidOperationException("Connection string 'AppContext' not found")));
 
-
-            // Ensure the database is created and migrate it
-            using (var serviceScope = builder.Services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>().CreateScope())
-            {
-                var dbContext = serviceScope.ServiceProvider.GetService<AppContext>();
-                dbContext.Database.Migrate();
-            }
-
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
             builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();
             builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
