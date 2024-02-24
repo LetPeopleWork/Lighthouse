@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CMFTAspNet.Migrations
 {
-    [DbContext(typeof(CMFTAspNetContext))]
+    [DbContext(typeof(Data.AppContext))]
     partial class CMFTAspNetContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

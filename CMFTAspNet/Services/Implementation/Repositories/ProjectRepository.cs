@@ -6,7 +6,7 @@ namespace CMFTAspNet.Services.Implementation.Repositories
 {
     public class ProjectRepository : RepositoryBase<Project>
     {
-        public ProjectRepository(CMFTAspNetContext context) : base(context, (context) => context.Projects)
+        public ProjectRepository(Data.AppContext context) : base(context, (context) => context.Projects)
         {
         }
 

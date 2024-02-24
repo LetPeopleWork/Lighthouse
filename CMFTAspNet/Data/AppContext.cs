@@ -4,9 +4,9 @@ using CMFTAspNet.Models.Forecast;
 
 namespace CMFTAspNet.Data
 {
-    public class CMFTAspNetContext : DbContext
+    public class AppContext : DbContext
     {
-        public CMFTAspNetContext(DbContextOptions<CMFTAspNetContext> options)
+        public AppContext(DbContextOptions<AppContext> options)
             : base(options)
         {
         }

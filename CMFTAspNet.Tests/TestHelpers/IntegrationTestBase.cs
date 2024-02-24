@@ -18,7 +18,7 @@ namespace CMFTAspNet.Tests.TestHelpers
 
         protected IServiceProvider ServiceProvider { get; private set; }
 
-        protected CMFTAspNetContext DatabaseContext { get; private set; }
+        protected Data.AppContext DatabaseContext { get; private set; }
 
         [OneTimeTearDown]
         public void GlobalTearDown()
@@ -32,7 +32,7 @@ namespace CMFTAspNet.Tests.TestHelpers
             serviceScope = webApplicationFactory.Services.CreateScope();
             ServiceProvider = serviceScope.ServiceProvider;
 
-            DatabaseContext = ServiceProvider.GetService<CMFTAspNetContext>() ?? throw new InvalidOperationException("Could not Find DB Context");
+            DatabaseContext = ServiceProvider.GetService<Data.AppContext>() ?? throw new InvalidOperationException("Could not Find DB Context");
             
             DatabaseContext.Database.Migrate();
         }

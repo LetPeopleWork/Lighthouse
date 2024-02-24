@@ -7,15 +7,15 @@ namespace CMFTAspNet.Services.Implementation.Repositories
 {
     public abstract class RepositoryBase<T> : IRepository<T> where T : class, IEntity
     {
-        private readonly Func<CMFTAspNetContext, DbSet<T>> dbSetGetter;
+        private readonly Func<Data.AppContext, DbSet<T>> dbSetGetter;
 
-        public RepositoryBase(CMFTAspNetContext context, Func<CMFTAspNetContext, DbSet<T>> dbSetGetter)
+        public RepositoryBase(Data.AppContext context, Func<Data.AppContext, DbSet<T>> dbSetGetter)
         {
             Context = context;
             this.dbSetGetter = dbSetGetter;
         }
 
-        protected CMFTAspNetContext Context { get; private set; }
+        protected Data.AppContext Context { get; private set; }
 
 
         public void Add(T item)

@@ -5,7 +5,7 @@ namespace CMFTAspNet.Services.Implementation.Repositories
 {
     public class FeatureRepository : RepositoryBase<Feature>
     {
-        public FeatureRepository(CMFTAspNetContext context) : base(context, (context) => context.Features)
+        public FeatureRepository(Data.AppContext context) : base(context, (context) => context.Features)
         {            
         }
     }

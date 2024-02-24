@@ -25,7 +25,7 @@ namespace CMFTAspNet.Tests.TestHelpers
                     return connection;
                 });
 
-                services.AddDbContext<CMFTAspNetContext>((container, options) =>
+                services.AddDbContext<Data.AppContext>((container, options) =>
                 {
                     var connection = container.GetRequiredService<DbConnection>();
                     options.UseSqlite(connection);
@@ -35,7 +35,7 @@ namespace CMFTAspNet.Tests.TestHelpers
 
         private void RemoveAllDbContextFromServices(IServiceCollection services)
         {
-            var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<CMFTAspNetContext>));
+            var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<Data.AppContext>));
 
             if (dbContextDescriptor != null)
             {

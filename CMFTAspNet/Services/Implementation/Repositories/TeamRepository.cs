@@ -6,7 +6,7 @@ namespace CMFTAspNet.Services.Implementation.Repositories
 {
     public class TeamRepository : RepositoryBase<Team>
     {
-        public TeamRepository(CMFTAspNetContext context) : base(context, (context) => context.Teams)
+        public TeamRepository(Data.AppContext context) : base(context, (context) => context.Teams)
         {
         }
 

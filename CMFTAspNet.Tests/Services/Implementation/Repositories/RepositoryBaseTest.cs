@@ -123,7 +123,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
 
     class RepositoryBaseTestClass : RepositoryBase<Feature>
     {
-        public RepositoryBaseTestClass(CMFTAspNetContext context) : base(context, (context) => context.Features)
+        public RepositoryBaseTestClass(Data.AppContext context) : base(context, (context) => context.Features)
         {
         }
     }

@@ -9,10 +9,10 @@ namespace CMFTAspNet.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly CMFTAspNetContext _context;
+    private readonly Data.AppContext _context;
     private readonly IMonteCarloService monteCarloService;
 
-    public IndexModel(CMFTAspNetContext context, IMonteCarloService monteCarloService)
+    public IndexModel(Data.AppContext context, IMonteCarloService monteCarloService)
     {
         _context = context;
         this.monteCarloService = monteCarloService;

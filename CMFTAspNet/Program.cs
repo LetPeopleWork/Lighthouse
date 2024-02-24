@@ -14,8 +14,8 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddRazorPages();
-        builder.Services.AddDbContext<CMFTAspNetContext>(options =>
-            options.UseSqlite(builder.Configuration.GetConnectionString("CMFTAspNetContext") ?? throw new InvalidOperationException("Connection string 'CMFTAspNetContext' not found")));
+        builder.Services.AddDbContext<CMFTAspNet.Data.AppContext>(options =>
+            options.UseSqlite(builder.Configuration.GetConnectionString("AppContext") ?? throw new InvalidOperationException("Connection string 'AppContext' not found")));
 
         builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
         builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();

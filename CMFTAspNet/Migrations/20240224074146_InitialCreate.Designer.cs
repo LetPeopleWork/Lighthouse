@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CMFTAspNet.Migrations
 {
-    [DbContext(typeof(CMFTAspNetContext))]
+    [DbContext(typeof(Data.AppContext))]
     [Migration("20240224074146_InitialCreate")]
     partial class InitialCreate
     {
