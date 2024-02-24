@@ -1,5 +1,6 @@
 using CMFTAspNet.Models;
 using CMFTAspNet.Services.Implementation;
+using CMFTAspNet.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -8,12 +9,12 @@ namespace CMFTAspNet.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly Data.AppContext _context;
+    private readonly IRepository<Project> projectRepository;
     private readonly IMonteCarloService monteCarloService;
 
-    public IndexModel(Data.AppContext context, IMonteCarloService monteCarloService)
+    public IndexModel(IRepository<Project> projectRepository, IMonteCarloService monteCarloService)
     {
-        _context = context;
+        this.projectRepository = projectRepository;
         this.monteCarloService = monteCarloService;
     }
 
@@ -22,26 +23,14 @@ public class IndexModel : PageModel
 
     public IActionResult OnGet()
     {
-        Projects = new List<Project>(
-            _context.Projects
-            .Include(r => r.Features)
-            .ThenInclude(f => f.RemainingWork)
-            .Include(f => f.Features)
-            .ThenInclude(f => f.Forecast)
-            .ToList());
+        Projects = new List<Project>(projectRepository.GetAll());
 
         return Page();
     }
 
     public async Task<IActionResult> OnPost()
     {
-        var projects = _context.Projects.Include(r => r.Features).ThenInclude(x => x.RemainingWork).ThenInclude(x => x.Team);
-        foreach (var project in projects)
-        {
-            monteCarloService.ForecastFeatures(project.Features);
-
-            await _context.SaveChangesAsync();
-        }
+        await monteCarloService.UpdateForecastsForAllProjects();
 
         return OnGet();
     }

@@ -10,6 +10,17 @@ namespace CMFTAspNet.Services.Implementation.Repositories
         {
         }
 
+        public override IEnumerable<Project> GetAll()
+        {
+            return Context.Projects
+                .Include(r => r.Features)
+                .ThenInclude(f => f.RemainingWork)
+                .Include(f => f.Features)
+                .ThenInclude(f => f.Forecast)
+                .Include(f => f.InvolvedTeams)
+                .ToList();
+        }
+
         public override Project? GetById(int id)
         {
             return Context.Projects

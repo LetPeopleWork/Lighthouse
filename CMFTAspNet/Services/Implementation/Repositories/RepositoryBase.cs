@@ -26,7 +26,7 @@ namespace CMFTAspNet.Services.Implementation.Repositories
             return dbSetGetter(Context).Find(id) != null;
         }
 
-        public IEnumerable<T> GetAll()
+        public virtual IEnumerable<T> GetAll()
         {
             return dbSetGetter(Context).ToList();
         }

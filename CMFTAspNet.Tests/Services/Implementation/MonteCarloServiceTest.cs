@@ -1,13 +1,23 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
 using CMFTAspNet.Services.Implementation;
+using CMFTAspNet.Services.Interfaces;
 using CMFTAspNet.Tests.TestDoubles;
+using Moq;
 
 namespace CMFTAspNet.Tests.Services.Implementation
 {
     public class MonteCarloServiceTest
     {
         private NotSoRandomNumberService randomNumberService;
+
+        private Mock<IRepository<Project>> projectRepositoryMock;
+
+        [SetUp]
+        public void Setup()
+        {
+            projectRepositoryMock = new Mock<IRepository<Project>>();
+        }
 
         [Test]
         public void HowMany_ReturnsHowManyForecast()
@@ -370,16 +380,37 @@ namespace CMFTAspNet.Tests.Services.Implementation
             });
         }
 
+        [Test]
+        public async Task UpdateForecastsForAllProjects_UpdatesForecast_SavesChanges()
+        {
+            var projects = new List<Project>
+            {
+                new Project { Id = 12, Name = "Project" }
+            };
+
+            var team = CreateTeam(1, [1]);
+            var feature = new Feature(team, 35);
+            projects.Single().Features.Add(feature);
+
+            projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
+
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            await subject.UpdateForecastsForAllProjects();
+
+            projectRepositoryMock.Verify(x => x.Save());
+        }
+
         private MonteCarloService CreateSubjectWithPersistentThroughput()
         {
             randomNumberService = new NotSoRandomNumberService();
 
-            return new MonteCarloService(new NotSoRandomNumberService());
+            return new MonteCarloService(new NotSoRandomNumberService(), projectRepositoryMock.Object);
         }
 
         private MonteCarloService CreateSubjectWithRealThroughput()
         {
-            return new MonteCarloService(new RandomNumberService(), 10000);
+            return new MonteCarloService(new RandomNumberService(), projectRepositoryMock.Object, 10000);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)

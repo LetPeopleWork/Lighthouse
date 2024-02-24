@@ -7,7 +7,9 @@ namespace CMFTAspNet.Services.Implementation
     {
         void ForecastFeatures(IEnumerable<Feature> features);
 
-        HowManyForecast HowMany(Throughput throughput, int days);
+        Task UpdateForecastsForAllProjects();
+
+        HowManyForecast HowMany(Throughput throughput, int days);        
 
         WhenForecast When(Team team, int remainingItems);
     }

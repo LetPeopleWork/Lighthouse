@@ -32,34 +32,32 @@
             {
                 foreach (var feature in project.Features)
                 {
-                    @* Determine the likelihood color based on the value *@
                     @if (feature.Forecast != null)
                     {
                         var likelihood = feature.Forecast.GetLikelihood((project.TargetDate - DateTime.Today).Value.Days);
-                        var likelihoodColor = likelihood >= 80 ? "green" : likelihood >= 50 ? "amber" : "red";
+
+                        string GetLikelihoodColor(double likelihood)
+                        {
+                            return likelihood >= 80 ? "green" : likelihood >= 50 ? "amber" : "red";
+                        }
+
+                        string GetFutureDate(int daysInFuture)
+                        {
+                            var futureDate = DateTime.Today.AddDays(daysInFuture);
+                            return futureDate.ToString("d");
+                        }
+
+                        var likelihoodColor = GetLikelihoodColor(likelihood);
 
                         <tr>
                             <td>@project.Name</td>
                             <td>@feature.Name</td>
                             <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
-                            <td>@feature.Forecast?.GetProbability(50)</td>
-                            <td>@feature.Forecast?.GetProbability(70)</td>
-                            <td>@feature.Forecast?.GetProbability(85)</td>
-                            <td>@feature.Forecast?.GetProbability(95)</td>
+                            <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
+                            <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
+                            <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
+                            <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
                             <td style="background-color: @likelihoodColor">@likelihood</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        <tr>
-                            <td>@project.Name</td>
-                            <td>@feature.Name</td>
-                            <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
-                            <td>@feature.Forecast?.GetProbability(50)</td>
-                            <td>@feature.Forecast?.GetProbability(70)</td>
-                            <td>@feature.Forecast?.GetProbability(85)</td>
-                            <td>@feature.Forecast?.GetProbability(95)</td>
-                            <td>N/A</td>
                         </tr>
                     }
                 }
