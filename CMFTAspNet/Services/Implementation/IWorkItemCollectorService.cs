@@ -4,6 +4,6 @@ namespace CMFTAspNet.Services.Implementation
 {
     public interface IWorkItemCollectorService
     {
-        Task<IEnumerable<Feature>> CollectFeaturesForProject(IEnumerable<Project> projects);
+        Task UpdateFeaturesForProject(Project project);
     }
 }

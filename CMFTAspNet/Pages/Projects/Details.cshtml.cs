@@ -9,7 +9,7 @@ namespace CMFTAspNet.Pages.Projects
     {
         private readonly IWorkItemCollectorService workItemCollectorService;
 
-        public DetailsModel(IRepository<Project> repository, IWorkItemCollectorService workItemCollectorService) : base(repository)
+        public DetailsModel(IRepository<Project> projectRepository, IWorkItemCollectorService workItemCollectorService) : base(projectRepository)
         {
             this.workItemCollectorService = workItemCollectorService;
         }
@@ -22,10 +22,7 @@ namespace CMFTAspNet.Pages.Projects
                 return NotFound();
             }
 
-            await workItemCollectorService.CollectFeaturesForProject([project]);
-            Repository.Update(project);
-
-            await Repository.Save();
+            await workItemCollectorService.UpdateFeaturesForProject(project);
 
             return OnGet(id);
         }

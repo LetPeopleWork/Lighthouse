@@ -7,44 +7,65 @@ namespace CMFTAspNet.Services.Implementation
     public class WorkItemCollectorService : IWorkItemCollectorService
     {
         private readonly IWorkItemServiceFactory workItemServiceFactory;
+
+        private readonly IRepository<Feature> featureRepository;
+        private readonly IRepository<Project> projectRepository;
+
         private readonly int UnparentedFeatureId = int.MaxValue - 1;
 
-        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory)
+        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, IRepository<Project> projectRepository)
         {
             this.workItemServiceFactory = workItemServiceFactory;
+            this.featureRepository = featureRepository;
+            this.projectRepository = projectRepository;
         }
 
-        public async Task<IEnumerable<Feature>> CollectFeaturesForProject(IEnumerable<Project> projects)
+        public async Task UpdateFeaturesForProject(Project project)
         {
             var features = new List<Feature>();
 
-            foreach (var project in projects)
-            {
-                var featuresForProject = await GetFeaturesForProject(project);
-                features.AddRange(featuresForProject.OrderBy(x => x.Order));
+            var featuresForProject = await GetFeaturesForProject(project);
+            features.AddRange(featuresForProject.OrderBy(x => x.Order));
 
-                await GetRemainingWorkForFeatures(project, features);
+            await GetRemainingWorkForFeatures(project, features);
 
-                foreach (var feature in features.ToList())
-                {
-                    RemoveDoneFeaturesFromList(features, feature);
-                }
-            }
+            RemoveDoneFeatures(features);
 
-            return features;
+            await SaveChanges(project, features);
         }
 
-        private void RemoveDoneFeaturesFromList(List<Feature> features, Feature feature)
+        private async Task SaveChanges(Project project, List<Feature> features)
         {
-            if (feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0)
+            foreach (var feature in project.Features.ToList())
             {
-                features.Remove(feature);
+                project.Features.Remove(feature);
+                featureRepository.Remove(feature.Id);
             }
 
-            var uninvolvedTeams = feature.RemainingWork.Where(x => x.RemainingWorkItems == 0).Select(kvp => kvp.Team).ToList();
-            foreach (var team in uninvolvedTeams)
+            foreach (var feature in features)
             {
-                feature.RemoveTeamFromFeature(team);
+                project.Features.Add(feature);
+                featureRepository.Add(feature);
+            }
+
+            await featureRepository.Save();
+            await projectRepository.Save();
+        }
+
+        private void RemoveDoneFeatures(List<Feature> features)
+        {
+            foreach (var feature in features.ToList())
+            {
+                if (feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0)
+                {
+                    features.Remove(feature);
+                }
+
+                var uninvolvedTeams = feature.RemainingWork.Where(x => x.RemainingWorkItems == 0).Select(kvp => kvp.Team).ToList();
+                foreach (var team in uninvolvedTeams)
+                {
+                    feature.RemoveTeamFromFeature(team);
+                }
             }
         }
 

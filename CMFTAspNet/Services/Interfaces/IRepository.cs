@@ -13,5 +13,7 @@
         void Update(T item);
 
         Task Save();
+
+        bool Exists(int id);
     }
 }

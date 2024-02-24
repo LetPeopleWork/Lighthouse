@@ -19,6 +19,7 @@ public class Program
 
         builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
         builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();
+        builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
         builder.Services.AddScoped<IRandomNumberService, RandomNumberService>();        
         builder.Services.AddScoped<IMonteCarloService, MonteCarloService>();
         builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();

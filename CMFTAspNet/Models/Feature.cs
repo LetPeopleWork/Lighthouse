@@ -1,8 +1,9 @@
 ﻿using CMFTAspNet.Models.Forecast;
+using CMFTAspNet.Services.Interfaces;
 
 namespace CMFTAspNet.Models
 {
-    public class Feature
+    public class Feature : IEntity
     {
         public Feature() : this(Enumerable.Empty<(Team team, int remainingItems)>())
         {

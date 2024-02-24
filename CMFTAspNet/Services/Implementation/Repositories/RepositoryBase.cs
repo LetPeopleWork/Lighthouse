@@ -1,6 +1,7 @@
 ﻿using CMFTAspNet.Data;
 using CMFTAspNet.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.TeamFoundation.SourceControl.WebApi.Legacy;
 
 namespace CMFTAspNet.Services.Implementation.Repositories
 {
@@ -20,6 +21,11 @@ namespace CMFTAspNet.Services.Implementation.Repositories
         public void Add(T item)
         {
             dbSetGetter(Context).Add(item);
+        }
+
+        public bool Exists(int id)
+        {
+            return dbSetGetter(Context).Find(id) != null;
         }
 
         public IEnumerable<T> GetAll()

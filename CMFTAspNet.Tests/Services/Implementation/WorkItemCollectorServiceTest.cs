@@ -10,12 +10,19 @@ namespace CMFTAspNet.Tests.Services.Implementation
     public class WorkItemCollectorServiceTest
     {
         private Mock<IWorkItemService> workItemServiceMock;
+
+        private Mock<IRepository<Project>> projectRepositoryMock;
+
+        private Mock<IRepository<Feature>> featureRepositoryMock;
+
         private WorkItemCollectorService subject;
 
         [SetUp]
         public void SetUp()
         {
             workItemServiceMock = new Mock<IWorkItemService>();
+            projectRepositoryMock = new Mock<IRepository<Project>>();
+            featureRepositoryMock = new Mock<IRepository<Feature>>();
 
             var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
             workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
@@ -23,7 +30,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<int>()));
             workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<int>()));
 
-            subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object);
+            subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object, featureRepositoryMock.Object, projectRepositoryMock.Object);
         }
 
         [Test]
@@ -36,12 +43,47 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(12));
 
-            var features = await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
-            Assert.That(features.ToList(), Has.Count.EqualTo(1));
+            Assert.That(project.Features.ToList(), Has.Count.EqualTo(1));
 
-            var actualFeature = features.Single();
+            var actualFeature = project.Features.Single();
             Assert.That(actualFeature.Id, Is.EqualTo(feature.Id));
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_StoresFeaturesAndProject()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(SearchBy.Tag, [team]);
+            var feature = new Feature(team, 12) { Id = 12 };
+
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(12));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            projectRepositoryMock.Verify(x => x.Save());
+            featureRepositoryMock.Verify(x => x.Save());
+            featureRepositoryMock.Verify(x => x.Add(It.IsAny<Feature>()));
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_GivenExistingFeatures_ClearsExistingFeatures()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(SearchBy.Tag, [team]);
+            var existingFeature = new Feature(team, 12) { Id = 12 };
+
+            project.Features.Add(existingFeature);
+
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int>()));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(existingFeature.Id, It.IsAny<Team>())).Returns(Task.FromResult(12));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.That(project.Features.Count, Is.EqualTo(0));
+            featureRepositoryMock.Verify(x => x.Remove(existingFeature.Id));
         }
 
         [Test]
@@ -54,11 +96,11 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(12));
 
-            var features = await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
-            Assert.That(features.ToList(), Has.Count.EqualTo(1));
+            Assert.That(project.Features.ToList(), Has.Count.EqualTo(1));
 
-            var actualFeature = features.Single();
+            var actualFeature = project.Features.Single();
             Assert.That(actualFeature.Id, Is.EqualTo(feature.Id));
         }
 
@@ -73,9 +115,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
 
-            var features = await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
-            Assert.That(features, Is.Empty);
+            Assert.That(project.Features, Is.Empty);
         }
 
         [Test]
@@ -90,9 +132,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(remainingWorkItems));
 
-            var features = await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
-            var actualFeature = features.Single();
+            var actualFeature = project.Features.Single();
             Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(remainingWorkItems));
         }
 
@@ -106,7 +148,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<int>()));
 
-            await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
             workItemServiceMock.Verify(x => x.GetWorkItemsByTag(project.WorkItemTypes, It.IsAny<string>(), team1), Times.Exactly(1));
             workItemServiceMock.Verify(x => x.GetWorkItemsByTag(project.WorkItemTypes, It.IsAny<string>(), team2), Times.Exactly(1));
@@ -130,11 +172,11 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(project.WorkItemTypes, project.SearchTerm, team2)).Returns(Task.FromResult(new List<int> { feature2.Id }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, team2)).Returns(Task.FromResult(remainingWorkItemsFeature2));
 
-            var features = await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
-            var actualFeature1 = features.First();
+            var actualFeature1 = project.Features.First();
             Assert.That(actualFeature1.GetRemainingWorkForTeam(team1), Is.EqualTo(remainingWorkItemsFeature1));
-            var actualFeature2 = features.Last();
+            var actualFeature2 = project.Features.Last();
             Assert.That(actualFeature2.GetRemainingWorkForTeam(team2), Is.EqualTo(remainingWorkItemsFeature2));
         }
 
@@ -153,9 +195,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, team1)).Returns(Task.FromResult(remainingWorkItemsTeam1));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, team2)).Returns(Task.FromResult(remainingWorkItemsTeam2));
 
-            var features = await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
-            var actualFeature = features.Single();
+            var actualFeature = project.Features.Single();
             Assert.Multiple(() =>
             {
                 Assert.That(actualFeature.GetRemainingWorkForTeam(team1), Is.EqualTo(remainingWorkItemsTeam1));
@@ -178,9 +220,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             workItemServiceMock.Setup(x => x.GetNotClosedWorkItemsByAreaPath(team.WorkItemTypes, project.SearchTerm, team)).Returns(Task.FromResult(new List<int>(unparentedItems)));
 
-            var features = await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
-            var actualFeature = features.Single();
+            var actualFeature = project.Features.Single();
             Assert.Multiple(() =>
             {
                 Assert.That(actualFeature.Name, Is.EqualTo("Unparented"));
@@ -203,9 +245,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             workItemServiceMock.Setup(x => x.GetNotClosedWorkItemsByTag(team.WorkItemTypes, project.SearchTerm, team)).Returns(Task.FromResult(new List<int>(unparentedItems)));
 
-            var features = await subject.CollectFeaturesForProject([project]);
+            await subject.UpdateFeaturesForProject(project);
 
-            var actualFeature = features.Single();
+            var actualFeature = project.Features.Single();
             Assert.Multiple(() =>
             {
                 Assert.That(actualFeature.Name, Is.EqualTo("Unparented"));

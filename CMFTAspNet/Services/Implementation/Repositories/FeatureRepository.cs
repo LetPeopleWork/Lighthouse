@@ -1,35 +1,12 @@
-﻿using CMFTAspNet.Models;
+﻿using CMFTAspNet.Data;
+using CMFTAspNet.Models;
 
 namespace CMFTAspNet.Services.Implementation.Repositories
 {
-    public class FeatureRepository
+    public class FeatureRepository : RepositoryBase<Feature>
     {
-        private readonly List<Feature> features = new List<Feature>();
-
-        public void AddFeature(Feature feature)
-        {
-            features.Add(feature);
-        }
-
-        public IEnumerable<Feature> GetFeatures()
-        {
-            return features;
-        }
-
-        public void RemoveFeature(Feature feature)
-        {
-            var featureToRemove = features.SingleOrDefault(t => t.Id == feature.Id);
-
-            if (featureToRemove != null)
-            {
-                features.Remove(featureToRemove);
-            }
-        }
-
-        public void UpdateFeature(Feature feature)
-        {
-            RemoveFeature(feature);
-            AddFeature(feature);
+        public FeatureRepository(CMFTAspNetContext context) : base(context, (context) => context.Features)
+        {            
         }
     }
 }
