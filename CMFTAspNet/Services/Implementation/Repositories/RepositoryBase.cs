@@ -1,7 +1,5 @@
-﻿using CMFTAspNet.Data;
-using CMFTAspNet.Services.Interfaces;
+﻿using CMFTAspNet.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.TeamFoundation.SourceControl.WebApi.Legacy;
 
 namespace CMFTAspNet.Services.Implementation.Repositories
 {
@@ -9,7 +7,7 @@ namespace CMFTAspNet.Services.Implementation.Repositories
     {
         private readonly Func<Data.AppContext, DbSet<T>> dbSetGetter;
 
-        public RepositoryBase(Data.AppContext context, Func<Data.AppContext, DbSet<T>> dbSetGetter)
+        protected RepositoryBase(Data.AppContext context, Func<Data.AppContext, DbSet<T>> dbSetGetter)
         {
             Context = context;
             this.dbSetGetter = dbSetGetter;

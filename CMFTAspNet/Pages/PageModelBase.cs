@@ -6,7 +6,7 @@ namespace CMFTAspNet.Pages
 {
     public abstract class PageModelBase<T> : PageModel where T : class
     {
-        public PageModelBase(IRepository<T> repository)
+        protected PageModelBase(IRepository<T> repository)
         {
             Repository = repository;
         }
