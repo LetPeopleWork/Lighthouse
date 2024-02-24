@@ -7,7 +7,7 @@ using CMFTAspNet.Models;
 
 namespace CMFTAspNet
 {
-    public static class Program
+    public class Program
     {
         public static void Main(string[] args)
         {
@@ -15,7 +15,7 @@ namespace CMFTAspNet
 
             // Add services to the container.
             builder.Services.AddRazorPages();
-            builder.Services.AddDbContext<CMFTAspNet.Data.AppContext>(options =>
+            builder.Services.AddDbContext<Data.AppContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("AppContext") ?? throw new InvalidOperationException("Connection string 'AppContext' not found")));
 
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();

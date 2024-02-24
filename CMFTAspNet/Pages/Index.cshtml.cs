@@ -1,4 +1,3 @@
-using CMFTAspNet.Data;
 using CMFTAspNet.Models;
 using CMFTAspNet.Services.Implementation;
 using Microsoft.AspNetCore.Mvc;
