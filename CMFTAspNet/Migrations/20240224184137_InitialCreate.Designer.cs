@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMFTAspNet.Migrations
 {
     [DbContext(typeof(AppContext))]
-    [Migration("20240224160055_InitialCreate")]
+    [Migration("20240224184137_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -36,7 +36,10 @@ namespace CMFTAspNet.Migrations
                     b.Property<int>("Order")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ProjectId")
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ReferenceId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -223,9 +226,13 @@ namespace CMFTAspNet.Migrations
 
             modelBuilder.Entity("CMFTAspNet.Models.Feature", b =>
                 {
-                    b.HasOne("CMFTAspNet.Models.Project", null)
+                    b.HasOne("CMFTAspNet.Models.Project", "Project")
                         .WithMany("Features")
-                        .HasForeignKey("ProjectId");
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("CMFTAspNet.Models.Forecast.IndividualSimulationResult", b =>

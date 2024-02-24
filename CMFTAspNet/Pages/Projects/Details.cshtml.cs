@@ -23,6 +23,7 @@ namespace CMFTAspNet.Pages.Projects
             }
 
             await workItemCollectorService.UpdateFeaturesForProject(project);
+            await Repository.Save();
 
             return OnGet(id);
         }

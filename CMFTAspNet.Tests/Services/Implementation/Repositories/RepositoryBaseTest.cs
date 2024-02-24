@@ -25,7 +25,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         public async Task Add_StoresAsync()
         {
             var subject = CreateSubject();
-            var item = new Feature { Name = "Name" };
+            Feature item = CreateFeature();
 
             subject.Add(item);
             await subject.Save();
@@ -40,7 +40,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         {
             var subject = CreateSubject();
 
-            var item = new Feature { Name = "Name" };
+            var item = CreateFeature();
 
             subject.Add(item);
             await subject.Save();
@@ -51,10 +51,42 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         }
 
         [Test]
+        public async Task GetByPredicate_ExistingItem_RetunrsCorrectEntity()
+        {
+            var subject = CreateSubject();
+
+            var item = CreateFeature();
+            item.ReferenceId = 12;
+
+            subject.Add(item);
+            await subject.Save();
+
+            var foundEntity = subject.GetByPredicate(f => f.ReferenceId == 12);
+
+            Assert.That(foundEntity, Is.EqualTo(item));
+        }
+
+        [Test]
+        public async Task GetByPredicate_NotExistingItem_RetunrsNull()
+        {
+            var subject = CreateSubject();
+
+            var item = CreateFeature();
+            item.ReferenceId = 12;
+
+            subject.Add(item);
+            await subject.Save();
+
+            var foundEntity = subject.GetByPredicate(f => f.ReferenceId == 42);
+
+            Assert.That(foundEntity, Is.Null);
+        }
+
+        [Test]
         public async Task GivenExistingEntity_Remove_RemovesFromList()
         {
             var subject = CreateSubject();
-            var item = new Feature { Name = "Name" };
+            var item = CreateFeature();
 
             subject.Add(item);
             await subject.Save();
@@ -71,7 +103,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         public async Task Update_GivenExisting_PersistsChange()
         {
             var subject = CreateSubject();
-            var item = new Feature { Name = "Name", Order = 12 };
+            var item = CreateFeature();
 
             subject.Add(item);
             await subject.Save();
@@ -90,12 +122,12 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         public async Task Exists_DoesExist_ReturnsTrueAsync()
         {
             var subject = CreateSubject();
-            var item = new Feature { Name = "Name", Id = 57 };
+            var item = CreateFeature();
 
             subject.Add(item);
             await subject.Save();
 
-            var actual = subject.Exists(57);
+            var actual = subject.Exists(item.Id);
 
             Assert.That(actual, Is.True);
         }
@@ -105,7 +137,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         {
 
             var subject = CreateSubject();
-            var item = new Feature { Name = "Name", Id = 12 };
+            var item = CreateFeature();
 
             subject.Add(item);
             await subject.Save();
@@ -115,9 +147,45 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             Assert.That(actual, Is.False);
         }
 
+        [Test]
+        public async Task Exists_UsingPredicate_DoesExist_ReturnsTrueAsync()
+        {
+            var subject = CreateSubject();
+            var item = CreateFeature();
+            item.ReferenceId = 32;
+
+            subject.Add(item);
+            await subject.Save();
+
+            var actual = subject.Exists(f => f.ReferenceId == 32);
+
+            Assert.That(actual, Is.True);
+        }
+
+        [Test]
+        public async Task Exists_UsingPredicate_DoesNotExist_ReturnsFalseAsync()
+        {
+
+            var subject = CreateSubject();
+            var item = CreateFeature();
+            item.ReferenceId = 32;
+
+            subject.Add(item);
+            await subject.Save();
+
+            var actual = subject.Exists(f => f.ReferenceId == 42);
+
+            Assert.That(actual, Is.False);
+        }
+
         private RepositoryBaseTestClass CreateSubject()
         {
             return new RepositoryBaseTestClass(DatabaseContext);
+        }
+
+        private Feature CreateFeature()
+        {
+            return new Feature { Name = "Name", Project = new Project { Name = "Project", SearchTerm = "Term" } };
         }
     }
 

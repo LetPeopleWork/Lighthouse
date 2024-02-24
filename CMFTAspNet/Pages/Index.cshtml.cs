@@ -3,34 +3,36 @@ using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace CMFTAspNet.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly IRepository<Project> projectRepository;
+    private readonly IRepository<Feature> featureRepository;
     private readonly IMonteCarloService monteCarloService;
 
-    public IndexModel(IRepository<Project> projectRepository, IMonteCarloService monteCarloService)
+    public IndexModel(IRepository<Feature> featureRepository, IMonteCarloService monteCarloService)
     {
-        this.projectRepository = projectRepository;
+        this.featureRepository = featureRepository;
         this.monteCarloService = monteCarloService;
     }
 
     [BindProperty]
-    public List<Project> Projects { get; set; } = new List<Project>();
+    public List<Feature> Features { get; set; } = new List<Feature>();
 
     public IActionResult OnGet()
     {
-        Projects = new List<Project>(projectRepository.GetAll());
+        Features = new List<Feature>(featureRepository.GetAll());
 
         return Page();
     }
 
     public async Task<IActionResult> OnPost()
     {
-        await monteCarloService.UpdateForecastsForAllProjects();
+        var allFeatures = featureRepository.GetAll().OrderBy(x => x.Order);
+        monteCarloService.ForecastFeatures(allFeatures);
+
+        await featureRepository.Save();
 
         return OnGet();
     }

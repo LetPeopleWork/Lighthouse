@@ -43,9 +43,6 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             var project = new Project { Name = "Name", SearchTerm = "Search" };
             var feature = new Feature { Name = "MyFeature" };
 
-            DatabaseContext.Features.Add(feature);
-            await DatabaseContext.SaveChangesAsync();
-
             project.Features.Add(feature);
 
             // Act

@@ -17,7 +17,6 @@
         <caption>Forecasts</caption>
         <thead>
             <tr>
-                <th>Projects</th>
                 <th>Feature</th>
                 <th>Remaining Work</th>
                 <th>50% Probability</th>
@@ -28,38 +27,34 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var project in Model.Projects)
+            @foreach (var feature in Model.Features.OrderBy(f => f.Order))
             {
-                foreach (var feature in project.Features.OrderBy(f => f.Order))
+                @if (feature.Forecast != null)
                 {
-                    @if (feature.Forecast != null)
+                    var likelihood = feature.GetTargetDateLikelihood();
+
+                    string GetLikelihoodColor(double likelihood)
                     {
-                        var likelihood = feature.Forecast.GetLikelihood((project.TargetDate - DateTime.Today).Value.Days);
-
-                        string GetLikelihoodColor(double likelihood)
-                        {
-                            return likelihood >= 80 ? "green" : likelihood >= 50 ? "amber" : "red";
-                        }
-
-                        string GetFutureDate(int daysInFuture)
-                        {
-                            var futureDate = DateTime.Today.AddDays(daysInFuture);
-                            return futureDate.ToString("d");
-                        }
-
-                        var likelihoodColor = GetLikelihoodColor(likelihood);
-
-                        <tr>
-                            <td>@project.Name</td>
-                            <td>@feature.Name</td>
-                            <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
-                            <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
-                            <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
-                            <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
-                            <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
-                            <td style="background-color: @likelihoodColor">@likelihood</td>
-                        </tr>
+                        return likelihood >= 80 ? "green" : likelihood >= 50 ? "amber" : "red";
                     }
+
+                    string GetFutureDate(int daysInFuture)
+                    {
+                        var futureDate = DateTime.Today.AddDays(daysInFuture);
+                        return futureDate.ToString("d");
+                    }
+
+                    var likelihoodColor = GetLikelihoodColor(likelihood);
+
+                    <tr>
+                        <td>@feature.Name</td>
+                        <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
+                        <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
+                        <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
+                        <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
+                        <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
+                        <td style="background-color: @likelihoodColor">@likelihood</td>
+                    </tr>
                 }
             }
         </tbody>

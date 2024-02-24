@@ -23,6 +23,8 @@ namespace CMFTAspNet.Models
 
         public int Id { get; set; }
 
+        public int ReferenceId { get; set; }
+
         public string Name { get; set; }
 
         public int Order { get; set; }
@@ -31,7 +33,23 @@ namespace CMFTAspNet.Models
 
         public List<RemainingWork> RemainingWork { get; set; } = new List<RemainingWork>();
 
+        public int ProjectId { get; set; }
+
+        public Project Project { get; set; }
+
         public bool IsUnparentedFeature { get; set; } = false;
+
+        public double GetTargetDateLikelihood()
+        {
+            if (Project?.TargetDate != null)
+            {
+                var timeToTargetDate = (Project.TargetDate - DateTime.Today).Value.Days;
+
+                return Forecast.GetLikelihood(timeToTargetDate);
+            }
+
+            return 100;
+        }
 
         public void AddOrUpdateRemainingWorkForTeam(Team team, int remainingWork)
         {

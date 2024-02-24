@@ -7,15 +7,12 @@ namespace CMFTAspNet.Services.Implementation
     public class WorkItemCollectorService : IWorkItemCollectorService
     {
         private readonly IWorkItemServiceFactory workItemServiceFactory;
-
         private readonly IRepository<Feature> featureRepository;
-        private readonly IRepository<Project> projectRepository;
 
-        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, IRepository<Project> projectRepository)
+        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository)
         {
             this.workItemServiceFactory = workItemServiceFactory;
             this.featureRepository = featureRepository;
-            this.projectRepository = projectRepository;
         }
 
         public async Task UpdateFeaturesForProject(Project project)
@@ -29,25 +26,8 @@ namespace CMFTAspNet.Services.Implementation
 
             RemoveDoneFeatures(features);
 
-            await SaveChanges(project, features);
-        }
-
-        private async Task SaveChanges(Project project, List<Feature> features)
-        {
-            foreach (var feature in project.Features.ToList())
-            {
-                project.Features.Remove(feature);
-                featureRepository.Remove(feature.Id);
-            }
-
-            foreach (var feature in features)
-            {
-                project.Features.Add(feature);
-                featureRepository.Add(feature);
-            }
-
-            await featureRepository.Save();
-            await projectRepository.Save();
+            project.Features.Clear();
+            project.Features.AddRange(features);
         }
 
         private void RemoveDoneFeatures(List<Feature> features)
@@ -82,20 +62,22 @@ namespace CMFTAspNet.Services.Implementation
 
         private async Task GetUnparentedItemsForTeams(Project project, List<Feature> features)
         {
-            var featureIds = features.Select(x => x.Id);
+            var featureIds = features.Select(x => x.ReferenceId);
 
             foreach (var team in project.InvolvedTeams)
             {
                 var notClosedItems = await GetNotClosedItemsBySearchCriteria(project, team);
                 var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team, notClosedItems);
 
-                var unparentedFeature = features.SingleOrDefault(f => f.IsUnparentedFeature);
+                var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = int.MaxValue - 1, Order = int.MaxValue, IsUnparentedFeature = true, ProjectId = project.Id, Project = project };
+                var unparentedFeatureId = project.Features.FirstOrDefault(f => f.IsUnparentedFeature)?.Id;                
 
-                if (unparentedFeature == null)
+                if (unparentedFeatureId != null)
                 {
-                    unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", Order = int.MaxValue, IsUnparentedFeature = true };
-                    features.Add(unparentedFeature);
+                    unparentedFeature = featureRepository.GetById(unparentedFeatureId.Value) ?? unparentedFeature;
                 }
+
+                features.Add(unparentedFeature);
 
                 unparentedFeature.AddOrUpdateRemainingWorkForTeam(team, unparentedItems.Count);
             }
@@ -144,7 +126,7 @@ namespace CMFTAspNet.Services.Implementation
 
             foreach (var team in involvedTeams)
             {
-                var remainingWork = await GetWorkItemServiceForTeam(team).GetRemainingRelatedWorkItems(featureForProject.Id, team);
+                var remainingWork = await GetWorkItemServiceForTeam(team).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
                 featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
             }
         }
@@ -176,7 +158,7 @@ namespace CMFTAspNet.Services.Implementation
             {
                 var foundFeatures = await getFeatureAction(project.WorkItemTypes, team);
 
-                foreach (var featureId in foundFeatures.Where(f => AddOrExtendFeature(featuresForProject, f)))
+                foreach (var featureId in foundFeatures.Where(f => AddOrExtendFeature(featuresForProject, f, project)))
                 {
                     await AddFeatureDetails(featuresForProject, team, featureId);
                 }
@@ -194,11 +176,18 @@ namespace CMFTAspNet.Services.Implementation
             featureToUpdate.Order = order;
         }
 
-        private bool AddOrExtendFeature(Dictionary<int, Feature> featuresForProject, int featureId)
+        private bool AddOrExtendFeature(Dictionary<int, Feature> featuresForProject, int featureId, Project project)
         {
             if (!featuresForProject.ContainsKey(featureId))
             {
-                featuresForProject[featureId] = new Feature() { Id = featureId };
+                var newFeature = featureRepository.GetByPredicate(f => f.ReferenceId == featureId);
+
+                if (newFeature == null)
+                {
+                    newFeature = new Feature() { ReferenceId = featureId, Project = project, ProjectId = project.Id };
+                }
+
+                featuresForProject[featureId] = newFeature;
                 return true;
             }
 

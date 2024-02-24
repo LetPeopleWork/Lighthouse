@@ -5,15 +5,15 @@ namespace CMFTAspNet.Services.Implementation.Repositories
 {
     public abstract class RepositoryBase<T> : IRepository<T> where T : class, IEntity
     {
-        private readonly Func<Data.AppContext, DbSet<T>> dbSetGetter;
+        private readonly Func<AppContext, DbSet<T>> dbSetGetter;
 
-        protected RepositoryBase(Data.AppContext context, Func<Data.AppContext, DbSet<T>> dbSetGetter)
+        protected RepositoryBase(AppContext context, Func<AppContext, DbSet<T>> dbSetGetter)
         {
             Context = context;
             this.dbSetGetter = dbSetGetter;
         }
 
-        protected Data.AppContext Context { get; private set; }
+        protected AppContext Context { get; private set; }
 
 
         public void Add(T item)
@@ -26,6 +26,11 @@ namespace CMFTAspNet.Services.Implementation.Repositories
             return dbSetGetter(Context).Find(id) != null;
         }
 
+        public bool Exists(Func<T, bool> predicate)
+        {
+            return GetByPredicate(predicate) != null;
+        }
+
         public virtual IEnumerable<T> GetAll()
         {
             return dbSetGetter(Context).ToList();
@@ -34,6 +39,11 @@ namespace CMFTAspNet.Services.Implementation.Repositories
         public virtual T? GetById(int id)
         {
             return dbSetGetter(Context).SingleOrDefault(t => t.Id == id);
+        }
+
+        public virtual T? GetByPredicate(Func<T, bool> predicate)
+        {
+            return dbSetGetter(Context).SingleOrDefault(predicate);
         }
 
         public void Remove(int id)

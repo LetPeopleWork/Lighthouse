@@ -11,8 +11,6 @@ namespace CMFTAspNet.Tests.Services.Implementation
     {
         private Mock<IWorkItemService> workItemServiceMock;
 
-        private Mock<IRepository<Project>> projectRepositoryMock;
-
         private Mock<IRepository<Feature>> featureRepositoryMock;
 
         private WorkItemCollectorService subject;
@@ -21,7 +19,6 @@ namespace CMFTAspNet.Tests.Services.Implementation
         public void SetUp()
         {
             workItemServiceMock = new Mock<IWorkItemService>();
-            projectRepositoryMock = new Mock<IRepository<Project>>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
 
             var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
@@ -30,7 +27,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<int>()));
             workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<int>()));
 
-            subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object, featureRepositoryMock.Object, projectRepositoryMock.Object);
+            subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object, featureRepositoryMock.Object);
         }
 
         [Test]
@@ -38,34 +35,17 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var team = CreateTeam();
             var project = CreateProject(SearchBy.Tag, [team]);
-            var feature = new Feature(team, 12) { Id = 12 };
+            var feature = new Feature(team, 12) { ReferenceId = 12 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(12));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(12));
 
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features.ToList(), Has.Count.EqualTo(1));
 
             var actualFeature = project.Features.Single();
-            Assert.That(actualFeature.Id, Is.EqualTo(feature.Id));
-        }
-
-        [Test]
-        public async Task CollectFeaturesForProject_StoresFeaturesAndProject()
-        {
-            var team = CreateTeam();
-            var project = CreateProject(SearchBy.Tag, [team]);
-            var feature = new Feature(team, 12) { Id = 12 };
-
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(12));
-
-            await subject.UpdateFeaturesForProject(project);
-
-            projectRepositoryMock.Verify(x => x.Save());
-            featureRepositoryMock.Verify(x => x.Save());
-            featureRepositoryMock.Verify(x => x.Add(It.IsAny<Feature>()));
+            Assert.That(actualFeature.ReferenceId, Is.EqualTo(feature.ReferenceId));
         }
 
         [Test]
@@ -82,8 +62,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.That(project.Features.Count, Is.EqualTo(0));
-            featureRepositoryMock.Verify(x => x.Remove(existingFeature.Id));
+            Assert.That(project.Features, Is.Empty);
         }
 
         [Test]
@@ -91,17 +70,17 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var team = CreateTeam();
             var project = CreateProject(SearchBy.AreaPath, [team]);
-            var feature = new Feature(team, 12) { Id = 12 };
+            var feature = new Feature(team, 12) { ReferenceId = 12 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(12));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(12));
 
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features.ToList(), Has.Count.EqualTo(1));
 
             var actualFeature = project.Features.Single();
-            Assert.That(actualFeature.Id, Is.EqualTo(feature.Id));
+            Assert.That(actualFeature.ReferenceId, Is.EqualTo(feature.ReferenceId));
         }
 
         [Test]
