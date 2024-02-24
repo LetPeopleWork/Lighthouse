@@ -31,6 +31,8 @@ namespace CMFTAspNet.Models
 
         public List<RemainingWork> RemainingWork { get; set; } = new List<RemainingWork>();
 
+        public bool IsUnparentedFeature { get; set; } = false;
+
         public void AddOrUpdateRemainingWorkForTeam(Team team, int remainingWork)
         {
             var existingTeam = RemainingWork.SingleOrDefault(t => t.Team == team);

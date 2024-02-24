@@ -33,7 +33,7 @@ namespace CMFTAspNet.Tests.TestHelpers
             ServiceProvider = serviceScope.ServiceProvider;
 
             DatabaseContext = ServiceProvider.GetService<Data.AppContext>() ?? throw new InvalidOperationException("Could not Find DB Context");
-            
+
             DatabaseContext.Database.Migrate();
         }
 

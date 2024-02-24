@@ -30,7 +30,7 @@
         <tbody>
             @foreach (var project in Model.Projects)
             {
-                foreach (var feature in project.Features)
+                foreach (var feature in project.Features.OrderBy(f => f.Order))
                 {
                     @if (feature.Forecast != null)
                     {

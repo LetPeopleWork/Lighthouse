@@ -55,7 +55,7 @@ namespace CMFTAspNet.Services.Implementation
         {
             foreach (var project in projectRepository.GetAll())
             {
-                ForecastFeatures(project.Features);
+                ForecastFeatures(project.Features.OrderBy(x => x.Order));
             }
 
             await projectRepository.Save();

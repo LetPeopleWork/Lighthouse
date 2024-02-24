@@ -2,22 +2,22 @@
 {
     public class Throughput
     {
-        private readonly int[] throughputPerUnitOfTime;
-
         public Throughput() : this([])
         {
         }
 
         public Throughput(int[] throughputPerUnitOfTime) 
         {
-            this.throughputPerUnitOfTime = throughputPerUnitOfTime;
+            ThroughputPerUnitOfTime = throughputPerUnitOfTime;
         }
 
-        public int History => throughputPerUnitOfTime.Length;
+        public int[] ThroughputPerUnitOfTime { get; set; }
+
+        public int History => ThroughputPerUnitOfTime.Length;
 
         public int GetThroughputOnDay(int day)
         {
-            return throughputPerUnitOfTime[day];
+            return ThroughputPerUnitOfTime[day];
         }
     }
 }

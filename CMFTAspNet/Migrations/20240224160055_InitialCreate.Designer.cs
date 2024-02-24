@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMFTAspNet.Migrations
 {
     [DbContext(typeof(AppContext))]
-    [Migration("20240224125345_InitialCreate")]
+    [Migration("20240224160055_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -24,6 +24,9 @@ namespace CMFTAspNet.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsUnparentedFeature")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

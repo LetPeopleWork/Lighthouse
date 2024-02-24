@@ -225,7 +225,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var actualFeature = project.Features.Single();
             Assert.Multiple(() =>
             {
-                Assert.That(actualFeature.Name, Is.EqualTo("Unparented"));
+                Assert.That(actualFeature.Name, Is.EqualTo("Release 1 - Unparented"));
                 Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(unparentedItems.Length));
             });
         }
@@ -250,7 +250,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var actualFeature = project.Features.Single();
             Assert.Multiple(() =>
             {
-                Assert.That(actualFeature.Name, Is.EqualTo("Unparented"));
+                Assert.That(actualFeature.Name, Is.EqualTo("Release 1 - Unparented"));
                 Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(unparentedItems.Length));
             });
         }

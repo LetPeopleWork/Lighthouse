@@ -11,8 +11,6 @@ namespace CMFTAspNet.Services.Implementation
         private readonly IRepository<Feature> featureRepository;
         private readonly IRepository<Project> projectRepository;
 
-        private readonly int UnparentedFeatureId = int.MaxValue - 1;
-
         public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, IRepository<Project> projectRepository)
         {
             this.workItemServiceFactory = workItemServiceFactory;
@@ -91,11 +89,11 @@ namespace CMFTAspNet.Services.Implementation
                 var notClosedItems = await GetNotClosedItemsBySearchCriteria(project, team);
                 var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team, notClosedItems);
 
-                var unparentedFeature = features.SingleOrDefault(f => f.Id == UnparentedFeatureId);
+                var unparentedFeature = features.SingleOrDefault(f => f.IsUnparentedFeature);
 
                 if (unparentedFeature == null)
                 {
-                    unparentedFeature = new Feature() { Id = UnparentedFeatureId, Name = "Unparented" };
+                    unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", Order = int.MaxValue, IsUnparentedFeature = true };
                     features.Add(unparentedFeature);
                 }
 
@@ -139,7 +137,7 @@ namespace CMFTAspNet.Services.Implementation
 
         private async Task GetRemainingWorkForFeature(Feature featureForProject, List<Team> involvedTeams)
         {
-            if (featureForProject.Id == UnparentedFeatureId)
+            if (featureForProject.IsUnparentedFeature)
             {
                 return;
             }
