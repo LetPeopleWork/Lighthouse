@@ -149,7 +149,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             var feature = new Feature(team, 35);
 
-            subject.ForecastFeatures(feature);
+            subject.ForecastFeatures([feature]);
 
             Assert.Multiple(() =>
             {
@@ -170,7 +170,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature1 = new Feature(team, 35);
             var feature2 = new Feature(team, 20);
 
-            subject.ForecastFeatures(feature1, feature2);
+            subject.ForecastFeatures([feature1, feature2]);
 
             Assert.Multiple(() =>
             {
@@ -196,7 +196,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature1 = new Feature(team, 35);
             var feature2 = new Feature(team, 15);
 
-            subject.ForecastFeatures(feature1, feature2);
+            subject.ForecastFeatures([feature1, feature2]);
 
             Assert.Multiple(() =>
             {
@@ -218,7 +218,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature2 = new Feature(team, 20);
             var feature3 = new Feature(team, 20);
 
-            subject.ForecastFeatures(feature1, feature2, feature3);
+            subject.ForecastFeatures([feature1, feature2, feature3]);
 
             Assert.Multiple(() =>
             {
@@ -250,7 +250,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature2 = new Feature(team, 20);
             var feature3 = new Feature(team, 5);
 
-            subject.ForecastFeatures(feature1, feature2, feature3);
+            subject.ForecastFeatures([feature1, feature2, feature3]);
 
             Assert.Multiple(() =>
             {
@@ -282,7 +282,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature1 = new Feature(team1, 35);
             var feature2 = new Feature(team2, 20);
 
-            subject.ForecastFeatures(feature1, feature2);
+            subject.ForecastFeatures([feature1, feature2]);
 
             Assert.Multiple(() =>
             {
@@ -305,7 +305,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature2 = new Feature(team2, 20);
             var feature3 = new Feature(team2, 7);
 
-            subject.ForecastFeatures(feature1, feature2, feature3);
+            subject.ForecastFeatures([feature1, feature2, feature3]);
 
             Assert.Multiple(() =>
             {
@@ -333,7 +333,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature2 = new Feature(team2, 20);
             var feature3 = new Feature(team2, 20);
 
-            subject.ForecastFeatures(feature1, feature2, feature3);
+            subject.ForecastFeatures([feature1, feature2, feature3]);
 
             Assert.Multiple(() =>
             {
@@ -359,7 +359,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             var feature1 = new Feature([(team1, 20), (team2, 15)]);
 
-            subject.ForecastFeatures(feature1);
+            subject.ForecastFeatures([feature1]);
 
             Assert.Multiple(() =>
             {

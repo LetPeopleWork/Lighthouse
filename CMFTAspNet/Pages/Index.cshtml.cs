@@ -38,7 +38,7 @@ public class IndexModel : PageModel
         var projects = _context.Projects.Include(r => r.Features).ThenInclude(x => x.RemainingWork).ThenInclude(x => x.Team);
         foreach (var project in projects)
         {
-            monteCarloService.ForecastFeatures([.. project.Features]);
+            monteCarloService.ForecastFeatures(project.Features);
 
             await _context.SaveChangesAsync();
         }

@@ -37,12 +37,12 @@ namespace CMFTAspNet.Services.Implementation
         public WhenForecast When(Team team, int remainingItems)
         {
             var fakeFeature = new Feature(team, remainingItems);
-            ForecastFeatures(fakeFeature);
+            ForecastFeatures([fakeFeature]);
 
             return fakeFeature.Forecast;
         }
 
-        public void ForecastFeatures(params Feature[] features)
+        public void ForecastFeatures(IEnumerable<Feature> features)
         {
             var simulationResults = InitializeSimulationResults(features);
             RunMonteCarloSimulation(simulationResults);
@@ -68,7 +68,7 @@ namespace CMFTAspNet.Services.Implementation
             }
         }
 
-        private void UpdateFeatureForecasts(Feature[] features, List<SimulationResult> simulationResults)
+        private void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults)
         {
             foreach (var feature in features)
             {
@@ -80,7 +80,7 @@ namespace CMFTAspNet.Services.Implementation
             }
         }
 
-        private List<SimulationResult> InitializeSimulationResults(Feature[] features)
+        private List<SimulationResult> InitializeSimulationResults(IEnumerable<Feature> features)
         {
             var simulationResults = new List<SimulationResult>();
 

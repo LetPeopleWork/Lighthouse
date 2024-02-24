@@ -5,7 +5,7 @@ namespace CMFTAspNet.Services.Implementation
 {
     public interface IMonteCarloService
     {
-        void ForecastFeatures(params Feature[] features);
+        void ForecastFeatures(IEnumerable<Feature> features);
 
         HowManyForecast HowMany(Throughput throughput, int days);
 
