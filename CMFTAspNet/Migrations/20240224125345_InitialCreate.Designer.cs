@@ -3,16 +3,19 @@ using System;
 using CMFTAspNet.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
 namespace CMFTAspNet.Migrations
 {
-    [DbContext(typeof(Data.AppContext))]
-    partial class CMFTAspNetContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(AppContext))]
+    [Migration("20240224125345_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.2");
@@ -38,6 +41,28 @@ namespace CMFTAspNet.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("Features");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Forecast.IndividualSimulationResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Key")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("WhenForecastId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WhenForecastId");
+
+                    b.ToTable("IndividualSimulationResult");
                 });
 
             modelBuilder.Entity("CMFTAspNet.Models.Forecast.WhenForecast", b =>
@@ -200,6 +225,13 @@ namespace CMFTAspNet.Migrations
                         .HasForeignKey("ProjectId");
                 });
 
+            modelBuilder.Entity("CMFTAspNet.Models.Forecast.IndividualSimulationResult", b =>
+                {
+                    b.HasOne("CMFTAspNet.Models.Forecast.WhenForecast", null)
+                        .WithMany("SimulationResults")
+                        .HasForeignKey("WhenForecastId");
+                });
+
             modelBuilder.Entity("CMFTAspNet.Models.Forecast.WhenForecast", b =>
                 {
                     b.HasOne("CMFTAspNet.Models.Feature", "Feature")
@@ -250,6 +282,11 @@ namespace CMFTAspNet.Migrations
                         .IsRequired();
 
                     b.Navigation("RemainingWork");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Forecast.WhenForecast", b =>
+                {
+                    b.Navigation("SimulationResults");
                 });
 
             modelBuilder.Entity("CMFTAspNet.Models.Project", b =>

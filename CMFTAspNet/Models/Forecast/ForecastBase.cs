@@ -25,7 +25,7 @@
 
         public int TotalTrials { get; set; }
 
-        protected List<IndividualSimulationResult> SimulationResults { get; set; } = new List<IndividualSimulationResult>();
+        public List<IndividualSimulationResult> SimulationResults { get; set; } = new List<IndividualSimulationResult>();
 
         protected SortedDictionary<int, int> SimulationResult
         {

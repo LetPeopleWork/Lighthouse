@@ -144,10 +144,35 @@ namespace CMFTAspNet.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "IndividualSimulationResult",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Key = table.Column<int>(type: "INTEGER", nullable: false),
+                    Value = table.Column<int>(type: "INTEGER", nullable: false),
+                    WhenForecastId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IndividualSimulationResult", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_IndividualSimulationResult_WhenForecast_WhenForecastId",
+                        column: x => x.WhenForecastId,
+                        principalTable: "WhenForecast",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Features_ProjectId",
                 table: "Features",
                 column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_IndividualSimulationResult_WhenForecastId",
+                table: "IndividualSimulationResult",
+                column: "WhenForecastId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RemainingWork_FeatureId",
@@ -180,19 +205,22 @@ namespace CMFTAspNet.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "RemainingWork");
+                name: "IndividualSimulationResult");
 
             migrationBuilder.DropTable(
-                name: "WhenForecast");
+                name: "RemainingWork");
 
             migrationBuilder.DropTable(
                 name: "WorkTrackingSystemOption");
 
             migrationBuilder.DropTable(
-                name: "Features");
+                name: "WhenForecast");
 
             migrationBuilder.DropTable(
                 name: "Teams");
+
+            migrationBuilder.DropTable(
+                name: "Features");
 
             migrationBuilder.DropTable(
                 name: "Projects");

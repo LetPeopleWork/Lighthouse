@@ -1,3 +1,5 @@
+global using AppContext = CMFTAspNet.Data.AppContext;
+
 using CMFTAspNet.Services.Interfaces;
 using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Services.Factories;
@@ -17,6 +19,14 @@ namespace CMFTAspNet
             builder.Services.AddRazorPages();
             builder.Services.AddDbContext<Data.AppContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("AppContext") ?? throw new InvalidOperationException("Connection string 'AppContext' not found")));
+
+
+            // Ensure the database is created and migrate it
+            using (var serviceScope = builder.Services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>().CreateScope())
+            {
+                var dbContext = serviceScope.ServiceProvider.GetService<AppContext>();
+                dbContext.Database.Migrate();
+            }
 
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
             builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();
