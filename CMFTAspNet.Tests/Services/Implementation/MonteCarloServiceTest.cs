@@ -1,6 +1,5 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
-using CMFTAspNet.Models.Teams;
 using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Tests.TestDoubles;
 

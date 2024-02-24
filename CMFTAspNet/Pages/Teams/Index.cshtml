@@ -2,46 +2,34 @@
 @model CMFTAspNet.Pages.Teams.IndexModel
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Team Overview";
 }
 
 <h1>Index</h1>
 
 <p>
-    <a asp-page="Create">Create New</a>
+    <a asp-page="Create">Create New Team</a>
 </p>
 <table class="table">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Team[0].Name)
+                Name
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Team[0].ProjectName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Team[0].FeatureWIP)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Team[0].ThroughputHistory)
+                Project Name
             </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model.Team) {
+@foreach (var item in Model.Teams) {
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.ProjectName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.FeatureWIP)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ThroughputHistory)
             </td>
             <td>
                 <a asp-page="./Edit" asp-route-id="@item.Id">Edit</a> |

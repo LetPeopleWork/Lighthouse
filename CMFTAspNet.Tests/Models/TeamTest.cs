@@ -1,5 +1,4 @@
 ﻿using CMFTAspNet.Models;
-using CMFTAspNet.Models.Teams;
 using CMFTAspNet.WorkTracking;
 
 namespace CMFTAspNet.Tests.Models

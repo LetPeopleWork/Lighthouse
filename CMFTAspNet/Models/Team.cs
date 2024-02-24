@@ -1,8 +1,9 @@
-﻿using CMFTAspNet.WorkTracking;
+﻿using CMFTAspNet.Services.Interfaces;
+using CMFTAspNet.WorkTracking;
 
-namespace CMFTAspNet.Models.Teams
+namespace CMFTAspNet.Models
 {
-    public class Team
+    public class Team : IEntity
     {
         public int Id { get; set; }
 

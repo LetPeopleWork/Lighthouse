@@ -19,7 +19,11 @@ namespace CMFTAspNet.Services.Implementation.Repositories
         public void RemoveFeature(Feature feature)
         {
             var featureToRemove = features.SingleOrDefault(t => t.Id == feature.Id);
-            features.Remove(featureToRemove);
+
+            if (featureToRemove != null)
+            {
+                features.Remove(featureToRemove);
+            }
         }
 
         public void UpdateFeature(Feature feature)

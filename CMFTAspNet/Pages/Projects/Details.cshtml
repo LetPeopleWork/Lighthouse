@@ -1,0 +1,106 @@
+﻿@page
+@model CMFTAspNet.Pages.Projects.DetailsModel
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Project</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Entity.Name)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Entity.Name)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Entity.SearchBy)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Entity.SearchBy)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Entity.WorkItemTypes)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Entity.WorkItemTypes)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Entity.SearchTerm)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Entity.SearchTerm)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Entity.TargetDate)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Entity.TargetDate)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Entity.IncludeUnparentedItems)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Entity.IncludeUnparentedItems)
+        </dd>
+    </dl>
+</div>
+
+<div id="featuresTable">
+    <h4>Features</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Feature Id</th>
+                <th>Name</th>
+                <th>Remaining Work</th>
+                <!-- Add more columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var feature in Model.Entity.Features)
+            {
+                <tr>
+                    <td>@feature.Id</td>
+                    <td>@feature.Name</td>
+
+                    <td>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Team</th>
+                                    <th>Remaining Work</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var remainingWorkItem in feature.RemainingWork)
+                                {
+                                    <tr>
+                                        <td>@remainingWorkItem.Team.Name</td>
+                                        <td>@remainingWorkItem.RemainingWorkItems</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div>
+    <form method="post">
+        <input type="hidden" asp-for="Entity.Id" />
+        <button type="submit" class="btn btn-primary">Refresh Features</button>
+    </form>
+</div>
+
+<div>
+    <a asp-page="./Edit" asp-route-id="@Model.Entity.Id">Edit</a> |
+    <a asp-page="./Index">Back to List</a>
+</div>

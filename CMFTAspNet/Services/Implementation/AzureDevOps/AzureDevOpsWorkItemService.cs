@@ -1,5 +1,5 @@
 ﻿using CMFTAspNet.Cache;
-using CMFTAspNet.Models.Teams;
+using CMFTAspNet.Models;
 using CMFTAspNet.Services.Interfaces;
 using CMFTAspNet.WorkTracking.AzureDevOps;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;

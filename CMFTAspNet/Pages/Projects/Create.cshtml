@@ -1,0 +1,75 @@
+﻿@page
+@using CMFTAspNet.Models
+@model CMFTAspNet.Pages.Projects.CreateModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>Project</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Project.Name" class="control-label"></label>
+                <input asp-for="Project.Name" class="form-control" />
+                <span asp-validation-for="Project.Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Project.SearchBy" class="control-label">Search By:</label>
+                <select asp-for="Project.SearchBy" class="form-control">
+                    @foreach (var searchByValue in Enum.GetValues(typeof(SearchBy)))
+                    {
+                        <option value="@searchByValue">@searchByValue</option>
+                    }
+                </select>
+                <span asp-validation-for="Project.SearchBy" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Project.SearchTerm" class="control-label"></label>
+                <input asp-for="Project.SearchTerm" class="form-control" />
+                <span asp-validation-for="Project.SearchTerm" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Project.WorkItemTypes" class="control-label"></label>
+                <input asp-for="Project.WorkItemTypes" class="form-control" />
+                <span asp-validation-for="Project.WorkItemTypes" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Project.TargetDate" class="control-label"></label>
+                <input asp-for="Project.TargetDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
+                <span asp-validation-for="Project.TargetDate" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Project.IncludeUnparentedItems" /> @Html.DisplayNameFor(model => model.Project.IncludeUnparentedItems)
+                </label>
+            </div>
+
+            <!-- Multi-select dropdown for selecting teams -->
+            <div class="form-group">
+                <label>Select Teams:</label>
+                <select asp-for="SelectedTeams" asp-items="Model.TeamsList" multiple class="form-control"></select>
+                <span asp-validation-for="SelectedTeams" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

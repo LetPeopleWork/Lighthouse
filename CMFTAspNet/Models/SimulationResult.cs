@@ -1,4 +1,4 @@
-﻿using CMFTAspNet.Models.Teams;
+﻿using CMFTAspNet.Models;
 
 namespace CMFTAspNet.Models
 {

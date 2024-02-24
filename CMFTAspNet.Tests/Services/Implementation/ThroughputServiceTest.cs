@@ -1,4 +1,4 @@
-﻿using CMFTAspNet.Models.Teams;
+﻿using CMFTAspNet.Models;
 using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Services.Interfaces;

@@ -1,0 +1,60 @@
+﻿@page
+@model CMFTAspNet.Pages.Projects.EditModel
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Project</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Entity.Id" />
+            <div class="form-group">
+                <label asp-for="Entity.Name" class="control-label"></label>
+                <input asp-for="Entity.Name" class="form-control" />
+                <span asp-validation-for="Entity.Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Entity.SearchBy" class="control-label"></label>
+                <select asp-for="Entity.SearchBy" class="form-control"></select>
+                <span asp-validation-for="Entity.SearchBy" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Entity.WorkItemTypes" class="control-label"></label>
+                <input asp-for="Entity.WorkItemTypes" class="form-control" />
+                <span asp-validation-for="Entity.WorkItemTypes" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Entity.SearchTerm" class="control-label"></label>
+                <input asp-for="Entity.SearchTerm" class="form-control" />
+                <span asp-validation-for="Entity.SearchTerm" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Entity.TargetDate" class="control-label"></label>
+                <input asp-for="Entity.TargetDate" class="form-control" />
+                <span asp-validation-for="Entity.TargetDate" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Entity.IncludeUnparentedItems" /> @Html.DisplayNameFor(model => model.Entity.IncludeUnparentedItems)
+                </label>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="./Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

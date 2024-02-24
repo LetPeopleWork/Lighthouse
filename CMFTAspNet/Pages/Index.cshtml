@@ -1,10 +1,68 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Forecasts";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Forecasts</h1>
+
+    <form method="post">
+        <button type="submit" class="btn btn-primary">Update Forecasts</button>
+    </form>
+
+    <h1>Projects</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Projects</th>
+                <th>Feature</th>
+                <th>Remaining Work</th>
+                <th>50% Probability</th>
+                <th>70% Probability</th>
+                <th>85% Probability</th>
+                <th>95% Probability</th>
+                <th>Likelihood</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var project in Model.Projects)
+            {
+                foreach (var feature in project.Features)
+                {
+                    @* Determine the likelihood color based on the value *@
+                    @if (feature.Forecast != null)
+                    {
+                        var likelihood = feature.Forecast.GetLikelihood((project.TargetDate - DateTime.Today).Value.Days);
+                        var likelihoodColor = likelihood >= 80 ? "green" : likelihood >= 50 ? "amber" : "red";
+
+                        <tr>
+                            <td>@project.Name</td>
+                            <td>@feature.Name</td>
+                            <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
+                            <td>@feature.Forecast?.GetProbability(50)</td>
+                            <td>@feature.Forecast?.GetProbability(70)</td>
+                            <td>@feature.Forecast?.GetProbability(85)</td>
+                            <td>@feature.Forecast?.GetProbability(95)</td>
+                            <td style="background-color: @likelihoodColor">@likelihood</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td>@project.Name</td>
+                            <td>@feature.Name</td>
+                            <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
+                            <td>@feature.Forecast?.GetProbability(50)</td>
+                            <td>@feature.Forecast?.GetProbability(70)</td>
+                            <td>@feature.Forecast?.GetProbability(85)</td>
+                            <td>@feature.Forecast?.GetProbability(95)</td>
+                            <td>N/A</td>
+                        </tr>
+                    }
+                }
+            }
+        </tbody>
+    </table>
 </div>

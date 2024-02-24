@@ -11,32 +11,32 @@
     <div class="col-md-6">
         <form method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Team.Id" />
+            <input type="hidden" asp-for="Entity.Id" />
             <div class="form-group">
-                <label asp-for="Team.Name" class="control-label">Team Name:</label>
-                <input asp-for="Team.Name" class="form-control" />
-                <span asp-validation-for="Team.Name" class="text-danger"></span>
+                <label asp-for="Entity.Name" class="control-label">Team Name:</label>
+                <input asp-for="Entity.Name" class="form-control" />
+                <span asp-validation-for="Entity.Name" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Team.ProjectName" class="control-label">Project Name:</label>
-                <input asp-for="Team.ProjectName" class="form-control" />
-                <span asp-validation-for="Team.ProjectName" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Team.FeatureWIP" class="control-label">Feature WIP:</label>
-                <input asp-for="Team.FeatureWIP" class="form-control" />
-                <span asp-validation-for="Team.FeatureWIP" class="text-danger"></span>
+                <label asp-for="Entity.ProjectName" class="control-label">Project Name:</label>
+                <input asp-for="Entity.ProjectName" class="form-control" />
+                <span asp-validation-for="Entity.ProjectName" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label asp-for="Team.ThroughputHistory" class="control-label">History in Days:</label>
-                <input asp-for="Team.ThroughputHistory" class="form-control" />
-                <span asp-validation-for="Team.ThroughputHistory" class="text-danger"></span>
+                <label asp-for="Entity.FeatureWIP" class="control-label">Feature WIP:</label>
+                <input asp-for="Entity.FeatureWIP" class="form-control" />
+                <span asp-validation-for="Entity.FeatureWIP" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Entity.ThroughputHistory" class="control-label">History in Days:</label>
+                <input asp-for="Entity.ThroughputHistory" class="form-control" />
+                <span asp-validation-for="Entity.ThroughputHistory" class="text-danger"></span>
             </div>
 
             <!-- Display existing AreaPaths -->
-            @foreach (var areaPath in Model.Team.AreaPaths)
+            @foreach (var areaPath in Model.Entity.AreaPaths)
             {
                 <div class="form-group">
                     <label>Area Path:</label>
@@ -46,7 +46,7 @@
             }
 
             <!-- Display existing WorkItemTypes -->
-            @foreach (var workItemType in Model.Team.WorkItemTypes)
+            @foreach (var workItemType in Model.Entity.WorkItemTypes)
             {
                 <div class="form-group">
                     <label>Work Item Type:</label>
@@ -56,7 +56,7 @@
             }
 
             <!-- Display existing IgnoredTags -->
-            @foreach (var ignoredTag in Model.Team.IgnoredTags)
+            @foreach (var ignoredTag in Model.Entity.IgnoredTags)
             {
                 <div class="form-group">
                     <label>Ignored Tag:</label>
@@ -66,7 +66,7 @@
             }
 
             <!-- Display existing AdditionalRelatedFields -->
-            @foreach (var additionalField in Model.Team.AdditionalRelatedFields)
+            @foreach (var additionalField in Model.Entity.AdditionalRelatedFields)
             {
                 <div class="form-group">
                     <label>Additional Related Field:</label>
@@ -76,12 +76,12 @@
             }
 
             <!-- Display existing WorkTrackingSystemOptions -->
-            @for (int i = 0; i < Model.Team.WorkTrackingSystemOptions.Count; i++)
+            @for (int i = 0; i < Model.Entity.WorkTrackingSystemOptions.Count; i++)
             {
                 <div class="form-group">
                     <label>Work Tracking System Option:</label>
-                    <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" class="form-control" value="@Model.Team.WorkTrackingSystemOptions[i].Key" />
-                    <input type="text" name="Team.WorkTrackingSystemOptions[@i].Value" class="form-control" value="@Model.Team.WorkTrackingSystemOptions[i].Value" />
+                    <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" class="form-control" value="@Model.Entity.WorkTrackingSystemOptions[i].Key" />
+                    <input type="text" name="Team.WorkTrackingSystemOptions[@i].Value" class="form-control" value="@Model.Entity.WorkTrackingSystemOptions[i].Value" />
                     <button class="btn btn-outline-danger remove-option" type="button">Remove</button>
                 </div>
             }
@@ -115,9 +115,9 @@
             </div>
 
             <div class="form-group">
-                <label asp-for="Team.WorkTrackingSystem" class="control-label">Work Tracking System:</label>
-                <select asp-for="Team.WorkTrackingSystem" class="form-control"></select>
-                <span asp-validation-for="Team.WorkTrackingSystem" class="text-danger"></span>
+                <label asp-for="Entity.WorkTrackingSystem" class="control-label">Work Tracking System:</label>
+                <select asp-for="Entity.WorkTrackingSystem" class="form-control"></select>
+                <span asp-validation-for="Entity.WorkTrackingSystem" class="text-danger"></span>
             </div>
 
             <!-- Dynamic input fields for WorkTrackingSystemOptions -->

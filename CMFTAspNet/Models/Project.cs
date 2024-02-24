@@ -1,8 +1,8 @@
-﻿using CMFTAspNet.Models.Teams;
+﻿using CMFTAspNet.Services.Interfaces;
 
 namespace CMFTAspNet.Models
 {
-    public class ReleaseConfiguration
+    public class Project : IEntity
     {
         public int Id { get; set; }
 
@@ -16,7 +16,7 @@ namespace CMFTAspNet.Models
 
         public string SearchTerm { get; set; }
 
-        public DateTime TargetDate { get;set; }
+        public DateTime? TargetDate { get;set; }
 
         public List<Feature> Features { get; } = new List<Feature>();
 

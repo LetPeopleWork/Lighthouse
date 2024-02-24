@@ -1,29 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using CMFTAspNet.Data;
-using CMFTAspNet.Models.Teams;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+using CMFTAspNet.Models;
+using CMFTAspNet.Services.Interfaces;
 
 namespace CMFTAspNet.Pages.Teams
 {
     public class IndexModel : PageModel
     {
-        private readonly CMFTAspNet.Data.CMFTAspNetContext _context;
+        private readonly IRepository<Team> teamRepository;
 
-        public IndexModel(CMFTAspNet.Data.CMFTAspNetContext context)
+        public IndexModel(IRepository<Team> teamRepository)
         {
-            _context = context;
+            this.teamRepository = teamRepository;
         }
 
-        public IList<Team> Team { get;set; } = default!;
+        public IList<Team> Teams { get;set; } = default!;
 
-        public async Task OnGetAsync()
+        public void OnGet()
         {
-            Team = await _context.Team.ToListAsync();
+            var teams = teamRepository.GetAll();
+            Teams = new List<Team>(teams);
         }
     }
 }

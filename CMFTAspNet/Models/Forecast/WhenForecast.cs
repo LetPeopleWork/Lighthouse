@@ -3,7 +3,7 @@ namespace CMFTAspNet.Models.Forecast
 {
     public class WhenForecast : ForecastBase
     {
-        public WhenForecast() : base()
+        public WhenForecast() : base(Comparer<int>.Create((x, y) => x.CompareTo(y)))
         {            
         }
 
@@ -11,11 +11,15 @@ namespace CMFTAspNet.Models.Forecast
         {
         }
 
+        public int FeatureId { get; set; }
+
+        public Feature Feature { get; set; }
+
         public double GetLikelihood(int daysToTargetDate)
         {
             var trialCounter = 0;
 
-            foreach (var simulation in simulationResult)
+            foreach (var simulation in SimulationResult)
             {
                 trialCounter += simulation.Value;
 
@@ -25,7 +29,7 @@ namespace CMFTAspNet.Models.Forecast
                 }
             }
 
-            return 100 / ((double)totalTrials) * trialCounter;
+            return 100 / ((double)TotalTrials) * trialCounter;
         }
     }
 }

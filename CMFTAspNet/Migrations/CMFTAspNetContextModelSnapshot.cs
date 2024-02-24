@@ -17,7 +17,106 @@ namespace CMFTAspNet.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.2");
 
-            modelBuilder.Entity("CMFTAspNet.Models.Teams.Team", b =>
+            modelBuilder.Entity("CMFTAspNet.Models.Feature", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("Features");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Forecast.WhenForecast", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FeatureId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalTrials")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeatureId")
+                        .IsUnique();
+
+                    b.ToTable("WhenForecast");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Project", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IncludeUnparentedItems")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SearchBy")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SearchTerm")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("TargetDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkItemTypes")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.RemainingWork", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FeatureId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RemainingWorkItems")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeatureId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("RemainingWork");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Team", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -42,6 +141,9 @@ namespace CMFTAspNet.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ProjectName")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -62,7 +164,9 @@ namespace CMFTAspNet.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Team");
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("Teams");
                 });
 
             modelBuilder.Entity("CMFTAspNet.WorkTracking.WorkTrackingSystemOption", b =>
@@ -89,14 +193,73 @@ namespace CMFTAspNet.Migrations
                     b.ToTable("WorkTrackingSystemOption");
                 });
 
+            modelBuilder.Entity("CMFTAspNet.Models.Feature", b =>
+                {
+                    b.HasOne("CMFTAspNet.Models.Project", null)
+                        .WithMany("Features")
+                        .HasForeignKey("ProjectId");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Forecast.WhenForecast", b =>
+                {
+                    b.HasOne("CMFTAspNet.Models.Feature", "Feature")
+                        .WithOne("Forecast")
+                        .HasForeignKey("CMFTAspNet.Models.Forecast.WhenForecast", "FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feature");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.RemainingWork", b =>
+                {
+                    b.HasOne("CMFTAspNet.Models.Feature", "Feature")
+                        .WithMany("RemainingWork")
+                        .HasForeignKey("FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CMFTAspNet.Models.Team", "Team")
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feature");
+
+                    b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Team", b =>
+                {
+                    b.HasOne("CMFTAspNet.Models.Project", null)
+                        .WithMany("InvolvedTeams")
+                        .HasForeignKey("ProjectId");
+                });
+
             modelBuilder.Entity("CMFTAspNet.WorkTracking.WorkTrackingSystemOption", b =>
                 {
-                    b.HasOne("CMFTAspNet.Models.Teams.Team", null)
+                    b.HasOne("CMFTAspNet.Models.Team", null)
                         .WithMany("WorkTrackingSystemOptions")
                         .HasForeignKey("TeamId");
                 });
 
-            modelBuilder.Entity("CMFTAspNet.Models.Teams.Team", b =>
+            modelBuilder.Entity("CMFTAspNet.Models.Feature", b =>
+                {
+                    b.Navigation("Forecast")
+                        .IsRequired();
+
+                    b.Navigation("RemainingWork");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Project", b =>
+                {
+                    b.Navigation("Features");
+
+                    b.Navigation("InvolvedTeams");
+                });
+
+            modelBuilder.Entity("CMFTAspNet.Models.Team", b =>
                 {
                     b.Navigation("WorkTrackingSystemOptions");
                 });

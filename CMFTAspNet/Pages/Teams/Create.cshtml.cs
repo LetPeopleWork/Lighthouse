@@ -1,16 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using CMFTAspNet.Models.Teams;
+using CMFTAspNet.Models;
+using CMFTAspNet.Services.Interfaces;
 
 namespace CMFTAspNet.Pages.Teams
 {
     public class CreateModel : PageModel
     {
-        private readonly Data.CMFTAspNetContext _context;
+        private readonly IRepository<Team> teamRepository;
 
-        public CreateModel(Data.CMFTAspNetContext context)
+        public CreateModel(IRepository<Team> teamRepository)
         {
-            _context = context;
+            this.teamRepository = teamRepository;
         }
 
         public IActionResult OnGet()
@@ -21,7 +22,6 @@ namespace CMFTAspNet.Pages.Teams
         [BindProperty]
         public Team Team { get; set; } = default!;
 
-        // To protect from overposting attacks, see https://aka.ms/RazorPagesCRUD
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
@@ -29,8 +29,8 @@ namespace CMFTAspNet.Pages.Teams
                 return Page();
             }
 
-            _context.Team.Add(Team);
-            await _context.SaveChangesAsync();
+            teamRepository.Add(Team);
+            await teamRepository.Save();
 
             return RedirectToPage("./Index");
         }

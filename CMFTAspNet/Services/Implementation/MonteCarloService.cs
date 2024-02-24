@@ -1,11 +1,10 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
-using CMFTAspNet.Models.Teams;
 using CMFTAspNet.Services.Interfaces;
 
 namespace CMFTAspNet.Services.Implementation
 {
-    public class MonteCarloService
+    public class MonteCarloService : IMonteCarloService
     {
         private readonly int trials;
         private readonly IRandomNumberService randomNumberService;
@@ -87,9 +86,9 @@ namespace CMFTAspNet.Services.Implementation
 
             foreach (var feature in features)
             {
-                foreach (var remainingWorkKey in feature.RemainingWork.Keys)
+                foreach (var remainingWork in feature.RemainingWork)
                 {
-                    simulationResults.Add(new SimulationResult(remainingWorkKey, feature, feature.RemainingWork[remainingWorkKey]));
+                    simulationResults.Add(new SimulationResult(remainingWork.Team, feature, remainingWork.RemainingWorkItems));
                 }
             }
 

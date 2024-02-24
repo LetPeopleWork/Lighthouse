@@ -2,7 +2,7 @@
 {
     public class HowManyForecast : ForecastBase
     {
-        public HowManyForecast() : base()
+        public HowManyForecast() : base(Comparer<int>.Create((x, y) => y.CompareTo(x)))
         {            
         }
 

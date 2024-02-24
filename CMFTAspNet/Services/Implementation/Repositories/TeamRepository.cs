@@ -1,31 +1,18 @@
-﻿using CMFTAspNet.Models.Teams;
+﻿using CMFTAspNet.Data;
+using CMFTAspNet.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CMFTAspNet.Services.Implementation.Repositories
 {
-    public class TeamRepository
+    public class TeamRepository : RepositoryBase<Team>
     {
-        private readonly List<Team> teams = new List<Team>();
-
-        public void AddTeam(Team team)
+        public TeamRepository(CMFTAspNetContext context) : base(context, (context) => context.Teams)
         {
-            teams.Add(team);
         }
 
-        public IEnumerable<Team> GetTeams()
+        public override Team? GetById(int id)
         {
-            return teams;
-        }
-
-        public void RemoveTeam(Team team)
-        {
-            var teamToRemove = teams.SingleOrDefault(t => t.Id == team.Id);
-            teams.Remove(teamToRemove);
-        }
-
-        public void UpdateTeam(Team team)
-        {
-            RemoveTeam(team);
-            AddTeam(team);
+            return Context.Teams.Include(x => x.WorkTrackingSystemOptions).SingleOrDefault(t => t.Id == id);
         }
     }
 }

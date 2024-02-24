@@ -34,6 +34,12 @@ csharp_style_expression_bodied_accessors = true:silent
 csharp_style_expression_bodied_lambdas = false:silent
 csharp_style_expression_bodied_local_functions = false:silent
 
+# CS8600: Converting null literal or possible null value to non-nullable type.
+dotnet_diagnostic.CS8600.severity = none
+
+# IDE0090: Use 'new(...)'
+dotnet_diagnostic.IDE0090.severity = none
+
 [*.{cs,vb}]
 #### Naming styles ####
 
