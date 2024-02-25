@@ -2,7 +2,7 @@
 {
     public interface IRepository<T> where T : class
     {
-        void Add(T newItem);
+        void Add(T item);
 
         IEnumerable<T> GetAll();
 

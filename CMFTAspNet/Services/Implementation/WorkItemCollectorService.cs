@@ -1,6 +1,7 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Interfaces;
+using System.Linq;
 
 namespace CMFTAspNet.Services.Implementation
 {
@@ -33,17 +34,13 @@ namespace CMFTAspNet.Services.Implementation
 
         private void ExtrapolateNotBrokenDownFeatures(List<Feature> features, Project project)
         {
-            foreach (var feature in features)
+            foreach (var feature in features.Where(feature => feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0))
             {
-                if (feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0)
+                var numberOfTeams = feature.RemainingWork.Count;
+                var buckets = SplitIntoBuckets(project.DefaultAmountOfWorkItemsPerFeature, numberOfTeams);
+                for (var index = 0; index < numberOfTeams; index++)
                 {
-                    var numberOfTeams = feature.RemainingWork.Count;
-                    var buckets = SplitIntoBuckets(project.DefaultAmountOfWorkItemsPerFeature, numberOfTeams);
-
-                    for (var index = 0; index < numberOfTeams; index++)
-                    {
-                        feature.RemainingWork[index].RemainingWorkItems = buckets[index];
-                    }
+                    feature.RemainingWork[index].RemainingWorkItems = buckets[index];
                 }
             }
         }
@@ -102,7 +99,7 @@ namespace CMFTAspNet.Services.Implementation
                 var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team, notClosedItems);
 
                 var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = int.MaxValue - 1, Order = int.MaxValue, IsUnparentedFeature = true, ProjectId = project.Id, Project = project };
-                var unparentedFeatureId = project.Features.FirstOrDefault(f => f.IsUnparentedFeature)?.Id;                
+                var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;                
 
                 if (unparentedFeatureId != null)
                 {
