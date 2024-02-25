@@ -11,9 +11,9 @@ namespace CMFTAspNet.Tests.Models
             var team = new Team();
 
             var rawThroughput = new int[] { 1, 3, 0, 0, 0, 1, 3 };
-            team.RawThroughput = rawThroughput;
+            team.UpdateThroughput(rawThroughput);
 
-            Assert.That(team.RawThroughput, Is.EqualTo(rawThroughput));
+            Assert.That(team.Throughput.ThroughputPerUnitOfTime, Is.EqualTo(rawThroughput));
         }
 
         [Test]

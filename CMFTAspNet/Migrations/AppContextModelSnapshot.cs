@@ -74,6 +74,9 @@ namespace CMFTAspNet.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("FeatureId")
                         .HasColumnType("INTEGER");
 
@@ -185,6 +188,9 @@ namespace CMFTAspNet.Migrations
 
                     b.Property<int>("ThroughputHistory")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ThroughputUpdateTime")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("WorkItemTypes")
                         .IsRequired()

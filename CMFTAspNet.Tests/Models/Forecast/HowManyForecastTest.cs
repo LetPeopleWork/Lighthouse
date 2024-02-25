@@ -22,7 +22,7 @@ namespace CMFTAspNet.Tests.Models.Forecast
                 {4, 2 },
             };
 
-            var subject = new HowManyForecast(simulationResult);
+            var subject = new HowManyForecast(simulationResult, 1);
 
             var forecast = subject.GetProbability(percentile);
 

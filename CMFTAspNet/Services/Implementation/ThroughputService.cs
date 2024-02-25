@@ -23,7 +23,9 @@ namespace CMFTAspNet.Services.Implementation
 
             var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
             var throughput = await workItemService.GetClosedWorkItemsForTeam(team.ThroughputHistory, team);
-            team.RawThroughput = throughput;
+
+            team.UpdateThroughput(throughput);
+
         }
     }
 }

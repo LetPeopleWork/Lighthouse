@@ -1,6 +1,4 @@
-﻿using CMFTAspNet.Models;
-
-namespace CMFTAspNet.Models
+﻿namespace CMFTAspNet.Models
 {
     public class SimulationResult
     {

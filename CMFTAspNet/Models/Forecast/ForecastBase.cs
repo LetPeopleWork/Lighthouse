@@ -18,6 +18,7 @@
             }
 
             TotalTrials = simulationResult.Values.Sum();
+            CreationTime = DateTime.Now;
             this.comparer = comparer;
         }
 
@@ -25,9 +26,11 @@
 
         public int TotalTrials { get; set; }
 
+        public DateTime CreationTime { get; set; }
+
         public List<IndividualSimulationResult> SimulationResults { get; set; } = new List<IndividualSimulationResult>();
 
-        protected SortedDictionary<int, int> SimulationResult
+        public SortedDictionary<int, int> SimulationResult
         {
             get
             {

@@ -7,13 +7,16 @@ namespace CMFTAspNet.Models.Forecast
         {            
         }
 
-        public WhenForecast(Dictionary<int, int> simulationResult) : base(simulationResult, Comparer<int>.Create((x, y) => x.CompareTo(y)))
+        public WhenForecast(Dictionary<int, int> simulationResult, int numberOfItems) : base(simulationResult, Comparer<int>.Create((x, y) => x.CompareTo(y)))
         {
+            NumberOfItems = numberOfItems;
         }
 
         public int FeatureId { get; set; }
 
         public Feature Feature { get; set; }
+
+        public int NumberOfItems { get; }
 
         public double GetLikelihood(int daysToTargetDate)
         {

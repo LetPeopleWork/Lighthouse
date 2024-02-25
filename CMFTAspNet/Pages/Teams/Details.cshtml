@@ -8,13 +8,13 @@
 <script src="/lib/Chart/Chart.min.js" integrity="sha256-d9Np49KdviSc4EDxsOPieKUBCpTmrW16eLD+BB4Vaio="></script>
 
 
-<h1>@Model.Entity.Name</h1>
+<h1>@Model.Entity.Name - Team Overview</h1>
 
-<div class="row">
+<div id="actions" class="row">
     <div class="col">
         <form method="post">
             <input type="hidden" name="id" value="@Model.Entity.Id" />
-            <button type="submit" asp-page-handler="UpdateThroughput" class="btn btn-primary">Refresh Throughput</button>
+            <button type="submit" asp-page-handler="UpdateThroughput" class="btn btn-primary">Update Throughput</button>
         </form>
     </div>
     <div class="col">
@@ -25,51 +25,152 @@
     </div>
 </div>
 
-
-
 <div id="featuresTable">
-    <h4>Features</h4>
-    <table class="table">
-        <caption>Forecasts</caption>
-        <thead>
-            <tr>
-                <th>Feature</th>
-                <th>Remaining Work</th>
-                <th>50% Probability</th>
-                <th>70% Probability</th>
-                <th>85% Probability</th>
-                <th>95% Probability</th>
-                <th>Project</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var feature in Model.Features.OrderBy(f => f.Order))
-            {
-                @if (feature.Forecast != null)
+    @if (Model.Features.Any())
+    {
+        <h4>Feature Forecast</h4>
+        <table class="table">
+            <caption>Feature Forecasts</caption>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Remaining Work</th>
+                    <th>50% Probability</th>
+                    <th>70% Probability</th>
+                    <th>85% Probability</th>
+                    <th>95% Probability</th>
+                    <th>Updated on</th>
+                    <th>Project</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var feature in Model.Features.OrderBy(f => f.Order))
                 {
-                    string GetFutureDate(int daysInFuture)
+                    @if (feature.Forecast != null)
                     {
-                        var futureDate = DateTime.Today.AddDays(daysInFuture);
-                        return futureDate.ToString("d");
-                    }
+                        string GetFutureDate(int daysInFuture)
+                        {
+                            var futureDate = DateTime.Today.AddDays(daysInFuture);
+                            return futureDate.ToString("d");
+                        }
 
-                    <tr>
-                        <td>@feature.Name</td>
-                        <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
-                        <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
-                        <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
-                        <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
-                        <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
-                        <td><a asp-page="../Projects/Details" asp-route-id="@feature.ProjectId">@feature.Project.Name</a></td>
-                    </tr>
+                        <tr>
+                            <td>@feature.Name</td>
+                            <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
+                            <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
+                            <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
+                            <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
+                            <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
+                            <td>@feature.Forecast.CreationTime.ToString("G")</td>
+                            <td><a asp-page="../Projects/Details" asp-route-id="@feature.ProjectId">@feature.Project.Name</a></td>
+                        </tr>
+                    }
                 }
-            }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    }
 </div>
 
-<canvas id="throughputRunChart" width="400" height="150"></canvas>
+<div id="manualForecasts">
+    <h4>Manual Forecasts</h4>
+    <div class="row">
+        <div class="col">
+            <form method="post">
+                <input type="hidden" name="id" value="@Model.Entity.Id" />
+                <label for="itemsRemaining">Remaining Items:</label>
+                <input type="number" name="itemsRemaining" value="" />
+                <button type="submit" asp-page-handler="WhenForecast" class="btn btn-primary">Forecast</button>
+            </form>
+        </div>
+        <div class="col">
+            <form method="post">
+                <input type="hidden" name="id" value="@Model.Entity.Id" />
+                <label for="targetDate">Target Date:</label>
+                <input type="date" name="targetDate" value="" />
+                <button type="submit" asp-page-handler="HowManyForecast" class="btn btn-primary">Forecast</button>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            @if (Model.WhenForecast != null)
+            {
+                <h7>When will @Model.WhenForecast.NumberOfItems items be done?</h7>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>50% Probability</th>
+                            <th>70% Probability</th>
+                            <th>85% Probability</th>
+                            <th>95% Probability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.WhenForecast != null)
+                        {
+                            string GetFutureDate(int daysInFuture)
+                            {
+                                var futureDate = DateTime.Today.AddDays(daysInFuture);
+                                return futureDate.ToString("d");
+                            }
 
+                            <tr>
+                                <td>@GetFutureDate(@Model.WhenForecast.GetProbability(50))</td>
+                                <td>@GetFutureDate(@Model.WhenForecast.GetProbability(70))</td>
+                                <td>@GetFutureDate(@Model.WhenForecast.GetProbability(85))</td>
+                                <td>@GetFutureDate(@Model.WhenForecast.GetProbability(95))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div id="WhenChartContainer">
+                    <canvas id="whenChart" width="400" height="200"></canvas>
+                </div>
+            }
+        </div>
+        <div class="col">
+
+            @if (Model.HowManyForecast != null)
+            {
+                <h7>How Many Items will be done till @Model.HowManyForecast.TargetDate.ToString("d")?</h7>
+                <table class="table">
+                    <caption>How Many Forecast</caption>
+                    <thead>
+                        <tr>
+                            <th>50% Probability</th>
+                            <th>70% Probability</th>
+                            <th>85% Probability</th>
+                            <th>95% Probability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HowManyForecast != null)
+                        {
+                            <tr>
+                                <td>@Model.HowManyForecast.GetProbability(50)</td>
+                                <td>@Model.HowManyForecast.GetProbability(70)</td>
+                                <td>@Model.HowManyForecast.GetProbability(85)</td>
+                                <td>@Model.HowManyForecast.GetProbability(95)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div id="HowManyChartContainer">
+                    <canvas id="howManyChart" width="400" height="200"></canvas>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+<div id="throughput">
+    <h4>Throughput</h4>
+    <h7>Updated on: @Model.Entity.ThroughputUpdateTime.ToString("G")</h7>
+    <canvas id="throughputRunChart" width="400" height="150"></canvas>
+</div>
 <div>
     <a asp-page="./Edit" asp-route-id="@Model.Entity.Id">Edit</a> |
     <a asp-page="./Index">Back to List</a>
@@ -77,14 +178,14 @@
 
 <script>
     var ctx = document.getElementById('throughputRunChart').getContext('2d');
-    var rawData = @Html.Raw(Json.Serialize(Model.Entity.RawThroughput)); // Serialize the RawThroughput array to JSON
+    var rawData = @Html.Raw(Json.Serialize(Model.Entity.Throughput.ThroughputPerUnitOfTime)); // Serialize the RawThroughput array to JSON
     var labels = Array.from({ length: rawData.length }, (_, i) => i.toString()); // Generate labels from 0 to length of RawThroughput array
     var chartData = {
         labels: labels,
         datasets: [{
-            label: 'Raw Throughput',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)', // Bar fill color
-            borderColor: 'rgba(75, 192, 192, 1)', // Bar border color
+            label: 'Throughput',
+            backgroundColor: 'rgba(48, 87, 78, 1)', // Bar fill color
+            borderColor: 'rgba(48, 87, 78, 1)', // Bar border color
             borderWidth: 1,
             data: rawData // Use RawThroughput array as data
         }]
@@ -104,3 +205,113 @@
     });
 </script>
 
+<script>
+    // Get the simulation results from the model directly
+    var simulationResults = @Html.Raw(Json.Serialize(Model.WhenForecast?.SimulationResult));
+
+    // Check if simulationResults is not null and not empty
+    if (simulationResults && Object.keys(simulationResults).length > 0) {
+        // Extract keys and values for x-axis and y-axis
+        var keys = Object.keys(simulationResults).map(function (key) {
+            return parseInt(key);
+        });
+        var values = Object.values(simulationResults);
+
+        // Create a bar chart
+        var ctx = document.getElementById('whenChart').getContext('2d');
+        var whenChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: keys, // x-axis labels
+                datasets: [{
+                    label: 'Simulation', // legend label
+                    data: values, // y-axis values
+                    backgroundColor: 'rgba(48, 87, 78, 1)', // bar fill color
+                    borderColor: 'rgba(48, 87, 78, 1)', // bar border color
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true // Start the scale from zero
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Values' // Label for the y-axis
+                        }
+                    }],
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Keys' // Label for the x-axis
+                        }
+                    }]
+                }
+            }
+        });
+    } else {
+        // Handle the case when simulationResults is null or empty
+        var ctx = document.getElementById('whenChart').getContext('2d');
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available', 200, 100);
+    }
+</script>
+
+
+<script>
+    // Get the simulation results from the model directly
+    var simulationResults = @Html.Raw(Json.Serialize(Model.HowManyForecast?.SimulationResult));
+
+    // Check if simulationResults is not null and not empty
+    if (simulationResults && Object.keys(simulationResults).length > 0) {
+        // Extract keys and values for x-axis and y-axis
+        var keys = Object.keys(simulationResults).map(function (key) {
+            return parseInt(key);
+        });
+        var values = Object.values(simulationResults);
+
+        // Create a bar chart
+        var ctx = document.getElementById('howManyChart').getContext('2d');
+        var whenChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: keys, // x-axis labels
+                datasets: [{
+                    label: 'Simulation Results', // legend label
+                    data: values, // y-axis values
+                    backgroundColor: 'rgba(48, 87, 78, 1)', // bar fill color
+                    borderColor: 'rgba(48, 87, 78, 1)', // bar border color
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true // Start the scale from zero
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Values' // Label for the y-axis
+                        }
+                    }],
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Keys' // Label for the x-axis
+                        }
+                    }]
+                }
+            }
+        });
+    } else {
+        // Handle the case when simulationResults is null or empty
+        var ctx = document.getElementById('howManyChart').getContext('2d');
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available', 200, 100);
+    }
+</script>

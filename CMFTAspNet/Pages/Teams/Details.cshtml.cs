@@ -2,6 +2,7 @@
 using CMFTAspNet.Services.Interfaces;
 using CMFTAspNet.Models;
 using CMFTAspNet.Services.Implementation;
+using CMFTAspNet.Models.Forecast;
 
 namespace CMFTAspNet.Pages.Teams
 {
@@ -11,7 +12,7 @@ namespace CMFTAspNet.Pages.Teams
         private readonly IRepository<Feature> featureRepository;
         private readonly IMonteCarloService monteCarloService;
 
-        public DetailsModel(IRepository<Team> teamRepository, IThroughputService throughputService, IRepository<Feature> featureRepository, IMonteCarloService monteCarloService) : base(teamRepository) 
+        public DetailsModel(IRepository<Team> teamRepository, IThroughputService throughputService, IRepository<Feature> featureRepository, IMonteCarloService monteCarloService) : base(teamRepository)
         {
             this.throughputService = throughputService;
             this.featureRepository = featureRepository;
@@ -19,6 +20,12 @@ namespace CMFTAspNet.Pages.Teams
         }
 
         public List<Feature> Features { get; set; } = new List<Feature>();
+
+        [BindProperty]
+        public HowManyForecast HowManyForecast { get; set; }
+
+        [BindProperty]
+        public WhenForecast WhenForecast { get; set; }
 
         protected override void OnGet(int id)
         {
@@ -30,21 +37,56 @@ namespace CMFTAspNet.Pages.Teams
 
         public async Task<IActionResult> OnPostUpdateThroughput(int? id)
         {
-            var team = GetById(id);
-            if (team == null)
+            return await GetTeamAndReloadPage(id, async (Team team) =>
             {
-                return NotFound();
-            }
+                await throughputService.UpdateThroughput(team);
+                Repository.Update(team);
 
-            await throughputService.UpdateThroughput(team);
-            Repository.Update(team);
-            
-            await Repository.Save();
-
-            return OnGet(id);
+                await Repository.Save();
+            });
         }
 
         public async Task<IActionResult> OnPostUpdateForecast(int? id)
+        {
+            return await GetTeamAndReloadPage(id, async (Team team) =>
+            {
+                monteCarloService.ForecastFeatures(GetFeaturesForTeam(id.Value));
+                await featureRepository.Save();
+            });
+        }
+
+        public async Task<IActionResult> OnPostWhenForecast(int? id, int? itemsRemaining)
+        {
+            return await GetTeamAndReloadPage(id, (Team team) =>
+            {
+                if (itemsRemaining.HasValue)
+                {
+                    WhenForecast = monteCarloService.When(team, itemsRemaining.Value);
+                }
+
+                return Task.CompletedTask;
+            });
+        }
+
+        public async Task<IActionResult> OnPostHowManyForecast(int? id, DateTime? targetDate)
+        {
+            return await GetTeamAndReloadPage(id, (Team team) =>
+            {
+                if (targetDate.HasValue)
+                {
+                    var daysTillTargetDate = (targetDate.Value - DateTime.Today).Days;
+
+                    if (daysTillTargetDate > 0)
+                    {
+                        HowManyForecast = monteCarloService.HowMany(team.Throughput, daysTillTargetDate);
+                    }
+                }
+
+                return Task.CompletedTask;
+            });
+        }
+
+        private async Task<IActionResult> GetTeamAndReloadPage(int? id, Func<Team, Task> postAction)
         {
             var team = GetById(id);
             if (!id.HasValue || team == null)
@@ -52,8 +94,7 @@ namespace CMFTAspNet.Pages.Teams
                 return NotFound();
             }
 
-            monteCarloService.ForecastFeatures(GetFeaturesForTeam(id.Value));
-            await featureRepository.Save();
+            await postAction(team);
 
             return OnGet(id);
         }

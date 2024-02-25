@@ -67,6 +67,7 @@ namespace CMFTAspNet.Migrations
                     IgnoredTags = table.Column<string>(type: "TEXT", nullable: false),
                     AdditionalRelatedFields = table.Column<string>(type: "TEXT", nullable: false),
                     FeatureWIP = table.Column<int>(type: "INTEGER", nullable: false),
+                    ThroughputUpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
                     RawThroughput = table.Column<string>(type: "TEXT", nullable: false),
                     ThroughputHistory = table.Column<int>(type: "INTEGER", nullable: false),
                     ProjectId = table.Column<int>(type: "INTEGER", nullable: true)
@@ -89,7 +90,8 @@ namespace CMFTAspNet.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     FeatureId = table.Column<int>(type: "INTEGER", nullable: false),
-                    TotalTrials = table.Column<int>(type: "INTEGER", nullable: false)
+                    TotalTrials = table.Column<int>(type: "INTEGER", nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -137,6 +139,7 @@ namespace CMFTAspNet.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Key = table.Column<string>(type: "TEXT", nullable: false),
                     Value = table.Column<string>(type: "TEXT", nullable: false),
+                    Secret = table.Column<bool>(type: "INTEGER", nullable: false),
                     TeamId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>

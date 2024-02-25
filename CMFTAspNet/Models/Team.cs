@@ -25,6 +25,8 @@ namespace CMFTAspNet.Models
 
         public int FeatureWIP { get; set; } = 1;
 
+        public DateTime ThroughputUpdateTime { get; set; }
+
         public int[] RawThroughput { get; set; } = [1];
 
         public int ThroughputHistory { get; set; } = 30;
@@ -41,6 +43,12 @@ namespace CMFTAspNet.Models
             }
 
             return workTrackingOption.Value;
+        }
+
+        public void UpdateThroughput(int[] throughput)
+        {
+            RawThroughput = throughput;
+            ThroughputUpdateTime = DateTime.Now; ;
         }
     }
 }

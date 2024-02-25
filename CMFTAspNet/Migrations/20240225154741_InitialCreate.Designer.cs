@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMFTAspNet.Migrations
 {
     [DbContext(typeof(AppContext))]
-    [Migration("20240225095258_IsSecretWorkTrackingOption")]
-    partial class IsSecretWorkTrackingOption
+    [Migration("20240225154741_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -76,6 +76,9 @@ namespace CMFTAspNet.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("FeatureId")
                         .HasColumnType("INTEGER");
@@ -188,6 +191,9 @@ namespace CMFTAspNet.Migrations
 
                     b.Property<int>("ThroughputHistory")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ThroughputUpdateTime")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("WorkItemTypes")
                         .IsRequired()

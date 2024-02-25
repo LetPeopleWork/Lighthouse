@@ -31,7 +31,7 @@ namespace CMFTAspNet.Services.Implementation
             });
 
 
-            return new HowManyForecast(simulationResults);
+            return new HowManyForecast(simulationResults, days);
         }
 
         public WhenForecast When(Team team, int remainingItems)
@@ -75,7 +75,7 @@ namespace CMFTAspNet.Services.Implementation
                 var simulationResultForFeature = simulationResults
                     .Where(x => x.Feature == feature);
 
-                var featureForecasts = simulationResultForFeature.Select(result => new WhenForecast(result.SimulationResults));
+                var featureForecasts = simulationResultForFeature.Select(result => new WhenForecast(result.SimulationResults, result.InitialRemainingItems));
                 feature.SetFeatureForecast(featureForecasts);
             }
         }

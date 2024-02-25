@@ -1,4 +1,5 @@
 ﻿using CMFTAspNet.Models;
+using CMFTAspNet.Models.Forecast;
 using CMFTAspNet.Pages.Teams;
 using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Services.Interfaces;
@@ -113,6 +114,38 @@ namespace CMFTAspNet.Tests.Pages.Teams
             throughputServiceMock.Verify(x => x.UpdateThroughput(team), Times.Once());
             teamRepositoryMock.Verify(x => x.Update(team), Times.Once());
             teamRepositoryMock.Verify(x => x.Save(), Times.Once());
+        }
+
+        [Test]
+        public async Task OnPostWhenForecast_RunsForecast_SetsPropertyAsync()
+        {
+            var team = new Team { Id = 2, Name = "Team", ProjectName = "Project" };
+
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+            var subject = CreateSubject();
+
+            var expectedForecast = new WhenForecast();
+            monteCarloServiceMock.Setup(x => x.When(team, 42)).Returns(expectedForecast);
+
+            var result = await subject.OnPostWhenForecast(12, 42);
+
+            Assert.That(subject.WhenForecast, Is.EqualTo(expectedForecast));
+        }
+
+        [Test]
+        public async Task OnPostHowManyForecast_RunsForecast_SetsPropertyAsync()
+        {
+            var team = new Team { Id = 2, Name = "Team", ProjectName = "Project" };
+
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+            var subject = CreateSubject();
+
+            var expectedForecast = new HowManyForecast();
+            monteCarloServiceMock.Setup(x => x.HowMany(It.IsAny<Throughput>(), 32)).Returns(expectedForecast);
+
+            var result = await subject.OnPostHowManyForecast(12, DateTime.Now.AddDays(32));
+
+            Assert.That(subject.HowManyForecast, Is.EqualTo(expectedForecast));
         }
 
         private DetailsModel CreateSubject()

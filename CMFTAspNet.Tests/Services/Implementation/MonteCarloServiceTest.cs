@@ -390,8 +390,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             {
                 Name = "Team",
                 FeatureWIP = featureWip,
-                RawThroughput = throughput,
             };
+
+            team.UpdateThroughput(throughput);
 
             return team;
         }

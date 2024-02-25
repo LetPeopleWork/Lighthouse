@@ -24,7 +24,7 @@ namespace CMFTAspNet.Tests.Models.Forecast
                 {8, 0 }
             };
 
-            var subject = new WhenForecast(simulationResult);
+            var subject = new WhenForecast(simulationResult, 1);
 
             var forecast = subject.GetProbability(percentile);
 
@@ -51,7 +51,7 @@ namespace CMFTAspNet.Tests.Models.Forecast
                 {6, 2 }
             };
 
-            var subject = new WhenForecast(simulationResult);
+            var subject = new WhenForecast(simulationResult, 1);
 
             var forecast = subject.GetLikelihood(daysToTargetDate);
 

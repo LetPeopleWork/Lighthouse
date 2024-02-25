@@ -49,7 +49,7 @@ namespace CMFTAspNet.Pages.Teams
 
             await teamRepository.Save();
 
-            return RedirectToPage("./Index");
+            return RedirectToPage("./Details", Team.Id);
         }
     }
 }
