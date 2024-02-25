@@ -56,6 +56,25 @@
         </tbody>
     </table>
 </div>
+<div id="teamsTable">
+    <h4>Involved Teams</h4>
+    <table class="table">
+        <caption>Teams</caption>
+        <thead>
+            <tr>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var team in Model.Entity.InvolvedTeams)
+            {
+                <tr>
+                    <td><a asp-page="../Teams/Details" asp-route-id="@team.Id">@team.Name</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 
 <div>
     <form method="post">
