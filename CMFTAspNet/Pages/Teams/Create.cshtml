@@ -41,7 +41,7 @@
             <div class="form-group">
                 <label>Area Paths:</label>
                 <div id="areaPathsContainer">
-                    @foreach (var areaPath in Model.Team.AreaPaths)
+                    @foreach (var areaPath in Model.Team?.AreaPaths ?? new List<string>())
                     {
                         <div class="input-group mt-2">
                             <input type="text" name="Team.AreaPaths" value="@areaPath" class="form-control" />
@@ -59,7 +59,7 @@
             <div class="form-group">
                 <label>Work Item Types:</label>
                 <div id="workItemTypesContainer">
-                    @foreach (var workItemType in Model.Team.WorkItemTypes)
+                    @foreach (var workItemType in Model.Team?.WorkItemTypes ?? new List<string>())
                     {
                         <div class="input-group mt-2">
                             <input type="text" name="Team.WorkItemTypes" value="@workItemType" class="form-control" />
@@ -76,7 +76,7 @@
             <div class="form-group">
                 <label>Ignored Tags:</label>
                 <div id="ignoredTagsContainer">
-                    @foreach (var ignoredTag in Model.Team.IgnoredTags)
+                    @foreach (var ignoredTag in Model.Team?.IgnoredTags ?? new List<string>())
                     {
                         <div class="input-group mt-2">
                             <input type="text" name="Team.IgnoredTags" value="@ignoredTag" class="form-control" />
@@ -93,7 +93,7 @@
             <div class="form-group">
                 <label>Additional Related Fields:</label>
                 <div id="additionalFieldsContainer">
-                    @foreach (var additionalField in Model.Team.AdditionalRelatedFields)
+                    @foreach (var additionalField in Model.Team?.AdditionalRelatedFields ?? new List<string>())
                     {
                         <div class="input-group mt-2">
                             <input type="text" name="Team.AdditionalRelatedFields" value="@additionalField" class="form-control" />

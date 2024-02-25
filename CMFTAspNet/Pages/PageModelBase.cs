@@ -20,14 +20,21 @@ namespace CMFTAspNet.Pages
         {
             var entity = GetById(id);
 
-            if (entity == null)
+            if (!id.HasValue || entity == null)
             {
                 return NotFound();
             }
 
             Entity = entity;
 
+            OnGet(id.Value);
+
             return Page();
+        }
+
+        protected virtual void OnGet(int id)
+        {
+            // To be overriden
         }
 
         protected T? GetById(int? id)

@@ -1,5 +1,6 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Pages.Teams;
+using CMFTAspNet.Services.Implementation;
 using CMFTAspNet.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -9,14 +10,71 @@ namespace CMFTAspNet.Tests.Pages.Teams
 {
     public class DetailsModelTest
     {
-        private Mock<IRepository<Team>> repositoryMock;
+        private Mock<IRepository<Team>> teamRepositoryMock;
+        private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IThroughputService> throughputServiceMock;
+        private Mock<IMonteCarloService> monteCarloServiceMock;
 
         [SetUp]
         public void Setup()
         {
-            repositoryMock = new Mock<IRepository<Team>>();
+            teamRepositoryMock = new Mock<IRepository<Team>>();
+            featureRepositoryMock = new Mock<IRepository<Feature>>();
             throughputServiceMock = new Mock<IThroughputService>();
+            monteCarloServiceMock = new Mock<IMonteCarloService>();
+        }
+
+        [Test]
+        public void OnGet_ExistingTeam_GetsFeaturesForTeam()
+        {
+            var team = new Team { Id = 12, Name = "MyTeam" };
+
+            var features = new List<Feature>();
+            var featureForTeam = CreateFeatureForTeam(team, 37);
+
+            features.Add(featureForTeam);
+            features.Add(new Feature { Name = "Other Feature" });
+
+            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+
+            var subject = CreateSubject();
+
+            // Act
+            subject.OnGet(12);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(subject.Features, Has.Count.EqualTo(1));
+                Assert.That(subject.Features.Single(), Is.EqualTo(featureForTeam));
+            });
+        }
+
+        [Test]
+        public async Task OnPostUpdateForecast_GivenFeaturesForTeam_UpdatesForecastsAsync()
+        {
+            var team = new Team { Id = 12, Name = "My Team" };
+
+            var featuresForTeam = new List<Feature>
+            {
+                CreateFeatureForTeam(team, 37),
+                CreateFeatureForTeam(team, 12),
+                CreateFeatureForTeam(team, 57),
+            };
+
+            var features = new List<Feature> { new Feature() };
+            features.AddRange(featuresForTeam);
+            features.Add(new Feature());
+
+            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+
+            var subject = CreateSubject();
+
+            // Act
+            await subject.OnPostUpdateForecast(12);
+
+            monteCarloServiceMock.Verify(x => x.ForecastFeatures(featuresForTeam));
         }
 
         [Test]
@@ -24,19 +82,19 @@ namespace CMFTAspNet.Tests.Pages.Teams
         {
             var subject = CreateSubject();
 
-            var result = await subject.OnPost(null);
+            var result = await subject.OnPostUpdateThroughput(null);
 
             Assert.That(result, Is.InstanceOf<NotFoundResult>());
-            repositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Never());
+            teamRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Never());
         }
 
         [Test]
         public async Task OnPost_TeamDoesNotExist_ReturnsNotFoundAsync()
         {
-            repositoryMock.Setup(x => x.GetById(12)).Returns((Team)null);
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns((Team)null);
             var subject = CreateSubject();
 
-            var result = await subject.OnPost(12);
+            var result = await subject.OnPostUpdateThroughput(12);
 
             Assert.That(result, Is.InstanceOf<NotFoundResult>());
         }
@@ -46,20 +104,27 @@ namespace CMFTAspNet.Tests.Pages.Teams
         {
             var team = new Team { Id = 2, Name = "Team", ProjectName = "Project" };
 
-            repositoryMock.Setup(x => x.GetById(12)).Returns(team);
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
             var subject = CreateSubject();
 
-            var result = await subject.OnPost(12);
+            var result = await subject.OnPostUpdateThroughput(12);
 
             Assert.That(result, Is.InstanceOf<PageResult>());
             throughputServiceMock.Verify(x => x.UpdateThroughput(team), Times.Once());
-            repositoryMock.Verify(x => x.Update(team), Times.Once());
-            repositoryMock.Verify(x => x.Save(), Times.Once());
+            teamRepositoryMock.Verify(x => x.Update(team), Times.Once());
+            teamRepositoryMock.Verify(x => x.Save(), Times.Once());
         }
 
         private DetailsModel CreateSubject()
         {
-            return new DetailsModel(repositoryMock.Object, throughputServiceMock.Object);
+            return new DetailsModel(teamRepositoryMock.Object, throughputServiceMock.Object, featureRepositoryMock.Object, monteCarloServiceMock.Object);
+        }
+
+        private Feature CreateFeatureForTeam(Team team, int featureId)
+        {
+            var featureForTeam = new Feature { Name = "FeatureForTeam " };
+            featureForTeam.RemainingWork.Add(new RemainingWork(team, featureId, featureForTeam));
+            return featureForTeam;
         }
     }
 }

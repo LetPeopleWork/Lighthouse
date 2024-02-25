@@ -8,54 +8,67 @@
 <script src="/lib/Chart/Chart.min.js" integrity="sha256-d9Np49KdviSc4EDxsOPieKUBCpTmrW16eLD+BB4Vaio="></script>
 
 
-<h1>Details</h1>
+<h1>@Model.Entity.Name</h1>
 
-<div>
-    <h4>Team</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.Name)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.Name)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.ProjectName)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.ProjectName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.WorkItemTypes)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.WorkItemTypes)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.FeatureWIP)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.FeatureWIP)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.ThroughputHistory)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.ThroughputHistory)
-        </dd>
-    </dl>
+<div class="row">
+    <div class="col">
+        <form method="post">
+            <input type="hidden" name="id" value="@Model.Entity.Id" />
+            <button type="submit" asp-page-handler="UpdateThroughput" class="btn btn-primary">Refresh Throughput</button>
+        </form>
+    </div>
+    <div class="col">
+        <form method="post">
+            <input type="hidden" name="id" value="@Model.Entity.Id" />
+            <button type="submit" asp-page-handler="UpdateForecast" class="btn btn-primary">Update Forecast</button>
+        </form>
+    </div>
+</div>
+
+
+
+<div id="featuresTable">
+    <h4>Features</h4>
+    <table class="table">
+        <caption>Forecasts</caption>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Remaining Work</th>
+                <th>50% Probability</th>
+                <th>70% Probability</th>
+                <th>85% Probability</th>
+                <th>95% Probability</th>
+                <th>Project</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var feature in Model.Features.OrderBy(f => f.Order))
+            {
+                @if (feature.Forecast != null)
+                {
+                    string GetFutureDate(int daysInFuture)
+                    {
+                        var futureDate = DateTime.Today.AddDays(daysInFuture);
+                        return futureDate.ToString("d");
+                    }
+
+                    <tr>
+                        <td>@feature.Name</td>
+                        <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
+                        <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
+                        <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
+                        <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
+                        <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
+                        <td><a asp-page="../Projects/Details" asp-route-id="@feature.ProjectId">@feature.Project.Name</a></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
 </div>
 
 <canvas id="throughputRunChart" width="400" height="150"></canvas>
-
-<!-- Add button to trigger update action -->
-<div>
-    <form method="post">
-        <input type="hidden" asp-for="Entity.Id" />
-        <button type="submit" class="btn btn-primary">Refresh Throughput</button>
-    </form>
-</div>
 
 <div>
     <a asp-page="./Edit" asp-route-id="@Model.Entity.Id">Edit</a> |

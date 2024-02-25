@@ -20,7 +20,7 @@ namespace CMFTAspNet.Pages.Projects
         [BindProperty]
         public Project Project { get; set; } = default!;
 
-        public bool IsEditMode => Project.Id != default;
+        public bool IsEditMode => Project.Id > 0;
 
         [BindProperty]
         public List<int> SelectedTeams { get; set; } = new List<int>();
@@ -41,8 +41,12 @@ namespace CMFTAspNet.Pages.Projects
                     SelectedTeams.AddRange(Project.InvolvedTeams.Select(t => t.Id));
                 }
             }
+            else
+            {
+                Project = new Project();
+            }
 
-            return Page();
+            return Project != null ? Page() : NotFound();
         }
 
         public async Task<IActionResult> OnPostAsync()

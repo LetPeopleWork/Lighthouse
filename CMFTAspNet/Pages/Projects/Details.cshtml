@@ -5,53 +5,10 @@
     ViewData["Title"] = "Details";
 }
 
-<h1>Details</h1>
-
-<div>
-    <h4>Project</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.Name)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.Name)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.SearchBy)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.SearchBy)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.WorkItemTypes)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.WorkItemTypes)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.SearchTerm)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.SearchTerm)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.TargetDate)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.TargetDate)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Entity.IncludeUnparentedItems)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Entity.IncludeUnparentedItems)
-        </dd>
-    </dl>
-</div>
+<h1>@Model.Entity.Name</h1>
 
 <div id="featuresTable">
-    <h4>Features</h4>
+    <h4>Target Date: @Model.Entity.TargetDate?.ToString("d")</h4>
     <table class="table">
         <caption>Forecasts</caption>
         <thead>

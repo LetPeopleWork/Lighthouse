@@ -39,14 +39,14 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
         {
             var witClient = GetClientService<WorkItemTrackingHttpClient>(team);
 
-            return await GetWorkItemsByTag(witClient, tag, workItemTypes, team, ["Closed", "Removed"]);
+            return await GetWorkItemsByTag(witClient, tag, workItemTypes, team, ["Done", "Closed", "Removed"]);
         }
 
         public async Task<List<int>> GetNotClosedWorkItemsByAreaPath(IEnumerable<string> workItemTypes, string areaPath, Team team)
         {
             var witClient = GetClientService<WorkItemTrackingHttpClient>(team);
 
-            return await GetWorkItemsByAreaPath(witClient, areaPath, workItemTypes, team, ["Closed", "Removed"]);
+            return await GetWorkItemsByAreaPath(witClient, areaPath, workItemTypes, team, ["Done", "Closed", "Removed"]);
         }
 
         public async Task<int> GetRemainingRelatedWorkItems(int featureId, Team team)
@@ -100,7 +100,7 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
 
             var areaPathQuery = string.Join(" OR ", team.AreaPaths.Select(path => $"[{AzureDevOpsFieldNames.AreaPath}] UNDER '{path}'"));
             var workItemsQuery = string.Join(" OR ", team.WorkItemTypes.Select(type => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{type}'"));
-            var stateQuery = PrepareStateQuery(["Closed", "Removed"]);
+            var stateQuery = PrepareStateQuery(["Closed", "Done", "Removed"]);
             var ignoredTagsQuery = PrepareIgnoredTagsQuery(team.IgnoredTags);
 
             var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{team.ProjectName}' " +
@@ -225,7 +225,7 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
             var workItemsQuery = string.Join(" OR ", team.WorkItemTypes.Select(type => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{type}'"));
             var ignoredTagsQuery = PrepareIgnoredTagsQuery(team.IgnoredTags);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{team.ProjectName}' AND [{AzureDevOpsFieldNames.State}] = 'Closed' " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{team.ProjectName}' AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done')" +
                 $"AND ({areaPathQuery}) " +
                 $"AND ({workItemsQuery}) " +
                 $"{ignoredTagsQuery}" +
