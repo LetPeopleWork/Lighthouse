@@ -6,6 +6,7 @@ using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Implementation.Repositories;
 using Microsoft.EntityFrameworkCore;
 using CMFTAspNet.Models;
+using CMFTAspNet.Factories;
 
 namespace CMFTAspNet
 {
@@ -20,12 +21,18 @@ namespace CMFTAspNet
             builder.Services.AddDbContext<Data.AppContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("AppContext") ?? throw new InvalidOperationException("Connection string 'AppContext' not found")));
 
+            // Repos
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
             builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();
             builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
+
+            // Factories
+            builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
+            builder.Services.AddScoped<IWorkTrackingOptionsFactory, WorkTrackingOptionsFactory>();
+
+            // Services
             builder.Services.AddScoped<IRandomNumberService, RandomNumberService>();
             builder.Services.AddScoped<IMonteCarloService, MonteCarloService>();
-            builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
             builder.Services.AddScoped<IThroughputService, ThroughputService>();
             builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
 
@@ -46,6 +53,7 @@ namespace CMFTAspNet
 
             app.UseAuthorization();
 
+            app.MapControllers();
             app.MapRazorPages();
 
             app.Run();

@@ -109,7 +109,7 @@
 
             <div class="form-group">
                 <label asp-for="Team.WorkTrackingSystem" class="control-label">Work Tracking System:</label>
-                <select asp-for="Team.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()">
+                <select asp-for="Team.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()" id="workTrackingSystem">
                     <option selected="selected" value="">Please select</option>
                 </select>
                 <span asp-validation-for="Team.WorkTrackingSystem" class="text-danger"></span>
@@ -190,27 +190,37 @@
                     '</div>');
             });
 
-            // Function to add WorkTrackingSystemOption input fields
-            $("#addOption").click(function () {
-                var index = $("#workTrackingOptionsContainer").children().length;
-                var html = '<div class="input-group mt-2">' +
-                    '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Key" class="form-control" placeholder="Key" />' +
-                    '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Value" class="form-control" placeholder="Value" />' +
-                    '<div class="input-group-append">' +
-                    '<button class="btn btn-outline-danger remove-option" type="button">Remove</button>' +
-                    '</div>' +
-                    '</div>';
-                $("#workTrackingOptionsContainer").append(html);
+            $("#workTrackingSystem").change(function () {
+                var selectedSystem = $(this).val();
+                $.get("/api/WorkTrackingSystemOptions?selectedSystem=" + selectedSystem, function (data) {
+                    // Clear existing options
+                    $("#workTrackingOptionsContainer").empty();
 
-                $(".remove-option").click(function () {
-                    $(this).parent().parent().remove();
+                    // Add new options
+                    $.each(data, function (index, option) {
+                        var inputType = option.secret ? "password" : "text";
+                        var html = '<div class="input-group mt-2">' +
+                            '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Key" value="' + option.key + '" class="form-control" placeholder="Key" />' +
+                            '<input type="' + inputType + '" name="Team.WorkTrackingSystemOptions[' + index + '].Value" value="' + option.value + '" class="form-control" placeholder="Value" />' +
+                            '<div class="input-group-append">' +
+                            '<button class="btn btn-outline-danger remove-option" type="button">Remove</button>' +
+                            '</div>' +
+                            '</div>';
+                        $("#workTrackingOptionsContainer").append(html);
+                    });
                 });
             });
 
-            // Function to remove dynamically added input field
-            $(document).on("click", ".remove-field", function () {
+
+            $(".remove-option").click(function () {
                 $(this).parent().parent().remove();
             });
         });
+
+        // Function to remove dynamically added input field
+        $(document).on("click", ".remove-field", function () {
+            $(this).parent().parent().remove();
+        });
     </script>
 }
+
