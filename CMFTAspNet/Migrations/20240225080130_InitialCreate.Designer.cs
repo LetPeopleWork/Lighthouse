@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMFTAspNet.Migrations
 {
     [DbContext(typeof(AppContext))]
-    [Migration("20240224184137_InitialCreate")]
+    [Migration("20240225080130_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -95,6 +95,9 @@ namespace CMFTAspNet.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DefaultAmountOfWorkItemsPerFeature")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IncludeUnparentedItems")
@@ -276,7 +279,8 @@ namespace CMFTAspNet.Migrations
                 {
                     b.HasOne("CMFTAspNet.Models.Project", null)
                         .WithMany("InvolvedTeams")
-                        .HasForeignKey("ProjectId");
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("CMFTAspNet.WorkTracking.WorkTrackingSystemOption", b =>

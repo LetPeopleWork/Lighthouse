@@ -14,13 +14,22 @@ namespace CMFTAspNet.Pages.Teams
             this.teamRepository = teamRepository;
         }
 
-        public IActionResult OnGet()
-        {
-            return Page();
-        }
-
         [BindProperty]
         public Team Team { get; set; } = default!;
+
+        public IActionResult OnGet(int? id)
+        {
+            if (id.HasValue)
+            {
+                Team = teamRepository.GetById(id.Value);
+            }
+            else
+            {
+                Team = new Team();
+            }
+
+            return Team != null ? Page() : NotFound();
+        }
 
         public async Task<IActionResult> OnPostAsync()
         {
@@ -29,7 +38,15 @@ namespace CMFTAspNet.Pages.Teams
                 return Page();
             }
 
-            teamRepository.Add(Team);
+            if (Team.Id > 0)
+            {
+                teamRepository.Update(Team);
+            }
+            else
+            {
+                teamRepository.Add(Team);
+            }
+
             await teamRepository.Save();
 
             return RedirectToPage("./Index");

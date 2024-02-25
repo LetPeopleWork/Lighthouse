@@ -18,17 +18,46 @@ namespace CMFTAspNet.Tests.Pages.Teams
         }
 
         [Test]
-        public void OnGet_ReturnsPage()
+        public void OnGet_CreateNew_ReturnsPageAsync()
         {
             var subject = CreateSubject();
 
-            var result = subject.OnGet();
+            var result = subject.OnGet(null);
 
             Assert.That(result, Is.InstanceOf<PageResult>());
         }
 
         [Test]
-        public async Task OnPost_ModelNotValid_ReturnsPage()
+        public void OnGet_EditExisting_IdExists_ReturnsPageAsync()
+        {
+            var subject = CreateSubject();
+            var team = new Team { Name = "Team" };
+
+            repositoryMock.Setup(x => x.GetById(12)).Returns(team);
+
+            var result = subject.OnGet(12);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.InstanceOf<PageResult>());
+                Assert.That(subject.Team, Is.EqualTo(team));
+            });
+        }
+
+        [Test]
+        public void OnGet_EditExisting_IdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            repositoryMock.Setup(x => x.GetById(12)).Returns((Team)null);
+
+            var result = subject.OnGet(12);
+
+            Assert.That(result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public async Task OnPost_CreateNew_ModelNotValid_ReturnsPage()
         {
             var subject = CreateSubject();
             subject.ModelState.AddModelError("Error", "Error");
@@ -41,7 +70,7 @@ namespace CMFTAspNet.Tests.Pages.Teams
         }
 
         [Test]
-        public async Task OnPost_ModelValid_AddsTeamAndSaves()
+        public async Task OnPost_CreateNew_ModelValid_AddsTeamAndSaves()
         {
             var subject = CreateSubject();
             subject.Team = new Team { Name = "Test" };
@@ -50,6 +79,19 @@ namespace CMFTAspNet.Tests.Pages.Teams
 
             Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
             repositoryMock.Verify(x => x.Add(subject.Team));
+            repositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task OnPost_EditExisting_ModelValid_UpdatesTeamAndSaves()
+        {
+            var subject = CreateSubject();
+            subject.Team = new Team { Name = "Test", Id = 12 };
+
+            var result = await subject.OnPostAsync();
+
+            Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
+            repositoryMock.Verify(x => x.Update(subject.Team));
             repositoryMock.Verify(x => x.Save());
         }
 

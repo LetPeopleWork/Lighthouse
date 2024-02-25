@@ -20,20 +20,30 @@ namespace CMFTAspNet.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<RemainingWork>()
-                .HasOne(r => r.Feature)         // One RemainingWork is associated with one Feature
-                .WithMany(f => f.RemainingWork) // One Feature can have many RemainingWork
+                .HasOne(r => r.Feature)
+                .WithMany(f => f.RemainingWork)
                 .HasForeignKey(r => r.FeatureId)
                 .IsRequired();
+
+            modelBuilder.Entity<RemainingWork>()
+                .HasOne(r => r.Feature)
+                .WithMany(f => f.RemainingWork)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Feature>()
+                .HasOne(f => f.Project)
+                .WithMany(p => p.Features)
+                .HasForeignKey(f => f.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Feature>()
                 .HasOne(f => f.Forecast)
                 .WithOne(wf => wf.Feature)
                 .HasForeignKey<WhenForecast>(wf => wf.FeatureId);
 
-            // Optionally, configure cascade delete behavior
-            modelBuilder.Entity<Feature>()
-                .HasMany(f => f.RemainingWork)
-                .WithOne(r => r.Feature)
+            modelBuilder.Entity<Project>()
+                .HasMany(p => p.InvolvedTeams)
+                .WithOne()
                 .OnDelete(DeleteBehavior.Cascade);
 
             Database.Migrate();

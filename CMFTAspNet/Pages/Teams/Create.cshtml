@@ -1,12 +1,12 @@
-﻿@page
+﻿@page "{id?}"
 @using CMFTAspNet.WorkTracking
 @model CMFTAspNet.Pages.Teams.CreateModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = Model.Team?.Id > 0 ? "Edit Team" : "Create Team";
 }
 
-<h1>Create Team</h1>
+<h1>@ViewData["Title"]</h1>
 
 <div class="row">
     <div class="col-md-6">
@@ -16,6 +16,8 @@
                 <label asp-for="Team.Name" class="control-label">Team Name:</label>
                 <input asp-for="Team.Name" class="form-control" />
                 <span asp-validation-for="Team.Name" class="text-danger"></span>
+
+                <input type="hidden" asp-for="Team.Id" />
             </div>
             <div class="form-group">
                 <label asp-for="Team.ProjectName" class="control-label">Project Name:</label>
@@ -38,30 +40,72 @@
             <!-- Dynamic input fields for AreaPaths -->
             <div class="form-group">
                 <label>Area Paths:</label>
-                <div id="areaPathsContainer"></div>
+                <div id="areaPathsContainer">
+                    @foreach (var areaPath in Model.Team.AreaPaths)
+                    {
+                        <div class="input-group mt-2">
+                            <input type="text" name="Team.AreaPaths" value="@areaPath" class="form-control" />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                            </div>
+                        </div>
+                    }
+                </div>
                 <button type="button" id="addAreaPath" class="btn btn-primary mt-2">Add Area Path</button>
             </div>
+
 
             <!-- Dynamic input fields for WorkItemTypes -->
             <div class="form-group">
                 <label>Work Item Types:</label>
-                <div id="workItemTypesContainer"></div>
+                <div id="workItemTypesContainer">
+                    @foreach (var workItemType in Model.Team.WorkItemTypes)
+                    {
+                        <div class="input-group mt-2">
+                            <input type="text" name="Team.WorkItemTypes" value="@workItemType" class="form-control" />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                            </div>
+                        </div>
+                    }
+                </div>
                 <button type="button" id="addWorkItemType" class="btn btn-primary mt-2">Add Work Item Type</button>
             </div>
 
             <!-- Dynamic input fields for IgnoredTags -->
             <div class="form-group">
                 <label>Ignored Tags:</label>
-                <div id="ignoredTagsContainer"></div>
+                <div id="ignoredTagsContainer">
+                    @foreach (var ignoredTag in Model.Team.IgnoredTags)
+                    {
+                        <div class="input-group mt-2">
+                            <input type="text" name="Team.IgnoredTags" value="@ignoredTag" class="form-control" />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                            </div>
+                        </div>
+                    }
+                </div>
                 <button type="button" id="addIgnoredTag" class="btn btn-primary mt-2">Add Ignored Tag</button>
             </div>
 
             <!-- Dynamic input fields for AdditionalRelatedFields -->
             <div class="form-group">
                 <label>Additional Related Fields:</label>
-                <div id="additionalFieldsContainer"></div>
+                <div id="additionalFieldsContainer">
+                    @foreach (var additionalField in Model.Team.AdditionalRelatedFields)
+                    {
+                        <div class="input-group mt-2">
+                            <input type="text" name="Team.AdditionalRelatedFields" value="@additionalField" class="form-control" />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                            </div>
+                        </div>
+                    }
+                </div>
                 <button type="button" id="addAdditionalField" class="btn btn-primary mt-2">Add Additional Field</button>
             </div>
+
 
             <div class="form-group">
                 <label asp-for="Team.WorkTrackingSystem" class="control-label">Work Tracking System:</label>
@@ -74,12 +118,24 @@
             <!-- Dynamic input fields for WorkTrackingSystemOptions -->
             <div class="form-group">
                 <label>Work Tracking System Options:</label>
-                <div id="workTrackingOptionsContainer"></div>
+                <div id="workTrackingOptionsContainer">
+                    @for (int i = 0; i < Model.Team.WorkTrackingSystemOptions.Count; i++)
+                    {
+                        <div class="input-group mt-2">
+                            <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" value="@Model.Team.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" />
+                            <input type="text" name="Team.WorkTrackingSystemOptions[@i].Value" value="@Model.Team.WorkTrackingSystemOptions[i].Value" class="form-control" placeholder="Value" />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-danger remove-option" type="button">Remove</button>
+                            </div>
+                        </div>
+                    }
+                </div>
                 <button type="button" id="addOption" class="btn btn-primary mt-2">Add Option</button>
             </div>
 
+
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="@ViewData["Title"]" class="btn btn-primary" />
             </div>
         </form>
     </div>
@@ -88,7 +144,6 @@
 <div>
     <a asp-page="Index">Back to List</a>
 </div>
-
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");

@@ -276,7 +276,8 @@ namespace CMFTAspNet.Migrations
                 {
                     b.HasOne("CMFTAspNet.Models.Project", null)
                         .WithMany("InvolvedTeams")
-                        .HasForeignKey("ProjectId");
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("CMFTAspNet.WorkTracking.WorkTrackingSystemOption", b =>

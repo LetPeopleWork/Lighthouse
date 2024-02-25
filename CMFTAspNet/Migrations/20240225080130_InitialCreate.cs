@@ -22,7 +22,8 @@ namespace CMFTAspNet.Migrations
                     WorkItemTypes = table.Column<string>(type: "TEXT", nullable: false),
                     SearchTerm = table.Column<string>(type: "TEXT", nullable: false),
                     TargetDate = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    IncludeUnparentedItems = table.Column<bool>(type: "INTEGER", nullable: false)
+                    IncludeUnparentedItems = table.Column<bool>(type: "INTEGER", nullable: false),
+                    DefaultAmountOfWorkItemsPerFeature = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -77,7 +78,8 @@ namespace CMFTAspNet.Migrations
                         name: "FK_Teams_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
