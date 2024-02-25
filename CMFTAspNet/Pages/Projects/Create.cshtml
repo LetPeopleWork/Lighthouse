@@ -3,7 +3,7 @@
 @model CMFTAspNet.Pages.Projects.CreateModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = Model.IsEditMode ? "Edit" : "Create";
 }
 
 <h1>Create</h1>
@@ -18,6 +18,7 @@
                 <label asp-for="Project.Name" class="control-label"></label>
                 <input asp-for="Project.Name" class="form-control" />
                 <span asp-validation-for="Project.Name" class="text-danger"></span>
+                <input type="hidden" asp-for="Project.Id" />
             </div>
             <div class="form-group">
                 <label asp-for="Project.SearchBy" class="control-label">Search By:</label>
@@ -34,11 +35,23 @@
                 <input asp-for="Project.SearchTerm" class="form-control" />
                 <span asp-validation-for="Project.SearchTerm" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="Project.WorkItemTypes" class="control-label"></label>
-                <input asp-for="Project.WorkItemTypes" class="form-control" />
-                <span asp-validation-for="Project.WorkItemTypes" class="text-danger"></span>
+            <div class="form-group" id="workItemTypesContainer">
+                <label>Work Item Types:</label>
+                @if (Model.Project.WorkItemTypes != null)
+                {
+                    foreach (var workItemType in Model.Project.WorkItemTypes)
+                    {
+                        <div class="input-group mb-3">
+                            <input asp-for="Project.WorkItemTypes" class="form-control" value="@workItemType" />
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-work-item" data-work-item="@workItemType">Remove</button>
+                            </div>
+                        </div>
+                    }
+                }
             </div>
+            <button type="button" class="btn btn-success" id="addWorkItemType">Add Work Item Type</button>
+
             <div class="form-group">
                 <label asp-for="Project.TargetDate" class="control-label"></label>
                 <input asp-for="Project.TargetDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
@@ -63,7 +76,7 @@
             </div>
 
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Save" class="btn btn-primary" />
             </div>
         </form>
     </div>
@@ -78,3 +91,57 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("addWorkItemType").addEventListener("click", function () {
+            var container = document.getElementById("workItemTypesContainer");
+            var input = document.createElement("input");
+            input.setAttribute("class", "form-control");
+            input.setAttribute("name", "Project.WorkItemTypes");
+            input.setAttribute("placeholder", "Enter work item type");
+            container.appendChild(input);
+
+            var buttonDiv = document.createElement("div");
+            buttonDiv.setAttribute("class", "input-group-append");
+            var button = document.createElement("button");
+            button.setAttribute("type", "button");
+            button.setAttribute("class", "btn btn-danger remove-work-item");
+            button.textContent = "Remove";
+            buttonDiv.appendChild(button);
+
+            var inputGroup = document.createElement("div");
+            inputGroup.setAttribute("class", "input-group mb-3");
+            inputGroup.appendChild(input);
+            inputGroup.appendChild(buttonDiv);
+            container.appendChild(inputGroup);
+
+            button.addEventListener("click", function () {
+                container.removeChild(inputGroup);
+            });
+        });
+
+        document.querySelectorAll(".remove-work-item").forEach(function (button) {
+            button.addEventListener("click", function () {
+                var container = document.getElementById("workItemTypesContainer");
+                container.removeChild(button.closest(".input-group.mb-3"));
+            });
+        });
+    });
+
+    // Function to prepopulate existing work item types when editing
+    window.onload = function () {
+        var existingWorkItemTypes = document.querySelectorAll('.form-control[name="Project.WorkItemTypes"]');
+        existingWorkItemTypes.forEach(function (input) {
+            if (input.value !== "") {
+                var container = document.getElementById("workItemTypesContainer");
+                var inputGroup = input.closest(".input-group.mb-3");
+                var button = inputGroup.querySelector(".btn.btn-danger.remove-work-item");
+                container.appendChild(inputGroup);
+
+                button.addEventListener("click", function () {
+                    container.removeChild(inputGroup);
+                });
+            }
+        });
+    };
+</script>

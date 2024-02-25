@@ -20,15 +20,27 @@ namespace CMFTAspNet.Pages.Projects
         [BindProperty]
         public Project Project { get; set; } = default!;
 
+        public bool IsEditMode => Project.Id != default;
+
         [BindProperty]
         public List<int> SelectedTeams { get; set; } = new List<int>();
 
         public SelectList TeamsList { get; set; }
 
-        public IActionResult OnGet()
+        public IActionResult OnGet(int? id)
         {
             var teams = teamRepository.GetAll();
             TeamsList = new SelectList(teams, "Id", "Name");
+
+            if (id.HasValue)
+            {
+                Project = projectRepository.GetById(id.Value);
+
+                if (Project != null)
+                {
+                    SelectedTeams.AddRange(Project.InvolvedTeams.Select(t => t.Id));
+                }
+            }
 
             return Page();
         }
@@ -40,6 +52,25 @@ namespace CMFTAspNet.Pages.Projects
                 return Page();
             }
 
+            SetupInvolvedTeams();
+
+            if (IsEditMode)
+            {
+                projectRepository.Update(Project);
+            }
+            else
+            {
+                projectRepository.Add(Project);
+            }
+
+            await projectRepository.Save();
+
+            return RedirectToPage("./Index");
+        }
+
+        private void SetupInvolvedTeams()
+        {
+            Project.InvolvedTeams.Clear();
             foreach (var involvedTeamId in SelectedTeams)
             {
                 var team = teamRepository.GetById(involvedTeamId);
@@ -48,11 +79,6 @@ namespace CMFTAspNet.Pages.Projects
                     Project.InvolvedTeams.Add(team);
                 }
             }
-
-            projectRepository.Add(Project);
-            await projectRepository.Save();
-
-            return RedirectToPage("./Index");
         }
     }
 }

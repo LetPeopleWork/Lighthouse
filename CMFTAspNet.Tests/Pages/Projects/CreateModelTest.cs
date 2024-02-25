@@ -20,12 +20,12 @@ namespace CMFTAspNet.Tests.Pages.Projects
         }
 
         [Test]
-        public void OnGet_LoadsAllAvailableTeams_ReturnsPage()
+        public void OnGet_NoId_LoadsAllAvailableTeams_ReturnsPage()
         {
             var subject = CreateSubject();
             var availableTeams = SetupTeams();
 
-            var result = subject.OnGet();
+            var result = subject.OnGet(null);
 
             Assert.Multiple(() =>
             {
@@ -35,7 +35,28 @@ namespace CMFTAspNet.Tests.Pages.Projects
         }
 
         [Test]
-        public async Task OnPost_ModelNotValid_ReturnsPage()
+        public void OnGet_ExistingProject_LoadsProjectAndSetsUpInvolvedTeams_ReturnsPage()
+        {
+            var subject = CreateSubject();
+            var availableTeams = SetupTeams();
+            var project = new Project { Name = "MyProject", Id = 12 };
+            project.InvolvedTeams.Add(availableTeams.Last());
+
+            projectRepositoryMock.Setup(x => x.GetById(12)).Returns(project);
+
+            // Act
+            var result = subject.OnGet(12);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.InstanceOf<PageResult>());
+                Assert.That(subject.Project, Is.EqualTo(project));
+                CollectionAssert.Contains(subject.SelectedTeams, project.InvolvedTeams.Last().Id);
+            });
+        }
+
+        [Test]
+        public async Task OnPost_CreateNew_ModelNotValid_ReturnsPage()
         {
             var subject = CreateSubject();
             subject.ModelState.AddModelError("Error", "Error");
@@ -48,7 +69,7 @@ namespace CMFTAspNet.Tests.Pages.Projects
         }
 
         [Test]
-        public async Task OnPost_ModelValid_AddsProjectAndSaves()
+        public async Task OnPost_CreateNew_ModelValid_AddsProjectAndSaves()
         {
             var subject = CreateSubject();
             subject.Project = new Project { Name = "Test" };
@@ -61,7 +82,20 @@ namespace CMFTAspNet.Tests.Pages.Projects
         }
 
         [Test]
-        public async Task OnPost_InvolvedTeamsSelected_GetsInvolvedTeamsAndAddsToProject()
+        public async Task OnPost_EditExisting_ModelValid_UpdatesProjectAndSaves()
+        {
+            var subject = CreateSubject();
+            subject.Project = new Project { Name = "Test", Id = 12 };
+
+            var result = await subject.OnPostAsync();
+
+            Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
+            projectRepositoryMock.Verify(x => x.Update(subject.Project));
+            projectRepositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task OnPost_CreateNew_InvolvedTeamsSelected_GetsInvolvedTeamsAndAddsToProject()
         {
             var subject = CreateSubject();
             subject.Project = new Project { Name = "Test" };
