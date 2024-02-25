@@ -49,6 +49,11 @@
                     <input class="form-check-input" asp-for="Project.IncludeUnparentedItems" /> @Html.DisplayNameFor(model => model.Project.IncludeUnparentedItems)
                 </label>
             </div>
+            <div class="form-group">
+                <label asp-for="Project.DefaultAmountOfWorkItemsPerFeature" class="control-label">Default Work Items Per Feature:</label>
+                <input asp-for="Project.DefaultAmountOfWorkItemsPerFeature" class="form-control" />
+                <span asp-validation-for="Project.DefaultAmountOfWorkItemsPerFeature" class="text-danger"></span>
+            </div>
 
             <!-- Multi-select dropdown for selecting teams -->
             <div class="form-group">

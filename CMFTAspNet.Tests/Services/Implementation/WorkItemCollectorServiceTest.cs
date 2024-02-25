@@ -84,10 +84,11 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_IgnoresFeature()
+        public async Task CollectFeaturesForProject_NoRemainingWork_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
             var project = CreateProject(SearchBy.AreaPath, [team]);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
 
             var feature = new Feature(team, 0) { Id = 42 };
 
@@ -96,7 +97,8 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.That(project.Features, Is.Empty);
+            Assert.That(project.Features, Has.Count.EqualTo(1));
+            Assert.That(project.Features.Single().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
         }
 
         [Test]

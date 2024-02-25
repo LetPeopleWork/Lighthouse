@@ -21,6 +21,8 @@ namespace CMFTAspNet.Models
         public List<Feature> Features { get; } = new List<Feature>();
 
         public bool IncludeUnparentedItems { get; set; }
+
+        public int DefaultAmountOfWorkItemsPerFeature { get; set; } = 25;
     }
 
     public enum SearchBy

@@ -24,27 +24,59 @@ namespace CMFTAspNet.Services.Implementation
 
             await GetRemainingWorkForFeatures(project, features);
 
-            RemoveDoneFeatures(features);
+            ExtrapolateNotBrokenDownFeatures(features, project);
+            RemoveUninvolvedTeams(features);
 
             project.Features.Clear();
             project.Features.AddRange(features);
         }
 
-        private void RemoveDoneFeatures(List<Feature> features)
+        private void ExtrapolateNotBrokenDownFeatures(List<Feature> features, Project project)
         {
-            foreach (var feature in features.ToList())
+            foreach (var feature in features)
             {
                 if (feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0)
                 {
-                    features.Remove(feature);
-                }
+                    var numberOfTeams = feature.RemainingWork.Count;
+                    var buckets = SplitIntoBuckets(project.DefaultAmountOfWorkItemsPerFeature, numberOfTeams);
 
+                    for (var index = 0; index < numberOfTeams; index++)
+                    {
+                        feature.RemainingWork[index].RemainingWorkItems = buckets[index];
+                    }
+                }
+            }
+        }
+
+        private void RemoveUninvolvedTeams(List<Feature> features)
+        {
+            foreach (var feature in features.ToList())
+            {
                 var uninvolvedTeams = feature.RemainingWork.Where(x => x.RemainingWorkItems == 0).Select(kvp => kvp.Team).ToList();
                 foreach (var team in uninvolvedTeams)
                 {
                     feature.RemoveTeamFromFeature(team);
                 }
             }
+        }
+
+        private int[] SplitIntoBuckets(int itemCount, int numBuckets)
+        {
+            var buckets = new int[numBuckets];
+            int quotient = itemCount / numBuckets;
+            int remainder = itemCount % numBuckets;
+
+            for (int i = 0; i < numBuckets; i++)
+            {
+                buckets[i] = quotient;
+            }
+
+            for (int i = 0; i < remainder; i++)
+            {
+                buckets[i]++;
+            }
+
+            return buckets;
         }
 
         private async Task GetRemainingWorkForFeatures(Project project, List<Feature> features)
