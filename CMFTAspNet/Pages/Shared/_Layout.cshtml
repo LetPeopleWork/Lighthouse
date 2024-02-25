@@ -7,12 +7,20 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CMFTAspNet.styles.css" asp-append-version="true" />
+    <!-- Add font link for Quicksand font -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+    <!-- Add Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-5e2ESR8Ycmos6g3gAKr1Jvwye8sW4U1u/cAKulfVJnkakCcMqhOudbtPnvJ+nbv7" crossorigin="anonymous">
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">CMFT</a>
+                <!-- Logo with "Let People Work" -->
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-page="https://letpeople.work">
+                    <span style="font-family: 'Quicksand', sans-serif; color: black; font-weight: bold;">Let People&nbsp;</span>
+                    <span style="font-family: 'Quicksand', sans-serif; color: rgba(48, 87, 78, 1); font-weight: bold;">Work</span>
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -28,10 +36,28 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Projects/Index">Projects</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
                     </ul>
+                    
+                    <div class="d-flex gap-5">
+                        <a href="https://www.google.com" target="_blank" title="Help">
+                            <i class="fa-solid fa-info fa-lg" style="color: rgba(48, 87, 78, 1)"></i>
+                        </a>
+                        <a href="https://github.com/LetPeopleWork/CMFT/issues" target="_blank" title="Raise an Issue on GitHub">
+                            <i class="fa-solid fa-bug fa-lg" style="color: rgba(48, 87, 78, 1)"></i>
+                        </a>
+
+                        <a href="https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ" target="_blank" title="Let People Work Youtube Channel">
+                            <i class="fab fa-youtube fa-lg" style="color: rgba(48, 87, 78, 1)"></i>
+                        </a>
+
+                        <a href="https://www.letpeople.work/blog" target="_blank" title="Let People Work Blog">
+                            <i class="fa-solid fa-square-rss fa-lg" style="color: rgba(48, 87, 78, 1)"></i>
+                        </a>
+
+                        <a href="https://github.com/LetPeopleWork/" target="_blank" title="All Tools on GitHub">
+                            <i class="fab fa-github fa-lg" style="color: rgba(48, 87, 78, 1)"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -44,7 +70,10 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2024 - CMFTAspNet - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            <a class="navbar-brand d-flex align-items-center" asp-area="" asp-page="https://letpeople.work">
+                <span style="font-family: 'Quicksand', sans-serif; color: black; font-weight: bold;">&copy; 2024 - Let People&nbsp;</span>
+                <span style="font-family: 'Quicksand', sans-serif; color: rgba(48, 87, 78, 1); font-weight: bold;">Work</span>
+            </a>
         </div>
     </footer>
 
