@@ -1,5 +1,4 @@
-﻿using CMFTAspNet.Data;
-using CMFTAspNet.Models;
+﻿using CMFTAspNet.Models;
 using CMFTAspNet.Services.Implementation.Repositories;
 using CMFTAspNet.Tests.TestHelpers;
 

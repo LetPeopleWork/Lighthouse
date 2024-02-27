@@ -1,13 +1,18 @@
-﻿using CMFTAspNet.Data;
-using CMFTAspNet.Models;
+﻿using CMFTAspNet.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace CMFTAspNet.Services.Implementation.Repositories
 {
     public class TeamRepository : RepositoryBase<Team>
     {
-        public TeamRepository(Data.AppContext context) : base(context, (context) => context.Teams)
+        public TeamRepository(AppContext context) : base(context, (context) => context.Teams)
         {
+        }
+
+        public override IEnumerable<Team> GetAll()
+        {
+            return Context.Teams
+                .Include(x => x.WorkTrackingSystemOptions);
         }
 
         public override Team? GetById(int id)

@@ -25,7 +25,6 @@ namespace CMFTAspNet.Services.Implementation
             var throughput = await workItemService.GetClosedWorkItemsForTeam(team.ThroughputHistory, team);
 
             team.UpdateThroughput(throughput);
-
         }
     }
 }

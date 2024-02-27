@@ -7,6 +7,7 @@ using CMFTAspNet.Services.Implementation.Repositories;
 using Microsoft.EntityFrameworkCore;
 using CMFTAspNet.Models;
 using CMFTAspNet.Factories;
+using CMFTAspNet.Services.Implementation.BackgroundServices;
 
 namespace CMFTAspNet
 {
@@ -35,6 +36,8 @@ namespace CMFTAspNet
             builder.Services.AddScoped<IMonteCarloService, MonteCarloService>();
             builder.Services.AddScoped<IThroughputService, ThroughputService>();
             builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
+            
+            builder.Services.AddHostedService<ThroughputUpdateService>();
 
             var app = builder.Build();
 

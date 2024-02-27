@@ -48,7 +48,7 @@ namespace CMFTAspNet.Models
         public void UpdateThroughput(int[] throughput)
         {
             RawThroughput = throughput;
-            ThroughputUpdateTime = DateTime.Now; ;
+            ThroughputUpdateTime = DateTime.Now;
         }
     }
 }

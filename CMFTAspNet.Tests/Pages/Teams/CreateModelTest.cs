@@ -65,6 +65,7 @@ namespace CMFTAspNet.Tests.Pages.Teams
             var result = await subject.OnPostAsync();
 
             Assert.That(result, Is.InstanceOf<PageResult>());
+
             repositoryMock.Verify(x => x.Add(It.IsAny<Team>()), Times.Never);
             repositoryMock.Verify(x => x.Save(), Times.Never);
         }
@@ -77,7 +78,6 @@ namespace CMFTAspNet.Tests.Pages.Teams
 
             var result = await subject.OnPostAsync();
 
-            Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
             repositoryMock.Verify(x => x.Add(subject.Team));
             repositoryMock.Verify(x => x.Save());
         }
@@ -91,6 +91,15 @@ namespace CMFTAspNet.Tests.Pages.Teams
             var result = await subject.OnPostAsync();
 
             Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
+
+            Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
+            var pageResult = (RedirectToPageResult)result;
+            Assert.That(pageResult.PageName, Is.EqualTo("./Details"));
+            Assert.That(pageResult.RouteValues?.Count, Is.EqualTo(1));
+            var routeValue = pageResult.RouteValues.Single();
+            Assert.That(routeValue.Key, Is.EqualTo("id"));
+            Assert.That(routeValue.Value, Is.EqualTo(12));
+
             repositoryMock.Verify(x => x.Update(subject.Team));
             repositoryMock.Verify(x => x.Save());
         }

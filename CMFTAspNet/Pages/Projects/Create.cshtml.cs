@@ -69,7 +69,7 @@ namespace CMFTAspNet.Pages.Projects
 
             await projectRepository.Save();
 
-            return RedirectToPage("./Index");
+            return RedirectToPage("./Details", new { id = Project.Id });
         }
 
         private void SetupInvolvedTeams()
