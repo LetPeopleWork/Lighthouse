@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using System.Data.Common;
 
 namespace CMFTAspNet.Tests.TestHelpers
@@ -14,7 +16,7 @@ namespace CMFTAspNet.Tests.TestHelpers
         {
             builder.ConfigureServices(services =>
             {
-                RemoveAllDbContextFromServices(services);
+                RemoveServices(services);
 
                 // Create open SqliteConnection so EF won't automatically close it.
                 services.AddSingleton<DbConnection>(container =>
@@ -31,6 +33,17 @@ namespace CMFTAspNet.Tests.TestHelpers
                     options.UseSqlite(connection);
                 });
             });
+        }
+
+        private void RemoveServices(IServiceCollection services)
+        {
+            RemoveAllDbContextFromServices(services);
+            RemoveHostedServices(services);
+        }
+
+        private void RemoveHostedServices(IServiceCollection services)
+        {
+            services.RemoveAll<IHostedService>();
         }
 
         private void RemoveAllDbContextFromServices(IServiceCollection services)
