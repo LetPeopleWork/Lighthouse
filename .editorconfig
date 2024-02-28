@@ -19,7 +19,7 @@ dotnet_diagnostic.IDE0028.severity = none
 dotnet_diagnostic.IDE0066.severity = none
 csharp_indent_labels = one_less_than_current
 csharp_using_directive_placement = outside_namespace:silent
-csharp_prefer_simple_using_statement = true:suggestion
+csharp_prefer_simple_using_statement = true:none
 csharp_prefer_braces = true:silent
 csharp_style_namespace_declarations = block_scoped:silent
 csharp_style_prefer_method_group_conversion = true:silent
@@ -39,6 +39,9 @@ dotnet_diagnostic.CS8600.severity = none
 
 # IDE0090: Use 'new(...)'
 dotnet_diagnostic.IDE0090.severity = none
+
+# IDE0063: Use simple 'using' statement
+dotnet_diagnostic.IDE0063.severity = none
 
 [*.{cs,vb}]
 #### Naming styles ####
