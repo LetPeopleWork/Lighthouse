@@ -30,6 +30,8 @@ namespace CMFTAspNet.Models
         {
             Features.Clear();
             Features.AddRange(features);
+
+            ProjectUpdateTime = DateTime.Now;
         }
     }
 
