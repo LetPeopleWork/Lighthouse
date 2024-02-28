@@ -39,6 +39,7 @@ namespace CMFTAspNet
             
             builder.Services.AddHostedService<ThroughputUpdateService>();
             builder.Services.AddHostedService<WorkItemUpdateService>();
+            builder.Services.AddHostedService<ForecastUpdateService>();
 
             var app = builder.Build();
 

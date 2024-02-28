@@ -44,7 +44,7 @@ namespace CMFTAspNet.Services.Implementation
 
         public void ForecastFeatures(IEnumerable<Feature> features)
         {
-            var simulationResults = InitializeSimulationResults(features);
+            var simulationResults = InitializeSimulationResults(features.OrderBy(f => f.Order));
             RunMonteCarloSimulation(simulationResults);
             UpdateFeatureForecasts(features, simulationResults);
         }

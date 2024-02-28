@@ -99,6 +99,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.BackgroundServices
             {
                 { "PeriodicRefresh:Throughput:Interval", interval.ToString() },
                 { "PeriodicRefresh:Throughput:RefreshAfter", refreshAfter.ToString() },
+                { "PeriodicRefresh:Forecast:StartDelay", 0.ToString() },
             };
 
             configuration = new ConfigurationBuilder()
