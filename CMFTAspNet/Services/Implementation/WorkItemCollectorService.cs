@@ -28,8 +28,7 @@ namespace CMFTAspNet.Services.Implementation
             ExtrapolateNotBrokenDownFeatures(features, project);
             RemoveUninvolvedTeams(features);
 
-            project.Features.Clear();
-            project.Features.AddRange(features);
+            project.UpdateFeatures(features);
         }
 
         private void ExtrapolateNotBrokenDownFeatures(List<Feature> features, Project project)

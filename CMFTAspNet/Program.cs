@@ -38,6 +38,7 @@ namespace CMFTAspNet
             builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
             
             builder.Services.AddHostedService<ThroughputUpdateService>();
+            builder.Services.AddHostedService<WorkItemUpdateService>();
 
             var app = builder.Build();
 

@@ -23,6 +23,14 @@ namespace CMFTAspNet.Models
         public bool IncludeUnparentedItems { get; set; }
 
         public int DefaultAmountOfWorkItemsPerFeature { get; set; } = 25;
+
+        public DateTime ProjectUpdateTime { get; set; }
+
+        public void UpdateFeatures(IEnumerable<Feature> features)
+        {
+            Features.Clear();
+            Features.AddRange(features);
+        }
     }
 
     public enum SearchBy
