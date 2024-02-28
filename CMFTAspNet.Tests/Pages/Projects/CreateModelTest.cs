@@ -88,15 +88,24 @@ namespace CMFTAspNet.Tests.Pages.Projects
             subject.Project = new Project { Name = "Test", Id = 12 };
 
             var result = await subject.OnPostAsync();
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
 
-            Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
+                var pageResult = (RedirectToPageResult)result;
 
-            var pageResult = (RedirectToPageResult)result;
-            Assert.That(pageResult.PageName, Is.EqualTo("./Details"));
-            Assert.That(pageResult.RouteValues?.Count, Is.EqualTo(1));
-            var routeValue = pageResult.RouteValues.Single();
-            Assert.That(routeValue.Key, Is.EqualTo("id"));
-            Assert.That(routeValue.Value, Is.EqualTo(12));
+                Assert.That(pageResult.PageName, Is.EqualTo("./Details"));
+
+                var routeValues = pageResult.RouteValues ?? throw new InvalidOperationException("Route Values is null");
+
+                Assert.That(routeValues, Has.Count.EqualTo(1));
+
+                var routeValue = routeValues.Single();
+
+                Assert.That(routeValue.Key, Is.EqualTo("id"));
+                Assert.That(routeValue.Value, Is.EqualTo(12));
+
+            });
 
             projectRepositoryMock.Verify(x => x.Update(subject.Project));
             projectRepositoryMock.Verify(x => x.Save());

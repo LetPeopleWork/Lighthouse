@@ -89,16 +89,20 @@ namespace CMFTAspNet.Tests.Pages.Teams
             subject.Team = new Team { Name = "Test", Id = 12 };
 
             var result = await subject.OnPostAsync();
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
 
-            Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
+                Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
+                var pageResult = (RedirectToPageResult)result;
 
-            Assert.That(result, Is.InstanceOf<RedirectToPageResult>());
-            var pageResult = (RedirectToPageResult)result;
-            Assert.That(pageResult.PageName, Is.EqualTo("./Details"));
-            Assert.That(pageResult.RouteValues?.Count, Is.EqualTo(1));
-            var routeValue = pageResult.RouteValues.Single();
-            Assert.That(routeValue.Key, Is.EqualTo("id"));
-            Assert.That(routeValue.Value, Is.EqualTo(12));
+                var routeValue = pageResult.RouteValues?.Single() ?? throw new InvalidOperationException("RoutedValues not set");
+                Assert.That(routeValue.Key, Is.EqualTo("id"));
+                Assert.That(routeValue.Value, Is.EqualTo(12));
+
+                Assert.That(pageResult.PageName, Is.EqualTo("./Details"));
+                Assert.That(pageResult.RouteValues?.Count, Is.EqualTo(1));
+            });
 
             repositoryMock.Verify(x => x.Update(subject.Team));
             repositoryMock.Verify(x => x.Save());

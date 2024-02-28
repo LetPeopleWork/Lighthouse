@@ -95,7 +95,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.BackgroundServices
 
         private void SetupConfiguration(int interval, int refreshAfter)
         {
-            var inMemorySettings = new Dictionary<string, string> 
+            var inMemorySettings = new Dictionary<string, string?> 
             {
                 { "PeriodicRefresh:Throughput:Interval", interval.ToString() },
                 { "PeriodicRefresh:Throughput:RefreshAfter", refreshAfter.ToString() },
