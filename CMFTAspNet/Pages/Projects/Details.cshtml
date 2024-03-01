@@ -67,10 +67,10 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var team in Model.Entity.InvolvedTeams)
+            @foreach (var teamInProject in Model.Entity.InvolvedTeams)
             {
                 <tr>
-                    <td><a asp-page="../Teams/Details" asp-route-id="@team.Id">@team.Name</a></td>
+                    <td><a asp-page="../Teams/Details" asp-route-id="@teamInProject.Team.Id">@teamInProject.Team.Name</a></td>
                 </tr>
             }
         </tbody>
@@ -85,6 +85,6 @@
 </div>
 
 <div>
-    <a asp-page="./Edit" asp-route-id="@Model.Entity.Id">Edit</a> |
+    <a asp-page="./Create" asp-route-id="@Model.Entity.Id">Edit</a> |
     <a asp-page="./Index">Back to List</a>
 </div>

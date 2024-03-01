@@ -1,7 +1,6 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Interfaces;
-using System.Linq;
 
 namespace CMFTAspNet.Services.Implementation
 {
@@ -79,7 +78,7 @@ namespace CMFTAspNet.Services.Implementation
         {
             foreach (var featureForProject in features)
             {
-                await GetRemainingWorkForFeature(featureForProject, project.InvolvedTeams);
+                await GetRemainingWorkForFeature(featureForProject, project.InvolvedTeams.Select(x => x.Team));
             }
 
             if (project.IncludeUnparentedItems)
@@ -92,7 +91,7 @@ namespace CMFTAspNet.Services.Implementation
         {
             var featureIds = features.Select(x => x.ReferenceId);
 
-            foreach (var team in project.InvolvedTeams)
+            foreach (var team in project.InvolvedTeams.Select(t => t.Team))
             {
                 var notClosedItems = await GetNotClosedItemsBySearchCriteria(project, team);
                 var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team, notClosedItems);
@@ -145,7 +144,7 @@ namespace CMFTAspNet.Services.Implementation
             return unparentedItems;
         }
 
-        private async Task GetRemainingWorkForFeature(Feature featureForProject, List<Team> involvedTeams)
+        private async Task GetRemainingWorkForFeature(Feature featureForProject, IEnumerable<Team> involvedTeams)
         {
             if (featureForProject.IsUnparentedFeature)
             {
@@ -182,7 +181,7 @@ namespace CMFTAspNet.Services.Implementation
         {
             var featuresForProject = new Dictionary<int, Feature>();
 
-            foreach (var team in project.InvolvedTeams)
+            foreach (var team in project.InvolvedTeams.Select(x => x.Team))
             {
                 var foundFeatures = await getFeatureAction(project.WorkItemTypes, team);
 

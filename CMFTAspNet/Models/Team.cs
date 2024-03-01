@@ -9,8 +9,6 @@ namespace CMFTAspNet.Models
 
         public string Name { get; set; }
 
-        public string ProjectName { get; set; }
-
         public WorkTrackingSystems WorkTrackingSystem { get; set; }
 
         public List<WorkTrackingSystemOption> WorkTrackingSystemOptions { get; set; } = new List<WorkTrackingSystemOption>();

@@ -26,6 +26,7 @@ namespace CMFTAspNet.Tests.Factories
             Assert.Multiple(() =>
             {
                 Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl), Is.True);
+                Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.AzureDevOpsTeamProject), Is.True);
                 Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, true), Is.True);
             });
         }

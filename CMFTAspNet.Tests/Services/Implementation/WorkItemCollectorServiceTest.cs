@@ -258,7 +258,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             foreach (var team in teams)
             {
-                project.InvolvedTeams.Add(team);
+                project.InvolvedTeams.Add(new TeamInProject(team, project));
             }
 
             return project;

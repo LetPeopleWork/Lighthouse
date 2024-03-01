@@ -1,4 +1,6 @@
-﻿namespace CMFTAspNet.WorkTracking
+﻿using CMFTAspNet.Models;
+
+namespace CMFTAspNet.WorkTracking
 {
     public class WorkTrackingSystemOption
     {
@@ -6,7 +8,7 @@
         {            
         }
 
-        public WorkTrackingSystemOption(string key, string value, bool isSecret = false)
+        public WorkTrackingSystemOption(string key, string value, bool isSecret)
         {
             Key = key;
             Value = value;
@@ -20,5 +22,9 @@
         public string Value { get; set; }
 
         public bool Secret { get; set; }
+
+        public Team Team { get; set; }
+
+        public int TeamId { get; set; }
     }
 }

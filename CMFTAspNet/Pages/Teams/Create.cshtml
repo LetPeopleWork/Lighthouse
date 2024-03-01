@@ -19,11 +19,6 @@
 
                 <input type="hidden" asp-for="Team.Id" />
             </div>
-            <div class="form-group">
-                <label asp-for="Team.ProjectName" class="control-label">Project Name:</label>
-                <input asp-for="Team.ProjectName" class="form-control" />
-                <span asp-validation-for="Team.ProjectName" class="text-danger"></span>
-            </div>
 
             <div class="form-group">
                 <label asp-for="Team.FeatureWIP" class="control-label">Feature WIP:</label>
@@ -121,16 +116,15 @@
                 <div id="workTrackingOptionsContainer">
                     @for (int i = 0; i < Model.Team.WorkTrackingSystemOptions.Count; i++)
                     {
+                        var inputType = Model.Team.WorkTrackingSystemOptions[@i].Secret ? "password" : "text";
+
                         <div class="input-group mt-2">
                             <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" value="@Model.Team.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" />
-                            <input type="text" name="Team.WorkTrackingSystemOptions[@i].Value" value="@Model.Team.WorkTrackingSystemOptions[i].Value" class="form-control" placeholder="Value" />
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-danger remove-option" type="button">Remove</button>
-                            </div>
+                            <input type="@inputType" name="Team.WorkTrackingSystemOptions[@i].Value" value="@Model.Team.WorkTrackingSystemOptions[i].Value" class="form-control" placeholder="Value" />
+                            <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Secret" value="@Model.Team.WorkTrackingSystemOptions[i].Secret" class="form-control" placeholder="Secret" />
                         </div>
                     }
                 </div>
-                <button type="button" id="addOption" class="btn btn-primary mt-2">Add Option</button>
             </div>
 
 
@@ -202,18 +196,13 @@
                         var html = '<div class="input-group mt-2">' +
                             '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Key" value="' + option.key + '" class="form-control" placeholder="Key" />' +
                             '<input type="' + inputType + '" name="Team.WorkTrackingSystemOptions[' + index + '].Value" value="' + option.value + '" class="form-control" placeholder="Value" />' +
+                            '<input type="hidden" name="Team.WorkTrackingSystemOptions[' + index + '].Secret" value="' + option.secret + '" class="form-control" placeholder="Secret" />' +
                             '<div class="input-group-append">' +
-                            '<button class="btn btn-outline-danger remove-option" type="button">Remove</button>' +
                             '</div>' +
                             '</div>';
                         $("#workTrackingOptionsContainer").append(html);
                     });
                 });
-            });
-
-
-            $(".remove-option").click(function () {
-                $(this).parent().parent().remove();
             });
         });
 

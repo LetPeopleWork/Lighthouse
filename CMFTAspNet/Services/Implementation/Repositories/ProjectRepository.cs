@@ -26,7 +26,8 @@ namespace CMFTAspNet.Services.Implementation.Repositories
             return Context.Projects
                 .Include(r => r.Features).ThenInclude(f => f.RemainingWork)
                 .Include(f => f.Features).ThenInclude(f => f.Forecast).ThenInclude(f => f.SimulationResults)
-                .Include(f => f.InvolvedTeams).ThenInclude(t => t.WorkTrackingSystemOptions);
+                .Include(f => f.InvolvedTeams)
+                    .ThenInclude(t => t.Team.WorkTrackingSystemOptions);
         }
     }
 }

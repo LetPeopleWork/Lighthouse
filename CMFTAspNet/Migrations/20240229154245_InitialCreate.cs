@@ -23,11 +23,34 @@ namespace CMFTAspNet.Migrations
                     SearchTerm = table.Column<string>(type: "TEXT", nullable: false),
                     TargetDate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     IncludeUnparentedItems = table.Column<bool>(type: "INTEGER", nullable: false),
-                    DefaultAmountOfWorkItemsPerFeature = table.Column<int>(type: "INTEGER", nullable: false)
+                    DefaultAmountOfWorkItemsPerFeature = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProjectUpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Projects", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Teams",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkTrackingSystem = table.Column<int>(type: "INTEGER", nullable: false),
+                    AreaPaths = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkItemTypes = table.Column<string>(type: "TEXT", nullable: false),
+                    IgnoredTags = table.Column<string>(type: "TEXT", nullable: false),
+                    AdditionalRelatedFields = table.Column<string>(type: "TEXT", nullable: false),
+                    FeatureWIP = table.Column<int>(type: "INTEGER", nullable: false),
+                    ThroughputUpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    RawThroughput = table.Column<string>(type: "TEXT", nullable: false),
+                    ThroughputHistory = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Teams", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -54,52 +77,49 @@ namespace CMFTAspNet.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Teams",
+                name: "TeamInProject",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    ProjectName = table.Column<string>(type: "TEXT", nullable: false),
-                    WorkTrackingSystem = table.Column<int>(type: "INTEGER", nullable: false),
-                    AreaPaths = table.Column<string>(type: "TEXT", nullable: false),
-                    WorkItemTypes = table.Column<string>(type: "TEXT", nullable: false),
-                    IgnoredTags = table.Column<string>(type: "TEXT", nullable: false),
-                    AdditionalRelatedFields = table.Column<string>(type: "TEXT", nullable: false),
-                    FeatureWIP = table.Column<int>(type: "INTEGER", nullable: false),
-                    ThroughputUpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    RawThroughput = table.Column<string>(type: "TEXT", nullable: false),
-                    ThroughputHistory = table.Column<int>(type: "INTEGER", nullable: false),
-                    ProjectId = table.Column<int>(type: "INTEGER", nullable: true)
+                    ProjectId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TeamId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Teams", x => x.Id);
+                    table.PrimaryKey("PK_TeamInProject", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Teams_Projects_ProjectId",
+                        name: "FK_TeamInProject_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TeamInProject_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "Teams",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "WhenForecast",
+                name: "WorkTrackingSystemOption",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    FeatureId = table.Column<int>(type: "INTEGER", nullable: false),
-                    TotalTrials = table.Column<int>(type: "INTEGER", nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    Key = table.Column<string>(type: "TEXT", nullable: false),
+                    Value = table.Column<string>(type: "TEXT", nullable: false),
+                    Secret = table.Column<bool>(type: "INTEGER", nullable: false),
+                    TeamId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WhenForecast", x => x.Id);
+                    table.PrimaryKey("PK_WorkTrackingSystemOption", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_WhenForecast_Features_FeatureId",
-                        column: x => x.FeatureId,
-                        principalTable: "Features",
+                        name: "FK_WorkTrackingSystemOption_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "Teams",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -132,24 +152,24 @@ namespace CMFTAspNet.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "WorkTrackingSystemOption",
+                name: "WhenForecast",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Key = table.Column<string>(type: "TEXT", nullable: false),
-                    Value = table.Column<string>(type: "TEXT", nullable: false),
-                    Secret = table.Column<bool>(type: "INTEGER", nullable: false),
-                    TeamId = table.Column<int>(type: "INTEGER", nullable: true)
+                    FeatureId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TotalTrials = table.Column<int>(type: "INTEGER", nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WorkTrackingSystemOption", x => x.Id);
+                    table.PrimaryKey("PK_WhenForecast", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_WorkTrackingSystemOption_Teams_TeamId",
-                        column: x => x.TeamId,
-                        principalTable: "Teams",
-                        principalColumn: "Id");
+                        name: "FK_WhenForecast_Features_FeatureId",
+                        column: x => x.FeatureId,
+                        principalTable: "Features",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -193,9 +213,14 @@ namespace CMFTAspNet.Migrations
                 column: "TeamId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Teams_ProjectId",
-                table: "Teams",
+                name: "IX_TeamInProject_ProjectId",
+                table: "TeamInProject",
                 column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeamInProject_TeamId",
+                table: "TeamInProject",
+                column: "TeamId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WhenForecast_FeatureId",
@@ -217,6 +242,9 @@ namespace CMFTAspNet.Migrations
 
             migrationBuilder.DropTable(
                 name: "RemainingWork");
+
+            migrationBuilder.DropTable(
+                name: "TeamInProject");
 
             migrationBuilder.DropTable(
                 name: "WorkTrackingSystemOption");

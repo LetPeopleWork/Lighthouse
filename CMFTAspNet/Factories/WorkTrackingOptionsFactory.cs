@@ -20,7 +20,8 @@ namespace CMFTAspNet.Factories
         {
             return new List<WorkTrackingSystemOption>
             {
-                new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl, string.Empty),
+                new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl, string.Empty, false),
+                new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsTeamProject, string.Empty, false),
                 new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, string.Empty, true),
             };
         }

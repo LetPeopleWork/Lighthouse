@@ -12,7 +12,7 @@ namespace CMFTAspNet.Models
         
         public List<string> WorkItemTypes { get; set; } = new List<string>();
 
-        public List<Team> InvolvedTeams { get; set; } = new List<Team>();
+        public List<TeamInProject> InvolvedTeams { get; set; } = new List<TeamInProject>();
 
         public string SearchTerm { get; set; }
 

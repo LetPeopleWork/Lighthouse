@@ -40,7 +40,7 @@ namespace CMFTAspNet.Tests.Pages.Projects
             var subject = CreateSubject();
             var availableTeams = SetupTeams();
             var project = new Project { Name = "MyProject", Id = 12 };
-            project.InvolvedTeams.Add(availableTeams.Last());
+            project.InvolvedTeams.Add(new TeamInProject(availableTeams.Last(), project));
 
             projectRepositoryMock.Setup(x => x.GetById(12)).Returns(project);
 
@@ -125,7 +125,7 @@ namespace CMFTAspNet.Tests.Pages.Projects
             var result = await subject.OnPostAsync();
 
             Assert.That(subject.Project.InvolvedTeams, Has.Count.EqualTo(1));
-            Assert.That(subject.Project.InvolvedTeams.Single(), Is.EqualTo(selectedTeam));
+            Assert.That(subject.Project.InvolvedTeams.Single().Team, Is.EqualTo(selectedTeam));
         }
 
         private CreateModel CreateSubject()

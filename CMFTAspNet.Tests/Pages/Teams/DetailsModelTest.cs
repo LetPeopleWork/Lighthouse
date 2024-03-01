@@ -103,7 +103,7 @@ namespace CMFTAspNet.Tests.Pages.Teams
         [Test]
         public async Task OnPost_TeamExists_UpdatesThroughputAndSavesAsync()
         {
-            var team = new Team { Id = 2, Name = "Team", ProjectName = "Project" };
+            var team = new Team { Id = 2, Name = "Team" };
 
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
             var subject = CreateSubject();
@@ -119,7 +119,7 @@ namespace CMFTAspNet.Tests.Pages.Teams
         [Test]
         public async Task OnPostWhenForecast_RunsForecast_SetsPropertyAsync()
         {
-            var team = new Team { Id = 2, Name = "Team", ProjectName = "Project" };
+            var team = new Team { Id = 2, Name = "Team" };
 
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
             var subject = CreateSubject();
@@ -135,7 +135,7 @@ namespace CMFTAspNet.Tests.Pages.Teams
         [Test]
         public async Task OnPostHowManyForecast_RunsForecast_SetsPropertyAsync()
         {
-            var team = new Team { Id = 2, Name = "Team", ProjectName = "Project" };
+            var team = new Team { Id = 2, Name = "Team" };
 
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
             var subject = CreateSubject();

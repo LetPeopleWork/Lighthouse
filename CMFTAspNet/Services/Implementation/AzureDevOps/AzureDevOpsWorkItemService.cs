@@ -87,8 +87,10 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
         {
             var additionalFieldsQuery = PrepareAdditionalFieldsQuery(additionalFields);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}] {additionalFieldsQuery} FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{team.ProjectName}' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
-            var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql }, team.ProjectName);
+            var teamProject = GetAzureDevOpsTeamProject(team);
+
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}] {additionalFieldsQuery} FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
+            var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql }, teamProject);
 
             var workItemReference = queryResult.WorkItems.Single();
             return await GetWorkItemFromCache(workItemReference.Id, witClient);
@@ -97,19 +99,20 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
         private async Task<int> GetRelatedWorkItems(WorkItemTrackingHttpClient witClient, Team team, int relatedWorkItemId)
         {
             var remainingItems = 0;
+            var teamProject = GetAzureDevOpsTeamProject(team);
 
             var areaPathQuery = string.Join(" OR ", team.AreaPaths.Select(path => $"[{AzureDevOpsFieldNames.AreaPath}] UNDER '{path}'"));
             var workItemsQuery = string.Join(" OR ", team.WorkItemTypes.Select(type => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{type}'"));
             var stateQuery = PrepareStateQuery(["Closed", "Done", "Removed"]);
             var ignoredTagsQuery = PrepareIgnoredTagsQuery(team.IgnoredTags);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{team.ProjectName}' " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' " +
                 $"{stateQuery}" +
                 $"AND ({areaPathQuery}) " +
                 $"AND ({workItemsQuery}) " +
                 $"{ignoredTagsQuery}";
 
-            var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql }, team.ProjectName);
+            var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql }, teamProject);
 
             foreach (WorkItemReference workItemRef in queryResult.WorkItems)
             {
@@ -165,12 +168,13 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
         private async Task<List<int>> GetWorkItemsByAreaPath(WorkItemTrackingHttpClient witClient, string areaPath, IEnumerable<string> workItemTypes, Team team, string[] excludedStates)
         {
             var foundItemIds = new List<int>();
+            var teamProject = GetAzureDevOpsTeamProject(team);
 
             var areaPathQuery = $"[{AzureDevOpsFieldNames.AreaPath}] UNDER '{areaPath}'";
             var workItemsQuery = string.Join(" OR ", workItemTypes.Select(itemType => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{itemType}'"));
             var stateQuery = PrepareStateQuery(excludedStates);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{team.ProjectName}' " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' " +
                 $"AND ({areaPathQuery}) " +
                 $"AND ({workItemsQuery}) " +
                 $"{stateQuery}";
@@ -194,13 +198,14 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
         private async Task<List<int>> GetWorkItemsByTag(WorkItemTrackingHttpClient witClient, string tag, IEnumerable<string> workItemTypes, Team team, string[] excludedStates)
         {
             var foundItemIds = new List<int>();
+            var teamProject = GetAzureDevOpsTeamProject(team);
 
             var areaPathQuery = string.Join(" OR ", team.AreaPaths.Select(path => $"[{AzureDevOpsFieldNames.AreaPath}] UNDER '{path}'"));
             var workItemsQuery = string.Join(" OR ", workItemTypes.Select(itemType => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{itemType}'"));
             var tagQuery = $"[{AzureDevOpsFieldNames.Tags}] CONTAINS '{tag}'";
             string stateQuery = PrepareStateQuery(excludedStates);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{team.ProjectName}' " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' " +
                 $"AND ({areaPathQuery}) " +
                 $"AND ({workItemsQuery}) " +
                 $"{stateQuery}" +
@@ -218,6 +223,7 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
         private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, int numberOfDays, Team team)
         {
             var closedItemsPerDay = new int[numberOfDays];
+            var teamProject = GetAzureDevOpsTeamProject(team);
 
             var startDate = DateTime.UtcNow.Date.AddDays(-(numberOfDays - 1));
 
@@ -225,7 +231,7 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
             var workItemsQuery = string.Join(" OR ", team.WorkItemTypes.Select(type => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{type}'"));
             var ignoredTagsQuery = PrepareIgnoredTagsQuery(team.IgnoredTags);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{team.ProjectName}' AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done')" +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done')" +
                 $"AND ({areaPathQuery}) " +
                 $"AND ({workItemsQuery}) " +
                 $"{ignoredTagsQuery}" +
@@ -300,17 +306,24 @@ namespace CMFTAspNet.Services.Implementation.AzureDevOps
 
         private T GetClientService<T>(Team team) where T : VssHttpClientBase
         {
-            var (url, personalAccessToken) = GetAzureDevOpsConfiguration(team);
+            var (url, _, personalAccessToken) = GetAzureDevOpsConfiguration(team);
             var connection = CreateConnection(url, personalAccessToken);
             return connection.GetClient<T>();
         }
 
-        private (string azureDevOpsUrl, string personalAccessToken) GetAzureDevOpsConfiguration(Team team)
+        private string GetAzureDevOpsTeamProject(Team team)
+        {
+            var (_, teamProject, _) = GetAzureDevOpsConfiguration(team);
+            return teamProject;
+        }
+
+        private (string azureDevOpsUrl, string teamProject, string personalAccessToken) GetAzureDevOpsConfiguration(Team team)
         {
             var url = team.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl);
+            var teamProject = team.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsTeamProject);
             var personalAccessToken = team.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
 
-            return (url, personalAccessToken);
+            return (url, teamProject, personalAccessToken);
         }
 
         private VssConnection CreateConnection(string azureDevOpsUrl, string personalAccessToken)

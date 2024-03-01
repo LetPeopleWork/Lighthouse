@@ -48,11 +48,11 @@ namespace CMFTAspNet.Services.Implementation.Repositories
 
         public void Remove(int id)
         {
-            var project = dbSetGetter(Context).Find(id);
+            var itemToRemove = dbSetGetter(Context).Find(id);
 
-            if (project != null)
+            if (itemToRemove != null)
             {
-                dbSetGetter(Context).Remove(project);
+                dbSetGetter(Context).Remove(itemToRemove);
             }
         }
 

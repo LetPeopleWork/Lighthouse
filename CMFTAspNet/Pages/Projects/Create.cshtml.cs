@@ -80,7 +80,7 @@ namespace CMFTAspNet.Pages.Projects
                 var team = teamRepository.GetById(involvedTeamId);
                 if (team != null)
                 {
-                    Project.InvolvedTeams.Add(team);
+                    Project.InvolvedTeams.Add(new TeamInProject(team, Project));
                 }
             }
         }

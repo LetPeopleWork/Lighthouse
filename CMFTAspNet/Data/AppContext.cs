@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
+using CMFTAspNet.WorkTracking;
 
 namespace CMFTAspNet.Data
 {
@@ -19,31 +20,45 @@ namespace CMFTAspNet.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<RemainingWork>()
-                .HasOne(r => r.Feature)
-                .WithMany(f => f.RemainingWork)
-                .HasForeignKey(r => r.FeatureId)
-                .IsRequired();
+            modelBuilder.Entity<TeamInProject>()
+                .HasOne(tp => tp.Team)
+                .WithMany()
+                .HasForeignKey(tp => tp.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TeamInProject>()
+                .HasOne(tp => tp.Project)
+                .WithMany(p => p.InvolvedTeams)
+                .HasForeignKey(tp => tp.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade); // Or other delete behavior as needed
+
+            modelBuilder.Entity<WorkTrackingSystemOption>()
+                .HasOne(t => t.Team)
+                .WithMany(x => x.WorkTrackingSystemOptions)
+                .HasForeignKey(wts => wts.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<RemainingWork>()
-                .HasOne(r => r.Feature)
+                .HasOne(rw => rw.Team)
+                .WithMany()
+                .HasForeignKey(rw => rw.TeamId);
+
+            modelBuilder.Entity<RemainingWork>()
+                .HasOne(rw => rw.Feature)
                 .WithMany(f => f.RemainingWork)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasForeignKey(rw => rw.FeatureId)
+                .OnDelete(DeleteBehavior.Cascade); // Or other delete behavior as needed
+
+            modelBuilder.Entity<Feature>()
+                .HasOne(f => f.Forecast)
+                .WithOne(wf => wf.Feature)
+                .HasForeignKey<WhenForecast>(wf => wf.FeatureId)
+                .OnDelete(DeleteBehavior.Cascade); // Or other delete behavior as needed
 
             modelBuilder.Entity<Feature>()
                 .HasOne(f => f.Project)
                 .WithMany(p => p.Features)
                 .HasForeignKey(f => f.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Feature>()
-                .HasOne(f => f.Forecast)
-                .WithOne(wf => wf.Feature)
-                .HasForeignKey<WhenForecast>(wf => wf.FeatureId);
-
-            modelBuilder.Entity<Project>()
-                .HasMany(p => p.InvolvedTeams)
-                .WithOne()
                 .OnDelete(DeleteBehavior.Cascade);
 
             Database.Migrate();
