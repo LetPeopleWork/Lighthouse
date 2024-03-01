@@ -18,7 +18,7 @@ namespace CMFTAspNet.Models.Forecast
 
         public int NumberOfItems { get; }
 
-        public double GetLikelihood(int daysToTargetDate)
+        public virtual double GetLikelihood(int daysToTargetDate)
         {
             var trialCounter = 0;
 

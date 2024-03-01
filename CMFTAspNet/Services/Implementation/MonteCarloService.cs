@@ -53,9 +53,15 @@ namespace CMFTAspNet.Services.Implementation
         {
             foreach (var simulationResultsByTeam in simulationResults.GroupBy(s => s.Team))
             {
+                if (simulationResultsByTeam.Key.TotalThroughput <= 0)
+                {
+                    continue;
+                }
+
                 RunSimulations(() =>
                 {
                     simulationResultsByTeam.ResetRemainingItems();
+
                     var simulatedDays = 1;
 
                     while (simulationResultsByTeam.GetRemainingItems() > 0)
@@ -75,9 +81,19 @@ namespace CMFTAspNet.Services.Implementation
                 var simulationResultForFeature = simulationResults
                     .Where(x => x.Feature == feature);
 
-                var featureForecasts = simulationResultForFeature.Select(result => new WhenForecast(result.SimulationResults, result.InitialRemainingItems));
+                var featureForecasts = simulationResultForFeature.Select(sr => CreateWhenForecastForSimulationResult(sr));
                 feature.SetFeatureForecast(featureForecasts);
             }
+        }
+
+        private WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult)
+        {
+            if (simulationResult.HasWorkRemaining)
+            {
+                return new NoForecast();
+            }
+
+            return new WhenForecast(simulationResult.SimulationResults, simulationResult.InitialRemainingItems);
         }
 
         private List<SimulationResult> InitializeSimulationResults(IEnumerable<Feature> features)

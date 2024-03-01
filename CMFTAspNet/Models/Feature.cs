@@ -87,7 +87,7 @@ namespace CMFTAspNet.Models
 
         public void SetFeatureForecast(IEnumerable<WhenForecast> forecasts)
         {
-            var worstCaseForecast = 0;
+            var worstCaseForecast = int.MinValue;
 
             foreach (var forecast in forecasts)
             {

@@ -102,6 +102,55 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task CollectFeaturesForProject_NoRemainingWork_MulitpleTeams_SplitsDefaultRemainingWorkByTeam()
+        {
+            var team1 = CreateTeam();
+            var team2 = CreateTeam();
+
+            var project = CreateProject(SearchBy.AreaPath, [team1, team2]);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+
+            var feature = new Feature([(team1, 0), (team2, 0)]);
+
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(project.Features, Has.Count.EqualTo(1));
+                Assert.That(project.Features.Single().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(project.Features.Single().RemainingWork.First().RemainingWorkItems, Is.EqualTo(6));
+                Assert.That(project.Features.Single().RemainingWork.Last().RemainingWorkItems, Is.EqualTo(6));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_NoRemainingWork_MulitpleTeams_OnTeamHasNoThroughput_DoesNotGetRemainingWork()
+        {
+            var team1 = CreateTeam();
+            var team2 = CreateTeam([0]);
+
+            var project = CreateProject(SearchBy.AreaPath, [team1, team2]);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+
+            var feature = new Feature([(team1, 0), (team2, 0)]);
+
+            workItemServiceMock.Setup(x => x.GetWorkItemsByAreaPath(project.WorkItemTypes, project.SearchTerm, It.IsAny<Team>())).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(project.Features, Has.Count.EqualTo(1));
+                Assert.That(project.Features.Single().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(project.Features.Single().RemainingWork.Single().RemainingWorkItems, Is.EqualTo(12));
+            });
+        }
+
+        [Test]
         public async Task CollectFeaturesForProject_SingleTeamInvolved_FindsRemainingWorkByTeam()
         {
             var team = CreateTeam();
@@ -236,11 +285,17 @@ namespace CMFTAspNet.Tests.Services.Implementation
             });
         }
 
-        private Team CreateTeam()
+        private Team CreateTeam(int[]? throughput = null)
         {
             var team = new Team { Name = "Team" };
 
+            if  (throughput == null)
+            {
+                throughput = [1];
+            }
+
             team.WorkItemTypes.Add("User Story");
+            team.UpdateThroughput(throughput);
 
             return team;
         }

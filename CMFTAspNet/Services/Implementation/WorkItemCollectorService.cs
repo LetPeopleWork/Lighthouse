@@ -34,11 +34,13 @@ namespace CMFTAspNet.Services.Implementation
         {
             foreach (var feature in features.Where(feature => feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0))
             {
-                var numberOfTeams = feature.RemainingWork.Count;
+                var teamsWithThroughput = feature.RemainingWork.Where(rw => rw.Team.TotalThroughput > 0).ToList();
+
+                var numberOfTeams = teamsWithThroughput.Count;
                 var buckets = SplitIntoBuckets(project.DefaultAmountOfWorkItemsPerFeature, numberOfTeams);
                 for (var index = 0; index < numberOfTeams; index++)
                 {
-                    feature.RemainingWork[index].RemainingWorkItems = buckets[index];
+                    teamsWithThroughput[index].RemainingWorkItems = buckets[index];
                 }
             }
         }

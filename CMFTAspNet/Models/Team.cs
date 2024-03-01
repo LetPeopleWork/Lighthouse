@@ -31,6 +31,8 @@ namespace CMFTAspNet.Models
 
         public Throughput Throughput => new Throughput(RawThroughput);
 
+        public int TotalThroughput => RawThroughput.Sum();
+
         public string GetWorkTrackingSystemOptionByKey(string key)
         {
             var workTrackingOption = WorkTrackingSystemOptions.SingleOrDefault(x => x.Key == key);

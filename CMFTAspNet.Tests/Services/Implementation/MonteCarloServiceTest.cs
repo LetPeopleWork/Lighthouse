@@ -1,9 +1,7 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
 using CMFTAspNet.Services.Implementation;
-using CMFTAspNet.Services.Interfaces;
 using CMFTAspNet.Tests.TestDoubles;
-using Moq;
 
 namespace CMFTAspNet.Tests.Services.Implementation
 {
@@ -369,6 +367,40 @@ namespace CMFTAspNet.Tests.Services.Implementation
                 Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(20));
                 Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(20));
                 Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(20));
+            });
+        }
+
+        [Test]
+        public void FeatureForecast_TeamHasNoThroughput_WillNotForecastThisTeam()
+        {
+            var subject = CreateSubjectWithRealThroughput();
+            var team = CreateTeam(1, [0, 0, 0 , 0]);
+
+            var feature = new Feature([(team, 20)]);
+
+            subject.ForecastFeatures([ feature ]);
+
+            Assert.That(feature.Forecast, Is.InstanceOf<NoForecast>());
+        }
+
+        [Test]
+        public void FeatureForecast_MultiTeam_OneTeamHasNoThroughput_UsesTeamWithThroughputsForecast()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            var team1 = CreateTeam(1, [0]);
+            var team2 = CreateTeam(1, [1]);
+
+            var feature1 = new Feature([(team1, 20), (team2, 15)]);
+
+            subject.ForecastFeatures([feature1]);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(feature1.Forecast.GetProbability(50), Is.EqualTo(15));
+                Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(15));
+                Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(15));
+                Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(15));
             });
         }
 
