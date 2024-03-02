@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMFTAspNet.Migrations
 {
     [DbContext(typeof(AppContext))]
-    [Migration("20240229154245_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20240301185452_RemoveNoFeature")]
+    partial class RemoveNoFeature
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -94,6 +94,29 @@ namespace CMFTAspNet.Migrations
                     b.ToTable("WhenForecast");
                 });
 
+            modelBuilder.Entity("CMFTAspNet.Models.Milestone", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("Milestone");
+                });
+
             modelBuilder.Entity("CMFTAspNet.Models.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -118,9 +141,6 @@ namespace CMFTAspNet.Migrations
 
                     b.Property<string>("SearchTerm")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("TargetDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkItemTypes")
@@ -280,6 +300,17 @@ namespace CMFTAspNet.Migrations
                     b.Navigation("Feature");
                 });
 
+            modelBuilder.Entity("CMFTAspNet.Models.Milestone", b =>
+                {
+                    b.HasOne("CMFTAspNet.Models.Project", "Project")
+                        .WithMany("Milestones")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("CMFTAspNet.Models.RemainingWork", b =>
                 {
                     b.HasOne("CMFTAspNet.Models.Feature", "Feature")
@@ -347,6 +378,8 @@ namespace CMFTAspNet.Migrations
                     b.Navigation("Features");
 
                     b.Navigation("InvolvedTeams");
+
+                    b.Navigation("Milestones");
                 });
 
             modelBuilder.Entity("CMFTAspNet.Models.Team", b =>

@@ -11,8 +11,6 @@
         <button type="submit" class="btn btn-primary">Update Forecasts</button>
     </form>
 
-    <h1>Projects</h1>
-
     <table class="table">
         <caption>Forecasts</caption>
         <thead>
@@ -23,7 +21,7 @@
                 <th>70% Probability</th>
                 <th>85% Probability</th>
                 <th>95% Probability</th>
-                <th>Likelihood</th>
+                <th>Project</th>
             </tr>
         </thead>
         <tbody>
@@ -31,20 +29,11 @@
             {
                 @if (feature.Forecast != null)
                 {
-                    var likelihood = feature.GetTargetDateLikelihood();
-
-                    string GetLikelihoodColor(double likelihood)
-                    {
-                        return likelihood >= 80 ? "green" : likelihood >= 50 ? "amber" : "red";
-                    }
-
                     string GetFutureDate(int daysInFuture)
                     {
                         var futureDate = DateTime.Today.AddDays(daysInFuture);
                         return futureDate.ToString("d");
                     }
-
-                    var likelihoodColor = GetLikelihoodColor(likelihood);
 
                     <tr>
                         <td>@feature.Name</td>
@@ -53,7 +42,7 @@
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
-                        <td style="background-color: @likelihoodColor">@likelihood</td>
+                        <td><a asp-page="./Projects/Details" asp-route-id="@feature.Project.Id">@feature.Project.Name</a></td>
                     </tr>
                 }
             }

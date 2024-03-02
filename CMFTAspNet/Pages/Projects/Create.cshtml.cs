@@ -35,28 +35,25 @@ namespace CMFTAspNet.Pages.Projects
             if (id.HasValue)
             {
                 Project = projectRepository.GetById(id.Value);
-
-                if (Project != null)
-                {
-                    SelectedTeams.AddRange(Project.InvolvedTeams.Select(t => t.Id));
-                }
             }
             else
             {
                 Project = new Project();
             }
 
+            SelectedTeams.AddRange(Project.InvolvedTeams.Select(t => t.TeamId));
+
             return Project != null ? Page() : NotFound();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
+            RemoveValidErrorsOnMilestons();
+
             if (!ModelState.IsValid)
             {
                 return Page();
             }
-
-            SetupInvolvedTeams();
 
             if (IsEditMode)
             {
@@ -66,6 +63,9 @@ namespace CMFTAspNet.Pages.Projects
             {
                 projectRepository.Add(Project);
             }
+
+            SetupMilestones();
+            SetupInvolvedTeams();
 
             await projectRepository.Save();
 
@@ -82,6 +82,25 @@ namespace CMFTAspNet.Pages.Projects
                 {
                     Project.InvolvedTeams.Add(new TeamInProject(team, Project));
                 }
+            }
+        }
+
+        private void SetupMilestones()
+        {
+            foreach (var milestone in Project.Milestones)
+            {
+                milestone.Project = Project;
+                milestone.ProjectId = Project.Id;
+            }
+        }
+
+        private void RemoveValidErrorsOnMilestons()
+        {
+            var milestonesWithErrors = ModelState.Where(x => x.Value.Errors.Any() && x.Key.StartsWith("Project.Milestones"));
+
+            foreach (var item in milestonesWithErrors)
+            {
+                ModelState.Remove(item.Key);
             }
         }
     }

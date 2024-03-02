@@ -21,7 +21,6 @@ namespace CMFTAspNet.Migrations
                     SearchBy = table.Column<int>(type: "INTEGER", nullable: false),
                     WorkItemTypes = table.Column<string>(type: "TEXT", nullable: false),
                     SearchTerm = table.Column<string>(type: "TEXT", nullable: false),
-                    TargetDate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     IncludeUnparentedItems = table.Column<bool>(type: "INTEGER", nullable: false),
                     DefaultAmountOfWorkItemsPerFeature = table.Column<int>(type: "INTEGER", nullable: false),
                     ProjectUpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false)
@@ -70,6 +69,27 @@ namespace CMFTAspNet.Migrations
                     table.PrimaryKey("PK_Features", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Features_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Milestone",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Date = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ProjectId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Milestone", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Milestone_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
                         principalColumn: "Id",
@@ -203,6 +223,11 @@ namespace CMFTAspNet.Migrations
                 column: "WhenForecastId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Milestone_ProjectId",
+                table: "Milestone",
+                column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RemainingWork_FeatureId",
                 table: "RemainingWork",
                 column: "FeatureId");
@@ -239,6 +264,9 @@ namespace CMFTAspNet.Migrations
         {
             migrationBuilder.DropTable(
                 name: "IndividualSimulationResult");
+
+            migrationBuilder.DropTable(
+                name: "Milestone");
 
             migrationBuilder.DropTable(
                 name: "RemainingWork");

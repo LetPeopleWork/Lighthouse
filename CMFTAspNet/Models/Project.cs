@@ -16,9 +16,9 @@ namespace CMFTAspNet.Models
 
         public string SearchTerm { get; set; }
 
-        public DateTime? TargetDate { get;set; }
-
         public List<Feature> Features { get; } = new List<Feature>();
+
+        public List<Milestone> Milestones { get; } = new List<Milestone>();
 
         public bool IncludeUnparentedItems { get; set; }
 

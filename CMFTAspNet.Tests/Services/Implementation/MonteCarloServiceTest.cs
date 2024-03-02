@@ -380,7 +380,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             subject.ForecastFeatures([ feature ]);
 
-            Assert.That(feature.Forecast, Is.InstanceOf<NoForecast>());
+            Assert.That(feature.Forecast.NumberOfItems, Is.EqualTo(0));
         }
 
         [Test]

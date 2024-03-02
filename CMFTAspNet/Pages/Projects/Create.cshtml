@@ -53,10 +53,23 @@
             <button type="button" class="btn btn-success" id="addWorkItemType">Add Work Item Type</button>
 
             <div class="form-group">
-                <label asp-for="Project.TargetDate" class="control-label"></label>
-                <input asp-for="Project.TargetDate" class="form-control" type="date" asp-format="{0:yyyy-MM-dd}" />
-                <span asp-validation-for="Project.TargetDate" class="text-danger"></span>
+                <label>Milestones:</label>
+                <div id="milestonesContainer">
+                    @for (int i = 0; i < Model.Project.Milestones.Count; i++)
+                    {
+                        <div class="input-group mt-2">
+                            <input type="text" name="Project.Milestones[@i].Name" value="@Model.Project.Milestones[i].Name" class="form-control" placeholder="Name" />
+                            <input type="date" name="Project.Milestones[@i].Date" value="@Model.Project.Milestones[i].Date.ToString("yyyy-MM-dd")" class="form-control" placeholder="Date" />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button type="button" id="addMilestone" class="btn btn-primary mt-2">Add Milestone</button>
             </div>
+
+
             <div class="form-group form-check">
                 <label class="form-check-label">
                     <input class="form-check-input" asp-for="Project.IncludeUnparentedItems" /> @Html.DisplayNameFor(model => model.Project.IncludeUnparentedItems)
@@ -90,58 +103,79 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-}
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        document.getElementById("addWorkItemType").addEventListener("click", function () {
-            var container = document.getElementById("workItemTypesContainer");
-            var input = document.createElement("input");
-            input.setAttribute("class", "form-control");
-            input.setAttribute("name", "Project.WorkItemTypes");
-            input.setAttribute("placeholder", "Enter work item type");
-            container.appendChild(input);
-
-            var buttonDiv = document.createElement("div");
-            buttonDiv.setAttribute("class", "input-group-append");
-            var button = document.createElement("button");
-            button.setAttribute("type", "button");
-            button.setAttribute("class", "btn btn-danger remove-work-item");
-            button.textContent = "Remove";
-            buttonDiv.appendChild(button);
-
-            var inputGroup = document.createElement("div");
-            inputGroup.setAttribute("class", "input-group mb-3");
-            inputGroup.appendChild(input);
-            inputGroup.appendChild(buttonDiv);
-            container.appendChild(inputGroup);
-
-            button.addEventListener("click", function () {
-                container.removeChild(inputGroup);
-            });
-        });
-
-        document.querySelectorAll(".remove-work-item").forEach(function (button) {
-            button.addEventListener("click", function () {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("addWorkItemType").addEventListener("click", function () {
                 var container = document.getElementById("workItemTypesContainer");
-                container.removeChild(button.closest(".input-group.mb-3"));
-            });
-        });
-    });
+                var input = document.createElement("input");
+                input.setAttribute("class", "form-control");
+                input.setAttribute("name", "Project.WorkItemTypes");
+                input.setAttribute("placeholder", "Enter work item type");
+                container.appendChild(input);
 
-    // Function to prepopulate existing work item types when editing
-    window.onload = function () {
-        var existingWorkItemTypes = document.querySelectorAll('.form-control[name="Project.WorkItemTypes"]');
-        existingWorkItemTypes.forEach(function (input) {
-            if (input.value !== "") {
-                var container = document.getElementById("workItemTypesContainer");
-                var inputGroup = input.closest(".input-group.mb-3");
-                var button = inputGroup.querySelector(".btn.btn-danger.remove-work-item");
+                var buttonDiv = document.createElement("div");
+                buttonDiv.setAttribute("class", "input-group-append");
+                var button = document.createElement("button");
+                button.setAttribute("type", "button");
+                button.setAttribute("class", "btn btn-danger remove-work-item");
+                button.textContent = "Remove";
+                buttonDiv.appendChild(button);
+
+                var inputGroup = document.createElement("div");
+                inputGroup.setAttribute("class", "input-group mb-3");
+                inputGroup.appendChild(input);
+                inputGroup.appendChild(buttonDiv);
                 container.appendChild(inputGroup);
 
                 button.addEventListener("click", function () {
                     container.removeChild(inputGroup);
                 });
-            }
+            });
+
+            document.querySelectorAll(".remove-work-item").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    var container = document.getElementById("workItemTypesContainer");
+                    container.removeChild(button.closest(".input-group.mb-3"));
+                });
+            });
         });
-    };
-</script>
+
+        // Function to prepopulate existing work item types when editing
+        window.onload = function () {
+            var existingWorkItemTypes = document.querySelectorAll('.form-control[name="Project.WorkItemTypes"]');
+            existingWorkItemTypes.forEach(function (input) {
+                if (input.value !== "") {
+                    var container = document.getElementById("workItemTypesContainer");
+                    var inputGroup = input.closest(".input-group.mb-3");
+                    var button = inputGroup.querySelector(".btn.btn-danger.remove-work-item");
+                    container.appendChild(inputGroup);
+
+                    button.addEventListener("click", function () {
+                        container.removeChild(inputGroup);
+                    });
+                }
+            });
+        };
+
+        $(document).ready(function () {
+            $("#addMilestone").click(function () {
+                var index = $("#milestonesContainer").children().length;
+
+                $("#milestonesContainer").append(`
+                    <div class="input-group mt-2">
+                        <input type="text" name="Project.Milestones[${index}].Name" class="form-control" placeholder="Name"/>
+                        <input type="date" name="Project.Milestones[${index}].Date" class="form-control" placeholder="Date"/>
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                        </div>
+                     </div>
+                  `);
+            });
+
+            $(document).on("click", ".remove-field", function () {
+                $(this).closest(".input-group").remove();
+            });
+        });
+
+    </script>
+}

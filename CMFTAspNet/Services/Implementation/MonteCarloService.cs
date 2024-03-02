@@ -90,7 +90,7 @@ namespace CMFTAspNet.Services.Implementation
         {
             if (simulationResult.HasWorkRemaining)
             {
-                return new NoForecast();
+                return new WhenForecast(new Dictionary<int, int>(), 0);
             }
 
             return new WhenForecast(simulationResult.SimulationResults, simulationResult.InitialRemainingItems);

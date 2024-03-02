@@ -12,12 +12,14 @@ namespace CMFTAspNet.Tests.Pages.Projects
     {
         private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IWorkItemCollectorService> workItemCollectorServiceMock;
+        private Mock<IMonteCarloService> monteCarloServiceMock;
 
         [SetUp]
         public void Setup()
         {
             projectRepositoryMock = new Mock<IRepository<Project>>();
             workItemCollectorServiceMock = new Mock<IWorkItemCollectorService>();
+            monteCarloServiceMock = new Mock<IMonteCarloService>();
         }
 
         [Test]
@@ -52,11 +54,12 @@ namespace CMFTAspNet.Tests.Pages.Projects
 
             Assert.That(result, Is.InstanceOf<PageResult>());
             workItemCollectorServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once());
+            monteCarloServiceMock.Verify(x => x.ForecastFeatures(project.Features), Times.Once());
         }
 
         private DetailsModel CreateSubject()
         {
-            return new DetailsModel(projectRepositoryMock.Object, workItemCollectorServiceMock.Object);
+            return new DetailsModel(projectRepositoryMock.Object, workItemCollectorServiceMock.Object, monteCarloServiceMock.Object);
         }
 
         private Project SetupProject()

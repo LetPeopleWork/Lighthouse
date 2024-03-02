@@ -27,7 +27,8 @@ namespace CMFTAspNet.Services.Implementation.Repositories
                 .Include(r => r.Features).ThenInclude(f => f.RemainingWork)
                 .Include(f => f.Features).ThenInclude(f => f.Forecast).ThenInclude(f => f.SimulationResults)
                 .Include(f => f.InvolvedTeams)
-                    .ThenInclude(t => t.Team.WorkTrackingSystemOptions);
+                    .ThenInclude(t => t.Team.WorkTrackingSystemOptions)
+                .Include(p => p.Milestones);
         }
     }
 }

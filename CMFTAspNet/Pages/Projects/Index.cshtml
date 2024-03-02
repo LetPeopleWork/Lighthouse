@@ -17,21 +17,6 @@
             <th>
                 @Html.DisplayNameFor(model => model.Projects[0].Name)
             </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Projects[0].SearchBy)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Projects[0].WorkItemTypes)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Projects[0].SearchTerm)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Projects[0].TargetDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Projects[0].IncludeUnparentedItems)
-            </th>
             <th></th>
         </tr>
     </thead>
@@ -40,21 +25,6 @@
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.SearchBy)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.WorkItemTypes)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.SearchTerm)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.TargetDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IncludeUnparentedItems)
             </td>
             <td>
                 <a asp-page="./Create" asp-route-id="@item.Id">Edit</a> |

@@ -3,6 +3,7 @@ using System;
 using CMFTAspNet.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMFTAspNet.Migrations
 {
     [DbContext(typeof(AppContext))]
-    partial class AppContextModelSnapshot : ModelSnapshot
+    [Migration("20240301191426_TIPRemoveID")]
+    partial class TIPRemoveID
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.2");
@@ -222,21 +225,15 @@ namespace CMFTAspNet.Migrations
 
             modelBuilder.Entity("CMFTAspNet.Models.TeamInProject", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("TeamId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("TeamId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
+                    b.HasKey("TeamId", "ProjectId");
 
                     b.HasIndex("ProjectId");
-
-                    b.HasIndex("TeamId");
 
                     b.ToTable("TeamInProject");
                 });

@@ -5,11 +5,31 @@
     ViewData["Title"] = "Details";
 }
 
+<script src="/lib/Chart/Chart.min.js" integrity="sha256-d9Np49KdviSc4EDxsOPieKUBCpTmrW16eLD+BB4Vaio="></script>
+<script src="/lib/Chart/chartjs-adapter-date-fns.min.js" integrity="sha256-Z371DmWQH8cU83vAk036QAegi+hs+B/Eps6Vm8iw6YI="></script>
+<script src="/lib/Chart/chartjs-plugin-annotation.min.js" integrity="sha512-vR1GpvTTRaF+Ed/GM5kp/1dI2hAJPhIYI9izuVRfiXxd6PoLuHHCwKHuQyzlvS+IgMMtmE6XakO+vxZp1ZDqAg=="></script>
+
 <h1>@Model.Entity.Name</h1>
 
+<div>
+    <h5>Milestones:</h5>
+    @foreach (var milestone in Model.Entity.Milestones)
+    {
+        <h7>@milestone.Name: @milestone.Date.ToString("d")</h7>
+
+        <br>
+    }
+    <h5>Last Updated on: @Model.Entity.ProjectUpdateTime.ToString("G")</h5>
+</div>
+
+<div>
+    <form method="post">
+        <input type="hidden" asp-for="Entity.Id" />
+        <button type="submit" class="btn btn-primary">Refresh Features</button>
+    </form>
+</div>
+
 <div id="featuresTable">
-    <h4>Target Date: @Model.Entity.TargetDate?.ToString("d")</h4>
-    <h4>Last Updated on: @Model.Entity.ProjectUpdateTime.ToString("G")</h4>
     <table class="table">
         <caption>Forecasts</caption>
         <thead>
@@ -20,7 +40,10 @@
                 <th>70% Probability</th>
                 <th>85% Probability</th>
                 <th>95% Probability</th>
-                <th>Likelihood</th>
+                @foreach (var milestone in Model.Entity.Milestones)
+                {
+                    <th>@milestone.Name</th>
+                }
             </tr>
         </thead>
         <tbody>
@@ -28,20 +51,11 @@
             {
                 @if (feature.Forecast != null)
                 {
-                    var likelihood = feature.GetTargetDateLikelihood();
-
-                    string GetLikelihoodColor(double likelihood)
-                    {
-                        return likelihood >= 80 ? "green" : likelihood >= 50 ? "amber" : "red";
-                    }
-
                     string GetFutureDate(int daysInFuture)
                     {
                         var futureDate = DateTime.Today.AddDays(daysInFuture);
                         return futureDate.ToString("d");
                     }
-
-                    var likelihoodColor = GetLikelihoodColor(likelihood);
 
                     <tr>
                         <td>@feature.Name</td>
@@ -50,7 +64,13 @@
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
-                        <td style="background-color: @likelihoodColor">@likelihood</td>
+
+                        @foreach (var milestone in Model.Entity.Milestones)
+                        {
+                            var likelihood = feature.GetLikelhoodForDate(milestone.Date);
+                            string likelihoodColor = likelihood >= 80 ? "green" : likelihood >= 50 ? "orange" : "red";
+                            <td style="background-color: @likelihoodColor">@likelihood</td>
+                        }
                     </tr>
                 }
             }
@@ -78,13 +98,146 @@
 </div>
 
 <div>
-    <form method="post">
-        <input type="hidden" asp-for="Entity.Id" />
-        <button type="submit" class="btn btn-primary">Refresh Features</button>
-    </form>
+    <canvas id="timelineChart" width="800" height="150"></canvas>
 </div>
 
 <div>
     <a asp-page="./Create" asp-route-id="@Model.Entity.Id">Edit</a> |
     <a asp-page="./Index">Back to List</a>
 </div>
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+
+@{
+    // Convert dates to ISO string format in C# before sending them to JavaScript
+    var milestones = Model.Entity.Milestones.Select(m => new
+    {
+        Name = m.Name,
+        Date = m.Date.ToString("yyyy-MM-dd"),
+        Category = "Milestone",
+    });
+
+    var features = Model.Entity.Features.Where(f => f.Forecast != null).Select(f => new
+    {
+        Name = f.Name,
+        Date = DateTime.Today.AddDays(f.Forecast.GetProbability(85)).ToString("yyyy-MM-dd"),
+        Category = "Feature Completion",
+    });
+
+    var eventData = milestones.Concat(features);
+}
+
+<script>
+    var eventData = @Html.Raw(Json.Serialize(eventData));
+
+    // Add today's date to eventData
+    eventData.push({
+        name: 'Today',
+        date: new Date().toISOString().split('T')[0],
+        category: "Today"
+    });
+
+    var categories = [
+        {
+            name: "Milestone",
+            color: "#CFA8B1"
+        },
+        {
+            name: "Feature Completion",
+            color: "#30574E"
+        },
+        {
+            name: "Today",
+            color: "gray"
+        }
+    ]
+
+    // Extracting data for Chart.js
+    var startDate = new Date(eventData.reduce((prev, curr) => prev.date < curr.date ? prev : curr).date);
+    var endDate = new Date(eventData.reduce((prev, curr) => prev.date > curr.date ? prev : curr).date);
+
+    var dateRange = [];
+    for (var date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        dateRange.push(new Date(date));
+    }
+
+    // Create array to hold data for scatterplot
+    var data = dateRange.map(date => {
+        return { x: date.toISOString().split('T')[0], y: 1 }; // Set y-value to 1 for all data points
+    });
+
+    // Create Chart.js chart
+    var ctx = document.getElementById('timelineChart').getContext('2d');
+    var timelineChart = new Chart(ctx, {
+        type: 'scatter', // Use scatter plot
+        data: {
+            datasets: categories.map(category => {
+                return {
+                    label: category.name,
+                    data: eventData.filter(event => event.category === category.name).map(event => {
+                        return { x: event.date, y: 1 };
+                    }),
+                    backgroundColor: category.color,
+                    borderColor: category.color,
+                    pointRadius: 15 // Set point radius
+                };
+            })
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'yyyy-MM-dd'
+                        }
+                    },
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Date'
+                    }
+                },
+                y: {
+                    display: false,
+                    max: 2,
+                    min: 0.5
+                }
+            },
+            plugins: {
+                tooltip: false,
+                annotation: {
+                    annotations: eventData
+                        .filter(event => event.category !== 'Today')
+                        .map(event => {
+                            var yValue = 1; // Default y-value
+                            if (event.category === 'Milestone') {
+                                yValue = 1.5; // Adjust y-value for Milestones
+                            } else if (event.category === 'Feature Completion') {
+                                yValue = 1.7; // Adjust y-value for Feature Completion
+                            }
+
+                            return {
+                                type: 'label',
+                                xValue: event.date,
+                                yValue: yValue,
+                                backgroundColor: 'rgba(245,245,245)',
+                                content: [event.name],
+                                font: {
+                                    size: 10
+                                }
+                            };
+                        })
+                }
+            }
+        }
+    });
+
+</script>
+
+

@@ -8,10 +8,12 @@ namespace CMFTAspNet.Pages.Projects
     public class DetailsModel : PageModelBase<Project>
     {
         private readonly IWorkItemCollectorService workItemCollectorService;
+        private readonly IMonteCarloService monteCarloService;
 
-        public DetailsModel(IRepository<Project> projectRepository, IWorkItemCollectorService workItemCollectorService) : base(projectRepository)
+        public DetailsModel(IRepository<Project> projectRepository, IWorkItemCollectorService workItemCollectorService, IMonteCarloService monteCarloService) : base(projectRepository)
         {
             this.workItemCollectorService = workItemCollectorService;
+            this.monteCarloService = monteCarloService;
         }
 
         public async Task<IActionResult> OnPost(int? id)
@@ -23,6 +25,7 @@ namespace CMFTAspNet.Pages.Projects
             }
 
             await workItemCollectorService.UpdateFeaturesForProject(project);
+            monteCarloService.ForecastFeatures(project.Features);
             await Repository.Save();
 
             return OnGet(id);

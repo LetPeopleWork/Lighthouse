@@ -13,6 +13,7 @@ namespace CMFTAspNet.Services.Implementation.Repositories
         {
             return Context.Features
                 .Include(f => f.Project)
+                    .ThenInclude(p => p.Milestones)
                 .Include(f => f.RemainingWork).ThenInclude(rw => rw.Team)
                 .Include(f => f.Forecast).ThenInclude(f => f.SimulationResults);
         }

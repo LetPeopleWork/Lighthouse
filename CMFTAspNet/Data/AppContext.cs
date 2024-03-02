@@ -30,12 +30,18 @@ namespace CMFTAspNet.Data
                 .HasOne(tp => tp.Project)
                 .WithMany(p => p.InvolvedTeams)
                 .HasForeignKey(tp => tp.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade); // Or other delete behavior as needed
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<WorkTrackingSystemOption>()
                 .HasOne(t => t.Team)
                 .WithMany(x => x.WorkTrackingSystemOptions)
                 .HasForeignKey(wts => wts.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Milestone>()
+                .HasOne(m => m.Project)
+                .WithMany(p => p.Milestones)
+                .HasForeignKey(m => m.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<RemainingWork>()
@@ -47,13 +53,13 @@ namespace CMFTAspNet.Data
                 .HasOne(rw => rw.Feature)
                 .WithMany(f => f.RemainingWork)
                 .HasForeignKey(rw => rw.FeatureId)
-                .OnDelete(DeleteBehavior.Cascade); // Or other delete behavior as needed
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Feature>()
                 .HasOne(f => f.Forecast)
                 .WithOne(wf => wf.Feature)
                 .HasForeignKey<WhenForecast>(wf => wf.FeatureId)
-                .OnDelete(DeleteBehavior.Cascade); // Or other delete behavior as needed
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Feature>()
                 .HasOne(f => f.Project)

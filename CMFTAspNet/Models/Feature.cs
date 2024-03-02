@@ -39,11 +39,11 @@ namespace CMFTAspNet.Models
 
         public bool IsUnparentedFeature { get; set; } = false;
 
-        public double GetTargetDateLikelihood()
+        public double GetLikelhoodForDate(DateTime date)
         {
-            if (Project?.TargetDate != null)
+            if (date != default)
             {
-                var timeToTargetDate = (Project.TargetDate - DateTime.Today).Value.Days;
+                var timeToTargetDate = (date - DateTime.Today).Days;
 
                 return Forecast.GetLikelihood(timeToTargetDate);
             }

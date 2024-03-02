@@ -51,7 +51,7 @@ namespace CMFTAspNet.Tests.Pages.Projects
             {
                 Assert.That(result, Is.InstanceOf<PageResult>());
                 Assert.That(subject.Project, Is.EqualTo(project));
-                CollectionAssert.Contains(subject.SelectedTeams, project.InvolvedTeams.Last().Id);
+                CollectionAssert.Contains(subject.SelectedTeams, project.InvolvedTeams.Last().TeamId);
             });
         }
 
