@@ -25,7 +25,7 @@
 <div>
     <form method="post">
         <input type="hidden" asp-for="Entity.Id" />
-        <button type="submit" class="btn btn-primary">Refresh Features</button>
+        <button type="submit" class="btn btn-primary">Refresh Features & Forecasts</button>
     </form>
 </div>
 
@@ -68,8 +68,8 @@
                         @foreach (var milestone in Model.Entity.Milestones)
                         {
                             var likelihood = feature.GetLikelhoodForDate(milestone.Date);
-                            string likelihoodColor = likelihood >= 80 ? "green" : likelihood >= 50 ? "orange" : "red";
-                            <td style="background-color: @likelihoodColor">@likelihood</td>
+                            string likelihoodColor = likelihood >= 80 ? "#6E9994" : likelihood >= 50 ? "#FF5733" : "#FF6E8D";
+                            <td style="background-color: @likelihoodColor">@likelihood.ToString("0.00")%</td>
                         }
                     </tr>
                 }
@@ -145,15 +145,15 @@
     var categories = [
         {
             name: "Milestone",
-            color: "#CFA8B1"
+            color: "#FF6E8D"
         },
         {
             name: "Feature Completion",
-            color: "#30574E"
+            color: "#6E9994"
         },
         {
             name: "Today",
-            color: "gray"
+            color: "#FF5733"
         }
     ]
 

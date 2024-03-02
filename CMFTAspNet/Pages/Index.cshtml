@@ -1,34 +1,40 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Forecasts";
+    ViewData["Title"] = "Overview";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Forecasts</h1>
+    <h1 class="display-4">Overview</h1>
 
     <form method="post">
-        <button type="submit" class="btn btn-primary">Update Forecasts</button>
+        <button type="submit" class="btn btn-primary">Update All</button>
     </form>
 
-    <table class="table">
-        <caption>Forecasts</caption>
-        <thead>
-            <tr>
-                <th>Feature</th>
-                <th>Remaining Work</th>
-                <th>50% Probability</th>
-                <th>70% Probability</th>
-                <th>85% Probability</th>
-                <th>95% Probability</th>
-                <th>Project</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var feature in Model.Features.OrderBy(f => f.Order))
-            {
-                @if (feature.Forecast != null)
-                {
+    @foreach (var project in Model.Projects)
+    {
+        <h2><a asp-page="./Projects/Details" asp-route-id="@project.Id">@project.Name</a></h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Remaining Work</th>
+                    <th>Involved Teams</th>
+                    <th>50% Probability</th>
+                    <th>70% Probability</th>
+                    <th>85% Probability</th>
+                    <th>95% Probability</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var highestForecastFeature = project.Features
+                        .Where(f => f.Forecast != null)
+                        .OrderByDescending(f => f.Forecast.GetProbability(85))
+                        .FirstOrDefault();
+
+                    var remainingWork = project.Features.SelectMany(f => f.RemainingWork).Sum(rw => rw.RemainingWorkItems);
+
                     string GetFutureDate(int daysInFuture)
                     {
                         var futureDate = DateTime.Today.AddDays(daysInFuture);
@@ -36,16 +42,20 @@
                     }
 
                     <tr>
-                        <td>@feature.Name</td>
-                        <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
-                        <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
-                        <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
-                        <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
-                        <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
-                        <td><a asp-page="./Projects/Details" asp-route-id="@feature.Project.Id">@feature.Project.Name</a></td>
+                        <td>@remainingWork Work Items</td>
+                        <td>
+                            @foreach(var team in project.InvolvedTeams)
+                            {
+                                <a asp-page="./Teams/Details" asp-route-id="@team.Id">@team.Name</a> <br />
+                            }
+                        </td>
+                        <td>@GetFutureDate(@highestForecastFeature?.Forecast?.GetProbability(50) ?? 0)</td>
+                        <td>@GetFutureDate(@highestForecastFeature?.Forecast?.GetProbability(70) ?? 0)</td>
+                        <td>@GetFutureDate(@highestForecastFeature?.Forecast?.GetProbability(85) ?? 0)</td>
+                        <td>@GetFutureDate(@highestForecastFeature?.Forecast?.GetProbability(95) ?? 0)</td>
                     </tr>
                 }
-            }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    }
 </div>

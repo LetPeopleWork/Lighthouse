@@ -93,21 +93,23 @@ namespace CMFTAspNet.Tests.Services.Implementation
         [Test]
         public async Task CollectFeaturesForProject_NoRemainingWork_AddsDefaultRemainingWorkToFeature()
         {
-            var team = CreateTeam();
+            var team = CreateTeam([1]);
             var project = CreateProject(SearchBy.AreaPath);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
             SetupTeams(team);
 
-            var feature = new Feature(team, 0) { Id = 42 };
+            var feature1 = new Feature(team, 0) { Id = 42 };
+            var feature2 = new Feature(team, 2) { Id = 12 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature1.Id, feature2.Id }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, It.IsAny<Team>())).Returns(Task.FromResult(2));
 
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.That(project.Features, Has.Count.EqualTo(1));
-            Assert.That(project.Features.Single().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+            Assert.That(project.Features, Has.Count.EqualTo(2));
+            Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
         }
 
         [Test]
@@ -120,19 +122,21 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var project = CreateProject(SearchBy.AreaPath);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
-            var feature = new Feature([(team1, 0), (team2, 0)]);
+            var feature1 = new Feature([(team1, 0), (team2, 0)]) { Id = 17 };
+            var feature2 = new Feature([(team1, 2), (team2, 2)]) { Id = 19 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature1.Id, feature2.Id }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, It.IsAny<Team>())).Returns(Task.FromResult(2));
 
             await subject.UpdateFeaturesForProject(project);
 
             Assert.Multiple(() =>
             {
-                Assert.That(project.Features, Has.Count.EqualTo(1));
-                Assert.That(project.Features.Single().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                Assert.That(project.Features.Single().RemainingWork.First().RemainingWorkItems, Is.EqualTo(6));
-                Assert.That(project.Features.Single().RemainingWork.Last().RemainingWorkItems, Is.EqualTo(6));
+                Assert.That(project.Features, Has.Count.EqualTo(2));
+                Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(project.Features.First().RemainingWork.First().RemainingWorkItems, Is.EqualTo(6));
+                Assert.That(project.Features.First().RemainingWork.Last().RemainingWorkItems, Is.EqualTo(6));
             });
         }
 
@@ -146,18 +150,20 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var project = CreateProject(SearchBy.AreaPath);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
-            var feature = new Feature([(team1, 0), (team2, 0)]);
+            var feature1 = new Feature([(team1, 0), (team2, 0)]) { Id = 34 };
+            var feature2 = new Feature([(team1, 2), (team2, 2)]) { Id = 12 };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature1.Id, feature2.Id }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, It.IsAny<Team>())).Returns(Task.FromResult(2));
 
             await subject.UpdateFeaturesForProject(project);
 
             Assert.Multiple(() =>
             {
-                Assert.That(project.Features, Has.Count.EqualTo(1));
-                Assert.That(project.Features.Single().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                Assert.That(project.Features.Single().RemainingWork.Single().RemainingWorkItems, Is.EqualTo(12));
+                Assert.That(project.Features, Has.Count.EqualTo(2));
+                Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(project.Features.First().RemainingWork.Single().RemainingWorkItems, Is.EqualTo(12));
             });
         }
 
@@ -318,7 +324,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         {
             var team = new Team { Name = "Team" };
 
-            if  (throughput == null)
+            if (throughput == null)
             {
                 throughput = [1];
             }

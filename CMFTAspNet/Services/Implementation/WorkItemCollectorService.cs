@@ -20,37 +20,39 @@ namespace CMFTAspNet.Services.Implementation
 
         public async Task UpdateFeaturesForProject(Project project)
         {
-            var features = new List<Feature>();
-
             var featuresForProject = await GetFeaturesForProject(project);
-            features.AddRange(featuresForProject.OrderBy(x => x.Order));
+            project.UpdateFeatures(featuresForProject.OrderBy(x => x.Order));
 
-            await GetRemainingWorkForFeatures(project, features);
+            await GetRemainingWorkForFeatures(project);
 
-            ExtrapolateNotBrokenDownFeatures(features, project);
-            RemoveUninvolvedTeams(features);
-
-            project.UpdateFeatures(features);
+            RemoveUninvolvedTeams(project);
+            ExtrapolateNotBrokenDownFeatures(project);
         }
 
-        private void ExtrapolateNotBrokenDownFeatures(List<Feature> features, Project project)
+        private void ExtrapolateNotBrokenDownFeatures(Project project)
         {
-            foreach (var feature in features.Where(feature => feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0))
-            {
-                var teamsWithThroughput = feature.RemainingWork.Where(rw => rw.Team.TotalThroughput > 0).ToList();
+            var involvedTeams = project.InvolvedTeams.Where(t => t.TotalThroughput > 0).ToList();
 
-                var numberOfTeams = teamsWithThroughput.Count;
+            if (involvedTeams.Count <= 0)
+            {
+                return;
+            }
+
+            foreach (var feature in project.Features.Where(feature => feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0))
+            {
+                var numberOfTeams = involvedTeams.Count;
                 var buckets = SplitIntoBuckets(project.DefaultAmountOfWorkItemsPerFeature, numberOfTeams);
                 for (var index = 0; index < numberOfTeams; index++)
                 {
-                    teamsWithThroughput[index].RemainingWorkItems = buckets[index];
+                    var team = involvedTeams[index];
+                    feature.AddOrUpdateRemainingWorkForTeam(team, buckets[index]);
                 }
             }
         }
 
-        private void RemoveUninvolvedTeams(List<Feature> features)
+        private void RemoveUninvolvedTeams(Project project)
         {
-            foreach (var feature in features.ToList())
+            foreach (var feature in project.Features.ToList())
             {
                 var uninvolvedTeams = feature.RemainingWork.Where(x => x.RemainingWorkItems == 0).Select(kvp => kvp.Team).ToList();
                 foreach (var team in uninvolvedTeams)
@@ -79,22 +81,22 @@ namespace CMFTAspNet.Services.Implementation
             return buckets;
         }
 
-        private async Task GetRemainingWorkForFeatures(Project project, List<Feature> features)
+        private async Task GetRemainingWorkForFeatures(Project project)
         {
-            foreach (var featureForProject in features)
+            foreach (var featureForProject in project.Features)
             {
                 await GetRemainingWorkForFeature(featureForProject);
             }
 
             if (project.IncludeUnparentedItems)
             {
-                await GetUnparentedItemsForTeams(project, features);
+                await GetUnparentedItemsForTeams(project);
             }
         }
 
-        private async Task GetUnparentedItemsForTeams(Project project, List<Feature> features)
+        private async Task GetUnparentedItemsForTeams(Project project)
         {
-            var featureIds = features.Select(x => x.ReferenceId);
+            var featureIds = project.Features.Select(x => x.ReferenceId);
 
             foreach (var team in teamRepository.GetAll())
             {
@@ -109,7 +111,7 @@ namespace CMFTAspNet.Services.Implementation
                     unparentedFeature = featureRepository.GetById(unparentedFeatureId.Value) ?? unparentedFeature;
                 }
 
-                features.Add(unparentedFeature);
+                project.Features.Add(unparentedFeature);
 
                 unparentedFeature.AddOrUpdateRemainingWorkForTeam(team, unparentedItems.Count);
             }
@@ -159,7 +161,11 @@ namespace CMFTAspNet.Services.Implementation
             foreach (var team in teamRepository.GetAll())
             {
                 var remainingWork = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
-                featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
+
+                if (remainingWork > 0)
+                {
+                    featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
+                }
             }
         }
 

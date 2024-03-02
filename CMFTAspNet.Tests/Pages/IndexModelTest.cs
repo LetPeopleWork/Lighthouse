@@ -9,13 +9,13 @@ namespace CMFTAspNet.Tests.Pages
 {
     public class IndexModelTest
     {
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IMonteCarloService> monteCarloServiceMock;
 
         [SetUp]
         public void Setup()
         {
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            projectRepositoryMock = new Mock<IRepository<Project>>();
             monteCarloServiceMock = new Mock<IMonteCarloService>();
         }
 
@@ -28,14 +28,19 @@ namespace CMFTAspNet.Tests.Pages
                 new Feature { Id = 2, Name = "SuperImportantProject" },
             };
 
-            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
+            var project = new Project();
+            project.UpdateFeatures(features);
+
+            var projects = new List<Project> { project };
+
+            projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
 
             var subject = CreateSubject();
 
             var result = subject.OnGet();
 
             Assert.That(result, Is.InstanceOf<PageResult>());
-            CollectionAssert.AreEquivalent(subject.Features, features);
+            CollectionAssert.AreEquivalent(subject.Projects, projects);
         }
 
         [Test]
@@ -51,7 +56,7 @@ namespace CMFTAspNet.Tests.Pages
 
         private IndexModel CreateSubject()
         {
-            return new IndexModel(featureRepositoryMock.Object, monteCarloServiceMock.Object);
+            return new IndexModel(projectRepositoryMock.Object, monteCarloServiceMock.Object);
         }
     }
 }

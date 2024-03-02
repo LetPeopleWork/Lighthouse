@@ -8,21 +8,21 @@ namespace CMFTAspNet.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly IRepository<Feature> featureRepository;
+    private readonly IRepository<Project> projectRepository;
     private readonly IMonteCarloService monteCarloService;
 
-    public IndexModel(IRepository<Feature> featureRepository, IMonteCarloService monteCarloService)
+    public IndexModel(IRepository<Project> projectRepository, IMonteCarloService monteCarloService)
     {
-        this.featureRepository = featureRepository;
+        this.projectRepository = projectRepository;
         this.monteCarloService = monteCarloService;
     }
 
     [BindProperty]
-    public List<Feature> Features { get; set; } = new List<Feature>();
+    public List<Project> Projects { get; set; } = new List<Project>();
 
     public IActionResult OnGet()
     {
-        Features = new List<Feature>(featureRepository.GetAll());
+        Projects = new List<Project>(projectRepository.GetAll());
 
         return Page();
     }
