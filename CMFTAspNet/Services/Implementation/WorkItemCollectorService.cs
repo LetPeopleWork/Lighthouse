@@ -1,6 +1,7 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Services.Factories;
 using CMFTAspNet.Services.Interfaces;
+using CMFTAspNet.WorkTracking;
 
 namespace CMFTAspNet.Services.Implementation
 {
@@ -8,11 +9,13 @@ namespace CMFTAspNet.Services.Implementation
     {
         private readonly IWorkItemServiceFactory workItemServiceFactory;
         private readonly IRepository<Feature> featureRepository;
+        private readonly IRepository<Team> teamRepository;
 
-        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository)
+        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, IRepository<Team> teamRepository)
         {
             this.workItemServiceFactory = workItemServiceFactory;
             this.featureRepository = featureRepository;
+            this.teamRepository = teamRepository;
         }
 
         public async Task UpdateFeaturesForProject(Project project)
@@ -80,7 +83,7 @@ namespace CMFTAspNet.Services.Implementation
         {
             foreach (var featureForProject in features)
             {
-                await GetRemainingWorkForFeature(featureForProject, project.InvolvedTeams.Select(x => x.Team));
+                await GetRemainingWorkForFeature(featureForProject);
             }
 
             if (project.IncludeUnparentedItems)
@@ -93,7 +96,7 @@ namespace CMFTAspNet.Services.Implementation
         {
             var featureIds = features.Select(x => x.ReferenceId);
 
-            foreach (var team in project.InvolvedTeams.Select(t => t.Team))
+            foreach (var team in teamRepository.GetAll())
             {
                 var notClosedItems = await GetNotClosedItemsBySearchCriteria(project, team);
                 var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team, notClosedItems);
@@ -118,7 +121,7 @@ namespace CMFTAspNet.Services.Implementation
 
             foreach (var itemId in notClosedItems)
             {
-                var isRelatedToFeature = await GetWorkItemServiceForTeam(team).IsRelatedToFeature(itemId, featureIds, team);
+                var isRelatedToFeature = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).IsRelatedToFeature(itemId, featureIds, team);
                 if (!isRelatedToFeature)
                 {
                     unparentedItems.Add(itemId);
@@ -134,10 +137,10 @@ namespace CMFTAspNet.Services.Implementation
             switch (project.SearchBy)
             {
                 case SearchBy.Tag:
-                    unparentedItems = await GetWorkItemServiceForTeam(team).GetNotClosedWorkItemsByTag(team.WorkItemTypes, project.SearchTerm, team);
+                    unparentedItems = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetNotClosedWorkItemsByTag(team.WorkItemTypes, project.SearchTerm, team);
                     break;
                 case SearchBy.AreaPath:
-                    unparentedItems = await GetWorkItemServiceForTeam(team).GetNotClosedWorkItemsByAreaPath(team.WorkItemTypes, project.SearchTerm, team);
+                    unparentedItems = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetNotClosedWorkItemsByAreaPath(team.WorkItemTypes, project.SearchTerm, team);
                     break;
                 default:
                     throw new NotSupportedException($"Search by {project.SearchBy} is not supported!");
@@ -146,86 +149,68 @@ namespace CMFTAspNet.Services.Implementation
             return unparentedItems;
         }
 
-        private async Task GetRemainingWorkForFeature(Feature featureForProject, IEnumerable<Team> involvedTeams)
+        private async Task GetRemainingWorkForFeature(Feature featureForProject)
         {
             if (featureForProject.IsUnparentedFeature)
             {
                 return;
             }
 
-            foreach (var team in involvedTeams)
+            foreach (var team in teamRepository.GetAll())
             {
-                var remainingWork = await GetWorkItemServiceForTeam(team).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
+                var remainingWork = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
                 featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
             }
         }
 
         private async Task<List<Feature>> GetFeaturesForProject(Project project)
         {
+            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem);
+
+            var features = new List<Feature>();
+            var featureIds = new List<int>();
+
             switch (project.SearchBy)
             {
                 case SearchBy.Tag:
-                    return await GetFeaturesForProject(
-                        project,
-                        async (workItemTypes, teamConfiguration) =>
-                            await GetWorkItemServiceForTeam(teamConfiguration).GetWorkItemsByTag(workItemTypes, project.SearchTerm, teamConfiguration));
+                    featureIds = await workItemService.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, project);
+                    break;
                 case SearchBy.AreaPath:
-                    return await GetFeaturesForProject(
-                        project,
-                        async (workItemTypes, teamConfiguration) =>
-                            await GetWorkItemServiceForTeam(teamConfiguration).GetWorkItemsByAreaPath(workItemTypes, project.SearchTerm, teamConfiguration));
+                    featureIds = await workItemService.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, project);
+                    break;
                 default:
                     throw new NotSupportedException($"Search by {project.SearchBy} is not supported!");
             }
-        }
 
-        private async Task<List<Feature>> GetFeaturesForProject(Project project, Func<IEnumerable<string>, Team, Task<List<int>>> getFeatureAction)
-        {
-            var featuresForProject = new Dictionary<int, Feature>();
-
-            foreach (var team in project.InvolvedTeams.Select(x => x.Team))
+            foreach (var featureId in featureIds)
             {
-                var foundFeatures = await getFeatureAction(project.WorkItemTypes, team);
+                var feature = GetOrCreateFeature(featureId, project);
 
-                foreach (var featureId in foundFeatures.Where(f => AddOrExtendFeature(featuresForProject, f, project)))
-                {
-                    await AddFeatureDetails(featuresForProject, team, featureId);
-                }
+                var (name, order) = await workItemService.GetWorkItemDetails(featureId, project);
+                feature.Name = name;
+                feature.Order = order;
+
+                features.Add(feature);
             }
 
-            return [.. featuresForProject.Values];
+            return features;
         }
 
-        private async Task AddFeatureDetails(Dictionary<int, Feature> featuresForProject, Team team, int featureId)
+        private Feature GetOrCreateFeature(int featureId, Project project)
         {
-            var (name, order) = await GetWorkItemServiceForTeam(team).GetWorkItemDetails(featureId, team);
-            var featureToUpdate = featuresForProject[featureId];
+            var feature = featureRepository.GetByPredicate(f => f.ReferenceId == featureId);
 
-            featureToUpdate.Name = name;
-            featureToUpdate.Order = order;
-        }
-
-        private bool AddOrExtendFeature(Dictionary<int, Feature> featuresForProject, int featureId, Project project)
-        {
-            if (!featuresForProject.ContainsKey(featureId))
+            if (feature == null)
             {
-                var newFeature = featureRepository.GetByPredicate(f => f.ReferenceId == featureId);
-
-                if (newFeature == null)
-                {
-                    newFeature = new Feature() { ReferenceId = featureId, Project = project, ProjectId = project.Id };
-                }
-
-                featuresForProject[featureId] = newFeature;
-                return true;
+                feature = new Feature() { ReferenceId = featureId, Project = project, ProjectId = project.Id };
             }
 
-            return false;
+            return feature;
         }
 
-        private IWorkItemService GetWorkItemServiceForTeam(Team team)
+        private IWorkItemService GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
-            return workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+            return workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystem);
         }
     }
 }

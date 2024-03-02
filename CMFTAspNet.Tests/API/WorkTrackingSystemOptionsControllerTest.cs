@@ -1,5 +1,6 @@
 ﻿using CMFTAspNet.API;
 using CMFTAspNet.Factories;
+using CMFTAspNet.Models;
 using CMFTAspNet.WorkTracking;
 using Moq;
 
@@ -8,20 +9,38 @@ namespace CMFTAspNet.Tests.API
     public class WorkTrackingSystemOptionsControllerTest
     {
         [Test]
-        public void OnGet_ReturnsOptionsProvidedByFactory()
+        public void OnGet_IsTeamOption_ReturnsOptionsProvidedByFactory()
         {
             var factoryMock = new Mock<IWorkTrackingOptionsFactory>();
             var subject = new WorkTrackingSystemOptionsController(factoryMock.Object);
 
-            var expectedOptions = new List<WorkTrackingSystemOption>
+            var expectedOptions = new List<WorkTrackingSystemOption<Team>>
             {
-                new WorkTrackingSystemOption("Key", "Value", true)
+                new WorkTrackingSystemOption<Team>("Key", "Value", true)
             };
 
-            factoryMock.Setup(x => x.CreateOptionsForWorkTrackingSystem(WorkTrackingSystems.AzureDevOps)).Returns(expectedOptions);
+            factoryMock.Setup(x => x.CreateOptionsForWorkTrackingSystem<Team>(WorkTrackingSystems.AzureDevOps)).Returns(expectedOptions);
 
             // Act
-            var result = subject.Get(WorkTrackingSystems.AzureDevOps);
+            var result = subject.GetTeamWorktrackingOptions(WorkTrackingSystems.AzureDevOps);
+
+            CollectionAssert.AreEqual(expectedOptions, result);
+        }
+        [Test]
+        public void OnGet_IsProjectOption_ReturnsOptionsProvidedByFactory()
+        {
+            var factoryMock = new Mock<IWorkTrackingOptionsFactory>();
+            var subject = new WorkTrackingSystemOptionsController(factoryMock.Object);
+
+            var expectedOptions = new List<WorkTrackingSystemOption<Project>>
+            {
+                new WorkTrackingSystemOption<Project>("Key", "Value", true)
+            };
+
+            factoryMock.Setup(x => x.CreateOptionsForWorkTrackingSystem<Project>(WorkTrackingSystems.AzureDevOps)).Returns(expectedOptions);
+
+            // Act
+            var result = subject.GetProjectWorktrackingOptions(WorkTrackingSystems.AzureDevOps);
 
             CollectionAssert.AreEqual(expectedOptions, result);
         }

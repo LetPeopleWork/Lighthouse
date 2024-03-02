@@ -1,5 +1,6 @@
 ﻿@page
 @using CMFTAspNet.Models
+@using CMFTAspNet.WorkTracking
 @model CMFTAspNet.Pages.Projects.CreateModel
 
 @{
@@ -60,6 +61,8 @@
                         <div class="input-group mt-2">
                             <input type="text" name="Project.Milestones[@i].Name" value="@Model.Project.Milestones[i].Name" class="form-control" placeholder="Name" />
                             <input type="date" name="Project.Milestones[@i].Date" value="@Model.Project.Milestones[i].Date.ToString("yyyy-MM-dd")" class="form-control" placeholder="Date" />
+                            <input type="hidden" name="Project.Milestones[@i].Id" value="@Model.Project.Milestones[i].Id" class="form-control" />
+                            <input type="hidden" name="Project.Milestones[@i].ProjectId" value="@Model.Project.Id" class="form-control" />
                             <div class="input-group-append">
                                 <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
                             </div>
@@ -68,7 +71,6 @@
                 </div>
                 <button type="button" id="addMilestone" class="btn btn-primary mt-2">Add Milestone</button>
             </div>
-
 
             <div class="form-group form-check">
                 <label class="form-check-label">
@@ -81,11 +83,31 @@
                 <span asp-validation-for="Project.DefaultAmountOfWorkItemsPerFeature" class="text-danger"></span>
             </div>
 
-            <!-- Multi-select dropdown for selecting teams -->
             <div class="form-group">
-                <label>Select Teams:</label>
-                <select asp-for="SelectedTeams" asp-items="Model.TeamsList" multiple class="form-control"></select>
-                <span asp-validation-for="SelectedTeams" class="text-danger"></span>
+                <label asp-for="Project.WorkTrackingSystem" class="control-label">Work Tracking System:</label>
+                <select asp-for="Project.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()" id="workTrackingSystem">
+                    <option selected="selected" value="">Please select</option>
+                </select>
+                <span asp-validation-for="Project.WorkTrackingSystem" class="text-danger"></span>
+            </div>
+
+            <!-- Dynamic input fields for WorkTrackingSystemOptions -->
+            <div class="form-group">
+                <label>Work Tracking System Options:</label>
+                <div id="workTrackingOptionsContainer">
+                    @for (int i = 0; i < Model.Project.WorkTrackingSystemOptions.Count; i++)
+                    {
+                        var inputType = Model.Project.WorkTrackingSystemOptions[@i].Secret ? "password" : "text";
+
+                        <div class="input-group mt-2">
+                            <input type="text" name="Project.WorkTrackingSystemOptions[@i].Key" value="@Model.Project.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" readonly />
+                            <input type="@inputType" name="Project.WorkTrackingSystemOptions[@i].Value" value="@Model.Project.WorkTrackingSystemOptions[i].Value" class="form-control" placeholder="Value" />
+                            <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].Id" value="@Model.Project.WorkTrackingSystemOptions[i].Id" class="form-control" />
+                            <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].Secret" value="@Model.Project.WorkTrackingSystemOptions[i].Secret.ToString()" class="form-control" />
+                            <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].EntityId" value="@Model.Project.Id" class="form-control" />
+                        </div>
+                    }
+                </div>
             </div>
 
             <div class="form-group">
@@ -162,14 +184,39 @@
                 var index = $("#milestonesContainer").children().length;
 
                 $("#milestonesContainer").append(`
-                    <div class="input-group mt-2">
-                        <input type="text" name="Project.Milestones[${index}].Name" class="form-control" placeholder="Name"/>
-                        <input type="date" name="Project.Milestones[${index}].Date" class="form-control" placeholder="Date"/>
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
-                        </div>
-                     </div>
-                  `);
+                            <div class="input-group mt-2">
+                                <input type="text" name="Project.Milestones[${index}].Name" class="form-control" placeholder="Name"/>
+                                <input type="date" name="Project.Milestones[${index}].Date" class="form-control" placeholder="Date"/>
+                                <input type="hidden" name="Project.Milestones[${index}].ProjectId" value="@Model.Project.Id" class="form-control" />
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                                </div>
+                             </div>
+                          `);
+            });
+
+            $("#workTrackingSystem").change(function () {
+                var selectedSystem = $(this).val();
+                $.get("/api/WorkTrackingSystemOptions/Project?selectedSystem=" + selectedSystem, function (data) {
+                    // Clear existing options
+                    $("#workTrackingOptionsContainer").empty();
+
+                    // Add new options
+                    $.each(data, function (index, option) {
+                        var inputType = option.secret ? "password" : "text";
+                        var secretValue = option.secret ? "true" : "false";
+
+                        var html = '<div class="input-group mt-2">' +
+                            '<input type="text" name="Project.WorkTrackingSystemOptions[' + index + '].Key" value="' + option.key + '" class="form-control" placeholder="Key" readonly/>' +
+                            '<input type="' + inputType + '" name="Project.WorkTrackingSystemOptions[' + index + '].Value" value="' + option.value + '" class="form-control" placeholder="Value" />' +
+                            '<input type="hidden" name="Project.WorkTrackingSystemOptions[' + index + '].Secret" value="' + secretValue + '" class="form-control" placeholder="Secret" />' +
+                            '<input type="hidden" name="Project.WorkTrackingSystemOptions[' + index + '].EntityId" value="@Model.Project.Id" class="form-control"  />' +
+                            '<div class="input-group-append">' +
+                            '</div>' +
+                            '</div>';
+                        $("#workTrackingOptionsContainer").append(html);
+                    });
+                });
             });
 
             $(document).on("click", ".remove-field", function () {

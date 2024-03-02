@@ -1,8 +1,6 @@
-﻿using CMFTAspNet.Models;
-
-namespace CMFTAspNet.WorkTracking
+﻿namespace CMFTAspNet.WorkTracking
 {
-    public class WorkTrackingSystemOption
+    public class WorkTrackingSystemOption<T> where T : class
     {
         public WorkTrackingSystemOption()
         {            
@@ -23,8 +21,8 @@ namespace CMFTAspNet.WorkTracking
 
         public bool Secret { get; set; }
 
-        public Team Team { get; set; }
+        public T? Entity { get; set; }
 
-        public int TeamId { get; set; }
+        public int EntityId {  get; set; }
     }
 }

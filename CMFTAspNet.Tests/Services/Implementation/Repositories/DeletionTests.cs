@@ -40,7 +40,6 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             await teamRepository.Save();
 
             var project = new Project { Name = "MyProject", SearchTerm = "Search" };
-            project.InvolvedTeams.Add(new TeamInProject(team, project));
 
             var projectRepository = ServiceProvider.GetService<IRepository<Project>>();
             projectRepository.Add(project);            
@@ -84,7 +83,6 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             await teamRepository.Save();
 
             var project = new Project { Name = "MyProject", SearchTerm = "Search" };
-            project.InvolvedTeams.Add(new TeamInProject(team, project));
 
             var milestone1 = new Milestone { Name = "Milestone", Date = DateTime.Now.AddDays(12), Project = project };
             var milestone2 = new Milestone { Name = "Milestone2", Date = DateTime.Now.AddDays(42), Project = project };
@@ -106,12 +104,12 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             feature.RemainingWork.Add(new RemainingWork(team, 12, feature));
             project.Features.Add(feature);
 
-            var monteCarloService = ServiceProvider.GetService<IMonteCarloService>();
-            monteCarloService.ForecastFeatures(project.Features);
-
             var featureRepository = ServiceProvider.GetService<IRepository<Feature>>();
             featureRepository.Add(feature);
             await featureRepository.Save();
+
+            var monteCarloService = ServiceProvider.GetService<IMonteCarloService>();
+            await monteCarloService.ForecastAllFeatures();
 
             // Act
             projectRepository.Remove(project.Id);
@@ -137,8 +135,6 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             await teamRepository.Save();
 
             var project = new Project { Name = "MyProject", SearchTerm = "Search" };
-            project.InvolvedTeams.Add(new TeamInProject(team1, project));
-            project.InvolvedTeams.Add(new TeamInProject(team2, project));
 
             var projectRepository = ServiceProvider.GetService<IRepository<Project>>();
             projectRepository.Add(project);

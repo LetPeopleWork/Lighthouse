@@ -75,7 +75,7 @@ namespace CMFTAspNet.Tests.Pages.Teams
             // Act
             await subject.OnPostUpdateForecast(12);
 
-            monteCarloServiceMock.Verify(x => x.ForecastFeatures(featuresForTeam));
+            monteCarloServiceMock.Verify(x => x.ForecastFeaturesForTeam(team));
         }
 
         [Test]

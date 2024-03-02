@@ -4,6 +4,6 @@ namespace CMFTAspNet.Factories
 {
     public interface IWorkTrackingOptionsFactory
     {
-        IEnumerable<WorkTrackingSystemOption> CreateOptionsForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem);
+        IEnumerable<WorkTrackingSystemOption<T>> CreateOptionsForWorkTrackingSystem<T>(WorkTrackingSystems workTrackingSystem) where T : class;
     }
 }

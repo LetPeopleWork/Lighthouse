@@ -63,7 +63,7 @@ namespace CMFTAspNet.Services.Implementation.Repositories
 
         public void Update(T item)
         {
-            Context.Entry(item).State = EntityState.Modified;
+            dbSetGetter(Context).Update(item);
         }
     }
 }

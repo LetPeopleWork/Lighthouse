@@ -50,8 +50,7 @@ namespace CMFTAspNet.Pages.Teams
         {
             return await GetTeamAndReloadPage(id, async (Team team) =>
             {
-                monteCarloService.ForecastFeatures(GetFeaturesForTeam(id.Value));
-                await featureRepository.Save();
+                await monteCarloService.ForecastFeaturesForTeam(team);
             });
         }
 

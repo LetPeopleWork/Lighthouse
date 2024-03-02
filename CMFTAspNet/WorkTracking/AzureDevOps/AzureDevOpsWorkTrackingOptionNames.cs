@@ -2,10 +2,12 @@
 {
     public static class AzureDevOpsWorkTrackingOptionNames
     {
-        public static string AzureDevOpsUrl => "Azure DevOps Url";
+        public static string Url => "Azure DevOps Url";
 
         public static string PersonalAccessToken => "Personal Access Token";
 
-        public static string AzureDevOpsTeamProject => "Team Project";
+        public static string TeamProject => "Team Project";
+
+        public static string AreaPaths => "Area Paths";
     }
 }

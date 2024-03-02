@@ -25,7 +25,12 @@ namespace CMFTAspNet.Pages.Projects
             }
 
             await workItemCollectorService.UpdateFeaturesForProject(project);
-            monteCarloService.ForecastFeatures(project.Features);
+
+            foreach (var team in project.InvolvedTeams)
+            {
+                await monteCarloService.ForecastFeaturesForTeam(team);
+            }
+
             await Repository.Save();
 
             return OnGet(id);

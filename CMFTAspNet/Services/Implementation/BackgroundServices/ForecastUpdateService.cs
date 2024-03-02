@@ -1,7 +1,4 @@
-﻿using CMFTAspNet.Models;
-using CMFTAspNet.Services.Interfaces;
-
-namespace CMFTAspNet.Services.Implementation.BackgroundServices
+﻿namespace CMFTAspNet.Services.Implementation.BackgroundServices
 {
     public class ForecastUpdateService : UpdateBackgroundServiceBase
     {
@@ -15,14 +12,9 @@ namespace CMFTAspNet.Services.Implementation.BackgroundServices
         protected override async Task UpdateAllItems(CancellationToken stoppingToken)
         {
             using (var scope = serviceScopeFactory.CreateScope())
-            {
-                var featureRepository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
-
-                var features = featureRepository.GetAll();
+            {                
                 var monteCarloService = scope.ServiceProvider.GetRequiredService<IMonteCarloService>();
-                monteCarloService.ForecastFeatures(features);
-                await featureRepository.Save();
-
+                await monteCarloService.ForecastAllFeatures();
             }
         }
     }

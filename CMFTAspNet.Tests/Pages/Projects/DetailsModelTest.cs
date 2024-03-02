@@ -48,13 +48,19 @@ namespace CMFTAspNet.Tests.Pages.Projects
         public async Task OnPost_ProjectExists_UpdatesFeaturesForProject()
         {
             var project = SetupProject();
+            var team = new Team();
+            var feautre = new Feature { Project = project };
+            feautre.RemainingWork.Add(new RemainingWork { Feature = feautre, Team = team });
+
+            project.Features.Add(feautre);
+
             var subject = CreateSubject();
 
             var result = await subject.OnPost(12);
 
             Assert.That(result, Is.InstanceOf<PageResult>());
             workItemCollectorServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once());
-            monteCarloServiceMock.Verify(x => x.ForecastFeatures(project.Features), Times.Once());
+            monteCarloServiceMock.Verify(x => x.ForecastFeaturesForTeam(team), Times.Once());
         }
 
         private DetailsModel CreateSubject()

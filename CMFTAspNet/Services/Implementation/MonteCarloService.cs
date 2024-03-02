@@ -8,11 +8,13 @@ namespace CMFTAspNet.Services.Implementation
     {
         private readonly int trials;
         private readonly IRandomNumberService randomNumberService;
+        private readonly IRepository<Feature> featureRepository;
 
-        public MonteCarloService(IRandomNumberService randomNumberService, int trials = 10000)
+        public MonteCarloService(IRandomNumberService randomNumberService, IRepository<Feature> featureRepository, int trials = 10000)
         {
             this.trials = trials;
             this.randomNumberService = randomNumberService;
+            this.featureRepository = featureRepository;
         }
 
         public HowManyForecast HowMany(Throughput throughput, int days)
@@ -42,7 +44,25 @@ namespace CMFTAspNet.Services.Implementation
             return fakeFeature.Forecast;
         }
 
-        public void ForecastFeatures(IEnumerable<Feature> features)
+        public async Task ForecastAllFeatures()
+        {
+            var allFeatures = featureRepository.GetAll();
+
+            ForecastFeatures(allFeatures);
+
+            await featureRepository.Save();
+        }
+
+        public async Task ForecastFeaturesForTeam(Team team)
+        {
+            var featuresForTeam = featureRepository.GetAll().Where(feature => feature.RemainingWork.Any(remainingWork => remainingWork.Team == team));
+
+            ForecastFeatures(featuresForTeam);
+
+            await featureRepository.Save();
+        }
+
+        private void ForecastFeatures(IEnumerable<Feature> features)
         {
             var simulationResults = InitializeSimulationResults(features.OrderBy(f => f.Order));
             RunMonteCarloSimulation(simulationResults);

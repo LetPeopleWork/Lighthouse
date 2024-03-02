@@ -7,5 +7,9 @@
         public int Key { get; set; }
 
         public int Value { get; set; }
+
+        public ForecastBase Forecast { get; set; }
+
+        public int ForecastId { get; set; } 
     }
 }

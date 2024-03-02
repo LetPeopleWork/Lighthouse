@@ -59,7 +59,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeam();
 
-            var itemsByTag = await subject.GetWorkItemsByAreaPath(["Feature"], "NotExistingAreaPath", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByArea(["Feature"], "NotExistingAreaPath", teamConfiguration);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -70,7 +70,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeam();
 
-            var itemsByTag = await subject.GetWorkItemsByAreaPath(["Feature"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByArea(["Feature"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(1));
         }
@@ -81,7 +81,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeam();
 
-            var itemsByTag = await subject.GetWorkItemsByAreaPath(["Bug"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
+            var itemsByTag = await subject.GetWorkItemsByArea(["Bug"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -177,11 +177,11 @@ namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
             var organizationUrl = "https://dev.azure.com/huserben";
             var personalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsCMFTIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'AzureDevOpsCMFTIntegrationTestToken' is set!");
             
-            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl, organizationUrl, false));
-            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.AzureDevOpsTeamProject, "CMFTTestTeamProject", false));
-            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, personalAccessToken, true));
+            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.Url, organizationUrl, false));
+            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.TeamProject, "CMFTTestTeamProject", false));
+            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.AreaPaths, "CMFTTestTeamProject", false));
+            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, personalAccessToken, true));
 
-            team.AreaPaths.Add("CMFTTestTeamProject");
             team.IgnoredTags.Add("ThroughputIgnore");
 
             return team;

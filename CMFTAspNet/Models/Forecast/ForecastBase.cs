@@ -5,6 +5,8 @@
         private SortedDictionary<int, int> simulationResult;
         private readonly IComparer<int> comparer;
 
+        protected ForecastBase() { }
+
         protected ForecastBase(IComparer<int> comparer)
         {
             this.comparer = comparer;
@@ -14,7 +16,7 @@
         {
             foreach (var item in simulationResult)
             {
-                SimulationResults.Add(new IndividualSimulationResult { Key = item.Key, Value = item.Value });
+                SimulationResults.Add(new IndividualSimulationResult { Key = item.Key, Value = item.Value, Forecast = this, ForecastId = Id });
             }
 
             TotalTrials = simulationResult.Values.Sum();

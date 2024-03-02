@@ -31,7 +31,7 @@ namespace CMFTAspNet.Tests.Models
         public void GetWorkTrackingOptionByKey_ValidKey_ReturnsOption()
         {
             var team = new Team();
-            var workTrackingOption = new WorkTrackingSystemOption("Key", "Value", false);
+            var workTrackingOption = new WorkTrackingSystemOption<Team>("Key", "Value", false);
             team.WorkTrackingSystemOptions.Add(workTrackingOption);
 
             var actualValue = team.GetWorkTrackingSystemOptionByKey("Key");
@@ -43,7 +43,7 @@ namespace CMFTAspNet.Tests.Models
         public void GetWorkTrackingOptionByKey_InvalidKey_Throws()
         {
             var team = new Team();
-            var workTrackingOption = new WorkTrackingSystemOption("Key", "Value", false);
+            var workTrackingOption = new WorkTrackingSystemOption<Team>("Key", "Value", false);
             team.WorkTrackingSystemOptions.Add(workTrackingOption);
 
             Assert.Throws<ArgumentException>(() => team.GetWorkTrackingSystemOptionByKey("InvalidKey"));

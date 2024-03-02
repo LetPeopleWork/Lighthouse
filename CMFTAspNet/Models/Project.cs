@@ -1,8 +1,9 @@
 ﻿using CMFTAspNet.Services.Interfaces;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CMFTAspNet.Models
 {
-    public class Project : IEntity
+    public class Project : WorkTrackingSystemOptionsOwner<Project>, IEntity
     {
         public int Id { get; set; }
 
@@ -10,9 +11,10 @@ namespace CMFTAspNet.Models
         
         public SearchBy SearchBy { get; set; }
         
-        public List<string> WorkItemTypes { get; set; } = new List<string>();
+        public List<string> WorkItemTypes { get; set; } = new List<string> { "Epic" };
 
-        public List<TeamInProject> InvolvedTeams { get; set; } = new List<TeamInProject>();
+        [NotMapped]
+        public IEnumerable<Team> InvolvedTeams => Features.SelectMany(f => f.RemainingWork).Select(rw => rw.Team).Distinct();
 
         public string SearchTerm { get; set; }
 

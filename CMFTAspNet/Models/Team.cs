@@ -1,19 +1,12 @@
 ﻿using CMFTAspNet.Services.Interfaces;
-using CMFTAspNet.WorkTracking;
 
 namespace CMFTAspNet.Models
 {
-    public class Team : IEntity
+    public class Team : WorkTrackingSystemOptionsOwner<Team>, IEntity
     {
         public int Id { get; set; }
 
         public string Name { get; set; }
-
-        public WorkTrackingSystems WorkTrackingSystem { get; set; }
-
-        public List<WorkTrackingSystemOption> WorkTrackingSystemOptions { get; set; } = new List<WorkTrackingSystemOption>();
-
-        public List<string> AreaPaths { get; set; } = new List<string>();
 
         public List<string> WorkItemTypes { get; set; } = new List<string> { "User Story", "Bug" };
 
@@ -32,19 +25,6 @@ namespace CMFTAspNet.Models
         public Throughput Throughput => new Throughput(RawThroughput);
 
         public int TotalThroughput => RawThroughput.Sum();
-
-        public string GetWorkTrackingSystemOptionByKey(string key)
-        {
-            var workTrackingOption = WorkTrackingSystemOptions.SingleOrDefault(x => x.Key == key);
-
-            if (workTrackingOption == null)
-            {
-                throw new ArgumentException($"Key {key} not found in Work Tracking Options");
-            }
-
-            return workTrackingOption.Value;
-        }
-
         public void UpdateThroughput(int[] throughput)
         {
             RawThroughput = throughput;

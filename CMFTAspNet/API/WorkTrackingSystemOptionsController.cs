@@ -1,4 +1,5 @@
 ﻿using CMFTAspNet.Factories;
+using CMFTAspNet.Models;
 using CMFTAspNet.WorkTracking;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,11 +16,16 @@ namespace CMFTAspNet.API
             this.workTrackingOptionsFactory = workTrackingOptionsFactory;
         }
 
-        public IEnumerable<WorkTrackingSystemOption> Get(WorkTrackingSystems selectedSystem)
+        [HttpGet("Team")]
+        public IEnumerable<WorkTrackingSystemOption<Team>> GetTeamWorktrackingOptions(WorkTrackingSystems selectedSystem)
         {
-            var options = workTrackingOptionsFactory.CreateOptionsForWorkTrackingSystem(selectedSystem);
+            return workTrackingOptionsFactory.CreateOptionsForWorkTrackingSystem<Team>(selectedSystem);
+        }
 
-            return options;
+        [HttpGet("Project")]
+        public IEnumerable<WorkTrackingSystemOption<Project>> GetProjectWorktrackingOptions(WorkTrackingSystems selectedSystem)
+        {
+            return workTrackingOptionsFactory.CreateOptionsForWorkTrackingSystem<Project>(selectedSystem);
         }
     }
 }

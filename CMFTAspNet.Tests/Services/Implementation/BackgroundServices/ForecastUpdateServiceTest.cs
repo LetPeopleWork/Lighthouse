@@ -12,7 +12,6 @@ namespace CMFTAspNet.Tests.Services.Implementation.BackgroundServices
     public class ForecastUpdateServiceTest
     {
         private IConfiguration configuration;
-        private Mock<IRepository<Feature>> featureRepoMock;
         private Mock<IMonteCarloService> monteCarloServiceMock;
         private Mock<IServiceScopeFactory> serviceScopeFactoryMock;
         private Mock<ILogger<ForecastUpdateService>> loggerMock;
@@ -20,7 +19,6 @@ namespace CMFTAspNet.Tests.Services.Implementation.BackgroundServices
         [SetUp]
         public void Setup()
         {
-            featureRepoMock = new Mock<IRepository<Feature>>();
             monteCarloServiceMock = new Mock<IMonteCarloService>();
 
             serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
@@ -29,7 +27,6 @@ namespace CMFTAspNet.Tests.Services.Implementation.BackgroundServices
             var scopeMock = new Mock<IServiceScope>();
 
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
-            scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IRepository<Feature>))).Returns(featureRepoMock.Object);
             scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IMonteCarloService))).Returns(monteCarloServiceMock.Object);
 
             SetupConfiguration(10);
@@ -38,21 +35,11 @@ namespace CMFTAspNet.Tests.Services.Implementation.BackgroundServices
         [Test]
         public async Task ExecuteAsync_RefreshesAllFeaturesAsync()
         {
-            var features = new List<Feature>
-            {
-                new Feature(),
-                new Feature(),
-                new Feature(),
-            };
-
-            featureRepoMock.Setup(x => x.GetAll()).Returns(features);
-
             var subject = CreateSubject();
 
             await subject.StartAsync(CancellationToken.None);
 
-            monteCarloServiceMock.Verify(x => x.ForecastFeatures(features));
-            featureRepoMock.Verify(x => x.Save());
+            monteCarloServiceMock.Verify(x => x.ForecastAllFeatures());
         }
 
         private void SetupConfiguration(int interval)

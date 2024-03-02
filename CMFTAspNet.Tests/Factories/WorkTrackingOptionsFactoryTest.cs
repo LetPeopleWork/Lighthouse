@@ -1,4 +1,5 @@
 ﻿using CMFTAspNet.Factories;
+using CMFTAspNet.Models;
 using CMFTAspNet.WorkTracking;
 using CMFTAspNet.WorkTracking.AzureDevOps;
 
@@ -11,7 +12,7 @@ namespace CMFTAspNet.Tests.Factories
         {
             var subject = new WorkTrackingOptionsFactory();
 
-            var options = subject.CreateOptionsForWorkTrackingSystem(WorkTrackingSystems.Unknown).ToList();
+            var options = subject.CreateOptionsForWorkTrackingSystem<Team>(WorkTrackingSystems.Unknown).ToList();
 
             Assert.That(options, Has.Count.EqualTo(0));
         }
@@ -21,17 +22,17 @@ namespace CMFTAspNet.Tests.Factories
         {
             var subject = new WorkTrackingOptionsFactory();
 
-            var options = subject.CreateOptionsForWorkTrackingSystem(WorkTrackingSystems.AzureDevOps);
+            var options = subject.CreateOptionsForWorkTrackingSystem<Project>(WorkTrackingSystems.AzureDevOps);
 
             Assert.Multiple(() =>
             {
-                Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.AzureDevOpsUrl), Is.True);
-                Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.AzureDevOpsTeamProject), Is.True);
+                Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.Url), Is.True);
+                Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.TeamProject), Is.True);
                 Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, true), Is.True);
             });
         }
 
-        private bool ContainsOption(IEnumerable<WorkTrackingSystemOption> options, string key, bool isSecret = false)
+        private bool ContainsOption<T>(IEnumerable<WorkTrackingSystemOption<T>> options, string key, bool isSecret = false) where T : class
         {
             return options.Any(option => option.Key == key && option.Secret == isSecret);
         }

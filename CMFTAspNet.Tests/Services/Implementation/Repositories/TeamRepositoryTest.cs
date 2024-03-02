@@ -15,7 +15,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         public async Task GetTeamById_ExistingId_RetunrsCorrectTeam()
         {
             var subject = CreateSubject();
-            var workTrackingOptions = new List<WorkTrackingSystemOption> { new WorkTrackingSystemOption("key", "value", false) };
+            var workTrackingOptions = new List<WorkTrackingSystemOption<Team>> { new WorkTrackingSystemOption<Team>("key", "value", false) };
             var team = new Team {  Name = "Name", WorkTrackingSystemOptions = workTrackingOptions };
 
             subject.Add(team);

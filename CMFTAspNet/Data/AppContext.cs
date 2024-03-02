@@ -20,22 +20,16 @@ namespace CMFTAspNet.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<TeamInProject>()
-                .HasOne(tp => tp.Team)
-                .WithMany()
-                .HasForeignKey(tp => tp.TeamId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<TeamInProject>()
-                .HasOne(tp => tp.Project)
-                .WithMany(p => p.InvolvedTeams)
-                .HasForeignKey(tp => tp.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<WorkTrackingSystemOption>()
-                .HasOne(t => t.Team)
+            modelBuilder.Entity<WorkTrackingSystemOption<Team>>()
+                .HasOne(t => t.Entity)
                 .WithMany(x => x.WorkTrackingSystemOptions)
-                .HasForeignKey(wts => wts.TeamId)
+                .HasForeignKey(wts => wts.EntityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WorkTrackingSystemOption<Project>>()
+                .HasOne(t => t.Entity)
+                .WithMany(x => x.WorkTrackingSystemOptions)
+                .HasForeignKey(wts => wts.EntityId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Milestone>()
@@ -59,6 +53,12 @@ namespace CMFTAspNet.Data
                 .HasOne(f => f.Forecast)
                 .WithOne(wf => wf.Feature)
                 .HasForeignKey<WhenForecast>(wf => wf.FeatureId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<IndividualSimulationResult>()
+                .HasOne(isr => isr.Forecast)
+                .WithMany(f => f.SimulationResults)
+                .HasForeignKey(isr => isr.ForecastId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Feature>()

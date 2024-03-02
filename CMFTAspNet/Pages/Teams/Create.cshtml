@@ -32,24 +32,6 @@
                 <span asp-validation-for="Team.ThroughputHistory" class="text-danger"></span>
             </div>
 
-            <!-- Dynamic input fields for AreaPaths -->
-            <div class="form-group">
-                <label>Area Paths:</label>
-                <div id="areaPathsContainer">
-                    @foreach (var areaPath in Model.Team?.AreaPaths ?? new List<string>())
-                    {
-                        <div class="input-group mt-2">
-                            <input type="text" name="Team.AreaPaths" value="@areaPath" class="form-control" />
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
-                            </div>
-                        </div>
-                    }
-                </div>
-                <button type="button" id="addAreaPath" class="btn btn-primary mt-2">Add Area Path</button>
-            </div>
-
-
             <!-- Dynamic input fields for WorkItemTypes -->
             <div class="form-group">
                 <label>Work Item Types:</label>
@@ -119,9 +101,11 @@
                         var inputType = Model.Team.WorkTrackingSystemOptions[@i].Secret ? "password" : "text";
 
                         <div class="input-group mt-2">
-                            <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" value="@Model.Team.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" />
+                            <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" value="@Model.Team.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" readonly />
                             <input type="@inputType" name="Team.WorkTrackingSystemOptions[@i].Value" value="@Model.Team.WorkTrackingSystemOptions[i].Value" class="form-control" placeholder="Value" />
                             <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Secret" value="@Model.Team.WorkTrackingSystemOptions[i].Secret" class="form-control" placeholder="Secret" />
+                            <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Id" value="@Model.Team.WorkTrackingSystemOptions[i].Id" class="form-control" />
+                            <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].EntityId" value="@Model.Team.Id" class="form-control" />
                         </div>
                     }
                 </div>
@@ -144,16 +128,6 @@
     }
     <script>
         $(document).ready(function () {
-            // Function to add AreaPath input field
-            $("#addAreaPath").click(function () {
-                $("#areaPathsContainer").append('<div class="input-group mt-2">' +
-                    '<input type="text" name="Team.AreaPaths" class="form-control" />' +
-                    '<div class="input-group-append">' +
-                    '<button class="btn btn-outline-danger remove-field" type="button">Remove</button>' +
-                    '</div>' +
-                    '</div>');
-            });
-
             // Function to add WorkItemType input field
             $("#addWorkItemType").click(function () {
                 $("#workItemTypesContainer").append('<div class="input-group mt-2">' +
@@ -186,17 +160,20 @@
 
             $("#workTrackingSystem").change(function () {
                 var selectedSystem = $(this).val();
-                $.get("/api/WorkTrackingSystemOptions?selectedSystem=" + selectedSystem, function (data) {
+                $.get("/api/WorkTrackingSystemOptions/Team?selectedSystem=" + selectedSystem, function (data) {
                     // Clear existing options
                     $("#workTrackingOptionsContainer").empty();
 
                     // Add new options
                     $.each(data, function (index, option) {
-                        var inputType = option.secret ? "password" : "text";
+                        var inputType = option.secret ? "password" : "text";                        
+                        var secretValue = option.secret ? "true" : "false";
+
                         var html = '<div class="input-group mt-2">' +
-                            '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Key" value="' + option.key + '" class="form-control" placeholder="Key" />' +
+                            '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Key" value="' + option.key + '" class="form-control" placeholder="Key" readonly/>' +
                             '<input type="' + inputType + '" name="Team.WorkTrackingSystemOptions[' + index + '].Value" value="' + option.value + '" class="form-control" placeholder="Value" />' +
-                            '<input type="hidden" name="Team.WorkTrackingSystemOptions[' + index + '].Secret" value="' + option.secret + '" class="form-control" placeholder="Secret" />' +
+                            '<input type="hidden" name="Team.WorkTrackingSystemOptions[' + index + '].Secret" value="' + option.secretValue + '" class="form-control" placeholder="Secret" />' +
+                            '<input type="hidden" name="Team.WorkTrackingSystemOptions[' + index + '].EntityId" value="@Model.Team.Id" class="form-control"  />' +
                             '<div class="input-group-append">' +
                             '</div>' +
                             '</div>';

@@ -41,20 +41,12 @@ namespace CMFTAspNet.Tests.Pages
         [Test]
         public async Task OnPost_RecalculatesForecasts_ReturnsPage()
         {
-            var features = new List<Feature>
-            {
-                new Feature { Id = 1, Name = "Project1" },
-                new Feature { Id = 2, Name = "SuperImportantProject" },
-            };
-
-            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
-
             var subject = CreateSubject();
 
             var result = await subject.OnPost();
 
             Assert.That(result, Is.InstanceOf<PageResult>());
-            monteCarloServiceMock.Verify(x => x.ForecastFeatures(features));
+            monteCarloServiceMock.Verify(x => x.ForecastAllFeatures());
         }
 
         private IndexModel CreateSubject()

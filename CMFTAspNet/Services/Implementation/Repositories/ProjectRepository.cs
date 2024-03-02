@@ -24,11 +24,10 @@ namespace CMFTAspNet.Services.Implementation.Repositories
         private IEnumerable<Project> GetAllProjectsWithIncludes()
         {
             return Context.Projects
-                .Include(r => r.Features).ThenInclude(f => f.RemainingWork)
+                .Include(r => r.Features).ThenInclude(f => f.RemainingWork).ThenInclude(rw => rw.Team).ThenInclude(t => t.WorkTrackingSystemOptions)
                 .Include(f => f.Features).ThenInclude(f => f.Forecast).ThenInclude(f => f.SimulationResults)
-                .Include(f => f.InvolvedTeams)
-                    .ThenInclude(t => t.Team.WorkTrackingSystemOptions)
-                .Include(p => p.Milestones);
+                .Include(p => p.Milestones)
+                .Include(p => p.WorkTrackingSystemOptions);
         }
     }
 }

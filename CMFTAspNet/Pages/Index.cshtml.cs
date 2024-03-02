@@ -29,10 +29,7 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPost()
     {
-        var allFeatures = featureRepository.GetAll().OrderBy(x => x.Order);
-        monteCarloService.ForecastFeatures(allFeatures);
-
-        await featureRepository.Save();
+        await monteCarloService.ForecastAllFeatures();
 
         return OnGet();
     }

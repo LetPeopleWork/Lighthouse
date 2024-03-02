@@ -1,13 +1,24 @@
 ﻿using CMFTAspNet.Models;
 using CMFTAspNet.Models.Forecast;
 using CMFTAspNet.Services.Implementation;
+using CMFTAspNet.Services.Interfaces;
 using CMFTAspNet.Tests.TestDoubles;
+using Moq;
 
 namespace CMFTAspNet.Tests.Services.Implementation
 {
     public class MonteCarloServiceTest
     {
         private NotSoRandomNumberService randomNumberService;
+
+        private Mock<IRepository<Feature>> featureRepositoryMock;
+
+        [SetUp]
+        public void Setup()
+        {
+            featureRepositoryMock = new Mock<IRepository<Feature>>();
+        }
+
 
         [Test]
         public void HowMany_ReturnsHowManyForecast()
@@ -141,15 +152,16 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_SingleTeam_OneFeature_FeatureWIPOne()
+        public async Task FeatureForecastForTeam_SingleTeam_ForecastsProperly()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
             var team = CreateTeam(1, [1]);
 
             var feature = new Feature(team, 35);
+            SetupFeatures([feature]);
 
-            subject.ForecastFeatures([feature]);
+            await subject.ForecastFeaturesForTeam(team);
 
             Assert.Multiple(() =>
             {
@@ -161,7 +173,54 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPOne()
+        public async Task FeatureForecastForTeam_MultipleTeams_ForecastsProperly()
+        {
+            var subject = CreateSubjectWithRealThroughput();
+
+            var team1 = CreateTeam(1, [1]);
+            var team2 = CreateTeam(1, [1]);
+
+            var feature1 = new Feature(team1, 35);
+            var feature2 = new Feature(team2, 20);
+
+            SetupFeatures(feature1, feature2);
+
+            await subject.ForecastFeaturesForTeam(team1);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(feature1.Forecast.GetProbability(50), Is.EqualTo(35));
+                Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(35));
+                Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(35));
+                Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(35));
+
+                Assert.That(feature2.Forecast, Is.Null);
+            });
+        }
+
+        [Test]
+        public async Task FeatureForecast_SingleTeam_OneFeature_FeatureWIPOne()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            var team = CreateTeam(1, [1]);
+
+            var feature = new Feature(team, 35);
+            SetupFeatures([feature]);
+
+            await subject.ForecastAllFeatures();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(35));
+                Assert.That(feature.Forecast.GetProbability(70), Is.EqualTo(35));
+                Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(35));
+                Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(35));
+            });
+        }
+
+        [Test]
+        public async Task FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPOneAsync()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -170,7 +229,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature1 = new Feature(team, 35);
             var feature2 = new Feature(team, 20);
 
-            subject.ForecastFeatures([feature1, feature2]);
+            SetupFeatures(feature1, feature2);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -186,7 +247,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPTwo()
+        public async Task FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPTwoAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -196,7 +257,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature1 = new Feature(team, 35);
             var feature2 = new Feature(team, 15);
 
-            subject.ForecastFeatures([feature1, feature2]);
+            SetupFeatures(feature1, feature2);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -208,7 +271,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPTwo()
+        public async Task FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPTwoAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -218,7 +281,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature2 = new Feature(team, 20);
             var feature3 = new Feature(team, 20);
 
-            subject.ForecastFeatures([feature1, feature2, feature3]);
+            SetupFeatures(feature1, feature2, feature3);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -240,7 +305,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPThree()
+        public async Task FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPThreeAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -250,7 +315,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature2 = new Feature(team, 20);
             var feature3 = new Feature(team, 5);
 
-            subject.ForecastFeatures([feature1, feature2, feature3]);
+            SetupFeatures(feature1, feature2, feature3);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -272,7 +339,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_MultiTeam_TwoFeatures_FeatureWIPOne()
+        public async Task FeatureForecast_MultiTeam_TwoFeatures_FeatureWIPOneAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -282,7 +349,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature1 = new Feature(team1, 35);
             var feature2 = new Feature(team2, 20);
 
-            subject.ForecastFeatures([feature1, feature2]);
+            SetupFeatures(feature1, feature2);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -294,7 +363,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPOne()
+        public async Task FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPOneAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -305,7 +374,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature2 = new Feature(team2, 20);
             var feature3 = new Feature(team2, 7);
 
-            subject.ForecastFeatures([feature1, feature2, feature3]);
+            SetupFeatures(feature1, feature2, feature3);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -322,7 +393,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPTwo()
+        public async Task FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPTwoAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -333,7 +404,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var feature2 = new Feature(team2, 20);
             var feature3 = new Feature(team2, 20);
 
-            subject.ForecastFeatures([feature1, feature2, feature3]);
+            SetupFeatures(feature1, feature2, feature3);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -350,7 +423,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_MultiTeam_SingleFeatures_FeatureWIPOne()
+        public async Task FeatureForecast_MultiTeam_SingleFeatures_FeatureWIPOneAsync()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -359,7 +432,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             var feature1 = new Feature([(team1, 20), (team2, 15)]);
 
-            subject.ForecastFeatures([feature1]);
+            SetupFeatures(feature1);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -371,20 +446,22 @@ namespace CMFTAspNet.Tests.Services.Implementation
         }
 
         [Test]
-        public void FeatureForecast_TeamHasNoThroughput_WillNotForecastThisTeam()
+        public async Task FeatureForecast_TeamHasNoThroughput_WillNotForecastThisTeamAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             var team = CreateTeam(1, [0, 0, 0 , 0]);
 
             var feature = new Feature([(team, 20)]);
 
-            subject.ForecastFeatures([ feature ]);
+            SetupFeatures(feature);
+
+            await subject.ForecastAllFeatures();
 
             Assert.That(feature.Forecast.NumberOfItems, Is.EqualTo(0));
         }
 
         [Test]
-        public void FeatureForecast_MultiTeam_OneTeamHasNoThroughput_UsesTeamWithThroughputsForecast()
+        public async Task FeatureForecast_MultiTeam_OneTeamHasNoThroughput_UsesTeamWithThroughputsForecastAsync()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -393,7 +470,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             var feature1 = new Feature([(team1, 20), (team2, 15)]);
 
-            subject.ForecastFeatures([feature1]);
+            SetupFeatures(feature1);
+
+            await subject.ForecastAllFeatures();
 
             Assert.Multiple(() =>
             {
@@ -404,16 +483,21 @@ namespace CMFTAspNet.Tests.Services.Implementation
             });
         }
 
+        private void SetupFeatures(params Feature[] features)
+        {
+            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
+        }
+
         private MonteCarloService CreateSubjectWithPersistentThroughput()
         {
             randomNumberService = new NotSoRandomNumberService();
 
-            return new MonteCarloService(new NotSoRandomNumberService());
+            return new MonteCarloService(new NotSoRandomNumberService(), featureRepositoryMock.Object);
         }
 
         private MonteCarloService CreateSubjectWithRealThroughput()
         {
-            return new MonteCarloService(new RandomNumberService(), 10000);
+            return new MonteCarloService(new RandomNumberService(), featureRepositoryMock.Object, 10000);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)
