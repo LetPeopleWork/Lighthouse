@@ -1,5 +1,5 @@
 ﻿using CMFTAspNet.Cache;
-using CMFTAspNet.Services.Implementation.AzureDevOps;
+using CMFTAspNet.Services.Implementation.WorkItemServices;
 using CMFTAspNet.Services.Interfaces;
 using CMFTAspNet.WorkTracking;
 
@@ -19,6 +19,9 @@ namespace CMFTAspNet.Services.Factories
                 {
                     case WorkTrackingSystems.AzureDevOps:
                         workItemSerivce = new AzureDevOpsWorkItemService();
+                        break;
+                    case WorkTrackingSystems.Jira:
+                        workItemSerivce = new JiraWorkItemService();
                         break;
                     default:
                         throw new NotSupportedException();

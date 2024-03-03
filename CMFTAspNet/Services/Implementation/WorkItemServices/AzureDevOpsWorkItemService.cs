@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using System.Text;
 
-namespace CMFTAspNet.Services.Implementation.AzureDevOps
+namespace CMFTAspNet.Services.Implementation.WorkItemServices
 {
     public class AzureDevOpsWorkItemService : IWorkItemService
     {

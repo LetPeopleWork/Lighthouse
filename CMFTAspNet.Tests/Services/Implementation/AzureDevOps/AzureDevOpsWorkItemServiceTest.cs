@@ -1,9 +1,9 @@
 ﻿using CMFTAspNet.Models;
-using CMFTAspNet.Services.Implementation.AzureDevOps;
+using CMFTAspNet.Services.Implementation.WorkItemServices;
 using CMFTAspNet.WorkTracking;
 using CMFTAspNet.WorkTracking.AzureDevOps;
 
-namespace CMFTAspNet.Tests.Services.Implementation.AzureDevOps
+namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
 {
     [Category("Integration")]
     public class AzureDevOpsWorkItemServiceTest

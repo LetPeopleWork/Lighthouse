@@ -2,6 +2,7 @@
 using CMFTAspNet.Models;
 using CMFTAspNet.WorkTracking;
 using CMFTAspNet.WorkTracking.AzureDevOps;
+using CMFTAspNet.WorkTracking.Jira;
 
 namespace CMFTAspNet.Tests.Factories
 {
@@ -26,9 +27,28 @@ namespace CMFTAspNet.Tests.Factories
 
             Assert.Multiple(() =>
             {
+                Assert.That(options.Count(), Is.EqualTo(4));
                 Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.TeamProject), Is.True);
+                Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.AreaPaths), Is.True);
                 Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, true), Is.True);
+            });
+        }
+
+        [Test]
+        public void CreateOptionsForWorkTrackingSystem_GivenJira_ReturnsCorrectOptions()
+        {
+            var subject = new WorkTrackingOptionsFactory();
+
+            var options = subject.CreateOptionsForWorkTrackingSystem<Project>(WorkTrackingSystems.Jira);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(options.Count(), Is.EqualTo(4));
+                Assert.That(ContainsOption(options, JiraWorkTrackingOptionNames.Url), Is.True);
+                Assert.That(ContainsOption(options, JiraWorkTrackingOptionNames.Username), Is.True);
+                Assert.That(ContainsOption(options, JiraWorkTrackingOptionNames.ApiToken, true), Is.True);
+                Assert.That(ContainsOption(options, JiraWorkTrackingOptionNames.ProjectKey), Is.True);
             });
         }
 
