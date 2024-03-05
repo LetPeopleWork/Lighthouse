@@ -93,7 +93,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
             var subject = new AzureDevOpsWorkItemService();
             var teamConfiguration = CreateTeam();
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems(370, teamConfiguration);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems("370", teamConfiguration);
 
             Assert.That(relatedItems, Is.EqualTo(2));
         }
@@ -106,7 +106,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
             var teamConfiguration = CreateTeam();
             teamConfiguration.WorkItemTypes.Add("Feature");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems(366, teamConfiguration);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems("366", teamConfiguration);
 
             Assert.That(relatedItems, Is.EqualTo(0));
         }
@@ -118,7 +118,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
             var teamConfiguration = CreateTeam();
             teamConfiguration.AdditionalRelatedFields.Add("Custom.RemoteFeatureID");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems(279, teamConfiguration);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems("279", teamConfiguration);
 
             Assert.That(relatedItems, Is.EqualTo(1));
         }

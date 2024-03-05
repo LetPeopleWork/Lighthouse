@@ -6,18 +6,18 @@ namespace CMFTAspNet.Services.Interfaces
     {
         Task<int[]> GetClosedWorkItemsForTeam(int history, Team team);
         
-        Task<List<int>> GetNotClosedWorkItemsByAreaPath(IEnumerable<string> workItemTypes, string areaPath, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
+        Task<List<string>> GetNotClosedWorkItemsByAreaPath(IEnumerable<string> workItemTypes, string areaPath, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
         
-        Task<List<int>> GetNotClosedWorkItemsByTag(IEnumerable<string> workItemTypes, string tag, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
+        Task<List<string>> GetNotClosedWorkItemsByTag(IEnumerable<string> workItemTypes, string tag, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
         
-        Task<int> GetRemainingRelatedWorkItems(int featureId, Team team);
+        Task<int> GetRemainingRelatedWorkItems(string featureId, Team team);
         
-        Task<(string name, int order)> GetWorkItemDetails(int itemId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
+        Task<(string name, int order)> GetWorkItemDetails(string itemId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
 
-        Task<List<int>> GetWorkItemsByArea(IEnumerable<string> workItemTypes, string area, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
+        Task<List<string>> GetWorkItemsByArea(IEnumerable<string> workItemTypes, string area, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
 
-        Task<List<int>> GetWorkItemsByTag(IEnumerable<string> workItemTypes, string tag, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
+        Task<List<string>> GetWorkItemsByTag(IEnumerable<string> workItemTypes, string tag, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
 
-        Task<bool> IsRelatedToFeature(int itemId, IEnumerable<int> featureIds, Team team);
+        Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team);
     }
 }

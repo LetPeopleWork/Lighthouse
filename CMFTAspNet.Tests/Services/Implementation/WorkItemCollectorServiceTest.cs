@@ -27,8 +27,8 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
             workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<int>()));
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<int>()));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<string>()));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<string>()));
 
             subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object, featureRepositoryMock.Object, teamRepositoryMock.Object);
         }
@@ -40,9 +40,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             SetupTeams(team);
 
             var project = CreateProject(SearchBy.Tag);
-            var feature = new Feature(team, 12) { ReferenceId = 12 };
+            var feature = new Feature(team, 12) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(12));
 
             await subject.UpdateFeaturesForProject(project);
@@ -62,8 +62,8 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             project.Features.Add(existingFeature);
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int>()));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(existingFeature.Id, It.IsAny<Team>())).Returns(Task.FromResult(12));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string>()));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(existingFeature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(12));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -77,9 +77,9 @@ namespace CMFTAspNet.Tests.Services.Implementation
             SetupTeams(team);
 
             var project = CreateProject(SearchBy.AreaPath);
-            var feature = new Feature(team, 12) { ReferenceId = 12 };
+            var feature = new Feature(team, 12) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(12));
 
             await subject.UpdateFeaturesForProject(project);
@@ -99,12 +99,12 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             SetupTeams(team);
 
-            var feature1 = new Feature(team, 0) { Id = 42 };
-            var feature2 = new Feature(team, 2) { Id = 12 };
+            var feature1 = new Feature(team, 0) { ReferenceId = "42" };
+            var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature1.Id, feature2.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, It.IsAny<Team>())).Returns(Task.FromResult(2));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(2));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -122,12 +122,12 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var project = CreateProject(SearchBy.AreaPath);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
-            var feature1 = new Feature([(team1, 0), (team2, 0)]) { Id = 17 };
-            var feature2 = new Feature([(team1, 2), (team2, 2)]) { Id = 19 };
+            var feature1 = new Feature([(team1, 0), (team2, 0)]) { ReferenceId = "17" };
+            var feature2 = new Feature([(team1, 2), (team2, 2)]) { ReferenceId = "19" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature1.Id, feature2.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, It.IsAny<Team>())).Returns(Task.FromResult(2));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(2));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -150,12 +150,12 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var project = CreateProject(SearchBy.AreaPath);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
-            var feature1 = new Feature([(team1, 0), (team2, 0)]) { Id = 34 };
-            var feature2 = new Feature([(team1, 2), (team2, 2)]) { Id = 12 };
+            var feature1 = new Feature([(team1, 0), (team2, 0)]) { ReferenceId = "34" };
+            var feature2 = new Feature([(team1, 2), (team2, 2)]) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature1.Id, feature2.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.Id, It.IsAny<Team>())).Returns(Task.FromResult(0));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, It.IsAny<Team>())).Returns(Task.FromResult(2));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(2));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -176,10 +176,10 @@ namespace CMFTAspNet.Tests.Services.Implementation
             var project = CreateProject(SearchBy.AreaPath);
 
             var remainingWorkItems = 12;
-            var feature = new Feature(team, remainingWorkItems) { Id = 42 };
+            var feature = new Feature(team, remainingWorkItems) { ReferenceId = "42" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int> { feature.Id }));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, It.IsAny<Team>())).Returns(Task.FromResult(remainingWorkItems));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(remainingWorkItems));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -197,7 +197,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             SetupTeams(team1, team2);
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int>()));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string>()));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -217,13 +217,13 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             var remainingWorkItemsFeature1 = 12;
             var remainingWorkItemsFeature2 = 1337;
-            var feature1 = new Feature(team1, remainingWorkItemsFeature1) { Id = 1 };
-            var feature2 = new Feature(team2, remainingWorkItemsFeature1) { Id = 2 };
+            var feature1 = new Feature(team1, remainingWorkItemsFeature1) { ReferenceId = "1" };
+            var feature2 = new Feature(team2, remainingWorkItemsFeature1) { ReferenceId = "2" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, project)).Returns(Task.FromResult(new List<int> { feature1.Id, feature2.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, project)).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
 
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.Id, team1)).Returns(Task.FromResult(remainingWorkItemsFeature1));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.Id, team2)).Returns(Task.FromResult(remainingWorkItemsFeature2));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.ReferenceId, team1)).Returns(Task.FromResult(remainingWorkItemsFeature1));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.ReferenceId, team2)).Returns(Task.FromResult(remainingWorkItemsFeature2));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -244,12 +244,12 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             var remainingWorkItemsTeam1 = 12;
             var remainingWorkItemsTeam2 = 7;
-            var feature = new Feature(team1, remainingWorkItemsTeam1) { Id = 1 };
+            var feature = new Feature(team1, remainingWorkItemsTeam1) { ReferenceId = "1" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, project)).Returns(Task.FromResult(new List<int> { feature.Id }));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, project)).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
 
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, team1)).Returns(Task.FromResult(remainingWorkItemsTeam1));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.Id, team2)).Returns(Task.FromResult(remainingWorkItemsTeam2));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.ReferenceId, team1)).Returns(Task.FromResult(remainingWorkItemsTeam1));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature.ReferenceId, team2)).Returns(Task.FromResult(remainingWorkItemsTeam2));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -271,12 +271,12 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             project.IncludeUnparentedItems = true;
 
-            var unparentedItems = new int[] { 12, 1337, 42 };
+            var unparentedItems = new string[] { "12", "1337", "42" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int>()));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<int>(), It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string>()));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(0));
 
-            workItemServiceMock.Setup(x => x.GetNotClosedWorkItemsByAreaPath(team.WorkItemTypes, project.SearchTerm, team)).Returns(Task.FromResult(new List<int>(unparentedItems)));
+            workItemServiceMock.Setup(x => x.GetNotClosedWorkItemsByAreaPath(team.WorkItemTypes, project.SearchTerm, team)).Returns(Task.FromResult(new List<string>(unparentedItems)));
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -298,12 +298,12 @@ namespace CMFTAspNet.Tests.Services.Implementation
 
             project.IncludeUnparentedItems = true;
 
-            var unparentedItems = new int[] { 12, 1337, 42 };
+            var unparentedItems = new string[] { "12", "1337", "42" };
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<int>()));
-            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<int>(), It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, It.IsAny<IWorkTrackingSystemOptionsOwner>())).Returns(Task.FromResult(new List<string>()));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(0));
 
-            workItemServiceMock.Setup(x => x.GetNotClosedWorkItemsByTag(team.WorkItemTypes, project.SearchTerm, team)).Returns(Task.FromResult(new List<int>(unparentedItems)));
+            workItemServiceMock.Setup(x => x.GetNotClosedWorkItemsByTag(team.WorkItemTypes, project.SearchTerm, team)).Returns(Task.FromResult(new List<string>(unparentedItems)));
 
             await subject.UpdateFeaturesForProject(project);
 

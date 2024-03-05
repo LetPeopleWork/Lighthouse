@@ -103,7 +103,7 @@ namespace CMFTAspNet.Services.Implementation
                 var notClosedItems = await GetNotClosedItemsBySearchCriteria(project, team);
                 var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team, notClosedItems);
 
-                var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = int.MaxValue - 1, Order = int.MaxValue, IsUnparentedFeature = true, ProjectId = project.Id, Project = project };
+                var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = (int.MaxValue - 1).ToString(), Order = int.MaxValue, IsUnparentedFeature = true, ProjectId = project.Id, Project = project };
                 var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;                
 
                 if (unparentedFeatureId != null)
@@ -117,9 +117,9 @@ namespace CMFTAspNet.Services.Implementation
             }
         }
 
-        private async Task<List<int>> ExtractItemsRelatedToFeature(IEnumerable<int> featureIds, Team team, List<int> notClosedItems)
+        private async Task<List<string>> ExtractItemsRelatedToFeature(IEnumerable<string> featureIds, Team team, List<string> notClosedItems)
         {
-            var unparentedItems = new List<int>();
+            var unparentedItems = new List<string>();
 
             foreach (var itemId in notClosedItems)
             {
@@ -133,9 +133,9 @@ namespace CMFTAspNet.Services.Implementation
             return unparentedItems;
         }
 
-        private async Task<List<int>> GetNotClosedItemsBySearchCriteria(Project project, Team team)
+        private async Task<List<string>> GetNotClosedItemsBySearchCriteria(Project project, Team team)
         {
-            List<int> unparentedItems;
+            List<string> unparentedItems;
             switch (project.SearchBy)
             {
                 case SearchBy.Tag:
@@ -174,7 +174,7 @@ namespace CMFTAspNet.Services.Implementation
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem);
 
             var features = new List<Feature>();
-            var featureIds = new List<int>();
+            var featureIds = new List<string>();
 
             switch (project.SearchBy)
             {
@@ -202,7 +202,7 @@ namespace CMFTAspNet.Services.Implementation
             return features;
         }
 
-        private Feature GetOrCreateFeature(int featureId, Project project)
+        private Feature GetOrCreateFeature(string featureId, Project project)
         {
             var feature = featureRepository.GetByPredicate(f => f.ReferenceId == featureId);
 

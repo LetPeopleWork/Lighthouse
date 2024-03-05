@@ -103,7 +103,7 @@
                         <div class="input-group mt-2">
                             <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" value="@Model.Team.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" readonly />
                             <input type="@inputType" name="Team.WorkTrackingSystemOptions[@i].Value" value="@Model.Team.WorkTrackingSystemOptions[i].Value" class="form-control" placeholder="Value" />
-                            <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Secret" value="@Model.Team.WorkTrackingSystemOptions[i].Secret" class="form-control" placeholder="Secret" />
+                            <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Secret" value="@Model.Team.WorkTrackingSystemOptions[i].Secret.ToString()" class="form-control" placeholder="Secret" />
                             <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Id" value="@Model.Team.WorkTrackingSystemOptions[i].Id" class="form-control" />
                             <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].EntityId" value="@Model.Team.Id" class="form-control" />
                         </div>
