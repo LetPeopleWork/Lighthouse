@@ -37,6 +37,8 @@ namespace CMFTAspNet.Models
 
         public Project Project { get; set; }
 
+        public bool IsUnparentedFeature { get; set; }
+
         public double GetLikelhoodForDate(DateTime date)
         {
             if (date != default)

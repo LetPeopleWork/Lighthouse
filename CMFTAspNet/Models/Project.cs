@@ -19,6 +19,8 @@ namespace CMFTAspNet.Models
 
         public DateTime ProjectUpdateTime { get; set; }
 
+        public string? UnparentedItemsQuery { get; set; }
+
         public void UpdateFeatures(IEnumerable<Feature> features)
         {
             Features.Clear();

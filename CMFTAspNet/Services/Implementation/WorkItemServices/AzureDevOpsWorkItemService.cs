@@ -58,6 +58,39 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
             return (workItemTitle, workItemStackRank);
         }
 
+        public async Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
+        {
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(team);
+
+            var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
+            var stateQuery = PrepareStateQuery(closedStates);
+
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}] FROM WorkItems WHERE {unparentedItemsQuery} " +
+                $"{workItemsQuery} " +
+                $"{stateQuery}";
+
+            var workItems = await GetWorkItemsByQuery(witClient, wiql);
+
+            return workItems.Select(x => x.Id.ToString()).ToList();
+        }
+
+        public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
+        {
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(team);
+
+            var workItem = await GetWorkItemById(witClient, itemId, team);
+
+            foreach (var featureId in featureIds)
+            {
+                if (IsWorkItemRelated(workItem, featureId, team.AdditionalRelatedField))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private async Task<WorkItem> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             var query = PrepareQuery([], [], workItemQueryOwner);

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMFTAspNet.Migrations
 {
     [DbContext(typeof(AppContext))]
-    [Migration("20240308105811_InitialMigration")]
+    [Migration("20240308145034_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -24,6 +24,9 @@ namespace CMFTAspNet.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsUnparentedFeature")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
@@ -132,6 +135,9 @@ namespace CMFTAspNet.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("ProjectUpdateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UnparentedItemsQuery")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkItemQuery")

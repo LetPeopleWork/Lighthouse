@@ -87,6 +87,64 @@ namespace CMFTAspNet.Services.Implementation
             {
                 await GetRemainingWorkForFeature(featureForProject);
             }
+
+            await GetUnparentedItems(project);
+        }
+
+        private async Task GetUnparentedItems(Project project)
+        {
+            if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
+            {
+                return;
+            }
+
+            var featureIds = project.Features.Select(x => x.ReferenceId);
+
+            var unparentedFeature = GetOrAddUnparentedFeature(project);
+
+            foreach (var team in teamRepository.GetAll().Where(t => t.WorkTrackingSystem == project.WorkTrackingSystem))
+            {
+                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+                var itemsMatchingUnparentedItemsQuery = await workItemService.GetOpenWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery);
+
+                var unparentedItems = await GetItemsUnrelatedToFeatures(featureIds, team, itemsMatchingUnparentedItemsQuery);
+
+                unparentedFeature.AddOrUpdateRemainingWorkForTeam(team, unparentedItems.Count);
+            }
+        }
+
+        private Feature GetOrAddUnparentedFeature(Project project)
+        {
+            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = $"{int.MaxValue - 1}", Order = int.MaxValue, IsUnparentedFeature = true, ProjectId = project.Id, Project = project };
+            var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;
+
+            if (unparentedFeatureId != null)
+            {
+                unparentedFeature = featureRepository.GetById(unparentedFeatureId.Value) ?? unparentedFeature;
+            }
+            else
+            {                
+                project.Features.Add(unparentedFeature);
+            }
+
+            return unparentedFeature;
+        }
+
+        private async Task<List<string>> GetItemsUnrelatedToFeatures(IEnumerable<string> featureIds, Team team, List<string> itemIds)
+        {
+            var unrelatedItems = new List<string>();
+
+            foreach (var itemId in itemIds)
+            {
+                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+                var isRelatedToFeature = await workItemService.IsRelatedToFeature(itemId, featureIds, team);
+                if (!isRelatedToFeature)
+                {
+                    unrelatedItems.Add(itemId);
+                }
+            }
+
+            return unrelatedItems;
         }
 
         private async Task GetRemainingWorkForFeature(Feature featureForProject)

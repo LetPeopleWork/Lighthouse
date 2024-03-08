@@ -21,6 +21,7 @@ namespace CMFTAspNet.Migrations
                     WorkItemTypes = table.Column<string>(type: "TEXT", nullable: false),
                     DefaultAmountOfWorkItemsPerFeature = table.Column<int>(type: "INTEGER", nullable: false),
                     ProjectUpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UnparentedItemsQuery = table.Column<string>(type: "TEXT", nullable: true),
                     WorkItemQuery = table.Column<string>(type: "TEXT", nullable: false),
                     WorkTrackingSystem = table.Column<int>(type: "INTEGER", nullable: false)
                 },
@@ -59,7 +60,8 @@ namespace CMFTAspNet.Migrations
                     ReferenceId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Order = table.Column<int>(type: "INTEGER", nullable: false),
-                    ProjectId = table.Column<int>(type: "INTEGER", nullable: false)
+                    ProjectId = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsUnparentedFeature = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -260,6 +260,34 @@ namespace CMFTAspNet.Tests.Services.Implementation
             });
         }
 
+        [Test]
+        public async Task CollectFeaturesForProject_UnparentedItems_CreatesDummyFeatureForUnparented()
+        {
+            var team = CreateTeam();
+            SetupTeams(team);
+
+            var project = CreateProject();
+
+            project.UnparentedItemsQuery = "[System.Tags] CONTAINS Release 123";
+
+            var unparentedItems = new string[] { "12", "1337", "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string>()));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(0));
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery)).Returns(Task.FromResult(new List<string>(unparentedItems)));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            var actualFeature = project.Features.Single();
+            Assert.Multiple(() =>
+            {
+                Assert.That(actualFeature.Name, Is.EqualTo("Release 1 - Unparented"));
+                Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(unparentedItems.Length));
+            });
+        }
+
+
         private void SetupTeams(params Team[] teams)
         {
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);

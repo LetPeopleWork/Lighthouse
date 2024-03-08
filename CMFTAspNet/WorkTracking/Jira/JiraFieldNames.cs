@@ -6,8 +6,6 @@
 
         public static string StatusFieldName => "status";
 
-        public static string Id => "id";
-
         public static string ResolvedFieldName = "resolved";
 
         public static string FieldsFieldName = "fields";

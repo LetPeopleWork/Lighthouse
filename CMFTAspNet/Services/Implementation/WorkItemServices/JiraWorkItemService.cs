@@ -62,6 +62,37 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
             return (issue.Title, issue.Rank);
         }
 
+        public async Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
+        {
+            var jiraClient = GetJiraRestClient(team);
+
+            var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
+            var stateQuery = PrepareStateQuery(closedStates);
+
+            var jql = $"{unparentedItemsQuery} " +
+                $"{workItemsQuery} " +
+                $"{stateQuery} ";
+
+            var issues = await GetIssuesByQuery(jiraClient, jql);
+            return issues.Select(x => x.Key).ToList();
+        }
+
+        public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
+        {
+            var jiraClient = GetJiraRestClient(team);
+            var issue = await GetIssueById(jiraClient, itemId);
+
+            foreach (var featureId in featureIds)
+            {
+                if (IsIssueRelated(issue, featureId, team.AdditionalRelatedField))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)
         {
             var issue = cache.Get(issueId);

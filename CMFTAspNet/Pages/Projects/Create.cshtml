@@ -57,11 +57,17 @@
                 <button type="button" id="addMilestone" class="btn btn-primary mt-2">Add Milestone</button>
             </div>
 
-
             <div class="form-group">
                 <label asp-for="Project.WorkItemQuery" class="control-label">Work Item Query:</label>
                 <textarea asp-for="Project.WorkItemQuery" class="form-control" rows="5"></textarea>
                 <span asp-validation-for="Project.WorkItemQuery" class="text-danger"></span>
+            </div>
+
+
+            <div class="form-group">
+                <label asp-for="Project.UnparentedItemsQuery" class="control-label">Unparented Items Query (leave empty if you don't want to include Unparented Items'):</label>
+                <textarea asp-for="Project.UnparentedItemsQuery" class="form-control" rows="5"></textarea>
+                <span asp-validation-for="Project.UnparentedItemsQuery" class="text-danger"></span>
             </div>
 
             <div class="form-group">
