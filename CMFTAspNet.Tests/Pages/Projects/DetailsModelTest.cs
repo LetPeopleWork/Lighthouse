@@ -70,7 +70,7 @@ namespace CMFTAspNet.Tests.Pages.Projects
 
         private Project SetupProject()
         {
-            var project = new Project { Id = 2, Name = "Team", SearchTerm = "Project" };
+            var project = new Project { Id = 2, Name = "Team" };
             projectRepositoryMock.Setup(x => x.GetById(12)).Returns(project);
 
             return project;

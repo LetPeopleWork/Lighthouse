@@ -27,10 +27,8 @@ namespace CMFTAspNet.Tests.Factories
 
             Assert.Multiple(() =>
             {
-                Assert.That(options.Count(), Is.EqualTo(4));
+                Assert.That(options.Count(), Is.EqualTo(2));
                 Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.Url), Is.True);
-                Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.TeamProject), Is.True);
-                Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.AreaPaths), Is.True);
                 Assert.That(ContainsOption(options, AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, true), Is.True);
             });
         }
@@ -44,11 +42,10 @@ namespace CMFTAspNet.Tests.Factories
 
             Assert.Multiple(() =>
             {
-                Assert.That(options.Count(), Is.EqualTo(4));
+                Assert.That(options.Count(), Is.EqualTo(3));
                 Assert.That(ContainsOption(options, JiraWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(options, JiraWorkTrackingOptionNames.Username), Is.True);
                 Assert.That(ContainsOption(options, JiraWorkTrackingOptionNames.ApiToken, true), Is.True);
-                Assert.That(ContainsOption(options, JiraWorkTrackingOptionNames.ProjectKey), Is.True);
             });
         }
 

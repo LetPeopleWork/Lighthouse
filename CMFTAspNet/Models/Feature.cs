@@ -23,7 +23,7 @@ namespace CMFTAspNet.Models
 
         public int Id { get; set; }
 
-        public string ReferenceId { get; set; }
+        public string ReferenceId { get; set; } = string.Empty;
 
         public string Name { get; set; }
 
@@ -36,8 +36,6 @@ namespace CMFTAspNet.Models
         public int ProjectId { get; set; }
 
         public Project Project { get; set; }
-
-        public bool IsUnparentedFeature { get; set; } = false;
 
         public double GetLikelhoodForDate(DateTime date)
         {

@@ -16,7 +16,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         {
             var subject = CreateSubject();
 
-            var project = new Project { Name = "Name", SearchTerm = "Search" };
+            var project = new Project { Name = "Name" };
             var team = new Team { Name = "Team1", WorkTrackingSystemOptions = new List<WorkTrackingSystemOption<Team>> { new WorkTrackingSystemOption<Team> { Key = "key", Value = "Value " } } };
 
             DatabaseContext.Teams.Add(team);
@@ -43,7 +43,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         {
             var subject = CreateSubject();
 
-            var project = new Project { Name = "Name", SearchTerm = "Search" };
+            var project = new Project { Name = "Name",  };
             var feature = new Feature { Name = "MyFeature" };
 
             project.Features.Add(feature);

@@ -1,20 +1,14 @@
-﻿using CMFTAspNet.Services.Interfaces;
-
-namespace CMFTAspNet.Models
+﻿namespace CMFTAspNet.Models
 {
-    public class Team : WorkTrackingSystemOptionsOwner<Team>, IEntity
+    public class Team : WorkTrackingSystemOptionsOwner<Team>
     {
-        public int Id { get; set; }
-
         public string Name { get; set; }
 
         public List<string> WorkItemTypes { get; set; } = new List<string> { "User Story", "Bug" };
 
-        public List<string> IgnoredTags { get; set; } = new List<string>();
-
-        public List<string> AdditionalRelatedFields { get; set; } = new List<string>();
-
         public int FeatureWIP { get; set; } = 1;
+
+        public string? AdditionalRelatedField { get; set; } = string.Empty;
 
         public DateTime ThroughputUpdateTime { get; set; }
 

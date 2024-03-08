@@ -1,28 +1,19 @@
-﻿using CMFTAspNet.Services.Interfaces;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CMFTAspNet.Models
 {
-    public class Project : WorkTrackingSystemOptionsOwner<Project>, IEntity
+    public class Project : WorkTrackingSystemOptionsOwner<Project>, IWorkItemQueryOwner
     {
-        public int Id { get; set; }
-
         public string Name { get; set; }
-        
-        public SearchBy SearchBy { get; set; }
         
         public List<string> WorkItemTypes { get; set; } = new List<string> { "Epic" };
 
         [NotMapped]
         public IEnumerable<Team> InvolvedTeams => Features.SelectMany(f => f.RemainingWork).Select(rw => rw.Team).Distinct();
 
-        public string SearchTerm { get; set; }
-
         public List<Feature> Features { get; } = new List<Feature>();
 
         public List<Milestone> Milestones { get; } = new List<Milestone>();
-
-        public bool IncludeUnparentedItems { get; set; }
 
         public int DefaultAmountOfWorkItemsPerFeature { get; set; } = 25;
 
@@ -35,11 +26,5 @@ namespace CMFTAspNet.Models
 
             ProjectUpdateTime = DateTime.Now;
         }
-    }
-
-    public enum SearchBy
-    {
-        Tag,
-        AreaPath,
     }
 }

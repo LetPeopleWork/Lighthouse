@@ -26,7 +26,6 @@ namespace CMFTAspNet.Factories
                 new WorkTrackingSystemOption<T>(JiraWorkTrackingOptionNames.Url, string.Empty, false),
                 new WorkTrackingSystemOption<T>(JiraWorkTrackingOptionNames.Username, string.Empty, false),
                 new WorkTrackingSystemOption<T>(JiraWorkTrackingOptionNames.ApiToken, string.Empty, true),
-                new WorkTrackingSystemOption<T>(JiraWorkTrackingOptionNames.ProjectKey, string.Empty, false),
             };
         }
 
@@ -35,8 +34,6 @@ namespace CMFTAspNet.Factories
             return new List<WorkTrackingSystemOption<T>>
             {
                 new WorkTrackingSystemOption<T>(AzureDevOpsWorkTrackingOptionNames.Url, string.Empty, false),
-                new WorkTrackingSystemOption<T>(AzureDevOpsWorkTrackingOptionNames.TeamProject, string.Empty, false),
-                new WorkTrackingSystemOption<T>(AzureDevOpsWorkTrackingOptionNames.AreaPaths, string.Empty, false),
                 new WorkTrackingSystemOption<T>(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, string.Empty, true),
             };
         }

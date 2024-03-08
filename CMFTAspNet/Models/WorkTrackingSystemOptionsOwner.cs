@@ -2,8 +2,12 @@
 
 namespace CMFTAspNet.Models
 {
-    public class WorkTrackingSystemOptionsOwner<T> : IWorkTrackingSystemOptionsOwner where T : class
+    public class WorkTrackingSystemOptionsOwner<T> : IWorkItemQueryOwner where T : class
     {
+        public int Id { get; set; }
+
+        public string WorkItemQuery { get; set; } = string.Empty;
+
         public WorkTrackingSystems WorkTrackingSystem { get; set; }
 
         public List<WorkTrackingSystemOption<T>> WorkTrackingSystemOptions { get; set; } = new List<WorkTrackingSystemOption<T>>();

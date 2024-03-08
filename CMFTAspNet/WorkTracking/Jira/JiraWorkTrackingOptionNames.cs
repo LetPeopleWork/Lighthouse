@@ -7,7 +7,5 @@
         public static string Username => "Username";
 
         public static string ApiToken => "Api Token";
-
-        public static string ProjectKey => "Project Key";
     }
 }

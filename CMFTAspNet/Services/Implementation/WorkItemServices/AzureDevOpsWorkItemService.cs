@@ -6,7 +6,6 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-using System.Text;
 
 namespace CMFTAspNet.Services.Implementation.WorkItemServices
 {
@@ -14,39 +13,30 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
     {
         private readonly Cache<string, WorkItem> cache = new Cache<string, WorkItem>();
 
-        public async Task<int[]> GetClosedWorkItemsForTeam(int history, Team team)
+        private readonly string[] closedStates = ["Done", "Closed", "Removed"];
+
+        public async Task<int[]> GetClosedWorkItems(int history, Team team)
         {
             var witClient = GetClientService<WorkItemTrackingHttpClient>(team);
 
             return await GetClosedItemsPerDay(witClient, history, team);
         }
 
-        public async Task<List<string>> GetWorkItemsByTag(IEnumerable<string> workItemTypes, string tag, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
+        public async Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner)
         {
-            var witClient = GetClientService<WorkItemTrackingHttpClient>(workTrackingSystemOptionsOwner);
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(workItemQueryOwner);
 
-            return await GetWorkItemsByTag(witClient, tag, workItemTypes, workTrackingSystemOptionsOwner, []);
-        }
+            var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
+            var workItems = await GetWorkItemsByQuery(witClient, query);
 
-        public async Task<List<string>> GetWorkItemsByArea(IEnumerable<string> workItemTypes, string areaPath, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            var witClient = GetClientService<WorkItemTrackingHttpClient>(workTrackingSystemOptionsOwner);
+            var workItemReferences = new List<string>();
 
-            return await GetWorkItemsByAreaPath(witClient, areaPath, workItemTypes, workTrackingSystemOptionsOwner, []);
-        }
+            foreach (var workItem in workItems)
+            {
+                workItemReferences.Add(workItem.Id.ToString());
+            }
 
-        public async Task<List<string>> GetNotClosedWorkItemsByTag(IEnumerable<string> workItemTypes, string tag, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            var witClient = GetClientService<WorkItemTrackingHttpClient>(workTrackingSystemOptionsOwner);
-
-            return await GetWorkItemsByTag(witClient, tag, workItemTypes, workTrackingSystemOptionsOwner, ["Done", "Closed", "Removed"]);
-        }
-
-        public async Task<List<string>> GetNotClosedWorkItemsByAreaPath(IEnumerable<string> workItemTypes, string areaPath, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            var witClient = GetClientService<WorkItemTrackingHttpClient>(workTrackingSystemOptionsOwner);
-
-            return await GetWorkItemsByAreaPath(witClient, areaPath, workItemTypes, workTrackingSystemOptionsOwner, ["Done", "Closed", "Removed"]);
+            return workItemReferences;
         }
 
         public async Task<int> GetRemainingRelatedWorkItems(string featureId, Team team)
@@ -56,26 +46,11 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
             return await GetRelatedWorkItems(witClient, team, featureId);
         }
 
-        public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
+        public async Task<(string name, int order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
-            var workItem = cache.Get(itemId);
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(workItemQueryOwner);
 
-            if (workItem == null)
-            {                
-                var witClient = GetClientService<WorkItemTrackingHttpClient>(team);
-
-                workItem = await GetWorkItemById(witClient, itemId, team, []);
-                cache.Store(itemId, workItem, TimeSpan.FromMinutes(5));
-            }
-
-            return featureIds.Any(f => IsWorkItemRelated(workItem, f, team.AdditionalRelatedFields));
-        }
-
-        public async Task<(string name, int order)> GetWorkItemDetails(string itemId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            var witClient = GetClientService<WorkItemTrackingHttpClient>(workTrackingSystemOptionsOwner);
-
-            var workItem = await GetWorkItemById(witClient, itemId, workTrackingSystemOptionsOwner, [AzureDevOpsFieldNames.Title, AzureDevOpsFieldNames.StackRank]);
+            var workItem = await GetWorkItemById(witClient, itemId, workItemQueryOwner);
 
             var workItemTitle = workItem?.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty;
             var workItemStackRank = int.Parse(workItem?.Fields[AzureDevOpsFieldNames.StackRank].ToString() ?? "0");
@@ -83,43 +58,29 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
             return (workItemTitle, workItemStackRank);
         }
 
-        private async Task<WorkItem> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner, List<string> additionalFields)
+        private async Task<WorkItem> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner)
         {
-            var additionalFieldsQuery = PrepareAdditionalFieldsQuery(additionalFields);
+            var query = PrepareQuery([], [], workItemQueryOwner);
+            query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
 
-            var teamProject = GetAzureDevOpsTeamProject(workTrackingSystemOptionsOwner);
+            var workItems = await GetWorkItemsByQuery(witClient, query);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}] {additionalFieldsQuery} FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
-            var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql }, teamProject);
-
-            var workItemReference = queryResult.WorkItems.Single();
+            var workItemReference = workItems.Single();
             return await GetWorkItemFromCache(workItemReference.Id.ToString(), witClient);
         }
 
         private async Task<int> GetRelatedWorkItems(WorkItemTrackingHttpClient witClient, Team team, string relatedWorkItemId)
         {
             var remainingItems = 0;
-            var teamProject = GetAzureDevOpsTeamProject(team);
-            var areaPaths = GetAreaPaths(team);
 
-            var areaPathQuery = string.Join(" OR ", areaPaths.Select(path => $"[{AzureDevOpsFieldNames.AreaPath}] UNDER '{path}'"));
-            var workItemsQuery = string.Join(" OR ", team.WorkItemTypes.Select(type => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{type}'"));
-            var stateQuery = PrepareStateQuery(["Closed", "Done", "Removed"]);
-            var ignoredTagsQuery = PrepareIgnoredTagsQuery(team.IgnoredTags);
+            var query = PrepareQuery(team.WorkItemTypes, closedStates, team);
+            var workItems = await GetWorkItemsByQuery(witClient, query);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' " +
-                $"{stateQuery}" +
-                $"AND ({areaPathQuery}) " +
-                $"AND ({workItemsQuery}) " +
-                $"{ignoredTagsQuery}";
-
-            var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql }, teamProject);
-
-            foreach (WorkItemReference workItemRef in queryResult.WorkItems)
+            foreach (WorkItemReference workItemRef in workItems)
             {
                 var workItem = await GetWorkItemFromCache(workItemRef.Id.ToString(), witClient);
 
-                if (IsWorkItemRelated(workItem, relatedWorkItemId, team.AdditionalRelatedFields))
+                if (IsWorkItemRelated(workItem, relatedWorkItemId, team.AdditionalRelatedField))
                 {
                     remainingItems += 1;
                 }
@@ -141,7 +102,7 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
             return workItem;
         }
 
-        private bool IsWorkItemRelated(WorkItem workItem, string relatedWorkItemId, List<string> additionalRelatedFields)
+        private bool IsWorkItemRelated(WorkItem workItem, string relatedWorkItemId, string additionalField)
         {
             // Check if the work item is a child of the specified relatedWorkItemId
             if (workItem.Relations != null)
@@ -155,94 +116,39 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
                 }
             }
 
-            foreach (var additionalField in additionalRelatedFields)
+            if (!string.IsNullOrEmpty(additionalField) && workItem.Fields.ContainsKey(additionalField) && workItem.Fields[additionalField].ToString() == $"{relatedWorkItemId}")
             {
-                if (workItem.Fields.ContainsKey(additionalField) && workItem.Fields[additionalField].ToString() == $"{relatedWorkItemId}")
-                {
-                    return true;
-                }
+                return true;
             }
 
             return false;
         }
 
-        private async Task<List<string>> GetWorkItemsByAreaPath(WorkItemTrackingHttpClient witClient, string areaPath, IEnumerable<string> workItemTypes, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner, string[] excludedStates)
+
+        private async Task<IEnumerable<WorkItemReference>> GetWorkItemsByQuery(WorkItemTrackingHttpClient witClient, string query)
         {
-            var foundItemIds = new List<string>();
-            var teamProject = GetAzureDevOpsTeamProject(workTrackingSystemOptionsOwner);
-
-            var areaPathQuery = $"[{AzureDevOpsFieldNames.AreaPath}] UNDER '{areaPath}'";
-            var workItemsQuery = string.Join(" OR ", workItemTypes.Select(itemType => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{itemType}'"));
-            var stateQuery = PrepareStateQuery(excludedStates);
-
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' " +
-                $"AND ({areaPathQuery}) " +
-                $"AND ({workItemsQuery}) " +
-                $"{stateQuery}";
-
             try
             {
-                var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
-                foreach (WorkItemReference workItemRef in queryResult.WorkItems)
-                {
-                    foundItemIds.Add(workItemRef.Id.ToString());
-                }
+                var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
+                return queryResult.WorkItems;
             }
             catch (VssServiceException)
             {
-                // Issue with query - ignore
+                return Enumerable.Empty<WorkItemReference>();
             }
-
-            return foundItemIds;
-        }
-
-        private async Task<List<string>> GetWorkItemsByTag(WorkItemTrackingHttpClient witClient, string tag, IEnumerable<string> workItemTypes, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner, string[] excludedStates)
-        {
-            var foundItemIds = new List<string>();
-            var teamProject = GetAzureDevOpsTeamProject(workTrackingSystemOptionsOwner);
-            var areaPaths = GetAreaPaths(workTrackingSystemOptionsOwner);
-
-            var areaPathQuery = string.Join(" OR ", areaPaths.Select(path => $"[{AzureDevOpsFieldNames.AreaPath}] UNDER '{path}'"));
-            var workItemsQuery = string.Join(" OR ", workItemTypes.Select(itemType => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{itemType}'"));
-            var tagQuery = $"[{AzureDevOpsFieldNames.Tags}] CONTAINS '{tag}'";
-            string stateQuery = PrepareStateQuery(excludedStates);
-
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' " +
-                $"AND ({areaPathQuery}) " +
-                $"AND ({workItemsQuery}) " +
-                $"{stateQuery}" +
-                $"AND ({tagQuery}) ";
-
-            var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
-            foreach (WorkItemReference workItemRef in queryResult.WorkItems)
-            {
-                foundItemIds.Add(workItemRef.Id.ToString());
-            }
-
-            return foundItemIds;
         }
 
         private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, int numberOfDays, Team team)
         {
             var closedItemsPerDay = new int[numberOfDays];
-            var teamProject = GetAzureDevOpsTeamProject(team);
-            var areaPaths = GetAreaPaths(team);
-
             var startDate = DateTime.UtcNow.Date.AddDays(-(numberOfDays - 1));
 
-            var areaPathQuery = string.Join(" OR ", areaPaths.Select(path => $"[{AzureDevOpsFieldNames.AreaPath}] UNDER '{path}'"));
-            var workItemsQuery = string.Join(" OR ", team.WorkItemTypes.Select(type => $"[{AzureDevOpsFieldNames.WorkItemType}] = '{type}'"));
-            var ignoredTagsQuery = PrepareIgnoredTagsQuery(team.IgnoredTags);
+            var query = PrepareQuery(team.WorkItemTypes, [], team);
+            query += $" AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done') AND [{AzureDevOpsFieldNames.ClosedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.TeamProject}] = '{teamProject}' AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done')" +
-                $"AND ({areaPathQuery}) " +
-                $"AND ({workItemsQuery}) " +
-                $"{ignoredTagsQuery}" +
-                $"AND [{AzureDevOpsFieldNames.ClosedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
+            var workItems = await GetWorkItemsByQuery(witClient, query);                        
 
-            var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
-
-            foreach (WorkItemReference workItemRef in queryResult.WorkItems)
+            foreach (WorkItemReference workItemRef in workItems)
             {
                 var workItem = await GetWorkItemFromCache(workItemRef.Id.ToString(), witClient);
                 var closedDate = workItem.Fields[AzureDevOpsFieldNames.ClosedDate].ToString();
@@ -263,48 +169,45 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
             return closedItemsPerDay;
         }
 
-        private string PrepareStateQuery(string[] excludedStates)
+        private string PrepareQuery(
+            IEnumerable<string> workItemTypes,
+            IEnumerable<string> excludedStates,
+            IWorkItemQueryOwner workitemQueryOwner)
         {
-            var stateQuery = string.Join(" AND ", excludedStates.Select(state => $"[{AzureDevOpsFieldNames.State}] <> '{state}'"));
+            var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
+            var stateQuery = PrepareStateQuery(excludedStates);
 
-            if (excludedStates.Length == 0)
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}] FROM WorkItems WHERE {workitemQueryOwner.WorkItemQuery} " +
+                $"{workItemsQuery} " +
+                $"{stateQuery}";
+
+            return wiql;
+        }
+
+        private string PrepareWorkItemTypeQuery(IEnumerable<string> workItemTypes)
+        {
+            return PrepareQuery(workItemTypes, AzureDevOpsFieldNames.WorkItemType, "OR", "=");
+        }
+
+        private string PrepareStateQuery(IEnumerable<string> excludedStates)
+        {
+            return PrepareQuery(excludedStates, AzureDevOpsFieldNames.State, "AND", "<>");
+        }
+
+        private string PrepareQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
+        {
+            var query = string.Join($" {queryOperator} ", options.Select(options => $"[{fieldName}] {queryComparison} '{options}'"));
+
+            if (options.Count() == 0)
             {
-                stateQuery = string.Empty;
+                query = string.Empty;
             }
             else
             {
-                stateQuery = $"AND ({stateQuery}) ";
+                query = $"AND ({query}) ";
             }
 
-            return stateQuery;
-        }
-
-        private string PrepareAdditionalFieldsQuery(List<string> additionalFields)
-        {
-            var additionalFieldsQuery = new StringBuilder();
-            
-            foreach (var additionalField in additionalFields)
-            {
-                additionalFieldsQuery.Append($", [{additionalField}] ");
-            }
-
-            return additionalFieldsQuery.ToString();
-        }
-
-        private string PrepareIgnoredTagsQuery(List<string> ignoredTags)
-        {
-            var ignoredTagsQuery = string.Join(" OR ", ignoredTags.Select(tag => $"[{AzureDevOpsFieldNames.Tags}] NOT CONTAINS '{tag}'"));
-
-            if (ignoredTagsQuery.Length != 0)
-            {
-                ignoredTagsQuery = $"AND ({ignoredTagsQuery}) ";
-            }
-            else
-            {
-                ignoredTagsQuery = string.Empty;
-            }
-
-            return ignoredTagsQuery;
+            return query;
         }
 
         private T GetClientService<T>(IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner) where T : VssHttpClientBase
@@ -313,16 +216,6 @@ namespace CMFTAspNet.Services.Implementation.WorkItemServices
             var personalAccessToken = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
             var connection = CreateConnection(url, personalAccessToken);
             return connection.GetClient<T>();
-        }
-
-        private string GetAzureDevOpsTeamProject(IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            return workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.TeamProject);
-        }
-
-        private IEnumerable<string> GetAreaPaths(IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            return workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.AreaPaths).Split(";").Select(areaPath => areaPath.Trim());
         }
 
         private VssConnection CreateConnection(string azureDevOpsUrl, string personalAccessToken)

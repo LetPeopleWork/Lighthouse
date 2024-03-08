@@ -184,7 +184,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
 
         private Feature CreateFeature()
         {
-            return new Feature { Name = "Name", Project = new Project { Name = "Project", SearchTerm = "Term" } };
+            return new Feature { Name = "Name", Project = new Project { Name = "Project" } };
         }
     }
 

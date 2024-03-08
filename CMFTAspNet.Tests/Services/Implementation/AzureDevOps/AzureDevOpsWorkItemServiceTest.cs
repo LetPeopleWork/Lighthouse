@@ -12,9 +12,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetClosedWorkItemsForTeam_FullHistory_TestProject_ReturnsCorrectAmountOfItems()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Tags] NOT CONTAINS 'ThroughputIgnore'");
 
-            var closedItems = await subject.GetClosedWorkItemsForTeam(720, teamConfiguration);
+            var closedItems = await subject.GetClosedWorkItems(720, team);
 
             Assert.That(closedItems.Count, Is.EqualTo(720));
             Assert.That(closedItems.Sum(), Is.EqualTo(4));
@@ -24,9 +24,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetWorkItemsByTag_TagDoesNotExist_ReturnsNoItems()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'NotExistingTag'");
 
-            var itemsByTag = await subject.GetWorkItemsByTag(["Feature"], "NotExistingTag", teamConfiguration);
+            var itemsByTag = await subject.GetOpenWorkItems(["Feature"], team);  
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -35,9 +35,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetWorkItemsByTag_TagExists_ReturnsCorrectNumberOfItems()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
 
-            var itemsByTag = await subject.GetWorkItemsByTag(["Feature"], "Release1", teamConfiguration);
+            var itemsByTag = await subject.GetOpenWorkItems(["Feature"], team);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(1));
         }
@@ -46,9 +46,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetWorkItemsByTag_TagExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
 
-            var itemsByTag = await subject.GetWorkItemsByTag(["Bug"], "Release1", teamConfiguration);
+            var itemsByTag = await subject.GetOpenWorkItems(["Bug"], team);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -57,9 +57,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetWorkItemsByAreaPath_AreaPathDoesNotExist_ReturnsNoItems()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\NotExistingAreaPath'");
 
-            var itemsByTag = await subject.GetWorkItemsByArea(["Feature"], "NotExistingAreaPath", teamConfiguration);
+            var itemsByTag = await subject.GetOpenWorkItems(["Feature"], team);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -68,9 +68,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetWorkItemsByAreaPath_AreaPathExists_ReturnsCorrectNumberOfItems()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths'");
 
-            var itemsByTag = await subject.GetWorkItemsByArea(["Feature"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
+            var itemsByTag = await subject.GetOpenWorkItems(["User Story"], team);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(1));
         }
@@ -79,9 +79,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetWorkItemsByAreaPath_AreaPathExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths'");
 
-            var itemsByTag = await subject.GetWorkItemsByArea(["Bug"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
+            var itemsByTag = await subject.GetOpenWorkItems(["Bug"], team);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -91,9 +91,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         {
 
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("370", teamConfiguration);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems("370", team);
 
             Assert.That(relatedItems, Is.EqualTo(2));
         }
@@ -103,10 +103,10 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         {
 
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
-            teamConfiguration.WorkItemTypes.Add("Feature");
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            team.WorkItemTypes.Add("Feature");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("366", teamConfiguration);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems("366", team);
 
             Assert.That(relatedItems, Is.EqualTo(0));
         }
@@ -115,10 +115,10 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetRelatedItems_ItemIdIsRemoteRelated_FindsRelation()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
-            teamConfiguration.AdditionalRelatedFields.Add("Custom.RemoteFeatureID");
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            team.AdditionalRelatedField = "Custom.RemoteFeatureID";
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("279", teamConfiguration);
+            var relatedItems = await subject.GetRemainingRelatedWorkItems("279", team);
 
             Assert.That(relatedItems, Is.EqualTo(1));
         }
@@ -127,9 +127,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetNotClosedWorkItemsByTag_ItemIsOpen_ReturnsItem()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();            
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
 
-            var actualItems = await subject.GetNotClosedWorkItemsByTag(["User Story"], "Release1", teamConfiguration);
+            var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
 
             Assert.That(actualItems, Has.Count.EqualTo(1));
         }
@@ -138,9 +138,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetNotClosedWorkItemsByTag_ItemIsClosed_ReturnsEmpty()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();            
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'PreviousRelease'");
 
-            var actualItems = await subject.GetNotClosedWorkItemsByTag(["User Story"], "PreviousRelease", teamConfiguration);
+            var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
 
             Assert.That(actualItems, Has.Count.EqualTo(0));
         }
@@ -149,9 +149,9 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetNotClosedWorkItemsByAreaPath_ItemIsOpen_ReturnsItem()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();            
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths'");
 
-            var actualItems = await subject.GetNotClosedWorkItemsByAreaPath(["User Story"], "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths", teamConfiguration);
+            var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
 
             Assert.That(actualItems, Has.Count.EqualTo(1));
         }
@@ -160,29 +160,26 @@ namespace CMFTAspNet.Tests.Services.Implementation.WorkItemServices
         public async Task GetNotClosedWorkItemsByAreaPath_ItemIsClosed_ReturnsEmpty()
         {
             var subject = new AzureDevOpsWorkItemService();
-            var teamConfiguration = CreateTeam();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
-            var actualItems = await subject.GetNotClosedWorkItemsByAreaPath(["User Story"], "CMFTTestTeamProject\\PreviousReleaseAreaPath", teamConfiguration);
+            var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
 
             Assert.That(actualItems, Has.Count.EqualTo(0));
         }
 
-        private Team CreateTeam()
+        private Team CreateTeam(string query)
         {
             var team = new Team
             {
                 Name = "TestTeam",
+                WorkItemQuery = query
             };
 
             var organizationUrl = "https://dev.azure.com/huserben";
             var personalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsCMFTIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'AzureDevOpsCMFTIntegrationTestToken' is set!");
             
             team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.Url, organizationUrl, false));
-            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.TeamProject, "CMFTTestTeamProject", false));
-            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.AreaPaths, "CMFTTestTeamProject", false));
             team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, personalAccessToken, true));
-
-            team.IgnoredTags.Add("ThroughputIgnore");
 
             return team;
         }

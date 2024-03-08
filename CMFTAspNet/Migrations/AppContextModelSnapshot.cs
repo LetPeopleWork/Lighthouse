@@ -23,9 +23,6 @@ namespace CMFTAspNet.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsUnparentedFeature")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -36,8 +33,9 @@ namespace CMFTAspNet.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ReferenceId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("ReferenceId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -126,9 +124,6 @@ namespace CMFTAspNet.Migrations
                     b.Property<int>("DefaultAmountOfWorkItemsPerFeature")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IncludeUnparentedItems")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -136,10 +131,7 @@ namespace CMFTAspNet.Migrations
                     b.Property<DateTime>("ProjectUpdateTime")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("SearchBy")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("SearchTerm")
+                    b.Property<string>("WorkItemQuery")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -185,16 +177,11 @@ namespace CMFTAspNet.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("AdditionalRelatedFields")
-                        .IsRequired()
+                    b.Property<string>("AdditionalRelatedField")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("FeatureWIP")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("IgnoredTags")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -208,6 +195,10 @@ namespace CMFTAspNet.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("ThroughputUpdateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkItemQuery")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkItemTypes")
