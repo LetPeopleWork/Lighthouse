@@ -53,7 +53,12 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var workItem = await GetWorkItemById(witClient, itemId, workItemQueryOwner);
 
             var workItemTitle = workItem?.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty;
-            var workItemStackRank = int.Parse(workItem?.Fields[AzureDevOpsFieldNames.StackRank].ToString() ?? "0");
+            var workItemStackRank = 0;
+
+            if (workItem?.Fields.TryGetValue(AzureDevOpsFieldNames.StackRank, out var stackRank) ?? false)
+            {
+                workItemStackRank = int.Parse(stackRank?.ToString() ?? "");
+            }
 
             return (workItemTitle, workItemStackRank);
         }
