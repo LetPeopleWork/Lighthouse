@@ -106,20 +106,10 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         private async Task<int> GetRelatedWorkItems(HttpClient jiraRestClient, Team team, string relatedWorkItemId)
         {
-            var remainingItems = 0;
-
             var query = PrepareQuery(team.WorkItemTypes, closedStates, team);
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
-            foreach (var issue in issues)
-            {
-                if (IsIssueRelated(issue, relatedWorkItemId, team.AdditionalRelatedField))
-                {
-                    remainingItems += 1;
-                }
-            }
-
-            return remainingItems;
+            return issues.Count(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField));
         }
 
         private bool IsIssueRelated(Issue issue, string relatedWorkItemId, string? additionalRelatedField)

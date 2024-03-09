@@ -18,8 +18,8 @@
             <div class="form-group">
                 <label asp-for="Project.Name" class="control-label">
                     <input asp-for="Project.Name" class="form-control" />
+                    <span asp-validation-for="Project.Name" class="text-danger"></span>
                 </label>
-                <span asp-validation-for="Project.Name" class="text-danger"></span>
                 <input type="hidden" asp-for="Project.Id" />
             </div>
             <div class="form-group" id="workItemTypesContainer">
@@ -37,8 +37,8 @@
                             </div>
                         }
                     }
+                </label>
             </div>
-            </label>
             <button type="button" class="btn btn-success" id="addWorkItemType">Add Work Item Type</button>
 
             <div class="form-group">
@@ -192,15 +192,15 @@
                 var index = $("#milestonesContainer").children().length;
 
                 $("#milestonesContainer").append(`
-                                                    <div class="input-group mt-2">
-                                                        <input type="text" name="Project.Milestones[${index}].Name" class="form-control" placeholder="Name"/>
-                                                        <input type="date" name="Project.Milestones[${index}].Date" class="form-control" placeholder="Date"/>
-                                                        <input type="hidden" name="Project.Milestones[${index}].ProjectId" value="@Model.Project.Id" class="form-control" />
-                                                        <div class="input-group-append">
-                                                            <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
-                                                        </div>
-                                                     </div>
-                                                  `);
+                                                            <div class="input-group mt-2">
+                                                                <input type="text" name="Project.Milestones[${index}].Name" class="form-control" placeholder="Name"/>
+                                                                <input type="date" name="Project.Milestones[${index}].Date" class="form-control" placeholder="Date"/>
+                                                                <input type="hidden" name="Project.Milestones[${index}].ProjectId" value="@Model.Project.Id" class="form-control" />
+                                                                <div class="input-group-append">
+                                                                    <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                                                                </div>
+                                                             </div>
+                                                          `);
             });
 
             $("#workTrackingSystem").change(function () {
