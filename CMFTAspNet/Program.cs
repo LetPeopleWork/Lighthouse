@@ -19,7 +19,7 @@ namespace CMFTAspNet
 
             // Add services to the container.
             builder.Services.AddRazorPages();
-            builder.Services.AddDbContext<Data.AppContext>(options =>
+            builder.Services.AddDbContext<AppContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("AppContext") ?? throw new InvalidOperationException("Connection string 'AppContext' not found")));
 
             // Repos

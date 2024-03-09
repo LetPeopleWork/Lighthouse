@@ -3,7 +3,7 @@
     public class WorkTrackingSystemOption<T> where T : class
     {
         public WorkTrackingSystemOption()
-        {            
+        {
         }
 
         public WorkTrackingSystemOption(string key, string value, bool isSecret)
@@ -11,7 +11,7 @@
             Key = key;
             Value = value;
             Secret = isSecret;
-        }   
+        }
 
         public int Id { get; set; }
 
@@ -23,6 +23,6 @@
 
         public T? Entity { get; set; }
 
-        public int EntityId {  get; set; }
+        public int EntityId { get; set; }
     }
 }

@@ -26,7 +26,7 @@ namespace CMFTAspNet.Tests.Services.Implementation
                 WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
             };
 
-            workItemServiceMock.Setup(x => x.GetClosedWorkItemsForTeam(7, team)).Returns(Task.FromResult(closedItemsPerDay));
+            workItemServiceMock.Setup(x => x.GetClosedWorkItems(7, team)).Returns(Task.FromResult(closedItemsPerDay));
 
             var subject = new ThroughputService(workItemServiceFactoryMock.Object);
 

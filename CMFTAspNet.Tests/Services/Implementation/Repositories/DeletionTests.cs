@@ -39,7 +39,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             teamRepository.Add(team);
             await teamRepository.Save();
 
-            var project = new Project { Name = "MyProject", SearchTerm = "Search" };
+            var project = new Project { Name = "MyProject" };
 
             var projectRepository = ServiceProvider.GetService<IRepository<Project>>();
             projectRepository.Add(project);            
@@ -82,7 +82,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             teamRepository.Add(team);
             await teamRepository.Save();
 
-            var project = new Project { Name = "MyProject", SearchTerm = "Search" };
+            var project = new Project { Name = "MyProject", };
 
             var milestone1 = new Milestone { Name = "Milestone", Date = DateTime.Now.AddDays(12), Project = project };
             var milestone2 = new Milestone { Name = "Milestone2", Date = DateTime.Now.AddDays(42), Project = project };
@@ -134,7 +134,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             teamRepository.Add(team2);
             await teamRepository.Save();
 
-            var project = new Project { Name = "MyProject", SearchTerm = "Search" };
+            var project = new Project { Name = "MyProject", };
 
             var projectRepository = ServiceProvider.GetService<IRepository<Project>>();
             projectRepository.Add(project);

@@ -55,12 +55,12 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             var subject = CreateSubject();
 
             var item = CreateFeature();
-            item.ReferenceId = 12;
+            item.ReferenceId = "12";
 
             subject.Add(item);
             await subject.Save();
 
-            var foundEntity = subject.GetByPredicate(f => f.ReferenceId == 12);
+            var foundEntity = subject.GetByPredicate(f => f.ReferenceId == "12");
 
             Assert.That(foundEntity, Is.EqualTo(item));
         }
@@ -71,12 +71,12 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
             var subject = CreateSubject();
 
             var item = CreateFeature();
-            item.ReferenceId = 12;
+            item.ReferenceId = "12";
 
             subject.Add(item);
             await subject.Save();
 
-            var foundEntity = subject.GetByPredicate(f => f.ReferenceId == 42);
+            var foundEntity = subject.GetByPredicate(f => f.ReferenceId == "42");
 
             Assert.That(foundEntity, Is.Null);
         }
@@ -151,12 +151,12 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
         {
             var subject = CreateSubject();
             var item = CreateFeature();
-            item.ReferenceId = 32;
+            item.ReferenceId = "32";
 
             subject.Add(item);
             await subject.Save();
 
-            var actual = subject.Exists(f => f.ReferenceId == 32);
+            var actual = subject.Exists(f => f.ReferenceId == "32");
 
             Assert.That(actual, Is.True);
         }
@@ -167,12 +167,12 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
 
             var subject = CreateSubject();
             var item = CreateFeature();
-            item.ReferenceId = 32;
+            item.ReferenceId = "32";
 
             subject.Add(item);
             await subject.Save();
 
-            var actual = subject.Exists(f => f.ReferenceId == 42);
+            var actual = subject.Exists(f => f.ReferenceId == "42");
 
             Assert.That(actual, Is.False);
         }
@@ -184,7 +184,7 @@ namespace CMFTAspNet.Tests.Services.Implementation.Repositories
 
         private Feature CreateFeature()
         {
-            return new Feature { Name = "Name", Project = new Project { Name = "Project", SearchTerm = "Term" } };
+            return new Feature { Name = "Name", Project = new Project { Name = "Project" } };
         }
     }
 

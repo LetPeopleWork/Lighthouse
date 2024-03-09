@@ -88,76 +88,67 @@ namespace CMFTAspNet.Services.Implementation
                 await GetRemainingWorkForFeature(featureForProject);
             }
 
-            if (project.IncludeUnparentedItems)
-            {
-                await GetUnparentedItemsForTeams(project);
-            }
+            await GetUnparentedItems(project);
         }
 
-        private async Task GetUnparentedItemsForTeams(Project project)
+        private async Task GetUnparentedItems(Project project)
         {
+            if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
+            {
+                return;
+            }
+
             var featureIds = project.Features.Select(x => x.ReferenceId);
 
-            foreach (var team in teamRepository.GetAll())
+            var unparentedFeature = GetOrAddUnparentedFeature(project);
+
+            foreach (var team in teamRepository.GetAll().Where(t => t.WorkTrackingSystem == project.WorkTrackingSystem))
             {
-                var notClosedItems = await GetNotClosedItemsBySearchCriteria(project, team);
-                var unparentedItems = await ExtractItemsRelatedToFeature(featureIds, team, notClosedItems);
+                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+                var itemsMatchingUnparentedItemsQuery = await workItemService.GetOpenWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery);
 
-                var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = int.MaxValue - 1, Order = int.MaxValue, IsUnparentedFeature = true, ProjectId = project.Id, Project = project };
-                var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;                
-
-                if (unparentedFeatureId != null)
-                {
-                    unparentedFeature = featureRepository.GetById(unparentedFeatureId.Value) ?? unparentedFeature;
-                }
-
-                project.Features.Add(unparentedFeature);
+                var unparentedItems = await GetItemsUnrelatedToFeatures(featureIds, team, itemsMatchingUnparentedItemsQuery);
 
                 unparentedFeature.AddOrUpdateRemainingWorkForTeam(team, unparentedItems.Count);
             }
         }
 
-        private async Task<List<int>> ExtractItemsRelatedToFeature(IEnumerable<int> featureIds, Team team, List<int> notClosedItems)
+        private Feature GetOrAddUnparentedFeature(Project project)
         {
-            var unparentedItems = new List<int>();
+            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = $"{int.MaxValue - 1}", Order = int.MaxValue, IsUnparentedFeature = true, ProjectId = project.Id, Project = project };
+            var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;
 
-            foreach (var itemId in notClosedItems)
+            if (unparentedFeatureId != null)
             {
-                var isRelatedToFeature = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).IsRelatedToFeature(itemId, featureIds, team);
+                unparentedFeature = featureRepository.GetById(unparentedFeatureId.Value) ?? unparentedFeature;
+            }
+            else
+            {                
+                project.Features.Add(unparentedFeature);
+            }
+
+            return unparentedFeature;
+        }
+
+        private async Task<List<string>> GetItemsUnrelatedToFeatures(IEnumerable<string> featureIds, Team team, List<string> itemIds)
+        {
+            var unrelatedItems = new List<string>();
+
+            foreach (var itemId in itemIds)
+            {
+                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+                var isRelatedToFeature = await workItemService.IsRelatedToFeature(itemId, featureIds, team);
                 if (!isRelatedToFeature)
                 {
-                    unparentedItems.Add(itemId);
+                    unrelatedItems.Add(itemId);
                 }
             }
 
-            return unparentedItems;
-        }
-
-        private async Task<List<int>> GetNotClosedItemsBySearchCriteria(Project project, Team team)
-        {
-            List<int> unparentedItems;
-            switch (project.SearchBy)
-            {
-                case SearchBy.Tag:
-                    unparentedItems = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetNotClosedWorkItemsByTag(team.WorkItemTypes, project.SearchTerm, team);
-                    break;
-                case SearchBy.AreaPath:
-                    unparentedItems = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetNotClosedWorkItemsByAreaPath(team.WorkItemTypes, project.SearchTerm, team);
-                    break;
-                default:
-                    throw new NotSupportedException($"Search by {project.SearchBy} is not supported!");
-            }
-
-            return unparentedItems;
+            return unrelatedItems;
         }
 
         private async Task GetRemainingWorkForFeature(Feature featureForProject)
         {
-            if (featureForProject.IsUnparentedFeature)
-            {
-                return;
-            }
-
             foreach (var team in teamRepository.GetAll())
             {
                 var remainingWork = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
@@ -174,19 +165,7 @@ namespace CMFTAspNet.Services.Implementation
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem);
 
             var features = new List<Feature>();
-            var featureIds = new List<int>();
-
-            switch (project.SearchBy)
-            {
-                case SearchBy.Tag:
-                    featureIds = await workItemService.GetWorkItemsByTag(project.WorkItemTypes, project.SearchTerm, project);
-                    break;
-                case SearchBy.AreaPath:
-                    featureIds = await workItemService.GetWorkItemsByArea(project.WorkItemTypes, project.SearchTerm, project);
-                    break;
-                default:
-                    throw new NotSupportedException($"Search by {project.SearchBy} is not supported!");
-            }
+            var featureIds = await workItemService.GetOpenWorkItems(project.WorkItemTypes, project);
 
             foreach (var featureId in featureIds)
             {
@@ -202,7 +181,7 @@ namespace CMFTAspNet.Services.Implementation
             return features;
         }
 
-        private Feature GetOrCreateFeature(int featureId, Project project)
+        private Feature GetOrCreateFeature(string featureId, Project project)
         {
             var feature = featureRepository.GetByPredicate(f => f.ReferenceId == featureId);
 

@@ -1,5 +1,5 @@
 ﻿using CMFTAspNet.Services.Factories;
-using CMFTAspNet.Services.Implementation.AzureDevOps;
+using CMFTAspNet.Services.Implementation.WorkItemServices;
 using CMFTAspNet.WorkTracking;
 
 namespace CMFTAspNet.Tests.Factories
@@ -7,13 +7,23 @@ namespace CMFTAspNet.Tests.Factories
     public class WorkItemServiceFactoryTest
     {
         [Test]
-        public void CreateWorkItemService_GivenAzureDevOpsn_ReturnsAzureDevOpsWorkItemService()
+        public void CreateWorkItemService_GivenAzureDevOps_ReturnsAzureDevOpsWorkItemService()
         {
             var subject = new WorkItemServiceFactory();
 
             var workItemService = subject.GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems.AzureDevOps);
 
             Assert.That(workItemService, Is.InstanceOf<AzureDevOpsWorkItemService>());
+        }
+
+        [Test]
+        public void CreateWorkItemService_GivenJira_ReturnsJiraWorkItemService()
+        {
+            var subject = new WorkItemServiceFactory();
+
+            var workItemService = subject.GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems.Jira);
+
+            Assert.That(workItemService, Is.InstanceOf<JiraWorkItemService>());
         }
 
         [Test]

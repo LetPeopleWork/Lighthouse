@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CMFTAspNet.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,12 +18,11 @@ namespace CMFTAspNet.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
-                    SearchBy = table.Column<int>(type: "INTEGER", nullable: false),
                     WorkItemTypes = table.Column<string>(type: "TEXT", nullable: false),
-                    SearchTerm = table.Column<string>(type: "TEXT", nullable: false),
-                    IncludeUnparentedItems = table.Column<bool>(type: "INTEGER", nullable: false),
                     DefaultAmountOfWorkItemsPerFeature = table.Column<int>(type: "INTEGER", nullable: false),
                     ProjectUpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UnparentedItemsQuery = table.Column<string>(type: "TEXT", nullable: true),
+                    WorkItemQuery = table.Column<string>(type: "TEXT", nullable: false),
                     WorkTrackingSystem = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -39,12 +38,12 @@ namespace CMFTAspNet.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     WorkItemTypes = table.Column<string>(type: "TEXT", nullable: false),
-                    IgnoredTags = table.Column<string>(type: "TEXT", nullable: false),
-                    AdditionalRelatedFields = table.Column<string>(type: "TEXT", nullable: false),
                     FeatureWIP = table.Column<int>(type: "INTEGER", nullable: false),
+                    AdditionalRelatedField = table.Column<string>(type: "TEXT", nullable: true),
                     ThroughputUpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
                     RawThroughput = table.Column<string>(type: "TEXT", nullable: false),
                     ThroughputHistory = table.Column<int>(type: "INTEGER", nullable: false),
+                    WorkItemQuery = table.Column<string>(type: "TEXT", nullable: false),
                     WorkTrackingSystem = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -58,7 +57,7 @@ namespace CMFTAspNet.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    ReferenceId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ReferenceId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Order = table.Column<int>(type: "INTEGER", nullable: false),
                     ProjectId = table.Column<int>(type: "INTEGER", nullable: false),
