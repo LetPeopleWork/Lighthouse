@@ -27,7 +27,7 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
 
         private async Task UpdateThroughputForTeam(IServiceScope scope, IRepository<Team> teamRepository, Team team)
         {
-            var minutesSinceLastUpdate = (DateTime.Now - team.ThroughputUpdateTime).TotalMinutes;
+            var minutesSinceLastUpdate = (DateTime.UtcNow - team.ThroughputUpdateTime).TotalMinutes;
 
             if (minutesSinceLastUpdate >= RefreshAfter)
             {

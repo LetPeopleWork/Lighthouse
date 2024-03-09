@@ -2,7 +2,7 @@
 
 namespace Lighthouse.Models
 {
-    public class Project : WorkTrackingSystemOptionsOwner<Project>, IWorkItemQueryOwner
+    public class Project : WorkTrackingSystemOptionsOwner<Project>
     {
         public string Name { get; set; }
         
@@ -26,7 +26,7 @@ namespace Lighthouse.Models
             Features.Clear();
             Features.AddRange(features);
 
-            ProjectUpdateTime = DateTime.Now;
+            ProjectUpdateTime = DateTime.UtcNow;
         }
     }
 }

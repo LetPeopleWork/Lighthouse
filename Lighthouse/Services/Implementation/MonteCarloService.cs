@@ -55,7 +55,7 @@ namespace Lighthouse.Services.Implementation
 
         public async Task ForecastFeaturesForTeam(Team team)
         {
-            var featuresForTeam = featureRepository.GetAll().Where(feature => feature.RemainingWork.Any(remainingWork => remainingWork.Team == team));
+            var featuresForTeam = featureRepository.GetAll().Where(feature => feature.RemainingWork.Exists(remainingWork => remainingWork.Team == team));
 
             ForecastFeatures(featuresForTeam);
 

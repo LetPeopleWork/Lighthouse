@@ -27,7 +27,7 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
 
         private async Task UpdateWorkItemsForProject(IServiceScope scope, IRepository<Project> projectRepository, Project project)
         {
-            var minutesSinceLastUpdate = (DateTime.Now - project.ProjectUpdateTime).TotalMinutes;
+            var minutesSinceLastUpdate = (DateTime.UtcNow - project.ProjectUpdateTime).TotalMinutes;
 
             if (minutesSinceLastUpdate >= RefreshAfter)
             {

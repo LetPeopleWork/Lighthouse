@@ -40,9 +40,9 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
 
                 await Task.Delay(TimeSpan.FromMinutes(Interval), stoppingToken);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                logger.LogError(ex.Message, ex);
+                logger.LogDebug(exception, $"An exception occured: {exception.Message}.", exception);
             }
         }
 

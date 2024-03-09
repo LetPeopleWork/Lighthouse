@@ -30,16 +30,13 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var workItems = issues.Where(i => workItemTypes.Contains(i.IssueType)).ToList();
 
-            foreach (var issue in issues)
+            foreach (var parentKey in issues.Where(i => !string.IsNullOrEmpty(i.ParentKey)).Select(i => i.ParentKey))
             {
-                if (!string.IsNullOrEmpty(issue.ParentKey))
-                {
-                    var parentItem = await GetIssueById(jiraRestClient, issue.ParentKey);
+                var parentItem = await GetIssueById(jiraRestClient, parentKey);
 
-                    if (workItemTypes.Contains(parentItem.IssueType))
-                    {
-                        workItems.Add(parentItem);
-                    }
+                if (workItemTypes.Contains(parentItem.IssueType))
+                {
+                    workItems.Add(parentItem);
                 }
             }
 
@@ -82,15 +79,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var jiraClient = GetJiraRestClient(team);
             var issue = await GetIssueById(jiraClient, itemId);
 
-            foreach (var featureId in featureIds)
-            {
-                if (IsIssueRelated(issue, featureId, team.AdditionalRelatedField))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return featureIds.Any(f => IsIssueRelated(issue, f, team.AdditionalRelatedField));
         }
 
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)
@@ -225,25 +214,25 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         private string PrepareWorkItemTypeQuery(IEnumerable<string> issueTypes)
         {
-            return PrepareQuery(issueTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
+            return PrepareGenericQuery(issueTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
         }
 
         private string PrepareStateQuery(IEnumerable<string> excludedStates)
         {
-            return PrepareQuery(excludedStates, JiraFieldNames.StatusFieldName, "AND", "!=");
+            return PrepareGenericQuery(excludedStates, JiraFieldNames.StatusFieldName, "AND", "!=");
         }
 
-        private string PrepareQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
+        private string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
             var query = string.Join($" {queryOperator} ", options.Select(options => $"{fieldName} {queryComparison} \"{options}\""));
 
-            if (options.Count() == 0)
+            if (options.Any())
             {
-                query = string.Empty;
+                query = $"AND ({query}) ";
             }
             else
             {
-                query = $"AND ({query}) ";
+                query = string.Empty;
             }
 
             return query;

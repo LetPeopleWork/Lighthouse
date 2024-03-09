@@ -101,7 +101,7 @@ namespace Lighthouse.Pages.Teams
         private IEnumerable<Feature> GetFeaturesForTeam(int id)
         {
             var allFeatures = featureRepository.GetAll().OrderBy(f => f.Order);
-            var featuresForTeam = allFeatures.Where(f => f.RemainingWork.Any(rw => rw.Team.Id == id));
+            var featuresForTeam = allFeatures.Where(f => f.RemainingWork.Exists(rw => rw.Team.Id == id));
             return featuresForTeam;
         }
     }

@@ -6,10 +6,10 @@
 
         public static string StatusFieldName => "status";
 
-        public static string ResolvedFieldName = "resolved";
+        public static string ResolvedFieldName => "resolved";
 
-        public static string FieldsFieldName = "fields";
+        public static string FieldsFieldName => "fields";
 
-        public static string ResolutionDateFieldName = "resolutiondate";
+        public static string ResolutionDateFieldName => "resolutiondate";
     }
 }

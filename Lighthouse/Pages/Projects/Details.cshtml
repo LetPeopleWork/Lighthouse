@@ -57,6 +57,16 @@
                         return futureDate.ToString("d");
                     }
 
+                    string GetColorForLikelihood(double likelihood)
+                    {
+                        if (likelihood >= 80)
+                        {
+                            return "#6E9994";
+                        }
+
+                        return likelihood >= 50 ? "#FF5733" : "#FF6E8D";
+                    }
+
                     <tr>
                         <td>@feature.Name</td>
                         <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
@@ -68,7 +78,7 @@
                         @foreach (var milestone in Model.Entity.Milestones)
                         {
                             var likelihood = feature.GetLikelhoodForDate(milestone.Date);
-                            string likelihoodColor = likelihood >= 80 ? "#6E9994" : likelihood >= 50 ? "#FF5733" : "#FF6E8D";
+                            string likelihoodColor = GetColorForLikelihood(likelihood);
                             <td style="background-color: @likelihoodColor">@likelihood.ToString("0.00")%</td>
                         }
                     </tr>

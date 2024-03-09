@@ -48,18 +48,20 @@
 
 
             <div class="form-group">
-                <label>Work Item Types:</label>
-                <div id="workItemTypesContainer">
-                    @foreach (var workItemType in Model.Team?.WorkItemTypes ?? new List<string>())
-                    {
-                        <div class="input-group mt-2">
-                            <input type="text" name="Team.WorkItemTypes" value="@workItemType" class="form-control" />
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                <label>
+                    Work Item Types:
+                    <div id="workItemTypesContainer">
+                        @foreach (var workItemType in Model.Team?.WorkItemTypes ?? new List<string>())
+                        {
+                            <div class="input-group mt-2">
+                                <input type="text" name="Team.WorkItemTypes" value="@workItemType" class="form-control" />
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                                </div>
                             </div>
-                        </div>
-                    }
-                </div>
+                        }
+                    </div>
+                </label>
                 <button type="button" id="addWorkItemType" class="btn btn-primary mt-2">Add Work Item Type</button>
             </div>
 
@@ -83,21 +85,23 @@
 
             <!-- Dynamic input fields for WorkTrackingSystemOptions -->
             <div class="form-group">
-                <label>Work Tracking System Options:</label>
-                <div id="workTrackingOptionsContainer">
-                    @for (int i = 0; i < Model.Team.WorkTrackingSystemOptions.Count; i++)
-                    {
-                        var inputType = Model.Team.WorkTrackingSystemOptions[@i].Secret ? "password" : "text";
+                <label>
+                    Work Tracking System Options:
+                    <div id="workTrackingOptionsContainer">
+                        @for (int i = 0; i < Model.Team.WorkTrackingSystemOptions.Count; i++)
+                        {
+                            var inputType = Model.Team.WorkTrackingSystemOptions[@i].Secret ? "password" : "text";
 
-                        <div class="input-group mt-2">
-                            <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" value="@Model.Team.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" readonly />
-                            <input type="@inputType" name="Team.WorkTrackingSystemOptions[@i].Value" value="@Model.Team.WorkTrackingSystemOptions[i].Value" class="form-control col-12" placeholder="Value" />
-                            <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Secret" value="@Model.Team.WorkTrackingSystemOptions[i].Secret.ToString()" class="form-control" placeholder="Secret" />
-                            <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Id" value="@Model.Team.WorkTrackingSystemOptions[i].Id" class="form-control" />
-                            <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].EntityId" value="@Model.Team.Id" class="form-control" />
-                        </div>
-                    }
-                </div>
+                            <div class="input-group mt-2">
+                                <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" value="@Model.Team.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" readonly />
+                                <input type="@inputType" name="Team.WorkTrackingSystemOptions[@i].Value" value="@Model.Team.WorkTrackingSystemOptions[i].Value" class="form-control col-12" placeholder="Value" />
+                                <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Secret" value="@Model.Team.WorkTrackingSystemOptions[i].Secret.ToString()" class="form-control" placeholder="Secret" />
+                                <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Id" value="@Model.Team.WorkTrackingSystemOptions[i].Id" class="form-control" />
+                                <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].EntityId" value="@Model.Team.Id" class="form-control" />
+                            </div>
+                        }
+                    </div>
+                </label>
             </div>
 
 

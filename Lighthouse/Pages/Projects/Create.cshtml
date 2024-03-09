@@ -16,91 +16,106 @@
         <form method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="Project.Name" class="control-label"></label>
-                <input asp-for="Project.Name" class="form-control" />
+                <label asp-for="Project.Name" class="control-label">
+                    <input asp-for="Project.Name" class="form-control" />
+                </label>
                 <span asp-validation-for="Project.Name" class="text-danger"></span>
                 <input type="hidden" asp-for="Project.Id" />
             </div>
             <div class="form-group" id="workItemTypesContainer">
-                <label>Work Item Types:</label>
-                @if (Model.Project.WorkItemTypes != null)
-                {
-                    foreach (var workItemType in Model.Project.WorkItemTypes)
+                <label>
+                    Work Item Types:
+                    @if (Model.Project.WorkItemTypes != null)
                     {
-                        <div class="input-group mb-3">
-                            <input asp-for="Project.WorkItemTypes" class="form-control" value="@workItemType" />
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-danger remove-work-item" data-work-item="@workItemType">Remove</button>
+                        foreach (var workItemType in Model.Project.WorkItemTypes)
+                        {
+                            <div class="input-group mb-3">
+                                <input asp-for="Project.WorkItemTypes" class="form-control" value="@workItemType" />
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-danger remove-work-item" data-work-item="@workItemType">Remove</button>
+                                </div>
                             </div>
-                        </div>
+                        }
                     }
-                }
             </div>
+            </label>
             <button type="button" class="btn btn-success" id="addWorkItemType">Add Work Item Type</button>
 
             <div class="form-group">
-                <label>Milestones:</label>
-                <div id="milestonesContainer">
-                    @for (int i = 0; i < Model.Project.Milestones.Count; i++)
-                    {
-                        <div class="input-group mt-2">
-                            <input type="text" name="Project.Milestones[@i].Name" value="@Model.Project.Milestones[i].Name" class="form-control" placeholder="Name" />
-                            <input type="date" name="Project.Milestones[@i].Date" value="@Model.Project.Milestones[i].Date.ToString("yyyy-MM-dd")" class="form-control" placeholder="Date" />
-                            <input type="hidden" name="Project.Milestones[@i].Id" value="@Model.Project.Milestones[i].Id" class="form-control" />
-                            <input type="hidden" name="Project.Milestones[@i].ProjectId" value="@Model.Project.Id" class="form-control" />
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                <label>
+                    Milestones:
+                    <div id="milestonesContainer">
+                        @for (int i = 0; i < Model.Project.Milestones.Count; i++)
+                        {
+                            <div class="input-group mt-2">
+                                <input type="text" name="Project.Milestones[@i].Name" value="@Model.Project.Milestones[i].Name" class="form-control" placeholder="Name" />
+                                <input type="date" name="Project.Milestones[@i].Date" value="@Model.Project.Milestones[i].Date.ToString("yyyy-MM-dd")" class="form-control" placeholder="Date" />
+                                <input type="hidden" name="Project.Milestones[@i].Id" value="@Model.Project.Milestones[i].Id" class="form-control" />
+                                <input type="hidden" name="Project.Milestones[@i].ProjectId" value="@Model.Project.Id" class="form-control" />
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                                </div>
                             </div>
-                        </div>
-                    }
-                </div>
+                        }
+                    </div>
+                </label>
                 <button type="button" id="addMilestone" class="btn btn-primary mt-2">Add Milestone</button>
             </div>
 
             <div class="form-group">
-                <label asp-for="Project.WorkItemQuery" class="control-label">Work Item Query:</label>
-                <textarea asp-for="Project.WorkItemQuery" class="form-control" rows="5"></textarea>
+                <label asp-for="Project.WorkItemQuery" class="control-label">
+                    Work Item Query:
+                    <textarea asp-for="Project.WorkItemQuery" class="form-control" rows="5"></textarea>
+                </label>
                 <span asp-validation-for="Project.WorkItemQuery" class="text-danger"></span>
             </div>
 
 
             <div class="form-group">
-                <label asp-for="Project.UnparentedItemsQuery" class="control-label">Unparented Items Query (leave empty if you don't want to include Unparented Items'):</label>
-                <textarea asp-for="Project.UnparentedItemsQuery" class="form-control" rows="5"></textarea>
+                <label asp-for="Project.UnparentedItemsQuery" class="control-label">
+                    Unparented Items Query (leave empty if you don't want to include Unparented Items'):
+                    <textarea asp-for="Project.UnparentedItemsQuery" class="form-control" rows="5"></textarea>
+                </label>
                 <span asp-validation-for="Project.UnparentedItemsQuery" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label asp-for="Project.DefaultAmountOfWorkItemsPerFeature" class="control-label">Default Work Items Per Feature:</label>
-                <input asp-for="Project.DefaultAmountOfWorkItemsPerFeature" class="form-control" />
+                <label asp-for="Project.DefaultAmountOfWorkItemsPerFeature" class="control-label">
+                    Default Work Items Per Feature:
+                    <input asp-for="Project.DefaultAmountOfWorkItemsPerFeature" class="form-control" />
+                </label>
                 <span asp-validation-for="Project.DefaultAmountOfWorkItemsPerFeature" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label asp-for="Project.WorkTrackingSystem" class="control-label">Work Tracking System:</label>
-                <select asp-for="Project.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()" id="workTrackingSystem">
-                    <option selected="selected" value="">Please select</option>
-                </select>
+                <label asp-for="Project.WorkTrackingSystem" class="control-label">
+                    Work Tracking System:
+                    <select asp-for="Project.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()" id="workTrackingSystem">
+                        <option selected="selected" value="">Please select</option>
+                    </select>
+                </label>
                 <span asp-validation-for="Project.WorkTrackingSystem" class="text-danger"></span>
             </div>
 
             <!-- Dynamic input fields for WorkTrackingSystemOptions -->
             <div class="form-group">
-                <label>Work Tracking System Options:</label>
-                <div id="workTrackingOptionsContainer">
-                    @for (int i = 0; i < Model.Project.WorkTrackingSystemOptions.Count; i++)
-                    {
-                        var inputType = Model.Project.WorkTrackingSystemOptions[@i].Secret ? "password" : "text";
+                <label>
+                    Work Tracking System Options:
+                    <div id="workTrackingOptionsContainer">
+                        @for (int i = 0; i < Model.Project.WorkTrackingSystemOptions.Count; i++)
+                        {
+                            var inputType = Model.Project.WorkTrackingSystemOptions[@i].Secret ? "password" : "text";
 
-                        <div class="input-group mt-2">
-                            <input type="text" name="Project.WorkTrackingSystemOptions[@i].Key" value="@Model.Project.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" readonly />
-                            <input type="@inputType" name="Project.WorkTrackingSystemOptions[@i].Value" value="@Model.Project.WorkTrackingSystemOptions[i].Value" class="form-control col-12" placeholder="Value" />
-                            <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].Id" value="@Model.Project.WorkTrackingSystemOptions[i].Id" class="form-control" />
-                            <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].Secret" value="@Model.Project.WorkTrackingSystemOptions[i].Secret.ToString()" class="form-control" />
-                            <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].EntityId" value="@Model.Project.Id" class="form-control" />
-                        </div>
-                    }
-                </div>
+                            <div class="input-group mt-2">
+                                <input type="text" name="Project.WorkTrackingSystemOptions[@i].Key" value="@Model.Project.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" readonly />
+                                <input type="@inputType" name="Project.WorkTrackingSystemOptions[@i].Value" value="@Model.Project.WorkTrackingSystemOptions[i].Value" class="form-control col-12" placeholder="Value" />
+                                <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].Id" value="@Model.Project.WorkTrackingSystemOptions[i].Id" class="form-control" />
+                                <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].Secret" value="@Model.Project.WorkTrackingSystemOptions[i].Secret.ToString()" class="form-control" />
+                                <input type="hidden" name="Project.WorkTrackingSystemOptions[@i].EntityId" value="@Model.Project.Id" class="form-control" />
+                            </div>
+                        }
+                    </div>
+                </label>
             </div>
 
             <div class="form-group">
@@ -177,15 +192,15 @@
                 var index = $("#milestonesContainer").children().length;
 
                 $("#milestonesContainer").append(`
-                            <div class="input-group mt-2">
-                                <input type="text" name="Project.Milestones[${index}].Name" class="form-control" placeholder="Name"/>
-                                <input type="date" name="Project.Milestones[${index}].Date" class="form-control" placeholder="Date"/>
-                                <input type="hidden" name="Project.Milestones[${index}].ProjectId" value="@Model.Project.Id" class="form-control" />
-                                <div class="input-group-append">
-                                    <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
-                                </div>
-                             </div>
-                          `);
+                                                    <div class="input-group mt-2">
+                                                        <input type="text" name="Project.Milestones[${index}].Name" class="form-control" placeholder="Name"/>
+                                                        <input type="date" name="Project.Milestones[${index}].Date" class="form-control" placeholder="Date"/>
+                                                        <input type="hidden" name="Project.Milestones[${index}].ProjectId" value="@Model.Project.Id" class="form-control" />
+                                                        <div class="input-group-append">
+                                                            <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                                                        </div>
+                                                     </div>
+                                                  `);
             });
 
             $("#workTrackingSystem").change(function () {

@@ -80,15 +80,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var workItem = await GetWorkItemById(witClient, itemId, team);
 
-            foreach (var featureId in featureIds)
-            {
-                if (IsWorkItemRelated(workItem, featureId, team.AdditionalRelatedField ?? string.Empty))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return featureIds.Any(f => IsWorkItemRelated(workItem, f, team.AdditionalRelatedField ?? string.Empty));
         }
 
         private async Task<WorkItem> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner)
@@ -219,25 +211,25 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         private string PrepareWorkItemTypeQuery(IEnumerable<string> workItemTypes)
         {
-            return PrepareQuery(workItemTypes, AzureDevOpsFieldNames.WorkItemType, "OR", "=");
+            return PrepareGenericQuery(workItemTypes, AzureDevOpsFieldNames.WorkItemType, "OR", "=");
         }
 
         private string PrepareStateQuery(IEnumerable<string> excludedStates)
         {
-            return PrepareQuery(excludedStates, AzureDevOpsFieldNames.State, "AND", "<>");
+            return PrepareGenericQuery(excludedStates, AzureDevOpsFieldNames.State, "AND", "<>");
         }
 
-        private string PrepareQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
+        private string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
             var query = string.Join($" {queryOperator} ", options.Select(options => $"[{fieldName}] {queryComparison} '{options}'"));
 
-            if (options.Count() == 0)
+            if (options.Any())
             {
-                query = string.Empty;
+                query = $"AND ({query}) ";
             }
             else
             {
-                query = $"AND ({query}) ";
+                query = string.Empty;
             }
 
             return query;
