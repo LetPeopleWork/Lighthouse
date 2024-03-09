@@ -13,28 +13,36 @@
         <form method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="Team.Name" class="control-label">Team Name:</label>
-                <input asp-for="Team.Name" class="form-control" />
+                <label asp-for="Team.Name" class="control-label">
+                    Team Name:
+                    <input asp-for="Team.Name" class="form-control" />
+                </label>
                 <span asp-validation-for="Team.Name" class="text-danger"></span>
 
                 <input type="hidden" asp-for="Team.Id" />
             </div>
 
             <div class="form-group">
-                <label asp-for="Team.FeatureWIP" class="control-label">Feature WIP:</label>
-                <input asp-for="Team.FeatureWIP" class="form-control" />
+                <label asp-for="Team.FeatureWIP" class="control-label">
+                    Feature WIP:
+                    <input asp-for="Team.FeatureWIP" class="form-control" />
+                </label>
                 <span asp-validation-for="Team.FeatureWIP" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label asp-for="Team.ThroughputHistory" class="control-label">History in Days:</label>
-                <input asp-for="Team.ThroughputHistory" class="form-control" />
+                <label asp-for="Team.ThroughputHistory" class="control-label">
+                    History in Days:
+                    <input asp-for="Team.ThroughputHistory" class="form-control" />
+                </label>
                 <span asp-validation-for="Team.ThroughputHistory" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label asp-for="Team.WorkItemQuery" class="control-label">Work Item Query:</label>
-                <textarea asp-for="Team.WorkItemQuery" class="form-control" rows="5"></textarea>
+                <label asp-for="Team.WorkItemQuery" class="control-label">
+                    Work Item Query:
+                    <textarea asp-for="Team.WorkItemQuery" class="form-control" rows="5"></textarea>
+                </label>
                 <span asp-validation-for="Team.WorkItemQuery" class="text-danger"></span>
             </div>
 
@@ -56,16 +64,20 @@
             </div>
 
             <div class="form-group">
-                <label asp-for="Team.AdditionalRelatedField" class="control-label">Additional Related Field:</label>
-                <input asp-for="Team.AdditionalRelatedField" class="form-control" />
+                <label asp-for="Team.AdditionalRelatedField" class="control-label">
+                    Additional Related Field:
+                    <input asp-for="Team.AdditionalRelatedField" class="form-control" />
+                </label>
                 <span asp-validation-for="Team.AdditionalRelatedField" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label asp-for="Team.WorkTrackingSystem" class="control-label">Work Tracking System:</label>
-                <select asp-for="Team.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()" id="workTrackingSystem">
-                    <option selected="selected" value="">Please select</option>
-                </select>
+                <label asp-for="Team.WorkTrackingSystem" class="control-label">
+                    Work Tracking System:
+                    <select asp-for="Team.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()" id="workTrackingSystem">
+                        <option selected="selected" value="">Please select</option>
+                    </select>
+                </label>
                 <span asp-validation-for="Team.WorkTrackingSystem" class="text-danger"></span>
             </div>
 
@@ -124,7 +136,7 @@
 
                     // Add new options
                     $.each(data, function (index, option) {
-                        var inputType = option.secret ? "password" : "text";                        
+                        var inputType = option.secret ? "password" : "text";
                         var secretValue = option.secret ? "true" : "false";
 
                         var html = '<div class="input-group mt-2">' +
@@ -138,7 +150,7 @@
                         $("#workTrackingOptionsContainer").append(html);
                     });
 
-                     $('[data-toggle="tooltip"]').tooltip();
+                    $('[data-toggle="tooltip"]').tooltip();
                 });
             });
         });
