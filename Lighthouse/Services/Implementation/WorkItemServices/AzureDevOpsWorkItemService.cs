@@ -85,6 +85,11 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var workItem = await GetWorkItemById(witClient, itemId, team);
 
+            if (workItem == null)
+            {
+                return false;
+            }
+
             return featureIds.Any(f => IsWorkItemRelated(workItem, f, team.AdditionalRelatedField ?? string.Empty));
         }
 
@@ -95,7 +100,13 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var workItems = await GetWorkItemsByQuery(witClient, query);
 
-            var workItemReference = workItems.Single();
+            var workItemReference = workItems.SingleOrDefault();
+
+            if (workItemReference == null)
+            {
+                return null;
+            }
+
             return await GetWorkItemFromCache(workItemReference.Id.ToString(), witClient);
         }
 
