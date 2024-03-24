@@ -153,10 +153,7 @@ namespace Lighthouse.Services.Implementation
             {
                 var remainingWork = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
 
-                if (remainingWork > 0)
-                {
-                    featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
-                }
+                featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
             }
         }
 

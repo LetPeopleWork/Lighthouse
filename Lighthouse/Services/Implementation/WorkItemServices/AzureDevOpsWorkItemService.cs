@@ -72,7 +72,8 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}] FROM WorkItems WHERE {unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
-                $"{stateQuery}";
+                $"{stateQuery}" +
+                $" AND {team.WorkItemQuery}";
 
             var workItems = await GetWorkItemsByQuery(witClient, wiql);
 
@@ -150,9 +151,11 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             {
                 foreach (var relation in workItem.Relations)
                 {
-                    if (relation.Attributes.TryGetValue("name", out var attributeValue) && attributeValue.ToString() == "Parent" && relation.Url.Contains($"/{relatedWorkItemId}"))
+                    if (relation.Attributes.TryGetValue("name", out var attributeValue) && attributeValue.ToString() == "Parent")
                     {
-                        return true;
+                        var parentId = relation.Url.Split("/").Last();
+
+                        return parentId == relatedWorkItemId;
                     }
                 }
             }

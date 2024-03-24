@@ -99,6 +99,18 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        public async Task GetRelatedItems_ItemIdIsPartiallyMatching_DoesNotFindRelation()
+        {
+
+            var subject = new AzureDevOpsWorkItemService();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+
+            var relatedItems = await subject.GetRemainingRelatedWorkItems("37", team);
+
+            Assert.That(relatedItems, Is.EqualTo(0));
+        }
+
+        [Test]
         public async Task GetRelatedItems_ItemIdIsChild_DoesNotFindRelation()
         {
 
@@ -179,21 +191,6 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             {
                 Assert.That(name, Is.EqualTo("Test Test Test"));
                 Assert.That(rank, Is.EqualTo(1999821120));
-            });
-        }
-
-        [Test]
-        public async Task GetOpenWorkItemsByQuery_UsesSpecifiedQueryAndNotTeamQuery()
-        {
-            var subject = new AzureDevOpsWorkItemService();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
-
-            var workItems = await subject.GetOpenWorkItemsByQuery(["User Story", "Bug"], team, "[System.Tags] CONTAINS 'Release1'");
-            
-            Assert.Multiple(() =>
-            {
-                Assert.That(workItems, Has.Count.EqualTo(1));
-                Assert.That(workItems.Single(), Is.EqualTo("373"));
             });
         }
 

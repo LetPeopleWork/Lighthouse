@@ -193,7 +193,7 @@ namespace Lighthouse.Services.Implementation
 
         private int GetSimulatedThroughput(Throughput throughput)
         {
-            var randomDay = randomNumberService.GetRandomNumber(throughput.History - 1);
+            var randomDay = randomNumberService.GetRandomNumber(throughput.History);
             return throughput.GetThroughputOnDay(randomDay);
         }
     }

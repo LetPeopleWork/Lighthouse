@@ -109,9 +109,9 @@ namespace Lighthouse.Tests.Services.Implementation
             Assert.Multiple(() =>
             {
                 Assert.That(forecast.GetProbability(50), Is.InRange(32, 34));
-                Assert.That(forecast.GetProbability(70), Is.InRange(36, 38));
-                Assert.That(forecast.GetProbability(85), Is.InRange(40, 42));
-                Assert.That(forecast.GetProbability(95), Is.InRange(46, 48));
+                Assert.That(forecast.GetProbability(70), Is.InRange(36, 39));
+                Assert.That(forecast.GetProbability(85), Is.InRange(40, 43));
+                Assert.That(forecast.GetProbability(95), Is.InRange(46, 49));
             });
         }
 
@@ -145,9 +145,9 @@ namespace Lighthouse.Tests.Services.Implementation
                 Assert.That(forecast.GetProbability(50), Is.InRange(26, 28));
                 Assert.That(forecast.GetProbability(70), Is.InRange(29, 31));
                 Assert.That(forecast.GetProbability(85), Is.InRange(33, 35));
-                Assert.That(forecast.GetProbability(95), Is.InRange(38, 40));
+                Assert.That(forecast.GetProbability(95), Is.InRange(38, 41));
 
-                Assert.That(forecast.GetLikelihood(30), Is.InRange(70, 73));
+                Assert.That(forecast.GetLikelihood(30), Is.InRange(65, 73));
             });
         }
 
