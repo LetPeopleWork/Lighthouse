@@ -7,6 +7,7 @@ using Lighthouse.Models;
 using Lighthouse.Factories;
 using Lighthouse.Services.Implementation.BackgroundServices;
 using Lighthouse.Data;
+using System.Globalization;
 
 namespace Lighthouse
 {
@@ -14,6 +15,9 @@ namespace Lighthouse
     {
         public static void Main(string[] args)
         {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture;
+
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.

@@ -61,7 +61,7 @@
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
-                            <td>@feature.Forecast.CreationTime.ToString("G")</td>
+                            <td>@feature.Forecast.CreationTime.ToString("d")</td>
                             <td><a asp-page="../Projects/Details" asp-route-id="@feature.ProjectId">@feature.Project.Name</a></td>
                         </tr>
                     }
@@ -124,6 +124,10 @@
                         }
                     </tbody>
                 </table>
+
+                <div id="WhenChartContainer">
+                    <canvas id="whenChart" width="400" height="200"></canvas>
+                </div>
             }
         </div>
         <div class="col">
@@ -153,6 +157,10 @@
                         }
                     </tbody>
                 </table>
+
+                <div id="HowManyChartContainer">
+                    <canvas id="howManyChart" width="400" height="200"></canvas>
+                </div>
             }
         </div>
     </div>
@@ -161,7 +169,7 @@
 
 <div id="throughput">
     <h4>Throughput</h4>
-    <h7>Updated on: @Model.Entity.ThroughputUpdateTime.ToString("G")</h7>
+    <h7>Updated on: @Model.Entity.ThroughputUpdateTime.ToString("d")</h7>
     <canvas id="throughputRunChart" width="400" height="150"></canvas>
 </div>
 <div>
@@ -196,4 +204,115 @@
             }
         }
     });
+</script>
+
+<script>
+    // Get the simulation results from the model directly
+    var simulationResults = @Html.Raw(Json.Serialize(Model.WhenForecast?.SimulationResult));
+
+    // Check if simulationResults is not null and not empty
+    if (simulationResults && Object.keys(simulationResults).length > 0) {
+        // Extract keys and values for x-axis and y-axis
+        var keys = Object.keys(simulationResults).map(function (key) {
+            return parseInt(key);
+        });
+        var values = Object.values(simulationResults);
+
+        // Create a bar chart
+        var ctx = document.getElementById('whenChart').getContext('2d');
+        var whenChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: keys, // x-axis labels
+                datasets: [{
+                    label: 'Simulation', // legend label
+                    data: values, // y-axis values
+                    backgroundColor: 'rgba(48, 87, 78, 1)', // bar fill color
+                    borderColor: 'rgba(48, 87, 78, 1)', // bar border color
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true // Start the scale from zero
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Values' // Label for the y-axis
+                        }
+                    }],
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Keys' // Label for the x-axis
+                        }
+                    }]
+                }
+            }
+        });
+    } else {
+        // Handle the case when simulationResults is null or empty
+        var ctx = document.getElementById('whenChart').getContext('2d');
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available', 200, 100);
+    }
+</script>
+
+
+<script>
+    // Get the simulation results from the model directly
+    var simulationResults = @Html.Raw(Json.Serialize(Model.HowManyForecast?.SimulationResult));
+
+    // Check if simulationResults is not null and not empty
+    if (simulationResults && Object.keys(simulationResults).length > 0) {
+        // Extract keys and values for x-axis and y-axis
+        var keys = Object.keys(simulationResults).map(function (key) {
+            return parseInt(key);
+        });
+        var values = Object.values(simulationResults);
+
+        // Create a bar chart
+        var ctx = document.getElementById('howManyChart').getContext('2d');
+        var whenChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: keys, // x-axis labels
+                datasets: [{
+                    label: 'Simulation Results', // legend label
+                    data: values, // y-axis values
+                    backgroundColor: 'rgba(48, 87, 78, 1)', // bar fill color
+                    borderColor: 'rgba(48, 87, 78, 1)', // bar border color
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true // Start the scale from zero
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Values' // Label for the y-axis
+                        }
+                    }],
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Keys' // Label for the x-axis
+                        }
+                    }]
+                }
+            }
+        });
+    } else {
+        // Handle the case when simulationResults is null or empty
+        var ctx = document.getElementById('howManyChart').getContext('2d');
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available', 200, 100);
+    }
 </script>
