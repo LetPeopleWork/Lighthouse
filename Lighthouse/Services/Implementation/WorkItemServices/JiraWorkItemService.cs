@@ -50,7 +50,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             return GetRelatedWorkItems(jiraRestClient, team, featureId);
         }
 
-        public async Task<(string name, int order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<(string name, string order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             var jiraRestClient = GetJiraRestClient(workItemQueryOwner);
 
@@ -164,19 +164,13 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var responseBody = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonDocument.Parse(responseBody);
 
-            var rank = 1;
             foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
             {
-                var issue = new Issue(jsonIssue)
-                {
-                    Rank = rank,
-                };
+                var issue = new Issue(jsonIssue);
 
                 issues.Add(issue);
 
                 UpdateCache(issue);
-
-                rank++;
             }
 
             return issues;

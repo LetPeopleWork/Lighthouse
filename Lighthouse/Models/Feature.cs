@@ -27,7 +27,7 @@ namespace Lighthouse.Models
 
         public string Name { get; set; }
 
-        public int Order { get; set; }
+        public string Order { get; set; }
 
         public WhenForecast Forecast { get; set; }
 

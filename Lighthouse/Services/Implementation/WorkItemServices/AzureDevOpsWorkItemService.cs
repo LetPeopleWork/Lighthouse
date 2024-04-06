@@ -46,18 +46,18 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             return await GetRelatedWorkItems(witClient, team, featureId);
         }
 
-        public async Task<(string name, int order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<(string name, string order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             var witClient = GetClientService<WorkItemTrackingHttpClient>(workItemQueryOwner);
 
             var workItem = await GetWorkItemById(witClient, itemId, workItemQueryOwner);
 
             var workItemTitle = workItem?.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty;
-            var workItemStackRank = 0;
+            var workItemStackRank = string.Empty;
 
             if (workItem?.Fields.TryGetValue(AzureDevOpsFieldNames.StackRank, out var stackRank) ?? false)
             {
-                workItemStackRank = int.Parse(stackRank?.ToString() ?? "");
+                workItemStackRank = stackRank?.ToString() ?? string.Empty;
             }
 
             return (workItemTitle, workItemStackRank);

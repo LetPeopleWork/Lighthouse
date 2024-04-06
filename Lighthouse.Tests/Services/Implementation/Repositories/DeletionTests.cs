@@ -51,6 +51,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
                 Name = "My Feature",
                 Project = project,
                 ProjectId = project.Id,
+                Order = "12",
             };
 
             feature.RemainingWork.Add(new RemainingWork(team, 12, feature));
@@ -99,6 +100,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
                 Name = "My Feature",
                 Project = project,
                 ProjectId = project.Id,
+                Order = "12",
             };
 
             feature.RemainingWork.Add(new RemainingWork(team, 12, feature));
@@ -146,6 +148,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
                 Name = "My Feature",
                 Project = project,
                 ProjectId = project.Id,
+                Order = "12",
             };
 
             feature.RemainingWork.Add(new RemainingWork(team1, 12, feature));

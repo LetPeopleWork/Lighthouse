@@ -4,6 +4,8 @@ namespace Lighthouse.WorkTracking.Jira
 {
     public class Issue
     {
+        private readonly JsonElement fields;
+
         public Issue(JsonElement issueAsJson)
         {
             fields = issueAsJson.GetProperty(JiraFieldNames.FieldsFieldName);
@@ -23,12 +25,16 @@ namespace Lighthouse.WorkTracking.Jira
                 ParentKey = parent.GetProperty("key").ToString();
             }
 
+            // customfield_10019 is how Jira stores the rank. It's a string, not an int. It's using the LexoGraph algorithm for this.
+            if (fields.TryGetProperty("customfield_10019", out var rank))
+            {
+                Rank = rank.ToString();
+            }
+
             IssueType = fields.GetProperty("issuetype").GetProperty("name").ToString();
         }
 
         public string Key { get; }
-
-        private JsonElement fields;
 
         public DateTime ResolutionDate { get; } = DateTime.MinValue;
 
@@ -36,7 +42,7 @@ namespace Lighthouse.WorkTracking.Jira
 
         public string Title { get; }
 
-        public int Rank { get; set; }
+        public string Rank { get; private set; }
 
         public string IssueType { get; }
 

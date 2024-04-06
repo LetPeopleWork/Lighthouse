@@ -190,7 +190,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             Assert.Multiple(() =>
             {
                 Assert.That(name, Is.EqualTo("Test Test Test"));
-                Assert.That(rank, Is.EqualTo(1999821120));
+                Assert.That(rank, Is.EqualTo("1999821120"));
             });
         }
 

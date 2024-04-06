@@ -108,7 +108,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
             await subject.Save();
 
             // Act
-            item.Order = 42;
+            item.Order = "42";
             subject.Update(item);
             await subject.Save();
 
@@ -184,7 +184,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
 
         private Feature CreateFeature()
         {
-            return new Feature { Name = "Name", Project = new Project { Name = "Project" } };
+            return new Feature { Name = "Name", Project = new Project { Name = "Project" }, Order = "12" };
         }
     }
 

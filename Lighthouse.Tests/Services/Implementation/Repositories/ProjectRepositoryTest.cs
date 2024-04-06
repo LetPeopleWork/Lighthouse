@@ -22,7 +22,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
             DatabaseContext.Teams.Add(team);
             await DatabaseContext.SaveChangesAsync();
 
-            var feature = new Feature { Name = "Feature" };
+            var feature = new Feature { Name = "Feature", Order = "12" };
             feature.RemainingWork.Add(new RemainingWork(team, 12, feature));
 
             project.Features.Add(feature);
@@ -47,7 +47,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
             var subject = CreateSubject();
 
             var project = new Project { Name = "Name",  };
-            var feature = new Feature { Name = "MyFeature" };
+            var feature = new Feature { Name = "MyFeature", Order = "12" };
 
             project.Features.Add(feature);
 

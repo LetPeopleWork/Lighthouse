@@ -100,7 +100,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             Assert.Multiple(() =>
             {
                 Assert.That(name, Is.EqualTo("Test 32523"));
-                Assert.That(rank, Is.EqualTo(0));
+                Assert.That(rank, Is.EqualTo("0|i00037:9"));
             });
         }
 
