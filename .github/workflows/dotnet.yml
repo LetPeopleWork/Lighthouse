@@ -22,7 +22,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
 
     - name: Restore dependencies
       run: dotnet restore
@@ -50,3 +50,29 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEINTEGRATIONTESTTOKEN }}
         JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    #if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Publish Project
+      run: dotnet publish -c Release -f net8.0 --no-restore
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Lighthouse
+        path: "**/publish/**"
