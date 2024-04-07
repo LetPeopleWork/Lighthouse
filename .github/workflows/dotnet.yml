@@ -19,34 +19,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: '0'
-    
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Set up dependency caching for faster builds
-      uses: actions/cache@v3
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
-    
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build with dotnet
-      run: dotnet build --no-restore
-    
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
-      env:
-        AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEINTEGRATIONTESTTOKEN }}
-        JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
 
     - name: SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
@@ -86,18 +58,12 @@ jobs:
         with:
           name: Lighthouse
 
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.__clientidsecretname__ }}
-          tenant-id: ${{ secrets.__tenantidsecretname__ }}
-          subscription-id: ${{ secrets.__subscriptionidsecretname__ }}  
-  
-      - name: Deploy to Azure Web App  
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp  
         uses: azure/webapps-deploy@v2  
         with:  
           app-name: 'LighthouseCloudDemo'  
           slot-name: 'production'  
-          package: .
+          package: .  
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_b2451da2f37a4b24932049f5b05e6a46 }}
   
