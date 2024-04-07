@@ -22,6 +22,14 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{env.DOTNET_ROOT}}
+
+    - name: Restore dependencies
+      run: dotnet restore
 
     - name: SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
@@ -31,11 +39,6 @@ jobs:
         sonarOrganization: letpeoplework
         dotnetTestArguments: --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
-
-    # Otherwise there is an issue with access denied
-    - name: Sleep for 3 seconds
-      run: sleep 3s
-      shell: bash
 
     - name: dotnet publish
       run: dotnet publish -c Release -f net8.0 -o ${{env.DOTNET_ROOT}}/publish
