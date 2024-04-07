@@ -68,7 +68,8 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var jql = $"{unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
-                $"{stateQuery} ";
+                $"{stateQuery} " +
+                $"AND {team.WorkItemQuery}";
 
             var issues = await GetIssuesByQuery(jiraClient, jql);
             return issues.Select(x => x.Key).ToList();

@@ -105,21 +105,6 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByQuery_UsesSpecifiedQueryAndNotTeamQuery()
-        {
-            var subject = new JiraWorkItemService();
-            var team = CreateTeam($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
-
-            var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "labels = \"ExistingLabel\"");
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(workItems, Has.Count.EqualTo(1));
-                Assert.That(workItems.Single(), Is.EqualTo("PROJ-18"));
-            });
-        }
-
-        [Test]
         public async Task GetOpenWorkItemsByQuery_IgnoresClosedItems()
         {
             var subject = new JiraWorkItemService();
@@ -137,6 +122,28 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             var team = CreateTeam($"project = PROJ");
 
             var workItems = await subject.GetOpenWorkItemsByQuery(["Bug"], team, "labels = \"ExistingLabel\"");
+
+            Assert.That(workItems, Has.Count.EqualTo(0));
+        }
+
+        [Test]
+        public async Task GetOpenWorkItemsByQuery_IncludesItemsThatMatchBothTeamAndCustomQuery()
+        {
+            var subject = new JiraWorkItemService();
+            var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
+
+            var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
+
+            Assert.That(workItems, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public async Task GetOpenWorkItemsByQuery_IgnoresItemsThatMatchCustomBotNotTeamTeamQuery()
+        {
+            var subject = new JiraWorkItemService();
+            var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"RebelRevolt\"");
+
+            var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
 
             Assert.That(workItems, Has.Count.EqualTo(0));
         }
