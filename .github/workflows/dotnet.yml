@@ -1,7 +1,11 @@
 name: Build And Deploy Lighthouse
 
 env:
-  DOTNET_VERSION: '8'                 # set this to the .NET Core version to use
+  DOTNET_VERSION: '8'  
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEINTEGRATIONTESTTOKEN }}
+  JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
 
 on:
   push:
@@ -61,12 +65,6 @@ jobs:
       with:
         name: Lighthouse
         path: ${{env.DOTNET_ROOT}}/publish
-        
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEINTEGRATIONTESTTOKEN }}
-        JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
 
 
   deploy:
