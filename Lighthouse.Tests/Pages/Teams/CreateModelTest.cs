@@ -11,10 +11,13 @@ namespace Lighthouse.Tests.Pages.Teams
     {
         private Mock<IRepository<Team>> repositoryMock;
 
+        private Mock<IThroughputService> throughputServiceMock;
+
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IRepository<Team>>();
+            throughputServiceMock = new Mock<IThroughputService>();
         }
 
         [Test]
@@ -80,6 +83,7 @@ namespace Lighthouse.Tests.Pages.Teams
 
             repositoryMock.Verify(x => x.Add(subject.Team));
             repositoryMock.Verify(x => x.Save());
+            throughputServiceMock.Verify(x => x.UpdateThroughput(subject.Team), Times.Once);
         }
 
         [Test]
@@ -106,11 +110,13 @@ namespace Lighthouse.Tests.Pages.Teams
 
             repositoryMock.Verify(x => x.Update(subject.Team));
             repositoryMock.Verify(x => x.Save());
+
+            throughputServiceMock.Verify(x => x.UpdateThroughput(subject.Team), Times.Once);
         }
 
         private CreateModel CreateSubject()
         {
-            return new CreateModel(repositoryMock.Object);
+            return new CreateModel(repositoryMock.Object, throughputServiceMock.Object);
         }
     }
 }

@@ -8,10 +8,12 @@ namespace Lighthouse.Pages.Teams
     public class CreateModel : PageModel
     {
         private readonly IRepository<Team> teamRepository;
+        private readonly IThroughputService throughputService;
 
-        public CreateModel(IRepository<Team> teamRepository)
+        public CreateModel(IRepository<Team> teamRepository, IThroughputService throughputService)
         {
             this.teamRepository = teamRepository;
+            this.throughputService = throughputService;
         }
 
         [BindProperty]
@@ -47,6 +49,7 @@ namespace Lighthouse.Pages.Teams
                 teamRepository.Add(Team);
             }
 
+            await throughputService.UpdateThroughput(Team);
             await teamRepository.Save();
 
             return RedirectToPage("./Details", new { id = Team.Id });

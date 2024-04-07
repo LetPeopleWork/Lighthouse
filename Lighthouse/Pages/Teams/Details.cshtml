@@ -92,69 +92,64 @@
         </div>
     </div>
     <div class="row">
-        <div class="col">
-            @if (Model.WhenForecast != null)
-            {
-                <h7>When will @Model.WhenForecast.NumberOfItems items be done?</h7>
-                <table class="table">
-                    <caption>When Forecast</caption>
-                    <thead>
-                        <tr>
-                            <th>50% Probability</th>
-                            <th>70% Probability</th>
-                            <th>85% Probability</th>
-                            <th>95% Probability</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.WhenForecast != null)
+        @if (Model.WhenForecast != null && Model.WhenForecast.NumberOfItems > 0)
+        {
+            <h5>When will @Model.WhenForecast.NumberOfItems items be done?</h5>
+            <table class="table">
+                <caption>When Forecast</caption>
+                <thead>
+                    <tr>
+                        <th>50% Probability</th>
+                        <th>70% Probability</th>
+                        <th>85% Probability</th>
+                        <th>95% Probability</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.WhenForecast != null)
+                    {
+                        string GetFutureDate(int daysInFuture)
                         {
-                            string GetFutureDate(int daysInFuture)
-                            {
-                                var futureDate = DateTime.Today.AddDays(daysInFuture);
-                                return futureDate.ToString("d");
-                            }
-
-                            <tr>
-                                <td>@GetFutureDate(@Model.WhenForecast.GetProbability(50))</td>
-                                <td>@GetFutureDate(@Model.WhenForecast.GetProbability(70))</td>
-                                <td>@GetFutureDate(@Model.WhenForecast.GetProbability(85))</td>
-                                <td>@GetFutureDate(@Model.WhenForecast.GetProbability(95))</td>
-                            </tr>
+                            var futureDate = DateTime.Today.AddDays(daysInFuture);
+                            return futureDate.ToString("d");
                         }
-                    </tbody>
-                </table>
-            }
-        </div>
-        <div class="col">
 
-            @if (Model.HowManyForecast != null)
-            {
-                <h7>How Many Items will be done till @Model.HowManyForecast.TargetDate.ToString("d")?</h7>
-                <table class="table">
-                    <caption>How Many Forecast</caption>
-                    <thead>
                         <tr>
-                            <th>50% Probability</th>
-                            <th>70% Probability</th>
-                            <th>85% Probability</th>
-                            <th>95% Probability</th>
+                            <td>@GetFutureDate(@Model.WhenForecast.GetProbability(50))</td>
+                            <td>@GetFutureDate(@Model.WhenForecast.GetProbability(70))</td>
+                            <td>@GetFutureDate(@Model.WhenForecast.GetProbability(85))</td>
+                            <td>@GetFutureDate(@Model.WhenForecast.GetProbability(95))</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.HowManyForecast != null)
-                        {
-                            <tr>
-                                <td>@Model.HowManyForecast.GetProbability(50)</td>
-                                <td>@Model.HowManyForecast.GetProbability(70)</td>
-                                <td>@Model.HowManyForecast.GetProbability(85)</td>
-                                <td>@Model.HowManyForecast.GetProbability(95)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-        </div>
+                    }
+                </tbody>
+            </table>
+        }
+        else if (Model.HowManyForecast != null && Model.HowManyForecast.TargetDate.Date > DateTime.Today.Date)
+        {
+            <h5>How Many Items will be done till @Model.HowManyForecast.TargetDate.ToString("d")?</h5>
+            <table class="table">
+                <caption>How Many Forecast</caption>
+                <thead>
+                    <tr>
+                        <th>50% Probability</th>
+                        <th>70% Probability</th>
+                        <th>85% Probability</th>
+                        <th>95% Probability</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.HowManyForecast != null)
+                    {
+                        <tr>
+                            <td>@Model.HowManyForecast.GetProbability(50)</td>
+                            <td>@Model.HowManyForecast.GetProbability(70)</td>
+                            <td>@Model.HowManyForecast.GetProbability(85)</td>
+                            <td>@Model.HowManyForecast.GetProbability(95)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </div>
 </div>
 
