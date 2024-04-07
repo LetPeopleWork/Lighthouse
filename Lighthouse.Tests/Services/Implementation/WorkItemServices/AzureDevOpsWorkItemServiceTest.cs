@@ -17,7 +17,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             var closedItems = await subject.GetClosedWorkItems(720, team);
 
             Assert.That(closedItems.Count, Is.EqualTo(720));
-            Assert.That(closedItems.Sum(), Is.EqualTo(4));
+            Assert.That(closedItems.Sum(), Is.EqualTo(5));
         }
 
         [Test]
