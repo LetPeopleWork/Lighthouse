@@ -95,9 +95,9 @@ This WIQL query will select all items in the Team Project called "Lighthouse Dem
 [System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\Binary Blazers"
 ```
 
-JQL Query:
+This JQL Query will select all items in the Project with the key "LGHTHSDMO" and where the item has the label "Lagunitas"
 ```
-TODO
+project = "LGHTHSDMO" AND labels = "Lagunitas"
 ```
 
 #### Save Team and Update Throughput
@@ -136,9 +136,9 @@ This WIQL query will select all items in the Team Project called "Lighthouse Dem
 [System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"
 ```
 
-JQL Query:
+This JQL Query will select all items in the Project with the key "LGHTHSDMO" and that are assigned to the release "Oberon Initiative":
 ```
-TODO
+project = "LGHTHSDMO" AND fixVersion = "Oberon Initiative"
 ```
 
 #### Save Project and Refresh Features & Forecasts
