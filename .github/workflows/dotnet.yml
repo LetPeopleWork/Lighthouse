@@ -28,16 +28,6 @@ jobs:
       with:
         dotnet-version: ${{env.DOTNET_ROOT}}
 
-    - name: dotnet publish
-      run: dotnet publish -c Release -f net8.0 -o ./publish
-      working-directory: ./Lighthouse
-
-    - name: Upload artifact for deployment job
-      uses: actions/upload-artifact@v4
-      with:
-        name: Lighthouse
-        path: ./Lighthouse/publish
-
     - name: SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
       with:
@@ -47,6 +37,15 @@ jobs:
         dotnetTestArguments: --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
 
+    - name: dotnet publish
+      run: dotnet publish -c Release -f net8.0 -o ./publish
+      working-directory: ./Lighthouse
+
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v4
+      with:
+        name: Lighthouse
+        path: ./Lighthouse/publish
 
   deploy:
     runs-on: ubuntu-latest
