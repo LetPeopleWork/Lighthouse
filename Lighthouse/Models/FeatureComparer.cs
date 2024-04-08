@@ -5,7 +5,7 @@
     /// </summary>
     public class FeatureComparer : IComparer<Feature>
     {
-        public int Compare(Feature x, Feature y)
+        public int Compare(Feature? x, Feature? y)
         {
             // Convert order strings to integers for comparison
             var xIsNumeric = int.TryParse(x.Order, out int xNum);

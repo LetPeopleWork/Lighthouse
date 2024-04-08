@@ -12,6 +12,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:  
 
 jobs:
   build:
@@ -55,6 +56,14 @@ jobs:
         with:
           dotnet-version: ${{env.DOTNET_ROOT}}
 
+      - name: Generate build number
+        id: buildnumber
+        run: echo "BUILD_NUMBER=$(date +'%Y.%m.%d').${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+
+      - name: Update appsettings.json
+        run: jq '.LighthouseVersion = env.BUILD_NUMBER' appsettings.json > temp.json && mv temp.json appsettings.json
+        working-directory: ./Lighthouse
+
       - name: dotnet publish
         run: dotnet publish -c Release -o ./publish
         working-directory: ./Lighthouse
@@ -62,7 +71,7 @@ jobs:
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: Lighthouse
+          name: Lighthouse_v${{ env.BUILD_NUMBER }}
           path: ./Lighthouse/publish
 
       - name: Login to Azure
