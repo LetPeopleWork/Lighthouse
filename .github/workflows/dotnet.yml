@@ -34,8 +34,8 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'   
+    #needs: build
+    #if: github.ref == 'refs/heads/main'   
 
     environment:
       name: 'Production'
@@ -73,18 +73,18 @@ jobs:
           name: Lighthouse_v${BUILD_NUMBER}
           path: ./Lighthouse/publish
 
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_8A96BB1E9EB043EE9CB0B648544834B0 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_6D622DE733434D3A987E82D0DBCEE2B3 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6A0B9B55694C47F4A1D8CEA847E84D78 }}
+      #- name: Login to Azure
+      #  uses: azure/login@v1
+      #  with:
+      #    client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_8A96BB1E9EB043EE9CB0B648544834B0 }}
+      #    tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_6D622DE733434D3A987E82D0DBCEE2B3 }}
+      #    subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6A0B9B55694C47F4A1D8CEA847E84D78 }}
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp  
-        uses: azure/webapps-deploy@v2  
-        with:  
-          app-name: 'LighthouseCloudDemo'  
-          slot-name: 'production'  
-          package: ./Lighthouse/publish
+      #- name: Deploy to Azure Web App
+      #  id: deploy-to-webapp  
+      #  uses: azure/webapps-deploy@v2  
+      #  with:  
+      #    app-name: 'LighthouseCloudDemo'  
+      #    slot-name: 'production'  
+      #    package: ./Lighthouse/publish
   
