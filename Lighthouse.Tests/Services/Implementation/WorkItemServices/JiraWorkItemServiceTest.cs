@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Models;
 using Lighthouse.Services.Implementation.WorkItemServices;
 using Lighthouse.WorkTracking;
+using Lighthouse.WorkTracking.AzureDevOps;
 using Lighthouse.WorkTracking.Jira;
 
 namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
@@ -179,6 +180,20 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             var isRelated = await subject.IsRelatedToFeature("PROJ-15", ["PROJ-9", "PROJ-8"], team);
 
             Assert.That(isRelated, Is.True);
+        }
+
+        [Test]
+        [TestCase("PROJ-21", true)]
+        [TestCase("PROJ-10", true)]
+        [TestCase("PROJ-20", false)]
+        public async Task ItemHasChildren_ReturnsTrueIfThereAreChildrenIndependentOfTheirState(string epicReferenceID, bool expectedValue)
+        {
+            var subject = new JiraWorkItemService();
+            var team = CreateTeam($"project = PROJ");
+
+            var result = await subject.ItemHasChildren(epicReferenceID, team);
+
+            Assert.That(result, Is.EqualTo(expectedValue));
         }
 
         private Team CreateTeam(string query)

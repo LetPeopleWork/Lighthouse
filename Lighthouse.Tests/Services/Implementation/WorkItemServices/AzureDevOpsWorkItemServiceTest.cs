@@ -17,7 +17,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             var closedItems = await subject.GetClosedWorkItems(720, team);
 
             Assert.That(closedItems.Count, Is.EqualTo(720));
-            Assert.That(closedItems.Sum(), Is.EqualTo(4));
+            Assert.That(closedItems.Sum(), Is.EqualTo(5));
         }
 
         [Test]
@@ -259,6 +259,21 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             var isRelated = await subject.IsRelatedToFeature("375", ["279"], team);
 
             Assert.That(isRelated, Is.True);
+        }
+
+        [Test]
+        [TestCase("371", true)]
+        [TestCase("380", true)]
+        [TestCase("379", false)]
+        [TestCase("374", false)]
+        public async Task ItemHasChildren_ReturnsTrueIfThereAreChildrenIndependentOfTheirState(string featureReferenceId, bool expectedValue)
+        {
+            var subject = new AzureDevOpsWorkItemService();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+
+            var result = await subject.ItemHasChildren(featureReferenceId, team);
+
+            Assert.That(result, Is.EqualTo(expectedValue));
         }
 
         private Team CreateTeam(string query)

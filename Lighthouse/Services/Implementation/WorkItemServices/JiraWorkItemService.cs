@@ -83,6 +83,16 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             return featureIds.Any(f => IsIssueRelated(issue, f, team.AdditionalRelatedField));
         }
 
+        public async Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
+        {
+            var jiraClient = GetJiraRestClient(workTrackingSystemOptionsOwner);
+            var jql = $"parent = \"{referenceId}\"";
+
+            var issues = await GetIssuesByQuery(jiraClient, jql);
+
+            return issues.Any();
+        }
+
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)
         {
             var issue = cache.Get(issueId);
