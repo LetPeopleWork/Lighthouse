@@ -28,9 +28,6 @@ jobs:
       with:
         dotnet-version: ${{env.DOTNET_ROOT}}
 
-    - name: Restore dependencies
-      run: dotnet restore
-
     - name: SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
       with:
@@ -41,13 +38,13 @@ jobs:
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
 
     - name: dotnet publish
-      run: dotnet publish -c Release -f net8.0 -o ${{env.DOTNET_ROOT}}/publish
+      run: dotnet publish -c Release -f net8.0 -o ${{env.DOTNET_ROOT}}/publishFolder/Lighthouse
 
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
       with:
         name: Lighthouse
-        path: ${{env.DOTNET_ROOT}}/publish
+        path: ${{env.DOTNET_ROOT}}/publishFolder/Lighthouse
 
 
   deploy:
