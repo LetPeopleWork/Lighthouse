@@ -38,7 +38,7 @@ jobs:
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
 
     - name: dotnet publish
-      run: dotnet publish -c Release -f net8.0 -o ./publish
+      run: dotnet publish -c Release --no-build -o ./publish
       working-directory: ./Lighthouse
 
     - name: Upload artifact for deployment job
