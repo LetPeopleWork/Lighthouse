@@ -261,6 +261,21 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             Assert.That(isRelated, Is.True);
         }
 
+        [Test]
+        [TestCase("371", true)]
+        [TestCase("380", true)]
+        [TestCase("379", false)]
+        [TestCase("374", false)]
+        public async Task ItemHasChildren_ReturnsTrueIfThereAreChildrenIndependentOfTheirState(string featureReferenceId, bool expectedValue)
+        {
+            var subject = new AzureDevOpsWorkItemService();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+
+            var result = await subject.ItemHasChildren(featureReferenceId, team);
+
+            Assert.That(result, Is.EqualTo(expectedValue));
+        }
+
         private Team CreateTeam(string query)
         {
             var team = new Team

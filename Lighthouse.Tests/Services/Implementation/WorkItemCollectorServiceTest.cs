@@ -90,7 +90,7 @@ namespace Lighthouse.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_AddsDefaultRemainingWorkToFeature()
+        public async Task CollectFeaturesForProject_NoRemainingWork_FeatureHasNoChildren_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
             var project = CreateProject();
@@ -105,10 +105,36 @@ namespace Lighthouse.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(0));
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(2));
 
+            workItemServiceMock.Setup(x => x.ItemHasChildren(feature1.ReferenceId, project)).ReturnsAsync(false);
+
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
             Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_NoRemainingWork_FeatureHasChildren_DoesNotAddDefaultRemainingWorkToFeature()
+        {
+            var team = CreateTeam([1]);
+            var project = CreateProject();
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+
+            SetupTeams(team);
+
+            var feature1 = new Feature(team, 0) { ReferenceId = "42" };
+            var feature2 = new Feature(team, 2) { ReferenceId = "12" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(0));
+            workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult(2));
+
+            workItemServiceMock.Setup(x => x.ItemHasChildren(feature1.ReferenceId, project)).ReturnsAsync(true);
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.That(project.Features, Has.Count.EqualTo(2));
+            Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(0));
         }
 
         [Test]

@@ -64,7 +64,7 @@ namespace Lighthouse.Services.Implementation
 
         private void ForecastFeatures(IEnumerable<Feature> features)
         {
-            var simulationResults = InitializeSimulationResults(features.OrderBy(f => f.Order));
+            var simulationResults = InitializeSimulationResults(features.OrderBy(f => f, new FeatureComparer()));
             RunMonteCarloSimulation(simulationResults);
             UpdateFeatureForecasts(features, simulationResults);
         }
@@ -98,21 +98,23 @@ namespace Lighthouse.Services.Implementation
         {
             foreach (var feature in features)
             {
-                var simulationResultForFeature = simulationResults
-                    .Where(x => x.Feature == feature);
+                var simulationResultsForFeature = simulationResults
+                    .Where(x => x.Feature == feature).ToList();
 
-                var featureForecasts = simulationResultForFeature.Select(sr => CreateWhenForecastForSimulationResult(sr));
+                if (!simulationResultsForFeature.Any())
+                {
+                    var simulationResult = new SimulationResult();
+                    simulationResult.SimulationResults.Add(0, 0);
+                    simulationResultsForFeature.Add(simulationResult);
+                }
+
+                var featureForecasts = simulationResultsForFeature.Select(CreateWhenForecastForSimulationResult);
                 feature.SetFeatureForecast(featureForecasts);
             }
         }
 
         private WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult)
         {
-            if (simulationResult.HasWorkRemaining)
-            {
-                return new WhenForecast(new Dictionary<int, int>(), 0);
-            }
-
             return new WhenForecast(simulationResult.SimulationResults, simulationResult.InitialRemainingItems);
         }
 

@@ -6,6 +6,7 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Lighthouse.Services.Implementation.WorkItemServices
 {
@@ -92,6 +93,16 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             }
 
             return featureIds.Any(f => IsWorkItemRelated(workItem, f, team.AdditionalRelatedField ?? string.Empty));
+        }
+
+        public async Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
+        {
+            var witClient = GetClientService<WorkItemTrackingHttpClient>(workTrackingSystemOptionsOwner);
+
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItemLinks WHERE [Source].[{AzureDevOpsFieldNames.Id}] = '{referenceId}' AND [System.Links.LinkType] = 'System.LinkTypes.Hierarchy-Forward' AND Target.[System.WorkItemType] <> '' MODE (Recursive)";
+            var workItems = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
+
+            return workItems.WorkItemRelations.Count() > 1;
         }
 
         private async Task<WorkItem> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner)

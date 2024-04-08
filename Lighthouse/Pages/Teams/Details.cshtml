@@ -1,4 +1,5 @@
 ﻿@page
+@using Lighthouse.Models
 @model Lighthouse.Pages.Teams.DetailsModel
 
 @{
@@ -44,7 +45,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var feature in Model.Features.OrderBy(f => f.Order))
+                @foreach (var feature in Model.Features.OrderBy(f => f, new FeatureComparer()))
                 {
                     @if (feature.Forecast != null)
                     {

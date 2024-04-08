@@ -15,5 +15,7 @@ namespace Lighthouse.Services.Interfaces
         Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team);
 
         Task<(string name, string order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner);
+
+        Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
     }
 }

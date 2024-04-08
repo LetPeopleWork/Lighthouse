@@ -21,15 +21,15 @@ namespace Lighthouse.Services.Implementation
         public async Task UpdateFeaturesForProject(Project project)
         {
             var featuresForProject = await GetFeaturesForProject(project);
-            project.UpdateFeatures(featuresForProject.OrderBy(x => x.Order));
+            project.UpdateFeatures(featuresForProject.OrderBy(f => f, new FeatureComparer()));
 
             await GetRemainingWorkForFeatures(project);
 
             RemoveUninvolvedTeams(project);
-            ExtrapolateNotBrokenDownFeatures(project);
+            await ExtrapolateNotBrokenDownFeaturesAsync(project);
         }
 
-        private void ExtrapolateNotBrokenDownFeatures(Project project)
+        private async Task ExtrapolateNotBrokenDownFeaturesAsync(Project project)
         {
             var involvedTeams = project.InvolvedTeams.Where(t => t.TotalThroughput > 0).ToList();
 
@@ -38,8 +38,15 @@ namespace Lighthouse.Services.Implementation
                 return;
             }
 
+            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem);
+
             foreach (var feature in project.Features.Where(feature => feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0))
             {
+                if (await workItemService.ItemHasChildren(feature.ReferenceId, project))
+                {
+                    continue;
+                }
+
                 var numberOfTeams = involvedTeams.Count;
                 var buckets = SplitIntoBuckets(project.DefaultAmountOfWorkItemsPerFeature, numberOfTeams);
                 for (var index = 0; index < numberOfTeams; index++)

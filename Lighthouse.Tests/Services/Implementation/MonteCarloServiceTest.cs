@@ -446,7 +446,7 @@ namespace Lighthouse.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_TeamHasNoThroughput_WillNotForecastThisTeamAsync()
+        public async Task FeatureForecast_TeamHasNoThroughput_WillIgnoreThisTeamAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             var team = CreateTeam(1, [0, 0, 0 , 0]);
@@ -457,7 +457,7 @@ namespace Lighthouse.Tests.Services.Implementation
 
             await subject.ForecastAllFeatures();
 
-            Assert.That(feature.Forecast.NumberOfItems, Is.EqualTo(0));
+            Assert.That(feature.Forecast.NumberOfItems, Is.EqualTo(20));
         }
 
         [Test]
@@ -480,6 +480,27 @@ namespace Lighthouse.Tests.Services.Implementation
                 Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(15));
                 Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(15));
                 Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(15));
+            });
+        }
+
+        [Test]
+        public async Task FeatureForecast_NoWorkRemaining_SetsDefaultForecast()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            var team = CreateTeam(1, [1]);
+
+            var feature = new Feature();
+            SetupFeatures([feature]);
+
+            await subject.ForecastAllFeatures();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(0));
+                Assert.That(feature.Forecast.GetProbability(70), Is.EqualTo(0));
+                Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(0));
+                Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(0));
             });
         }
 
