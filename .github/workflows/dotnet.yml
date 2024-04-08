@@ -78,6 +78,5 @@ jobs:
         with:  
           app-name: 'LighthouseCloudDemo'  
           slot-name: 'production'  
-          package: ./Lighthouse/publish  
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_b2451da2f37a4b24932049f5b05e6a46 }}
+          package: ./Lighthouse/publish
   
