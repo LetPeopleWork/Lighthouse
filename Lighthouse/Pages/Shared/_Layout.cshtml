@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -17,7 +19,7 @@
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
                 <!-- Logo with "Let People Work" -->
-                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-page="https://letpeople.work">
+                <a class="navbar-brand d-flex align-items-center" href="https://letpeople.work">
                     <span style="font-family: 'Quicksand', sans-serif; color: rgba(48, 87, 78, 1); font-weight: bold;">Light</span>
                     <span style="font-family: 'Quicksand', sans-serif; color: black; font-weight: bold;">house</span>
                 </a>
@@ -70,12 +72,21 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" asp-area="" asp-page="https://letpeople.work">
-                <span style="font-family: 'Quicksand', sans-serif; color: black; font-weight: bold;">&copy; 2024 - Let People&nbsp;</span>
-                <span style="font-family: 'Quicksand', sans-serif; color: rgba(48, 87, 78, 1); font-weight: bold;">Work</span>
-            </a>
+            <div class="row">
+                <div class="col-md-10">
+                    <a class="navbar-brand d-flex align-items-center" asp-area="" asp-page="https://letpeople.work">
+                        <span style="font-family: 'Quicksand', sans-serif; color: black; font-weight: bold;">&copy; 2024 - Let People&nbsp;</span>
+                        <span style="font-family: 'Quicksand', sans-serif; color: rgba(48, 87, 78, 1); font-weight: bold;">Work</span>
+                    </a>
+                </div>
+                <div class="col-md-2 text-md-right">
+                    <span style="font-family: 'Quicksand', sans-serif; color: rgba(48, 87, 78, 1);">v.@Configuration["LighthouseVersion"]</span>
+                </div>
+            </div>
         </div>
     </footer>
+
+
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
