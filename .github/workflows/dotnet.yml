@@ -104,11 +104,11 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse_v${{ needs.Release.outputs.version }}
+          name: Lighthouse_v${{ needs.deploy.outputs.version }}
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse_v${{ needs.Release.outputs.version }}"
-          tag: ${{ needs.Release.outputs.version }}
+          artifacts: "Lighthouse_v${{ needs.deploy.outputs.version }}"
+          tag: ${{ needs.deploy.outputs.version }}
           prerelease: true
-          name: "Lighthouse ${{ needs.Release.outputs.version }}"
+          name: "Lighthouse ${{ needs.deploy.outputs.version }}"
