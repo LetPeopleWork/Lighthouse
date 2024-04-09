@@ -113,13 +113,14 @@ jobs:
           name: Lighthouse ${{ needs.deploy.outputs.version }}
           path: Lighthouse
 
-      - uses: montudor/action-zip@v1
+      - uses: vimtor/action-zip@v1.2
         with:
-          args: zip -qq -r Lighthouse ${{ needs.deploy.outputs.version }}.zip Lighthouse
+          files: Lighthouse
+          dest: Lighthouse.zip
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse ${{ needs.deploy.outputs.version }}.zip"
+          artifacts: "Lighthouse.zip"
           tag: ${{ needs.deploy.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.deploy.outputs.version }}"
