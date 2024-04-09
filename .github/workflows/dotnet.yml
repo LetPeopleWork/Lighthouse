@@ -111,6 +111,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: Lighthouse ${{ needs.deploy.outputs.version }}
+          path: Lighthouse
 
       - uses: ncipollo/release-action@v1
         with:
