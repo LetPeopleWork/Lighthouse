@@ -60,6 +60,8 @@ jobs:
       - name: Create tag if necessary
         id: version
         uses: fregante/daily-version-action@v2
+        with:
+          prefix: v
 
       - name: Update appsettings.json
         run: jq '.LighthouseVersion = env.DAILY_VERSION' appsettings.json > temp.json && mv temp.json appsettings.json
@@ -72,7 +74,7 @@ jobs:
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: Lighthouse_v${{ env.DAILY_VERSION }}
+          name: Lighthouse ${{ env.DAILY_VERSION }}
           path: ./Lighthouse/publish
 
       - name: Login to Azure
@@ -104,11 +106,11 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse_v${{ needs.deploy.outputs.version }}
+          name: Lighthouse ${{ needs.deploy.outputs.version.DAILY_VERSION }}
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse_v${{ needs.deploy.outputs.version }}"
-          tag: ${{ needs.deploy.outputs.version }}
+          artifacts: "Lighthouse_v${{ needs.deploy.outputs.version.DAILY_VERSION }}"
+          tag: ${{ needs.deploy.outputs.version.DAILY_VERSION }}
           prerelease: true
-          name: "Lighthouse ${{ needs.deploy.outputs.version }}"
+          name: "Lighthouse ${{ needs.deploy.outputs.version.DAILY_VERSION }}"
