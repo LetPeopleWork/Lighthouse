@@ -91,6 +91,10 @@ jobs:
           app-name: 'LighthouseCloudDemo'  
           slot-name: 'production'  
           package: ./Lighthouse/publish
+      
+    outputs:
+      created: ${{ steps.version.outputs.created }}
+      version: ${{ steps.version.outputs.version }}
   
   release:
     runs-on: ubuntu-latest
@@ -106,11 +110,11 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse ${{ needs.deploy.outputs.version.DAILY_VERSION }}
+          name: Lighthouse ${{ needs.deploy.outputs.version }}
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse_v${{ needs.deploy.outputs.version.DAILY_VERSION }}"
-          tag: ${{ needs.deploy.outputs.version.DAILY_VERSION }}
+          artifacts: "Lighthouse ${{ needs.deploy.outputs.version }}"
+          tag: ${{ needs.deploy.outputs.version }}
           prerelease: true
-          name: "Lighthouse ${{ needs.deploy.outputs.version.DAILY_VERSION }}"
+          name: "Lighthouse ${{ needs.deploy.outputs.version }}"
