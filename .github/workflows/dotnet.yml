@@ -116,11 +116,11 @@ jobs:
       - uses: vimtor/action-zip@v1.2
         with:
           files: Lighthouse
-          dest: Lighthouse.zip
+          dest: Lighthouse ${{ needs.deploy.outputs.version }}.zip
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse.zip"
+          artifacts: "Lighthouse ${{ needs.deploy.outputs.version }}.zip"
           tag: ${{ needs.deploy.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.deploy.outputs.version }}"
