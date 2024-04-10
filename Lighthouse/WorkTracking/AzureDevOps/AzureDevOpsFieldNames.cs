@@ -19,5 +19,7 @@
         public static string ClosedDate => "Microsoft.VSTS.Common.ClosedDate";
 
         public static string StackRank => "Microsoft.VSTS.Common.StackRank";
+
+        public static string BacklogPriority => "Microsoft.VSTS.Common.BacklogPriority";
     }
 }

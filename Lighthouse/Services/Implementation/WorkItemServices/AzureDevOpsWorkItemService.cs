@@ -6,7 +6,6 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Lighthouse.Services.Implementation.WorkItemServices
 {
@@ -54,14 +53,18 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var workItem = await GetWorkItemById(witClient, itemId, workItemQueryOwner);
 
             var workItemTitle = workItem?.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty;
-            var workItemStackRank = string.Empty;
+            var workItemOrder = string.Empty;
 
             if (workItem?.Fields.TryGetValue(AzureDevOpsFieldNames.StackRank, out var stackRank) ?? false)
             {
-                workItemStackRank = stackRank?.ToString() ?? string.Empty;
+                workItemOrder = stackRank?.ToString() ?? string.Empty;
+            }
+            else if (workItem?.Fields.TryGetValue(AzureDevOpsFieldNames.BacklogPriority, out var backlogPriority) ?? false)
+            {
+                workItemOrder = backlogPriority?.ToString() ?? string.Empty;
             }
 
-            return (workItemTitle, workItemStackRank);
+            return (workItemTitle, workItemOrder);
         }
 
         public async Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
@@ -71,7 +74,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
             var stateQuery = PrepareStateQuery(closedStates);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}] FROM WorkItems WHERE {unparentedItemsQuery} " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
                 $"{stateQuery}" +
                 $" AND {team.WorkItemQuery}";
@@ -103,6 +106,40 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var workItems = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
 
             return workItems.WorkItemRelations.Count() > 1;
+        }
+
+        public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
+        {
+            if (!existingItemsOrder.Any())
+            {
+                return "0";
+            }
+
+            var orderAsInt = ConvertToIntegers(existingItemsOrder);
+
+            if (relativeOrder == RelativeOrder.Above)
+            {
+                var highestOrder = orderAsInt.Max();
+                return $"{highestOrder + 1}";
+            }
+
+            var lowestOrder = orderAsInt.Min();
+            return $"{lowestOrder - 1}";
+        }
+
+        public List<int> ConvertToIntegers(IEnumerable<string> orderAsStrings)
+        {
+            var orderAsInt = new List<int>();
+
+            foreach (var order in orderAsStrings)
+            {
+                if (int.TryParse(order, out int number))
+                {
+                    orderAsInt.Add(number);
+                }
+            }
+
+            return orderAsInt;
         }
 
         private async Task<WorkItem> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner)
@@ -232,7 +269,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
             var stateQuery = PrepareStateQuery(excludedStates);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}] FROM WorkItems WHERE {workitemQueryOwner.WorkItemQuery} " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {workitemQueryOwner.WorkItemQuery} " +
                 $"{workItemsQuery} " +
                 $"{stateQuery}";
 

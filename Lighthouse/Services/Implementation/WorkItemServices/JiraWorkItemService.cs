@@ -14,6 +14,13 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         private readonly string[] closedStates = ["Done", "Closed"];
 
+        private readonly ILexoRankService lexoRankService;
+
+        public JiraWorkItemService(ILexoRankService lexoRankService)
+        {
+            this.lexoRankService = lexoRankService;
+        }
+
         public async Task<int[]> GetClosedWorkItems(int history, Team team)
         {
             var client = GetJiraRestClient(team);
@@ -91,6 +98,23 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var issues = await GetIssuesByQuery(jiraClient, jql);
 
             return issues.Any();
+        }
+
+        public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
+        {
+            if (!existingItemsOrder.Any())
+            {
+                return lexoRankService.Default;
+            }
+
+            if (relativeOrder == RelativeOrder.Above)
+            {
+                var highestRank = existingItemsOrder.Max() ?? lexoRankService.Default;
+                return lexoRankService.GetHigherPriority(highestRank);
+            }
+
+            var lowestRank = existingItemsOrder.Min() ?? lexoRankService.Default;
+            return lexoRankService.GetLowerPriority(lowestRank);
         }
 
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)

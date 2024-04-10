@@ -289,6 +289,7 @@ namespace Lighthouse.Tests.Services.Implementation
         [Test]
         public async Task CollectFeaturesForProject_UnparentedItems_CreatesDummyFeatureForUnparented()
         {
+            var expectedUnparentedOrder = "123";
             var team = CreateTeam();
             SetupTeams(team);
 
@@ -302,6 +303,7 @@ namespace Lighthouse.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetRemainingRelatedWorkItems(It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult(0));
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery)).Returns(Task.FromResult(new List<string>(unparentedItems)));
+            workItemServiceMock.Setup(x => x.GetAdjacentOrderIndex(It.IsAny<IEnumerable<string>>(), RelativeOrder.Above)).Returns(expectedUnparentedOrder);
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -310,6 +312,7 @@ namespace Lighthouse.Tests.Services.Implementation
             {
                 Assert.That(actualFeature.Name, Is.EqualTo("Release 1 - Unparented"));
                 Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(unparentedItems.Length));
+                Assert.That(actualFeature.Order, Is.EqualTo(expectedUnparentedOrder));
             });
         }
 

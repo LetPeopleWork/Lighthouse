@@ -2,6 +2,12 @@
 
 namespace Lighthouse.Services.Interfaces
 {
+    public enum RelativeOrder
+    {
+        Above,
+        Below,
+    }
+
     public interface IWorkItemService
     {
         Task<int[]> GetClosedWorkItems(int history, Team team);
@@ -17,5 +23,7 @@ namespace Lighthouse.Services.Interfaces
         Task<(string name, string order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner);
 
         Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
+
+        string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder);
     }
 }

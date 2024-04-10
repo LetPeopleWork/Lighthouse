@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Models;
 using Lighthouse.Services.Implementation.WorkItemServices;
+using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking;
 using Lighthouse.WorkTracking.AzureDevOps;
 
@@ -26,7 +27,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             var subject = new AzureDevOpsWorkItemService();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'NotExistingTag'");
 
-            var itemsByTag = await subject.GetOpenWorkItems(["Feature"], team);  
+            var itemsByTag = await subject.GetOpenWorkItems(["Feature"], team);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -186,7 +187,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
             var (name, rank) = await subject.GetWorkItemDetails("366", team);
-            
+
             Assert.Multiple(() =>
             {
                 Assert.That(name, Is.EqualTo("Test Test Test"));
@@ -276,6 +277,40 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             Assert.That(result, Is.EqualTo(expectedValue));
         }
 
+        [Test]
+        [TestCase(RelativeOrder.Above)]
+        [TestCase(RelativeOrder.Below)]
+        public void GetAdjacentOrderIndex_NoFeaturesPassed_Returns0(RelativeOrder relativeOrder)
+        {
+            var subject = new AzureDevOpsWorkItemService();
+
+            var order = subject.GetAdjacentOrderIndex(Enumerable.Empty<string>(), relativeOrder);
+
+            Assert.That(order, Is.EqualTo("0"));
+        }
+
+        [Test]
+        [TestCase(new[] { "1" }, RelativeOrder.Above, "2")]
+        [TestCase(new[] { "2" }, RelativeOrder.Above, "3")]
+        [TestCase(new[] { "1", "2" }, RelativeOrder.Above, "3")]
+        [TestCase(new[] { "2", "1" }, RelativeOrder.Above, "3")]
+        [TestCase(new[] { "2", "3", "1" }, RelativeOrder.Above, "4")]
+        [TestCase(new[] { "2", "1", "test" }, RelativeOrder.Above, "3")]
+        [TestCase(new[] { "1" }, RelativeOrder.Below, "0")]
+        [TestCase(new[] { "2" }, RelativeOrder.Below, "1")]
+        [TestCase(new[] { "1", "2" }, RelativeOrder.Below, "0")]
+        [TestCase(new[] { "2", "1" }, RelativeOrder.Below, "0")]
+        [TestCase(new[] { "2", "1", "3" }, RelativeOrder.Below, "0")]
+        [TestCase(new[] { "2", "1", "test" }, RelativeOrder.Below, "0")]
+        public void GetAdjacentOrderIndex_ReturnsCorrectOrder(string[] existingItemsOrder, RelativeOrder relativeOrder, string expectedResult)
+        {
+            var subject = new AzureDevOpsWorkItemService();
+
+            var order = subject.GetAdjacentOrderIndex(existingItemsOrder, relativeOrder);
+
+            Assert.That(order, Is.EqualTo(expectedResult));
+        }
+
         private Team CreateTeam(string query)
         {
             var team = new Team
@@ -286,7 +321,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 
             var organizationUrl = "https://dev.azure.com/huserben";
             var personalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'AzureDevOpsLighthouseIntegrationTestToken' is set!");
-            
+
             team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.Url, organizationUrl, false));
             team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, personalAccessToken, true));
 

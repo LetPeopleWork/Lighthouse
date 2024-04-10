@@ -21,7 +21,7 @@ namespace Lighthouse.Services.Factories
                         workItemSerivce = new AzureDevOpsWorkItemService();
                         break;
                     case WorkTrackingSystems.Jira:
-                        workItemSerivce = new JiraWorkItemService();
+                        workItemSerivce = new JiraWorkItemService(new LexoRankService());
                         break;
                     default:
                         throw new NotSupportedException();

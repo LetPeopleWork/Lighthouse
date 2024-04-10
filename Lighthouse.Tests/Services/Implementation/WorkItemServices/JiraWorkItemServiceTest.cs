@@ -1,18 +1,27 @@
 ﻿using Lighthouse.Models;
 using Lighthouse.Services.Implementation.WorkItemServices;
+using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking;
-using Lighthouse.WorkTracking.AzureDevOps;
 using Lighthouse.WorkTracking.Jira;
+using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 {
     [Category("Integration")]
     public class JiraWorkItemServiceTest
     {
+        private Mock<ILexoRankService> lexoRankServiceMock;
+
+        [SetUp]
+        public void Setup()
+        {
+            lexoRankServiceMock = new Mock<ILexoRankService>();
+        }
+
         [Test]
         public async Task GetClosedWorkItemsForTeam_FullHistory_TestProject_ReturnsCorrectAmountOfItems()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var closedItems = await subject.GetClosedWorkItems(720, team);
@@ -24,7 +33,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByLabel_LabelDoesNotExist_ReturnsNoItems()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND labels = \"NotExistingLabel\"");
 
             var itemsByTag = await subject.GetOpenWorkItems(["Story"], team);
@@ -36,7 +45,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByTag_TagExists_ReturnsCorrectNumberOfItems()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND labels = \"ExistingLabel\"");
 
             var itemsByTag = await subject.GetOpenWorkItems(["Story"], team);
@@ -47,7 +56,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByTag_TagExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND labels = \"ExistingLabel\"");
 
             var itemsByTag = await subject.GetOpenWorkItems(["Bug"], team);
@@ -59,7 +68,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         public async Task GetRelatedItems_ItemIdIsParent_FindsRelation()
         {
 
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var relatedItems = await subject.GetRemainingRelatedWorkItems("PROJ-9", team);
@@ -71,7 +80,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         public async Task GetRelatedItems_ItemIdIsChild_DoesNotFindRelation()
         {
 
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var relatedItems = await subject.GetRemainingRelatedWorkItems("PROJ-6", team);
@@ -82,7 +91,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByTag_ItemIsClosed_ReturnsEmpty()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
 
             var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
@@ -93,7 +102,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemDetails_ReturnsTitleAndStackRank()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var (name, rank) = await subject.GetWorkItemDetails("PROJ-18", team);
@@ -108,7 +117,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByQuery_IgnoresClosedItems()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "labels = \"LabelOfItemThatIsClosed\"");
@@ -119,7 +128,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByQuery_IgnoresItemsOfNotMatchingWorkItemType()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var workItems = await subject.GetOpenWorkItemsByQuery(["Bug"], team, "labels = \"ExistingLabel\"");
@@ -130,7 +139,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByQuery_IncludesItemsThatMatchBothTeamAndCustomQuery()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
 
             var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
@@ -141,7 +150,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByQuery_IgnoresItemsThatMatchCustomBotNotTeamTeamQuery()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"RebelRevolt\"");
 
             var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
@@ -152,7 +161,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task IsRelatedToFeature_ItemHasNoRelation_ReturnsFalse()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var isRelated = await subject.IsRelatedToFeature("PROJ-18", ["PROJ-8"], team);
@@ -163,7 +172,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task IsRelatedToFeature_ItemIsChild_ReturnsTrue()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var isRelated = await subject.IsRelatedToFeature("PROJ-15", ["PROJ-8"], team);
@@ -174,7 +183,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task IsRelatedToFeature_ItemIsChild_MultipleFeatures_ReturnsTrue()
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var isRelated = await subject.IsRelatedToFeature("PROJ-15", ["PROJ-9", "PROJ-8"], team);
@@ -188,12 +197,55 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [TestCase("PROJ-20", false)]
         public async Task ItemHasChildren_ReturnsTrueIfThereAreChildrenIndependentOfTheirState(string epicReferenceID, bool expectedValue)
         {
-            var subject = new JiraWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var result = await subject.ItemHasChildren(epicReferenceID, team);
 
             Assert.That(result, Is.EqualTo(expectedValue));
+        }
+
+        [Test]
+        [TestCase(RelativeOrder.Above)]
+        [TestCase(RelativeOrder.Below)]
+        public void GetAdjacentOrderIndex_NoFeaturesPassed_ReturnsDefault(RelativeOrder relativeOrder)
+        {
+            var subject = CreateSubject();
+            var expectedOrder = "00000|";
+
+            lexoRankServiceMock.Setup(x => x.Default).Returns(expectedOrder);
+
+            var order = subject.GetAdjacentOrderIndex(Enumerable.Empty<string>(), relativeOrder);
+
+            Assert.That(order, Is.EqualTo(expectedOrder));
+        }
+
+        [Test]
+        public void GetAdjacentOrderIndex_OrderIsAbove_ReturnsHigherOrder()
+        {
+            var subject = CreateSubject();
+            var itemsOrder = new[] { "0|i000v3:", "0|i001v3:", "0|i000v2:"};
+            var expectedOrder = "0|i001v5:";
+
+            lexoRankServiceMock.Setup(x => x.GetHigherPriority("0|i001v3:")).Returns(expectedOrder);
+
+            var order = subject.GetAdjacentOrderIndex(itemsOrder, RelativeOrder.Above);
+
+            Assert.That(order, Is.EqualTo(expectedOrder));
+        }
+
+        [Test]
+        public void GetAdjacentOrderIndex_OrderIsBelow_ReturnsLowestOrder()
+        {
+            var subject = CreateSubject();
+            var itemsOrder = new[] { "0|i000v3:", "0|i001v3:", "0|i000v2:"};
+            var expectedOrder = "0|i000v1:";
+
+            lexoRankServiceMock.Setup(x => x.GetLowerPriority("0|i000v2:")).Returns(expectedOrder);
+
+            var order = subject.GetAdjacentOrderIndex(itemsOrder, RelativeOrder.Below);
+
+            Assert.That(order, Is.EqualTo(expectedOrder));
         }
 
         private Team CreateTeam(string query)
@@ -217,6 +269,11 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(JiraWorkTrackingOptionNames.ApiToken, apiToken, true));
 
             return team;
+        }
+
+        private JiraWorkItemService CreateSubject()
+        {
+            return new JiraWorkItemService(lexoRankServiceMock.Object);
         }
     }
 }
