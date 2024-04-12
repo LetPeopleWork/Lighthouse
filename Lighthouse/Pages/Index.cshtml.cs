@@ -10,11 +10,13 @@ public class IndexModel : PageModel
 {
     private readonly IRepository<Project> projectRepository;
     private readonly IMonteCarloService monteCarloService;
+    private readonly IWorkItemCollectorService workItemCollectorService;
 
-    public IndexModel(IRepository<Project> projectRepository, IMonteCarloService monteCarloService)
+    public IndexModel(IRepository<Project> projectRepository, IMonteCarloService monteCarloService, IWorkItemCollectorService workItemCollectorService)
     {
         this.projectRepository = projectRepository;
         this.monteCarloService = monteCarloService;
+        this.workItemCollectorService = workItemCollectorService;
     }
 
     [BindProperty]
@@ -29,6 +31,13 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPost()
     {
+        foreach (var project in projectRepository.GetAll())
+        {
+            await workItemCollectorService.UpdateFeaturesForProject(project);
+        }
+
+        await projectRepository.Save();
+
         await monteCarloService.ForecastAllFeatures();
 
         return OnGet();

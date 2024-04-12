@@ -10,17 +10,50 @@ namespace Lighthouse.Tests.Pages
     public class IndexModelTest
     {
         private Mock<IRepository<Project>> projectRepositoryMock;
+        
         private Mock<IMonteCarloService> monteCarloServiceMock;
+        
+        private Mock<IWorkItemCollectorService> workItemCollectorServiceMock;
+
 
         [SetUp]
         public void Setup()
         {
             projectRepositoryMock = new Mock<IRepository<Project>>();
             monteCarloServiceMock = new Mock<IMonteCarloService>();
+            workItemCollectorServiceMock = new Mock<IWorkItemCollectorService>();
         }
 
         [Test]
         public void OnGet_LoadsAllFeatures()
+        {
+            var projects = SetupProjectAndFeatures();
+
+            projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
+
+            var subject = CreateSubject();
+
+            var result = subject.OnGet();
+
+            Assert.That(result, Is.InstanceOf<PageResult>());
+            CollectionAssert.AreEquivalent(subject.Projects, projects);
+        }
+
+        [Test]
+        public async Task OnPost_ReloadsFeatures_RecalculatesForecasts_ReturnsPage()
+        {
+            var project = SetupProjectAndFeatures().Single();
+
+            var subject = CreateSubject();
+
+            var result = await subject.OnPost();
+
+            Assert.That(result, Is.InstanceOf<PageResult>());
+            monteCarloServiceMock.Verify(x => x.ForecastAllFeatures());
+            workItemCollectorServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once);
+        }
+
+        private IEnumerable<Project> SetupProjectAndFeatures()
         {
             var features = new List<Feature>
             {
@@ -35,28 +68,12 @@ namespace Lighthouse.Tests.Pages
 
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
 
-            var subject = CreateSubject();
-
-            var result = subject.OnGet();
-
-            Assert.That(result, Is.InstanceOf<PageResult>());
-            CollectionAssert.AreEquivalent(subject.Projects, projects);
-        }
-
-        [Test]
-        public async Task OnPost_RecalculatesForecasts_ReturnsPage()
-        {
-            var subject = CreateSubject();
-
-            var result = await subject.OnPost();
-
-            Assert.That(result, Is.InstanceOf<PageResult>());
-            monteCarloServiceMock.Verify(x => x.ForecastAllFeatures());
+            return projects;
         }
 
         private IndexModel CreateSubject()
         {
-            return new IndexModel(projectRepositoryMock.Object, monteCarloServiceMock.Object);
+            return new IndexModel(projectRepositoryMock.Object, monteCarloServiceMock.Object, workItemCollectorServiceMock.Object);
         }
     }
 }
