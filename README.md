@@ -17,12 +17,12 @@ Do you want to try it out? Reach out to us, we're happy to support you and get y
 Lighthouse is a web application, that is foreseen to run on a server where multiple people have access to it. You can however run it also on your local machine. This might be the preferred option for now, as there is no User Management, nor any authentication/authorization at this point.
 
 ## Prerequisites
-The application is based on dotnet. Thus you must have installed the [ASP.NET Core Runtime 8.0.3](https://dotnet.microsoft.com/en-us/download/dotnet/8.0). Select the version that matches your system (Windows, macOS, Linux).
+The application is based on dotnet. Thus you must have installed the [ASP.NET Core Runtime 8 or higher](https://dotnet.microsoft.com/en-us/download/dotnet/8.0). Select the version that matches your system (Windows, macOS, Linux).
 
 ![ASPNet Runtime](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/a18434dd-0a90-4d2c-802f-afaa4b61b11f)
 
 
-After you installed it, open a terminal, and type `dotnet --version`. It should show 8.0.3:
+After you installed it, open a terminal, and type `dotnet --version`. It should show *8.x.x*:
 
 ![dotnet version](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/2bec0ad8-9750-40a9-9886-be163a774b5d)
 
@@ -39,6 +39,22 @@ Once extracted, you can open a terminal on this location. Then you can start the
 This will start the application running on the system on port 5000. If everything worked as expected, you can open the app now in your browser via [http://localhost:5000](http://localhost:5000).
 You should see the (empty) landing page:
 ![Emtpy Landing Page](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/52fb6379-6c8c-4f6f-8213-fd622497163d)
+
+### Running Lighthouse on a different Port
+If you want to run Lighthouse on a different port, you can do so using the following approaches:
+
+#### URLs Parameter
+You can specify the urls the application should listen on during startup. You can also specify multiple URLs, separated by a *;*: 
+
+`dotnet Lighthouse.dll --urls "http://0.0.0.0:80;https://0.0.0.0:443"`
+
+#### Setting ASPNETCORE_URLS
+You can set the environment variable *ASPNETCORE_URLS* and then it will automatically be picked up by Lighthouse:
+
+```
+set ASPNETCORE_URLS=https://0.0.0.0:443
+dotnet Lighthouse.dll
+```
 
 # Usage
 When you browse to the Lighthouse Landing Page, you'll see an empty page (unless you've configured teams and projects already). The overview page will show you a summary of all configured projects and their estimated delivery dates in various probabilities.
