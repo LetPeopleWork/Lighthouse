@@ -41,7 +41,7 @@ namespace Lighthouse.Models
 
         public double GetLikelhoodForDate(DateTime date)
         {
-            if (date != default)
+            if (date != default && RemainingWork.Sum(r => r.RemainingWorkItems) > 0)
             {
                 var timeToTargetDate = (date - DateTime.Today).Days;
 

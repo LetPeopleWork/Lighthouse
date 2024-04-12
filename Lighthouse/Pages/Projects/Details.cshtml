@@ -8,7 +8,7 @@
 
 <script src="/lib/Chart/Chart.min.js"></script>
 <script src="/lib/Chart/chartjs-adapter-date-fns.min.js"></script>
-<script src="/lib/Chart/chartjs-plugin-annotation.min.js" ></script>
+<script src="/lib/Chart/chartjs-plugin-annotation.min.js"></script>
 
 <h1>@Model.Entity.Name</h1>
 
@@ -36,7 +36,8 @@
         <thead>
             <tr>
                 <th>Feature</th>
-                <th>Remaining Work</th>
+                <th>Remaining Work (Total)</th>
+                <th>Remaining Work per Team</th>
                 <th>50% Probability</th>
                 <th>70% Probability</th>
                 <th>85% Probability</th>
@@ -71,6 +72,15 @@
                     <tr>
                         <td>@feature.Name</td>
                         <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
+                        <td>
+                            @if (feature.RemainingWork.Any())
+                            {
+                                    @foreach (var remainingWork in feature.RemainingWork)
+                                    {
+                                        <a asp-page="../Teams/Details" asp-route-id="@remainingWork.Team.Id">@remainingWork.Team.Name: @remainingWork.RemainingWorkItems Items</a><br />
+                                    }
+                            }
+                        </td>
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
@@ -84,25 +94,6 @@
                         }
                     </tr>
                 }
-            }
-        </tbody>
-    </table>
-</div>
-<div id="teamsTable">
-    <h4>Involved Teams</h4>
-    <table class="table">
-        <caption>Teams</caption>
-        <thead>
-            <tr>
-                <th>Team</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var team in Model.Entity.InvolvedTeams)
-            {
-                <tr>
-                    <td><a asp-page="../Teams/Details" asp-route-id="@team.Id">@team.Name</a></td>
-                </tr>
             }
         </tbody>
     </table>

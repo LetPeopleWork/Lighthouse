@@ -35,7 +35,8 @@
             <thead>
                 <tr>
                     <th>Feature</th>
-                    <th>Remaining Work</th>
+                    <th>Remaining Work (Total)</th>
+                    <th>Remaining Work for @Model.Entity.Name</th>
                     <th>50% Probability</th>
                     <th>70% Probability</th>
                     <th>85% Probability</th>
@@ -58,11 +59,12 @@
                         <tr>
                             <td>@feature.Name</td>
                             <td>@feature.RemainingWork.Sum(r => r.RemainingWorkItems)</td>
+                            <td>@feature.GetRemainingWorkForTeam(Model.Entity)</td>
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(70))</td>
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
-                            <td>@feature.Forecast.CreationTime.ToString("d")</td>
+                            <td>@feature.Forecast.CreationTime.ToString("g")</td>
                             <td><a asp-page="../Projects/Details" asp-route-id="@feature.ProjectId">@feature.Project.Name</a></td>
                         </tr>
                     }

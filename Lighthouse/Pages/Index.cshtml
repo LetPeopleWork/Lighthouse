@@ -25,6 +25,7 @@
                     <th>70% Probability</th>
                     <th>85% Probability</th>
                     <th>95% Probability</th>
+                    <th>Updated on</th>
                 </tr>
             </thead>
             <tbody>
@@ -54,6 +55,7 @@
                         <td>@GetFutureDate(@highestForecastFeature?.Forecast?.GetProbability(70) ?? 0)</td>
                         <td>@GetFutureDate(@highestForecastFeature?.Forecast?.GetProbability(85) ?? 0)</td>
                         <td>@GetFutureDate(@highestForecastFeature?.Forecast?.GetProbability(95) ?? 0)</td>
+                        <td>@highestForecastFeature?.Forecast?.CreationTime.ToString("g")</td>
                     </tr>
                 }
             </tbody>
