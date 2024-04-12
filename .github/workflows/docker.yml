@@ -1,0 +1,22 @@
+name: Publish Docker Image
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  dockerpublic:
+    runs-on: ubuntu-latest    
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Build and publish a Docker image for ${{ github.repository }}
+        uses: macbre/push-to-ghcr@master        
+        with:
+          image_name: letpeoplework.${{ github.repository }} 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dockerfile: Lighthouse/Dockerfile
+      
