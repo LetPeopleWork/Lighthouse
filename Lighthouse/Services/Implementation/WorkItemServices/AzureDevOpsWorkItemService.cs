@@ -142,7 +142,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             return orderAsInt;
         }
 
-        private async Task<WorkItem> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner)
+        private async Task<WorkItem?> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             var query = PrepareQuery([], [], workItemQueryOwner);
             query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
@@ -201,7 +201,8 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
                 {
                     if (relation.Attributes.TryGetValue("name", out var attributeValue) && attributeValue.ToString() == "Parent")
                     {
-                        var parentId = relation.Url.Split("/").Last();
+                        var splittedUrl = relation.Url.Split("/");
+                        var parentId = splittedUrl[splittedUrl.Length - 1];
 
                         return parentId == relatedWorkItemId;
                     }

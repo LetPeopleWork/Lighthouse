@@ -4,12 +4,12 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 {
     public class LexoRankServiceTest
     {
-        private ILexoRankService _lexoRankService;
+        private LexoRankService lexoRankService;
 
         [SetUp]
         public void Setup()
         {
-            _lexoRankService = new LexoRankService();
+            lexoRankService = new LexoRankService();
         }
 
         [Test]
@@ -19,7 +19,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             string currentRank = "00000|";
 
             // Act
-            string higherPriority = _lexoRankService.GetHigherPriority(currentRank);
+            string higherPriority = lexoRankService.GetHigherPriority(currentRank);
 
             // Assert
             Assert.That(higherPriority, Is.EqualTo("00001|"));
@@ -32,7 +32,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             string currentRank = "00001|";
 
             // Act
-            string lowerPriority = _lexoRankService.GetLowerPriority(currentRank);
+            string lowerPriority = lexoRankService.GetLowerPriority(currentRank);
 
             // Assert
             Assert.That(lowerPriority, Is.EqualTo("00000|"));
@@ -45,7 +45,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             string currentRank = "00009|";
 
             // Act
-            string higherPriority = _lexoRankService.GetHigherPriority(currentRank);
+            string higherPriority = lexoRankService.GetHigherPriority(currentRank);
 
             // Assert
             Assert.That(higherPriority, Is.EqualTo("0000:|"));
@@ -58,7 +58,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             string currentRank = "00000|";
 
             // Act
-            string lowerPriority = _lexoRankService.GetLowerPriority(currentRank);
+            string lowerPriority = lexoRankService.GetLowerPriority(currentRank);
 
             // Assert
             Assert.That(lowerPriority, Is.EqualTo("0000/|"));

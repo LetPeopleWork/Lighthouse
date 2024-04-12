@@ -101,7 +101,7 @@ namespace Lighthouse.Services.Implementation
                 var simulationResultsForFeature = simulationResults
                     .Where(x => x.Feature == feature).ToList();
 
-                if (!simulationResultsForFeature.Any())
+                if (simulationResultsForFeature.Count < 1)
                 {
                     var simulationResult = new SimulationResult();
                     simulationResult.SimulationResults.Add(0, 0);
