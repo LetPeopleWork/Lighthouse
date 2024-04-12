@@ -16,7 +16,31 @@ namespace Lighthouse.Pages.Projects
             this.monteCarloService = monteCarloService;
         }
 
-        public async Task<IActionResult> OnPost(int? id)
+        public async Task<IActionResult> OnPostRefreshForecasts(int? id)
+        {
+            return await GetProjectByIdAndExecuteAction(id, UpdateForecastsForInvolvedTeams);
+        }
+
+        public async Task<IActionResult> OnPostRefreshFeatures(int? id)
+        {
+            return await GetProjectByIdAndExecuteAction(id, async (Project project) =>
+            {
+                await workItemCollectorService.UpdateFeaturesForProject(project);
+                await Repository.Save();
+
+                await UpdateForecastsForInvolvedTeams(project);
+            });
+        }
+
+        private async Task UpdateForecastsForInvolvedTeams(Project project)
+        {
+            foreach (var team in project.InvolvedTeams)
+            {
+                await monteCarloService.ForecastFeaturesForTeam(team);
+            }
+        }
+
+        private async Task<IActionResult> GetProjectByIdAndExecuteAction(int? id, Func<Project, Task> action)
         {
             var project = GetById(id);
             if (project == null)
@@ -24,13 +48,7 @@ namespace Lighthouse.Pages.Projects
                 return NotFound();
             }
 
-            await workItemCollectorService.UpdateFeaturesForProject(project);
-            await Repository.Save();
-
-            foreach (var team in project.InvolvedTeams)
-            {
-                await monteCarloService.ForecastFeaturesForTeam(team);
-            }            
+            await action(project);
 
             return OnGet(id);
         }

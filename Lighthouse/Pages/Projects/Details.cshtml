@@ -10,23 +10,65 @@
 <script src="/lib/Chart/chartjs-adapter-date-fns.min.js"></script>
 <script src="/lib/Chart/chartjs-plugin-annotation.min.js"></script>
 
-<h1>@Model.Entity.Name</h1>
-
-<div>
-    <h5>Milestones:</h5>
-    @foreach (var milestone in Model.Entity.Milestones)
-    {
-        <h7>@milestone.Name: @milestone.Date.ToString("d")</h7>
-
-        <br>
+<style>
+    .milestones-container {
+        float: left;
+        width: 50%;
     }
-    <h5>Last Updated on: @Model.Entity.ProjectUpdateTime.ToString("g")</h5>
+
+    .teams-container {
+        float: right;
+        width: 50%;
+    }
+</style>
+
+<h1>@Model.Entity.Name</h1>
+<h5>Last Updated on: @Model.Entity.ProjectUpdateTime.ToString("g")</h5>
+
+<div class="milestones-container">
+    <h5>Milestones:</h5>
+    <table class="table">
+        <tbody>
+            @foreach (var milestone in Model.Entity.Milestones)
+            {
+                <tr>
+                    <td>@milestone.Name</td>
+                    <td>@milestone.Date.ToString("d")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
+
+<div class="teams-container">
+    <h5>Teams:</h5>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Team Name</th>
+                <th>Feature WIP</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var team in Model.Entity.InvolvedTeams)
+            {
+                <tr>
+                    <td>
+                        <a asp-page="../Teams/Create" asp-route-id="@team.Id">@team.Name</a>
+                    </td>
+                    <td>@team.FeatureWIP</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div style="clear:both;"></div>
 
 <div>
     <form method="post">
-        <input type="hidden" asp-for="Entity.Id" />
-        <button type="submit" class="btn btn-primary">Refresh Features & Forecasts</button>
+        <input type="hidden" name="id" asp-for="Entity.Id" />
+        <button type="submit" class="btn btn-primary" asp-page-handler="RefreshForecasts">Refresh Forecasts</button>
     </form>
 </div>
 
@@ -75,10 +117,12 @@
                         <td>
                             @if (feature.RemainingWork.Any())
                             {
-                                    @foreach (var remainingWork in feature.RemainingWork)
-                                    {
-                                        <a asp-page="../Teams/Details" asp-route-id="@remainingWork.Team.Id">@remainingWork.Team.Name: @remainingWork.RemainingWorkItems Items</a><br />
-                                    }
+                                @foreach (var remainingWork in feature.RemainingWork)
+                                {
+                                    <a asp-page="../Teams/Details" asp-route-id="@remainingWork.Team.Id">@remainingWork.Team.Name: @remainingWork.RemainingWorkItems Items</a>
+
+                                    <br />
+                                }
                             }
                         </td>
                         <td>@GetFutureDate(@feature.Forecast.GetProbability(50))</td>
@@ -97,6 +141,14 @@
             }
         </tbody>
     </table>
+</div>
+
+
+<div>
+    <form method="post">
+        <input type="hidden" name="id" asp-for="Entity.Id" />
+        <button type="submit" class="btn btn-primary" asp-page-handler="RefreshFeatures">Refresh Features</button>
+    </form>
 </div>
 
 <div>
@@ -239,7 +291,4 @@
             }
         }
     });
-
 </script>
-
-

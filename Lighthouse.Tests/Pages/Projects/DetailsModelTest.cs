@@ -27,7 +27,7 @@ namespace Lighthouse.Tests.Pages.Projects
         {
             var subject = CreateSubject();
 
-            var result = await subject.OnPost(null);
+            var result = await subject.OnPostRefreshFeatures(null);
 
             Assert.That(result, Is.InstanceOf<NotFoundResult>());
             projectRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Never());
@@ -39,7 +39,7 @@ namespace Lighthouse.Tests.Pages.Projects
             projectRepositoryMock.Setup(x => x.GetById(12)).Returns((Project)null);
             var subject = CreateSubject();
 
-            var result = await subject.OnPost(12);
+            var result = await subject.OnPostRefreshFeatures(12);
 
             Assert.That(result, Is.InstanceOf<NotFoundResult>());
         }
@@ -56,7 +56,7 @@ namespace Lighthouse.Tests.Pages.Projects
 
             var subject = CreateSubject();
 
-            var result = await subject.OnPost(12);
+            var result = await subject.OnPostRefreshFeatures(12);
 
             Assert.That(result, Is.InstanceOf<PageResult>());
             workItemCollectorServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once());
