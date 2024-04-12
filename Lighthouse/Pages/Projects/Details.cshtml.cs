@@ -25,13 +25,12 @@ namespace Lighthouse.Pages.Projects
             }
 
             await workItemCollectorService.UpdateFeaturesForProject(project);
+            await Repository.Save();
 
             foreach (var team in project.InvolvedTeams)
             {
                 await monteCarloService.ForecastFeaturesForTeam(team);
-            }
-
-            await Repository.Save();
+            }            
 
             return OnGet(id);
         }
