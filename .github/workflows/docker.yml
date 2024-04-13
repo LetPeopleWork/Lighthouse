@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest    
     if: github.ref == 'refs/heads/main'
 
+    permissions: write-all
+
     steps:
       - uses: actions/checkout@v4
         with:

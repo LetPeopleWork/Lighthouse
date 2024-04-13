@@ -38,6 +38,8 @@ jobs:
     #needs: build
     #if: github.ref == 'refs/heads/main'
 
+    permissions: write-all
+
     steps:
       - uses: actions/checkout@v4
         with:
