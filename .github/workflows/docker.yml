@@ -13,9 +13,14 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          
       - name: Build and publish a Docker image for ${{ github.repository }}
         uses: macbre/push-to-ghcr@master        
         with:
           image_name: letpeoplework.${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          dockerfile: Lighthouse/Dockerfile
       
