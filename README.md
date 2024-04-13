@@ -16,6 +16,14 @@ Do you want to try it out? Reach out to us, we're happy to support you and get y
 # Installation
 Lighthouse is a web application, that is foreseen to run on a server where multiple people have access to it. You can however run it also on your local machine. This might be the preferred option for now, as there is no User Management, nor any authentication/authorization at this point.
 
+## Docker
+The easiest way to run Lighthouse is to use docker. You can either use the `latest` image which reflects the latest version, or use one with a specific tag. Check out the [packages](https://github.com/orgs/LetPeopleWork/packages?repo_name=Lighthouse) section to see the images.
+
+You can run Lighthouse in docker using the following command:
+`docker run -d -P -v ".:/app/Data" -e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest`
+
+This will use the directory you run the command from as storage for your database.
+
 ## Prerequisites
 The application is based on dotnet. Thus you must have installed the [ASP.NET Core Runtime 8 or higher](https://dotnet.microsoft.com/en-us/download/dotnet/8.0). Select the version that matches your system (Windows, macOS, Linux).
 
