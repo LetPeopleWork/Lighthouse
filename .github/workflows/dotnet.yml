@@ -124,8 +124,7 @@ jobs:
     environment:
       name: Release
 
-    permissions:
-      contents: write
+    permissions: write-all
 
     steps:
       - uses: actions/download-artifact@v4
@@ -144,3 +143,11 @@ jobs:
           tag: ${{ needs.deploy.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.deploy.outputs.version }}"
+
+      - name: Build and publish a Docker image for ${{ github.repository }}
+        uses: macbre/push-to-ghcr@master        
+        with:
+          image_name: ${{ github.repository }} 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dockerfile: Lighthouse/Dockerfile
+          image_tag: ${{ needs.deploy.outputs.version }}
