@@ -58,6 +58,10 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main'   
 
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
     permissions:
       contents: write
       id-token: write
