@@ -13,11 +13,11 @@ COPY ["Lighthouse/Lighthouse.csproj", "Lighthouse/"]
 RUN dotnet restore "./Lighthouse/./Lighthouse.csproj"
 COPY . .
 WORKDIR "/src/Lighthouse"
-RUN dotnet build "./Lighthouse.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./Lighthouse.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Lighthouse.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Lighthouse.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

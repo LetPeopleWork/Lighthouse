@@ -53,7 +53,7 @@ namespace Lighthouse.Tests.Pages
             workItemCollectorServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once);
         }
 
-        private IEnumerable<Project> SetupProjectAndFeatures()
+        private List<Project> SetupProjectAndFeatures()
         {
             var features = new List<Feature>
             {

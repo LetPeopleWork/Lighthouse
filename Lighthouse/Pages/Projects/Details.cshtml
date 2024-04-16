@@ -25,9 +25,16 @@
 <h1>@Model.Entity.Name</h1>
 <h5>Last Updated on: @Model.Entity.ProjectUpdateTime.ToString("g")</h5>
 
-<div class="milestones-container">
-    <h5>Milestones:</h5>
+<div class="milestones-container">        
     <table class="table">
+        <caption>Milestones</caption>
+        <thead>
+            <tr>
+                <th>Milestone</th>
+                <th>Date</th>
+            </tr>
+
+        </thead>
         <tbody>
             @foreach (var milestone in Model.Entity.Milestones)
             {
@@ -40,9 +47,9 @@
     </table>
 </div>
 
-<div class="teams-container">
-    <h5>Teams:</h5>
+<div class="teams-container">    
     <table class="table">
+        <caption>Teams</caption>
         <thead>
             <tr>
                 <th>Team Name</th>
