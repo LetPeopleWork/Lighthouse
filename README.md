@@ -30,10 +30,9 @@ The application is based on dotnet. Thus you must have installed the [ASP.NET Co
 ![ASPNet Runtime](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/a18434dd-0a90-4d2c-802f-afaa4b61b11f)
 
 
-After you installed it, open a terminal, and type `dotnet --version`. It should show *8.x.x*:
+After you installed it, open a terminal, and type `dotnet --list-runtimes`. It should show *8.x.x*:
 
-![dotnet version](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/2bec0ad8-9750-40a9-9886-be163a774b5d)
-
+![dotnet runtime version](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/926bfdba-ab88-4764-a983-099ab497e570)
 
 ## Download Lighthouse
 Download the latest version of Lighthouse from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
