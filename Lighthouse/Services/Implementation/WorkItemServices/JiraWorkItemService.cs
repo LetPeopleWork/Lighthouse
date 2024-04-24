@@ -191,7 +191,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
         {
             var issues = new List<Issue>();
 
-            var url = $"rest/api/3/search?jql={jqlQuery} order by rank";
+            var url = $"rest/api/3/search?jql={jqlQuery}";
 
             var response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();

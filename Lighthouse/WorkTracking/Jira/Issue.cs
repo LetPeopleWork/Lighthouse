@@ -20,11 +20,13 @@ namespace Lighthouse.WorkTracking.Jira
                 ResolutionDate = DateTime.Parse(resolutionDateString);
             }
 
+            ParentKey = string.Empty;
             if (fields.TryGetProperty("parent", out var parent))
             {
                 ParentKey = parent.GetProperty("key").ToString();
             }
 
+            Rank = "00000|";
             // customfield_10019 is how Jira stores the rank. It's a string, not an int. It's using the LexoGraph algorithm for this.
             if (fields.TryGetProperty("customfield_10019", out var rank))
             {
