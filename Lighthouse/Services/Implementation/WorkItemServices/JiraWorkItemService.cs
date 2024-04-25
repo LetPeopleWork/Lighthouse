@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Cache;
+using Lighthouse.Factories;
 using Lighthouse.Models;
 using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking.Jira;
@@ -15,10 +16,12 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
         private readonly string[] closedStates = ["Done", "Closed"];
 
         private readonly ILexoRankService lexoRankService;
+        private readonly IIssueFactory issueFactory;
 
-        public JiraWorkItemService(ILexoRankService lexoRankService)
+        public JiraWorkItemService(ILexoRankService lexoRankService, IIssueFactory issueFactory)
         {
             this.lexoRankService = lexoRankService;
+            this.issueFactory = issueFactory;
         }
 
         public async Task<int[]> GetClosedWorkItems(int history, Team team)
@@ -131,7 +134,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JsonDocument.Parse(responseBody);
 
-                issue = new Issue(jsonResponse.RootElement);
+                issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement);
 
                 UpdateCache(issue);
             }
@@ -156,7 +159,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             if (!string.IsNullOrEmpty(additionalRelatedField))
             {
-                var relatedFieldValue = issue.GetFieldValue(additionalRelatedField);
+                var relatedFieldValue = issue.Fields.GetFieldValue(additionalRelatedField);
 
                 return relatedFieldValue == relatedWorkItemId;
             }
@@ -201,7 +204,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
             {
-                var issue = new Issue(jsonIssue);
+                var issue = issueFactory.CreateIssueFromJson(jsonIssue);
 
                 issues.Add(issue);
 

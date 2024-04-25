@@ -1,10 +1,24 @@
-﻿using Lighthouse.WorkTracking.Jira;
+﻿using Lighthouse.Factories;
+using Lighthouse.Services.Implementation.WorkItemServices;
+using Microsoft.Extensions.Configuration;
+using Moq;
 using System.Text.Json;
 
-namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
+namespace Lighthouse.Tests.Factories
 {
-    public class IssueTest
+    public class IssueFactoryTest
     {
+        private IConfiguration configuration;
+        private Mock<ILexoRankService> lexoRankServiceMock;
+
+        [SetUp]
+        public void SetUp()
+        {
+            lexoRankServiceMock = new Mock<ILexoRankService>();
+
+            SetupConfiguration(string.Empty);
+        }
+
         [Test]
         public void CreateIssue_KeyAvailable_ParsesKeyCorrect()
         {
@@ -13,7 +27,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.Key, Is.EqualTo("LGHTHSDMO-12"));
         }
@@ -26,7 +40,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            Assert.Throws<KeyNotFoundException>(() => new Issue(jsonDocument.RootElement));
+            Assert.Throws<KeyNotFoundException>(() => CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement));
         }
 
         [Test]
@@ -37,7 +51,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.Title, Is.EqualTo("Story 2"));
         }
@@ -50,7 +64,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.Title, Is.EqualTo(string.Empty));
         }
@@ -63,7 +77,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.ParentKey, Is.EqualTo("LGHTHSDMO-1"));
         }
@@ -76,7 +90,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.ParentKey, Is.EqualTo(string.Empty));
         }
@@ -89,7 +103,23 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
+
+            Assert.That(issue.Rank, Is.EqualTo("0|i0007z:"));
+        }
+
+        [Test]
+        public void CreateIssue_RankAvailableInNonDefaultField_ParsesRankCorrect()
+        {
+            var customRankField = "customfield_10115";
+            SetupConfiguration(customRankField);
+
+            var jsonString = @"{
+                ""expand"":""renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice"",""id"":""10045"",""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/10045"",""key"":""LGHTHSDMO-12"",""fields"":{""statuscategorychangedate"":""2024-04-07T09:40:13.095+0200"",""issuetype"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/issuetype/10020"",""id"":""10020"",""description"":""Stories track functionality or features expressed as user goals."",""iconUrl"":""https://letpeoplework.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium"",""name"":""Story"",""subtask"":false,""avatarId"":10315,""entityId"":""89fa7ce1-7c35-46bd-8e22-e67215414703"",""hierarchyLevel"":0},""parent"":{""id"":""10034"",""key"":""LGHTHSDMO-1"",""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/10034"",""fields"":{""summary"":""Astral Affinitiy"",""status"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/status/10011"",""description"":"""",""iconUrl"":""https://letpeoplework.atlassian.net/"",""name"":""To Do"",""id"":""10011"",""statusCategory"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/statuscategory/2"",""id"":2,""key"":""new"",""colorName"":""blue-gray"",""name"":""To Do""}},""priority"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/priority/3"",""iconUrl"":""https://letpeoplework.atlassian.net/images/icons/priorities/medium.svg"",""name"":""Medium"",""id"":""3""},""issuetype"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/issuetype/10023"",""id"":""10023"",""description"":""Epics track collections of related bugs, stories, and tasks."",""iconUrl"":""https://letpeoplework.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium"",""name"":""Epic"",""subtask"":false,""avatarId"":10307,""entityId"":""0c40435a-079c-4b07-b5a2-7d6f626c9db0"",""hierarchyLevel"":1}}},""timespent"":null,""project"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/project/10004"",""id"":""10004"",""key"":""LGHTHSDMO"",""name"":""Lighthouse Demo"",""projectTypeKey"":""software"",""simplified"":true,""avatarUrls"":{""48x48"":""https://letpeoplework.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10421"",""24x24"":""https://letpeoplework.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10421?size=small"",""16x16"":""https://letpeoplework.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10421?size=xsmall"",""32x32"":""https://letpeoplework.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10421?size=medium""}},""customfield_10033"":null,""fixVersions"":[],""aggregatetimespent"":null,""customfield_10034"":null,""resolution"":null,""customfield_10027"":null,""customfield_10028"":null,""customfield_10029"":null,""resolutiondate"":null,""workratio"":-1,""issuerestriction"":{""issuerestrictions"":{},""shouldDisplay"":true},""lastViewed"":""2024-04-07T10:23:15.243+0200"",""watches"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/LGHTHSDMO-12/watchers"",""watchCount"":1,""isWatching"":true},""created"":""2024-04-07T09:40:12.704+0200"",""customfield_10020"":[{""id"":6,""name"":""LGHTHSDM Sprint 1"",""state"":""future"",""boardId"":6}],""customfield_10021"":null,""customfield_10022"":null,""priority"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/priority/3"",""iconUrl"":""https://letpeoplework.atlassian.net/images/icons/priorities/medium.svg"",""name"":""Medium"",""id"":""3""},""customfield_10023"":null,""customfield_10024"":null,""customfield_10025"":null,""labels"":[""Lagunitas""],""customfield_10026"":null,""customfield_10016"":null,""customfield_10017"":null,""customfield_10018"":{""hasEpicLinkFieldDependency"":false,""showField"":false,""nonEditableReason"":{""reason"":""PLUGIN_LICENSE_ERROR"",""message"":""The Parent Link is only available to Jira Premium users.""}},""customfield_10115"":""0|i0007z:"",""timeestimate"":null,""aggregatetimeoriginalestimate"":null,""versions"":[],""issuelinks"":[],""assignee"":null,""updated"":""2024-04-07T09:43:39.658+0200"",""status"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/status/10011"",""description"":"""",""iconUrl"":""https://letpeoplework.atlassian.net/"",""name"":""To Do"",""id"":""10011"",""statusCategory"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/statuscategory/2"",""id"":2,""key"":""new"",""colorName"":""blue-gray"",""name"":""To Do""}},""components"":[],""timeoriginalestimate"":null,""description"":null,""customfield_10010"":null,""customfield_10014"":null,""timetracking"":{},""customfield_10015"":null,""customfield_10005"":null,""customfield_10006"":null,""customfield_10007"":null,""security"":null,""customfield_10008"":null,""aggregatetimeestimate"":null,""attachment"":[],""customfield_10009"":null,""summary"":""Story 2"",""creator"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/user?accountId=712020%3A55c0ab9e-0195-4c50-9e09-8a3794eacd33"",""accountId"":""712020:55c0ab9e-0195-4c50-9e09-8a3794eacd33"",""emailAddress"":""benjhuser@gmail.com"",""avatarUrls"":{""48x48"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""24x24"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""16x16"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""32x32"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png""},""displayName"":""Benji Huser-Berta"",""active"":true,""timeZone"":""Europe/Zurich"",""accountType"":""atlassian""},""subtasks"":[],""reporter"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/user?accountId=712020%3A55c0ab9e-0195-4c50-9e09-8a3794eacd33"",""accountId"":""712020:55c0ab9e-0195-4c50-9e09-8a3794eacd33"",""emailAddress"":""benjhuser@gmail.com"",""avatarUrls"":{""48x48"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""24x24"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""16x16"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""32x32"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png""},""displayName"":""Benji Huser-Berta"",""active"":true,""timeZone"":""Europe/Zurich"",""accountType"":""atlassian""},""aggregateprogress"":{""progress"":0,""total"":0},""customfield_10001"":null,""customfield_10002"":null,""customfield_10003"":null,""customfield_10004"":null,""environment"":null,""duedate"":null,""progress"":{""progress"":0,""total"":0},""comment"":{""comments"":[],""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/10045/comment"",""maxResults"":0,""total"":0,""startAt"":0},""votes"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/LGHTHSDMO-12/votes"",""votes"":0,""hasVoted"":false},""worklog"":{""startAt"":0,""maxResults"":20,""total"":0,""worklogs"":[]}}
+                }";
+            var jsonDocument = JsonDocument.Parse(jsonString);
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.Rank, Is.EqualTo("0|i0007z:"));
         }
@@ -97,12 +127,14 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public void CreateIssue_RankNotAvailable_SetsDefaultRank()
         {
+            lexoRankServiceMock.Setup(x => x.Default).Returns("00000|");
+
             var jsonString = @"{
                 ""expand"":""renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice"",""id"":""10045"",""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/10045"",""key"":""LGHTHSDMO-12"",""fields"":{""statuscategorychangedate"":""2024-04-07T09:40:13.095+0200"",""issuetype"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/issuetype/10020"",""id"":""10020"",""description"":""Stories track functionality or features expressed as user goals."",""iconUrl"":""https://letpeoplework.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium"",""name"":""Story"",""subtask"":false,""avatarId"":10315,""entityId"":""89fa7ce1-7c35-46bd-8e22-e67215414703"",""hierarchyLevel"":0},""parent"":{""id"":""10034"",""key"":""LGHTHSDMO-1"",""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/10034"",""fields"":{""summary"":""Astral Affinitiy"",""status"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/status/10011"",""description"":"""",""iconUrl"":""https://letpeoplework.atlassian.net/"",""name"":""To Do"",""id"":""10011"",""statusCategory"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/statuscategory/2"",""id"":2,""key"":""new"",""colorName"":""blue-gray"",""name"":""To Do""}},""priority"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/priority/3"",""iconUrl"":""https://letpeoplework.atlassian.net/images/icons/priorities/medium.svg"",""name"":""Medium"",""id"":""3""},""issuetype"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/issuetype/10023"",""id"":""10023"",""description"":""Epics track collections of related bugs, stories, and tasks."",""iconUrl"":""https://letpeoplework.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10307?size=medium"",""name"":""Epic"",""subtask"":false,""avatarId"":10307,""entityId"":""0c40435a-079c-4b07-b5a2-7d6f626c9db0"",""hierarchyLevel"":1}}},""timespent"":null,""project"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/project/10004"",""id"":""10004"",""key"":""LGHTHSDMO"",""name"":""Lighthouse Demo"",""projectTypeKey"":""software"",""simplified"":true,""avatarUrls"":{""48x48"":""https://letpeoplework.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10421"",""24x24"":""https://letpeoplework.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10421?size=small"",""16x16"":""https://letpeoplework.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10421?size=xsmall"",""32x32"":""https://letpeoplework.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10421?size=medium""}},""customfield_10033"":null,""fixVersions"":[],""aggregatetimespent"":null,""customfield_10034"":null,""resolution"":null,""customfield_10027"":null,""customfield_10028"":null,""customfield_10029"":null,""resolutiondate"":null,""workratio"":-1,""issuerestriction"":{""issuerestrictions"":{},""shouldDisplay"":true},""lastViewed"":""2024-04-07T10:23:15.243+0200"",""watches"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/LGHTHSDMO-12/watchers"",""watchCount"":1,""isWatching"":true},""created"":""2024-04-07T09:40:12.704+0200"",""customfield_10020"":[{""id"":6,""name"":""LGHTHSDM Sprint 1"",""state"":""future"",""boardId"":6}],""customfield_10021"":null,""customfield_10022"":null,""priority"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/priority/3"",""iconUrl"":""https://letpeoplework.atlassian.net/images/icons/priorities/medium.svg"",""name"":""Medium"",""id"":""3""},""customfield_10023"":null,""customfield_10024"":null,""customfield_10025"":null,""labels"":[""Lagunitas""],""customfield_10026"":null,""customfield_10016"":null,""customfield_10017"":null,""customfield_10018"":{""hasEpicLinkFieldDependency"":false,""showField"":false,""nonEditableReason"":{""reason"":""PLUGIN_LICENSE_ERROR"",""message"":""The Parent Link is only available to Jira Premium users.""}},""customfield_10018"":""0|i0007z:"",""timeestimate"":null,""aggregatetimeoriginalestimate"":null,""versions"":[],""issuelinks"":[],""assignee"":null,""updated"":""2024-04-07T09:43:39.658+0200"",""status"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/status/10011"",""description"":"""",""iconUrl"":""https://letpeoplework.atlassian.net/"",""name"":""To Do"",""id"":""10011"",""statusCategory"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/statuscategory/2"",""id"":2,""key"":""new"",""colorName"":""blue-gray"",""name"":""To Do""}},""components"":[],""timeoriginalestimate"":null,""description"":null,""customfield_10010"":null,""customfield_10014"":null,""timetracking"":{},""customfield_10015"":null,""customfield_10005"":null,""customfield_10006"":null,""customfield_10007"":null,""security"":null,""customfield_10008"":null,""aggregatetimeestimate"":null,""attachment"":[],""customfield_10009"":null,""summary"":""Story 2"",""creator"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/user?accountId=712020%3A55c0ab9e-0195-4c50-9e09-8a3794eacd33"",""accountId"":""712020:55c0ab9e-0195-4c50-9e09-8a3794eacd33"",""emailAddress"":""benjhuser@gmail.com"",""avatarUrls"":{""48x48"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""24x24"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""16x16"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""32x32"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png""},""displayName"":""Benji Huser-Berta"",""active"":true,""timeZone"":""Europe/Zurich"",""accountType"":""atlassian""},""subtasks"":[],""reporter"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/user?accountId=712020%3A55c0ab9e-0195-4c50-9e09-8a3794eacd33"",""accountId"":""712020:55c0ab9e-0195-4c50-9e09-8a3794eacd33"",""emailAddress"":""benjhuser@gmail.com"",""avatarUrls"":{""48x48"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""24x24"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""16x16"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png"",""32x32"":""https://secure.gravatar.com/avatar/c96f458d0c13b5384e7dd4d4e6fa7232?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBH-0.png""},""displayName"":""Benji Huser-Berta"",""active"":true,""timeZone"":""Europe/Zurich"",""accountType"":""atlassian""},""aggregateprogress"":{""progress"":0,""total"":0},""customfield_10001"":null,""customfield_10002"":null,""customfield_10003"":null,""customfield_10004"":null,""environment"":null,""duedate"":null,""progress"":{""progress"":0,""total"":0},""comment"":{""comments"":[],""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/10045/comment"",""maxResults"":0,""total"":0,""startAt"":0},""votes"":{""self"":""https://letpeoplework.atlassian.net/rest/api/3/issue/LGHTHSDMO-12/votes"",""votes"":0,""hasVoted"":false},""worklog"":{""startAt"":0,""maxResults"":20,""total"":0,""worklogs"":[]}}
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.Rank, Is.EqualTo("00000|"));
         }
@@ -116,7 +148,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.ResolutionDate, Is.EqualTo(DateTime.Parse("2024-04-24T02:03:32.395+0200")));
         }
@@ -129,9 +161,26 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
                 }";
             var jsonDocument = JsonDocument.Parse(jsonString);
 
-            var issue = new Issue(jsonDocument.RootElement);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement);
 
             Assert.That(issue.ResolutionDate, Is.EqualTo(DateTime.MinValue));
+        }
+
+        private void SetupConfiguration(string customRankField)
+        {
+            var inMemorySettings = new Dictionary<string, string?>
+            {
+                { "JiraConfiguration:CustomRankField", customRankField },
+            };
+
+            configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(inMemorySettings)
+                .Build();
+        }
+
+        private IssueFactory CreateIssueFactory()
+        {
+            return new IssueFactory(configuration, lexoRankServiceMock.Object);
         }
     }
 }

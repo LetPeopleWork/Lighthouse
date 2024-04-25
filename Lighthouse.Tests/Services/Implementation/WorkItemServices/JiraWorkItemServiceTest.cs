@@ -1,8 +1,10 @@
-﻿using Lighthouse.Models;
+﻿using Lighthouse.Factories;
+using Lighthouse.Models;
 using Lighthouse.Services.Implementation.WorkItemServices;
 using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking;
 using Lighthouse.WorkTracking.Jira;
+using Microsoft.Extensions.Configuration;
 using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
@@ -273,7 +275,9 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 
         private JiraWorkItemService CreateSubject()
         {
-            return new JiraWorkItemService(lexoRankServiceMock.Object);
+            var configuration = new ConfigurationBuilder().Build();
+
+            return new JiraWorkItemService(lexoRankServiceMock.Object, new IssueFactory(configuration, lexoRankServiceMock.Object));
         }
     }
 }
