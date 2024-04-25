@@ -20,7 +20,7 @@
             }
 
             TotalTrials = simulationResult.Values.Sum();
-            CreationTime = DateTime.Now;
+            CreationTime = DateTime.UtcNow;
             this.comparer = comparer;
         }
 
