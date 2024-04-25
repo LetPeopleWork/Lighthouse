@@ -6,19 +6,13 @@ namespace Lighthouse.Factories
 {
     public class IssueFactory : IIssueFactory
     {
-        private readonly string rankField = "customfield_10019";
         private readonly ILexoRankService lexoRankService;
+        private readonly ILogger<IssueFactory> logger;
 
-        public IssueFactory(IConfiguration configuration, ILexoRankService lexoRankService)
+        public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger)
         {
-            var rankFiledOverride = configuration.GetValue<string>($"JiraConfiguration:CustomRankField");
-
-            if (!string.IsNullOrEmpty(rankFiledOverride))
-            {
-                rankField = rankFiledOverride;
-            }
-
             this.lexoRankService = lexoRankService;
+            this.logger = logger;
         }
 
         public Issue CreateIssueFromJson(JsonElement json)
@@ -42,10 +36,35 @@ namespace Lighthouse.Factories
         private string GetRankFromFields(JsonElement fields)
         {
             var rank = lexoRankService.Default;
+
+            // First try to use the "default" custom field to get the rank
             // customfield_10019 is how Jira stores the rank. It's a string, not an int. It's using the LexoGraph algorithm for this.
-            if (fields.TryGetProperty(rankField, out var parsedRank))
+            if (fields.TryGetProperty("customfield_10019", out var parsedRank))
             {
                 rank = parsedRank.ToString();
+
+                if (!string.IsNullOrEmpty(rank))
+                {
+                    return rank;
+                }
+            }
+
+            logger.LogInformation("Could not find rank in default field, parsing all fields for LexoRank...");
+
+            // It's possible that Jira is using a different custom field for the rank - try to find it via searching through the available properties.
+            // Iterate through all fields
+            foreach (var field in fields.EnumerateObject())
+            {
+                // Check if the field value contains "|"
+                if (field.Value.ToString().Contains("|"))
+                {
+                    // If found, set rank to that value
+                    rank = field.Value.ToString();
+
+                    logger.LogInformation($"Found rank in field {field.Name}: {rank}");
+
+                    break; // Stop iteration since we found the rank
+                }
             }
 
             return rank;

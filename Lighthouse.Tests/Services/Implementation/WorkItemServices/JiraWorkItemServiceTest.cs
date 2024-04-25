@@ -4,7 +4,7 @@ using Lighthouse.Services.Implementation.WorkItemServices;
 using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking;
 using Lighthouse.WorkTracking.Jira;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
@@ -275,9 +275,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 
         private JiraWorkItemService CreateSubject()
         {
-            var configuration = new ConfigurationBuilder().Build();
-
-            return new JiraWorkItemService(lexoRankServiceMock.Object, new IssueFactory(configuration, lexoRankServiceMock.Object));
+            return new JiraWorkItemService(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>()));
         }
     }
 }

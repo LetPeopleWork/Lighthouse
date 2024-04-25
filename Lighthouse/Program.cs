@@ -8,6 +8,7 @@ using Lighthouse.Factories;
 using Lighthouse.Services.Implementation.BackgroundServices;
 using Lighthouse.Data;
 using System.Globalization;
+using Lighthouse.Services.Implementation.WorkItemServices;
 
 namespace Lighthouse
 {
@@ -33,12 +34,14 @@ namespace Lighthouse
             // Factories
             builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
             builder.Services.AddScoped<IWorkTrackingOptionsFactory, WorkTrackingOptionsFactory>();
+            builder.Services.AddScoped<IIssueFactory, IssueFactory>();
 
             // Services
             builder.Services.AddScoped<IRandomNumberService, RandomNumberService>();
             builder.Services.AddScoped<IMonteCarloService, MonteCarloService>();
             builder.Services.AddScoped<IThroughputService, ThroughputService>();
             builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
+            builder.Services.AddScoped<ILexoRankService, LexoRankService>();
             
             builder.Services.AddHostedService<ThroughputUpdateService>();
             builder.Services.AddHostedService<WorkItemUpdateService>();

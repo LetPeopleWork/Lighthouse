@@ -9,12 +9,15 @@ namespace Lighthouse.Services.Factories
     public class WorkItemServiceFactory : IWorkItemServiceFactory
     {
         private readonly Cache<WorkTrackingSystems, IWorkItemService> cache = new Cache<WorkTrackingSystems, IWorkItemService>();
-        private readonly IConfiguration configuration;
+        private readonly IIssueFactory issueFactory;
+        private readonly ILexoRankService lexoRankService;
 
-        public WorkItemServiceFactory(IConfiguration configuration)
+        public WorkItemServiceFactory(IIssueFactory issueFactory, ILexoRankService lexoRankService)
         {
-            this.configuration = configuration;
+            this.issueFactory = issueFactory;
+            this.lexoRankService = lexoRankService;
         }
+
 
         public IWorkItemService GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
@@ -28,8 +31,7 @@ namespace Lighthouse.Services.Factories
                         workItemSerivce = new AzureDevOpsWorkItemService();
                         break;
                     case WorkTrackingSystems.Jira:
-                        var lexoRankService = new LexoRankService();
-                        workItemSerivce = new JiraWorkItemService(lexoRankService, new IssueFactory(configuration, lexoRankService));
+                        workItemSerivce = new JiraWorkItemService(lexoRankService, issueFactory);
                         break;
                     default:
                         throw new NotSupportedException();
