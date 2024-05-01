@@ -53,18 +53,12 @@ namespace Lighthouse.Factories
 
             // It's possible that Jira is using a different custom field for the rank - try to find it via searching through the available properties.
             // Iterate through all fields
-            foreach (var field in fields.EnumerateObject())
+            foreach (var field in fields.EnumerateObject().Where(f => f.Value.ToString().Contains('|')))
             {
-                // Check if the field value contains "|"
-                if (field.Value.ToString().Contains("|"))
-                {
-                    // If found, set rank to that value
-                    rank = field.Value.ToString();
+                rank = field.Value.ToString();
 
-                    logger.LogInformation($"Found rank in field {field.Name}: {rank}");
-
-                    break; // Stop iteration since we found the rank
-                }
+                logger.LogInformation("Found rank in field {Name}: {Rank}", field.Name, rank);
+                break;
             }
 
             return rank;
