@@ -35,13 +35,11 @@ namespace Lighthouse.Factories
 
         private string GetRankFromFields(JsonElement fields)
         {
-            var rank = lexoRankService.Default;
-
             // First try to use the "default" custom field to get the rank
             // customfield_10019 is how Jira stores the rank. It's a string, not an int. It's using the LexoGraph algorithm for this.
             if (fields.TryGetProperty("customfield_10019", out var parsedRank))
             {
-                rank = parsedRank.ToString();
+                var rank = parsedRank.ToString();
 
                 if (!string.IsNullOrEmpty(rank))
                 {
@@ -52,16 +50,16 @@ namespace Lighthouse.Factories
             logger.LogInformation("Could not find rank in default field, parsing all fields for LexoRank...");
 
             // It's possible that Jira is using a different custom field for the rank - try to find it via searching through the available properties.
-            // Iterate through all fields
-            foreach (var field in fields.EnumerateObject().Where(f => f.Value.ToString().Contains('|')))
+            var rankFields = fields.EnumerateObject().Where(f => f.Value.ToString().Contains('|'));
+            if (rankFields.Any())
             {
-                rank = field.Value.ToString();
-
+                var field = rankFields.First();
+                var rank = field.Value.ToString();
                 logger.LogInformation("Found rank in field {Name}: {Rank}", field.Name, rank);
-                break;
+                return rank;
             }
 
-            return rank;
+            return lexoRankService.Default;
         }
 
         private string GetParentFromFields(JsonElement fields)
