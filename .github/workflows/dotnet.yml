@@ -127,6 +127,10 @@ jobs:
     permissions: write-all
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
       - uses: actions/download-artifact@v4
         with:
           name: Lighthouse ${{ needs.deploy.outputs.version }}
