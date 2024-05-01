@@ -131,14 +131,22 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - name: Build and publish a Docker image for ${{ github.repository }}
+        uses: macbre/push-to-ghcr@master        
+        with:
+          image_name: ${{ github.repository }} 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dockerfile: Lighthouse/Dockerfile
+          image_tag: ${{ needs.deploy.outputs.version }}
+
       - uses: actions/download-artifact@v4
         with:
           name: Lighthouse ${{ needs.deploy.outputs.version }}
-          path: Lighthouse
+          path: LighthouseArtifacts
 
       - uses: vimtor/action-zip@v1.2
         with:
-          files: Lighthouse
+          files: LighthouseArtifacts
           dest: Lighthouse ${{ needs.deploy.outputs.version }}.zip
 
       - uses: ncipollo/release-action@v1
@@ -147,11 +155,3 @@ jobs:
           tag: ${{ needs.deploy.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.deploy.outputs.version }}"
-
-      - name: Build and publish a Docker image for ${{ github.repository }}
-        uses: macbre/push-to-ghcr@master        
-        with:
-          image_name: ${{ github.repository }} 
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          dockerfile: Lighthouse/Dockerfile
-          image_tag: ${{ needs.deploy.outputs.version }}
