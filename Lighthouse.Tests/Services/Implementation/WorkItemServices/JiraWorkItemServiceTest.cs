@@ -43,6 +43,17 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             Assert.That(itemsByTag, Is.Empty);
         }
 
+        [Test]
+        public async Task GetWorkItemsByLabel_ReturnsCorrectAmountOfItems()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Phoenix\"");
+
+            var itemsByTag = await subject.GetOpenWorkItems(["Epic"], team);
+
+            Assert.That(itemsByTag.Count, Is.EqualTo(3));
+        }
+
 
         [Test]
         public async Task GetWorkItemsByTag_TagExists_ReturnsCorrectNumberOfItems()

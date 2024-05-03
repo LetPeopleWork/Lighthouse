@@ -35,7 +35,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
         {
             var jiraRestClient = GetJiraRestClient(workItemQueryOwner);
 
-            var query = PrepareQuery([], closedStates, workItemQueryOwner);
+            var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
             var workItems = issues.Where(i => workItemTypes.Contains(i.IssueType)).ToList();
