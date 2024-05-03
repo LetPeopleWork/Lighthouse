@@ -107,7 +107,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
 
-            var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
+            var actualItems = await subject.GetOpenWorkItems(["Story"], team);
 
             Assert.That(actualItems, Has.Count.EqualTo(0));
         }
