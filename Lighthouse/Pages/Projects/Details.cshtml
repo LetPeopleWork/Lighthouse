@@ -75,7 +75,7 @@
 <div>
     <form method="post">
         <input type="hidden" name="id" asp-for="Entity.Id" />
-        <button type="submit" class="btn btn-primary" asp-page-handler="RefreshForecasts">Refresh Forecasts</button>
+        <button type="submit" class="btn btn-primary" asp-page-handler="RefreshFeatures">Refresh Features</button>
     </form>
 </div>
 
@@ -148,14 +148,6 @@
             }
         </tbody>
     </table>
-</div>
-
-
-<div>
-    <form method="post">
-        <input type="hidden" name="id" asp-for="Entity.Id" />
-        <button type="submit" class="btn btn-primary" asp-page-handler="RefreshFeatures">Refresh Features</button>
-    </form>
 </div>
 
 <div>

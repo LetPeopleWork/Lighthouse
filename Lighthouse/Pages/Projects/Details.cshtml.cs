@@ -16,11 +16,6 @@ namespace Lighthouse.Pages.Projects
             this.monteCarloService = monteCarloService;
         }
 
-        public async Task<IActionResult> OnPostRefreshForecasts(int? id)
-        {
-            return await GetProjectByIdAndExecuteAction(id, UpdateForecastsForInvolvedTeams);
-        }
-
         public async Task<IActionResult> OnPostRefreshFeatures(int? id)
         {
             return await GetProjectByIdAndExecuteAction(id, async (Project project) =>
