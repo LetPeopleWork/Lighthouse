@@ -42,7 +42,7 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
             }
             catch (Exception exception)
             {
-                logger.LogDebug(exception, "An exception occured: {Exception}.", exception);
+                logger.LogError(exception, "An exception occured: {Exception}.", exception);
             }
         }
 
