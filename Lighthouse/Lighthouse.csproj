@@ -23,6 +23,9 @@
 		<PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.205.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.1" />
+		<PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
 	</ItemGroup>
 
 
@@ -31,7 +34,6 @@
 			<_Parameter1>Lighthouse.Tests</_Parameter1>
 		</AssemblyAttribute>
 	</ItemGroup>
-
 
 	<ItemGroup>
 		<Folder Include="Migrations\" />

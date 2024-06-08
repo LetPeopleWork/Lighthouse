@@ -6,8 +6,11 @@ namespace Lighthouse.Services.Implementation.Repositories
 {
     public class ProjectRepository : RepositoryBase<Project>
     {
-        public ProjectRepository(LighthouseAppContext context) : base(context, (context) => context.Projects)
+        private readonly ILogger<ProjectRepository> logger;
+
+        public ProjectRepository(LighthouseAppContext context, ILogger<ProjectRepository> logger) : base(context, (context) => context.Projects, logger)
         {
+            this.logger = logger;
         }
 
         public override IEnumerable<Project> GetAll()
@@ -18,6 +21,8 @@ namespace Lighthouse.Services.Implementation.Repositories
 
         public override Project? GetById(int id)
         {
+            logger.LogDebug("Get Project by Id. Id: {id}", id);
+
             return GetAllProjectsWithIncludes()
                     .SingleOrDefault(x => x.Id == id);
         }

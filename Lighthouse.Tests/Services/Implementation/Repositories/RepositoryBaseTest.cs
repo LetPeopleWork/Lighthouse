@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Models;
 using Lighthouse.Services.Implementation.Repositories;
 using Lighthouse.Tests.TestHelpers;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation.Repositories
 {
@@ -190,7 +192,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
 
     class RepositoryBaseTestClass : RepositoryBase<Feature>
     {
-        public RepositoryBaseTestClass(Data.LighthouseAppContext context) : base(context, (context) => context.Features)
+        public RepositoryBaseTestClass(Data.LighthouseAppContext context) : base(context, (context) => context.Features, Mock.Of<ILogger<RepositoryBaseTestClass>>())
         {
         }
     }

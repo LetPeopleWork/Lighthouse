@@ -2,6 +2,8 @@
 using Lighthouse.Services.Implementation.Repositories;
 using Lighthouse.Tests.TestHelpers;
 using Lighthouse.WorkTracking;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation.Repositories
 {
@@ -66,7 +68,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
 
         private ProjectRepository CreateSubject()
         {
-            return new ProjectRepository(DatabaseContext);
+            return new ProjectRepository(DatabaseContext, Mock.Of<ILogger<ProjectRepository>>());
         }
     }
 }

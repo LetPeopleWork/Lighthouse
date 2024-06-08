@@ -1,7 +1,10 @@
-﻿using Lighthouse.Models;
+﻿using Castle.Core.Logging;
+using Lighthouse.Models;
 using Lighthouse.Services.Implementation.Repositories;
 using Lighthouse.Tests.TestHelpers;
 using Lighthouse.WorkTracking;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation.Repositories
 {
@@ -29,7 +32,7 @@ namespace Lighthouse.Tests.Services.Implementation.Repositories
 
         private TeamRepository CreateSubject()
         {
-            return new TeamRepository(DatabaseContext);
+            return new TeamRepository(DatabaseContext, Mock.Of<ILogger<TeamRepository>>());
         }
     }
 }

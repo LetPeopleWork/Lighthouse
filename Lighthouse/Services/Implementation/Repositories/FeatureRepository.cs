@@ -6,7 +6,7 @@ namespace Lighthouse.Services.Implementation.Repositories
 {
     public class FeatureRepository : RepositoryBase<Feature>
     {
-        public FeatureRepository(LighthouseAppContext context) : base(context, (context) => context.Features)
+        public FeatureRepository(LighthouseAppContext context, ILogger<FeatureRepository> logger) : base(context, (context) => context.Features, logger)
         {            
         }
 

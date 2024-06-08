@@ -6,8 +6,11 @@ namespace Lighthouse.Services.Implementation.Repositories
 {
     public class TeamRepository : RepositoryBase<Team>
     {
-        public TeamRepository(LighthouseAppContext context) : base(context, (context) => context.Teams)
+        private readonly ILogger<TeamRepository> logger;
+
+        public TeamRepository(LighthouseAppContext context, ILogger<TeamRepository> logger) : base(context, (context) => context.Teams, logger)
         {
+            this.logger = logger;
         }
 
         public override IEnumerable<Team> GetAll()
@@ -18,6 +21,7 @@ namespace Lighthouse.Services.Implementation.Repositories
 
         public override Team? GetById(int id)
         {
+            logger.LogDebug("Getting Team by Id. Id {id}", id);
             return Context.Teams.Include(x => x.WorkTrackingSystemOptions).SingleOrDefault(t => t.Id == id);
         }
     }
