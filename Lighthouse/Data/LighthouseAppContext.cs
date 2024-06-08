@@ -7,9 +7,12 @@ namespace Lighthouse.Data
 {
     public class LighthouseAppContext : DbContext
     {
-        public LighthouseAppContext(DbContextOptions<LighthouseAppContext> options)
+        private readonly ILogger<LighthouseAppContext> logger;
+
+        public LighthouseAppContext(DbContextOptions<LighthouseAppContext> options, ILogger<LighthouseAppContext> logger)
             : base(options)
         {
+            this.logger = logger;
         }
 
         public DbSet<Team> Teams { get; set; } = default!;
@@ -67,7 +70,9 @@ namespace Lighthouse.Data
                 .HasForeignKey(f => f.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            logger.LogInformation("Migrating Database");
             Database.Migrate();
+            logger.LogInformation("Migration of Database succeeded");
         }
     }
 }

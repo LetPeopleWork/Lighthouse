@@ -1,4 +1,6 @@
 ﻿using Lighthouse.Services.Implementation.WorkItemServices;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 {
@@ -9,7 +11,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [SetUp]
         public void Setup()
         {
-            lexoRankService = new LexoRankService();
+            lexoRankService = new LexoRankService(Mock.Of<ILogger<LexoRankService>>());
         }
 
         [Test]

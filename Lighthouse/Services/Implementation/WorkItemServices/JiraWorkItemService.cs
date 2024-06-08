@@ -17,15 +17,18 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         private readonly ILexoRankService lexoRankService;
         private readonly IIssueFactory issueFactory;
+        private readonly ILogger<JiraWorkItemService> logger;
 
-        public JiraWorkItemService(ILexoRankService lexoRankService, IIssueFactory issueFactory)
+        public JiraWorkItemService(ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkItemService> logger)
         {
             this.lexoRankService = lexoRankService;
             this.issueFactory = issueFactory;
+            this.logger = logger;
         }
 
         public async Task<int[]> GetClosedWorkItems(int history, Team team)
         {
+            logger.LogInformation($"Getting Closed Work Items for Team {team.Name}");
             var client = GetJiraRestClient(team);
 
             return await GetClosedItemsPerDay(client, history, team);
@@ -33,6 +36,8 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         public async Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner)
         {
+            logger.LogInformation($"Getting Open Work Items for Work Items {string.Join(", ", workItemTypes)} and Query '{workItemQueryOwner.WorkItemQuery}'");
+
             var jiraRestClient = GetJiraRestClient(workItemQueryOwner);
 
             var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
@@ -41,11 +46,12 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var workItems = issues.Where(i => workItemTypes.Contains(i.IssueType)).ToList();
 
             foreach (var parentKey in issues.Where(i => !string.IsNullOrEmpty(i.ParentKey)).Select(i => i.ParentKey))
-            {
+            {;
                 var parentItem = await GetIssueById(jiraRestClient, parentKey);
 
                 if (workItemTypes.Contains(parentItem.IssueType))
                 {
+                    logger.LogInformation($"Found Work Item with ID {parentItem.Key}");
                     workItems.Add(parentItem);
                 }
             }
@@ -55,13 +61,19 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         public Task<int> GetRemainingRelatedWorkItems(string featureId, Team team)
         {
+            logger.LogInformation($"Getting Related Work Items for Feature {featureId} and Team {team.Name}");
+
             var jiraRestClient = GetJiraRestClient(team);
 
-            return GetRelatedWorkItems(jiraRestClient, team, featureId);
+            var relatedWorkItems =  GetRelatedWorkItems(jiraRestClient, team, featureId);
+
+            return relatedWorkItems;
         }
 
         public async Task<(string name, string order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
+            logger.LogInformation($"Getting Work Item Details for {itemId} and Query {workItemQueryOwner.WorkItemQuery}");
+
             var jiraRestClient = GetJiraRestClient(workItemQueryOwner);
 
             var issue = await GetIssueById(jiraRestClient, itemId);
@@ -71,6 +83,8 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         public async Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
         {
+            logger.LogInformation($"Getting Open Work Items for Team {team.Name}, Item Types {string.Join(", ", workItemTypes)} and Unaprented Items Query '{unparentedItemsQuery}'");
+
             var jiraClient = GetJiraRestClient(team);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
@@ -82,50 +96,79 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
                 $"AND {team.WorkItemQuery}";
 
             var issues = await GetIssuesByQuery(jiraClient, jql);
-            return issues.Select(x => x.Key).ToList();
+            
+            var openWorkItemKeys = issues.Select(x => x.Key).ToList();
+            logger.LogInformation($"Found following Open Work Items {string.Join(", ", openWorkItemKeys)}");
+            
+            return openWorkItemKeys;
         }
 
         public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
         {
+            logger.LogInformation($"Checking if Item {itemId} of Team {team.Name} is related to {string.Join(", ", featureIds)}");
+
             var jiraClient = GetJiraRestClient(team);
             var issue = await GetIssueById(jiraClient, itemId);
 
-            return featureIds.Any(f => IsIssueRelated(issue, f, team.AdditionalRelatedField));
+            var isRelated = featureIds.Any(f => IsIssueRelated(issue, f, team.AdditionalRelatedField));
+            logger.LogInformation($"Is Item {itemId} related: {isRelated}");
+            
+            return isRelated;
         }
 
         public async Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
         {
+            logger.LogInformation($"Checking if Item {referenceId} has Children");
+
             var jiraClient = GetJiraRestClient(workTrackingSystemOptionsOwner);
             var jql = $"parent = \"{referenceId}\"";
 
             var issues = await GetIssuesByQuery(jiraClient, jql);
 
-            return issues.Any();
+            var hasChildren = issues.Any();
+            logger.LogInformation($"Item {referenceId} has Children: {hasChildren}");
+
+            return hasChildren;
         }
 
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
+            logger.LogInformation($"Getting Adjacent Order Index for items {string.Join(", ", existingItemsOrder)} in order {relativeOrder}");
+
+            var result = string.Empty;
+
             if (!existingItemsOrder.Any())
             {
-                return lexoRankService.Default;
+                result = lexoRankService.Default;
             }
-
-            if (relativeOrder == RelativeOrder.Above)
+            else
             {
-                var highestRank = existingItemsOrder.Max() ?? lexoRankService.Default;
-                return lexoRankService.GetHigherPriority(highestRank);
+                if (relativeOrder == RelativeOrder.Above)
+                {
+                    var highestRank = existingItemsOrder.Max() ?? lexoRankService.Default;
+                    result = lexoRankService.GetHigherPriority(highestRank);
+                }
+                else
+                {
+                    var lowestRank = existingItemsOrder.Min() ?? lexoRankService.Default;
+                    result = lexoRankService.GetLowerPriority(lowestRank);
+                }
             }
 
-            var lowestRank = existingItemsOrder.Min() ?? lexoRankService.Default;
-            return lexoRankService.GetLowerPriority(lowestRank);
+            logger.LogInformation($"Adjacent Order Index for items {string.Join(", ", existingItemsOrder)} in order {relativeOrder}: {result}");
+
+            return result;
         }
 
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)
         {
+            logger.LogDebug($"Getting Work Item by Id. ID: {issueId}");
             var issue = cache.Get(issueId);
 
             if (issue == null)
             {
+                logger.LogDebug($"Not Found in Cache - Getting from Jira");
+
                 var url = $"rest/api/3/issue/{issueId}";
 
                 var response = await jiraClient.GetAsync(url);
@@ -139,6 +182,8 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
                 UpdateCache(issue);
             }
 
+            logger.LogDebug($"Found Work Item by Id: {issue.Key}");
+
             return issue;
         }
 
@@ -147,11 +192,22 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var query = PrepareQuery(team.WorkItemTypes, closedStates, team);
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
-            return issues.Count(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField));
+            var remainingItems = 0;
+            foreach (var issue in issues)
+            {
+                if (IsIssueRelated(issue, relatedWorkItemId, team.AdditionalRelatedField))
+                {
+                    logger.LogInformation($"Found Related Work Item: {issue.Key}");
+                    remainingItems++;
+                }
+            }
+
+            return remainingItems;
         }
 
         private bool IsIssueRelated(Issue issue, string relatedWorkItemId, string? additionalRelatedField)
         {
+            logger.LogDebug($"Checking if Issue {issue.Key} is related to {relatedWorkItemId}");
             if (issue.ParentKey == relatedWorkItemId)
             {
                 return true;
@@ -192,6 +248,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(HttpClient client, string jqlQuery)
         {
+            logger.LogDebug($"Getting Issues by JQL Query: '{jqlQuery}'");
             var issues = new List<Issue>();
 
             var url = $"rest/api/3/search?jql={jqlQuery}";
@@ -205,6 +262,8 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
             {
                 var issue = issueFactory.CreateIssueFromJson(jsonIssue);
+
+                logger.LogDebug($"Found Issue {issue.Key}");
 
                 issues.Add(issue);
 

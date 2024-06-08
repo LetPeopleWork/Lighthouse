@@ -3,6 +3,7 @@ using Lighthouse.Services.Factories;
 using Lighthouse.Services.Implementation;
 using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation
@@ -28,7 +29,7 @@ namespace Lighthouse.Tests.Services.Implementation
 
             workItemServiceMock.Setup(x => x.GetClosedWorkItems(7, team)).Returns(Task.FromResult(closedItemsPerDay));
 
-            var subject = new ThroughputService(workItemServiceFactoryMock.Object);
+            var subject = new ThroughputService(workItemServiceFactoryMock.Object, Mock.Of<ILogger<ThroughputService>>());
 
             await subject.UpdateThroughput(team);
 
@@ -49,7 +50,7 @@ namespace Lighthouse.Tests.Services.Implementation
                 WorkTrackingSystem = WorkTrackingSystems.Unknown,
             };
 
-            var subject = new ThroughputService(Mock.Of<IWorkItemServiceFactory>());
+            var subject = new ThroughputService(Mock.Of<IWorkItemServiceFactory>(), Mock.Of<ILogger<ThroughputService>>());
 
             var exceptionThrown = false;
             try

@@ -3,6 +3,8 @@ using Lighthouse.Services.Implementation.WorkItemServices;
 using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking;
 using Lighthouse.WorkTracking.AzureDevOps;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 {
@@ -12,7 +14,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetClosedWorkItemsForTeam_FullHistory_TestProject_ReturnsCorrectAmountOfItems()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Tags] NOT CONTAINS 'ThroughputIgnore'");
 
             var closedItems = await subject.GetClosedWorkItems(720, team);
@@ -24,7 +26,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByTag_TagDoesNotExist_ReturnsNoItems()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'NotExistingTag'");
 
             var itemsByTag = await subject.GetOpenWorkItems(["Feature"], team);
@@ -35,7 +37,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByTag_TagExists_ReturnsCorrectNumberOfItems()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
 
             var itemsByTag = await subject.GetOpenWorkItems(["Feature"], team);
@@ -46,7 +48,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByTag_TagExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
 
             var itemsByTag = await subject.GetOpenWorkItems(["Bug"], team);
@@ -57,7 +59,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByAreaPath_AreaPathDoesNotExist_ReturnsNoItems()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\NotExistingAreaPath'");
 
             var itemsByTag = await subject.GetOpenWorkItems(["Feature"], team);
@@ -68,7 +70,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByAreaPath_AreaPathExists_ReturnsCorrectNumberOfItems()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths'");
 
             var itemsByTag = await subject.GetOpenWorkItems(["User Story"], team);
@@ -79,7 +81,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemsByAreaPath_AreaPathExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths'");
 
             var itemsByTag = await subject.GetOpenWorkItems(["Bug"], team);
@@ -91,7 +93,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         public async Task GetRelatedItems_ItemIdIsParent_FindsRelation()
         {
 
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
             var relatedItems = await subject.GetRemainingRelatedWorkItems("370", team);
@@ -103,7 +105,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         public async Task GetRelatedItems_ItemIdIsPartiallyMatching_DoesNotFindRelation()
         {
 
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
             var relatedItems = await subject.GetRemainingRelatedWorkItems("37", team);
@@ -115,7 +117,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         public async Task GetRelatedItems_ItemIdIsChild_DoesNotFindRelation()
         {
 
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
             team.WorkItemTypes.Add("Feature");
 
@@ -127,7 +129,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetRelatedItems_ItemIdIsRemoteRelated_FindsRelation()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
             team.AdditionalRelatedField = "Custom.RemoteFeatureID";
 
@@ -139,7 +141,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByTag_ItemIsOpen_ReturnsItem()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
 
             var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
@@ -150,7 +152,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByTag_ItemIsClosed_ReturnsEmpty()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'PreviousRelease'");
 
             var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
@@ -161,7 +163,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByAreaPath_ItemIsOpen_ReturnsItem()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths'");
 
             var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
@@ -172,7 +174,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByAreaPath_ItemIsClosed_ReturnsEmpty()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
             var actualItems = await subject.GetOpenWorkItems(["User Story"], team);
@@ -183,7 +185,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetWorkItemDetails_ReturnsTitleAndStackRank()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
             var (name, rank) = await subject.GetWorkItemDetails("366", team);
@@ -198,7 +200,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByQuery_IgnoresClosedItems()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
             var workItems = await subject.GetOpenWorkItemsByQuery(["User Story", "Bug"], team, "[System.Tags] CONTAINS 'ThroughputIgnore'");
@@ -209,7 +211,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetOpenWorkItemsByQuery_IgnoresItemsOfNotMatchingWorkItemType()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
             var workItems = await subject.GetOpenWorkItemsByQuery(["Bug"], team, "[System.Tags] CONTAINS 'Release1'");
@@ -220,7 +222,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task IsRelatedToFeature_ItemHasNoRelation_ReturnsFalse()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
             var isRelated = await subject.IsRelatedToFeature("365", ["370"], team);
@@ -231,7 +233,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task IsRelatedToFeature_ItemIsChild_ReturnsTrue()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
             var isRelated = await subject.IsRelatedToFeature("365", ["371"], team);
@@ -242,7 +244,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task IsRelatedToFeature_ItemIsChild_MultipleFeatures_ReturnsTrue()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
             var isRelated = await subject.IsRelatedToFeature("365", ["370", "371"], team);
@@ -253,7 +255,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task IsRelatedToFeature_ItemIsRemoteRelatedViaCustomField_ReturnsTrue()
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
             team.AdditionalRelatedField = "Custom.RemoteFeatureID";
 
@@ -269,7 +271,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [TestCase("374", false)]
         public async Task ItemHasChildren_ReturnsTrueIfThereAreChildrenIndependentOfTheirState(string featureReferenceId, bool expectedValue)
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
             var result = await subject.ItemHasChildren(featureReferenceId, team);
@@ -282,7 +284,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [TestCase(RelativeOrder.Below)]
         public void GetAdjacentOrderIndex_NoFeaturesPassed_Returns0(RelativeOrder relativeOrder)
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
 
             var order = subject.GetAdjacentOrderIndex(Enumerable.Empty<string>(), relativeOrder);
 
@@ -304,7 +306,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
         [TestCase(new[] { "2", "1", "test" }, RelativeOrder.Below, "0")]
         public void GetAdjacentOrderIndex_ReturnsCorrectOrder(string[] existingItemsOrder, RelativeOrder relativeOrder, string expectedResult)
         {
-            var subject = new AzureDevOpsWorkItemService();
+            var subject = CreateSubject();
 
             var order = subject.GetAdjacentOrderIndex(existingItemsOrder, relativeOrder);
 
@@ -326,6 +328,11 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
             team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, personalAccessToken, true));
 
             return team;
+        }
+
+        private AzureDevOpsWorkItemService CreateSubject()
+        {
+            return new AzureDevOpsWorkItemService(Mock.Of<ILogger<AzureDevOpsWorkItemService>>());
         }
     }
 }

@@ -9,6 +9,9 @@ namespace Lighthouse.Factories
         private readonly ILexoRankService lexoRankService;
         private readonly ILogger<IssueFactory> logger;
 
+        // customfield_10019 is how Jira stores the rank.
+        private static readonly List<string> rankCustomFieldNames = new List<string> { "customfield_10019" };
+
         public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger)
         {
             this.lexoRankService = lexoRankService;
@@ -25,6 +28,8 @@ namespace Lighthouse.Factories
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
 
+            logger.LogDebug($"Creating Issue with Key {key}, Title {title}, Resoultion Date {resolutionDate}, Parent Key {parentKey}, Rank {rank}, Issue Type {issueType}");
+
             return new Issue(key, title, resolutionDate, parentKey, rank, issueType, fields);
         }
 
@@ -35,32 +40,51 @@ namespace Lighthouse.Factories
 
         private string GetRankFromFields(JsonElement fields)
         {
-            // First try to use the "default" custom field to get the rank
-            // customfield_10019 is how Jira stores the rank. It's a string, not an int. It's using the LexoGraph algorithm for this.
-            if (fields.TryGetProperty("customfield_10019", out var parsedRank))
-            {
-                var rank = parsedRank.ToString();
+            // Try getting the ranks using the default field or previously used fields. It's a string, not an int. It's using the LexoGraph algorithm for this.
+            var rank = string.Empty;
 
-                if (!string.IsNullOrEmpty(rank))
-                {
-                    return rank;
-                }
+            if (TryGetRankFromKnownFields(fields, out rank))
+            {
+                return rank;
             }
 
             logger.LogInformation("Could not find rank in default field, parsing all fields for LexoRank...");
-
             // It's possible that Jira is using a different custom field for the rank - try to find it via searching through the available properties.
             var rankFields = fields.EnumerateObject().Where(f => f.Value.ToString().Contains('|'));
             if (rankFields.Any())
             {
                 var field = rankFields.First();
-                var rank = field.Value.ToString();
-                logger.LogInformation("Found rank in field {Name}: {Rank}", field.Name, rank);
+                rank = field.Value.ToString();
+                logger.LogInformation("Found rank in field {Name}: {Rank}. Storing for next use", field.Name, rank);
+
+                rankCustomFieldNames.Add(field.Name);
+
                 return rank;
             }
 
             return lexoRankService.Default;
         }
+
+        private bool TryGetRankFromKnownFields(JsonElement fields, out string rank)
+        {
+            rank = string.Empty;
+
+            foreach (var customField in rankCustomFieldNames)
+            {
+                if (fields.TryGetProperty(customField, out var parsedRank))
+                {
+                    rank = parsedRank.ToString();
+
+                    if (!string.IsNullOrEmpty(rank))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
 
         private string GetParentFromFields(JsonElement fields)
         {

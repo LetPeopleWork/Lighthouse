@@ -3,6 +3,7 @@ using Lighthouse.Models.Forecast;
 using Lighthouse.Services.Implementation;
 using Lighthouse.Services.Interfaces;
 using Lighthouse.Tests.TestDoubles;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation
@@ -513,12 +514,12 @@ namespace Lighthouse.Tests.Services.Implementation
         {
             randomNumberService = new NotSoRandomNumberService();
 
-            return new MonteCarloService(new NotSoRandomNumberService(), featureRepositoryMock.Object);
+            return new MonteCarloService(new NotSoRandomNumberService(), featureRepositoryMock.Object, Mock.Of<ILogger<MonteCarloService>>());
         }
 
         private MonteCarloService CreateSubjectWithRealThroughput()
         {
-            return new MonteCarloService(new RandomNumberService(), featureRepositoryMock.Object, 10000);
+            return new MonteCarloService(new RandomNumberService(), featureRepositoryMock.Object, Mock.Of<ILogger<MonteCarloService>>(), 10000);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)

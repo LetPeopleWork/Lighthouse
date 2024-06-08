@@ -6,28 +6,37 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
     public class ThroughputUpdateService : UpdateBackgroundServiceBase
     {
         private readonly IServiceScopeFactory serviceScopeFactory;
+        private readonly ILogger<ThroughputUpdateService> logger;
 
         public ThroughputUpdateService(IConfiguration configuration, IServiceScopeFactory serviceScopeFactory, ILogger<ThroughputUpdateService> logger) : base(configuration, "Throughput", logger)
         {
             this.serviceScopeFactory = serviceScopeFactory;
+            this.logger = logger;
         }
 
         protected override async Task UpdateAllItems(CancellationToken stoppingToken)
         {
+            logger.LogInformation($"Starting Update of Throughput for all Teams");
+
             using (var scope = serviceScopeFactory.CreateScope())
             {
                 var teamRepository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
 
                 foreach (var team in teamRepository.GetAll().ToList())
                 {
+                    logger.LogInformation($"Checking Throughput for team {team.Name}");
                     await UpdateThroughputForTeam(scope, teamRepository, team);
                 }
             }
+
+            logger.LogInformation($"Done Updating of Throughput for all Teams");
         }
 
         private async Task UpdateThroughputForTeam(IServiceScope scope, IRepository<Team> teamRepository, Team team)
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - team.ThroughputUpdateTime).TotalMinutes;
+
+            logger.LogInformation($"Last Refresh of Throughput for team {team.Name} was {minutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes");
 
             if (minutesSinceLastUpdate >= RefreshAfter)
             {

@@ -286,7 +286,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 
         private JiraWorkItemService CreateSubject()
         {
-            return new JiraWorkItemService(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>()));
+            return new JiraWorkItemService(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkItemService>>());
         }
     }
 }

@@ -1,8 +1,10 @@
-﻿using Lighthouse.Factories;
+﻿using Castle.Core.Logging;
+using Lighthouse.Factories;
 using Lighthouse.Services.Factories;
 using Lighthouse.Services.Implementation.WorkItemServices;
 using Lighthouse.WorkTracking;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Tests.Factories
@@ -50,7 +52,7 @@ namespace Lighthouse.Tests.Factories
 
         private WorkItemServiceFactory CreateSubject()
         {
-            return new WorkItemServiceFactory(Mock.Of<IIssueFactory>(), Mock.Of<ILexoRankService>());
+            return new WorkItemServiceFactory(Mock.Of<IIssueFactory>(), Mock.Of<ILexoRankService>(), Mock.Of<ILogger<WorkItemServiceFactory>>(), Mock.Of<ILogger<AzureDevOpsWorkItemService>>(), Mock.Of<ILogger<JiraWorkItemService>>());
         }
     }
 }

@@ -3,6 +3,7 @@ using Lighthouse.Services.Factories;
 using Lighthouse.Services.Implementation;
 using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Tests.Services.Implementation
@@ -29,7 +30,7 @@ namespace Lighthouse.Tests.Services.Implementation
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(It.IsAny<IEnumerable<string>>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<string>()));
 
-            subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object, featureRepositoryMock.Object, teamRepositoryMock.Object);
+            subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object, featureRepositoryMock.Object, teamRepositoryMock.Object, Mock.Of<ILogger<WorkItemCollectorService>>());
         }
 
         [Test]

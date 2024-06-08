@@ -10,16 +10,19 @@ namespace Lighthouse.Services.Implementation
         private readonly IWorkItemServiceFactory workItemServiceFactory;
         private readonly IRepository<Feature> featureRepository;
         private readonly IRepository<Team> teamRepository;
+        private readonly ILogger<WorkItemCollectorService> logger;
 
-        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, IRepository<Team> teamRepository)
+        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, IRepository<Team> teamRepository, ILogger<WorkItemCollectorService> logger)
         {
             this.workItemServiceFactory = workItemServiceFactory;
             this.featureRepository = featureRepository;
             this.teamRepository = teamRepository;
+            this.logger = logger;
         }
 
         public async Task UpdateFeaturesForProject(Project project)
         {
+            logger.LogInformation($"Updating Features for Project {project.Name}");
             var featuresForProject = await GetFeaturesForProject(project);
             project.UpdateFeatures(featuresForProject.OrderBy(f => f, new FeatureComparer()));
 
@@ -27,6 +30,8 @@ namespace Lighthouse.Services.Implementation
 
             RemoveUninvolvedTeams(project);
             await ExtrapolateNotBrokenDownFeaturesAsync(project);
+
+            logger.LogInformation($"Done Updating Features for Project {project.Name}");
         }
 
         private async Task ExtrapolateNotBrokenDownFeaturesAsync(Project project)
@@ -38,12 +43,16 @@ namespace Lighthouse.Services.Implementation
                 return;
             }
 
+            logger.LogInformation($"Extrapolating Not Broken Down Features for Project {project.Name}");
+
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem);
 
             foreach (var feature in project.Features.Where(feature => feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0))
             {
+                logger.LogInformation($"Checking Feature {feature.Name}");
                 if (await workItemService.ItemHasChildren(feature.ReferenceId, project))
                 {
+                    logger.LogInformation($"Feature has items already done - skipping");
                     continue;
                 }
 
@@ -54,16 +63,21 @@ namespace Lighthouse.Services.Implementation
                     var team = involvedTeams[index];
                     feature.AddOrUpdateRemainingWorkForTeam(team, buckets[index]);
                 }
+
+                logger.LogInformation($"Added {project.DefaultAmountOfWorkItemsPerFeature} Items to Feature {feature.Name}");
             }
         }
 
         private void RemoveUninvolvedTeams(Project project)
         {
+            logger.LogInformation($"Removing uninvolved teams for Project {project.Name}");
+
             foreach (var feature in project.Features.ToList())
             {
                 var uninvolvedTeams = feature.RemainingWork.Where(x => x.RemainingWorkItems == 0).Select(kvp => kvp.Team).ToList();
                 foreach (var team in uninvolvedTeams)
                 {
+                    logger.LogInformation($"Removing Team {team.Name} from Feature {feature.Name}");
                     feature.RemoveTeamFromFeature(team);
                 }
             }
@@ -105,6 +119,8 @@ namespace Lighthouse.Services.Implementation
                 return;
             }
 
+            logger.LogInformation($"Getting Unparented Items for Project {project.Name}");
+
             var featureIds = project.Features.Select(x => x.ReferenceId);
 
             var unparentedFeature = GetOrAddUnparentedFeature(project);
@@ -116,10 +132,14 @@ namespace Lighthouse.Services.Implementation
 
                 var unparentedItems = await GetItemsUnrelatedToFeatures(featureIds, team, itemsMatchingUnparentedItemsQuery);
 
+                logger.LogInformation($"Found {unparentedItems.Count} Unparented Items for Project {project.Name}");
+
                 unparentedFeature.AddOrUpdateRemainingWorkForTeam(team, unparentedItems.Count);
             }
 
             unparentedFeature.Order = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem).GetAdjacentOrderIndex(project.Features.Select(x => x.Order), RelativeOrder.Above);
+
+            logger.LogInformation($"Setting order for {unparentedFeature.Name} to {unparentedFeature.Order}");
         }
 
         private Feature GetOrAddUnparentedFeature(Project project)
@@ -162,6 +182,8 @@ namespace Lighthouse.Services.Implementation
             {
                 var remainingWork = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
 
+                logger.LogInformation($"Found {remainingWork} Work Item Remaining for Team {team.Name} for Feature {featureForProject.Name}");
+
                 featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
             }
         }
@@ -180,6 +202,8 @@ namespace Lighthouse.Services.Implementation
                 var (name, order) = await workItemService.GetWorkItemDetails(featureId, project);
                 feature.Name = name;
                 feature.Order = order;
+
+                logger.LogInformation($"Found Feature {feature.Name}, Id {featureId}, Order {feature.Order}");
 
                 features.Add(feature);
             }

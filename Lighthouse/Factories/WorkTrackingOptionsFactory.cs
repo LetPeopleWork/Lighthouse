@@ -6,8 +6,17 @@ namespace Lighthouse.Factories
 {
     public class WorkTrackingOptionsFactory : IWorkTrackingOptionsFactory
     {
+        private readonly ILogger<WorkTrackingOptionsFactory> logger;
+
+        public WorkTrackingOptionsFactory(ILogger<WorkTrackingOptionsFactory> logger)
+        {
+            this.logger = logger;
+        }
+
         public IEnumerable<WorkTrackingSystemOption<T>> CreateOptionsForWorkTrackingSystem<T>(WorkTrackingSystems workTrackingSystem) where T : class
         {
+            logger.LogDebug($"Getting WorkTrackingSystemOption for {workTrackingSystem}");
+
             switch (workTrackingSystem)
             {
                 case WorkTrackingSystems.AzureDevOps:

@@ -9,16 +9,20 @@ namespace Lighthouse.Services.Implementation
         private readonly int trials;
         private readonly IRandomNumberService randomNumberService;
         private readonly IRepository<Feature> featureRepository;
+        private readonly ILogger<MonteCarloService> logger;
 
-        public MonteCarloService(IRandomNumberService randomNumberService, IRepository<Feature> featureRepository, int trials = 10000)
+        public MonteCarloService(IRandomNumberService randomNumberService, IRepository<Feature> featureRepository, ILogger<MonteCarloService> logger, int trials = 10000)
         {
             this.trials = trials;
             this.randomNumberService = randomNumberService;
             this.featureRepository = featureRepository;
+            this.logger = logger;
         }
 
         public HowManyForecast HowMany(Throughput throughput, int days)
         {
+            logger.LogInformation($"Running Monte Carlo Forecast How Many for {days} days.");
+
             var simulationResults = new Dictionary<int, int>();
 
             RunSimulations(() =>
@@ -32,34 +36,47 @@ namespace Lighthouse.Services.Implementation
                 AddSimulationResult(simulationResults, simulatedThroughput);
             });
 
+            logger.LogInformation($"Finished running Monte Carlo How Many for {days} days.");
 
             return new HowManyForecast(simulationResults, days);
         }
 
         public WhenForecast When(Team team, int remainingItems)
         {
+            logger.LogInformation($"Running Monte Carlo Forecast When for Team {team.Name} and {remainingItems} items.");
+
             var fakeFeature = new Feature(team, remainingItems);
             ForecastFeatures([fakeFeature]);
+
+            logger.LogInformation($"Finished running Monte Carlo Forecast When for Team {team.Name} and {remainingItems} items.");
 
             return fakeFeature.Forecast;
         }
 
         public async Task ForecastAllFeatures()
         {
+            logger.LogInformation($"Running Monte Carlo Forecast For All Fetaures");
+
             var allFeatures = featureRepository.GetAll();
 
             ForecastFeatures(allFeatures);
+
+            logger.LogInformation($"Finished running Monte Carlo Forecast For All Fetaures");
 
             await featureRepository.Save();
         }
 
         public async Task ForecastFeaturesForTeam(Team team)
         {
+            logger.LogInformation($"Running Monte Carlo Forecast For All Fetaures of Team {team.Name}");
+
             var featuresForTeam = featureRepository.GetAll().Where(feature => feature.RemainingWork.Exists(remainingWork => remainingWork.Team == team));
 
             ForecastFeatures(featuresForTeam);
 
             await featureRepository.Save();
+
+            logger.LogInformation($"Finished running Monte Carlo Forecast For All Fetaures of Team {team.Name}");
         }
 
         private void ForecastFeatures(IEnumerable<Feature> features)

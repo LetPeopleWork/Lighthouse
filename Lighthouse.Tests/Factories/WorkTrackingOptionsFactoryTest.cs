@@ -1,8 +1,11 @@
-﻿using Lighthouse.Factories;
+﻿using Castle.Core.Logging;
+using Lighthouse.Factories;
 using Lighthouse.Models;
 using Lighthouse.WorkTracking;
 using Lighthouse.WorkTracking.AzureDevOps;
 using Lighthouse.WorkTracking.Jira;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Lighthouse.Tests.Factories
 {
@@ -11,7 +14,7 @@ namespace Lighthouse.Tests.Factories
         [Test]
         public void CreateOptionsForWorkTrackingSystem_GivenUnknown_ReturnsCorrectOptions()
         {
-            var subject = new WorkTrackingOptionsFactory();
+            var subject = CreateSubject();
 
             var options = subject.CreateOptionsForWorkTrackingSystem<Team>(WorkTrackingSystems.Unknown).ToList();
 
@@ -21,7 +24,7 @@ namespace Lighthouse.Tests.Factories
         [Test]
         public void CreateOptionsForWorkTrackingSystem_GivenAzureDevOps_ReturnsCorrectOptions()
         {
-            var subject = new WorkTrackingOptionsFactory();
+            var subject = CreateSubject();
 
             var options = subject.CreateOptionsForWorkTrackingSystem<Project>(WorkTrackingSystems.AzureDevOps);
 
@@ -36,7 +39,7 @@ namespace Lighthouse.Tests.Factories
         [Test]
         public void CreateOptionsForWorkTrackingSystem_GivenJira_ReturnsCorrectOptions()
         {
-            var subject = new WorkTrackingOptionsFactory();
+            var subject = CreateSubject();
 
             var options = subject.CreateOptionsForWorkTrackingSystem<Project>(WorkTrackingSystems.Jira);
 
@@ -52,6 +55,11 @@ namespace Lighthouse.Tests.Factories
         private bool ContainsOption<T>(IEnumerable<WorkTrackingSystemOption<T>> options, string key, bool isSecret = false) where T : class
         {
             return options.Any(option => option.Key == key && option.Secret == isSecret);
+        }
+
+        private WorkTrackingOptionsFactory CreateSubject()
+        {
+            return new WorkTrackingOptionsFactory(Mock.Of<ILogger<WorkTrackingOptionsFactory>>());
         }
     }
 }
