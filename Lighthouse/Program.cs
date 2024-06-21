@@ -10,6 +10,7 @@ using Lighthouse.Data;
 using System.Globalization;
 using Lighthouse.Services.Implementation.WorkItemServices;
 using Serilog;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Lighthouse
 {
@@ -39,7 +40,11 @@ namespace Lighthouse
                 // Add services to the container.
                 builder.Services.AddRazorPages();
                 builder.Services.AddDbContext<LighthouseAppContext>(options =>
-                    options.UseSqlite(builder.Configuration.GetConnectionString("LighthouseAppContext") ?? throw new InvalidOperationException("Connection string 'LighthouseAppContext' not found")));
+                    options.UseSqlite(
+                        builder.Configuration.GetConnectionString("LighthouseAppContext") ?? throw new InvalidOperationException("Connection string 'LighthouseAppContext' not found"),
+                        o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                    )
+                );
 
                 // Repos
                 builder.Services.AddScoped<IRepository<Team>, TeamRepository>();

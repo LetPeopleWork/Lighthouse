@@ -106,7 +106,7 @@ namespace Lighthouse.Services.Implementation
         {
             foreach (var featureForProject in project.Features)
             {
-                await GetRemainingWorkForFeature(featureForProject);
+                await GetRemainingWorkForFeature(featureForProject, project.WorkTrackingSystem);
             }
 
             await GetUnparentedItems(project);
@@ -176,9 +176,9 @@ namespace Lighthouse.Services.Implementation
             return unrelatedItems;
         }
 
-        private async Task GetRemainingWorkForFeature(Feature featureForProject)
+        private async Task GetRemainingWorkForFeature(Feature featureForProject, WorkTrackingSystems workTrackingSystem)
         {
-            foreach (var team in teamRepository.GetAll())
+            foreach (var team in teamRepository.GetAll().Where(t => t.WorkTrackingSystem == workTrackingSystem))
             {
                 var remainingWork = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
 
