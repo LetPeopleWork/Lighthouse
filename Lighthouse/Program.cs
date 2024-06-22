@@ -10,6 +10,7 @@ using Lighthouse.Data;
 using System.Globalization;
 using Lighthouse.Services.Implementation.WorkItemServices;
 using Serilog;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 
 namespace Lighthouse
 {
@@ -61,6 +62,9 @@ namespace Lighthouse
                 builder.Services.AddScoped<IThroughputService, ThroughputService>();
                 builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
                 builder.Services.AddScoped<ILexoRankService, LexoRankService>();
+
+                builder.Services.AddScoped<AzureDevOpsWorkItemService>();
+                builder.Services.AddScoped<JiraWorkItemService>();
 
                 builder.Services.AddHostedService<ThroughputUpdateService>();
                 builder.Services.AddHostedService<WorkItemUpdateService>();
