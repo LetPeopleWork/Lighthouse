@@ -21,7 +21,7 @@ namespace Lighthouse.Services.Implementation.Repositories
 
         public void Add(T item)
         {
-            logger.LogDebug("Adding item {item.Id}", item.Id);
+            logger.LogDebug("Adding item {Item_Id}", item.Id);
             dbSetGetter(Context).Add(item);
         }
 
@@ -70,7 +70,7 @@ namespace Lighthouse.Services.Implementation.Repositories
 
         public void Update(T item)
         {
-            logger.LogDebug("Updating item {item.Id}", item.Id);
+            logger.LogDebug("Updating item {Item_Id}", item.Id);
             dbSetGetter(Context).Update(item);
         }
     }
