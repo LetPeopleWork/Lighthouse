@@ -10,7 +10,6 @@ using Lighthouse.Data;
 using System.Globalization;
 using Lighthouse.Services.Implementation.WorkItemServices;
 using Serilog;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Lighthouse
 {
@@ -35,7 +34,7 @@ namespace Lighthouse
                     .ReadFrom.Services(services)
                     .Enrich.FromLogContext());
 
-                Log.Information($"Setting Culture Info to {CultureInfo.CurrentCulture.Name}");
+                Log.Information("Setting Culture Info to {CultureName}", CultureInfo.CurrentCulture.Name);
 
                 // Add services to the container.
                 builder.Services.AddRazorPages();

@@ -23,7 +23,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         public async Task<int[]> GetClosedWorkItems(int history, Team team)
         {
-            logger.LogInformation($"Getting Closed Work Items for Team {team.Name}");
+            logger.LogInformation("Getting Closed Work Items for Team {TeamName}", team.Name);
             var witClient = GetClientService(team);
 
             return await GetClosedItemsPerDay(witClient, history, team);
@@ -31,7 +31,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         public async Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner)
         {
-            logger.LogInformation($"Getting Open Work Items for Work Items {string.Join(", ", workItemTypes)} and Query '{workItemQueryOwner.WorkItemQuery}'");
+            logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", workItemTypes), workItemQueryOwner.WorkItemQuery);
             var witClient = GetClientService(workItemQueryOwner);
 
             var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
@@ -41,7 +41,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             foreach (var workItem in workItems)
             {
-                logger.LogInformation($"Found Work Item with ID {workItem.Id}");
+                logger.LogInformation("Found Work Item with ID {WorkItemID}", workItem.Id);
                 workItemReferences.Add(workItem.Id.ToString());
             }
 
@@ -50,7 +50,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         public async Task<int> GetRemainingRelatedWorkItems(string featureId, Team team)
         {
-            logger.LogInformation($"Getting Related Work Items for Feature {featureId} and Team {team.Name}");
+            logger.LogInformation("Getting Related Work Items for Feature {featureId} and Team {TeamName}", featureId, team.Name);
             var witClient = GetClientService(team);
 
             var relatedWorkItems = await GetRelatedWorkItems(witClient, team, featureId);
@@ -60,7 +60,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         public async Task<(string name, string order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
-            logger.LogInformation($"Getting Work Item Details for {itemId} and Query {workItemQueryOwner.WorkItemQuery}");
+            logger.LogInformation("Getting Work Item Details for {itemId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
             var witClient = GetClientService(workItemQueryOwner);
 
@@ -83,7 +83,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         public async Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
         {
-            logger.LogInformation($"Getting Open Work Items for Team {team.Name}, Item Types {string.Join(", ", workItemTypes)} and Unaprented Items Query '{unparentedItemsQuery}'");
+            logger.LogInformation("Getting Open Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
 
             var witClient = GetClientService(team);
 
@@ -99,14 +99,14 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var openWorkItems = workItems.Select(x => x.Id.ToString()).ToList();
 
-            logger.LogInformation($"Found following Open Work Items {string.Join(", ", openWorkItems)}");
+            logger.LogInformation("Found following Open Work Items {OpenItems}", string.Join(", ", openWorkItems));
 
             return openWorkItems;
         }
 
         public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
         {
-            logger.LogInformation($"Checking if Item {itemId} of Team {team.Name} is related to {string.Join(", ", featureIds)}");
+            logger.LogInformation("Checking if Item {ItemID} of Team {TeamName} is related to {FeatureIDs}", itemId, team.Name, string.Join(", ", featureIds));
 
             var witClient = GetClientService(team);
 
@@ -119,14 +119,14 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var isRelated = featureIds.Any(f => IsWorkItemRelated(workItem, f, team.AdditionalRelatedField ?? string.Empty));
 
-            logger.LogInformation($"Is Item {itemId} related: {isRelated}");
+            logger.LogInformation("Is Item {ItemID} related: {isRelated}", itemId, isRelated);
 
             return isRelated;
         }
 
         public async Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
         {
-            logger.LogInformation($"Checking if Item {referenceId} has Children");
+            logger.LogInformation("Checking if Item {referenceId} has Children", referenceId);
 
             var witClient = GetClientService(workTrackingSystemOptionsOwner);
 
@@ -135,14 +135,14 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             var hasChildren = workItems.WorkItemRelations.Count() > 1;
 
-            logger.LogInformation($"Item {referenceId} has Children: {hasChildren}");
+            logger.LogInformation("Item {referenceId} has Children: {hasChildren}", referenceId, hasChildren);
 
             return hasChildren;
         }
 
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
-            logger.LogInformation($"Getting Adjacent Order Index for items {string.Join(", ", existingItemsOrder)} in order {relativeOrder}");
+            logger.LogInformation("Getting Adjacent Order Index for items {ExistingItemsOrder} in order {relativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
 
             var result = string.Empty;
 
@@ -166,7 +166,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
                 }
             }
 
-            logger.LogInformation($"Adjacent Order Index for items {string.Join(", ", existingItemsOrder)} in order {relativeOrder}: {result}");
+            logger.LogInformation("Adjacent Order Index for items {existingItemsOrder} in order {relativeOrder}: {result}", string.Join(", ", existingItemsOrder), relativeOrder, result);
 
             return result;
         }
@@ -191,7 +191,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var query = PrepareQuery([], [], workItemQueryOwner);
             query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
 
-            logger.LogDebug($"Getting Work Item by Id. ID: {workItemId}. Query: '{query}'");
+            logger.LogDebug("Getting Work Item by Id. ID: {workItemId}. Query: '{query}'", workItemId, query);
 
             var workItems = await GetWorkItemsByQuery(witClient, query);
 
@@ -199,11 +199,11 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
             if (workItemReference == null)
             {
-                logger.LogDebug($"Found No Item");
+                logger.LogDebug("Found No Item");
                 return null;
             }
 
-            logger.LogDebug($"Found Item {workItemReference.Id}");
+            logger.LogDebug("Found Item {WorkItemReferenceID}", workItemReference.Id);
 
             return await GetWorkItemFromCache(workItemReference.Id.ToString(), witClient);
         }
@@ -220,12 +220,12 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         private async Task<WorkItem> GetWorkItemFromCache(string itemId, WorkItemTrackingHttpClient witClient)
         {
-            logger.LogDebug($"Trying to get Work Item {itemId} from cache...");
+            logger.LogDebug("Trying to get Work Item {itemId} from cache...", itemId);
             var workItem = workItemCache.Get(itemId);
 
             if (workItem == null)
             {
-                logger.LogDebug($"No Item in chace - getting from Azure DevOps...");
+                logger.LogDebug("No Item in chace - getting from Azure DevOps...");
                 workItem = await witClient.GetWorkItemAsync(int.Parse(itemId), expand: WorkItemExpand.Relations);
                 workItemCache.Store(itemId, workItem, TimeSpan.FromMinutes(5));
             }
@@ -235,7 +235,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
 
         private bool IsWorkItemRelated(WorkItem workItem, string relatedWorkItemId, string additionalField)
         {
-            logger.LogDebug($"Checking if Work Item: {workItem.Id} is related to {relatedWorkItemId}");
+            logger.LogDebug("Checking if Work Item: {WorkItemID} is related to {relatedWorkItemId}", workItem.Id, relatedWorkItemId);
 
             // Check if the work item is a child of the specified relatedWorkItemId
             if (workItem.Relations != null)
@@ -282,7 +282,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var query = PrepareQuery(team.WorkItemTypes, [], team);
             query += $" AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done') AND [{AzureDevOpsFieldNames.ClosedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
 
-            logger.LogDebug($"Getting closed items per day for thre last {numberOfDays} for team {team.Name} using query '{query}'");
+            logger.LogDebug("Getting closed items per day for thre last {numberOfDays} for team {TeamName} using query '{query}'", numberOfDays, team.Name, query);
 
             var workItems = await GetWorkItemsByQuery(witClient, query);
 

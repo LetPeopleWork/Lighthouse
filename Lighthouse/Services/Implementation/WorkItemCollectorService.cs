@@ -22,7 +22,7 @@ namespace Lighthouse.Services.Implementation
 
         public async Task UpdateFeaturesForProject(Project project)
         {
-            logger.LogInformation($"Updating Features for Project {project.Name}");
+            logger.LogInformation("Updating Features for Project {ProjectName}", project.Name);
             
             var featuresForProject = await GetFeaturesForProject(project);
 
@@ -34,7 +34,7 @@ namespace Lighthouse.Services.Implementation
             RemoveUninvolvedTeams(project);
             await ExtrapolateNotBrokenDownFeaturesAsync(project);
 
-            logger.LogInformation($"Done Updating Features for Project {project.Name}");
+            logger.LogInformation("Done Updating Features for Project {ProjectName}", project.Name);
         }
 
         private async Task ExtrapolateNotBrokenDownFeaturesAsync(Project project)
@@ -46,16 +46,16 @@ namespace Lighthouse.Services.Implementation
                 return;
             }
 
-            logger.LogInformation($"Extrapolating Not Broken Down Features for Project {project.Name}");
+            logger.LogInformation("Extrapolating Not Broken Down Features for Project {ProjectName}", project.Name);
 
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem);
 
             foreach (var feature in project.Features.Where(feature => feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0))
             {
-                logger.LogInformation($"Checking Feature {feature.Name}");
+                logger.LogInformation("Checking Feature {FeatureName}", feature.Name);
                 if (await workItemService.ItemHasChildren(feature.ReferenceId, project))
                 {
-                    logger.LogInformation($"Feature has items already done - skipping");
+                    logger.LogInformation("Feature has items already done - skipping");
                     continue;
                 }
 
@@ -67,20 +67,20 @@ namespace Lighthouse.Services.Implementation
                     feature.AddOrUpdateRemainingWorkForTeam(team, buckets[index]);
                 }
 
-                logger.LogInformation($"Added {project.DefaultAmountOfWorkItemsPerFeature} Items to Feature {feature.Name}");
+                logger.LogInformation("Added {DefaultAmountOfWorkItemsPerFeature} Items to Feature {FeatureName}", project.DefaultAmountOfWorkItemsPerFeature, feature.Name);
             }
         }
 
         private void RemoveUninvolvedTeams(Project project)
         {
-            logger.LogInformation($"Removing uninvolved teams for Project {project.Name}");
+            logger.LogInformation("Removing uninvolved teams for Project {ProjectName}", project.Name);
 
             foreach (var feature in project.Features.ToList())
             {
                 var uninvolvedTeams = feature.RemainingWork.Where(x => x.RemainingWorkItems == 0).Select(kvp => kvp.Team).ToList();
                 foreach (var team in uninvolvedTeams)
                 {
-                    logger.LogInformation($"Removing Team {team.Name} from Feature {feature.Name}");
+                    logger.LogInformation("Removing Team {TeamName} from Feature {FeatureName}", team.Name, feature.Name);
                     feature.RemoveTeamFromFeature(team);
                 }
             }

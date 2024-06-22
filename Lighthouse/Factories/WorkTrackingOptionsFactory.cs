@@ -15,7 +15,7 @@ namespace Lighthouse.Factories
 
         public IEnumerable<WorkTrackingSystemOption<T>> CreateOptionsForWorkTrackingSystem<T>(WorkTrackingSystems workTrackingSystem) where T : class
         {
-            logger.LogDebug($"Getting WorkTrackingSystemOption for {workTrackingSystem}");
+            logger.LogDebug("Getting WorkTrackingSystemOption for {workTrackingSystem}", workTrackingSystem);
 
             switch (workTrackingSystem)
             {

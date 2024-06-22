@@ -11,6 +11,22 @@ namespace Lighthouse.Tests.Factories
 {
     public class WorkItemServiceFactoryTest
     {
+        private Mock<IServiceProvider> serviceProviderMock;
+
+        [SetUp]
+        public void SetUp()
+        {
+            serviceProviderMock = new Mock<IServiceProvider>();
+
+            serviceProviderMock
+            .Setup(x => x.GetService(typeof(AzureDevOpsWorkItemService)))
+            .Returns(new AzureDevOpsWorkItemService(Mock.Of<ILogger<AzureDevOpsWorkItemService>>()));
+
+            serviceProviderMock
+            .Setup(x => x.GetService(typeof(JiraWorkItemService)))
+            .Returns(new JiraWorkItemService(Mock.Of<ILexoRankService>(), Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkItemService>>()));
+        }
+
         [Test]
         public void CreateWorkItemService_GivenAzureDevOps_ReturnsAzureDevOpsWorkItemService()
         {
@@ -52,7 +68,7 @@ namespace Lighthouse.Tests.Factories
 
         private WorkItemServiceFactory CreateSubject()
         {
-            return new WorkItemServiceFactory(Mock.Of<IIssueFactory>(), Mock.Of<ILexoRankService>(), Mock.Of<ILogger<WorkItemServiceFactory>>(), Mock.Of<ILogger<AzureDevOpsWorkItemService>>(), Mock.Of<ILogger<JiraWorkItemService>>());
+            return new WorkItemServiceFactory(serviceProviderMock.Object, Mock.Of<ILogger<WorkItemServiceFactory>>());
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Lighthouse.Factories
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
 
-            logger.LogDebug($"Creating Issue with Key {key}, Title {title}, Resoultion Date {resolutionDate}, Parent Key {parentKey}, Rank {rank}, Issue Type {issueType}");
+            logger.LogDebug("Creating Issue with Key {key}, Title {title}, Resoultion Date {resolutionDate}, Parent Key {parentKey}, Rank {rank}, Issue Type {issueType}", key, title, resolutionDate, parentKey, rank, issueType);
 
             return new Issue(key, title, resolutionDate, parentKey, rank, issueType, fields);
         }

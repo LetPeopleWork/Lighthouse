@@ -18,7 +18,7 @@ namespace Lighthouse.Services.Implementation
 
         public async Task UpdateThroughput(Team team)
         {
-            logger.LogInformation($"Updating Throughput for Team {team.Name}");
+            logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
 
             if (team.WorkTrackingSystem == WorkTrackingSystems.Unknown)
             {
@@ -29,7 +29,7 @@ namespace Lighthouse.Services.Implementation
             var throughput = await workItemService.GetClosedWorkItems(team.ThroughputHistory, team);
 
             team.UpdateThroughput(throughput);
-            logger.LogInformation($"Finished updating Throughput for Team {team.Name}");
+            logger.LogInformation("Finished updating Throughput for Team {TeamName}", team.Name);
         }
     }
 }

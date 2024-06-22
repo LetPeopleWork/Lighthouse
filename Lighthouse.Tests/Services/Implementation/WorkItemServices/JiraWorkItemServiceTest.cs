@@ -6,6 +6,7 @@ using Lighthouse.WorkTracking;
 using Lighthouse.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json.Linq;
 
 namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 {
@@ -51,7 +52,7 @@ namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
 
             var itemsByTag = await subject.GetOpenWorkItems(["Epic"], team);
 
-            Assert.That(itemsByTag.Count, Is.EqualTo(3));
+            Assert.That(itemsByTag, Has.Count.EqualTo(3));
         }
 
 

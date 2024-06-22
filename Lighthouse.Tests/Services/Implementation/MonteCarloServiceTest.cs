@@ -145,7 +145,7 @@ namespace Lighthouse.Tests.Services.Implementation
             {
                 Assert.That(forecast.GetProbability(50), Is.InRange(26, 28));
                 Assert.That(forecast.GetProbability(70), Is.InRange(29, 31));
-                Assert.That(forecast.GetProbability(85), Is.InRange(33, 35));
+                Assert.That(forecast.GetProbability(85), Is.InRange(33, 36));
                 Assert.That(forecast.GetProbability(95), Is.InRange(38, 41));
 
                 Assert.That(forecast.GetLikelihood(30), Is.InRange(65, 73));

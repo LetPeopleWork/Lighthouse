@@ -22,7 +22,7 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            logger.LogInformation($"Start Executing Background Service");
+            logger.LogInformation("Start Executing Background Service");
 
             await DelayStart(stoppingToken);
 
@@ -31,7 +31,7 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
                 await TryUpdating(stoppingToken);
             }
 
-            logger.LogInformation($"Stopping Executing Background Service");
+            logger.LogInformation("Stopping Executing Background Service");
         }
 
         protected abstract Task UpdateAllItems(CancellationToken stoppingToken);
@@ -40,10 +40,10 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
         {
             try
             {
-                logger.LogInformation($"Invoking Update");
+                logger.LogInformation("Invoking Update");
                 await UpdateAllItems(stoppingToken);
 
-                logger.LogInformation($"Done Updating - Waiting {Interval} Minutes till next execution");
+                logger.LogInformation("Done Updating - Waiting {Interval} Minutes till next execution", Interval);
                 await Task.Delay(TimeSpan.FromMinutes(Interval), stoppingToken);
             }
             catch (Exception exception)
@@ -54,7 +54,7 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
 
         private async Task DelayStart(CancellationToken stoppingToken)
         {
-            logger.LogInformation($"Wait {StartDelay} minutes before starting...");
+            logger.LogInformation("Wait {StartDelay} minutes before starting...", StartDelay);
             await Task.Delay(TimeSpan.FromMinutes(StartDelay), stoppingToken);
         }
     }

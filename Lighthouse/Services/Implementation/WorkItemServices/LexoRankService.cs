@@ -13,7 +13,7 @@
 
         public string GetHigherPriority(string currentRank)
         {
-            logger.LogDebug($"Trying to find higher rank than {currentRank}");
+            logger.LogDebug("Trying to find higher rank than {currentRank}", currentRank);
 
             // Increment the last character by 1 to get a higher priority
             char[] rankChars = currentRank.ToCharArray();
@@ -21,14 +21,14 @@
 
             var newRank = new string(rankChars);
 
-            logger.LogDebug($"Generated Rank: {newRank}");
+            logger.LogDebug("Generated Rank: {newRank}", newRank);
 
             return newRank;
         }
 
         public string GetLowerPriority(string currentRank)
         {
-            logger.LogDebug($"Trying to find lower rank than {currentRank}");
+            logger.LogDebug("Trying to find lower rank than {currentRank}", currentRank);
 
             // Decrement the last character by 1 to get a lower priority
             char[] rankChars = currentRank.ToCharArray();
@@ -36,7 +36,7 @@
 
             var newRank = new string(rankChars);
 
-            logger.LogDebug($"Generated Rank: {newRank}");
+            logger.LogDebug("Generated Rank: {newRank}", newRank);
 
             return newRank;
         }

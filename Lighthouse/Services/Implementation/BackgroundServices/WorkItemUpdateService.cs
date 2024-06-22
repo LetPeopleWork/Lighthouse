@@ -16,7 +16,7 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
 
         protected override async Task UpdateAllItems(CancellationToken stoppingToken)
         {
-            logger.LogInformation($"Starting Update of Work Items for Projects");
+            logger.LogInformation("Starting Update of Work Items for Projects");
 
             using (var scope = serviceScopeFactory.CreateScope())
             {
@@ -24,19 +24,19 @@ namespace Lighthouse.Services.Implementation.BackgroundServices
 
                 foreach (var project in projectRepository.GetAll().ToList())
                 {
-                    logger.LogInformation($"Checking Work Items for Project {project.Name}");
+                    logger.LogInformation("Checking Work Items for Project {ProjectName}", project.Name);
                     await UpdateWorkItemsForProject(scope, projectRepository, project);
                 }
             }
 
-            logger.LogInformation($"Done Updating of Work Items for Projects");
+            logger.LogInformation("Done Updating of Work Items for Projects");
         }
 
         private async Task UpdateWorkItemsForProject(IServiceScope scope, IRepository<Project> projectRepository, Project project)
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - project.ProjectUpdateTime).TotalMinutes;
 
-            logger.LogInformation($"Last Refresh of Work Items for Project {project.Name} was {minutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes");
+            logger.LogInformation("Last Refresh of Work Items for Project {ProjectName} was {minutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", project.Name, minutesSinceLastUpdate, RefreshAfter);
 
             if (minutesSinceLastUpdate >= RefreshAfter)
             {
