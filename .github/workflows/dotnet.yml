@@ -48,6 +48,10 @@ jobs:
         npm install -g sonarqube-scanner
         sonar-scanner
 
+    - name: Remove Frontend sonar-project.properties
+      run: |
+        rm ./Lighthouse.Frontend/sonar-project.properties
+
     - name: Backend Build Test SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
       with:
