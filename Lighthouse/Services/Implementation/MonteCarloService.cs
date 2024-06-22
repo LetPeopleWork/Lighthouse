@@ -41,12 +41,12 @@ namespace Lighthouse.Services.Implementation
             return new HowManyForecast(simulationResults, days);
         }
 
-        public WhenForecast When(Team team, int remainingItems)
+        public async Task<WhenForecast> When(Team team, int remainingItems)
         {
             logger.LogInformation($"Running Monte Carlo Forecast When for Team {team.Name} and {remainingItems} items.");
 
             var fakeFeature = new Feature(team, remainingItems);
-            ForecastFeatures([fakeFeature]);
+            await ForecastFeatures([fakeFeature]);
 
             logger.LogInformation($"Finished running Monte Carlo Forecast When for Team {team.Name} and {remainingItems} items.");
 
@@ -59,7 +59,7 @@ namespace Lighthouse.Services.Implementation
 
             var allFeatures = featureRepository.GetAll();
 
-            ForecastFeatures(allFeatures);
+            await ForecastFeatures(allFeatures);
 
             logger.LogInformation($"Finished running Monte Carlo Forecast For All Fetaures");
 
@@ -72,29 +72,26 @@ namespace Lighthouse.Services.Implementation
 
             var featuresForTeam = featureRepository.GetAll().Where(feature => feature.RemainingWork.Exists(remainingWork => remainingWork.Team == team));
 
-            ForecastFeatures(featuresForTeam);
+            await ForecastFeatures(featuresForTeam);
 
             await featureRepository.Save();
 
             logger.LogInformation($"Finished running Monte Carlo Forecast For All Fetaures of Team {team.Name}");
         }
 
-        private void ForecastFeatures(IEnumerable<Feature> features)
+        private async Task ForecastFeatures(IEnumerable<Feature> features)
         {
             var simulationResults = InitializeSimulationResults(features.OrderBy(f => f, new FeatureComparer()));
-            RunMonteCarloSimulation(simulationResults);
+            await RunMonteCarloSimulation(simulationResults);
             UpdateFeatureForecasts(features, simulationResults);
         }
 
-        private void RunMonteCarloSimulation(List<SimulationResult> simulationResults)
+        private async Task RunMonteCarloSimulation(List<SimulationResult> simulationResults)
         {
-            foreach (var simulationResultsByTeam in simulationResults.GroupBy(s => s.Team))
-            {
-                if (simulationResultsByTeam.Key.TotalThroughput <= 0)
-                {
-                    continue;
-                }
+            var groupedSimulationResults = simulationResults.GroupBy(s => s.Team).Where(t => t.Key.TotalThroughput > 0).ToList();
 
+            var tasks = groupedSimulationResults.Select(simulationResultsByTeam => Task.Run(() =>
+            {
                 RunSimulations(() =>
                 {
                     simulationResultsByTeam.ResetRemainingItems();
@@ -108,7 +105,9 @@ namespace Lighthouse.Services.Implementation
                         simulatedDays++;
                     }
                 });
-            }
+            })).ToList();
+
+            await Task.WhenAll(tasks);
         }
 
         private void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults)

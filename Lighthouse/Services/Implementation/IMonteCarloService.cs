@@ -9,8 +9,8 @@ namespace Lighthouse.Services.Implementation
 
         Task ForecastFeaturesForTeam(Team team);
 
-        HowManyForecast HowMany(Throughput throughput, int days);        
+        HowManyForecast HowMany(Throughput throughput, int days);
 
-        WhenForecast When(Team team, int remainingItems);
+        Task<WhenForecast> When(Team team, int remainingItems);
     }
 }

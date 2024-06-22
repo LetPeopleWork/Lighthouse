@@ -56,14 +56,12 @@ namespace Lighthouse.Pages.Teams
 
         public async Task<IActionResult> OnPostWhenForecast(int? id, int? itemsRemaining)
         {
-            return await GetTeamAndReloadPage(id, (Team team) =>
+            return await GetTeamAndReloadPage(id, async (Team team) =>
             {
                 if (itemsRemaining.HasValue)
                 {
-                    WhenForecast = monteCarloService.When(team, itemsRemaining.Value);
+                    WhenForecast = await monteCarloService.When(team, itemsRemaining.Value);
                 }
-
-                return Task.CompletedTask;
             });
         }
 

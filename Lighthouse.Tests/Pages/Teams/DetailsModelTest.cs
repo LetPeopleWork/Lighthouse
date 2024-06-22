@@ -125,7 +125,7 @@ namespace Lighthouse.Tests.Pages.Teams
             var subject = CreateSubject();
 
             var expectedForecast = new WhenForecast();
-            monteCarloServiceMock.Setup(x => x.When(team, 42)).Returns(expectedForecast);
+            monteCarloServiceMock.Setup(x => x.When(team, 42)).ReturnsAsync(expectedForecast);
 
             var result = await subject.OnPostWhenForecast(12, 42);
 

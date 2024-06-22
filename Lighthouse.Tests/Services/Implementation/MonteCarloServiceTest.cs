@@ -52,11 +52,11 @@ namespace Lighthouse.Tests.Services.Implementation
         }
 
         [Test]
-        public void When_ReturnsWhenForecast()
+        public async Task When_ReturnsWhenForecastAsync()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var forecast = subject.When(CreateTeam(1, [1]), 12);
+            var forecast = await subject.When(CreateTeam(1, [1]), 12);
 
             Assert.That(forecast, Is.InstanceOf(typeof(WhenForecast)));
         }
@@ -66,11 +66,11 @@ namespace Lighthouse.Tests.Services.Implementation
         [TestCase(14)]
         [TestCase(30)]
         [TestCase(90)]
-        public void When_ThroughputOfOne_AllPercentilesEqualTimespan(int remainingItems)
+        public async Task When_ThroughputOfOne_AllPercentilesEqualTimespan(int remainingItems)
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var forecast = subject.When(CreateTeam(1, [1]), remainingItems);
+            var forecast = await subject.When(CreateTeam(1, [1]), remainingItems);
 
             Assert.Multiple(() =>
             {
@@ -99,13 +99,13 @@ namespace Lighthouse.Tests.Services.Implementation
         }
 
         [Test]
-        public void When_FixedThroughputAndRemainingDays_ReturnsCorrectForecast()
+        public async Task When_FixedThroughputAndRemainingDays_ReturnsCorrectForecastAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput =  [ 2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
             var team = CreateTeam(1, throughput);
 
-            var forecast = subject.When(team, 35);
+            var forecast = await subject.When(team, 35);
 
             Assert.Multiple(() =>
             {
@@ -134,12 +134,12 @@ namespace Lighthouse.Tests.Services.Implementation
         }
 
         [Test]
-        public void When_RealData_RunRealForecast_ExpectCorrectResults()
+        public async Task When_RealData_RunRealForecast_ExpectCorrectResultsAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
 
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
-            var forecast = subject.When(CreateTeam(1, throughput), 28);
+            var forecast = await subject.When(CreateTeam(1, throughput), 28);
 
             Assert.Multiple(() =>
             {

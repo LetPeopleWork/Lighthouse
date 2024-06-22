@@ -23,7 +23,10 @@ namespace Lighthouse.Services.Implementation
         public async Task UpdateFeaturesForProject(Project project)
         {
             logger.LogInformation($"Updating Features for Project {project.Name}");
+            
             var featuresForProject = await GetFeaturesForProject(project);
+
+
             project.UpdateFeatures(featuresForProject.OrderBy(f => f, new FeatureComparer()));
 
             await GetRemainingWorkForFeatures(project);
@@ -104,10 +107,11 @@ namespace Lighthouse.Services.Implementation
 
         private async Task GetRemainingWorkForFeatures(Project project)
         {
-            foreach (var featureForProject in project.Features)
-            {
-                await GetRemainingWorkForFeature(featureForProject, project.WorkTrackingSystem);
-            }
+            var tasks = project.Features
+                .Select(featureForProject => GetRemainingWorkForFeature(featureForProject, project.WorkTrackingSystem))
+                .ToList();
+
+            await Task.WhenAll(tasks);
 
             await GetUnparentedItems(project);
         }
@@ -178,14 +182,19 @@ namespace Lighthouse.Services.Implementation
 
         private async Task GetRemainingWorkForFeature(Feature featureForProject, WorkTrackingSystems workTrackingSystem)
         {
-            foreach (var team in teamRepository.GetAll().Where(t => t.WorkTrackingSystem == workTrackingSystem))
+            var teams = teamRepository.GetAll().Where(t => t.WorkTrackingSystem == workTrackingSystem).ToList();
+
+            var tasks = teams.Select(async team =>
             {
-                var remainingWork = await GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem).GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
+                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+                var remainingWork = await workItemService.GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
 
                 logger.LogInformation($"Found {remainingWork} Work Item Remaining for Team {team.Name} for Feature {featureForProject.Name}");
 
                 featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
-            }
+            }).ToList();
+
+            await Task.WhenAll(tasks);
         }
 
         private async Task<List<Feature>> GetFeaturesForProject(Project project)
@@ -195,7 +204,7 @@ namespace Lighthouse.Services.Implementation
             var features = new List<Feature>();
             var featureIds = await workItemService.GetOpenWorkItems(project.WorkItemTypes, project);
 
-            foreach (var featureId in featureIds)
+            var tasks = featureIds.Select(async featureId =>
             {
                 var feature = GetOrCreateFeature(featureId, project);
 
@@ -205,8 +214,12 @@ namespace Lighthouse.Services.Implementation
 
                 logger.LogInformation($"Found Feature {feature.Name}, Id {featureId}, Order {feature.Order}");
 
-                features.Add(feature);
-            }
+                return feature;
+            }).ToList();
+
+            var featuresArray = await Task.WhenAll(tasks);
+
+            features.AddRange(featuresArray);
 
             return features;
         }
