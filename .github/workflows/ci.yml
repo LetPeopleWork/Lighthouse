@@ -24,7 +24,35 @@ jobs:
       with:
         fetch-depth: '0'
 
-    - name: SonarCloud
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+
+    - name: Install npm dependencies
+      run: npm install
+      working-directory: ./Lighthouse.Frontend
+
+    - name: Lint Frontend
+      run: npm run lint
+      working-directory: ./Lighthouse.Frontend
+
+    - name: Build Frontend
+      run: npm run build
+      working-directory: ./Lighthouse.Frontend
+
+    - name: Frontend SonarCloud
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      working-directory: ./Lighthouse.Frontend
+      run: |
+        npm install -g sonarqube-scanner
+        sonar-scanner
+
+    - name: Remove Frontend sonar-project.properties
+      run: |
+        rm ./Lighthouse.Frontend/sonar-project.properties
+
+    - name: Backend Build Test SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
       with:
         sonarProjectKey: LetPeopleWork_Lighthouse
@@ -76,6 +104,14 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{env.DOTNET_ROOT}}
+
+      - name: Install npm dependencies
+        run: npm install
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Build Frontend
+        run: npm run build
+        working-directory: ./Lighthouse.Frontend
 
       - name: Create tag if necessary
         id: version

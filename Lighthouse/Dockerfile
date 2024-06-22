@@ -15,8 +15,15 @@ COPY . .
 WORKDIR "/src/Lighthouse"
 RUN dotnet build "./Lighthouse.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 
+FROM node as node-builder
+WORKDIR /node
+COPY Lighthouse.Frontend /node
+RUN npm install
+RUN npm run build-docker
+
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+COPY --from=node-builder /node/dist ./wwwroot/NewFrontend
 RUN dotnet publish "./Lighthouse.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
