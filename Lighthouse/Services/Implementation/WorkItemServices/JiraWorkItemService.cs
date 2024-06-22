@@ -46,7 +46,7 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var workItems = issues.Where(i => workItemTypes.Contains(i.IssueType)).ToList();
 
             foreach (var parentKey in issues.Where(i => !string.IsNullOrEmpty(i.ParentKey)).Select(i => i.ParentKey))
-            {;
+            {
                 var parentItem = await GetIssueById(jiraRestClient, parentKey);
 
                 if (workItemTypes.Contains(parentItem.IssueType))
@@ -192,17 +192,10 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var query = PrepareQuery(team.WorkItemTypes, closedStates, team);
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
-            var remainingItems = 0;
-            foreach (var issue in issues)
-            {
-                if (IsIssueRelated(issue, relatedWorkItemId, team.AdditionalRelatedField))
-                {
-                    logger.LogInformation("Found Related Issue: {Key}", issue.Key);
-                    remainingItems++;
-                }
-            }
+            var relatedItems = issues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).Select(i => i.Key).ToList();
+            logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", relatedItems));
 
-            return remainingItems;
+            return relatedItems.Count;
         }
 
         private bool IsIssueRelated(Issue issue, string relatedWorkItemId, string? additionalRelatedField)
