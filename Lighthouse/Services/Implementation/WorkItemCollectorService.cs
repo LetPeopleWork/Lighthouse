@@ -123,7 +123,7 @@ namespace Lighthouse.Services.Implementation
                 return;
             }
 
-            logger.LogInformation($"Getting Unparented Items for Project {project.Name}");
+            logger.LogInformation("Getting Unparented Items for Project {ProjectName}", project.Name);
 
             var featureIds = project.Features.Select(x => x.ReferenceId);
 
@@ -136,14 +136,14 @@ namespace Lighthouse.Services.Implementation
 
                 var unparentedItems = await GetItemsUnrelatedToFeatures(featureIds, team, itemsMatchingUnparentedItemsQuery);
 
-                logger.LogInformation($"Found {unparentedItems.Count} Unparented Items for Project {project.Name}");
+                logger.LogInformation("Found {UnparentedItems} Unparented Items for Project {ProjectName}", unparentedItems.Count, project.Name);
 
                 unparentedFeature.AddOrUpdateRemainingWorkForTeam(team, unparentedItems.Count);
             }
 
             unparentedFeature.Order = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem).GetAdjacentOrderIndex(project.Features.Select(x => x.Order), RelativeOrder.Above);
 
-            logger.LogInformation($"Setting order for {unparentedFeature.Name} to {unparentedFeature.Order}");
+            logger.LogInformation("Setting order for {UnparentedFeatureName} to {UnparentedFeatureOrder}", unparentedFeature.Name, unparentedFeature.Order);
         }
 
         private Feature GetOrAddUnparentedFeature(Project project)
@@ -189,7 +189,7 @@ namespace Lighthouse.Services.Implementation
                 var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
                 var remainingWork = await workItemService.GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
 
-                logger.LogInformation($"Found {remainingWork} Work Item Remaining for Team {team.Name} for Feature {featureForProject.Name}");
+                logger.LogInformation("Found {remainingWork} Work Item Remaining for Team {TeamName} for Feature {FeatureName}", remainingWork, team.Name, featureForProject.Name);
 
                 featureForProject.AddOrUpdateRemainingWorkForTeam(team, remainingWork);
             }).ToList();
@@ -212,7 +212,7 @@ namespace Lighthouse.Services.Implementation
                 feature.Name = name;
                 feature.Order = order;
 
-                logger.LogInformation($"Found Feature {feature.Name}, Id {featureId}, Order {feature.Order}");
+                logger.LogInformation("Found Feature {Name}, Id {Id}, Order {Order}", feature.Name, featureId, feature.Order);
 
                 return feature;
             }).ToList();

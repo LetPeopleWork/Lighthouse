@@ -37,13 +37,8 @@ namespace Lighthouse.Services.Implementation.WorkItemServices
             var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
             var workItems = await GetWorkItemsByQuery(witClient, query);
 
-            var workItemReferences = new List<string>();
-
-            foreach (var workItem in workItems)
-            {
-                logger.LogInformation("Found Work Item with ID {WorkItemID}", workItem.Id);
-                workItemReferences.Add(workItem.Id.ToString());
-            }
+            var workItemReferences = workItems.Select(wi => wi.Id.ToString()).ToList();
+            logger.LogInformation("Found Work Items with IDs {WorkItemIDs}", string.Join(", ", workItemReferences));
 
             return workItemReferences;
         }

@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Cache;
-using Lighthouse.Factories;
 using Lighthouse.Services.Implementation.WorkItemServices;
 using Lighthouse.Services.Interfaces;
 using Lighthouse.WorkTracking;
@@ -10,25 +9,25 @@ namespace Lighthouse.Services.Factories
     {
         private readonly Cache<WorkTrackingSystems, IWorkItemService> cache = new Cache<WorkTrackingSystems, IWorkItemService>();
         private readonly IServiceProvider serviceProvider;
-        private readonly ILogger<WorkItemServiceFactory> workItemServiceFactoryLogger;
+        private readonly ILogger<WorkItemServiceFactory> logger;
 
         public WorkItemServiceFactory(
             IServiceProvider serviceProvider,
-            ILogger<WorkItemServiceFactory> workItemServiceFactoryLogger)
+            ILogger<WorkItemServiceFactory> logger)
         {
             this.serviceProvider = serviceProvider;
-            this.workItemServiceFactoryLogger = workItemServiceFactoryLogger;
+            this.logger = logger;
         }
 
 
         public IWorkItemService GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
-            workItemServiceFactoryLogger.LogDebug("Getting Work Item Service for {workTrackingSystem}", workTrackingSystem);
+            logger.LogDebug("Getting Work Item Service for {workTrackingSystem}", workTrackingSystem);
             var workItemSerivce = cache.Get(workTrackingSystem);
 
             if (workItemSerivce == null)
             {
-                workItemServiceFactoryLogger.LogDebug("Work Item Service for {workTrackingSystem} not found in the cache - creating", workTrackingSystem);
+                logger.LogDebug("Work Item Service for {workTrackingSystem} not found in the cache - creating", workTrackingSystem);
                 switch (workTrackingSystem)
                 {
                     case WorkTrackingSystems.AzureDevOps:
