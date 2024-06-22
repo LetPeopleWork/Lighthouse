@@ -39,6 +39,15 @@ jobs:
       run: npm run build
       working-directory: ./Lighthouse.Frontend
 
+    - name: SonarCloud Scan
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      working-directory: ./Lighthouse.Frontend
+      run: |
+        npm install -g sonarqube-scanner
+        sonar-scanner
+
     - name: SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
       with:
@@ -51,7 +60,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: build
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
 
     permissions: write-all
 
