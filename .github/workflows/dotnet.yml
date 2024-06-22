@@ -39,7 +39,7 @@ jobs:
       run: npm run build
       working-directory: ./Lighthouse.Frontend
 
-    - name: SonarCloud Scan
+    - name: Frontend SonarCloud
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -48,7 +48,7 @@ jobs:
         npm install -g sonarqube-scanner
         sonar-scanner
 
-    - name: SonarCloud
+    - name: Backend Build Test SonarCloud
       uses: highbyte/sonarscan-dotnet@v2.3.1
       with:
         sonarProjectKey: LetPeopleWork_Lighthouse
