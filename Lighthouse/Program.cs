@@ -10,8 +10,6 @@ using Lighthouse.Data;
 using System.Globalization;
 using Lighthouse.Services.Implementation.WorkItemServices;
 using Serilog;
-using Lighthouse.Middleware;
-using Microsoft.Extensions.FileProviders;
 
 namespace Lighthouse
 {
@@ -83,21 +81,6 @@ namespace Lighthouse
 
                 app.UseHttpsRedirection();
                 app.UseStaticFiles();
-
-                // Use the feature flag middleware
-                app.UseFeatureFlagMiddleware();
-
-                // Serve static files from wwwroot/NewFrontend if the feature flag is on
-                var useNewFrontend = app.Configuration.GetValue<bool>("FeatureFlags:UseNewFrontend");
-                if (useNewFrontend)
-                {
-                    app.UseStaticFiles(new StaticFileOptions
-                    {
-                        FileProvider = new PhysicalFileProvider(
-                            Path.Combine(app.Environment.WebRootPath, "NewFrontend")),
-                        RequestPath = "/NewFrontend"
-                    });
-                }
 
                 app.UseRouting();
 

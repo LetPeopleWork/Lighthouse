@@ -401,3 +401,4 @@ FodyWeavers.xsd
 *.db
 *.db-shm
 *.db-wal
+/Lighthouse/wwwroot/assets/*
