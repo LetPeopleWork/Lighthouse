@@ -18,7 +18,7 @@ RUN dotnet build "./Lighthouse.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 FROM node as node-builder
 WORKDIR /node
 COPY Lighthouse.Frontend /node
-RUN npm install
+RUN npm install --ignore-scripts
 RUN npm run build-docker
 
 FROM build AS publish
