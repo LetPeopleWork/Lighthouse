@@ -6,6 +6,7 @@ export default defineConfig({
     build: {
         outDir: '../Lighthouse/wwwroot/NewFrontend',
         emptyOutDir: true, // Ensure the output directory is cleaned before building
+        minify: true,
     },
     base: '/NewFrontend/', // Ensure the base path matches the subfolder
 });

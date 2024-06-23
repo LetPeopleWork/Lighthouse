@@ -23,7 +23,7 @@ namespace Lighthouse.Tests.API
 
             var subject = CreateSubject();
 
-            var result = await subject.Get();
+            var result = await subject.GetOverview();
 
             Assert.That(result.Count, Is.EqualTo(testProjects.Count()));
         }

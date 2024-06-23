@@ -6,7 +6,8 @@ interface LocalDateTimeDisplayProps {
 }
 
 const LocalDateTimeDisplay: React.FC<LocalDateTimeDisplayProps> = ({ utcDate, showTime = false }) => {
-    const localDateTimeString = showTime ? utcDate.toLocaleString() : utcDate.toLocaleDateString();
+    const dateObject = (utcDate instanceof Date) ? utcDate : new Date(utcDate)
+    const localDateTimeString = showTime ? dateObject.toLocaleString() : dateObject.toLocaleDateString();
 
     return (
         <div>
