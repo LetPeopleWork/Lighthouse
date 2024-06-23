@@ -7,7 +7,7 @@ interface ProjectOverviewTableProps {
 }
 
 const ProjectOverviewTable: React.FC<ProjectOverviewTableProps> = ({ projects }) => {
-    let projectRows: JSX.Element[] = [];
+    const projectRows: JSX.Element[] = [];
 
     projects.forEach((project) => {
         projectRows.push(

@@ -3,7 +3,7 @@ import FilterBar from "./FilterBar";
 import ProjectOverviewTable from "./ProjectOverviewTable";
 
 export default function OverviewDashboard() {    
-    let projects = getProjectOverview();
+    const projects = getProjectOverview();
 
     return (
     <div>

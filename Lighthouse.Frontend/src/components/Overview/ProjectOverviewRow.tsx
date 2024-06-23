@@ -8,7 +8,7 @@ interface ProjectOverviewOverviewProps {
 }
 
 const ProjectOverviewRow: React.FC<ProjectOverviewOverviewProps> = ({ project }) => {
-  let involvedTeamsRows: JSX.Element[] = [];
+  const involvedTeamsRows: JSX.Element[] = [];
 
   project.involvedTeams.forEach((team) => {
     involvedTeamsRows.push(
