@@ -8,6 +8,7 @@ import { Project } from '../../models/Project';
 const OverviewDashboard: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [filterText, setFilterText] = useState('');    
 
     useEffect(() => {
         const fetchData = async () => {
@@ -31,8 +32,8 @@ const OverviewDashboard: React.FC = () => {
 
     return (
         <div>
-            <FilterBar />
-            <ProjectOverviewTable projects={projects} />
+            <FilterBar filterText={filterText} onFilterTextChange={setFilterText} />
+            <ProjectOverviewTable projects={projects} filterText={filterText} />
         </div>
     );
 };

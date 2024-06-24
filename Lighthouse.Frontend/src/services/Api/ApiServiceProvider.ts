@@ -13,7 +13,7 @@ export class ApiServiceProvider{
             } else {
                 console.log("Using Real API Service")
                 let baseUrl = "/api";
-                if (import.meta.env.VITE_API_BASE_URL !== null){
+                if (import.meta.env.VITE_API_BASE_URL !== undefined){
                     console.log("Using custom base API URL")
                     baseUrl = import.meta.env.VITE_API_BASE_URL
                 }
