@@ -9,11 +9,11 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Lighthouse.Backend/Lighthouse.Backend.csproj", "Lighthouse/"]
-RUN dotnet restore "./Lighthouse.Backend/./Lighthouse.Backend.csproj"
+COPY ["Lighthouse.Backend/Lighthouse.Backend.csproj", "Lighthouse.Backend/"]
+RUN dotnet restore "./Lighthouse.Backend/Lighthouse.Backend.csproj"
 COPY . .
-WORKDIR "/src/Lighthouse"
-RUN dotnet build "./Lighthouse.Backend.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
+WORKDIR "/src/Lighthouse.Backend"
+RUN dotnet build "Lighthouse.Backend.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 
 FROM node as node-builder
 WORKDIR /node
