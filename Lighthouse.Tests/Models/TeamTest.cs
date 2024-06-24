@@ -1,7 +1,7 @@
-﻿using Lighthouse.Models;
-using Lighthouse.WorkTracking;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.WorkTracking;
 
-namespace Lighthouse.Tests.Models
+namespace Lighthouse.Backend.Tests.Models
 {
     public class TeamTest
     {

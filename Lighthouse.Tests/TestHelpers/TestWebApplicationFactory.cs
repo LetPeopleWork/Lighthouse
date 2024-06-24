@@ -1,4 +1,4 @@
-﻿using Lighthouse.Data;
+﻿using Lighthouse.Backend.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using System.Data.Common;
 
-namespace Lighthouse.Tests.TestHelpers
+namespace Lighthouse.Backend.Tests.TestHelpers
 {
     public sealed class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
     {

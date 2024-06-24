@@ -1,14 +1,14 @@
-﻿using Lighthouse.Factories;
-using Lighthouse.Models;
-using Lighthouse.Services.Implementation.WorkItemServices;
-using Lighthouse.Services.Interfaces;
-using Lighthouse.WorkTracking;
-using Lighthouse.WorkTracking.Jira;
+﻿using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkItemServices;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json.Linq;
 
-namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 {
     [Category("Integration")]
     public class JiraWorkItemServiceTest

@@ -1,11 +1,11 @@
-﻿using Lighthouse.Models;
+﻿using Lighthouse.Backend.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Lighthouse.Services.Interfaces;
-using Lighthouse.Pages;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Pages;
 
-namespace Lighthouse.Tests.Pages
+namespace Lighthouse.Backend.Tests.Pages
 {
     public class PageModelBaseTest
     {

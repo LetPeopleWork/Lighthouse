@@ -1,13 +1,13 @@
 ﻿using Castle.Core.Logging;
-using Lighthouse.Factories;
-using Lighthouse.Services.Factories;
-using Lighthouse.Services.Implementation.WorkItemServices;
-using Lighthouse.WorkTracking;
+using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.WorkItemServices;
+using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Tests.Factories
+namespace Lighthouse.Backend.Tests.Factories
 {
     public class WorkItemServiceFactoryTest
     {

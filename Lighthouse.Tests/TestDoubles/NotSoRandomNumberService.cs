@@ -1,6 +1,6 @@
-﻿using Lighthouse.Services.Interfaces;
+﻿using Lighthouse.Backend.Services.Interfaces;
 
-namespace Lighthouse.Tests.TestDoubles
+namespace Lighthouse.Backend.Tests.TestDoubles
 {
     internal class NotSoRandomNumberService : IRandomNumberService
     {

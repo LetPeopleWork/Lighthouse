@@ -1,10 +1,10 @@
-﻿using Lighthouse.Factories;
-using Lighthouse.Services.Implementation.WorkItemServices;
+﻿using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;
 
-namespace Lighthouse.Tests.Factories
+namespace Lighthouse.Backend.Tests.Factories
 {
     public class IssueFactoryTest
     {

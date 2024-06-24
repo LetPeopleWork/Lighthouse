@@ -1,9 +1,9 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Pages.Teams;
-using Lighthouse.Services.Interfaces;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Pages.Teams;
+using Lighthouse.Backend.Services.Interfaces;
 using Moq;
 
-namespace Lighthouse.Tests.Pages.Teams
+namespace Lighthouse.Backend.Tests.Pages.Teams
 {
     public class IndexModelTest
     {

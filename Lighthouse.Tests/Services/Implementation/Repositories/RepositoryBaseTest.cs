@@ -1,10 +1,10 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Services.Implementation.Repositories;
-using Lighthouse.Tests.TestHelpers;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Tests.Services.Implementation.Repositories
+namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
     public class RepositoryBaseTest : IntegrationTestBase
     {

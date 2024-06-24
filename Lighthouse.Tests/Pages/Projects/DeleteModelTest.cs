@@ -1,10 +1,10 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Pages.Projects;
-using Lighthouse.Services.Interfaces;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Pages.Projects;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
-namespace Lighthouse.Tests.Pages.Projects
+namespace Lighthouse.Backend.Tests.Pages.Projects
 {
     public class DeleteModelTest
     {

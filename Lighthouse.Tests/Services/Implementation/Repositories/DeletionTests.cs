@@ -1,10 +1,10 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Services.Implementation;
-using Lighthouse.Services.Interfaces;
-using Lighthouse.Tests.TestHelpers;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lighthouse.Tests.Services.Implementation.Repositories
+namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
     public class DeletionTests : IntegrationTestBase
     {

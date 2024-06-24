@@ -1,6 +1,6 @@
-﻿using Lighthouse.Models.Forecast;
+﻿using Lighthouse.Backend.Models.Forecast;
 
-namespace Lighthouse.Tests.Models.Forecast
+namespace Lighthouse.Backend.Tests.Models.Forecast
 {
     public class WhenForecastTest
     {

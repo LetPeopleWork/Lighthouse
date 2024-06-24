@@ -401,4 +401,5 @@ FodyWeavers.xsd
 *.db
 *.db-shm
 *.db-wal
-/Lighthouse/wwwroot/assets/*
+/Lighthouse.Backend/wwwroot/assets/*
+Lighthouse.Frontend/sonar-report.xml

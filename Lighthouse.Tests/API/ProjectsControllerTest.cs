@@ -1,9 +1,9 @@
-﻿using Lighthouse.API;
-using Lighthouse.Models;
-using Lighthouse.Services.Interfaces;
+﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Moq;
 
-namespace Lighthouse.Tests.API
+namespace Lighthouse.Backend.Tests.API
 {
     public class ProjectsControllerTest
     {

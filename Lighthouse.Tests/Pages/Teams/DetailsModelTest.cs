@@ -1,13 +1,13 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Models.Forecast;
-using Lighthouse.Pages.Teams;
-using Lighthouse.Services.Implementation;
-using Lighthouse.Services.Interfaces;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Pages.Teams;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Moq;
 
-namespace Lighthouse.Tests.Pages.Teams
+namespace Lighthouse.Backend.Tests.Pages.Teams
 {
     public class DetailsModelTest
     {

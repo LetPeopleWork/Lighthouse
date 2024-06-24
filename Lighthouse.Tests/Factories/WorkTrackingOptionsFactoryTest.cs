@@ -1,13 +1,12 @@
-﻿using Castle.Core.Logging;
-using Lighthouse.Factories;
-using Lighthouse.Models;
-using Lighthouse.WorkTracking;
-using Lighthouse.WorkTracking.AzureDevOps;
-using Lighthouse.WorkTracking.Jira;
+﻿using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.WorkTracking.AzureDevOps;
+using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Tests.Factories
+namespace Lighthouse.Backend.Tests.Factories
 {
     public class WorkTrackingOptionsFactoryTest
     {

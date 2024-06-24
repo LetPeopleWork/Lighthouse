@@ -1,10 +1,10 @@
-﻿using Lighthouse.API;
-using Lighthouse.Factories;
-using Lighthouse.Models;
-using Lighthouse.WorkTracking;
+﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.WorkTracking;
 using Moq;
 
-namespace Lighthouse.Tests.API
+namespace Lighthouse.Backend.Tests.API
 {
     public class WorkTrackingSystemOptionsControllerTest
     {

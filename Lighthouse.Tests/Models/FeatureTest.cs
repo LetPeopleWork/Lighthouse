@@ -1,6 +1,6 @@
-﻿using Lighthouse.Models;
+﻿using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Tests.Models
+namespace Lighthouse.Backend.Tests.Models
 {
     public class FeatureTest
     {

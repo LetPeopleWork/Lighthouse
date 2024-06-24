@@ -15,8 +15,32 @@ on:
   workflow_dispatch:  
 
 jobs:
-  build:
+  backend:
 
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: '0'
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+
+    - name: Remove Frontend sonar-project.properties
+      run: |
+        rm ./Lighthouse.Frontend/sonar-project.properties
+
+    - name: Backend Build Test SonarCloud
+      uses: highbyte/sonarscan-dotnet@v2.3.1
+      with:
+        sonarProjectKey: LetPeopleWork_Lighthouse
+        sonarProjectName:  Lighthouse.Backend
+        sonarOrganization: letpeoplework
+        dotnetTestArguments: --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
+  
+  frontend:
     runs-on: ubuntu-latest
 
     steps:
@@ -51,23 +75,13 @@ jobs:
       run: |
         npm install -g sonarqube-scanner
         sonar-scanner
-
-    - name: Remove Frontend sonar-project.properties
-      run: |
-        rm ./Lighthouse.Frontend/sonar-project.properties
-
-    - name: Backend Build Test SonarCloud
-      uses: highbyte/sonarscan-dotnet@v2.3.1
-      with:
-        sonarProjectKey: LetPeopleWork_Lighthouse
-        sonarProjectName:  Lighthouse
-        sonarOrganization: letpeoplework
-        dotnetTestArguments: --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-        sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
-
+        
   docker:
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+    - backend
+    - frontend
+
     if: github.ref == 'refs/heads/main'
 
     permissions: write-all
@@ -82,12 +96,15 @@ jobs:
         with:
           image_name: ${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          dockerfile: Lighthouse/Dockerfile
+          dockerfile: Lighthouse.Backend/Dockerfile
         
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+    - backend
+    - frontend
+
     if: github.ref == 'refs/heads/main'   
 
     environment:
@@ -125,17 +142,17 @@ jobs:
 
       - name: Update appsettings.json
         run: jq '.LighthouseVersion = env.DAILY_VERSION' appsettings.json > temp.json && mv temp.json appsettings.json
-        working-directory: ./Lighthouse
+        working-directory: ./Lighthouse.Backend
 
       - name: dotnet publish
         run: dotnet publish -c Release -o ./publish
-        working-directory: ./Lighthouse
+        working-directory: ./Lighthouse.Backend
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: Lighthouse ${{ env.DAILY_VERSION }}
-          path: ./Lighthouse/publish
+          path: ./Lighthouse.Backend/publish
 
       - name: Login to Azure
         uses: azure/login@v1
@@ -150,7 +167,7 @@ jobs:
         with:  
           app-name: 'LighthouseCloudDemo'  
           slot-name: 'production'  
-          package: ./Lighthouse/publish
+          package: ./Lighthouse.Backend/publish
       
     outputs:
       created: ${{ steps.version.outputs.created }}
@@ -176,7 +193,7 @@ jobs:
         with:
           image_name: ${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          dockerfile: Lighthouse/Dockerfile
+          dockerfile: Lighthouse.Backend/Dockerfile
           image_tag: ${{ needs.deploy.outputs.version }}
 
       - uses: actions/download-artifact@v4

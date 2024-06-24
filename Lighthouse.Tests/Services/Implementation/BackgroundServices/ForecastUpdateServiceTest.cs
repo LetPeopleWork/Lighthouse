@@ -1,13 +1,13 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Services.Implementation;
-using Lighthouse.Services.Implementation.BackgroundServices;
-using Lighthouse.Services.Interfaces;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Tests.Services.Implementation.BackgroundServices
+namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 {
     public class ForecastUpdateServiceTest
     {

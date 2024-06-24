@@ -1,12 +1,12 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Models.Forecast;
-using Lighthouse.Services.Implementation;
-using Lighthouse.Services.Interfaces;
-using Lighthouse.Tests.TestDoubles;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     public class MonteCarloServiceTest
     {

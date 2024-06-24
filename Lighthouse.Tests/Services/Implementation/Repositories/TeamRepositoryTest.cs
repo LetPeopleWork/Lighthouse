@@ -1,12 +1,12 @@
 ﻿using Castle.Core.Logging;
-using Lighthouse.Models;
-using Lighthouse.Services.Implementation.Repositories;
-using Lighthouse.Tests.TestHelpers;
-using Lighthouse.WorkTracking;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Tests.Services.Implementation.Repositories
+namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
     public class TeamRepositoryTest : IntegrationTestBase
     {

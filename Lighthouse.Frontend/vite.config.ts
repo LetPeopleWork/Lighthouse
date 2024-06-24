@@ -10,9 +10,12 @@ export default defineConfig({
         environment: "jsdom",
         setupFiles: ["./setupTests.ts"],
         css: true,
+        reporters: [
+            ['vitest-sonar-reporter', { outputFile: 'sonar-report.xml' }],
+        ],
       },
     build: {
-        outDir: '../Lighthouse/wwwroot',
+        outDir: '../Lighthouse.Backend/wwwroot',
         emptyOutDir: false,
         minify: true,
     },

@@ -1,12 +1,12 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Services.Factories;
-using Lighthouse.Services.Implementation;
-using Lighthouse.Services.Interfaces;
-using Lighthouse.WorkTracking;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     public class WorkItemCollectorServiceTest
     {

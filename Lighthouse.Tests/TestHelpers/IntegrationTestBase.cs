@@ -1,8 +1,8 @@
-﻿using Lighthouse.Data;
+﻿using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lighthouse.Tests.TestHelpers
+namespace Lighthouse.Backend.Tests.TestHelpers
 {
     [TestFixture]
     public abstract class IntegrationTestBase

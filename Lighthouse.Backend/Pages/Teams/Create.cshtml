@@ -1,0 +1,168 @@
+﻿@page "{id?}"
+@using Lighthouse.Backend.WorkTracking
+@model Lighthouse.Backend.Pages.Teams.CreateModel
+
+@{
+    ViewData["Title"] = Model.Team?.Id > 0 ? "Edit Team" : "Create Team";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Team.Name" class="control-label">
+                    Team Name:
+                    <input asp-for="Team.Name" class="form-control" />
+                </label>
+                <span asp-validation-for="Team.Name" class="text-danger"></span>
+
+                <input type="hidden" asp-for="Team.Id" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Team.FeatureWIP" class="control-label">
+                    Feature WIP:
+                    <input asp-for="Team.FeatureWIP" class="form-control" />
+                </label>
+                <span asp-validation-for="Team.FeatureWIP" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Team.ThroughputHistory" class="control-label">
+                    History in Days:
+                    <input asp-for="Team.ThroughputHistory" class="form-control" />
+                </label>
+                <span asp-validation-for="Team.ThroughputHistory" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Team.WorkItemQuery" class="control-label">
+                    Work Item Query:
+                    <textarea asp-for="Team.WorkItemQuery" class="form-control" rows="5"></textarea>
+                </label>
+                <span asp-validation-for="Team.WorkItemQuery" class="text-danger"></span>
+            </div>
+
+
+            <div class="form-group">
+                <label>
+                    Work Item Types:
+                    <div id="workItemTypesContainer">
+                        @foreach (var workItemType in Model.Team?.WorkItemTypes ?? new List<string>())
+                        {
+                            <div class="input-group mt-2">
+                                <input type="text" name="Team.WorkItemTypes" value="@workItemType" class="form-control" />
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-danger remove-field" type="button">Remove</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </label>
+                <button type="button" id="addWorkItemType" class="btn btn-primary mt-2">Add Work Item Type</button>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Team.AdditionalRelatedField" class="control-label">
+                    Additional Related Field:
+                    <input asp-for="Team.AdditionalRelatedField" class="form-control" />
+                </label>
+                <span asp-validation-for="Team.AdditionalRelatedField" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Team.WorkTrackingSystem" class="control-label">
+                    Work Tracking System:
+                    <select asp-for="Team.WorkTrackingSystem" class="form-control" asp-items="Html.GetEnumSelectList<WorkTrackingSystems>()" id="workTrackingSystem">
+                        <option selected="selected" value="">Please select</option>
+                    </select>
+                </label>
+                <span asp-validation-for="Team.WorkTrackingSystem" class="text-danger"></span>
+            </div>
+
+            <!-- Dynamic input fields for WorkTrackingSystemOptions -->
+            <div class="form-group">
+                <label>
+                    Work Tracking System Options:
+                    <div id="workTrackingOptionsContainer">
+                        @for (int i = 0; i < Model.Team.WorkTrackingSystemOptions.Count; i++)
+                        {
+                            var inputType = Model.Team.WorkTrackingSystemOptions[@i].Secret ? "password" : "text";
+
+                            <div class="input-group mt-2">
+                                <input type="text" name="Team.WorkTrackingSystemOptions[@i].Key" value="@Model.Team.WorkTrackingSystemOptions[i].Key" class="form-control" placeholder="Key" readonly />
+                                <input type="@inputType" name="Team.WorkTrackingSystemOptions[@i].Value" value="@Model.Team.WorkTrackingSystemOptions[i].Value" class="form-control col-12" placeholder="Value" />
+                                <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Secret" value="@Model.Team.WorkTrackingSystemOptions[i].Secret.ToString()" class="form-control" placeholder="Secret" />
+                                <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].Id" value="@Model.Team.WorkTrackingSystemOptions[i].Id" class="form-control" />
+                                <input type="hidden" name="Team.WorkTrackingSystemOptions[@i].EntityId" value="@Model.Team.Id" class="form-control" />
+                            </div>
+                        }
+                    </div>
+                </label>
+            </div>
+
+
+            <div class="form-group">
+                <input type="submit" value="@ViewData["Title"]" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="Index">Back to List</a>
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            // Function to add WorkItemType input field
+            $("#addWorkItemType").click(function () {
+                $("#workItemTypesContainer").append('<div class="input-group mt-2">' +
+                    '<input type="text" name="Team.WorkItemTypes" class="form-control" />' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-outline-danger remove-field" type="button">Remove</button>' +
+                    '</div>' +
+                    '</div>');
+            });
+
+
+            $("#workTrackingSystem").change(function () {
+                var selectedSystem = $(this).val();
+                $.get("/api/WorkTrackingSystemOptions/Team?selectedSystem=" + selectedSystem, function (data) {
+                    // Clear existing options
+                    $("#workTrackingOptionsContainer").empty();
+
+                    // Add new options
+                    $.each(data, function (index, option) {
+                        var inputType = option.secret ? "password" : "text";
+                        var secretValue = option.secret ? "true" : "false";
+
+                        var html = '<div class="input-group mt-2">' +
+                            '<input type="text" name="Team.WorkTrackingSystemOptions[' + index + '].Key" value="' + option.key + '" class="form-control" placeholder="Key" readonly/>' +
+                            '<input type="' + inputType + '" name="Team.WorkTrackingSystemOptions[' + index + '].Value" value="' + option.value + '" class="form-control col-12" placeholder="Value" />' +
+                            '<input type="hidden" name="Team.WorkTrackingSystemOptions[' + index + '].Secret" value="' + secretValue + '" class="form-control" placeholder="Secret" />' +
+                            '<input type="hidden" name="Team.WorkTrackingSystemOptions[' + index + '].EntityId" value="@Model.Team.Id" class="form-control"  />' +
+                            '<div class="input-group-append">' +
+                            '</div>' +
+                            '</div>';
+                        $("#workTrackingOptionsContainer").append(html);
+                    });
+
+                    $('[data-toggle="tooltip"]').tooltip();
+                });
+            });
+        });
+
+        // Function to remove dynamically added input field
+        $(document).on("click", ".remove-field", function () {
+            $(this).parent().parent().remove();
+        });
+    </script>
+}
+

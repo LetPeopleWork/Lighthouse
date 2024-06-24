@@ -1,12 +1,12 @@
-﻿using Lighthouse.Models;
-using Lighthouse.Services.Implementation.WorkItemServices;
-using Lighthouse.Services.Interfaces;
-using Lighthouse.WorkTracking;
-using Lighthouse.WorkTracking.AzureDevOps;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkItemServices;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Tests.Services.Implementation.WorkItemServices
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 {
     [Category("Integration")]
     public class AzureDevOpsWorkItemServiceTest
