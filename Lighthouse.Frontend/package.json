@@ -10,7 +10,8 @@
     "build-docker": "tsc -b && vite build --outDir ./dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest run --coverage"
+    "test": "vitest --reporter=default",
+    "sonarreport": "vitest run --coverage --reporter=vitest-sonar-reporter --outputFile=./sonar-report.xml"
   },
   "dependencies": {
     "axios": "^1.7.2",

@@ -20,7 +20,6 @@ describe('FilterBar', () => {
 
     render(<FilterBar filterText={filterText} onFilterTextChange={onFilterTextChange} />);
 
-    // Simulate user typing in the input
     const inputElement = screen.getByPlaceholderText('Search...');
     fireEvent.change(inputElement, { target: { value: 'new text' } });
 
