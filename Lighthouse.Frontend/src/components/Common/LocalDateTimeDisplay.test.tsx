@@ -13,9 +13,9 @@ describe('LocalDateTimeDisplay', () => {
   const mockToLocaleString = vi.fn(() => '6/24/2024, 12:00:00 PM');
   const mockToLocaleDateString = vi.fn(() => '6/24/2024')
   
-  let originalToLocaleString: any;
-  let originalToLocaleDateString: any;
-
+  let originalToLocaleString: (this: Date, locales?: string | string[], options?: Intl.DateTimeFormatOptions) => string;
+  let originalToLocaleDateString: (this: Date, locales?: string | string[], options?: Intl.DateTimeFormatOptions) => string;
+  
   beforeEach(() => {    
     originalToLocaleString = Date.prototype.toLocaleString;
     originalToLocaleDateString = Date.prototype.toLocaleDateString;
