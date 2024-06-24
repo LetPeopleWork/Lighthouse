@@ -9,11 +9,11 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Lighthouse.Backend/Lighthouse.csproj", "Lighthouse/"]
-RUN dotnet restore "./Lighthouse.Backend/./Lighthouse.csproj"
+COPY ["Lighthouse.Backend/Lighthouse.Backend.csproj", "Lighthouse/"]
+RUN dotnet restore "./Lighthouse.Backend/./Lighthouse.Backend.csproj"
 COPY . .
 WORKDIR "/src/Lighthouse"
-RUN dotnet build "./Lighthouse.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
+RUN dotnet build "./Lighthouse.Backend.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 
 FROM node as node-builder
 WORKDIR /node
@@ -24,9 +24,9 @@ RUN npm run build-docker
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 COPY --from=node-builder /node/dist ./wwwroot
-RUN dotnet publish "./Lighthouse.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Lighthouse.Backend.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Lighthouse.dll"]
+ENTRYPOINT ["dotnet", "Lighthouse.Backend.dll"]

@@ -403,3 +403,4 @@ FodyWeavers.xsd
 *.db-wal
 /Lighthouse.Backend/wwwroot/assets/*
 Lighthouse.Frontend/sonar-report.xml
+Lighthouse.Frontend/coverage/*
