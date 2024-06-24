@@ -3,7 +3,6 @@ import { describe, test, expect, vi } from 'vitest';
 import ProjectOverviewTable from './ProjectOverviewTable';
 import { Project } from '../../models/Project';
 
-// Mock ProjectOverviewRow component to simplify tests
 vi.mock('./ProjectOverviewRow', () => ({
     default: ({ project }: { project: Project }) => (
     <tr data-testid="project-row">
@@ -44,8 +43,15 @@ describe('ProjectOverviewTable', () => {
     expect(projectRows).toHaveLength(2);
   });
 
-  test('filters projects based on the filter text in project name', () => {
+  test('filters single project based on the filter text in project name', () => {
     render(<ProjectOverviewTable projects={projects} filterText="Alpha" />);
+    const projectRows = screen.getAllByTestId('project-row');
+    expect(projectRows).toHaveLength(1);
+    expect(screen.getByText('Project Alpha')).toBeInTheDocument();
+  });
+
+  test('filters multiple projects based on the filter text in project name', () => {
+    render(<ProjectOverviewTable projects={projects} filterText="Project" />);
     const projectRows = screen.getAllByTestId('project-row');
     expect(projectRows).toHaveLength(2);
     expect(screen.getByText('Project Alpha')).toBeInTheDocument();

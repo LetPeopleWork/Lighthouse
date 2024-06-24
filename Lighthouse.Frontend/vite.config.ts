@@ -9,6 +9,9 @@ export default defineConfig({
         globals: true,
         environment: "jsdom",
         setupFiles: ["./setupTests.ts"],
+        env:{
+            VITE_API_SERVICE_TYPE: 'MOCK'
+        },
         css: true,
         coverage: {
             reporter: ['text', 'lcov']

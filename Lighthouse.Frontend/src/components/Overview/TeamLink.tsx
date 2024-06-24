@@ -1,14 +1,16 @@
 import React from "react";
 import { Team } from "../../models/Team";
 
-interface TeamLinkProps{
+interface TeamLinkProps {
     team: Team
 }
 
-const TeamLink : React.FC<TeamLinkProps> = ({team}) => {
+const TeamLink: React.FC<TeamLinkProps> = ({ team }) => {
 
     return (
-        <a href={`/teams/${team.id}`}>{team.name}</a>
+        <div key={team.id}>
+            <a href={`/teams/${team.id}`}>{team.name}</a>
+        </div>
     );
 
 };
