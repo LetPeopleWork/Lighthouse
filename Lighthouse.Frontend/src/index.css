@@ -66,3 +66,64 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* index.css */
+
+/* Global styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  height: 100%;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Full height of viewport */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between; /* Align items in header */
+  align-items: center; /* Center items vertically */
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+}
+
+.logo {
+  font-size: 24px;
+}
+
+.links {
+  display: flex;
+}
+
+.links > * {
+  margin-left: 10px;
+}
+
+.main {
+  display: flex;
+  flex: 1; /* Main section expands to fill remaining space */
+}
+
+.sidebar {
+  background-color: #444;
+  color: #fff;
+  padding: 20px;
+  width: 200px;
+}
+
+.content {
+  flex: 1; /* Content area takes up remaining space */
+  padding: 20px;
+}
+
+.footer {
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+}
