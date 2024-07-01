@@ -12,7 +12,7 @@ const ProjectOverviewRow: React.FC<ProjectOverviewOverviewProps> = ({ project })
 
   project.involvedTeams.forEach((team) => {
     involvedTeamsRows.push(
-        <TeamLink team={team} />
+        <TeamLink key={team.id} team={team} />
     )
   })
       

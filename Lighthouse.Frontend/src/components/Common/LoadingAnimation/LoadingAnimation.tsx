@@ -1,27 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface LoadingAnimationProps {
-    asyncFunction: () => Promise<void>;
+    isLoading: boolean;
+    hasError: boolean;
     children: React.ReactNode;
 }
 
-const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ asyncFunction, children }) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
-
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                await asyncFunction();
-                setIsLoading(false);
-            } catch (error) {
-                console.error('Error during async function execution:', error);
-                setHasError(true);
-            }
-        };
-
-        loadData();
-    }, [asyncFunction]);
+const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ isLoading, hasError, children }) => {
 
     if (isLoading) {
         return <div>Loading...</div>;
