@@ -1,17 +1,17 @@
 // App.tsx
 import React from 'react';
-import Header from './components/App/Header';
-import Sidebar from './components/App/Sidebar';
+import Header from './components/App/Header/Header';
+import Sidebar from './components/App/Sidebar/Sidebar';
 import Footer from './components/App/Footer';
 import OverviewDashboard from './components/Overview/OverviewDashboard';
 
 const App: React.FC = () => {
   return (
-    <div className="app">
+    <div >
       <Header />
-      <div className="main">
+      <div >
         <Sidebar />
-        <div className="content">
+        <div>
           <OverviewDashboard />
         </div>
       </div>

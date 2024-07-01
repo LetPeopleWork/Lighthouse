@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.Tests.API
 
             CollectionAssert.AreEqual(expectedOptions, result);
         }
+        
         [Test]
         public void OnGet_IsProjectOption_ReturnsOptionsProvidedByFactory()
         {

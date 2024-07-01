@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -102,9 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                 { "PeriodicRefresh:Forecast:StartDelay", 0.ToString() },
             };
 
-            configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(inMemorySettings)
-                .Build();
+            configuration = TestConfiguration.SetupTestConfiguration(inMemorySettings);
         }
 
         private ThroughputUpdateService CreateSubject()

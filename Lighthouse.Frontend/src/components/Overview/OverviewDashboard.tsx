@@ -1,40 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ApiServiceProvider } from '../../services/Api/ApiServiceProvider';
 import { IApiService } from '../../services/Api/IApiService';
 import FilterBar from './FilterBar';
 import ProjectOverviewTable from './ProjectOverviewTable';
 import { Project } from '../../models/Project';
+import LoadingAnimation from '../Common/LoadingAnimation/LoadingAnimation';
 
 const OverviewDashboard: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [filterText, setFilterText] = useState('');    
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const apiService: IApiService = ApiServiceProvider.getApiService();
-                const projectData = await apiService.getProjectOverviewData();
-                setProjects(projectData);
-                setIsLoading(false);
-            } catch (error) {
-                console.error('Error fetching project overview data:', error);
-                // Handle error state if needed
-            }
-        };
-
-        fetchData();
-    }, []);
-
-    if (isLoading) {
-        return <div>Loading...</div>;
-    }
+    const fetchProjectData = async () => {
+        const apiService: IApiService = ApiServiceProvider.getApiService();
+        const projectData = await apiService.getProjectOverviewData();
+        setProjects(projectData);
+    };
 
     return (
-        <div>
-            <FilterBar filterText={filterText} onFilterTextChange={setFilterText} />
-            <ProjectOverviewTable projects={projects} filterText={filterText} />
-        </div>
+        <LoadingAnimation asyncFunction={fetchProjectData}>
+            <div>
+                <FilterBar filterText={filterText} onFilterTextChange={setFilterText} />
+                <ProjectOverviewTable projects={projects} filterText={filterText} />
+            </div>
+        </LoadingAnimation>
     );
 };
 

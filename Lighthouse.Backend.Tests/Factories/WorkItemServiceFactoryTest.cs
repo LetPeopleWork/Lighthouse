@@ -1,9 +1,7 @@
-﻿using Castle.Core.Logging;
-using Lighthouse.Backend.Factories;
+﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.WorkTracking;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 

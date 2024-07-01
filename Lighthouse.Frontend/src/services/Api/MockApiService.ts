@@ -5,6 +5,10 @@ import { IApiService } from './IApiService';
 
 export class MockApiService implements IApiService {
 
+    getVersion(): Promise<string> {
+        return Promise.resolve("v1.33.7");
+    }
+
     getProjectOverviewData(): Promise<Project[]> {
         const binaryBlazer = new Team("Binary Blazers", 1)
         const mavericks = new Team("Mavericks", 2)

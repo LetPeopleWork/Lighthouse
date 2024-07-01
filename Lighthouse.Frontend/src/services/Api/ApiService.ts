@@ -11,12 +11,25 @@ export class ApiService implements IApiService {
         });
     }
 
+    async getVersion(): Promise<string> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<string>('/version');
+            return response.data;
+        });
+    }
+
     async getProjectOverviewData(): Promise<Project[]> {
-        try {
+        return this.withErrorHandling(async () => {
             const response = await this.apiService.get<Project[]>('/projects/overview');
             return response.data;
+        });
+    }
+
+    private async withErrorHandling<T>(asyncFunction: () => Promise<T>): Promise<T> {
+        try {
+            return await asyncFunction();
         } catch (error) {
-            console.error('Error fetching Project Overview Data:', error);
+            console.error('Error during async function execution:', error);
             throw error; 
         }
     }
