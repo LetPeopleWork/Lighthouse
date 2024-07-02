@@ -6,6 +6,7 @@ import { ApiService } from './ApiService';
 describe('ApiServiceProvider', () => {
   beforeEach(() => {
     import.meta.env.VITE_API_SERVICE_TYPE = undefined;
+    ApiServiceProvider['instance'] = null;
   });
 
   test('returns MockApiService instance when VITE_API_SERVICE_TYPE is MOCK', () => {

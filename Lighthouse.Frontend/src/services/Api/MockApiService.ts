@@ -5,11 +5,19 @@ import { IApiService } from './IApiService';
 
 export class MockApiService implements IApiService {
 
-    getVersion(): Promise<string> {
-        return Promise.resolve("v1.33.7");
+    delay(){
+        const randomDelay : number = Math.random() * 1000;
+        return new Promise(resolve => setTimeout(resolve, randomDelay))        ;
     }
 
-    getProjectOverviewData(): Promise<Project[]> {
+    async getVersion(): Promise<string> {
+        await this.delay()  
+        return "v1.33.7";
+    }
+
+    async getProjectOverviewData(): Promise<Project[]> {
+        await this.delay();
+        
         const binaryBlazer = new Team("Binary Blazers", 1)
         const mavericks = new Team("Mavericks", 2)
         const cyberSultans = new Team("Cyber Sultans", 3)
@@ -23,6 +31,6 @@ export class MockApiService implements IApiService {
             new Project("Release Codename Daniel", 3, 33, [binaryBlazer, techEagles, mavericks, cyberSultans], [new Forecast(50, new Date("07/07/2024")), new Forecast(70, new Date("07/09/2024")), new Forecast(85, new Date("07/12/2024")), new Forecast(95, new Date("07/16/2024"))], lastUpdated)
         ]
 
-        return Promise.resolve(projects);
+        return projects;
     }
 }

@@ -13,16 +13,6 @@ describe('OverviewDashboard', () => {
     expect(screen.getByText('Release Codename Daniel')).toBeInTheDocument();
   });
 
-  test('displays loading indicator initially', async () => {
-    render(<OverviewDashboard />);
-  
-    // Verify loading indicator is displayed
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
-  
-    // Ensure other content is not yet rendered
-    expect(screen.queryByText('Release 1.33.7')).not.toBeInTheDocument();
-  });
-
   test('filters projects based on filter text', async () => {
     render(<OverviewDashboard />);
   

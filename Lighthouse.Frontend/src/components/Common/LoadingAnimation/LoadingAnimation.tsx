@@ -1,4 +1,5 @@
 import React from 'react';
+import { SyncLoader } from 'react-spinners';
 
 interface LoadingAnimationProps {
     isLoading: boolean;
@@ -9,7 +10,7 @@ interface LoadingAnimationProps {
 const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ isLoading, hasError, children }) => {
 
     if (isLoading) {
-        return <div>Loading...</div>;
+        return <SyncLoader />
     }
 
     if (hasError) {
