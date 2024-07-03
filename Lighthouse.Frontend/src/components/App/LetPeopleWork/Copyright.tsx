@@ -3,8 +3,6 @@ import { Box, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
 
 const Copyright: React.FC = () => {
-  const currentYear = new Date().getFullYear();
-
   return (
     <Box
       component={Link}
