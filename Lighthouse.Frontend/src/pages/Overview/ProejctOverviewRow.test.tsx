@@ -13,7 +13,7 @@ vi.mock('./TeamLink', () => ({
     ),
 }));
 
-vi.mock('../Common/LocalDateTimeDisplay/LocalDateTimeDisplay', () => ({
+vi.mock("../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay", () => ({
     default: ({ utcDate }: { utcDate: Date, showTime?: boolean }) => (
         <div data-testid="time-row">
             {utcDate.toString()}

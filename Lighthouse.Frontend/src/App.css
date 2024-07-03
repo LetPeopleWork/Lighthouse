@@ -1,42 +1,118 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Reset default margins and paddings */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif; /* Apply a suitable font family */
 }
 
+/* Header styles */
+header {
+  background-color: rgba(48, 87, 78, 1); /* Dark green background color */
+  color: white; /* Light text color for contrast */
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
+}
+
+/* Logo styles */
 .logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: white; /* Light text color for contrast */
+  font-weight: bold;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Navigation links styles */
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  color: white; /* Light text color for contrast */
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* Content area styles */
+.content {
+  display: flex;
+  height: calc(100vh - 64px); /* Adjust for header height */
+  margin-top: 64px; /* Ensure content starts below header */
+}
+
+/* Sidebar styles */
+.sidebar {
+  background-color: white;
+  color: rgba(48, 87, 78, 1); /* Dark green text color */
+  width: 250px;
+  overflow-y: auto; /* Allow scrolling if sidebar content exceeds height */
+  box-shadow: 2px 0px 4px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
+}
+
+.sidebar-item {
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-item:hover {
+  background-color: rgba(48, 87, 78, 0.1); /* Light green hover color */
+}
+
+.sidebar-item a {
+  color: rgba(48, 87, 78, 1); /* Dark green text color */
+  text-decoration: none;
+  margin-left: 10px;
+}
+
+/* Main content area styles */
+.main-content {
+  flex: 1; /* Take remaining space */
+  padding: 20px;
+}
+
+/* Footer styles */
+footer {
+  background-color: rgba(48, 87, 78, 1); /* Dark green background color */
+  color: white; /* Light text color for contrast */
+  padding: 20px;
+  text-align: center;
+  width: 100%;
+  box-shadow: 0px -2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-content a {
+  color: white; /* Light text color for contrast */
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+    height: auto;
   }
-  to {
-    transform: rotate(360deg);
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    margin-bottom: 20px;
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  
+  .main-content {
+    margin-left: 0;
+    padding: 20px;
   }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }

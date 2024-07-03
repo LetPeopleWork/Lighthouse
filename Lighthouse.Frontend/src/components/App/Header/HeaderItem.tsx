@@ -1,20 +1,17 @@
-import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import React from 'react'
+import React from 'react';
+import { IconButton } from '@mui/material';
 
 interface HeaderItemProps {
-    link: string;
-    icon: IconProp;
+  link: string;
+  icon: React.ReactElement;
 }
 
 const HeaderItem: React.FC<HeaderItemProps> = ({ link, icon }) => {
-    return (
-        <div>
-            <a href={link}>
-                <FontAwesomeIcon icon={icon} />
-            </a>
-        </div>
-    );
-}
+  return (
+    <IconButton href={link} target="_blank" rel="noopener noreferrer" color="inherit">
+      {icon}
+    </IconButton>
+  );
+};
 
 export default HeaderItem;

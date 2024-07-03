@@ -4,7 +4,7 @@ import { IApiService } from '../../services/Api/IApiService';
 import FilterBar from './FilterBar';
 import ProjectOverviewTable from './ProjectOverviewTable';
 import { Project } from '../../models/Project';
-import LoadingAnimation from '../Common/LoadingAnimation/LoadingAnimation';
+import LoadingAnimation from '../../components/Common/LoadingAnimation/LoadingAnimation';
 
 const OverviewDashboard: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);

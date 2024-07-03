@@ -1,5 +1,5 @@
+import { CircularProgress } from '@mui/material';
 import React from 'react';
-import { SyncLoader } from 'react-spinners';
 
 interface LoadingAnimationProps {
     isLoading: boolean;
@@ -10,7 +10,7 @@ interface LoadingAnimationProps {
 const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ isLoading, hasError, children }) => {
 
     if (isLoading) {
-        return <SyncLoader />
+        return <CircularProgress  />
     }
 
     if (hasError) {

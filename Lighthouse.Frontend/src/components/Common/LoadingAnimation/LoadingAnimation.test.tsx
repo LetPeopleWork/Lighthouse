@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import { describe, test, expect, vi } from 'vitest';
 import LoadingAnimation from './LoadingAnimation';
 
-vi.mock('react-spinners', () => {
+vi.mock('@mui/material', () => {
     return {
-        SyncLoader: () => <div data-testid="sync-loader">Loading...</div>
+        CircularProgress : () => <div data-testid="sync-loader">Loading...</div>
     };
 });
 

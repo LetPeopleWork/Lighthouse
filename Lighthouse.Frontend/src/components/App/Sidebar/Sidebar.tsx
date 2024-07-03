@@ -1,15 +1,34 @@
 import React from 'react';
-import { faChartPie, faUsers, faProjectDiagram, faCog } from '@fortawesome/free-solid-svg-icons';
-import SidebarElement from './SidebarElement';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+import { Link } from 'react-router-dom';
+import HomeIcon from '@mui/icons-material/Home';
+import GroupIcon from '@mui/icons-material/Group';
+import WorkIcon from '@mui/icons-material/Work';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const Sidebar: React.FC = () => {
   return (
-    <aside>
-      <SidebarElement text='Overview' link='/Overview' icon={faChartPie}  />
-      <SidebarElement text='Teams' link='/Teams' icon={faUsers}  />
-      <SidebarElement text='Projects' link='/Overview' icon={faProjectDiagram}  />
-      <SidebarElement text='Settings' link='/Settings' icon={faCog}  />
-    </aside>
+    <Drawer variant="permanent" className="sidebar">
+      <List>
+        <ListItem component={Link} to="/" className="sidebar-item">
+          <ListItemIcon><HomeIcon style={{ color: 'rgba(48, 87, 78, 1)' }} /></ListItemIcon>
+          <ListItemText primary="Overview" />
+        </ListItem>
+        <ListItem component={Link} to="/teams" className="sidebar-item">
+          <ListItemIcon><GroupIcon style={{ color: 'rgba(48, 87, 78, 1)' }} /></ListItemIcon>
+          <ListItemText primary="Teams" />
+        </ListItem>
+        <ListItem component={Link} to="/projects" className="sidebar-item">
+          <ListItemIcon><WorkIcon style={{ color: 'rgba(48, 87, 78, 1)' }} /></ListItemIcon>
+          <ListItemText primary="Projects" />
+        </ListItem>
+        <ListItem component={Link} to="/settings" className="sidebar-item">
+          <ListItemIcon><SettingsIcon style={{ color: 'rgba(48, 87, 78, 1)' }} /></ListItemIcon>
+          <ListItemText primary="Settings" />
+        </ListItem>
+      </List>
+      <Divider />
+    </Drawer>
   );
 };
 

@@ -14,14 +14,14 @@
     "sonarreport": "vitest run --coverage --reporter=vitest-sonar-reporter --outputFile=./sonar-report.xml"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.5.2",
-    "@fortawesome/free-brands-svg-icons": "^6.5.2",
-    "@fortawesome/free-solid-svg-icons": "^6.5.2",
-    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/icons-material": "^5.15.21",
+    "@mui/material": "^5.15.21",
     "axios": "^1.7.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-spinners": "^0.14.1"
+    "react-router-dom": "^6.24.1"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.1.0",

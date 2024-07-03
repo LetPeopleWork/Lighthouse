@@ -1,19 +1,18 @@
-import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React from 'react';
+import { ListItem, ListItemText } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 interface SidebarElementProps {
     text: string;
-    link: string;
-    icon: IconProp;
+    path: string;
 }
 
-const SidebarElement: React.FC<SidebarElementProps> = ({ text, link, icon }) => {
+const SidebarElement: React.FC<SidebarElementProps> = ({ text, path }) => {
     return (
-        <div>
-            <FontAwesomeIcon icon={icon} />
-            <a href={link}>{text}</a>
-        </div>)
+        <ListItem component={RouterLink} to={path}>
+          <ListItemText primary={text} />
+        </ListItem>
+      );
 };
 
 export default SidebarElement;

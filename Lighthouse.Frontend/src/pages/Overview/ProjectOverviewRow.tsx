@@ -1,7 +1,7 @@
 import React from "react";
 import { Project } from "../../models/Project";
 import TeamLink from "./TeamLink";
-import LocalDateTimeDisplay from "../Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
+import LocalDateTimeDisplay from "../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 
 interface ProjectOverviewOverviewProps {
   project: Project;
