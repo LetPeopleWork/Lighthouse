@@ -1,25 +1,18 @@
 import React from 'react';
-import { Box } from '@mui/material';
-import { Link } from 'react-router-dom';
+import CellTowerIcon from '@mui/icons-material/CellTower';
+import { Typography } from '@mui/material';
 
 const LighthouseLogo: React.FC = () => {
   return (
-    <Box
-      component={Link}
-      to="/"
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        textDecoration: 'none',
-      }}
-    >
-      <span style={{ fontFamily: 'Quicksand, sans-serif', color: 'rgba(48, 87, 78, 1)', fontWeight: 'bold' }}>
+    <>
+      <CellTowerIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1, color: 'black' }} />
+      <Typography style={{ fontFamily: 'Quicksand, sans-serif', color: 'rgba(48, 87, 78, 1)', fontWeight: 'bold' }}>
         Light
-      </span>
-      <span style={{ fontFamily: 'Quicksand, sans-serif', color: 'black', fontWeight: 'bold' }}>
-        house
-      </span>
-    </Box>
+      </Typography>
+      <Typography style={{ fontFamily: 'Quicksand, sans-serif', color: 'black', fontWeight: 'bold' }}>
+        House
+      </Typography>
+      </>
   );
 };
 

@@ -1,27 +1,54 @@
 import React from 'react';
-import { AppBar, Toolbar, Box } from '@mui/material';
-import HeaderItem from './HeaderItem';
+import { AppBar, Toolbar, Box, Button, IconButton } from '@mui/material';
+import LighthouseLogo from '../LetPeopleWork/LighthouseLogo';
+import { Link } from 'react-router-dom';
+import { BugReport } from '@mui/icons-material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import BlogIcon from '@mui/icons-material/RssFeed';
-import LighthouseLogo from '../LetPeopleWork/LighthouseLogo';
-import { BugReport } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
 
 const Header: React.FC = () => {
   return (
-    <AppBar position="static" sx={{ backgroundColor: 'white' }}>
-      <Toolbar>
-        <Box sx={{ flexGrow: 1 }}>
-          <Link to="/">
-            <LighthouseLogo />
-          </Link>
+    <AppBar position="static" className="header" style={{ backgroundColor: 'white' }}>
+      <Toolbar className="toolbar">
+        <Box className="logo">
+          <LighthouseLogo />
         </Box>
         <Box className="nav-links">
-          <HeaderItem link="https://github.com/LetPeopleWork/Lighthouse/issues" icon={<BugReport sx={{ color: 'rgba(48, 87, 78, 1)' }} />} />
-          <HeaderItem link="https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ" icon={<YouTubeIcon sx={{ color: 'rgba(48, 87, 78, 1)' }} />} />
-          <HeaderItem link="https://www.letpeople.work/blog" icon={<BlogIcon sx={{ color: 'rgba(48, 87, 78, 1)' }} />} />
-          <HeaderItem link="https://github.com/LetPeopleWork/" icon={<GitHubIcon sx={{ color: 'rgba(48, 87, 78, 1)' }} />} />
+          <Button component={Link} to="/" className="nav-link">Overview</Button>
+          <Button component={Link} to="/teams" className="nav-link">Teams</Button>
+          <Button component={Link} to="/projects" className="nav-link">Projects</Button>
+          <Button component={Link} to="/settings" className="nav-link">Settings</Button>
+        </Box>
+        <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+          <IconButton
+            size="large"
+            color="inherit"
+            component={Link}
+            to={"https://github.com/LetPeopleWork/Lighthouse/issues"} >
+            <BugReport style={{ color: 'rgba(48, 87, 78, 1)' }} />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="inherit"
+            component={Link}
+            to={"https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ"} >
+            <YouTubeIcon style={{ color: 'rgba(48, 87, 78, 1)' }} />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="inherit"
+            component={Link}
+            to={"https://www.letpeople.work/blog/"} >
+            <BlogIcon style={{ color: 'rgba(48, 87, 78, 1)' }} />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="inherit"
+            component={Link}
+            to={"https://github.com/LetPeopleWork/"} >
+            <GitHubIcon style={{ color: 'rgba(48, 87, 78, 1)' }} />
+          </IconButton>
         </Box>
       </Toolbar>
     </AppBar>

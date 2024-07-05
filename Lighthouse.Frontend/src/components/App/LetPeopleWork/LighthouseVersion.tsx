@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Box } from '@mui/material';
+import { Button } from '@mui/material';
 import { IApiService } from "../../../services/Api/IApiService";
 import { ApiServiceProvider } from "../../../services/Api/ApiServiceProvider";
 import LoadingAnimation from "../../Common/LoadingAnimation/LoadingAnimation";
+import { Link } from "react-router-dom";
 
 const LighthouseVersion: React.FC = () => {
   const [version, setVersion] = useState<string>();
@@ -27,18 +28,14 @@ const LighthouseVersion: React.FC = () => {
 
   return (
     <LoadingAnimation isLoading={isLoading} hasError={hasError}>
-      <Box
-        component="a"
-        href={`https://github.com/LetPeopleWork/Lighthouse/releases/tag/${version}`}
-        sx={{
-          textDecoration: 'none',
-          fontFamily: 'Quicksand, sans-serif',
-          color: 'rgba(48, 87, 78, 1)',
-          fontWeight: 'bold',
-        }}
-      >
-        {version}
-      </Box>
+      <Button component={Link} to={`https://github.com/LetPeopleWork/Lighthouse/releases/tag/${version}`} className="nav-link"
+              sx={{
+                textDecoration: 'none',
+                fontFamily: 'Quicksand, sans-serif',
+                color: 'rgba(48, 87, 78, 1)',
+                fontWeight: 'bold',
+              }}
+              >{version}</Button>
     </LoadingAnimation>
   );
 }

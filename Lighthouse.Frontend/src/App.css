@@ -5,33 +5,35 @@ body, html {
   font-family: 'Roboto', sans-serif; /* Apply a suitable font family */
 }
 
-/* Header styles */
-header {
-  background-color: rgba(48, 87, 78, 1); /* Dark green background color */
-  color: white; /* Light text color for contrast */
-  padding: 10px 20px;
+
+.header {
+  background-color:white;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
+}
+
+.toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
+  width: 100%;
+  padding: 0 20px; /* Ensure the toolbar stretches the full width */
 }
 
 /* Logo styles */
 .logo {
   display: flex;
   align-items: center;
-  text-decoration: none;
-  color: white; /* Light text color for contrast */
-  font-weight: bold;
 }
 
 /* Navigation links styles */
 .nav-links {
   display: flex;
+  justify-content: center;
+  flex-grow: 1;
   gap: 20px;
 }
 
-.nav-links a {
+.nav-link {
   color: white; /* Light text color for contrast */
   text-decoration: none;
   font-weight: bold;
@@ -44,71 +46,18 @@ header {
   margin-top: 64px; /* Ensure content starts below header */
 }
 
-/* Sidebar styles */
-.sidebar {
-  background-color: white;
-  color: rgba(48, 87, 78, 1); /* Dark green text color */
-  width: 250px;
-  overflow-y: auto; /* Allow scrolling if sidebar content exceeds height */
-  box-shadow: 2px 0px 4px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
-}
-
-.sidebar-item {
-  padding: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-.sidebar-item:hover {
-  background-color: rgba(48, 87, 78, 0.1); /* Light green hover color */
-}
-
-.sidebar-item a {
-  color: rgba(48, 87, 78, 1); /* Dark green text color */
-  text-decoration: none;
-  margin-left: 10px;
-}
-
 /* Main content area styles */
 .main-content {
   flex: 1; /* Take remaining space */
   padding: 20px;
 }
 
-/* Footer styles */
-footer {
-  background-color: rgba(48, 87, 78, 1); /* Dark green background color */
-  color: white; /* Light text color for contrast */
-  padding: 20px;
-  text-align: center;
-  width: 100%;
-  box-shadow: 0px -2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
-}
-
-.footer-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.footer-content a {
-  color: white; /* Light text color for contrast */
-  text-decoration: none;
-  font-weight: bold;
-}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .content {
     flex-direction: column;
     height: auto;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    margin-bottom: 20px;
   }
   
   .main-content {
