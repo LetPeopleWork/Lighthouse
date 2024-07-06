@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Container, Grid } from '@mui/material';
-import LetPeopleWorkLogo from './LetPeopleWork/LetPeopleWorkLogo';
-import LighthouseVersion from './LetPeopleWork/LighthouseVersion';
+import LetPeopleWorkLogo from '../LetPeopleWork/LetPeopleWorkLogo';
+import LighthouseVersion from '../LetPeopleWork/LighthouseVersion';
 
 const Footer: React.FC = () => {
   return (

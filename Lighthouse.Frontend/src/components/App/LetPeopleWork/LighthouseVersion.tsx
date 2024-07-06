@@ -28,16 +28,23 @@ const LighthouseVersion: React.FC = () => {
 
   return (
     <LoadingAnimation isLoading={isLoading} hasError={hasError}>
-      <Button component={Link} to={`https://github.com/LetPeopleWork/Lighthouse/releases/tag/${version}`} className="nav-link"
-              sx={{
-                textDecoration: 'none',
-                fontFamily: 'Quicksand, sans-serif',
-                color: 'rgba(48, 87, 78, 1)',
-                fontWeight: 'bold',
-              }}
-              >{version}</Button>
+      <Button
+        component={Link}
+        to={`https://github.com/LetPeopleWork/Lighthouse/releases/tag/${version}`}
+        className="nav-link"
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{
+          textDecoration: 'none',
+          fontFamily: 'Quicksand, sans-serif',
+          color: 'rgba(48, 87, 78, 1)',
+          fontWeight: 'bold',
+        }}
+      >
+        {version}
+      </Button>
     </LoadingAnimation>
   );
-}
+};
 
 export default LighthouseVersion;
