@@ -31,7 +31,6 @@ body, html {
   align-items: center;
 }
 
-/* Navigation links styles */
 .nav-links {
   display: flex;
   justify-content: center;
@@ -39,9 +38,12 @@ body, html {
   gap: 20px;
 }
 
-.nav-link {
-  color: white; /* Light text color for contrast */
+.nav-link {  
+  color: rgba(48, 87, 78, 1);
   text-decoration: none;
+}
+
+.active{
   font-weight: bold;
 }
 

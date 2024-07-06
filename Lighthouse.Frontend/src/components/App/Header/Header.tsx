@@ -1,7 +1,7 @@
 import React from 'react';
-import { AppBar, Toolbar, Box, Button, IconButton } from '@mui/material';
+import { AppBar, Toolbar, Box, IconButton } from '@mui/material';
 import LighthouseLogo from '../LetPeopleWork/LighthouseLogo';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { BugReport } from '@mui/icons-material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import YouTubeIcon from '@mui/icons-material/YouTube';
@@ -15,10 +15,10 @@ const Header: React.FC = () => {
           <LighthouseLogo />
         </Box>
         <Box className="nav-links">
-          <Button component={Link} to="/" className="nav-link">Overview</Button>
-          <Button component={Link} to="/teams" className="nav-link">Teams</Button>
-          <Button component={Link} to="/projects" className="nav-link">Projects</Button>
-          <Button component={Link} to="/settings" className="nav-link">Settings</Button>
+          <NavLink to="/" className={({isActive}) => (isActive ? 'nav-link active': 'nav-link')}>Overview</NavLink>
+          <NavLink to="/teams" className={({isActive}) => (isActive ? 'nav-link active': 'nav-link')}>Teams</NavLink>
+          <NavLink to="/projects" className={({isActive}) => (isActive ? 'nav-link active': 'nav-link')}>Projects</NavLink>
+          <NavLink to="/settings" className={({isActive}) => (isActive ? 'nav-link active': 'nav-link')}>Settings</NavLink>
         </Box>
         <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
           <IconButton
