@@ -1,7 +1,8 @@
 import React from 'react';
-import { AppBar, Toolbar, Box, IconButton } from '@mui/material';
+import { AppBar, Toolbar, Box } from '@mui/material';
 import LighthouseLogo from '../LetPeopleWork/LighthouseLogo';
-import { Link, NavLink } from 'react-router-dom';
+import NavigationItem from './NavigationItem';
+import ExternalLinkButton from './ExternalLinkButton';
 import { BugReport } from '@mui/icons-material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import YouTubeIcon from '@mui/icons-material/YouTube';
@@ -15,40 +16,28 @@ const Header: React.FC = () => {
           <LighthouseLogo />
         </Box>
         <Box className="nav-links">
-          <NavLink to="/" className={({isActive}) => (isActive ? 'nav-link active': 'nav-link')}>Overview</NavLink>
-          <NavLink to="/teams" className={({isActive}) => (isActive ? 'nav-link active': 'nav-link')}>Teams</NavLink>
-          <NavLink to="/projects" className={({isActive}) => (isActive ? 'nav-link active': 'nav-link')}>Projects</NavLink>
-          <NavLink to="/settings" className={({isActive}) => (isActive ? 'nav-link active': 'nav-link')}>Settings</NavLink>
+          <NavigationItem path='/' text='Overview' />
+          <NavigationItem path='/teams' text='Teams' />
+          <NavigationItem path='/projects' text='Projects' />
+          <NavigationItem path='/settings' text='Settings' />
         </Box>
         <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-          <IconButton
-            size="large"
-            color="inherit"
-            component={Link}
-            to={"https://github.com/LetPeopleWork/Lighthouse/issues"} >
-            <BugReport style={{ color: 'rgba(48, 87, 78, 1)' }} />
-          </IconButton>
-          <IconButton
-            size="large"
-            color="inherit"
-            component={Link}
-            to={"https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ"} >
-            <YouTubeIcon style={{ color: 'rgba(48, 87, 78, 1)' }} />
-          </IconButton>
-          <IconButton
-            size="large"
-            color="inherit"
-            component={Link}
-            to={"https://www.letpeople.work/blog/"} >
-            <BlogIcon style={{ color: 'rgba(48, 87, 78, 1)' }} />
-          </IconButton>
-          <IconButton
-            size="large"
-            color="inherit"
-            component={Link}
-            to={"https://github.com/LetPeopleWork/"} >
-            <GitHubIcon style={{ color: 'rgba(48, 87, 78, 1)' }} />
-          </IconButton>
+          <ExternalLinkButton
+            link="https://github.com/LetPeopleWork/Lighthouse/issues"
+            icon={BugReport}
+          />
+          <ExternalLinkButton
+            link="https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ"
+            icon={YouTubeIcon}
+          />
+          <ExternalLinkButton
+            link="https://www.letpeople.work/blog/"
+            icon={BlogIcon}
+          />
+          <ExternalLinkButton
+            link="https://github.com/LetPeopleWork/"
+            icon={GitHubIcon}
+          />
         </Box>
       </Toolbar>
     </AppBar>
