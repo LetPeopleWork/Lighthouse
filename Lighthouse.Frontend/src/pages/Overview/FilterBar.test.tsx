@@ -9,7 +9,7 @@ describe('FilterBar', () => {
 
     render(<FilterBar filterText={filterText} onFilterTextChange={onFilterTextChange} />);
 
-    const inputElement = screen.getByPlaceholderText('Search...');
+    const inputElement = screen.getByPlaceholderText('Search');
     expect(inputElement).toBeInTheDocument();
     expect(inputElement).toHaveValue(filterText);
   });
@@ -20,7 +20,7 @@ describe('FilterBar', () => {
 
     render(<FilterBar filterText={filterText} onFilterTextChange={onFilterTextChange} />);
 
-    const inputElement = screen.getByPlaceholderText('Search...');
+    const inputElement = screen.getByPlaceholderText('Search');
     fireEvent.change(inputElement, { target: { value: 'new text' } });
 
     // Check if onFilterTextChange is called with the correct value

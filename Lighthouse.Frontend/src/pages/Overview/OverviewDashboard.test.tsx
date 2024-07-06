@@ -20,7 +20,7 @@ describe('OverviewDashboard', () => {
     await screen.findByText('Release 1.33.7');
   
     // Simulate typing into the filter input
-    const filterInput = screen.getByPlaceholderText('Search...');
+    const filterInput = screen.getByPlaceholderText('Search');
     fireEvent.change(filterInput, { target: { value: 'Daniel' } });
   
     // Verify filtered results
@@ -34,7 +34,7 @@ describe('OverviewDashboard', () => {
     // Wait for data to load
     await screen.findByText('Release 1.33.7');
   
-    expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search')).toBeInTheDocument();
     expect(screen.getByRole('table')).toBeInTheDocument();
   });
   

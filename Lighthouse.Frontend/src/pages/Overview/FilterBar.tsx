@@ -1,3 +1,6 @@
+import { InputAdornment, TextField } from "@mui/material";
+import SearchIcon from '@mui/icons-material/Search';
+
 interface FilterBarProps {
   filterText: string;
   onFilterTextChange : (newFilterText: string) => void;
@@ -5,9 +8,21 @@ interface FilterBarProps {
 
 const FilterBar:React.FC<FilterBarProps> = ({ filterText, onFilterTextChange }) => {
     return (
-        <form>
-          <input type="text" placeholder="Search..." value={filterText} onChange={(e) => onFilterTextChange(e.target.value)}/>          
-        </form>
+          <TextField 
+            id="standard-basic"
+            placeholder="Search"
+            variant="standard" 
+            value={filterText} 
+            onChange={(e) => onFilterTextChange(e.target.value)}
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon  />
+                </InputAdornment>
+              ),
+            }}
+            />
       );
 }
 
