@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ApiServiceProvider } from '../../services/Api/ApiServiceProvider';
 import { IApiService } from '../../services/Api/IApiService';
 import FilterBar from './FilterBar';
-import ProjectOverviewTable from './ProjectOverviewTable';
+import ProjectOverview from './ProjectOverview';
 import { Project } from '../../models/Project';
 import LoadingAnimation from '../../components/Common/LoadingAnimation/LoadingAnimation';
 
@@ -32,7 +32,7 @@ const OverviewDashboard: React.FC = () => {
         <LoadingAnimation isLoading={isLoading} hasError={hasError}>
             <div>
                 <FilterBar filterText={filterText} onFilterTextChange={setFilterText} />
-                <ProjectOverviewTable projects={projects} filterText={filterText} />
+                <ProjectOverview projects={projects} filterText={filterText} />
             </div>
         </LoadingAnimation>
     )

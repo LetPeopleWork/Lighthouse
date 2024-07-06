@@ -12,10 +12,10 @@ import './App.css';
 const App: React.FC = () => {
   return (
     <Router>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box className="container">
         <CssBaseline />
         <Header />
-        <Box component="main" sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', p: 3 }}>
+        <Box component="main" className="main-content">
           <Routes>
             <Route path="/" element={<OverviewDashboard />} />
             <Route path="/teams" element={<TeamsOverview />} />

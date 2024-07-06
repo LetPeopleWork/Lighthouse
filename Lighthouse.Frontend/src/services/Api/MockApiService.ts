@@ -4,20 +4,29 @@ import { Team } from '../../models/Team';
 import { IApiService } from './IApiService';
 
 export class MockApiService implements IApiService {
+    private useDelay: boolean;
 
-    delay(){
-        const randomDelay : number = Math.random() * 1000;
-        return new Promise(resolve => setTimeout(resolve, randomDelay))        ;
+    constructor(useDelay: boolean) {
+        this.useDelay = useDelay;
+    }
+
+    delay() {
+        if (this.useDelay) {
+            const randomDelay: number = Math.random() * 1000;
+            return new Promise(resolve => setTimeout(resolve, randomDelay));
+        }
+
+        return Promise.resolve();
     }
 
     async getVersion(): Promise<string> {
-        await this.delay()  
+        await this.delay()
         return "v1.33.7";
     }
 
     async getProjectOverviewData(): Promise<Project[]> {
         await this.delay();
-        
+
         const binaryBlazer = new Team("Binary Blazers", 1)
         const mavericks = new Team("Mavericks", 2)
         const cyberSultans = new Team("Cyber Sultans", 3)

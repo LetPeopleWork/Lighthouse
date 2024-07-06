@@ -14,9 +14,9 @@ const LocalDateTimeDisplay: React.FC<LocalDateTimeDisplayProps> = ({ utcDate, sh
     }
 
     return (
-        <div>
+        <>
             {localDateTimeString}
-        </div>
+        </>
     );
 };
 

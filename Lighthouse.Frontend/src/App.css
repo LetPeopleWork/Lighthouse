@@ -54,12 +54,20 @@ body, html {
   margin-top: 64px; /* Ensure content starts below header */
 }
 
-/* Main content area styles */
-.main-content {
-  flex: 1; /* Take remaining space */
-  padding: 20px;
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
+.main-content {
+  flex-grow: 1; /* Fill remaining space */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Adjust alignment as needed */
+  padding: 20px; /* Adjust padding as needed */
+  box-sizing: border-box;
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
