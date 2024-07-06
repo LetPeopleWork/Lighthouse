@@ -10,7 +10,7 @@ const LighthouseLogo: React.FC = () => {
         Light
       </Typography>
       <Typography style={{ fontFamily: 'Quicksand, sans-serif', color: 'black', fontWeight: 'bold' }}>
-        House
+        house
       </Typography>
       </>
   );
