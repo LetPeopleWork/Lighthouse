@@ -1,36 +1,36 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import TeamsOverview from './TeamsOverview';
+import ProjectsOverview from './ProjectsOverview';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { MockApiService } from '../../../services/Api/MockApiService';
 
-describe('TeamsOverview component', () => {
+describe('ProjectOverview component', () => {
     beforeEach(() => {
         ApiServiceProvider['instance'] = null;
     });
 
-
-    test('renders teams data when fetched successfully', async () => {
+    test('renders project data when fetched successfully', async () => {
         render(
             <Router>
-                <TeamsOverview />
+                <ProjectsOverview />
             </Router>
         );
 
         await waitFor(() => {
-            expect(screen.getByText('Binary Blazers')).toBeInTheDocument();
-            expect(screen.getByText('Mavericks')).toBeInTheDocument();
+            expect(screen.getByText('Release 1.33.7')).toBeInTheDocument();
+            expect(screen.getByText('Release 42')).toBeInTheDocument();
+            expect(screen.getByText('Release Codename Daniel')).toBeInTheDocument();
         });
 
         expect(screen.queryByText('Error loading data. Please try again later.')).toBeNull();
     });
 
-    test('displays error message when fetching teams fails', async () => {
+    test('displays error message when fetching projects fails', async () => {
         ApiServiceProvider['instance'] = new MockApiService(false, true);
 
         render(
             <Router>
-                <TeamsOverview />
+                <ProjectsOverview />
             </Router>
         );
 
@@ -43,16 +43,16 @@ describe('TeamsOverview component', () => {
     test('opens delete confirmation dialog when delete button is clicked', async () => {
         render(
             <Router>
-                <TeamsOverview />
+                <ProjectsOverview />
             </Router>
         );
 
         await waitFor(() => {
-            expect(screen.getByText('Binary Blazers')).toBeInTheDocument();
+            expect(screen.getByText('Release 1.33.7')).toBeInTheDocument();
         });
 
         fireEvent.click(screen.getAllByTestId('delete-item-button')[0]);
         expect(screen.getByText('Confirm Delete')).toBeInTheDocument();
-        expect(screen.getByText('Do you really want to delete Binary Blazers?')).toBeInTheDocument();
+        expect(screen.getByText('Do you really want to delete Release 1.33.7?')).toBeInTheDocument();
     });
 });

@@ -2,24 +2,24 @@ import React, { useEffect, useState } from 'react';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import DataOverviewTable from '../../../components/Common/DataOverviewTable/DataOverviewTable';
 import DeleteConfirmationDialog from '../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog';
-import { Team } from '../../../models/Team';
+import { Project } from '../../../models/Project';
 import { IApiService } from '../../../services/Api/IApiService';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IData } from '../../../models/IData';
 
-const TeamsOverview: React.FC = () => {
-  const [teams, setTeams] = useState<Team[]>([]);
+const ProjectsOverview: React.FC = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const fetchData = async () => {
     try {
       setIsLoading(true);
       const apiService: IApiService = ApiServiceProvider.getApiService();
-      const teamData = await apiService.getTeams();
-      setTeams(teamData);
+      const projectData = await apiService.getProjectOverviewData();
+      setProjects(projectData);
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching team data:', error);
@@ -31,41 +31,41 @@ const TeamsOverview: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleDelete = (team: IData) => {
-    setSelectedTeam(team as Team);
+  const handleDelete = (project: IData) => {
+    setSelectedProject(project as Project);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirmation = async (confirmed: boolean) => {
-    if (confirmed && selectedTeam) {
+    if (confirmed && selectedProject) {
       try {
         const apiService: IApiService = ApiServiceProvider.getApiService();
         setIsLoading(true);
 
-        await apiService.deleteTeam(selectedTeam.id);
+        await apiService.deleteProject(selectedProject.id);
         await fetchData();
 
       } catch (error) {
-        console.error('Error deleting team:', error);
+        console.error('Error deleting project:', error);
         setHasError(true);
       }
     }
 
     setDeleteDialogOpen(false);
-    setSelectedTeam(null);
+    setSelectedProject(null);
   };
 
   return (
     <LoadingAnimation hasError={hasError} isLoading={isLoading}>
       <DataOverviewTable
-        data={teams}
-        api="teams"
+        data={projects}
+        api="projects"
         onDelete={handleDelete}
       />
-      {selectedTeam && (
+      {selectedProject && (
         <DeleteConfirmationDialog
           open={deleteDialogOpen}
-          itemName={selectedTeam.name}
+          itemName={selectedProject.name}
           onClose={handleDeleteConfirmation}
         />
       )}
@@ -73,4 +73,4 @@ const TeamsOverview: React.FC = () => {
   );
 };
 
-export default TeamsOverview;
+export default ProjectsOverview;

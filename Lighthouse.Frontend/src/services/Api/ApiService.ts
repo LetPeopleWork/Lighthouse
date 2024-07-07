@@ -40,6 +40,13 @@ export class ApiService implements IApiService {
         });
     }
 
+    async deleteProject(id: number): Promise<void> {
+        await this.withErrorHandling(async () => {
+            const response = await this.apiService.delete<void>(`/projects/${id}`);
+            return response.data;
+        });
+    }
+
     private async withErrorHandling<T>(asyncFunction: () => Promise<T>): Promise<T> {
         try {
             return await asyncFunction();

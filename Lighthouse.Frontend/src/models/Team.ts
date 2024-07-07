@@ -1,4 +1,6 @@
-export class Team {
+import { IData } from "./IData";
+
+export class Team implements IData {
     name!: string;
     id!: number;
     remainingWork!: number;

@@ -28,6 +28,19 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(result.Count, Is.EqualTo(testProjects.Count()));
         }
 
+        [Test]
+        public void Delete_RemovesTeamAndSaves()
+        {
+            var projectId = 12;
+
+            var subject = CreateSubject();
+
+            subject.DeleteProject(projectId);
+
+            projectRepoMock.Verify(x => x.Remove(projectId));
+            projectRepoMock.Verify(x => x.Save());
+        }
+
         private ProjectsController CreateSubject()
         {
             return new ProjectsController(projectRepoMock.Object);

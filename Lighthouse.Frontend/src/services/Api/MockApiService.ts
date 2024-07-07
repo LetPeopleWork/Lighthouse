@@ -33,6 +33,12 @@ export class MockApiService implements IApiService {
         await this.delay();
     }
 
+    async deleteProject(id: number): Promise<void> {
+        console.log(`'Deleting' Project with id ${id}`)
+        await this.delay();
+
+    }
+
     async getVersion(): Promise<string> {
         await this.delay()
         return "v1.33.7";
@@ -44,9 +50,9 @@ export class MockApiService implements IApiService {
         const lastUpdated = new Date("06/23/2024 12:41");
 
         const projects: Project[] = [
-            new Project("Release 1.33.7", 1, 35, [this.binaryBlazers], [new Forecast(50, new Date("07/31/2024")), new Forecast(70, new Date("08/05/2024")), new Forecast(85, new Date("08/09/2024")), new Forecast(95, new Date("08/14/2024"))], lastUpdated),
-            new Project("Release 42", 2, 28, [this.mavericks, this.cyberSultans], [new Forecast(50, new Date("07/09/2024")), new Forecast(70, new Date("07/11/2024")), new Forecast(85, new Date("07/14/2024")), new Forecast(95, new Date("07/17/2024"))], lastUpdated),
-            new Project("Release Codename Daniel", 3, 33, [this.binaryBlazers, this.techEagles, this.mavericks, this.cyberSultans], [new Forecast(50, new Date("07/07/2024")), new Forecast(70, new Date("07/09/2024")), new Forecast(85, new Date("07/12/2024")), new Forecast(95, new Date("07/16/2024"))], lastUpdated)
+            new Project("Release 1.33.7", 1, 35, [this.binaryBlazers], 1, [new Forecast(50, new Date("07/31/2024")), new Forecast(70, new Date("08/05/2024")), new Forecast(85, new Date("08/09/2024")), new Forecast(95, new Date("08/14/2024"))], lastUpdated),
+            new Project("Release 42", 2, 28, [this.mavericks, this.cyberSultans], 3, [new Forecast(50, new Date("07/09/2024")), new Forecast(70, new Date("07/11/2024")), new Forecast(85, new Date("07/14/2024")), new Forecast(95, new Date("07/17/2024"))], lastUpdated),
+            new Project("Release Codename Daniel", 3, 33, [this.binaryBlazers, this.techEagles, this.mavericks, this.cyberSultans], 7, [new Forecast(50, new Date("07/07/2024")), new Forecast(70, new Date("07/09/2024")), new Forecast(85, new Date("07/12/2024")), new Forecast(95, new Date("07/16/2024"))], lastUpdated)
         ]
 
         return projects;

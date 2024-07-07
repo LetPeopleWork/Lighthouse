@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -70,6 +71,13 @@ namespace Lighthouse.Backend.API
             };
 
             return forecasts;
+        }
+
+        [HttpDelete("{id}")]
+        public void DeleteProject(int id)
+        {
+            repository.Remove(id);
+            repository.Save();
         }
 
         private DateTime GetFutureDate(int daysInFuture)
