@@ -17,11 +17,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("overview")]
-        public async Task<IEnumerable<ProjectOverviewDto>> GetOverview()
+        public IEnumerable<ProjectOverviewDto> GetOverview()
         {
             var projectOverviewDtos = new List<ProjectOverviewDto>();
 
-            var allProjects = await Task.FromResult(repository.GetAll());
+            var allProjects = repository.GetAll();
 
             foreach (var project in allProjects)
             {

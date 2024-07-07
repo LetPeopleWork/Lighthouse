@@ -16,14 +16,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task GetProjects_ReturnsAllProjectsFromRepository()
+        public void GetProjects_ReturnsAllProjectsFromRepository()
         {
             var testProjects = GetTestProjects();
             projectRepoMock.Setup(x => x.GetAll()).Returns(testProjects);
 
             var subject = CreateSubject();
 
-            var result = await subject.GetOverview();
+            var result = subject.GetOverview();
 
             Assert.That(result.Count, Is.EqualTo(testProjects.Count()));
         }
