@@ -1,4 +1,4 @@
-export interface IData{
+export interface ILighthouseData{
     name: string;
     id : number;
     remainingWork: number;

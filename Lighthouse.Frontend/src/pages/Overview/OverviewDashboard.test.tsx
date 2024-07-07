@@ -23,14 +23,11 @@ describe('OverviewDashboard', () => {
         <OverviewDashboard />
       </Router>);
 
-    // Wait for data to load
     await screen.findByText('Release 1.33.7');
 
-    // Simulate typing into the filter input
     const filterInput = screen.getByPlaceholderText('Search');
     fireEvent.change(filterInput, { target: { value: 'Daniel' } });
 
-    // Verify filtered results
     expect(screen.getByText('Release Codename Daniel')).toBeInTheDocument();
     expect(screen.queryByText('Release 1.33.7')).not.toBeInTheDocument();
   });

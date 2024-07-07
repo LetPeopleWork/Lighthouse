@@ -1,6 +1,6 @@
-import { IData } from "./IData";
+import { ILighthouseData } from "./ILighthouseData";
 
-export class Team implements IData {
+export class Team implements ILighthouseData {
     name!: string;
     id!: number;
     remainingWork!: number;

@@ -1,8 +1,8 @@
 import { Forecast } from './Forecast';
-import { IData } from './IData';
+import { ILighthouseData } from './ILighthouseData';
 import { Team } from './Team'
 
-export class Project implements IData {
+export class Project implements ILighthouseData {
     name!: string;
     id! : number;
     remainingWork!: number;
