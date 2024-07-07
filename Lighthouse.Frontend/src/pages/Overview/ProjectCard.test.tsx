@@ -29,7 +29,7 @@ describe('ProjectCard component', () => {
         'Project Alpha',
         1,
         10,
-        [new Team('Team A', 1), new Team('Team B', 2)],
+        [new Team('Team A', 1, 1, 2, 3), new Team('Team B', 2, 1, 2, 3)],
         [new Forecast(50, new Date("2025-08-04")), new Forecast(70, new Date("2025-06-25")), new Forecast(85, new Date("2025-07-25")), new Forecast(95, new Date("2025-08-19"))],
         new Date('2024-06-01'))
 

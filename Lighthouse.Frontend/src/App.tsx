@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Header from './components/App/Header/Header';
 import Footer from './components/App/Footer/Footer';
 import OverviewDashboard from './pages/Overview/OverviewDashboard';
-import TeamsOverview from './pages/Teams/TeamsOverview';
+import TeamsOverview from './pages/Teams/Overview/TeamsOverview';
 import ProjectsOverview from './pages/Projects/ProjectsOverview';
 import Settings from './pages/Settings/Settings';
 import './App.css';
