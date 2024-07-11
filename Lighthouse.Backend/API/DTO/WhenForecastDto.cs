@@ -1,6 +1,6 @@
 ﻿namespace Lighthouse.Backend.API.DTO
 {
-    public class ForecastDto
+    public class WhenForecastDto
     {
         public int Probability { get; set; }
 

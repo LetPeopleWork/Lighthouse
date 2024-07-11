@@ -1,16 +1,29 @@
-import { Forecast } from '../../models/Forecast';
+import { WhenForecast } from '../../models/WhenForecast';
 import { Project } from '../../models/Project';
 import { Team } from '../../models/Team';
 import { IApiService } from './IApiService';
+import { Feature } from '../../models/Feature';
 
 export class MockApiService implements IApiService {
     private useDelay: boolean;
-    private throwError: boolean;
+    private throwError: boolean;    
 
-    private binaryBlazers = new Team("Binary Blazers", 1, 20, 2, 4);
-    private mavericks = new Team("Mavericks", 2, 5, 1, 1);
-    private cyberSultans = new Team("Cyber Sultans", 3, 35, 3, 2);
-    private techEagles = new Team("Tech Eagles", 4, 17, 1, 3);
+    private lastUpdated = new Date("06/23/2024 12:41");
+    
+    private feature1 = new Feature('Feature 1', 1, new Date(), { 1: 10 }, [new WhenForecast(50, new Date("07/31/2024")), new WhenForecast(70, new Date("08/05/2024")), new WhenForecast(85, new Date("08/09/2024")), new WhenForecast(95, new Date("08/14/2024"))]);
+    private feature2 = new Feature('Feature 2', 2, new Date(), { 2: 5 }, [new WhenForecast(50, new Date("07/09/2024")), new WhenForecast(70, new Date("07/11/2024")), new WhenForecast(85, new Date("07/14/2024")), new WhenForecast(95, new Date("07/17/2024"))]);
+    private feature3 = new Feature('Feature 3', 3, new Date(), { 3: 7, 2: 15 }, [new WhenForecast(50, new Date("07/07/2024")), new WhenForecast(70, new Date("07/09/2024")), new WhenForecast(85, new Date("07/12/2024")), new WhenForecast(95, new Date("07/16/2024"))]);
+    private feature4 = new Feature('Feature 4', 4, new Date(), { 1: 3, 4: 9 }, [new WhenForecast(50, new Date("07/31/2024")), new WhenForecast(70, new Date("08/05/2024")), new WhenForecast(85, new Date("08/09/2024")), new WhenForecast(95, new Date("08/14/2024"))]);
+
+    private binaryBlazers = new Team("Binary Blazers", 1, [], [this.feature1, this.feature4]);
+    private mavericks = new Team("Mavericks", 2, [], [this.feature2, this.feature3]);
+    private cyberSultans = new Team("Cyber Sultans", 3, [], [this.feature3]);
+    private techEagles = new Team("Tech Eagles", 4, [], [this.feature4]);
+
+    private release_1337 = new Project("Release 1.33.7", 1, [this.binaryBlazers], [this.feature1], this.lastUpdated);
+    private release_42 = new Project("Release 42", 2, [this.mavericks], [this.feature2], this.lastUpdated);
+    private release_codename_daniel = new Project("Release Codename Daniel", 3, [this.binaryBlazers, this.techEagles, this.mavericks, this.cyberSultans], [this.feature3, this.feature4], this.lastUpdated);
+
 
     constructor(useDelay: boolean, throwError: boolean = false) {
         this.useDelay = useDelay;
@@ -44,18 +57,10 @@ export class MockApiService implements IApiService {
         return "v1.33.7";
     }
 
-    async getProjectOverviewData(): Promise<Project[]> {
+    async getProjects(): Promise<Project[]> {
         await this.delay();
-
-        const lastUpdated = new Date("06/23/2024 12:41");
-
-        const projects: Project[] = [
-            new Project("Release 1.33.7", 1, 35, [this.binaryBlazers], 1, [new Forecast(50, new Date("07/31/2024")), new Forecast(70, new Date("08/05/2024")), new Forecast(85, new Date("08/09/2024")), new Forecast(95, new Date("08/14/2024"))], lastUpdated),
-            new Project("Release 42", 2, 28, [this.mavericks, this.cyberSultans], 3, [new Forecast(50, new Date("07/09/2024")), new Forecast(70, new Date("07/11/2024")), new Forecast(85, new Date("07/14/2024")), new Forecast(95, new Date("07/17/2024"))], lastUpdated),
-            new Project("Release Codename Daniel", 3, 33, [this.binaryBlazers, this.techEagles, this.mavericks, this.cyberSultans], 7, [new Forecast(50, new Date("07/07/2024")), new Forecast(70, new Date("07/09/2024")), new Forecast(85, new Date("07/12/2024")), new Forecast(95, new Date("07/16/2024"))], lastUpdated)
-        ]
-
-        return projects;
+        
+        return [this.release_1337, this.release_42, this.release_codename_daniel];
     }
 
     delay() {

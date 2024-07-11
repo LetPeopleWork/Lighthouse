@@ -5,7 +5,7 @@ import DeleteConfirmationDialog from '../../../components/Common/DeleteConfirmat
 import { Project } from '../../../models/Project';
 import { IApiService } from '../../../services/Api/IApiService';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
-import { ILighthouseData } from '../../../models/ILighthouseData';
+import { IFeatureOwner } from '../../../models/IFeatureOwner';
 
 const ProjectsOverview: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -18,7 +18,7 @@ const ProjectsOverview: React.FC = () => {
     try {
       setIsLoading(true);
       const apiService: IApiService = ApiServiceProvider.getApiService();
-      const projectData = await apiService.getProjectOverviewData();
+      const projectData = await apiService.getProjects();
       setProjects(projectData);
       setIsLoading(false);
     } catch (error) {
@@ -31,7 +31,7 @@ const ProjectsOverview: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleDelete = (project: ILighthouseData) => {
+  const handleDelete = (project: IFeatureOwner) => {
     setSelectedProject(project as Project);
     setDeleteDialogOpen(true);
   };

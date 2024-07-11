@@ -1,23 +1,38 @@
-import { Forecast } from './Forecast';
-import { ILighthouseData } from './ILighthouseData';
-import { Team } from './Team'
+import { Feature } from './Feature';
+import { IFeatureOwner } from './IFeatureOwner';
+import { ITeam, Team } from './Team'
 
-export class Project implements ILighthouseData {
+export interface IProject extends IFeatureOwner {
+    name: string;
+    id: number;
+    involvedTeams: ITeam[];
+    lastUpdated: Date;
+}
+
+export class Project implements IProject {
     name!: string;
-    id! : number;
-    remainingWork!: number;
-    involvedTeams!: Team[];
-    forecasts!: Forecast[];
-    lastUpdated!: Date;
-    features!: number;
+    id!: number;
 
-    constructor(name: string, id: number, remainingWork: number, involvedTeams: Team[], features: number, forecasts: Forecast[], lastUpdated: Date) {
+    features!: Feature[];
+    involvedTeams!: Team[];
+
+    lastUpdated!: Date;
+
+    constructor(name: string, id: number, involvedTeams: Team[], features: Feature[], lastUpdated: Date) {
         this.name = name;
         this.id = id;
-        this.remainingWork = remainingWork;
         this.involvedTeams = involvedTeams;
-        this.forecasts = forecasts;
         this.lastUpdated = lastUpdated;
-        this.features = features;
+        this.features = features || [];
+    }
+
+    get remainingWork(): number {
+        const totalRemainingWork = this.features.reduce((acc, feature) => acc + feature.getAllRemainingWork(), 0);
+    
+        return totalRemainingWork;
+    }
+
+    get remainingFeatures(): number {
+        return this.features.length;
     }
 }

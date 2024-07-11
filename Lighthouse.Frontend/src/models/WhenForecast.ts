@@ -1,4 +1,9 @@
-export class Forecast{
+export interface IWhenForecast {
+    probability: number;
+    expectedDate: Date;
+}
+
+export class WhenForecast implements IWhenForecast {
     probability! : number
     expectedDate! : Date
 

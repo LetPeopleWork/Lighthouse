@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Typography, Container } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { ILighthouseData } from '../../../models/ILighthouseData';
+import { IFeatureOwner } from '../../../models/IFeatureOwner';
 
 import InfoIcon from '@mui/icons-material/Info';
 import EditIcon from '@mui/icons-material/Edit';
@@ -10,13 +10,13 @@ import FilterBar from '../FilterBar/FilterBar';
 
 const iconColor = 'rgba(48, 87, 78, 1)';
 
-interface DataOverviewTableProps<ILighthouseData> {
-    data: ILighthouseData[];
+interface DataOverviewTableProps<IFeatureOwner> {
+    data: IFeatureOwner[];
     api: string;
-    onDelete: (item: ILighthouseData) => void;
+    onDelete: (item: IFeatureOwner) => void;
 }
 
-const DataOverviewTable: React.FC<DataOverviewTableProps<ILighthouseData>> = ({ data, api, onDelete }) => {
+const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ data, api, onDelete }) => {
     const [filterText, setFilterText] = useState('');
 
     const filteredData = data.filter(item =>
@@ -56,7 +56,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<ILighthouseData>> = ({ 
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {filteredData.map((item: ILighthouseData) => (
+                            {filteredData.map((item: IFeatureOwner) => (
                                 <TableRow key={item.id} data-testid={`table-row-${item.id}`}>
                                     <TableCell>
                                         <Link to={`/${api}/${item.id}`} style={{ textDecoration: 'none', color: iconColor }}>
@@ -66,7 +66,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<ILighthouseData>> = ({ 
                                         </Link>
                                     </TableCell>
                                     <TableCell>{item.remainingWork}</TableCell>
-                                    <TableCell>{item.features}</TableCell>
+                                    <TableCell>{item.remainingFeatures}</TableCell>
                                     <TableCell>
                                         <Tooltip title="Details">
                                             <IconButton component={Link} to={`/${api}/${item.id}`} style={{ color: iconColor }}>

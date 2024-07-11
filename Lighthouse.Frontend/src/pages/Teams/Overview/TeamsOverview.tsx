@@ -5,7 +5,7 @@ import DeleteConfirmationDialog from '../../../components/Common/DeleteConfirmat
 import { Team } from '../../../models/Team';
 import { IApiService } from '../../../services/Api/IApiService';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
-import { ILighthouseData } from '../../../models/ILighthouseData';
+import { IFeatureOwner } from '../../../models/IFeatureOwner';
 
 const TeamsOverview: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -31,7 +31,7 @@ const TeamsOverview: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleDelete = (team: ILighthouseData) => {
+  const handleDelete = (team: IFeatureOwner) => {
     setSelectedTeam(team as Team);
     setDeleteDialogOpen(true);
   };
@@ -59,7 +59,7 @@ const TeamsOverview: React.FC = () => {
     <LoadingAnimation hasError={hasError} isLoading={isLoading}>
       <DataOverviewTable
         data={teams}
-        api="teams"
+        api="teams"        
         onDelete={handleDelete}
       />
       {selectedTeam && (

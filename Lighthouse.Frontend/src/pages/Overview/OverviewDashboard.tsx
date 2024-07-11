@@ -16,7 +16,7 @@ const OverviewDashboard: React.FC = () => {
         const fetchData = async () => {
             try {
                 const apiService: IApiService = ApiServiceProvider.getApiService();
-                const projectData = await apiService.getProjectOverviewData();
+                const projectData = await apiService.getProjects();
                 setProjects(projectData);
                 setIsLoading(false);
             } catch (error) {

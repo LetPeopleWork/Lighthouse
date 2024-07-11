@@ -1,17 +1,17 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
-import { ILighthouseData } from '../../../models/ILighthouseData';
 import DataOverviewTable from './DataOverviewTable';
+import { IFeatureOwner } from '../../../models/IFeatureOwner';
 
 const renderWithRouter = (ui : React.ReactNode) => {
     return render(<BrowserRouter>{ui}</BrowserRouter>);
 };
 
-const sampleData: ILighthouseData[] = [
-    { id: 1, name: 'Item 1', remainingWork: 10, features: 5 },
-    { id: 2, name: 'Item 2', remainingWork: 20, features: 15 },
-    { id: 3, name: 'Another Item', remainingWork: 30, features: 25 },
+const sampleData: IFeatureOwner[] = [
+    { id: 1, name: 'Item 1', remainingWork: 10, remainingFeatures: 5, features: [] },
+    { id: 2, name: 'Item 2', remainingWork: 20, remainingFeatures: 15, features: [] },
+    { id: 3, name: 'Another Item', remainingWork: 30, remainingFeatures: 25, features: [] },
 ];
 
 describe('DataOverviewTable', () => {

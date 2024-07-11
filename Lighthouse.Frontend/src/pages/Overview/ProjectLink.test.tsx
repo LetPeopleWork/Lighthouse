@@ -4,7 +4,7 @@ import ProjectLink from './ProjectLink';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Project } from '../../models/Project';
 
-const project: Project = new Project("My Team", 12, 42, [], 0, [], new Date())
+const project: Project = new Project("My Team", 12, [], [], new Date())
 
 describe('ProjectLink', () => {
   test('renders without crashing', () => {

@@ -25,20 +25,28 @@ namespace Lighthouse.Backend.API
         {
             var teamDtos = new List<TeamDto>();
 
-            var allTeams = teamRepository.GetAll();
+            var allTeams = teamRepository.GetAll().ToList();
+            var allProjects = projectRepository.GetAll().ToList();
+            var allFeatures = featureRepository.GetAll().ToList();
 
             foreach (var team in allTeams)
             {
-                var teamDto = new TeamDto();
+                var teamDto = new TeamDto(team);
 
-                var teamProjects = projectRepository.GetAll().Where(p => p.InvolvedTeams.Any(t => t.Id == team.Id)).ToList();
-                var remainingWorkPerFeature = featureRepository.GetAll().SelectMany(f => f.RemainingWork).Where(rw => rw.Team.Id == team.Id).ToList();
+                var teamProjects = allProjects.Where(p => p.InvolvedTeams.Any(t => t.Id == team.Id)).ToList();
 
-                teamDto.Name = team.Name;
-                teamDto.Id = team.Id;
-                teamDto.Projects = teamProjects.Count;
-                teamDto.Features = remainingWorkPerFeature.Count;
-                teamDto.RemainingWork = remainingWorkPerFeature.Sum(rw => rw.RemainingWorkItems);
+                var features = new List<Feature>();
+
+                foreach (var feature in allFeatures)
+                {
+                    if (feature.RemainingWork.Any(rw => rw.TeamId == team.Id))
+                    {
+                        features.Add(feature);
+                    }
+                }
+
+                teamDto.Projects.AddRange(teamProjects.Select(p => new ProjectDto(p)));
+                teamDto.Features.AddRange(features.Select(f => new FeatureDto(f)));
 
                 teamDtos.Add(teamDto);
             }

@@ -8,7 +8,7 @@ export interface IApiService {
 
     getTeams(): Promise<Team[]>;
 
-    getProjectOverviewData(): Promise<Project[]>;
+    getProjects(): Promise<Project[]>;
 
     getVersion() : Promise<string>;
 }

@@ -4,7 +4,7 @@ import TeamLink from './TeamLink';
 import { Team } from '../../models/Team';
 import { BrowserRouter as Router } from 'react-router-dom';
 
-const team: Team = new Team("My Team", 12, 1, 2, 3)
+const team: Team = new Team("My Team", 12, [], [])
 
 describe('TeamLink', () => {
   test('renders without crashing', () => {

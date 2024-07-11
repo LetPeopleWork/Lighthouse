@@ -4,7 +4,8 @@ import ProjectCard from './ProjectCard';
 import { Project } from '../../models/Project';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Team } from '../../models/Team';
-import { Forecast } from '../../models/Forecast';
+import { WhenForecast } from '../../models/WhenForecast';
+import { Feature } from '../../models/Feature';
 
 vi.mock('./TeamLink', () => ({
     default: ({ team }: { team: Team }) => (
@@ -28,10 +29,8 @@ describe('ProjectCard component', () => {
     const project: Project = new Project(
         'Project Alpha',
         1,
-        10,
-        [new Team('Team A', 1, 1, 2, 3), new Team('Team B', 2, 1, 2, 3)],
-        3,
-        [new Forecast(50, new Date("2025-08-04")), new Forecast(70, new Date("2025-06-25")), new Forecast(85, new Date("2025-07-25")), new Forecast(95, new Date("2025-08-19"))],
+        [new Team('Team A', 1, [], []), new Team('Team B', 2, [], [])],
+        [new Feature('Feature', 0, new Date(), { 1: 7, 2: 3 }, [new WhenForecast(50, new Date("2025-08-04")), new WhenForecast(70, new Date("2025-06-25")), new WhenForecast(85, new Date("2025-07-25")), new WhenForecast(95, new Date("2025-08-19"))])],
         new Date('2024-06-01'))
 
   const renderComponent = () => render(
@@ -43,14 +42,11 @@ describe('ProjectCard component', () => {
   it('should render project details correctly', () => {
     renderComponent();
 
-    // Check if project link is rendered
     const projectLink = screen.getByTestId('project-link');
     expect(projectLink).toBeInTheDocument();
 
-    // Check if remaining work is rendered
     expect(screen.getByText('10 Work Items')).toBeInTheDocument();
 
-    // Check if team links are rendered
     const teamLinks = screen.getAllByTestId('team-link');
     expect(teamLinks).toHaveLength(2);
 

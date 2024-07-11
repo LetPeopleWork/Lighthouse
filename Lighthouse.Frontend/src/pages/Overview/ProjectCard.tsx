@@ -58,25 +58,25 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
             <Tooltip title={<TooltipText level="Risky" percentage={50} />} arrow>
               <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
                 <RiskyIcon style={{ color: 'red', marginRight: 8 }} />
-                <LocalDateTimeDisplay utcDate={project.forecasts[0].expectedDate} />
+                <LocalDateTimeDisplay utcDate={project.features[0].forecasts[0].expectedDate} />
               </Typography>
             </Tooltip>
             <Tooltip title={<TooltipText level="Realistic" percentage={70} />} arrow>
               <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
                 <RealisticIcon style={{ color: 'orange', marginRight: 8 }} />
-                <LocalDateTimeDisplay utcDate={project.forecasts[1].expectedDate} />
+                <LocalDateTimeDisplay utcDate={project.features[0].forecasts[1].expectedDate} />
               </Typography>
             </Tooltip>
             <Tooltip title={<TooltipText level="Confident" percentage={85} />} arrow>
               <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
                 <ConfidentIcon style={{ color: 'lightgreen', marginRight: 8 }} />
-                <LocalDateTimeDisplay utcDate={project.forecasts[2].expectedDate} />
+                <LocalDateTimeDisplay utcDate={project.features[0].forecasts[2].expectedDate} />
               </Typography>
             </Tooltip>
             <Tooltip title={<TooltipText level="Certain" percentage={95} />} arrow>
               <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
                 <CertainIcon style={{ color: 'green', marginRight: 8 }} />
-                <LocalDateTimeDisplay utcDate={project.forecasts[3].expectedDate} />
+                <LocalDateTimeDisplay utcDate={project.features[0].forecasts[3].expectedDate} />
               </Typography>
             </Tooltip>
           </Grid>

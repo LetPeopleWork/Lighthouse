@@ -33,9 +33,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(result.Projects, Is.EqualTo(0));
-                Assert.That(result.Features, Is.EqualTo(0));
-                Assert.That(result.RemainingWork, Is.EqualTo(0));
+                Assert.That(result.Projects.Count, Is.EqualTo(0));
+                Assert.That(result.Features.Count, Is.EqualTo(0));
             });
         }
 
@@ -55,9 +54,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(result.Projects, Is.EqualTo(1));
-                Assert.That(result.Features, Is.EqualTo(1));
-                Assert.That(result.RemainingWork, Is.EqualTo(12));
+                Assert.That(result.Projects.Count, Is.EqualTo(1));
+                Assert.That(result.Features.Count, Is.EqualTo(1));
             });
         }
 
@@ -78,9 +76,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(result.Projects, Is.EqualTo(1));
-                Assert.That(result.Features, Is.EqualTo(2));
-                Assert.That(result.RemainingWork, Is.EqualTo(54));
+                Assert.That(result.Projects.Count, Is.EqualTo(1));
+                Assert.That(result.Features.Count, Is.EqualTo(2));
             });
         }
 
@@ -104,9 +101,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
-                Assert.That(result.Projects, Is.EqualTo(2));
-                Assert.That(result.Features, Is.EqualTo(3));
-                Assert.That(result.RemainingWork, Is.EqualTo(59));
+                Assert.That(result.Projects.Count, Is.EqualTo(2));
+                Assert.That(result.Features.Count, Is.EqualTo(3));
             });
         }
 
@@ -136,14 +132,11 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(team1Results.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(team2Results.Name, Is.EqualTo("Una Mas"));
 
-                Assert.That(team1Results.Projects, Is.EqualTo(1));
-                Assert.That(team2Results.Projects, Is.EqualTo(1));
+                Assert.That(team1Results.Projects.Count, Is.EqualTo(1));
+                Assert.That(team2Results.Projects.Count, Is.EqualTo(1));
 
-                Assert.That(team1Results.Features, Is.EqualTo(2));
-                Assert.That(team2Results.Features, Is.EqualTo(1));
-
-                Assert.That(team1Results.RemainingWork, Is.EqualTo(54));
-                Assert.That(team2Results.RemainingWork, Is.EqualTo(5));
+                Assert.That(team1Results.Features.Count, Is.EqualTo(2));
+                Assert.That(team2Results.Features.Count, Is.EqualTo(1));
             });
         }
 

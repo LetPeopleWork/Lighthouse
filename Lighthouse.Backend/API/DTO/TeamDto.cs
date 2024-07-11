@@ -1,15 +1,21 @@
-﻿namespace Lighthouse.Backend.API.DTO
+﻿using Lighthouse.Backend.Models;
+
+namespace Lighthouse.Backend.API.DTO
 {
     public class TeamDto
     {
+        public TeamDto(Team team)
+        {
+            Name = team.Name;
+            Id = team.Id;
+        }
+
         public string Name { get; set; }
 
         public int Id { get; set; }
 
-        public int RemainingWork { get; set; }
+        public List<FeatureDto> Features { get; } = new List<FeatureDto>();
 
-        public int Features {  get; set; }
-
-        public int Projects { get; set; }
+        public List<ProjectDto> Projects { get; } = new List<ProjectDto>();
     }
 }
