@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Pages.Teams
                 teamRepository.Add(Team);
             }
 
-            await throughputService.UpdateThroughput(Team);
+            await throughputService.UpdateThroughputForTeam(Team);
             await teamRepository.Save();
 
             return RedirectToPage("./Details", new { id = Team.Id });

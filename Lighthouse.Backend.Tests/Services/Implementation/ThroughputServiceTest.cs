@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = new ThroughputService(workItemServiceFactoryMock.Object, Mock.Of<ILogger<ThroughputService>>());
 
-            await subject.UpdateThroughput(team);
+            await subject.UpdateThroughputForTeam(team);
 
             Assert.That(team.Throughput.History, Is.EqualTo(closedItemsPerDay.Length));
             for (var index = 0; index < closedItemsPerDay.Length; index++)
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var exceptionThrown = false;
             try
             {
-                await subject.UpdateThroughput(team);
+                await subject.UpdateThroughputForTeam(team);
             }
             catch (NotSupportedException)
             {

@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -151,6 +153,55 @@ namespace Lighthouse.Backend.Tests.API
 
             teamRepositoryMock.Verify(x => x.Remove(teamId));
             teamRepositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public void GetTeam_TeamExists_ReturnsTeam()
+        {
+            var team = CreateTeam(1, "Numero Uno");
+            var project1 = CreateProject(42, "My Project");
+            var feature1 = CreateFeature(project1, team, 12);
+            var feature2 = CreateFeature(project1, team, 42);
+
+            var project2 = CreateProject(13, "My Other Project");
+            var feature3 = CreateFeature(project2, team, 5);
+
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var subject = CreateSubject([team], [project1, project2], [feature1, feature2, feature3]);
+
+            var result = subject.GetTeam(1);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                var returnedTeamDto = okResult.Value as TeamDto;
+
+                Assert.That(returnedTeamDto.Id, Is.EqualTo(1));
+                Assert.That(returnedTeamDto.Name, Is.EqualTo("Numero Uno"));
+                Assert.That(returnedTeamDto.Projects.Count, Is.EqualTo(2));
+                Assert.That(returnedTeamDto.Features.Count, Is.EqualTo(3));
+            });
+        }
+
+        [Test]
+        public void GetTeam_TeamDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var result = subject.GetTeam(1);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>(), "Result should be NotFoundResult");
+
+                var notFoundResult = result.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404), "Status code should be 404");
+            });
         }
 
         private Team CreateTeam(int id, string name)

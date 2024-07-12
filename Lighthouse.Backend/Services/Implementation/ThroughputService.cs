@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Services.Implementation
             this.logger = logger;
         }
 
-        public async Task UpdateThroughput(Team team)
+        public async Task UpdateThroughputForTeam(Team team)
         {
             logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
 

@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Pages.Teams
 
             repositoryMock.Verify(x => x.Add(subject.Team));
             repositoryMock.Verify(x => x.Save());
-            throughputServiceMock.Verify(x => x.UpdateThroughput(subject.Team), Times.Once);
+            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(subject.Team), Times.Once);
         }
 
         [Test]
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Pages.Teams
             repositoryMock.Verify(x => x.Update(subject.Team));
             repositoryMock.Verify(x => x.Save());
 
-            throughputServiceMock.Verify(x => x.UpdateThroughput(subject.Team), Times.Once);
+            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(subject.Team), Times.Once);
         }
 
         private CreateModel CreateSubject()

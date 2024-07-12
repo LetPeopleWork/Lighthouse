@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Pages.Teams
         {
             return await GetTeamAndReloadPage(id, async (Team team) =>
             {
-                await throughputService.UpdateThroughput(team);
+                await throughputService.UpdateThroughputForTeam(team);
                 Repository.Update(team);
 
                 await Repository.Save();

@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             if (minutesSinceLastUpdate >= RefreshAfter)
             {
                 var throughputService = scope.ServiceProvider.GetRequiredService<IThroughputService>();
-                await throughputService.UpdateThroughput(team).ConfigureAwait(true);
+                await throughputService.UpdateThroughputForTeam(team).ConfigureAwait(true);
                 await teamRepository.Save();
             }
         }

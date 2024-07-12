@@ -31,22 +31,7 @@ namespace Lighthouse.Backend.API
 
             foreach (var team in allTeams)
             {
-                var teamDto = new TeamDto(team);
-
-                var teamProjects = allProjects.Where(p => p.InvolvedTeams.Any(t => t.Id == team.Id)).ToList();
-
-                var features = new List<Feature>();
-
-                foreach (var feature in allFeatures)
-                {
-                    if (feature.RemainingWork.Any(rw => rw.TeamId == team.Id))
-                    {
-                        features.Add(feature);
-                    }
-                }
-
-                teamDto.Projects.AddRange(teamProjects.Select(p => new ProjectDto(p)));
-                teamDto.Features.AddRange(features.Select(f => new FeatureDto(f)));
+                var teamDto = CreateTeamDto(allProjects, allFeatures, team);
 
                 teamDtos.Add(teamDto);
             }
@@ -54,11 +39,48 @@ namespace Lighthouse.Backend.API
             return teamDtos;
         }
 
+        [HttpGet("{id}")]
+        public ActionResult<TeamDto> GetTeam(int id)
+        {
+            var team = teamRepository.GetById(id);
+
+            var allProjects = projectRepository.GetAll().ToList();
+            var allFeatures = featureRepository.GetAll().ToList();
+
+            if (team == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(CreateTeamDto(allProjects, allFeatures, team));
+        }
+
         [HttpDelete("{id}")]
         public void DeleteTeam(int id)
         {
             teamRepository.Remove(id);
             teamRepository.Save();
+        }
+
+        private TeamDto CreateTeamDto(List<Project> allProjects, List<Feature> allFeatures, Team team)
+        {
+            var teamDto = new TeamDto(team);
+
+            var teamProjects = allProjects.Where(p => p.InvolvedTeams.Any(t => t.Id == team.Id)).ToList();
+
+            var features = new List<Feature>();
+
+            foreach (var feature in allFeatures)
+            {
+                if (feature.RemainingWork.Any(rw => rw.TeamId == team.Id))
+                {
+                    features.Add(feature);
+                }
+            }
+
+            teamDto.Projects.AddRange(teamProjects.Select(p => new ProjectDto(p)));
+            teamDto.Features.AddRange(features.Select(f => new FeatureDto(f)));
+            return teamDto;
         }
     }
 }

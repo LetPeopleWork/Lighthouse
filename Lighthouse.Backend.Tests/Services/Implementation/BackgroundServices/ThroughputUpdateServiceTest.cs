@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateThroughput(team));
+            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team));
             teamRepoMock.Verify(x => x.Save());
         }
 
@@ -60,8 +60,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateThroughput(team1));
-            throughputServiceMock.Verify(x => x.UpdateThroughput(team2));
+            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team1));
+            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team2));
             teamRepoMock.Verify(x => x.Save(), Times.Exactly(2));
         }
 
@@ -79,8 +79,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateThroughput(team1));
-            throughputServiceMock.Verify(x => x.UpdateThroughput(team2), Times.Never);
+            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team1));
+            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team2), Times.Never);
             teamRepoMock.Verify(x => x.Save(), Times.Exactly(1));
         }
 

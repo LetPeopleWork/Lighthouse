@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Pages.Teams
             var result = await subject.OnPostUpdateThroughput(12);
 
             Assert.That(result, Is.InstanceOf<PageResult>());
-            throughputServiceMock.Verify(x => x.UpdateThroughput(team), Times.Once());
+            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team), Times.Once());
             teamRepositoryMock.Verify(x => x.Update(team), Times.Once());
             teamRepositoryMock.Verify(x => x.Save(), Times.Once());
         }
