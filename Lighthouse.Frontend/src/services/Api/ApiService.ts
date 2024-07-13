@@ -133,7 +133,7 @@ export class ApiService implements IApiService {
             return new HowManyForecast(forecast.probability, forecast.expectedItems);
         })
 
-        return new ManualForecast(manualForecastData.remainingItems, manualForecastData.targetDate, whenForecasts, howManyForecasts, manualForecastData.likelihood);
+        return new ManualForecast(manualForecastData.remainingItems, new Date(manualForecastData.targetDate), whenForecasts, howManyForecasts, manualForecastData.likelihood);
     }
 
     private async withErrorHandling<T>(asyncFunction: () => Promise<T>): Promise<T> {
