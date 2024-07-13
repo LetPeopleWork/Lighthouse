@@ -63,7 +63,7 @@ describe('ManualForecaster component', () => {
                 onRemainingItemsChange={mockOnRemainingItemsChange}
                 onTargetDateChange={mockOnTargetDateChange}
                 onRunManualForecast={mockOnRunManualForecast}
-            />
+                waitingForResults={false} />
         );
     });
 
@@ -89,7 +89,7 @@ describe('ManualForecaster component', () => {
                 onRemainingItemsChange={mockOnRemainingItemsChange}
                 onTargetDateChange={mockOnTargetDateChange}
                 onRunManualForecast={mockOnRunManualForecast}
-            />
+                waitingForResults={false} />
         );
 
         const whenForecastList = screen.getAllByTestId((id) => id.startsWith('forecast-info-list'));
