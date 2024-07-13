@@ -18,7 +18,7 @@ describe('ManualForecast', () => {
         const whenForecasts: IWhenForecast[] = [mockWhenForecast];
         const howManyForecasts: IHowManyForecast[] = [mockHowManyForecast];
         const likelihood = 85;
-        const forecast = new ManualForecast(whenForecasts, howManyForecasts, likelihood);
+        const forecast = new ManualForecast(12, new Date(), whenForecasts, howManyForecasts, likelihood);
 
         expect(forecast.whenForecasts).toBe(whenForecasts);
         expect(forecast.howManyForecasts).toBe(howManyForecasts);
@@ -28,7 +28,7 @@ describe('ManualForecast', () => {
     it('should set a default likelihood of 0 if not provided', () => {
         const whenForecasts: IWhenForecast[] = [mockWhenForecast];
         const howManyForecasts: IHowManyForecast[] = [mockHowManyForecast];
-        const forecast = new ManualForecast(whenForecasts, howManyForecasts);
+        const forecast = new ManualForecast(12, new Date(), whenForecasts, howManyForecasts);
 
         expect(forecast.likelihood).toBe(0);
     });
@@ -36,9 +36,11 @@ describe('ManualForecast', () => {
     it('should implement the IManualForecast interface', () => {
         const whenForecasts: IWhenForecast[] = [mockWhenForecast];
         const howManyForecasts: IHowManyForecast[] = [mockHowManyForecast];
-        const forecast: IManualForecast = new ManualForecast(whenForecasts, howManyForecasts, 85);
+        const forecast: IManualForecast = new ManualForecast(12, new Date(), whenForecasts, howManyForecasts, 85);
 
         expect(forecast).toBeInstanceOf(ManualForecast);
+        expect(forecast).toHaveProperty('remainingItems');
+        expect(forecast).toHaveProperty('targetDate');
         expect(forecast).toHaveProperty('whenForecasts');
         expect(forecast).toHaveProperty('howManyForecasts');
         expect(forecast).toHaveProperty('likelihood');
