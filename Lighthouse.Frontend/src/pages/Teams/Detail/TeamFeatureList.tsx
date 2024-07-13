@@ -8,7 +8,7 @@ interface FeatureListProps{
     team: Team
 }
 
-const FeatureList : React.FC<FeatureListProps> = ({team}) => {
+const TeamFeatureList : React.FC<FeatureListProps> = ({team}) => {
     return (
         <TableContainer component={Paper}>
                         <Table>
@@ -49,4 +49,4 @@ const FeatureList : React.FC<FeatureListProps> = ({team}) => {
     )
 }
 
-export default FeatureList;
+export default TeamFeatureList;

@@ -7,6 +7,7 @@ import { Throughput } from '../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast } from '../../models/Forecasts/HowManyForecast';
 import dayjs from 'dayjs';
+import { Milestone } from '../../models/Milestone';
 
 export class MockApiService implements IApiService {
     private useDelay: boolean;
@@ -19,14 +20,20 @@ export class MockApiService implements IApiService {
     private feature3 = new Feature('Feature 3', 3, new Date(), { 3: 7, 2: 15 }, [new WhenForecast(50, new Date("07/07/2024")), new WhenForecast(70, new Date("07/09/2024")), new WhenForecast(85, new Date("07/12/2024")), new WhenForecast(95, new Date("07/16/2024"))]);
     private feature4 = new Feature('Feature 4', 4, new Date(), { 1: 3, 4: 9 }, [new WhenForecast(50, new Date("07/31/2024")), new WhenForecast(70, new Date("08/05/2024")), new WhenForecast(85, new Date("08/09/2024")), new WhenForecast(95, new Date("08/14/2024"))]);
 
-    private binaryBlazers = new Team("Binary Blazers", 1, [], [this.feature1, this.feature4]);
-    private mavericks = new Team("Mavericks", 2, [], [this.feature2, this.feature3]);
-    private cyberSultans = new Team("Cyber Sultans", 3, [], [this.feature3]);
-    private techEagles = new Team("Tech Eagles", 4, [], [this.feature4]);
+    private binaryBlazers = new Team("Binary Blazers", 1, [], [this.feature1, this.feature4], 1);
+    private mavericks = new Team("Mavericks", 2, [], [this.feature2, this.feature3], 2);
+    private cyberSultans = new Team("Cyber Sultans", 3, [], [this.feature3], 1);
+    private techEagles = new Team("Tech Eagles", 4, [], [this.feature4], 2);
 
-    private release_1337 = new Project("Release 1.33.7", 1, [this.binaryBlazers], [this.feature1], this.lastUpdated);
-    private release_42 = new Project("Release 42", 2, [this.mavericks], [this.feature2], this.lastUpdated);
-    private release_codename_daniel = new Project("Release Codename Daniel", 3, [this.binaryBlazers, this.techEagles, this.mavericks, this.cyberSultans], [this.feature3, this.feature4], this.lastUpdated);
+    private dayMultiplier : number = 24 * 60 * 60 * 1000;
+
+    private milestone1 = new Milestone("Milestone 1", new Date(Date.now() + 14 * this.dayMultiplier));
+    private milestone2 = new Milestone("Milestone 1", new Date(Date.now() + 28 * this.dayMultiplier));
+    private milestone3 = new Milestone("Milestone 1", new Date(Date.now() + 90 * this.dayMultiplier));
+
+    private release_1337 = new Project("Release 1.33.7", 1, [this.binaryBlazers], [this.feature1], [], this.lastUpdated);
+    private release_42 = new Project("Release 42", 2, [this.mavericks], [this.feature2], [this.milestone1], this.lastUpdated);
+    private release_codename_daniel = new Project("Release Codename Daniel", 3, [this.binaryBlazers, this.techEagles, this.mavericks, this.cyberSultans], [this.feature3, this.feature4], [this.milestone2, this.milestone3], this.lastUpdated);
 
 
     constructor(useDelay: boolean, throwError: boolean = false) {
@@ -93,6 +100,13 @@ export class MockApiService implements IApiService {
     async deleteTeam(id: number): Promise<void> {
         console.log(`'Deleting' Team with id ${id}`)
         await this.delay();
+    }
+    
+    async getProject(id: number): Promise<Project | null> {
+        console.log(`Getting Project with id ${id}`)
+        const projects = await this.getProjects();
+        const project = projects.find(project => project.id === id);
+        return project || null;
     }
 
     async deleteProject(id: number): Promise<void> {

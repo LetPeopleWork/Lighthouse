@@ -1,4 +1,4 @@
-import { IWhenForecast, WhenForecast } from "./Forecasts/WhenForecast";
+import { IWhenForecast } from "./Forecasts/WhenForecast";
 
 export interface IFeature {
     name: string;
@@ -18,9 +18,9 @@ export class Feature implements IFeature {
     id!: number;
     lastUpdated!: Date;
     remainingWork!: DictionaryObject;
-    forecasts!: WhenForecast[];
+    forecasts!: IWhenForecast[];
 
-    constructor(name: string, id: number, lastUpdated: Date, remainingWork: DictionaryObject, forecasts: WhenForecast[]) {
+    constructor(name: string, id: number, lastUpdated: Date, remainingWork: DictionaryObject, forecasts: IWhenForecast[]) {
         this.name = name;
         this.id = id;
         this.lastUpdated = lastUpdated;

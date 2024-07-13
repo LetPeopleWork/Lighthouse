@@ -7,6 +7,7 @@ export interface ITeam extends IFeatureOwner {
     name: string;
     id: number;
     projects: IProject[];
+    featureWip: number;
 }
 
 export class Team implements ITeam {
@@ -14,14 +15,16 @@ export class Team implements ITeam {
     id!: number;
     projects!: Project[];
     features!: Feature[];
+    featureWip: number;
 
-    constructor(name: string, id: number, projects: Project[], features: Feature[]) {
+    constructor(name: string, id: number, projects: Project[], features: Feature[], featureWip: number) {
         this.name = name;
         this.id = id;
         this.projects = projects;
         this.features = features;
+        this.featureWip = featureWip;
     }
-    
+
     get remainingWork(): number {
         return this.features.reduce((acc, feature) => acc += feature.getRemainingWorkForTeam(this.id), 0);
     }

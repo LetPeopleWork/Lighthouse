@@ -5,22 +5,18 @@ import { IApiService } from '../../../services/Api/IApiService';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import dayjs from 'dayjs';
-import {
-    Typography,
-    Grid,
-    Container
-} from '@mui/material';
+import { Typography, Grid, Container } from '@mui/material';
 import ThroughputBarChart from './ThroughputChart';
 import { Throughput } from '../../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../../models/Forecasts/ManualForecast';
-import FeatureList from './FeatureList';
+import TeamFeatureList from './TeamFeatureList';
 import ManualForecaster from './ManualForecaster';
 import ActionButton from '../../../components/Common/ActionButton/ActionButton';
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const apiService: IApiService = ApiServiceProvider.getApiService();
-    const numericId = Number(id);
+    const teamId = Number(id);
 
     const [team, setTeam] = useState<Team>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -38,7 +34,7 @@ const TeamDetail: React.FC = () => {
     const fetchTeam = async () => {
         try {
             setIsLoading(true);
-            const teamData = await apiService.getTeam(numericId);
+            const teamData = await apiService.getTeam(teamId);
 
             if (teamData) {
                 setTeam(teamData);
@@ -144,7 +140,7 @@ const TeamDetail: React.FC = () => {
                     </Grid>
                     <Grid item xs={12}>
                         {team != null ? (
-                            <FeatureList team={team} />) : (<></>)}
+                            <TeamFeatureList team={team} />) : (<></>)}
                     </Grid>
                     <Grid item xs={12}>
                         <ManualForecaster

@@ -7,6 +7,7 @@ import { IWhenForecast, WhenForecast } from '../../models/Forecasts/WhenForecast
 import { Throughput } from '../../models/Forecasts/Throughput';
 import { IManualForecast, ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast, IHowManyForecast } from '../../models/Forecasts/HowManyForecast';
+import { IMilestone, Milestone } from '../../models/Milestone';
 
 export class ApiService implements IApiService {
     private apiService!: AxiosInstance;
@@ -58,6 +59,14 @@ export class ApiService implements IApiService {
         });
     }
 
+    async getProject(id: number): Promise<Project | null>{
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.get<IProject>(`/projects/${id}`);
+
+            return this.deserializeProject(response.data);
+        });
+    }
+
     async updateThroughput(teamId: number): Promise<void> {
         await this.withErrorHandling(async () => {
             await this.apiService.post<void>(`/throughput/${teamId}`);
@@ -98,7 +107,7 @@ export class ApiService implements IApiService {
     private deserializeTeam(item: ITeam) {
         const projects = this.deserializeProjects(item.projects);
         const features: Feature[] = this.deserializeFeatures(item.features);
-        return new Team(item.name, item.id, projects, features);
+        return new Team(item.name, item.id, projects, features, item.featureWip);
     }
 
     private deserializeFeatures(featureData: IFeature[]): Feature[] {
@@ -119,9 +128,14 @@ export class ApiService implements IApiService {
     private deserializeProject(item: IProject) {
         const features: Feature[] = this.deserializeFeatures(item.features);
         const teams: Team[] = item.involvedTeams.map((team: ITeam) => {
-            return new Team(team.name, team.id, [], []);
+            return new Team(team.name, team.id, [], [], team.featureWip);
         });
-        return new Project(item.name, item.id, teams, features, new Date(item.lastUpdated));
+
+        const milestones : Milestone[] = item.milestones.map((milestone: IMilestone) => {
+            return new Milestone(milestone.name, new Date(milestone.date))
+        })
+
+        return new Project(item.name, item.id, teams, features, milestones, new Date(item.lastUpdated));
     }
 
     private deserializeManualForecast(manualForecastData: IManualForecast) {

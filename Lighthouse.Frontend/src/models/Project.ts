@@ -1,5 +1,6 @@
 import { Feature } from './Feature';
 import { IFeatureOwner } from './IFeatureOwner';
+import { IMilestone } from './Milestone';
 import { ITeam, Team } from './Team'
 
 export interface IProject extends IFeatureOwner {
@@ -7,6 +8,7 @@ export interface IProject extends IFeatureOwner {
     id: number;
     involvedTeams: ITeam[];
     lastUpdated: Date;
+    milestones: IMilestone[];
 }
 
 export class Project implements IProject {
@@ -15,15 +17,17 @@ export class Project implements IProject {
 
     features!: Feature[];
     involvedTeams!: Team[];
+    milestones!: IMilestone[];
 
     lastUpdated!: Date;
 
-    constructor(name: string, id: number, involvedTeams: Team[], features: Feature[], lastUpdated: Date) {
+    constructor(name: string, id: number, involvedTeams: Team[], features: Feature[], milestones: IMilestone[], lastUpdated: Date) {
         this.name = name;
         this.id = id;
         this.involvedTeams = involvedTeams;
         this.lastUpdated = lastUpdated;
         this.features = features || [];
+        this.milestones = milestones;
     }
 
     get remainingWork(): number {

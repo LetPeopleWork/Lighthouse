@@ -4,7 +4,6 @@ import { Throughput } from "../../models/Forecasts/Throughput";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 
 export interface IApiService {
-    deleteProject(id: number): Promise<void>;
 
     deleteTeam(id: number): Promise<void>;
 
@@ -13,6 +12,10 @@ export interface IApiService {
     getTeam(id: number): Promise<Team | null>;
 
     getProjects(): Promise<Project[]>;
+
+    getProject(id: number): Promise<Project | null>;
+    
+    deleteProject(id: number): Promise<void>;
 
     getVersion(): Promise<string>;
 

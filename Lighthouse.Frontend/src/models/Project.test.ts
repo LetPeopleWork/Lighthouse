@@ -2,6 +2,7 @@ import { Project } from './Project';
 import { Feature } from './Feature';
 import { Team } from './Team';
 import { WhenForecast } from './Forecasts/WhenForecast';
+import { Milestone } from './Milestone';
 
 describe('Project Class', () => {
     let project: Project;
@@ -14,8 +15,10 @@ describe('Project Class', () => {
     beforeEach(() => {
         name = 'New Project';
         id = 1;
-        involvedTeams = [new Team('Team A', 1, [], []), new Team('Team B', 2, [], [])];
+        involvedTeams = [new Team('Team A', 1, [], [], 2), new Team('Team B', 2, [], [], 1)];
         lastUpdated = new Date('2023-07-11');
+
+        const milestone = new Milestone("Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60));
 
         const feature1 = new Feature('Feature 1', 1, new Date('2023-07-10'), { 1: 10, 2: 20 }, [
             new WhenForecast(0.8, new Date('2023-08-01')),
@@ -25,7 +28,7 @@ describe('Project Class', () => {
         ]);
 
         features = [feature1, feature2];
-        project = new Project(name, id, involvedTeams, features, lastUpdated);
+        project = new Project(name, id, involvedTeams, features, [milestone], lastUpdated);
     });
 
     it('should create an instance of Project correctly', () => {

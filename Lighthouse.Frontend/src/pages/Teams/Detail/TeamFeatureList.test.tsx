@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import FeatureList from './FeatureList';
+import TeamFeatureList from './TeamFeatureList';
 import { Team } from '../../../models/Team';
 import { Feature } from '../../../models/Feature';
 import { WhenForecast } from '../../../models/Forecasts/WhenForecast';
@@ -25,10 +25,11 @@ describe('FeatureList component', () => {
         "Team A",
         1,
         [],
-        [new Feature('Feature 1', 1, new Date(), { 1: 10 }, [new WhenForecast(80, new Date())]), new Feature('Feature 2', 2, new Date(), { 1: 5 }, [new WhenForecast(60, new Date())])]);
+        [new Feature('Feature 1', 1, new Date(), { 1: 10 }, [new WhenForecast(80, new Date())]), new Feature('Feature 2', 2, new Date(), { 1: 5 }, [new WhenForecast(60, new Date())])],
+        1);
 
     it('should render all features with correct data', () => {
-        render(<FeatureList team={team} />);
+        render(<TeamFeatureList team={team} />);
 
         team.features.forEach((feature) => {
             const featureNameElement = screen.getByText(feature.name);
@@ -43,14 +44,14 @@ describe('FeatureList component', () => {
             })
 
             const localDateTimeDisplayElements = screen.getAllByTestId((id) => id.startsWith('local-date-time-display'))
-            localDateTimeDisplayElements.map((localDateTimeDisplayElement =>  {
+            localDateTimeDisplayElements.map((localDateTimeDisplayElement => {
                 expect(localDateTimeDisplayElement).toBeInTheDocument();
-            }));            
+            }));
         });
     });
 
     it('should render the correct number of features', () => {
-        render(<FeatureList team={team} />);
+        render(<TeamFeatureList team={team} />);
 
         const featureRows = screen.getAllByRole('row', { name: /feature/i });
         expect(featureRows).toHaveLength(team.features.length + 1);

@@ -14,8 +14,8 @@ describe('Team Class', () => {
         name = 'Team A';
         id = 1;
 
-        const project1 = new Project('Project 1', 1, [], [], new Date('2023-07-11'));
-        const project2 = new Project('Project 2', 2, [], [], new Date('2023-07-10'));
+        const project1 = new Project('Project 1', 1, [], [], [], new Date('2023-07-11'));
+        const project2 = new Project('Project 2', 2, [], [], [], new Date('2023-07-10'));
         projects = [project1, project2];
 
         const feature1 = new Feature('Feature 1', 1, new Date('2023-07-10'), { 1: 10, 2: 20 }, [
@@ -26,7 +26,7 @@ describe('Team Class', () => {
         ]);
         features = [feature1, feature2];
 
-        team = new Team(name, id, projects, features);
+        team = new Team(name, id, projects, features, 1);
     });
 
     it('should create an instance of Team correctly', () => {
