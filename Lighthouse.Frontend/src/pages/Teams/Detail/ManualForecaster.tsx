@@ -65,7 +65,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
                         </Grid>
                         <Grid item xs={4}>
                             <ForecastInfoList
-                                title={`How Many Items will you get done till  ${manualForecastResult.targetDate.toLocaleDateString()}?`}
+                                title={`How Many Items will you get done till ${manualForecastResult.targetDate.toLocaleDateString()}?`}
                                 forecasts={manualForecastResult.howManyForecasts}
                             />
                         </Grid>

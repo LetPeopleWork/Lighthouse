@@ -98,7 +98,7 @@ describe('ManualForecaster component', () => {
         })
 
         const howManyForecastList = screen.getByText(
-            `How Many Items will you get done till ${dayjs().add(2, 'weeks').toDate().toLocaleDateString()}?`
+            `How Many Items will you get done till ${new Date().toLocaleDateString()}?`
         );
         const likelihoodComponent = screen.getByTestId('forecast-likelihood');
 
