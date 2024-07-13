@@ -1,17 +1,19 @@
 import React from 'react';
 import dayjs from 'dayjs';
-import { Grid, TextField, Button } from '@mui/material';
+import { Grid, TextField } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { ManualForecast } from '../../../models/Forecasts/ManualForecast';
 import ForecastInfoList from '../../../components/Common/Forecasts/ForecastInfoList';
 import ForecastLikelihood from '../../../components/Common/Forecasts/ForecastLikelihood';
+import ActionButton from '../../../components/Common/ActionButton/ActionButton';
 
 interface ManualForecasterProps {
     remainingItems: number;
     targetDate: dayjs.Dayjs | null;
     manualForecastResult: ManualForecast | null;
+    waitingForResults: boolean;
     onRemainingItemsChange: (value: number) => void;
     onTargetDateChange: (date: dayjs.Dayjs | null) => void;
     onRunManualForecast: () => void;
@@ -21,6 +23,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
     remainingItems,
     targetDate,
     manualForecastResult,
+    waitingForResults,
     onRemainingItemsChange,
     onTargetDateChange,
     onRunManualForecast
@@ -50,7 +53,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
                         </LocalizationProvider>
                     </Grid>
                     <Grid item xs={4}>
-                        <Button variant="contained" onClick={onRunManualForecast}>Forecast</Button>
+                        <ActionButton onClickHandler={onRunManualForecast} buttonText='Forecast' isWaiting={waitingForResults}  />
                     </Grid>
                 </Grid>
             </Grid>

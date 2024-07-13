@@ -6,10 +6,8 @@ import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import dayjs from 'dayjs';
 import {
-    Button,
     Typography,
     Grid,
-    CircularProgress,
     Container
 } from '@mui/material';
 import ThroughputBarChart from './ThroughputChart';
@@ -17,6 +15,7 @@ import { Throughput } from '../../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../../models/Forecasts/ManualForecast';
 import FeatureList from './FeatureList';
 import ManualForecaster from './ManualForecaster';
+import ActionButton from '../../../components/Common/ActionButton/ActionButton';
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -32,6 +31,7 @@ const TeamDetail: React.FC = () => {
     const [remainingItems, setRemainingItems] = useState<number>(10);
     const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(dayjs().add(2, 'week'));
     const [manualForecastResult, setManualForecastResult] = useState<ManualForecast | null>(null);
+    const [waitingForManualForecastResult, setWaitingForManualForecastResult] = useState<boolean>(false);
 
     const [throughput, setThroughput] = useState<Throughput>(new Throughput([]))
 
@@ -107,12 +107,16 @@ const TeamDetail: React.FC = () => {
             return;
         }
 
+        setWaitingForManualForecastResult(true);
+
         try {
             const manualForecast = await apiService.runManualForecast(team.id, remainingItems, targetDate?.toDate());
             setManualForecastResult(manualForecast);
         } catch (error) {
             console.error('Error getting throughput:', error);
         }
+
+        setWaitingForManualForecastResult(false);
     };
 
     useEffect(() => {
@@ -122,7 +126,7 @@ const TeamDetail: React.FC = () => {
 
     useEffect(() => {
         if (team) {
-            fetchThroughput();            
+            fetchThroughput();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [team]);
@@ -135,12 +139,8 @@ const TeamDetail: React.FC = () => {
                         <Typography variant='h3'>{team?.name}</Typography>
                     </Grid>
                     <Grid item xs={12}>
-                        <Button variant="contained" onClick={onUpdateThroughput} disabled={!team || isUpdatingThroughput}>
-                            {isUpdatingThroughput ? <CircularProgress /> : 'Update Throughput'}
-                        </Button>
-                        <Button variant="contained" onClick={onUpdateForecast} disabled={!team || isUpdatingForecast}>
-                            {isUpdatingForecast ? <CircularProgress /> : 'Update Forecast'}
-                        </Button>
+                        <ActionButton onClickHandler={onUpdateThroughput} buttonText='Update Throughput' isWaiting={!team || isUpdatingThroughput} />
+                        <ActionButton onClickHandler={onUpdateForecast} buttonText='Update Forecast' isWaiting={!team || isUpdatingForecast} />
                     </Grid>
                     <Grid item xs={12}>
                         {team != null ? (
@@ -151,6 +151,7 @@ const TeamDetail: React.FC = () => {
                             remainingItems={remainingItems}
                             targetDate={targetDate}
                             manualForecastResult={manualForecastResult}
+                            waitingForResults={waitingForManualForecastResult}
                             onRemainingItemsChange={setRemainingItems}
                             onTargetDateChange={setTargetDate}
                             onRunManualForecast={onRunManualForecast}
