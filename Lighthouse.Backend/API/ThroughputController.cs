@@ -1,5 +1,4 @@
-﻿using Lighthouse.Backend.API.DTO;
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +15,19 @@ namespace Lighthouse.Backend.API
         {
             this.throughputService = throughputService;
             this.teamRepository = teamRepository;
+        }
+
+        [HttpGet("{id}")]
+        public ActionResult GetThroughputForTeam(int id)
+        {
+            var team = teamRepository.GetById(id);
+
+            if (team == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(team.RawThroughput);
         }
 
         [HttpPost("{id}")]

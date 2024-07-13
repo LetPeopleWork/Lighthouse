@@ -54,6 +54,45 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        public void GetThroughputForTeam_TeamExists_ReturnsRawThroughput()
+        {
+            var expectedThroughput = new int[] { 1, 1, 0, 2, 0, 1, 0, 0, 1, 2, 3, 0, 0, 0, 0 };
+            var team = new Team();
+
+            team.UpdateThroughput(expectedThroughput);
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+
+            var subject = CreateSubject();
+
+            var result = subject.GetThroughputForTeam(12);
+
+            var okResult = result as OkObjectResult;
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                var value = okResult.Value;
+                Assert.That(value, Is.EqualTo(expectedThroughput));
+            });
+        }
+
+        [Test]
+        public void GetThroughputForTeam_TeamDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var result = subject.GetThroughputForTeam(12);
+
+            var notFoundResult = result as NotFoundResult;
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.InstanceOf<NotFoundResult>());
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
         private ThroughputController CreateSubject()
         {
             return new ThroughputController(throughputServiceMock.Object, teamRepositoryMock.Object);

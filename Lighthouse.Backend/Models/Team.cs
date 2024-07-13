@@ -19,6 +19,7 @@
         public Throughput Throughput => new Throughput(RawThroughput);
 
         public int TotalThroughput => RawThroughput.Sum();
+
         public void UpdateThroughput(int[] throughput)
         {
             RawThroughput = throughput;

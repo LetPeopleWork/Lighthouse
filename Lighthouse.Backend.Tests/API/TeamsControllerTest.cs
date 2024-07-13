@@ -197,10 +197,10 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.Multiple(() =>
             {
-                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>(), "Result should be NotFoundResult");
+                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = result.Result as NotFoundResult;
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404), "Status code should be 404");
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             });
         }
 
