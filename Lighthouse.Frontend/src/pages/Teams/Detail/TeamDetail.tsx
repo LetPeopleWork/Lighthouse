@@ -117,12 +117,14 @@ const TeamDetail: React.FC = () => {
 
     useEffect(() => {
         fetchTeam();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
         if (team) {
-            fetchThroughput();
+            fetchThroughput();            
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [team]);
 
     return (
