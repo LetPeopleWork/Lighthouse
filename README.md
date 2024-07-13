@@ -18,7 +18,7 @@ Lighthouse is provided free of charge as open-source software by [LetPeopleWork]
 See [Installation](./INSTALLATION.md) for more details on the installation.
 
 # Contribution
-See [Contribution](./CONTRIBUTION.md) for more details on how you can contribute.
+See [Contribution](./CONTRIBUTING.md) for more details on how you can contribute.
 
 # Running Locally
 To build and run the sources locally, follow these instructions.
