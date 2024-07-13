@@ -6,11 +6,12 @@ import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Team } from '../../models/Team';
 import { Feature } from '../../models/Feature';
+import { Milestone } from '../../models/Milestone';
 
 describe('ProjectOverview component', () => {
   const projects: Project[] = [
-    new Project('Project Alpha', 1, [new Team('Team A', 1, [], []), new Team('Team B', 2, [], [])], [new Feature('Feature 1', 1, new Date('2024-06-01'), { }, [new WhenForecast(50, new Date("2024-01-01")), new WhenForecast(70, new Date("2024-02-01")), new WhenForecast(85, new Date("2024-03-01")), new WhenForecast(95, new Date("2024-04-01"))])], new Date('2024-06-01')),
-    new Project('Project Beta', 2, [new Team('Team C', 3, [], [])], [new Feature('Feature 3', 1, new Date('2024-06-01'), { }, [new WhenForecast(50, new Date("2024-01-01")), new WhenForecast(70, new Date("2024-02-01")), new WhenForecast(85, new Date("2024-03-01")), new WhenForecast(95, new Date("2024-04-01"))])], new Date('2024-06-01'))
+    new Project('Project Alpha', 1, [new Team('Team A', 1, [], [], 1), new Team('Team B', 2, [], [], 1)], [new Feature('Feature 1', 1, new Date('2024-06-01'), { }, [new WhenForecast(50, new Date("2024-01-01")), new WhenForecast(70, new Date("2024-02-01")), new WhenForecast(85, new Date("2024-03-01")), new WhenForecast(95, new Date("2024-04-01"))])], [new Milestone("Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60))], new Date('2024-06-01')),
+    new Project('Project Beta', 2, [new Team('Team C', 3, [], [], 2)], [new Feature('Feature 3', 1, new Date('2024-06-01'), { }, [new WhenForecast(50, new Date("2024-01-01")), new WhenForecast(70, new Date("2024-02-01")), new WhenForecast(85, new Date("2024-03-01")), new WhenForecast(95, new Date("2024-04-01"))])], [new Milestone("Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60))], new Date('2024-06-01'))
   ];
 
   it('should render all projects when no filter is applied', () => {
