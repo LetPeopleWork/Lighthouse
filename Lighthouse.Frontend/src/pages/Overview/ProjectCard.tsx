@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent, Typography, Grid, Tooltip } from '@mui/material';
+import { Card, CardContent, Typography, Grid } from '@mui/material';
 import { styled } from '@mui/system';
 import { Project } from "../../models/Project";
 import TeamLink from "./TeamLink";
@@ -7,30 +7,14 @@ import LocalDateTimeDisplay from "../../components/Common/LocalDateTimeDisplay/L
 import ProjectLink from "./ProjectLink";
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import StyledCardTypography from "./StyledCardTypography";
-
-// Custom icons representing different certainty levels with colors
-import RiskyIcon from '@mui/icons-material/ErrorOutline';
-import RealisticIcon from '@mui/icons-material/QueryBuilder';
-import ConfidentIcon from '@mui/icons-material/CheckCircleOutline';
-import CertainIcon from '@mui/icons-material/CheckCircle';
 import { ViewKanban } from "@mui/icons-material";
+import ForecastInfoList from "../../components/Common/Forecasts/ForecastInfoList";
 
 const ProjectCardStyle = styled(Card)({
   marginBottom: 'inherit',
   width: 'fit-content', // Limit card width to content size
   alignSelf: 'flex-start', // Align card to start of flex container
 });
-
-const ForecastsHeader = styled(Typography)({
-  marginBottom: 'inherit',
-  fontWeight: 'bold',
-});
-
-const TooltipText: React.FC<{ level: string; percentage: number }> = ({ level, percentage }) => (
-  <Typography variant="body1">
-    {level} ({percentage}% Chance)
-  </Typography>
-);
 
 interface ProjectOverviewRowProps {
   project: Project;
@@ -54,31 +38,10 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
             </Typography>
           </Grid>
           <Grid item xs={12}>
-            <ForecastsHeader variant="body1">Project Completion</ForecastsHeader>
-            <Tooltip title={<TooltipText level="Risky" percentage={50} />} arrow>
-              <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
-                <RiskyIcon style={{ color: 'red', marginRight: 8 }} />
-                <LocalDateTimeDisplay utcDate={project.features[0].forecasts[0].expectedDate} />
-              </Typography>
-            </Tooltip>
-            <Tooltip title={<TooltipText level="Realistic" percentage={70} />} arrow>
-              <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
-                <RealisticIcon style={{ color: 'orange', marginRight: 8 }} />
-                <LocalDateTimeDisplay utcDate={project.features[0].forecasts[1].expectedDate} />
-              </Typography>
-            </Tooltip>
-            <Tooltip title={<TooltipText level="Confident" percentage={85} />} arrow>
-              <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
-                <ConfidentIcon style={{ color: 'lightgreen', marginRight: 8 }} />
-                <LocalDateTimeDisplay utcDate={project.features[0].forecasts[2].expectedDate} />
-              </Typography>
-            </Tooltip>
-            <Tooltip title={<TooltipText level="Certain" percentage={95} />} arrow>
-              <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
-                <CertainIcon style={{ color: 'green', marginRight: 8 }} />
-                <LocalDateTimeDisplay utcDate={project.features[0].forecasts[3].expectedDate} />
-              </Typography>
-            </Tooltip>
+            <ForecastInfoList
+              title="Project Completion"
+              forecasts={project.features[0].forecasts}
+            />
           </Grid>
         </Grid>
 

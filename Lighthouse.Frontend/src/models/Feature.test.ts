@@ -1,5 +1,5 @@
 import { Feature } from './Feature';
-import { WhenForecast } from './WhenForecast';
+import { WhenForecast } from './Forecasts/WhenForecast';
 
 describe('Feature Class', () => {
     let feature: Feature;

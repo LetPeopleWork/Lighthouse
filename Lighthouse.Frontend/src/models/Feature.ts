@@ -1,4 +1,4 @@
-import { IWhenForecast, WhenForecast } from "./WhenForecast";
+import { IWhenForecast, WhenForecast } from "./Forecasts/WhenForecast";
 
 export interface IFeature {
     name: string;

@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
-            var manualForecast = new ManualForecastDto();
+            var manualForecast = new ManualForecastDto(input.RemainingItems, input.TargetDate);
 
             var timeToTargetDate = (input.TargetDate - DateTime.Today).Days;
 

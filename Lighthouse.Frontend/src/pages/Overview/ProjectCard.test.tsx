@@ -4,7 +4,7 @@ import ProjectCard from './ProjectCard';
 import { Project } from '../../models/Project';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Team } from '../../models/Team';
-import { WhenForecast } from '../../models/WhenForecast';
+import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { Feature } from '../../models/Feature';
 
 vi.mock('./TeamLink', () => ({

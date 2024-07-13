@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ProjectOverview from './ProjectOverview';
 import { Project } from '../../models/Project';
-import { WhenForecast } from '../../models/WhenForecast';
+import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Team } from '../../models/Team';
 import { Feature } from '../../models/Feature';

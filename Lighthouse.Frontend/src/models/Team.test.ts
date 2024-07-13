@@ -1,7 +1,7 @@
 import { Team } from './Team';
 import { Project } from './Project';
 import { Feature } from './Feature';
-import { WhenForecast } from './WhenForecast';
+import { WhenForecast } from './Forecasts/WhenForecast';
 
 describe('Team Class', () => {
     let team: Team;
