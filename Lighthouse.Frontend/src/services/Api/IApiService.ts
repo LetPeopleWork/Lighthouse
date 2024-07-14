@@ -14,6 +14,8 @@ export interface IApiService {
     getProjects(): Promise<Project[]>;
 
     getProject(id: number): Promise<Project | null>;
+
+    refreshFeaturesForProject(id: number): Promise<Project | null>;
     
     deleteProject(id: number): Promise<void>;
 

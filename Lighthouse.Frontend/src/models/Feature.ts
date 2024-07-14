@@ -5,6 +5,9 @@ export interface IFeature {
     id: number;
     lastUpdated: Date;
     remainingWork: { [key: number]: number };
+    milestoneLikelihood: { [key: number]: number };
+    projectId: number;
+    projectName: string;
     forecasts: IWhenForecast[];
 }
 
@@ -17,14 +20,20 @@ export class Feature implements IFeature {
     name!: string;
     id!: number;
     lastUpdated!: Date;
+    projectId: number;
+    projectName: string;
     remainingWork!: DictionaryObject;
+    milestoneLikelihood! : DictionaryObject;
     forecasts!: IWhenForecast[];
 
-    constructor(name: string, id: number, lastUpdated: Date, remainingWork: DictionaryObject, forecasts: IWhenForecast[]) {
+    constructor(name: string, id: number, lastUpdated: Date, projectId: number, projectName: string, remainingWork: DictionaryObject, milestoneLikelihood: DictionaryObject, forecasts: IWhenForecast[]) {
         this.name = name;
         this.id = id;
         this.lastUpdated = lastUpdated;
+        this.projectId = projectId;
+        this.projectName = projectName;
         this.remainingWork = remainingWork;
+        this.milestoneLikelihood = milestoneLikelihood;
         this.forecasts = forecasts;
     }
 
@@ -41,5 +50,9 @@ export class Feature implements IFeature {
         }
 
         return totalRemainingWork;
+    }
+
+    getMilestoneLikelihood(milestoneId: number){
+        return this.milestoneLikelihood[milestoneId] ?? 0;
     }
 }

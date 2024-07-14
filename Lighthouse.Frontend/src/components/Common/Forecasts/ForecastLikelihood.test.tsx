@@ -25,14 +25,14 @@ describe('ForecastLikelihood component', () => {
     const likelihood = 75;
 
     it('should render the likelihood percentage correctly', () => {
-        render(<ForecastLikelihood howMany={howMany} when={when} likelihood={likelihood} />);
+        render(<ForecastLikelihood remainingItems={howMany} targetDate={when} likelihood={likelihood} />);
 
         expect(screen.getByText(`${likelihood}%`)).toBeInTheDocument();
     });
 
     it('should render the correct icon and color based on the likelihood', () => {
         const forecastLevel = new ForecastLevel(likelihood);
-        render(<ForecastLikelihood howMany={howMany} when={when} likelihood={likelihood} />);
+        render(<ForecastLikelihood remainingItems={howMany} targetDate={when} likelihood={likelihood} />);
 
         const iconElement = screen.getByTestId('forecast-level-icon');
         expect(iconElement).toBeInTheDocument();

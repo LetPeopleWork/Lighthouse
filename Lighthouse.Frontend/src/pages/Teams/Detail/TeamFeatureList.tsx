@@ -3,6 +3,7 @@ import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import { Team } from "../../../models/Team";
+import { Link } from "react-router-dom";
 
 interface FeatureListProps{
     team: Team
@@ -26,6 +27,9 @@ const TeamFeatureList : React.FC<FeatureListProps> = ({team}) => {
                                     <TableCell>
                                         <Typography variant="h6" component="div">Updated On</Typography>
                                     </TableCell>
+                                    <TableCell>
+                                        <Typography variant="h6" component="div">Project</Typography>
+                                    </TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -40,6 +44,11 @@ const TeamFeatureList : React.FC<FeatureListProps> = ({team}) => {
                                         </TableCell>
                                         <TableCell>
                                             <LocalDateTimeDisplay utcDate={feature.lastUpdated} showTime={true} />
+                                        </TableCell>
+                                        <TableCell>
+                                        <Link to={`/projects/${feature.projectId}`}>
+                                                {`${feature.projectName}`}
+                                            </Link>
                                         </TableCell>
                                     </TableRow>
                                 ))}

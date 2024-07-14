@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom'; // Import Routes and MemoryRouter
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import TeamDetail from './TeamDetail';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 

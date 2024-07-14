@@ -67,6 +67,14 @@ export class ApiService implements IApiService {
         });
     }
 
+    async refreshFeaturesForProject(id: number): Promise<Project | null> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.post<IProject>(`/projects/refresh/${id}`);
+
+            return this.deserializeProject(response.data);
+        });
+    }
+
     async updateThroughput(teamId: number): Promise<void> {
         await this.withErrorHandling(async () => {
             await this.apiService.post<void>(`/throughput/${teamId}`);
@@ -115,7 +123,7 @@ export class ApiService implements IApiService {
             const forecasts: WhenForecast[] = feature.forecasts.map((forecast: IWhenForecast) => {
                 return new WhenForecast(forecast.probability, new Date(forecast.expectedDate));
             });
-            return new Feature(feature.name, feature.id, new Date(feature.lastUpdated), feature.remainingWork, forecasts);
+            return new Feature(feature.name, feature.id, new Date(feature.lastUpdated), feature.projectId, feature.projectName, feature.remainingWork, feature.milestoneLikelihood, forecasts);
         });
     }
 
@@ -132,7 +140,7 @@ export class ApiService implements IApiService {
         });
 
         const milestones : Milestone[] = item.milestones.map((milestone: IMilestone) => {
-            return new Milestone(milestone.name, new Date(milestone.date))
+            return new Milestone(milestone.id, milestone.name, new Date(milestone.date))
         })
 
         return new Project(item.name, item.id, teams, features, milestones, new Date(item.lastUpdated));

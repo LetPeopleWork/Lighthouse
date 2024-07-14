@@ -7,6 +7,7 @@ describe('Feature Class', () => {
     let id: number;
     let lastUpdated: Date;
     let remainingWork: { [key: number]: number };
+    let milestoneLikelihood: { [key: number]: number };
     let forecasts: WhenForecast[];
 
     beforeEach(() => {
@@ -14,11 +15,12 @@ describe('Feature Class', () => {
         id = 1;
         lastUpdated = new Date('2023-07-11');
         remainingWork = { 1: 10, 2: 20, 3: 30 };
+        milestoneLikelihood = { 0: 97.1, 1: 35.6 };
         forecasts = [
             new WhenForecast(0.8, new Date('2023-08-01')),
             new WhenForecast(0.6, new Date('2023-09-01')),
         ];
-        feature = new Feature(name, id, lastUpdated, remainingWork, forecasts);
+        feature = new Feature(name, id, lastUpdated, 0, "Project", remainingWork, milestoneLikelihood, forecasts);
     });
 
     it('should create an instance of Feature correctly', () => {
