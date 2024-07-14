@@ -21,15 +21,33 @@ namespace Lighthouse.Backend.API.DTO
 
                 RemainingWork[remainingWork.TeamId] += remainingWork.RemainingWorkItems;
             }
+
+            if (feature.Project != null)            
+            {
+                ProjectId = feature.Project.Id;
+                ProjectName = feature.Project.Name;
+
+                foreach (var milestone in feature.Project.Milestones)
+                {
+                    var likelihood = feature.GetLikelhoodForDate(milestone.Date);
+                    MilestoneLikelihood.Add(milestone.Id, likelihood);
+                }
+            }
         }
 
         public string Name { get; set; }
 
         public int Id { get; set; }
 
+        public int ProjectId { get; set; }
+
+        public string ProjectName { get; set; }
+
         public DateTime LastUpdated { get; }
 
         public Dictionary<int, int> RemainingWork { get; } = new Dictionary<int, int>();
+
+        public Dictionary<int, double> MilestoneLikelihood { get; } = new Dictionary<int, double>();
 
         public List<WhenForecastDto> Forecasts { get; } = new List<WhenForecastDto>();
     }

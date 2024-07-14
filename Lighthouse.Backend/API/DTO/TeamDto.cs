@@ -8,11 +8,14 @@ namespace Lighthouse.Backend.API.DTO
         {
             Name = team.Name;
             Id = team.Id;
+            FeatureWip = team.FeatureWIP;
         }
 
         public string Name { get; set; }
 
         public int Id { get; set; }
+
+        public int FeatureWip { get;set; }
 
         public List<FeatureDto> Features { get; } = new List<FeatureDto>();
 

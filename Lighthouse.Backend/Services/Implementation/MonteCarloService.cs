@@ -66,6 +66,16 @@ namespace Lighthouse.Backend.Services.Implementation
             await featureRepository.Save();
         }
 
+        public async Task UpdateForecastsForProject(Project project)
+        {
+            logger.LogInformation("Running Monte Carlo Forecast For Project {project}", project.Name);
+
+            foreach (var team in project.InvolvedTeams)
+            {
+                await ForecastFeaturesForTeam(team);
+            }
+        }
+
         public async Task ForecastFeaturesForTeam(Team team)
         {
             logger.LogInformation("Running Monte Carlo Forecast For All Fetaures of Team {TeamName}", team.Name);

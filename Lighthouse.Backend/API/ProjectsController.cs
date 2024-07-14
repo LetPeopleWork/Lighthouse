@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +11,14 @@ namespace Lighthouse.Backend.API
     public class ProjectsController : ControllerBase
     {
         private readonly IRepository<Project> repository;
+        private readonly IWorkItemCollectorService workItemCollectorService;
+        private readonly IMonteCarloService monteCarloService;
 
-        public ProjectsController(IRepository<Project> repository)
+        public ProjectsController(IRepository<Project> repository, IWorkItemCollectorService workItemCollectorService, IMonteCarloService monteCarloService)
         {
             this.repository = repository;
+            this.workItemCollectorService = workItemCollectorService;
+            this.monteCarloService = monteCarloService;
         }
 
         [HttpGet]
@@ -33,7 +38,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("{id}")]
-        public IActionResult Get(int id)
+        public ActionResult<ProjectDto> Get(int id)
         {
             var project = repository.GetById(id);
             if (project == null)
@@ -44,11 +49,28 @@ namespace Lighthouse.Backend.API
             return Ok(new ProjectDto(project));
         }
 
+        [HttpPost("refresh/{id}")]
+        public async Task<ActionResult> UpdateFeaturesForProject(int id)
+        {
+            var project = repository.GetById(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            await workItemCollectorService.UpdateFeaturesForProject(project);
+            await repository.Save();
+            await monteCarloService.UpdateForecastsForProject(project);
+
+            return Ok(new ProjectDto(project));
+        }
+
         [HttpDelete("{id}")]
         public void DeleteProject(int id)
         {
             repository.Remove(id);
             repository.Save();
         }
+
     }
 }
