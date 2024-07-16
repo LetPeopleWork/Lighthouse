@@ -12,6 +12,7 @@ interface ForecastLikelihoodProps {
 
 const ForecastLikelihood: React.FC<ForecastLikelihoodProps> = ({ remainingItems, targetDate, likelihood, showText = true }) => {
     const forecastLevel = new ForecastLevel(likelihood);
+    const formattedLikelihood = likelihood.toFixed(2);
 
     return (
         <Grid container direction="column" sx={{ width: '100%' }}>
@@ -23,7 +24,7 @@ const ForecastLikelihood: React.FC<ForecastLikelihoodProps> = ({ remainingItems,
 
             <Typography variant="h1" sx={{ color: forecastLevel.color, flex: 1, fontSize: '2rem' }}>
                 <forecastLevel.IconComponent style={{ fontSize: 32, color: forecastLevel.color, marginRight: 8 }} data-testid="forecast-level-icon" />
-                {likelihood}%
+                {formattedLikelihood}%
             </Typography>
         </Grid>
     );

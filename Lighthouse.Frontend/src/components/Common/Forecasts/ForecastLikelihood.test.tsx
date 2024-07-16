@@ -22,12 +22,13 @@ const colorToRGB = (colorName: string) => {
 describe('ForecastLikelihood component', () => {
     const howMany = 10;
     const when = new Date('2025-01-01');
-    const likelihood = 75;
+    const likelihood = 75.1234;
 
     it('should render the likelihood percentage correctly', () => {
         render(<ForecastLikelihood remainingItems={howMany} targetDate={when} likelihood={likelihood} />);
+        const formattedLikelihood = likelihood.toFixed(2);
 
-        expect(screen.getByText(`${likelihood}%`)).toBeInTheDocument();
+        expect(screen.getByText(`${formattedLikelihood}%`)).toBeInTheDocument();
     });
 
     it('should render the correct icon and color based on the likelihood', () => {
