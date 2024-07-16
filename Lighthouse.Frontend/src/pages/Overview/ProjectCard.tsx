@@ -39,7 +39,7 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
           </Grid>
           <Grid item xs={12}>
             <ForecastInfoList
-              title="Project Completion"
+              title="Projected Completion"
               forecasts={project.features[0].forecasts}
             />
           </Grid>
