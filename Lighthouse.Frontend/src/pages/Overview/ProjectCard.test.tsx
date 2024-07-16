@@ -33,7 +33,8 @@ describe('ProjectCard component', () => {
     [new Team('Team A', 1, [], [], 1), new Team('Team B', 2, [], [], 1)],
     [new Feature('Feature', 0, new Date(), 1, "Project Alpha", { 1: 7, 2: 3 }, { 0: 74.5 }, [new WhenForecast(50, new Date("2025-08-04")), new WhenForecast(70, new Date("2025-06-25")), new WhenForecast(85, new Date("2025-07-25")), new WhenForecast(95, new Date("2025-08-19"))])],
     [new Milestone(1, "Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60))],
-    new Date('2024-06-01'))
+    new Date('2024-06-01')
+  );
 
   const renderComponent = () => render(
     <Router>
@@ -62,5 +63,20 @@ describe('ProjectCard component', () => {
     // Check if LocalDateTimeDisplay components are rendered for forecasts
     const dateTimeDisplays = screen.getAllByTestId('local-date-time-display');
     expect(dateTimeDisplays).toHaveLength(5); // 4 forecasts + 1 last updated
+  });
+
+  it('should render forecasts from the feature with the latest expectedDate', () => {
+    renderComponent();
+
+    const forecastDates = [
+      new Date("2025-08-04").toString(),
+      new Date("2025-06-25").toString(),
+      new Date("2025-07-25").toString(),
+      new Date("2025-08-19").toString()
+    ];
+
+    forecastDates.forEach(date => {
+      expect(screen.getByText((content, element) => content.includes(date))).toBeInTheDocument();
+    });
   });
 });

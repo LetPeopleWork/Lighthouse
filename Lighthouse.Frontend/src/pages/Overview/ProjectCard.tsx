@@ -12,8 +12,8 @@ import ForecastInfoList from "../../components/Common/Forecasts/ForecastInfoList
 
 const ProjectCardStyle = styled(Card)({
   marginBottom: 'inherit',
-  width: 'fit-content', // Limit card width to content size
-  alignSelf: 'flex-start', // Align card to start of flex container
+  width: 'fit-content',
+  alignSelf: 'flex-start',
 });
 
 interface ProjectOverviewRowProps {
@@ -24,6 +24,18 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
   const involvedTeamsList = project.involvedTeams.map((team) => (
     <TeamLink key={team.id} team={team} />
   ));
+
+  const featureWithLatestForecast = project.features.reduce((latest, feature) => {
+    const latestForecastDate = latest.forecasts.reduce((latestDate, forecast) => {
+      return forecast.expectedDate > latestDate ? forecast.expectedDate : latestDate;
+    }, new Date(0));
+
+    const currentFeatureLatestForecastDate = feature.forecasts.reduce((latestDate, forecast) => {
+      return forecast.expectedDate > latestDate ? forecast.expectedDate : latestDate;
+    }, new Date(0));
+
+    return currentFeatureLatestForecastDate > latestForecastDate ? feature : latest;
+  }, project.features[0]);
 
   return (
     <ProjectCardStyle>
@@ -40,7 +52,7 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
           <Grid item xs={12}>
             <ForecastInfoList
               title="Projected Completion"
-              forecasts={project.features[0].forecasts}
+              forecasts={featureWithLatestForecast.forecasts}
             />
           </Grid>
         </Grid>
