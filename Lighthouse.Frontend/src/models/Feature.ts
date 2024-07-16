@@ -6,32 +6,29 @@ export interface IFeature {
     lastUpdated: Date;
     remainingWork: { [key: number]: number };
     milestoneLikelihood: { [key: number]: number };
-    projectId: number;
-    projectName: string;
+    projects: {[key: number]: string };
     forecasts: IWhenForecast[];
 }
 
 
-export interface DictionaryObject{
-    readonly [key: number]: number
+export interface DictionaryObject<TValue>{
+    readonly [key: number]: TValue
 }
 
 export class Feature implements IFeature {
     name!: string;
     id!: number;
     lastUpdated!: Date;
-    projectId: number;
-    projectName: string;
-    remainingWork!: DictionaryObject;
-    milestoneLikelihood! : DictionaryObject;
+    projects: DictionaryObject<string>;
+    remainingWork: DictionaryObject<number>;
+    milestoneLikelihood: DictionaryObject<number>;
     forecasts!: IWhenForecast[];
 
-    constructor(name: string, id: number, lastUpdated: Date, projectId: number, projectName: string, remainingWork: DictionaryObject, milestoneLikelihood: DictionaryObject, forecasts: IWhenForecast[]) {
+    constructor(name: string, id: number, lastUpdated: Date, projects: DictionaryObject<string>, remainingWork: DictionaryObject<number>, milestoneLikelihood: DictionaryObject<number>, forecasts: IWhenForecast[]) {
         this.name = name;
         this.id = id;
         this.lastUpdated = lastUpdated;
-        this.projectId = projectId;
-        this.projectName = projectName;
+        this.projects = projects;
         this.remainingWork = remainingWork;
         this.milestoneLikelihood = milestoneLikelihood;
         this.forecasts = forecasts;

@@ -22,12 +22,11 @@ namespace Lighthouse.Backend.API.DTO
                 RemainingWork[remainingWork.TeamId] += remainingWork.RemainingWorkItems;
             }
 
-            if (feature.Project != null)            
+            foreach (var project in feature.Projects)
             {
-                ProjectId = feature.Project.Id;
-                ProjectName = feature.Project.Name;
+                Projects.Add(project.Id, project.Name);
 
-                foreach (var milestone in feature.Project.Milestones)
+                foreach (var milestone in project.Milestones)
                 {
                     var likelihood = feature.GetLikelhoodForDate(milestone.Date);
                     MilestoneLikelihood.Add(milestone.Id, likelihood);
@@ -39,9 +38,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public int Id { get; set; }
 
-        public int ProjectId { get; set; }
-
-        public string ProjectName { get; set; }
+        public Dictionary<int, string> Projects { get; } = new Dictionary<int, string>();
 
         public DateTime LastUpdated { get; }
 

@@ -31,11 +31,9 @@ namespace Lighthouse.Backend.Models
 
         public WhenForecast Forecast { get; set; }
 
-        public List<RemainingWork> RemainingWork { get; set; } = new List<RemainingWork>();
+        public List<RemainingWork> RemainingWork { get; } = new List<RemainingWork>();
 
-        public int ProjectId { get; set; }
-
-        public Project Project { get; set; }
+        public List<Project> Projects { get; } = [];
 
         public bool IsUnparentedFeature { get; set; }
 

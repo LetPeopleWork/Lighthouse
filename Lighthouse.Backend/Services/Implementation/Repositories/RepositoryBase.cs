@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return dbSetGetter(Context).SingleOrDefault(predicate);
         }
 
-        public void Remove(int id)
+        public virtual void Remove(int id)
         {
             logger.LogInformation("Removing item with {id}", id);
             var itemToRemove = dbSetGetter(Context).Find(id);

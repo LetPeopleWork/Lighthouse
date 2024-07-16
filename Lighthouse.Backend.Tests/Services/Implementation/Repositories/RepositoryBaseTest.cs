@@ -186,7 +186,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
         private Feature CreateFeature()
         {
-            return new Feature { Name = "Name", Project = new Project { Name = "Project" }, Order = "12" };
+            var feature = new Feature { Name = "Name", Order = "12" };
+            feature.Projects.Add(new Project { Name = "Project" });
+
+            return feature;
         }
     }
 

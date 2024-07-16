@@ -34,8 +34,8 @@ describe('ProjectFeatureList component', () => {
     const milestone1: Milestone = new Milestone(1, 'Milestone 1', new Date('2023-07-01'));
     const milestone2: Milestone = new Milestone(2, 'Milestone 2', new Date('2023-08-01'));
 
-    const feature1: Feature = new Feature('Feature 1', 1, new Date(), 10, '', { 1: 5, 2: 5 }, {}, [new WhenForecast(80, new Date())]);
-    const feature2: Feature = new Feature('Feature 2', 2, new Date(), 15, '', { 1: 10, 2: 5 }, {}, [new WhenForecast(60, new Date())]);
+    const feature1: Feature = new Feature('Feature 1', 1, new Date(), { 10: '' }, { 1: 5, 2: 5 }, {}, [new WhenForecast(80, new Date())]);
+    const feature2: Feature = new Feature('Feature 2', 2, new Date(), { 15: '' }, { 1: 10, 2: 5 }, {}, [new WhenForecast(60, new Date())]);
 
     const project: Project = new Project('Project 1', 1, [team1, team2], [feature1, feature2], [milestone1, milestone2], new Date());
 

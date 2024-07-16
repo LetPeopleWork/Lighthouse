@@ -65,10 +65,8 @@ namespace Lighthouse.Backend.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Feature>()
-                .HasOne(f => f.Project)
-                .WithMany(p => p.Features)
-                .HasForeignKey(f => f.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasMany(f => f.Projects)
+                .WithMany(p => p.Features);
 
             logger.LogInformation("Migrating Database");
             Database.Migrate();

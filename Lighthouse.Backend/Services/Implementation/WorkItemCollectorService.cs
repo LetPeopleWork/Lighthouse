@@ -148,7 +148,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private Feature GetOrAddUnparentedFeature(Project project)
         {
-            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = $"{int.MaxValue - 1}", IsUnparentedFeature = true, ProjectId = project.Id, Project = project };
+            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = $"{int.MaxValue - 1}", IsUnparentedFeature = true };
+            unparentedFeature.Projects.Add(project);
+
             var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;
 
             if (unparentedFeatureId != null)
@@ -230,7 +232,13 @@ namespace Lighthouse.Backend.Services.Implementation
 
             if (feature == null)
             {
-                feature = new Feature() { ReferenceId = featureId, Project = project, ProjectId = project.Id };
+                feature = new Feature() { ReferenceId = featureId };
+            }
+
+            var featureIsAddedToProject = feature.Projects.Any(p => p.Id == project.Id);
+            if (!featureIsAddedToProject)
+            {
+                feature.Projects.Add(project);
             }
 
             return feature;

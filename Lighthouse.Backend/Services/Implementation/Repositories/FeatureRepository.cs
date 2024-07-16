@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         public override IEnumerable<Feature> GetAll()
         {
             return Context.Features
-                .Include(f => f.Project)
+                .Include(f => f.Projects)
                     .ThenInclude(p => p.Milestones)
                 .Include(f => f.RemainingWork).ThenInclude(rw => rw.Team)
                 .Include(f => f.Forecast).ThenInclude(f => f.SimulationResults);

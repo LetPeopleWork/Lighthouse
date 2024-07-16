@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public IEnumerable<Team> InvolvedTeams => Features.SelectMany(f => f.RemainingWork).Select(rw => rw.Team).Distinct();
 
-        public List<Feature> Features { get; } = new List<Feature>();
+        public List<Feature> Features { get; } = [];
 
         public List<Milestone> Milestones { get; } = new List<Milestone>();
 

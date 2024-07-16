@@ -50,10 +50,13 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
             </Typography>
           </Grid>
           <Grid item xs={12}>
-            <ForecastInfoList
-              title="Projected Completion"
-              forecasts={featureWithLatestForecast.forecasts}
-            />
+            {featureWithLatestForecast !== undefined ? (
+              <ForecastInfoList
+                title="Projected Completion"
+                forecasts={featureWithLatestForecast.forecasts}
+              />) :
+              <></>
+            }
           </Grid>
         </Grid>
 

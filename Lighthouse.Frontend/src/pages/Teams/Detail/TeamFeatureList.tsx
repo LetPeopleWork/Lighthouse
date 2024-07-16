@@ -5,56 +5,60 @@ import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDispla
 import { Team } from "../../../models/Team";
 import { Link } from "react-router-dom";
 
-interface FeatureListProps{
+interface FeatureListProps {
     team: Team
 }
 
-const TeamFeatureList : React.FC<FeatureListProps> = ({team}) => {
+const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
     return (
         <TableContainer component={Paper}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>
-                                        <Typography variant="h6" component="div">Feature Name</Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="h6" component="div">Remaining Work (Team / Total)</Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="h6" component="div">Forecasts</Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="h6" component="div">Updated On</Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="h6" component="div">Project</Typography>
-                                    </TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {team?.features.map((feature) => (
-                                    <TableRow key={feature.id}>
-                                        <TableCell>{feature.name}</TableCell>
-                                        <TableCell>
-                                            {feature.getRemainingWorkForTeam(team.id)} / {feature.getAllRemainingWork()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <ForecastInfoList title={''} forecasts={feature.forecasts} />
-                                        </TableCell>
-                                        <TableCell>
-                                            <LocalDateTimeDisplay utcDate={feature.lastUpdated} showTime={true} />
-                                        </TableCell>
-                                        <TableCell>
-                                        <Link to={`/projects/${feature.projectId}`}>
-                                                {`${feature.projectName}`}
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>
+                            <Typography variant="h6" component="div">Feature Name</Typography>
+                        </TableCell>
+                        <TableCell>
+                            <Typography variant="h6" component="div">Remaining Work (Team / Total)</Typography>
+                        </TableCell>
+                        <TableCell>
+                            <Typography variant="h6" component="div">Forecasts</Typography>
+                        </TableCell>
+                        <TableCell>
+                            <Typography variant="h6" component="div">Updated On</Typography>
+                        </TableCell>
+                        <TableCell>
+                            <Typography variant="h6" component="div">Project</Typography>
+                        </TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {team?.features.map((feature) => (
+                        <TableRow key={feature.id}>
+                            <TableCell>{feature.name}</TableCell>
+                            <TableCell>
+                                {feature.getRemainingWorkForTeam(team.id)} / {feature.getAllRemainingWork()}
+                            </TableCell>
+                            <TableCell>
+                                <ForecastInfoList title={''} forecasts={feature.forecasts} />
+                            </TableCell>
+                            <TableCell>
+                                <LocalDateTimeDisplay utcDate={feature.lastUpdated} showTime={true} />
+                            </TableCell>
+                            <TableCell>
+                                {Object.entries(feature.projects).map(([projectId, projectName]) => (
+                                    <div key={projectId}>
+                                        <Link to={`/projects/${projectId}`}>
+                                            {projectName}
+                                        </Link>
+                                    </div>
                                 ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
     )
 }
 

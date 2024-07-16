@@ -65,7 +65,6 @@
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(85))</td>
                             <td>@GetFutureDate(@feature.Forecast.GetProbability(95))</td>
                             <td>@feature.Forecast.CreationTime.ToString("g")</td>
-                            <td><a asp-page="../Projects/Details" asp-route-id="@feature.ProjectId">@feature.Project.Name</a></td>
                         </tr>
                     }
                 }

@@ -49,10 +49,11 @@ namespace Lighthouse.Backend.Tests.Pages.Projects
         {
             var project = SetupProject();
             var team = new Team();
-            var feautre = new Feature { Project = project };
-            feautre.RemainingWork.Add(new RemainingWork { Feature = feautre, Team = team });
+            var feature = new Feature();
+            feature.Projects.Add(project);
+            feature.RemainingWork.Add(new RemainingWork { Feature = feature, Team = team });
 
-            project.Features.Add(feautre);
+            project.Features.Add(feature);
 
             var subject = CreateSubject();
 
