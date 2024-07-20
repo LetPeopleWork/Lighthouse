@@ -85,7 +85,7 @@ const WorkTrackingSystemConnectionSettings: React.FC = () => {
 
     useEffect(() => {
         initializeData();
-    });
+    }, [initializeData]);
 
     return (
         <Container>
