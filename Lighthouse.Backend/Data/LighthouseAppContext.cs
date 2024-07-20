@@ -21,6 +21,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<Project> Projects { get; set; } = default!;
 
+        public DbSet<WorkTrackingSystemConnection> WorkTrackingSystemConnections { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<WorkTrackingSystemOption<Team>>()
@@ -67,6 +69,14 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<Feature>()
                 .HasMany(f => f.Projects)
                 .WithMany(p => p.Features);
+
+            modelBuilder.Entity<WorkTrackingSystemConnection>(entity =>
+            {
+                entity.HasMany(e => e.Options)
+                      .WithOne(option => option.WorkTrackingSystemConnection)
+                      .HasForeignKey(option => option.WorkTrackingSystemConnectionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
             logger.LogInformation("Migrating Database");
             Database.Migrate();

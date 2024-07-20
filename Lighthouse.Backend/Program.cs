@@ -10,6 +10,7 @@ using Lighthouse.Backend.Data;
 using System.Globalization;
 using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Serilog;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend
 {
@@ -49,11 +50,13 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
                 builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();
                 builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
+                builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
 
                 // Factories
                 builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
                 builder.Services.AddScoped<IWorkTrackingOptionsFactory, WorkTrackingOptionsFactory>();
                 builder.Services.AddScoped<IIssueFactory, IssueFactory>();
+                builder.Services.AddScoped<IWorkTrackingSystemFactory, WorkTrackingSystemFactory>();
 
                 // Services
                 builder.Services.AddScoped<IRandomNumberService, RandomNumberService>();
@@ -70,16 +73,21 @@ namespace Lighthouse.Backend
                 builder.Services.AddHostedService<ForecastUpdateService>();
 
                 // Add CORS services
-                builder.Services.AddCors(options =>
-                {
-                    options.AddPolicy("AllowAll",
-                        builder =>
-                        {
-                            builder.AllowAnyOrigin()
-                                   .AllowAnyMethod()
-                                   .AllowAnyHeader();
-                        });
-                });
+                builder.Services
+                    .AddCors(options =>
+                    {
+                        options.AddPolicy("AllowAll",
+                            builder =>
+                            {
+                                builder.AllowAnyOrigin()
+                                       .AllowAnyMethod()
+                                       .AllowAnyHeader();
+                            });
+                    })
+                    .AddControllers().AddJsonOptions(options =>
+                    {
+                        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    });
 
                 var app = builder.Build();
 

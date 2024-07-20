@@ -160,6 +160,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return result;
         }
 
+        public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
+        {
+            var client = GetJiraRestClient(connection);
+            var response = await client.GetAsync("rest/api/2/myself");
+
+            return response.IsSuccessStatusCode;
+        }
+
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)
         {
             logger.LogDebug("Getting Issue by Key '{Key}'", issueId);
@@ -317,6 +325,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var url = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(JiraWorkTrackingOptionNames.Url);
             var username = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(JiraWorkTrackingOptionNames.Username);
             var apiToken = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
+            var byteArray = Encoding.ASCII.GetBytes($"{username}:{apiToken}");
+
+            var client = new HttpClient();
+            client.BaseAddress = new Uri(url.TrimEnd('/'));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+
+            return client;
+        }
+
+        private HttpClient GetJiraRestClient(WorkTrackingSystemConnection connection)
+        {
+            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
+            var username = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Username);
+            var apiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var byteArray = Encoding.ASCII.GetBytes($"{username}:{apiToken}");
 
             var client = new HttpClient();

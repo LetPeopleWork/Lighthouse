@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -260,6 +261,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var order = subject.GetAdjacentOrderIndex(itemsOrder, RelativeOrder.Below);
 
             Assert.That(order, Is.EqualTo(expectedOrder));
+        }
+
+        [Test]
+        public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()
+        {
+            var subject = CreateSubject();
+
+            var organizationUrl = "https://letpeoplework.atlassian.net";
+            var username = "benjhuser@gmail.com";
+            var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
+
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                ]);
+
+            var isValid = await subject.ValidateConnection(connectionSetting);
+
+            Assert.IsTrue(isValid);
+        }
+
+        [Test]
+        public async Task ValidateConnection_GivenInvalidSettings_ReturnsFalse()
+        {
+            var subject = CreateSubject();
+
+            var apiToken = "Yah-yah-yah, Coco Jamboo, yah-yah-yeh";
+            var organizationUrl = "https://letpeoplework.atlassian.net";
+            var username = "benjhuser@gmail.com";
+
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                ]);
+
+            var isValid = await subject.ValidateConnection(connectionSetting);
+
+            Assert.IsFalse(isValid);
         }
 
         private Team CreateTeam(string query)

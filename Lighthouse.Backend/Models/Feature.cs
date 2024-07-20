@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Models
             {
                 var timeToTargetDate = (date - DateTime.Today).Days;
 
-                return Forecast.GetLikelihood(timeToTargetDate);
+                return Forecast?.GetLikelihood(timeToTargetDate) ?? 0;
             }
 
             return 100;

@@ -25,5 +25,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
 
         string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder);
+
+        Task<bool> ValidateConnection(WorkTrackingSystemConnection connection);
     }
 }

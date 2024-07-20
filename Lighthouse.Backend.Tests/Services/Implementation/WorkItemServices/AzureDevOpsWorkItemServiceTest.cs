@@ -5,6 +5,7 @@ using Lighthouse.Backend.WorkTracking;
 using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Collections.Generic;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 {
@@ -311,6 +312,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var order = subject.GetAdjacentOrderIndex(existingItemsOrder, relativeOrder);
 
             Assert.That(order, Is.EqualTo(expectedResult));
+        }
+
+        [Test]
+        public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()
+        {
+            var subject = CreateSubject();
+
+            var organizationUrl = "https://dev.azure.com/huserben";
+            var personalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'AzureDevOpsLighthouseIntegrationTestToken' is set!");
+
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = personalAccessToken, IsSecret = true },
+                ]);
+
+            var isValid = await subject.ValidateConnection(connectionSetting);
+
+            Assert.IsTrue(isValid);
+        }
+
+        [Test]
+        public async Task ValidateConnection_GivenInvalidSettings_ReturnsFalse()
+        {
+            var subject = CreateSubject();
+
+            var organizationUrl = "https://dev.azure.com/huserben";
+            var personalAccessToken = "Yah-yah-yah, Coco Jamboo, yah-yah-yeh";
+
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = personalAccessToken, IsSecret = true },
+                ]);
+
+            var isValid = await subject.ValidateConnection(connectionSetting);
+
+            Assert.IsFalse(isValid);
         }
 
         private Team CreateTeam(string query)

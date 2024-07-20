@@ -166,6 +166,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return result;
         }
 
+        public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
+        {
+            var witClient = GetClientService(connection);
+            var query = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.Id}] = 12";
+
+            try
+            {
+                await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private List<int> ConvertToIntegers(IEnumerable<string> orderAsStrings)
         {
             var orderAsInt = new List<int>();
@@ -358,6 +374,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             var url = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
             var personalAccessToken = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
+
+            var connection = CreateConnection(url, personalAccessToken);
+            return connection.GetClient<WorkItemTrackingHttpClient>();
+        }
+
+        private WorkItemTrackingHttpClient GetClientService(WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            var url = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
+            var personalAccessToken = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
 
             var connection = CreateConnection(url, personalAccessToken);
             return connection.GetClient<WorkItemTrackingHttpClient>();
