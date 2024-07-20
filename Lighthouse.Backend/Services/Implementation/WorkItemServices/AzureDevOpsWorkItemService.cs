@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         public async Task<int[]> GetClosedWorkItems(int history, Team team)
         {
             logger.LogInformation("Getting Closed Work Items for Team {TeamName}", team.Name);
-            var witClient = GetClientService(team);
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
             return await GetClosedItemsPerDay(witClient, history, team);
         }
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         public async Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner)
         {
             logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", workItemTypes), workItemQueryOwner.WorkItemQuery);
-            var witClient = GetClientService(workItemQueryOwner);
+            var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
             var workItems = await GetWorkItemsByQuery(witClient, query);
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         public async Task<int> GetRemainingRelatedWorkItems(string featureId, Team team)
         {
             logger.LogInformation("Getting Related Work Items for Feature {featureId} and Team {TeamName}", featureId, team.Name);
-            var witClient = GetClientService(team);
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
             var relatedWorkItems = await GetRelatedWorkItems(witClient, team, featureId);
 
@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Getting Work Item Details for {itemId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
-            var witClient = GetClientService(workItemQueryOwner);
+            var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var workItem = await GetWorkItemById(witClient, itemId, workItemQueryOwner);
 
@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Getting Open Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
 
-            var witClient = GetClientService(team);
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
             var stateQuery = PrepareStateQuery(closedStates);
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Checking if Item {ItemID} of Team {TeamName} is related to {FeatureIDs}", itemId, team.Name, string.Join(", ", featureIds));
 
-            var witClient = GetClientService(team);
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
             var workItem = await GetWorkItemById(witClient, itemId, team);
 
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Checking if Item {referenceId} has Children", referenceId);
 
-            var witClient = GetClientService(workTrackingSystemOptionsOwner);
+            var witClient = GetClientService(workTrackingSystemOptionsOwner.WorkTrackingSystemConnection);
 
             var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItemLinks WHERE [Source].[{AzureDevOpsFieldNames.Id}] = '{referenceId}' AND [System.Links.LinkType] = 'System.LinkTypes.Hierarchy-Forward' AND Target.[System.WorkItemType] <> '' MODE (Recursive)";
             var workItems = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
@@ -368,15 +368,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
 
             return $"AND ([System.Parent] = '{relatedItemId}' {additionalRelatedFieldQuery})";
-        }
-
-        private WorkItemTrackingHttpClient GetClientService(IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            var url = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
-            var personalAccessToken = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
-
-            var connection = CreateConnection(url, personalAccessToken);
-            return connection.GetClient<WorkItemTrackingHttpClient>();
         }
 
         private WorkItemTrackingHttpClient GetClientService(WorkTrackingSystemConnection workTrackingSystemConnection)

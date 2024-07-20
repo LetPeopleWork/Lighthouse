@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             logger.LogInformation("Extrapolating Not Broken Down Features for Project {ProjectName}", project.Name);
 
-            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem);
+            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             foreach (var feature in project.Features.Where(feature => feature.RemainingWork.Sum(x => x.RemainingWorkItems) == 0))
             {
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private async Task GetRemainingWorkForFeatures(Project project)
         {
             var tasks = project.Features
-                .Select(featureForProject => GetRemainingWorkForFeature(featureForProject, project.WorkTrackingSystem))
+                .Select(featureForProject => GetRemainingWorkForFeature(featureForProject, project.WorkTrackingSystemConnection.WorkTrackingSystem))
                 .ToList();
 
             await Task.WhenAll(tasks);
@@ -129,9 +129,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var unparentedFeature = GetOrAddUnparentedFeature(project);
 
-            foreach (var team in teamRepository.GetAll().Where(t => t.WorkTrackingSystem == project.WorkTrackingSystem))
+            foreach (var team in teamRepository.GetAll().Where(t => t.WorkTrackingSystemConnection.WorkTrackingSystem == project.WorkTrackingSystemConnection.WorkTrackingSystem))
             {
-                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
                 var itemsMatchingUnparentedItemsQuery = await workItemService.GetOpenWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery);
 
                 var unparentedItems = await GetItemsUnrelatedToFeatures(featureIds, team, itemsMatchingUnparentedItemsQuery);
@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 unparentedFeature.AddOrUpdateRemainingWorkForTeam(team, unparentedItems.Count);
             }
 
-            unparentedFeature.Order = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem).GetAdjacentOrderIndex(project.Features.Select(x => x.Order), RelativeOrder.Above);
+            unparentedFeature.Order = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem).GetAdjacentOrderIndex(project.Features.Select(x => x.Order), RelativeOrder.Above);
 
             logger.LogInformation("Setting order for {UnparentedFeatureName} to {UnparentedFeatureOrder}", unparentedFeature.Name, unparentedFeature.Order);
         }
@@ -171,7 +171,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             foreach (var itemId in itemIds)
             {
-                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
                 var isRelatedToFeature = await workItemService.IsRelatedToFeature(itemId, featureIds, team);
                 if (!isRelatedToFeature)
                 {
@@ -184,11 +184,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private async Task GetRemainingWorkForFeature(Feature featureForProject, WorkTrackingSystems workTrackingSystem)
         {
-            var teams = teamRepository.GetAll().Where(t => t.WorkTrackingSystem == workTrackingSystem).ToList();
+            var teams = teamRepository.GetAll().Where(t => t.WorkTrackingSystemConnection.WorkTrackingSystem == workTrackingSystem).ToList();
 
             var tasks = teams.Select(async team =>
             {
-                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+                var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
                 var remainingWork = await workItemService.GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
 
                 logger.LogInformation("Found {remainingWork} Work Item Remaining for Team {TeamName} for Feature {FeatureName}", remainingWork, team.Name, featureForProject.Name);
@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private async Task<List<Feature>> GetFeaturesForProject(Project project)
         {
-            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystem);
+            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var features = new List<Feature>();
             var featureIds = await workItemService.GetOpenWorkItems(project.WorkItemTypes, project);

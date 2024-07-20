@@ -43,16 +43,45 @@ namespace Lighthouse.Backend.API
         public ActionResult<TeamDto> GetTeam(int id)
         {
             var team = teamRepository.GetById(id);
-
-            var allProjects = projectRepository.GetAll().ToList();
-            var allFeatures = featureRepository.GetAll().ToList();
-
+            
             if (team == null)
             {
                 return NotFound();
             }
 
+            var allProjects = projectRepository.GetAll().ToList();
+            var allFeatures = featureRepository.GetAll().ToList();
+
+            
+
             return Ok(CreateTeamDto(allProjects, allFeatures, team));
+        }
+
+        [HttpPost]
+        public ActionResult CreateTeam(TeamSettingDto teamSetting)
+        {
+            return Ok();
+        }
+
+        [HttpPut("{id}")]
+        public ActionResult UpdateTeam(int id, TeamSettingDto teamSetting)
+        {
+            return Ok();
+        }
+
+        [HttpGet("{id}/settings")]
+        public ActionResult<TeamSettingDto> GetTeamSettings(int id)
+        {
+            var team = teamRepository.GetById(id);
+            
+            if (team == null)
+            {
+                return NotFound();
+            }
+
+            var teamSettingDto = new TeamSettingDto(team);
+
+            return Ok(teamSettingDto);
         }
 
         [HttpDelete("{id}")]

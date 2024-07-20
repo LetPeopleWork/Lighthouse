@@ -18,8 +18,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         public async Task GetTeamById_ExistingId_RetunrsCorrectTeam()
         {
             var subject = CreateSubject();
-            var workTrackingOptions = new List<WorkTrackingSystemOption<Team>> { new WorkTrackingSystemOption<Team>("key", "value", false) };
-            var team = new Team {  Name = "Name", WorkTrackingSystemOptions = workTrackingOptions };
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            workTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "key", Value = "value" });
+
+            var team = new Team { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
             subject.Add(team);
             await subject.Save();
@@ -27,7 +29,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var foundTeam = subject.GetById(team.Id);
 
             Assert.That(foundTeam, Is.EqualTo(team));
-            CollectionAssert.AreEquivalent(foundTeam.WorkTrackingSystemOptions, workTrackingOptions);
+            Assert.That(foundTeam.WorkTrackingSystemConnection, Is.EqualTo(workTrackingSystemConnection));
         }
 
         private TeamRepository CreateSubject()

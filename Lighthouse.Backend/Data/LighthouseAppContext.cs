@@ -25,18 +25,6 @@ namespace Lighthouse.Backend.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<WorkTrackingSystemOption<Team>>()
-                .HasOne(t => t.Entity)
-                .WithMany(x => x.WorkTrackingSystemOptions)
-                .HasForeignKey(wts => wts.EntityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<WorkTrackingSystemOption<Project>>()
-                .HasOne(t => t.Entity)
-                .WithMany(x => x.WorkTrackingSystemOptions)
-                .HasForeignKey(wts => wts.EntityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<Milestone>()
                 .HasOne(m => m.Project)
                 .WithMany(p => p.Milestones)

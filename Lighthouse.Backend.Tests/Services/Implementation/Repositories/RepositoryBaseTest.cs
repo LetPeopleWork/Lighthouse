@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -187,7 +188,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         private Feature CreateFeature()
         {
             var feature = new Feature { Name = "Name", Order = "12" };
-            feature.Projects.Add(new Project { Name = "Project" });
+
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            var project = new Project { Name = "Project" };
+            project.WorkTrackingSystemConnection = workTrackingSystemConnection;
+            feature.Projects.Add(project);
 
             return feature;
         }

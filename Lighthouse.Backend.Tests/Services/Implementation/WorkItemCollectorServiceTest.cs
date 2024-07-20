@@ -335,6 +335,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.WorkItemTypes.Add("User Story");
             team.UpdateThroughput(throughput);
 
+            var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
+            team.WorkTrackingSystemConnection = workTrackingConnection;
+
             return team;
         }
 
@@ -346,6 +349,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             };
 
             project.WorkItemTypes.Add("Feature");
+
+            var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
+            project.WorkTrackingSystemConnection = workTrackingConnection;
 
             return project;
         }

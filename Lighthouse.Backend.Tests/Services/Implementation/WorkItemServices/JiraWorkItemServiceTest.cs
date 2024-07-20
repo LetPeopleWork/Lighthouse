@@ -321,9 +321,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var username = "benjhuser@gmail.com";
             var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
 
-            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(JiraWorkTrackingOptionNames.Url, organizationUrl, false));
-            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(JiraWorkTrackingOptionNames.Username, username, false));
-            team.WorkTrackingSystemOptions.Add(new WorkTrackingSystemOption<Team>(JiraWorkTrackingOptionNames.ApiToken, apiToken, true));
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                ]);
+
+            team.WorkTrackingSystemConnection = connectionSetting;
 
             return team;
         }

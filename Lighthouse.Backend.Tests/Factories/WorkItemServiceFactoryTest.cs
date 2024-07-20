@@ -56,14 +56,6 @@ namespace Lighthouse.Backend.Tests.Factories
             Assert.That(workItemService2, Is.EqualTo(workItemService1));
         }
 
-        [Test]
-        public void CreateWorkItemService_GivenUnknownWorkTrackingSystem_Throws()
-        {
-            var subject = CreateSubject();
-
-            Assert.Throws<NotSupportedException>(() => subject.GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems.Unknown));
-        }
-
         private WorkItemServiceFactory CreateSubject()
         {
             return new WorkItemServiceFactory(serviceProviderMock.Object, Mock.Of<ILogger<WorkItemServiceFactory>>());

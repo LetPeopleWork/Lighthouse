@@ -30,11 +30,6 @@ namespace Lighthouse.Backend.API
 
             foreach (WorkTrackingSystems system in Enum.GetValues(typeof(WorkTrackingSystems)))
             {
-                if (system == WorkTrackingSystems.Unknown)
-                {
-                    continue;
-                }
-
                 AddConnectionForWorkTrackingSystem(supportedSystems, system);
             }
 

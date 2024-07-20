@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         public async Task<int[]> GetClosedWorkItems(int history, Team team)
         {
             logger.LogInformation("Getting Closed Work Items for Team {TeamName}", team.Name);
-            var client = GetJiraRestClient(team);
+            var client = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
             return await GetClosedItemsPerDay(client, history, team);
         }
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", workItemTypes), workItemQueryOwner.WorkItemQuery);
 
-            var jiraRestClient = GetJiraRestClient(workItemQueryOwner);
+            var jiraRestClient = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
             var issues = await GetIssuesByQuery(jiraRestClient, query);
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Getting Related Issues for Feature {Id} and Team {TeamName}", featureId, team.Name);
 
-            var jiraRestClient = GetJiraRestClient(team);
+            var jiraRestClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
             var relatedWorkItems =  GetRelatedWorkItems(jiraRestClient, team, featureId);
 
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Getting Issue Details for {IssueId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
-            var jiraRestClient = GetJiraRestClient(workItemQueryOwner);
+            var jiraRestClient = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var issue = await GetIssueById(jiraRestClient, itemId);
 
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Getting Open Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
 
-            var jiraClient = GetJiraRestClient(team);
+            var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
             var stateQuery = PrepareStateQuery(closedStates);
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Checking if Issue {Key} of Team {TeamName} is related to {FeatureIDs}", itemId, team.Name, string.Join(", ", featureIds));
 
-            var jiraClient = GetJiraRestClient(team);
+            var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
             var issue = await GetIssueById(jiraClient, itemId);
 
             var isRelated = featureIds.Any(f => IsIssueRelated(issue, f, team.AdditionalRelatedField));
@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             logger.LogInformation("Checking if Issue {Key} has Children", referenceId);
 
-            var jiraClient = GetJiraRestClient(workTrackingSystemOptionsOwner);
+            var jiraClient = GetJiraRestClient(workTrackingSystemOptionsOwner.WorkTrackingSystemConnection);
             var jql = $"parent = \"{referenceId}\"";
 
             var issues = await GetIssuesByQuery(jiraClient, jql);
@@ -318,20 +318,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
 
             return query;
-        }
-
-        private HttpClient GetJiraRestClient(IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            var url = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(JiraWorkTrackingOptionNames.Url);
-            var username = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(JiraWorkTrackingOptionNames.Username);
-            var apiToken = workTrackingSystemOptionsOwner.GetWorkTrackingSystemOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
-            var byteArray = Encoding.ASCII.GetBytes($"{username}:{apiToken}");
-
-            var client = new HttpClient();
-            client.BaseAddress = new Uri(url.TrimEnd('/'));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
-
-            return client;
         }
 
         private HttpClient GetJiraRestClient(WorkTrackingSystemConnection connection)

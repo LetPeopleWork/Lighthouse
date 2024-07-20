@@ -20,12 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
 
-            if (team.WorkTrackingSystem == WorkTrackingSystems.Unknown)
-            {
-                throw new NotSupportedException("Cannot Update Throughput if Work Tracking System is not set!");
-            }
-
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystem);
+            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
             var throughput = await workItemService.GetClosedWorkItems(team.ThroughputHistory, team);
 
             team.UpdateThroughput(throughput);

@@ -1,0 +1,39 @@
+﻿using Lighthouse.Backend.Models;
+
+namespace Lighthouse.Backend.API.DTO
+{
+    public class TeamSettingDto
+    {
+        public TeamSettingDto()
+        {            
+        }
+
+        public TeamSettingDto(Team team)
+        {
+            Id = team.Id;    
+            Name = team.Name;
+            ThroughputHistory = team.ThroughputHistory;
+            FeatureWIP = team.FeatureWIP;
+            WorkItemQuery = team.WorkItemQuery;
+            WorkItemTypes = team.WorkItemTypes;
+            WorkTrackingSystemConnectionId = team.WorkTrackingSystemConnectionId;
+            RelationCustomField = team.AdditionalRelatedField;
+        }
+
+        public int Id { get; set; }
+
+        public string Name { get; set; }
+
+        public int ThroughputHistory { get; set; }
+
+        public int FeatureWIP { get; set; }
+
+        public string WorkItemQuery { get; set; }
+
+        public List<string> WorkItemTypes { get; set; }
+
+        public int WorkTrackingSystemConnectionId { get; set; }
+
+        public string RelationCustomField { get; set; }
+    }
+}

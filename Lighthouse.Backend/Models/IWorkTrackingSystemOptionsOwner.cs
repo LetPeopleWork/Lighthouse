@@ -1,11 +1,9 @@
-﻿using Lighthouse.Backend.WorkTracking;
-
-namespace Lighthouse.Backend.Models
+﻿namespace Lighthouse.Backend.Models
 {
     public interface IWorkTrackingSystemOptionsOwner
     {
-        WorkTrackingSystems WorkTrackingSystem { get; set; }
+        public int WorkTrackingSystemConnectionId { get; set; }
 
-        string GetWorkTrackingSystemOptionByKey(string key);
+        public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }
     }
 }

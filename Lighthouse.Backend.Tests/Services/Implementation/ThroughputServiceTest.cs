@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Name = "Team",
                 ThroughputHistory = 7,
-                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps },
             };
 
             workItemServiceMock.Setup(x => x.GetClosedWorkItems(7, team)).Returns(Task.FromResult(closedItemsPerDay));
@@ -38,31 +38,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(team.Throughput.GetThroughputOnDay(index), Is.EqualTo(closedItemsPerDay[index]));
             }
-        }
-
-        [Test]
-        public async Task UpdateThroughput_UnknownWorkTrackingSystem_Throws()
-        {
-            var team = new Team
-            {
-                Name = "Team",
-                ThroughputHistory = 7,
-                WorkTrackingSystem = WorkTrackingSystems.Unknown,
-            };
-
-            var subject = new ThroughputService(Mock.Of<IWorkItemServiceFactory>(), Mock.Of<ILogger<ThroughputService>>());
-
-            var exceptionThrown = false;
-            try
-            {
-                await subject.UpdateThroughputForTeam(team);
-            }
-            catch (NotSupportedException)
-            {
-                exceptionThrown = true;
-            }
-
-            Assert.That(exceptionThrown, Is.True);
         }
     }
 }
