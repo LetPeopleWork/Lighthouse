@@ -8,6 +8,8 @@ import { Throughput } from '../../models/Forecasts/Throughput';
 import { IManualForecast, ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast, IHowManyForecast } from '../../models/Forecasts/HowManyForecast';
 import { IMilestone, Milestone } from '../../models/Milestone';
+import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
+import { IWorkTrackingSystemOption, WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 
 export class ApiService implements IApiService {
     private apiService!: AxiosInstance;
@@ -59,7 +61,7 @@ export class ApiService implements IApiService {
         });
     }
 
-    async getProject(id: number): Promise<Project | null>{
+    async getProject(id: number): Promise<Project | null> {
         return await this.withErrorHandling(async () => {
             const response = await this.apiService.get<IProject>(`/projects/${id}`);
 
@@ -106,6 +108,52 @@ export class ApiService implements IApiService {
         });
     }
 
+    async getWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.get<IWorkTrackingSystemConnection[]>(`/worktrackingsystemconnections/supported`);
+
+            return response.data.map((connection) => this.deserializeWorkTrackingSystemConnection(connection))
+        });
+    }
+
+    async getConfiguredWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.get<IWorkTrackingSystemConnection[]>(`/worktrackingsystemconnections`);
+
+            return response.data.map((connection) => this.deserializeWorkTrackingSystemConnection(connection))
+        });
+    }
+
+    async addNewWorkTrackingSystemConnection(newWorkTrackingSystemConnection: IWorkTrackingSystemConnection): Promise<IWorkTrackingSystemConnection> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.post<IWorkTrackingSystemConnection>(`/worktrackingsystemconnections`, newWorkTrackingSystemConnection);
+
+            return this.deserializeWorkTrackingSystemConnection(response.data);
+        });
+    }
+
+    async updateWorkTrackingSystemConnection(modifiedConnection: IWorkTrackingSystemConnection): Promise<IWorkTrackingSystemConnection> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.put<IWorkTrackingSystemConnection>(`/worktrackingsystemconnections/${modifiedConnection.id}`, modifiedConnection);
+
+            return this.deserializeWorkTrackingSystemConnection(response.data);
+        });
+    }
+
+    async deleteWorkTrackingSystemConnection(connectionId: number): Promise<void> {
+        this.withErrorHandling(async () => {
+            await this.apiService.delete(`/worktrackingsystemconnections/${connectionId}`);
+        });
+    }
+
+    async validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean>{
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.post<boolean>(`/worktrackingsystemconnections/validate`, connection);
+
+            return response.data;
+        });
+    }
+
     private deserializeTeams(teams: ITeam[]) {
         return teams.map((item: ITeam) => {
             return this.deserializeTeam(item);
@@ -139,11 +187,23 @@ export class ApiService implements IApiService {
             return new Team(team.name, team.id, [], [], team.featureWip);
         });
 
-        const milestones : Milestone[] = item.milestones.map((milestone: IMilestone) => {
+        const milestones: Milestone[] = item.milestones.map((milestone: IMilestone) => {
             return new Milestone(milestone.id, milestone.name, new Date(milestone.date))
         })
 
         return new Project(item.name, item.id, teams, features, milestones, new Date(item.lastUpdated));
+    }
+
+    private deserializeWorkTrackingSystemConnectionOption(workTrackingSystemConnectionOption: IWorkTrackingSystemOption): WorkTrackingSystemOption {
+        return new WorkTrackingSystemOption(workTrackingSystemConnectionOption.key, workTrackingSystemConnectionOption.value, workTrackingSystemConnectionOption.isSecret);
+    }
+
+    private deserializeWorkTrackingSystemConnection(workTrackingSystemConnection: IWorkTrackingSystemConnection) {
+        const workTrackingSystemOptions = workTrackingSystemConnection.options.map((option: IWorkTrackingSystemOption) => {
+            return this.deserializeWorkTrackingSystemConnectionOption(option);
+        })
+
+        return new WorkTrackingSystemConnection(workTrackingSystemConnection.id, workTrackingSystemConnection.name, workTrackingSystemConnection.workTrackingSystem, workTrackingSystemOptions);
     }
 
     private deserializeManualForecast(manualForecastData: IManualForecast) {

@@ -2,6 +2,7 @@ import { Project } from "../../models/Project";
 import { Team } from "../../models/Team";
 import { Throughput } from "../../models/Forecasts/Throughput";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
+import { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 
 export interface IApiService {
 
@@ -16,16 +17,28 @@ export interface IApiService {
     getProject(id: number): Promise<Project | null>;
 
     refreshFeaturesForProject(id: number): Promise<Project | null>;
-    
+
     deleteProject(id: number): Promise<void>;
 
     getVersion(): Promise<string>;
 
     updateThroughput(teamId: number): Promise<void>;
 
-    getThroughput(teamId: number) : Promise<Throughput>;
+    getThroughput(teamId: number): Promise<Throughput>;
 
     updateForecast(teamId: number): Promise<void>;
 
-    runManualForecast(teamId: number, remainingItems: number, targetDate: Date) : Promise<ManualForecast>;
+    runManualForecast(teamId: number, remainingItems: number, targetDate: Date): Promise<ManualForecast>;
+
+    getWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]>;
+
+    getConfiguredWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]>;
+
+    addNewWorkTrackingSystemConnection(newWorkTrackingSystemConnection: IWorkTrackingSystemConnection): Promise<IWorkTrackingSystemConnection>;
+
+    updateWorkTrackingSystemConnection(modifiedConnection: IWorkTrackingSystemConnection): Promise<IWorkTrackingSystemConnection>;
+
+    deleteWorkTrackingSystemConnection(connectionId: number): Promise<void>;
+
+    validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean>;
 }

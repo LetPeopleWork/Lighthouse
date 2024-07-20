@@ -8,6 +8,8 @@ import { ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast } from '../../models/Forecasts/HowManyForecast';
 import dayjs from 'dayjs';
 import { Milestone } from '../../models/Milestone';
+import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
+import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 
 export class MockApiService implements IApiService {
     private useDelay: boolean;
@@ -135,6 +137,48 @@ export class MockApiService implements IApiService {
 
         return [this.release_1337, this.release_42, this.release_codename_daniel];
     }
+
+    async getWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]> {
+        await this.delay();
+
+        return [
+            new WorkTrackingSystemConnection(null, "New Azure DevOps Connection", "AzureDevOps", [new WorkTrackingSystemOption("Azure DevOps Url", "", false), new WorkTrackingSystemOption("Personal Access Token", "", true)]),
+            new WorkTrackingSystemConnection(null, "New Jira Connection", "Jira", [new WorkTrackingSystemOption("Jira Url", "", false), new WorkTrackingSystemOption("Username", "", false), new WorkTrackingSystemOption("Api Token", "", true)])];
+    }
+
+    async getConfiguredWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]> {
+        await this.delay();
+
+        return [
+            new WorkTrackingSystemConnection(12, "My ADO Connection", "AzureDevOps", [new WorkTrackingSystemOption("Azure DevOps Url", "https://dev.azure.com/letpeoplework", false), new WorkTrackingSystemOption("Personal Access Token", "This is a secret token", true)]),
+            new WorkTrackingSystemConnection(42, "My Jira Connection", "Jira", [new WorkTrackingSystemOption("Jira Url", "https://letpeoplework.atlassian.com", false), new WorkTrackingSystemOption("Username", "superuser@letpeople.work", false), new WorkTrackingSystemOption("Api Token", "Secretive Secret", true)])]
+    }
+
+    async addNewWorkTrackingSystemConnection(newWorkTrackingSystemConnection: IWorkTrackingSystemConnection): Promise<IWorkTrackingSystemConnection> {
+        await this.delay();
+
+        newWorkTrackingSystemConnection.id = 12;
+
+        return newWorkTrackingSystemConnection;
+    }
+
+    async updateWorkTrackingSystemConnection(modifiedConnection: IWorkTrackingSystemConnection): Promise<IWorkTrackingSystemConnection> {
+        await this.delay();
+
+        return modifiedConnection;
+    }
+
+    async deleteWorkTrackingSystemConnection(connectionId: number): Promise<void> {
+        console.log(`Deleting Work Tracking Connection with id ${connectionId}`)
+        await this.delay();
+    }
+
+    async validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean> {
+        console.log(`Validating connection for ${connection.name}`);
+        await this.delay();
+        return true;
+    }
+
 
     delay() {
         if (this.throwError) {
