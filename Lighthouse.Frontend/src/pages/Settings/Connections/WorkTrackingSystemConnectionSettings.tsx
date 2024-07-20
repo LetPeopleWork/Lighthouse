@@ -85,7 +85,7 @@ const WorkTrackingSystemConnectionSettings: React.FC = () => {
 
     useEffect(() => {
         initializeData();
-    }, [initializeData]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <Container>
