@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             return new SerilogLogConfiguration(config, configFileUpdaterMock.Object, fileSystemMock.Object);
         }
 
-        private IConfiguration SetupConfiguration(string logLevel, string logsFolder = "")
+        private IConfiguration SetupConfiguration(string logLevel, string logsFolder = "/logs")
         {
             var inMemorySettings = new Dictionary<string, string?>
             {
