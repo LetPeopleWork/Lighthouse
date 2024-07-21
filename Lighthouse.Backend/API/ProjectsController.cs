@@ -3,6 +3,9 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Lighthouse.Backend.API
 {
@@ -72,5 +75,73 @@ namespace Lighthouse.Backend.API
             repository.Save();
         }
 
+        [HttpGet("{id}/settings")]
+        public ActionResult<ProjectSettingDto> GetProjectSettings(int id)
+        {
+            var project = repository.GetById(id);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            var projectSettingDto = new ProjectSettingDto(project);
+            return Ok(projectSettingDto);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ProjectSettingDto>> UpdateProject(int id, ProjectSettingDto projectSetting)
+        {
+            var project = repository.GetById(id);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            SyncProjectWithProjectSettings(project, projectSetting);
+
+            repository.Update(project);
+            await repository.Save();
+
+            var updatedProjectSettingDto = new ProjectSettingDto(project);
+            return Ok(updatedProjectSettingDto);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ProjectSettingDto>> CreateProject(ProjectSettingDto projectSetting)
+        {
+            var newProject = new Project();
+            SyncProjectWithProjectSettings(newProject, projectSetting);
+
+            repository.Add(newProject);
+            await repository.Save();
+
+            var projectSettingDto = new ProjectSettingDto(newProject);
+            return Ok(projectSettingDto);
+        }
+
+        private void SyncProjectWithProjectSettings(Project project, ProjectSettingDto projectSetting)
+        {
+            project.Name = projectSetting.Name;
+            project.WorkItemTypes = projectSetting.WorkItemTypes;
+            project.WorkItemQuery = projectSetting.WorkItemQuery;
+            project.UnparentedItemsQuery = projectSetting.UnparentedItemsQuery;
+            project.DefaultAmountOfWorkItemsPerFeature = projectSetting.DefaultAmountOfWorkItemsPerFeature;
+            project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
+
+            project.Milestones.Clear();
+            foreach (var milestone in projectSetting.Milestones)
+            {
+                project.Milestones.Add(new Milestone
+                {
+                    Id = milestone.Id,
+                    Name = milestone.Name,
+                    Date = milestone.Date,
+                    Project = project,
+                    ProjectId = project.Id,
+                });
+            }
+        }
     }
 }

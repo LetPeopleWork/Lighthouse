@@ -55,8 +55,15 @@ namespace Lighthouse.Backend.API
             return Ok(CreateTeamDto(allProjects, allFeatures, team));
         }
 
+        [HttpDelete("{id}")]
+        public void DeleteTeam(int id)
+        {
+            teamRepository.Remove(id);
+            teamRepository.Save();
+        }
+
         [HttpPost]
-        public async Task<ActionResult<TeamSettingDto>> CreateTeamAsync(TeamSettingDto teamSetting)
+        public async Task<ActionResult<TeamSettingDto>> CreateTeam(TeamSettingDto teamSetting)
         {
             var newTeam = new Team();
             SyncTeamWithTeamSettings(newTeam, teamSetting);
@@ -100,13 +107,6 @@ namespace Lighthouse.Backend.API
             var teamSettingDto = new TeamSettingDto(team);
 
             return Ok(teamSettingDto);
-        }
-
-        [HttpDelete("{id}")]
-        public void DeleteTeam(int id)
-        {
-            teamRepository.Remove(id);
-            teamRepository.Save();
         }
 
         private void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)

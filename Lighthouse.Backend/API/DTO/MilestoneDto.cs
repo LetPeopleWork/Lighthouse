@@ -4,6 +4,9 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class MilestoneDto
     {
+        public MilestoneDto()
+        {            
+        }
         public MilestoneDto(Milestone milestone)
         {
             Id = milestone.Id;
@@ -11,10 +14,10 @@ namespace Lighthouse.Backend.API.DTO
             Date = milestone.Date;
         }
 
-        public int Id { get; }
+        public int Id { get; set; }
 
-        public string Name { get; }
+        public string Name { get; set; }
 
-        public DateTime Date { get; }
+        public DateTime Date { get; set; }
     }
 }

@@ -273,7 +273,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = await subject.CreateTeamAsync(newTeamSettings);
+            var result = await subject.CreateTeam(newTeamSettings);
 
             teamRepositoryMock.Verify(x => x.Add(It.IsAny<Team>()));
             teamRepositoryMock.Verify(x => x.Save());
