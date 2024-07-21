@@ -1,4 +1,4 @@
-import { Button, CircularProgress, Box } from "@mui/material";
+import { Button, CircularProgress } from "@mui/material";
 import React from "react";
 
 type ButtonVariant = "text" | "outlined" | "contained";
