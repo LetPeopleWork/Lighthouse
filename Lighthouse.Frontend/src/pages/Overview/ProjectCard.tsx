@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent, Typography, Grid } from '@mui/material';
 import { styled } from '@mui/system';
-import { Project } from "../../models/Project";
+import { Project } from "../../models/Project/Project";
 import TeamLink from "./TeamLink";
 import LocalDateTimeDisplay from "../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ProjectLink from "./ProjectLink";

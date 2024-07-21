@@ -3,7 +3,7 @@ import { ApiServiceProvider } from '../../services/Api/ApiServiceProvider';
 import { IApiService } from '../../services/Api/IApiService';
 import FilterBar from '../../components/Common/FilterBar/FilterBar';
 import ProjectOverview from './ProjectOverview';
-import { Project } from '../../models/Project';
+import { Project } from '../../models/Project/Project';
 import LoadingAnimation from '../../components/Common/LoadingAnimation/LoadingAnimation';
 
 const OverviewDashboard: React.FC = () => {

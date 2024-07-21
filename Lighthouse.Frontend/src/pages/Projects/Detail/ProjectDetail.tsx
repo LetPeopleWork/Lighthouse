@@ -2,7 +2,7 @@ import { Container, Grid, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
-import { Project } from '../../../models/Project';
+import { Project } from '../../../models/Project/Project';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IApiService } from '../../../services/Api/IApiService';
 import LocalDateTimeDisplay from '../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay';

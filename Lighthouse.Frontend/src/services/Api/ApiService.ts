@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { IProject, Project } from '../../models/Project';
+import { IProject, Project } from '../../models/Project/Project';
 import { IApiService } from './IApiService';
 import { ITeam, Team } from '../../models/Team/Team';
 import { Feature, IFeature } from '../../models/Feature';
@@ -7,7 +7,7 @@ import { IWhenForecast, WhenForecast } from '../../models/Forecasts/WhenForecast
 import { Throughput } from '../../models/Forecasts/Throughput';
 import { IManualForecast, ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast, IHowManyForecast } from '../../models/Forecasts/HowManyForecast';
-import { IMilestone, Milestone } from '../../models/Milestone';
+import { IMilestone, Milestone } from '../../models/Project/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { IWorkTrackingSystemOption, WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';

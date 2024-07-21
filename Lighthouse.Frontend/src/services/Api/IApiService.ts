@@ -1,4 +1,4 @@
-import { Project } from "../../models/Project";
+import { Project } from "../../models/Project/Project";
 import { Team } from "../../models/Team/Team";
 import { Throughput } from "../../models/Forecasts/Throughput";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";

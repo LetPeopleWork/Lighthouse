@@ -2,12 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ProjectFeatureList from './ProjectFeatureList';
-import { Project } from '../../../models/Project';
 import { Feature } from '../../../models/Feature';
 import { Team } from '../../../models/Team/Team';
-import { Milestone } from '../../../models/Milestone';
+import { Milestone } from '../../../models/Project/Milestone';
 import { WhenForecast } from '../../../models/Forecasts/WhenForecast';
 import { IForecast } from '../../../models/Forecasts/IForecast';
+import { Project } from '../../../models/Project/Project';
 
 vi.mock('../../../components/Common/Forecasts/ForecastInfoList', () => ({
     default: ({ title, forecasts }: { title: string; forecasts: IForecast[] }) => (

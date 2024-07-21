@@ -1,5 +1,5 @@
 import { Team } from './Team';
-import { Project } from '../Project';
+import { Project } from '../Project/Project';
 import { Feature } from '../Feature';
 import { WhenForecast } from '../Forecasts/WhenForecast';
 

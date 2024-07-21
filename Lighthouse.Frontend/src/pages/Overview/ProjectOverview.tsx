@@ -1,6 +1,6 @@
 import React from 'react';
 import { Grid, Typography } from '@mui/material';
-import { Project } from '../../models/Project';
+import { Project } from '../../models/Project/Project';
 import ProjectCard from './ProjectCard';
 
 interface ProjectOverviewProps {

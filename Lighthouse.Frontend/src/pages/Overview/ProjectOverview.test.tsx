@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ProjectOverview from './ProjectOverview';
-import { Project } from '../../models/Project';
 import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Team } from '../../models/Team/Team';
 import { Feature } from '../../models/Feature';
-import { Milestone } from '../../models/Milestone';
+import { Milestone } from '../../models/Project/Milestone';
+import { Project } from '../../models/Project/Project';
 
 describe('ProjectOverview component', () => {
   const projects: Project[] = [

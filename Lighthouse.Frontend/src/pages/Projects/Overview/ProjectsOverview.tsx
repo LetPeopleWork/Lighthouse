@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import DataOverviewTable from '../../../components/Common/DataOverviewTable/DataOverviewTable';
 import DeleteConfirmationDialog from '../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog';
-import { Project } from '../../../models/Project';
+import { Project } from '../../../models/Project/Project';
 import { IApiService } from '../../../services/Api/IApiService';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';

@@ -1,7 +1,8 @@
-import { Feature } from './Feature';
-import { IFeatureOwner } from './IFeatureOwner';
-import { IMilestone } from './Milestone';
-import { ITeam, Team } from './Team/Team'
+import { Feature } from "../Feature";
+import { IFeatureOwner } from "../IFeatureOwner";
+import { ITeam, Team } from "../Team/Team";
+import { IMilestone } from "./Milestone";
+
 
 export interface IProject extends IFeatureOwner {
     name: string;

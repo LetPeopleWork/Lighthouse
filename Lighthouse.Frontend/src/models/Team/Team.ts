@@ -1,6 +1,6 @@
 import { Feature } from "../Feature";
 import { IFeatureOwner } from "../IFeatureOwner";
-import { IProject, Project } from "../Project";
+import { IProject, Project } from "../Project/Project";
 
 
 export interface ITeam extends IFeatureOwner {

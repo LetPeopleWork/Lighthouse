@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, test, expect } from 'vitest';
 import ProjectLink from './ProjectLink';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { Project } from '../../models/Project';
+import { Project } from '../../models/Project/Project';
 
 const project: Project = new Project("My Team", 12, [], [], [], new Date())
 

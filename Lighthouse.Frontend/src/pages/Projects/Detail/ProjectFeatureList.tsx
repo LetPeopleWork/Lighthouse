@@ -2,7 +2,7 @@ import React from "react";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
-import { Project } from "../../../models/Project";
+import { Project } from "../../../models/Project/Project";
 import { Link } from "react-router-dom";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
 

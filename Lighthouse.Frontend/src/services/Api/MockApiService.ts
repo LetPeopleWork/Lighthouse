@@ -1,5 +1,5 @@
 import { WhenForecast } from '../../models/Forecasts/WhenForecast';
-import { Project } from '../../models/Project';
+import { Project } from '../../models/Project/Project';
 import { Team } from '../../models/Team/Team';
 import { IApiService } from './IApiService';
 import { Feature } from '../../models/Feature';
@@ -7,7 +7,7 @@ import { Throughput } from '../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast } from '../../models/Forecasts/HowManyForecast';
 import dayjs from 'dayjs';
-import { Milestone } from '../../models/Milestone';
+import { Milestone } from '../../models/Project/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';

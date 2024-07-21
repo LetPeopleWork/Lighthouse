@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ProjectCard from './ProjectCard';
-import { Project } from '../../models/Project';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Team } from '../../models/Team/Team';
 import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { Feature } from '../../models/Feature';
-import { Milestone } from '../../models/Milestone';
+import { Milestone } from '../../models/Project/Milestone';
+import { Project } from '../../models/Project/Project';
 
 vi.mock('./TeamLink', () => ({
   default: ({ team }: { team: Team }) => (

@@ -1,5 +1,5 @@
 import React from "react";
-import { Project } from "../../models/Project";
+import { Project } from "../../models/Project/Project";
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import StyleCardNavLink from "./StyleCardNavLink";
 
