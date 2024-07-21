@@ -3,8 +3,17 @@ import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import DataOverviewTable from './DataOverviewTable';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';
+import { useNavigate } from 'react-router-dom';
 
-const renderWithRouter = (ui : React.ReactNode) => {
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom');
+    return {
+        ...actual,
+        useNavigate: vi.fn(),
+    };
+});
+
+const renderWithRouter = (ui: React.ReactNode) => {
     return render(<BrowserRouter>{ui}</BrowserRouter>);
 };
 
@@ -49,5 +58,17 @@ describe('DataOverviewTable', () => {
         
         fireEvent.change(filterInput, { target: { value: 'Non-existing Item' } });
         expect(screen.getByTestId('no-items-message')).toBeInTheDocument();
+    });
+
+    it('navigates to the new item page when "Add New" button is clicked', () => {
+        const navigate = vi.fn();
+        vi.mocked(useNavigate).mockReturnValue(navigate);
+
+        renderWithRouter(<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />);
+        
+        const addButton = screen.getByText('Add New');
+        fireEvent.click(addButton);
+
+        expect(navigate).toHaveBeenCalledWith('new');
     });
 });

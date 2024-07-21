@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import ProjectCard from './ProjectCard';
 import { Project } from '../../models/Project';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { Team } from '../../models/Team';
+import { Team } from '../../models/Team/Team';
 import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { Feature } from '../../models/Feature';
 import { Milestone } from '../../models/Milestone';

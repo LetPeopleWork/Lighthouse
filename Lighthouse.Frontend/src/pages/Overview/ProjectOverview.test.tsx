@@ -4,7 +4,7 @@ import ProjectOverview from './ProjectOverview';
 import { Project } from '../../models/Project';
 import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { Team } from '../../models/Team';
+import { Team } from '../../models/Team/Team';
 import { Feature } from '../../models/Feature';
 import { Milestone } from '../../models/Milestone';
 

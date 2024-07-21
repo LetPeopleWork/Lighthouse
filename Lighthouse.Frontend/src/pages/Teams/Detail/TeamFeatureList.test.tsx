@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import TeamFeatureList from './TeamFeatureList';
-import { Team } from '../../../models/Team';
+import { Team } from '../../../models/Team/Team';
 import { Feature } from '../../../models/Feature';
 import { WhenForecast } from '../../../models/Forecasts/WhenForecast';
 import { IForecast } from '../../../models/Forecasts/IForecast';

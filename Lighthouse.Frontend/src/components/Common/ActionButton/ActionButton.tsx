@@ -10,7 +10,8 @@ interface ActionButtonProps {
 const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, isWaiting, onClickHandler }) => {
     return (
         <Button variant="contained" onClick={onClickHandler} disabled={isWaiting}>
-            {isWaiting ? <CircularProgress /> : buttonText}
+            {isWaiting ? <CircularProgress /> : <></>}
+            {buttonText}
         </Button>
     )
 }

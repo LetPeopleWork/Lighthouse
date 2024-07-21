@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Typography, Container } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Typography, Container, Button } from '@mui/material';
+import { Link, useNavigate } from 'react-router-dom';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';
 
 import InfoIcon from '@mui/icons-material/Info';
@@ -18,6 +18,7 @@ interface DataOverviewTableProps<IFeatureOwner> {
 
 const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ data, api, onDelete }) => {
     const [filterText, setFilterText] = useState('');
+    const navigate = useNavigate();
 
     const filteredData = data.filter(item =>
         isMatchingFilterText(item.name)
@@ -31,8 +32,13 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ da
         return textToCheck.toLowerCase().includes(filterText.toLowerCase());
     }
 
+    const handleRedirect = () => {
+        navigate(`new`);
+      };
+
     return (
         <Container>
+            <Button sx={{marginTop: 2, marginBottom: 2}} variant="contained" color="primary" onClick={handleRedirect}>Add New</Button>
             <FilterBar filterText={filterText} onFilterTextChange={setFilterText} data-testid="filter-bar" />
             {filteredData.length === 0 ? (
                 <Typography variant="h6" align="center" data-testid="no-items-message">

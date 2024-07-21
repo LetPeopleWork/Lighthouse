@@ -204,6 +204,163 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        public void GetTeamSettings_TeamExists_ReturnsSettings()
+        {
+            var team = CreateTeam(12, "El Teamo");
+            team.ThroughputHistory = 42;
+            team.FeatureWIP = 3;
+            team.WorkItemQuery = "SELECT * FROM *";
+            team.WorkTrackingSystemConnectionId = 37;
+            team.AdditionalRelatedField = "Custom.RelatedItem";
+
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+
+            var subject = CreateSubject();
+
+            var result = subject.GetTeamSettings(12);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okObjectResult = result.Result as OkObjectResult;
+                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
+
+                Assert.That(okObjectResult.Value, Is.InstanceOf<TeamSettingDto>());
+                var teamSettingDto = okObjectResult.Value as TeamSettingDto;
+
+                Assert.That(teamSettingDto.Id, Is.EqualTo(team.Id));
+                Assert.That(teamSettingDto.Name, Is.EqualTo(team.Name));
+                Assert.That(teamSettingDto.ThroughputHistory, Is.EqualTo(team.ThroughputHistory));
+                Assert.That(teamSettingDto.FeatureWIP, Is.EqualTo(team.FeatureWIP));
+                Assert.That(teamSettingDto.WorkItemQuery, Is.EqualTo(team.WorkItemQuery));
+                Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(team.WorkItemTypes));
+                Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(team.WorkTrackingSystemConnectionId));
+                Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(team.AdditionalRelatedField));
+            });
+        }
+
+        [Test]
+        public void GetTeamSettings_TeamNotFound_ReturnsNotFoundResult()
+        {
+            var subject = CreateSubject();
+
+            var result = subject.GetTeamSettings(1);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = result.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
+        [Test]
+        public async Task CreateTeam_GivenNewTeamSettings_CreatesTeamAsync()
+        {
+            var newTeamSettings = new TeamSettingDto
+            {
+                Name = "New Team",
+                FeatureWIP = 12,
+                ThroughputHistory = 30,
+                WorkItemQuery = "project = MyProject",
+                WorkItemTypes = new List<string> { "User Story", "Bug" },
+                WorkTrackingSystemConnectionId = 2,
+                RelationCustomField = "CUSTOM.AdditionalField"
+            };
+
+            var subject = CreateSubject();
+
+            var result = await subject.CreateTeamAsync(newTeamSettings);
+
+            teamRepositoryMock.Verify(x => x.Add(It.IsAny<Team>()));
+            teamRepositoryMock.Verify(x => x.Save());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okObjectResult = result.Result as OkObjectResult;
+                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
+
+                Assert.That(okObjectResult.Value, Is.InstanceOf<TeamSettingDto>());
+                var teamSettingDto = okObjectResult.Value as TeamSettingDto;
+
+                Assert.That(teamSettingDto.Name, Is.EqualTo(newTeamSettings.Name));
+                Assert.That(teamSettingDto.ThroughputHistory, Is.EqualTo(newTeamSettings.ThroughputHistory));
+                Assert.That(teamSettingDto.FeatureWIP, Is.EqualTo(newTeamSettings.FeatureWIP));
+                Assert.That(teamSettingDto.WorkItemQuery, Is.EqualTo(newTeamSettings.WorkItemQuery));
+                Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(newTeamSettings.WorkItemTypes));
+                Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newTeamSettings.WorkTrackingSystemConnectionId));
+                Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(newTeamSettings.RelationCustomField));
+            });
+        }
+
+        [Test]
+        public async Task UpdateTeam_GivenNewTeamSettings_UpdatesTeamAsync()
+        {
+            var existingTeam = new Team { Id = 132 };
+
+            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
+
+            var updatedTeamSettings = new TeamSettingDto
+            {
+                Id = 132,
+                Name = "Updated Team",
+                FeatureWIP = 12,
+                ThroughputHistory = 30,
+                WorkItemQuery = "project = MyProject",
+                WorkItemTypes = new List<string> { "User Story", "Bug" },
+                WorkTrackingSystemConnectionId = 2,
+                RelationCustomField = "CUSTOM.AdditionalField"
+            };
+
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateTeam(132, updatedTeamSettings);
+
+            teamRepositoryMock.Verify(x => x.Update(existingTeam));
+            teamRepositoryMock.Verify(x => x.Save());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okObjectResult = result.Result as OkObjectResult;
+                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
+
+                Assert.That(okObjectResult.Value, Is.InstanceOf<TeamSettingDto>());
+                var teamSettingDto = okObjectResult.Value as TeamSettingDto;
+
+                Assert.That(teamSettingDto.Name, Is.EqualTo(updatedTeamSettings.Name));
+                Assert.That(teamSettingDto.ThroughputHistory, Is.EqualTo(updatedTeamSettings.ThroughputHistory));
+                Assert.That(teamSettingDto.FeatureWIP, Is.EqualTo(updatedTeamSettings.FeatureWIP));
+                Assert.That(teamSettingDto.WorkItemQuery, Is.EqualTo(updatedTeamSettings.WorkItemQuery));
+                Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(updatedTeamSettings.WorkItemTypes));
+                Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedTeamSettings.WorkTrackingSystemConnectionId));
+                Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(updatedTeamSettings.RelationCustomField));
+            });
+        }
+
+
+        [Test]
+        public async Task UpdateTeam_TeamNotFound_ReturnsNotFoundResultAsync()
+        {
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateTeam(1, new TeamSettingDto());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = result.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
         private Team CreateTeam(int id, string name)
         {
             return new Team { Id = id, Name = name };

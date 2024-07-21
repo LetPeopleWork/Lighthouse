@@ -1,6 +1,6 @@
 import { Project } from './Project';
 import { Feature } from './Feature';
-import { Team } from './Team';
+import { Team } from './Team/Team';
 import { WhenForecast } from './Forecasts/WhenForecast';
 import { Milestone } from './Milestone';
 

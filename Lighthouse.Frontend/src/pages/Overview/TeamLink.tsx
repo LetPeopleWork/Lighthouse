@@ -1,6 +1,6 @@
 import React from 'react';
 import Diversity3Icon from '@mui/icons-material/Diversity3';
-import { Team } from '../../models/Team';
+import { Team } from '../../models/Team/Team';
 import StyleCardNavLink from './StyleCardNavLink';
 
 

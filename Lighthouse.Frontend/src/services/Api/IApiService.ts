@@ -1,16 +1,22 @@
 import { Project } from "../../models/Project";
-import { Team } from "../../models/Team";
+import { Team } from "../../models/Team/Team";
 import { Throughput } from "../../models/Forecasts/Throughput";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ITeamSettings } from "../../models/Team/TeamSettings";
 
 export interface IApiService {
-
     deleteTeam(id: number): Promise<void>;
 
     getTeams(): Promise<Team[]>;
 
     getTeam(id: number): Promise<Team | null>;
+
+    getTeamSettings(id: number): Promise<ITeamSettings>;
+    
+    updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
+    
+    createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
 
     getProjects(): Promise<Project[]>;
 

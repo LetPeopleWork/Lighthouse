@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Team } from '../../../models/Team';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Team } from '../../../models/Team/Team';
 import { IApiService } from '../../../services/Api/IApiService';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import dayjs from 'dayjs';
-import { Typography, Grid, Container } from '@mui/material';
+import { Typography, Grid, Container, Button } from '@mui/material';
 import ThroughputBarChart from './ThroughputChart';
 import { Throughput } from '../../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../../models/Forecasts/ManualForecast';
@@ -30,6 +30,8 @@ const TeamDetail: React.FC = () => {
     const [waitingForManualForecastResult, setWaitingForManualForecastResult] = useState<boolean>(false);
 
     const [throughput, setThroughput] = useState<Throughput>(new Throughput([]))
+
+    const navigate = useNavigate();
 
     const fetchTeam = async () => {
         try {
@@ -115,6 +117,10 @@ const TeamDetail: React.FC = () => {
         setWaitingForManualForecastResult(false);
     };
 
+    const onEditTeam = () => {
+        navigate(`/teams/edit/${id}`);
+    }
+
     useEffect(() => {
         fetchTeam();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,6 +143,7 @@ const TeamDetail: React.FC = () => {
                     <Grid item xs={12}>
                         <ActionButton onClickHandler={onUpdateThroughput} buttonText='Update Throughput' isWaiting={!team || isUpdatingThroughput} />
                         <ActionButton onClickHandler={onUpdateForecast} buttonText='Update Forecast' isWaiting={!team || isUpdatingForecast} />
+                        <Button variant="contained" onClick={onEditTeam}>Edit Team</Button>
                     </Grid>
                     <Grid item xs={12}>
                         {team != null ? (

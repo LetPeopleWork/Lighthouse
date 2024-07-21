@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { IProject, Project } from '../../models/Project';
 import { IApiService } from './IApiService';
-import { ITeam, Team } from '../../models/Team';
+import { ITeam, Team } from '../../models/Team/Team';
 import { Feature, IFeature } from '../../models/Feature';
 import { IWhenForecast, WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { Throughput } from '../../models/Forecasts/Throughput';
@@ -10,6 +10,7 @@ import { HowManyForecast, IHowManyForecast } from '../../models/Forecasts/HowMan
 import { IMilestone, Milestone } from '../../models/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { IWorkTrackingSystemOption, WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
+import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 
 export class ApiService implements IApiService {
     private apiService!: AxiosInstance;
@@ -52,6 +53,27 @@ export class ApiService implements IApiService {
     async deleteTeam(id: number): Promise<void> {
         await this.withErrorHandling(async () => {
             await this.apiService.delete<void>(`/teams/${id}`);
+        });
+    }
+
+    async getTeamSettings(id: number): Promise<ITeamSettings> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<ITeamSettings>(`/teams/${id}/settings`);
+            return this.deserializeTeamSettings(response.data);
+        });
+    }
+
+    async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.put<ITeamSettings>(`/teams/${teamSettings.id}`, teamSettings);
+            return this.deserializeTeamSettings(response.data);
+        });
+    }
+
+    async createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.post<ITeamSettings>(`/teams`, teamSettings);
+            return this.deserializeTeamSettings(response.data);
         });
     }
 
@@ -146,7 +168,7 @@ export class ApiService implements IApiService {
         });
     }
 
-    async validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean>{
+    async validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.post<boolean>(`/worktrackingsystemconnections/validate`, connection);
 
@@ -165,6 +187,20 @@ export class ApiService implements IApiService {
         const features: Feature[] = this.deserializeFeatures(item.features);
         return new Team(item.name, item.id, projects, features, item.featureWip);
     }
+
+    private deserializeTeamSettings(item: ITeamSettings): TeamSettings {
+        return new TeamSettings(
+            item.id,
+            item.name,
+            item.throughputHistory,
+            item.featureWIP,
+            item.workItemQuery,
+            item.workItemTypes,
+            item.workTrackingSystemConnectionId,
+            item.relationCustomField
+        );
+    }
+
 
     private deserializeFeatures(featureData: IFeature[]): Feature[] {
         return featureData.map((feature: IFeature) => {

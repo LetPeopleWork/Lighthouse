@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { TextField, Typography } from '@mui/material';
-import { ITeam } from '../../../models/Team';
+import { ITeam } from '../../../models/Team/Team';
 
 interface InvolvedTeamsListProps {
     teams: ITeam[];

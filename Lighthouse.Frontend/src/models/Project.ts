@@ -1,7 +1,7 @@
 import { Feature } from './Feature';
 import { IFeatureOwner } from './IFeatureOwner';
 import { IMilestone } from './Milestone';
-import { ITeam, Team } from './Team'
+import { ITeam, Team } from './Team/Team'
 
 export interface IProject extends IFeatureOwner {
     name: string;

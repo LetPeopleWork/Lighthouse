@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import InvolvedTeamsList from './InvolvedTeamsList';
-import { ITeam, Team } from '../../../models/Team';
+import { ITeam, Team } from '../../../models/Team/Team';
 
 describe('InvolvedTeamsList component', () => {
     const teams: ITeam[] = [

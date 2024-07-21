@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.API
         public ActionResult<TeamDto> GetTeam(int id)
         {
             var team = teamRepository.GetById(id);
-            
+
             if (team == null)
             {
                 return NotFound();
@@ -52,28 +52,46 @@ namespace Lighthouse.Backend.API
             var allProjects = projectRepository.GetAll().ToList();
             var allFeatures = featureRepository.GetAll().ToList();
 
-            
-
             return Ok(CreateTeamDto(allProjects, allFeatures, team));
         }
 
         [HttpPost]
-        public ActionResult CreateTeam(TeamSettingDto teamSetting)
+        public async Task<ActionResult<TeamSettingDto>> CreateTeamAsync(TeamSettingDto teamSetting)
         {
-            return Ok();
+            var newTeam = new Team();
+            SyncTeamWithTeamSettings(newTeam, teamSetting);
+
+            teamRepository.Add(newTeam);
+            await teamRepository.Save();
+
+            var teamSettingDto = new TeamSettingDto(newTeam);
+            return Ok(teamSettingDto);
         }
 
         [HttpPut("{id}")]
-        public ActionResult UpdateTeam(int id, TeamSettingDto teamSetting)
+        public async Task<ActionResult<TeamSettingDto>> UpdateTeam(int id, TeamSettingDto teamSetting)
         {
-            return Ok();
+            var team = teamRepository.GetById(id);
+
+            if (team == null)
+            {
+                return NotFound();
+            }
+
+            SyncTeamWithTeamSettings(team, teamSetting);
+
+            teamRepository.Update(team);
+            await teamRepository.Save();
+
+            var teamSettingDto = new TeamSettingDto(team);
+            return Ok(teamSettingDto);
         }
 
         [HttpGet("{id}/settings")]
         public ActionResult<TeamSettingDto> GetTeamSettings(int id)
         {
             var team = teamRepository.GetById(id);
-            
+
             if (team == null)
             {
                 return NotFound();
@@ -89,6 +107,17 @@ namespace Lighthouse.Backend.API
         {
             teamRepository.Remove(id);
             teamRepository.Save();
+        }
+
+        private void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)
+        {
+            team.Name = teamSetting.Name;
+            team.WorkItemQuery = teamSetting.WorkItemQuery;
+            team.AdditionalRelatedField = teamSetting.RelationCustomField;
+            team.FeatureWIP = teamSetting.FeatureWIP;
+            team.ThroughputHistory = teamSetting.ThroughputHistory;
+            team.WorkItemTypes = teamSetting.WorkItemTypes;
+            team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
         }
 
         private TeamDto CreateTeamDto(List<Project> allProjects, List<Feature> allFeatures, Team team)

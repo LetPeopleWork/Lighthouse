@@ -1,6 +1,6 @@
 import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { Project } from '../../models/Project';
-import { Team } from '../../models/Team';
+import { Team } from '../../models/Team/Team';
 import { IApiService } from './IApiService';
 import { Feature } from '../../models/Feature';
 import { Throughput } from '../../models/Forecasts/Throughput';
@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { Milestone } from '../../models/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
+import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 
 export class MockApiService implements IApiService {
     private useDelay: boolean;
@@ -103,6 +104,28 @@ export class MockApiService implements IApiService {
     async deleteTeam(id: number): Promise<void> {
         console.log(`'Deleting' Team with id ${id}`)
         await this.delay();
+    }
+
+    async getTeamSettings(id: number): Promise<ITeamSettings>{
+        console.log(`Getting Settings for team ${id}`);
+
+        await this.delay();
+
+        return new TeamSettings(1, "My Team", 30, 1, "[System.TeamProject] = \"My Team\"", ["User Story", "Bug"], 12, "");
+    }
+
+    async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>{
+        console.log(`Updating Team ${teamSettings.name}`);
+        
+        await this.delay();
+        return teamSettings;
+    }
+    
+    async createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>{
+        console.log(`Creating Team ${teamSettings.name}`);
+
+        await this.delay();
+        return teamSettings;
     }
 
     async getProject(id: number): Promise<Project | null> {

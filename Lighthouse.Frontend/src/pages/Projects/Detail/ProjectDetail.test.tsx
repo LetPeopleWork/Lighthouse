@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ProjectDetail from './ProjectDetail';
 import { Project } from '../../../models/Project';
-import { Team } from '../../../models/Team';
+import { Team } from '../../../models/Team/Team';
 import { Milestone } from '../../../models/Milestone';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IApiService } from '../../../services/Api/IApiService';
