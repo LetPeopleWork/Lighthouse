@@ -8,7 +8,6 @@ interface ActionButtonProps {
     isWaiting: boolean;
     onClickHandler: () => void;
     buttonVariant?: ButtonVariant;
-    disabled?: boolean;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, isWaiting, onClickHandler, buttonVariant = "contained" }) => {

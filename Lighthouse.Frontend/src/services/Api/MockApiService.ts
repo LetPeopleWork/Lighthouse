@@ -12,6 +12,7 @@ import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../
 import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
+import { LoremIpsum } from "lorem-ipsum";
 
 export class MockApiService implements IApiService {
     private useDelay: boolean;
@@ -223,6 +224,39 @@ export class MockApiService implements IApiService {
         console.log(`Validating connection for ${connection.name}`);
         await this.delay();
         return true;
+    }
+
+    async getLogLevel(): Promise<string>{
+        await this.delay();
+        return "Information";
+    }
+
+    async getSupportedLogLevels(): Promise<string[]>{
+        await this.delay();
+
+        return ["Debug", "Information", "Warning", "Error"];
+    }
+
+    async setLogLevel(logLevel: string) : Promise<void>{
+        console.log(`Setting log level to ${logLevel}`);
+        await this.delay();
+    }
+
+    async getLogs(): Promise<string>{
+        await this.delay();
+
+        const lorem = new LoremIpsum({
+            sentencesPerParagraph: {
+              max: 4,
+              min: 2
+            },
+            wordsPerSentence: {
+              max: 10,
+              min: 2
+            }
+          });
+
+        return lorem.generateParagraphs(7);
     }
 
 

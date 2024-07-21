@@ -54,4 +54,12 @@ export interface IApiService {
     deleteWorkTrackingSystemConnection(connectionId: number): Promise<void>;
 
     validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean>;
+    
+    getLogLevel(): Promise<string>;
+
+    getSupportedLogLevels(): Promise<string[]>;
+
+    setLogLevel(logLevel: string) : Promise<void>;
+
+    getLogs(): Promise<string>;
 }

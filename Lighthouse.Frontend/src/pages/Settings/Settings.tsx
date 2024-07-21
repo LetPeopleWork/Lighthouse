@@ -6,6 +6,7 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import GeneralSettings from './General/GeneralSettings';
 import WorkTrackingSystemConnectionSettings from './Connections/WorkTrackingSystemConnectionSettings';
+import LogSettings from './LogSettings/LogSettings';
 
 const Settings: React.FC = () => {
   const [value, setValue] = React.useState('1');
@@ -21,6 +22,7 @@ const Settings: React.FC = () => {
           <TabList onChange={handleChange} >
             <Tab label="General" value="1" />
             <Tab label="Work Tracking Systems" value="2" />
+            <Tab label="Logs" value="3" />
           </TabList>
         </Box>
         <TabPanel value="1">
@@ -28,6 +30,9 @@ const Settings: React.FC = () => {
         </TabPanel>
         <TabPanel value="2">
           <WorkTrackingSystemConnectionSettings />
+        </TabPanel>
+        <TabPanel value="3">
+          <LogSettings />
         </TabPanel>
       </TabContext>
     </Container>

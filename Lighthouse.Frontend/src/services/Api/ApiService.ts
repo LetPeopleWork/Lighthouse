@@ -198,6 +198,36 @@ export class ApiService implements IApiService {
         });
     }
 
+    async getLogLevel(): Promise<string> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<string>(`/logs/level`);
+
+            return response.data;
+        });
+    }
+
+    async getSupportedLogLevels(): Promise<string[]> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<string[]>(`/logs/level/supported`);
+
+            return response.data;
+        });
+    }
+
+    async setLogLevel(logLevel: string): Promise<void> {
+        await this.withErrorHandling(async () => {
+            await this.apiService.post<void>('/logs/level', { level: logLevel });
+        });
+    }    
+
+    async getLogs(): Promise<string> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<string>(`/logs`);
+
+            return response.data;
+        });
+    }
+
     private deserializeTeams(teams: ITeam[]) {
         return teams.map((item: ITeam) => {
             return this.deserializeTeam(item);
@@ -223,7 +253,7 @@ export class ApiService implements IApiService {
         );
     }
 
-    private deserializeProjectSettings(item: IProjectSettings): ProjectSettings{
+    private deserializeProjectSettings(item: IProjectSettings): ProjectSettings {
         const milestones = item.milestones.map((milestone: IMilestone) => {
             return new Milestone(milestone.id, milestone.name, new Date(milestone.date))
         })

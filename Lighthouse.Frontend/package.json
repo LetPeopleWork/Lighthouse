@@ -16,6 +16,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "@melloware/react-logviewer": "^5.1.1",
     "@mui/icons-material": "^5.15.21",
     "@mui/lab": "^5.0.0-alpha.172",
     "@mui/material": "^5.16.1",
@@ -23,6 +24,7 @@
     "@mui/x-date-pickers": "^7.10.0",
     "axios": "^1.7.2",
     "dayjs": "^1.11.11",
+    "lorem-ipsum": "^2.0.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.24.1"
