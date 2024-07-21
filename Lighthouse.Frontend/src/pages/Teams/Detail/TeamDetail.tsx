@@ -140,10 +140,22 @@ const TeamDetail: React.FC = () => {
                     <Grid item xs={12}>
                         <Typography variant='h3'>{team?.name}</Typography>
                     </Grid>
-                    <Grid item xs={12}>
-                        <ActionButton onClickHandler={onUpdateThroughput} buttonText='Update Throughput' isWaiting={!team || isUpdatingThroughput} />
-                        <ActionButton onClickHandler={onUpdateForecast} buttonText='Update Forecast' isWaiting={!team || isUpdatingForecast} />
-                        <Button variant="contained" onClick={onEditTeam}>Edit Team</Button>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} sx={{ display: 'flex', gap: 2 }}>
+                            <ActionButton
+                                onClickHandler={onUpdateThroughput}
+                                buttonText="Update Throughput"
+                                isWaiting={!team || isUpdatingThroughput}
+                            />
+                            <ActionButton
+                                onClickHandler={onUpdateForecast}
+                                buttonText="Update Forecast"
+                                isWaiting={!team || isUpdatingForecast}
+                            />
+                            <Button variant="contained" onClick={onEditTeam}>
+                                Edit Team
+                            </Button>
+                        </Grid>
                     </Grid>
                     <Grid item xs={12}>
                         {team != null ? (

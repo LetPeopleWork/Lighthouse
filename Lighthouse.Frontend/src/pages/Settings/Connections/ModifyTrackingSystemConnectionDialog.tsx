@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import { SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
+import { SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Button } from "@mui/material";
 import { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
-import CheckIcon from '@mui/icons-material/Check';
-import ErrorIcon from '@mui/icons-material/Error';
+import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 
 interface ModifyWorkTrackingSystemConnectionDialogProps {
     open: boolean;
@@ -17,7 +16,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
     const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] = useState<IWorkTrackingSystemConnection | null>(null);
     const [selectedOptions, setSelectedOptions] = useState<IWorkTrackingSystemOption[]>([]);
     const [formValid, setFormValid] = useState<boolean>(false);
-    const [validationStatus, setValidationStatus] = useState<'valid' | 'invalid' | 'pending'>('pending');
+    const [isValidating, setIsValidating] = useState<boolean>(false);
 
     useEffect(() => {
         if (open && workTrackingSystems.length > 0) {
@@ -31,17 +30,6 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
             })));
         }
     }, [open, workTrackingSystems]);
-
-    useEffect(() => {
-        const allFieldsFilled = name !== "" && selectedOptions.every(option => option.value);
-        setFormValid(allFieldsFilled);
-    }, [name, selectedOptions]);
-
-    useEffect(() => {
-        if (validationStatus === 'valid' || validationStatus === 'invalid') {
-            setFormValid(false);
-        }
-    }, [validationStatus]);
 
     const handleSystemChange = (event: SelectChangeEvent<string>) => {
         const system = workTrackingSystems.find(system => system.workTrackingSystem === event.target.value);
@@ -62,12 +50,13 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 option.key === changedOption.key ? { ...option, value: newValue } : option
             )
         );
-        setValidationStatus('pending');
+        
+        setFormValid(false);
     };
 
     const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value);
-        setValidationStatus('pending');
+        setFormValid(false);
     };
 
     const handleValidate = async () => {
@@ -79,21 +68,24 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 options: selectedOptions
             };
 
+            setIsValidating(true);
             const isValid = await validateSettings(settings);
-            if (isValid) {
-                setValidationStatus('valid');
-                return;
-            }
-        }
+            setIsValidating(false);
 
-        setValidationStatus('invalid');
+            if (isValid) {
+                setFormValid(true);
+                return;
+            } 
+        }
+        
+        setFormValid(false);
     };
 
     const handleSubmit = () => {
-        if (selectedWorkTrackingSystem && validationStatus === 'valid') {
+        if (selectedWorkTrackingSystem) {
             const updatedSystem: IWorkTrackingSystemConnection = {
                 id: selectedWorkTrackingSystem.id,
-                name,
+                name: selectedWorkTrackingSystem.name,
                 workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
                 options: selectedOptions
             };
@@ -142,13 +134,14 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 ))}
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClose} color="primary">Cancel</Button>
-                <Button onClick={handleValidate} color="primary" disabled={!formValid}>
-                    Validate
-                    {validationStatus === 'valid' && <CheckIcon color="success" />}
-                    {validationStatus === 'invalid' && <ErrorIcon color="error" />}
-                </Button>
-                <Button onClick={handleSubmit} color="primary" disabled={validationStatus !== 'valid'}>
+                <Button onClick={handleClose} variant="outlined" >Cancel</Button>
+                <ActionButton
+                    buttonText='Validate'
+                    isWaiting={isValidating}
+                    onClickHandler={handleValidate}
+                    buttonVariant="outlined"
+                />
+                <Button onClick={handleSubmit} variant="outlined" disabled={!formValid}>
                     {workTrackingSystems.length === 1 ? "Save" : "Create"}
                 </Button>
             </DialogActions>
