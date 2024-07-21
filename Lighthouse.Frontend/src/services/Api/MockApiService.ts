@@ -11,6 +11,7 @@ import { Milestone } from '../../models/Project/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
+import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
 
 export class MockApiService implements IApiService {
     private useDelay: boolean;
@@ -126,6 +127,28 @@ export class MockApiService implements IApiService {
 
         await this.delay();
         return teamSettings;
+    }
+    
+    async getProjectSettings(id: number): Promise<IProjectSettings>{
+        console.log(`Getting Settings for Project ${id}`);
+
+        await this.delay();
+
+        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"",  "[System.TeamProject] = \"My Team\"", 15, 2);
+    }
+
+    async updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings>{
+        console.log(`Updating Project ${projectSettings.name}`);
+        
+        await this.delay();
+        return projectSettings;
+    }
+    
+    async createProject(projectSettings: IProjectSettings): Promise<IProjectSettings>{
+        console.log(`Creating Project ${projectSettings.name}`);
+
+        await this.delay();
+        return projectSettings;
     }
 
     async getProject(id: number): Promise<Project | null> {

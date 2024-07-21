@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.WorkTracking;
 
 namespace Lighthouse.Backend.Data
 {

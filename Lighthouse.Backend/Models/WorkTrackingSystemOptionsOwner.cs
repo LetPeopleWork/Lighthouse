@@ -1,8 +1,6 @@
-﻿using Lighthouse.Backend.WorkTracking;
-
-namespace Lighthouse.Backend.Models
+﻿namespace Lighthouse.Backend.Models
 {
-    public class WorkTrackingSystemOptionsOwner<T> : IWorkItemQueryOwner where T : class
+    public class WorkTrackingSystemOptionsOwner : IWorkItemQueryOwner
     {
         public int Id { get; set; }
 

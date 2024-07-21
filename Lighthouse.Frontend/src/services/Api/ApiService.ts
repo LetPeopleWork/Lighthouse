@@ -11,6 +11,7 @@ import { IMilestone, Milestone } from '../../models/Project/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { IWorkTrackingSystemOption, WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
+import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
 
 export class ApiService implements IApiService {
     private apiService!: AxiosInstance;
@@ -88,6 +89,27 @@ export class ApiService implements IApiService {
             const response = await this.apiService.get<IProject>(`/projects/${id}`);
 
             return this.deserializeProject(response.data);
+        });
+    }
+
+    async getProjectSettings(id: number): Promise<IProjectSettings> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<IProjectSettings>(`/projects/${id}/settings`);
+            return this.deserializeProjectSettings(response.data);
+        });
+    }
+
+    async updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.put<IProjectSettings>(`/projects/${projectSettings.id}`, projectSettings);
+            return this.deserializeProjectSettings(response.data);
+        });
+    }
+
+    async createProject(projectSettings: IProjectSettings): Promise<IProjectSettings> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.post<IProjectSettings>(`/projects`, projectSettings);
+            return this.deserializeProjectSettings(response.data);
         });
     }
 
@@ -201,6 +223,13 @@ export class ApiService implements IApiService {
         );
     }
 
+    private deserializeProjectSettings(item: IProjectSettings): ProjectSettings{
+        const milestones = item.milestones.map((milestone: IMilestone) => {
+            return new Milestone(milestone.id, milestone.name, new Date(milestone.date))
+        })
+
+        return new ProjectSettings(item.id, item.name, item.workItemTypes, milestones, item.workItemQuery, item.unparentedItemsQuery, item.defaultAmountOfWorkItemsPerFeature, item.workTrackingSystemConnectionId);
+    }
 
     private deserializeFeatures(featureData: IFeature[]): Feature[] {
         return featureData.map((feature: IFeature) => {

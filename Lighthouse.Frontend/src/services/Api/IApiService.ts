@@ -4,6 +4,7 @@ import { Throughput } from "../../models/Forecasts/Throughput";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ITeamSettings } from "../../models/Team/TeamSettings";
+import { IProjectSettings } from "../../models/Project/ProjectSettings";
 
 export interface IApiService {
     deleteTeam(id: number): Promise<void>;
@@ -25,6 +26,12 @@ export interface IApiService {
     refreshFeaturesForProject(id: number): Promise<Project | null>;
 
     deleteProject(id: number): Promise<void>;
+
+    getProjectSettings(id: number): Promise<IProjectSettings>;
+    
+    updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
+    
+    createProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
 
     getVersion(): Promise<string>;
 

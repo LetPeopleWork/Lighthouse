@@ -27,7 +27,6 @@ const EditTeamPage: React.FC = () => {
     const [workTrackingSystems, setWorkTrackingSystems] = useState<IWorkTrackingSystemConnection[]>([]);
     const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] = useState<IWorkTrackingSystemConnection | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const [newWorkItemType, setNewWorkItemType] = useState<string>('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -90,10 +89,9 @@ const EditTeamPage: React.FC = () => {
         setSelectedWorkTrackingSystem(newConnection);
     };
 
-    const handleAddWorkItemType = () => {
+    const handleAddWorkItemType = (newWorkItemType: string) => {
         if (newWorkItemType.trim()) {
             setTeamSettings(prev => prev ? { ...prev, workItemTypes: [...(prev.workItemTypes || []), newWorkItemType.trim()] } : prev);
-            setNewWorkItemType('');
         }
     };
 

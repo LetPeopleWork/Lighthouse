@@ -13,7 +13,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
     onTeamSettingsChange
 }) => {
     return (
-        <InputGroup title={'Optional Configuration'} >
+        <InputGroup title={'Advanced Configuration'} initiallyExpanded={false} >
             <Grid item xs={12}>
                 <TextField
                     label="Relation Custom Field"

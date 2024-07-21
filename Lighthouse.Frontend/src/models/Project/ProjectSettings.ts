@@ -1,6 +1,6 @@
 import { IMilestone } from "./Milestone";
 
-export interface IProjectSetting {
+export interface IProjectSettings {
     id: number;
     name: string;
     workItemTypes: string[];
@@ -12,7 +12,7 @@ export interface IProjectSetting {
 }
 
 
-export class ProjectSetting implements IProjectSetting {
+export class ProjectSettings implements IProjectSettings {
     id: number;
     name: string;
     workItemTypes: string[];

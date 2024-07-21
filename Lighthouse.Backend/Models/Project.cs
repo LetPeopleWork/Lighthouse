@@ -2,7 +2,7 @@
 
 namespace Lighthouse.Backend.Models
 {
-    public class Project : WorkTrackingSystemOptionsOwner<Project>
+    public class Project : WorkTrackingSystemOptionsOwner
     {
         public string Name { get; set; }
         

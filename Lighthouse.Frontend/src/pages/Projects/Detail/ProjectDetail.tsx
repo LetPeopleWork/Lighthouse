@@ -1,6 +1,6 @@
-import { Container, Grid, Typography } from '@mui/material';
+import { Button, Container, Grid, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import { Project } from '../../../models/Project/Project';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
@@ -22,6 +22,8 @@ const ProjectDetail: React.FC = () => {
 
     const [isRefreshingFeatures, setIsRefreshingFeatures] = useState<boolean>(false);
 
+    const navigate = useNavigate();
+
     const fetchProject = async () => {
         try {
             setIsLoading(true);
@@ -42,8 +44,8 @@ const ProjectDetail: React.FC = () => {
     }
 
     const onRefreshFeaturesClick = async () => {
-        try{
-            if (project == null){
+        try {
+            if (project == null) {
                 return;
             }
 
@@ -54,12 +56,16 @@ const ProjectDetail: React.FC = () => {
                 setProject(projectData)
             }
         }
-        catch (error){
+        catch (error) {
             console.error('Error Refreshing Features:', error);
         }
-        finally{
+        finally {
             setIsRefreshingFeatures(false);
         }
+    }
+
+    const onEditProject = () => {
+        navigate(`/projects/edit/${id}`);
     }
 
     useEffect(() => {
@@ -86,6 +92,7 @@ const ProjectDetail: React.FC = () => {
                         </Grid>
                         <Grid item xs={12}>
                             <ActionButton buttonText='Refresh Features' isWaiting={isRefreshingFeatures} onClickHandler={onRefreshFeaturesClick} />
+                            <Button variant="contained" onClick={onEditProject}>Edit Project</Button>
                         </Grid>
                         <Grid item xs={12}>
                             <ProjectFeatureList project={project} />
