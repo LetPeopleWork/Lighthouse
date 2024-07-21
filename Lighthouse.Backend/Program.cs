@@ -30,9 +30,17 @@ namespace Lighthouse.Backend
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture;
 
                 var builder = WebApplication.CreateBuilder(args);
+
+                // Need to manually new some services as we need them before DI is ready.
+                var fileSystemService = new FileSystemService();
+                var configFileUpdater = new ConfigFileUpdater(builder.Configuration, fileSystemService);
+                var serilogConfiguration = new SerilogLogConfiguration(builder.Configuration, configFileUpdater, fileSystemService);
+                builder.Services.AddSingleton<ILogConfiguration>(serilogConfiguration);
+
                 builder.Services.AddSerilog((services, lc) => lc
                     .ReadFrom.Configuration(builder.Configuration)
                     .ReadFrom.Services(services)
+                    .MinimumLevel.ControlledBy(serilogConfiguration.LoggingLevelSwitch)
                     .Enrich.FromLogContext());
 
                 Log.Information("Setting Culture Info to {CultureName}", CultureInfo.CurrentCulture.Name);
@@ -63,6 +71,8 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IThroughputService, ThroughputService>();
                 builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
                 builder.Services.AddScoped<ILexoRankService, LexoRankService>();
+                builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
+                builder.Services.AddScoped<IFileSystemService, FileSystemService>();
 
                 builder.Services.AddScoped<AzureDevOpsWorkItemService>();
                 builder.Services.AddScoped<JiraWorkItemService>();
