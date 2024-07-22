@@ -75,7 +75,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
                         {manualForecastResult.likelihood > 0 && (
                             <Grid item xs={4}>
                                 <ForecastLikelihood
-                                    remainingItems={remainingItems}
+                                    remainingItems={manualForecastResult.remainingItems}
                                     targetDate={manualForecastResult.targetDate}
                                     likelihood={manualForecastResult.likelihood}
                                 />
