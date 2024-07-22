@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public void UpdateConfigFile<T>(string key, T value)
         {
-            if (value == null)
+            if (EqualityComparer<T>.Default.Equals(value, default))
             {
                 return;
             }

@@ -16,9 +16,11 @@ namespace Lighthouse.Backend.Tests.API
             var subject = new VersionController(config);
 
             var actual = (ObjectResult)subject.GetVersion();
-
-            Assert.That(actual.StatusCode, Is.EqualTo(200));
-            Assert.That(actual.Value, Is.EqualTo(version));
+            Assert.Multiple(() =>
+            {
+                Assert.That(actual.StatusCode, Is.EqualTo(200));
+                Assert.That(actual.Value, Is.EqualTo(version));
+            });
         }
 
         [Test]
@@ -28,9 +30,11 @@ namespace Lighthouse.Backend.Tests.API
             var subject = new VersionController(config);
 
             var actual = (ObjectResult)subject.GetVersion();
-
-            Assert.That(actual.StatusCode, Is.EqualTo(404));
-            Assert.That(actual.Value, Is.EqualTo("404"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(actual.StatusCode, Is.EqualTo(404));
+                Assert.That(actual.Value, Is.EqualTo("404"));
+            });
         }
 
         private IConfiguration SetupConfiguration(string version)

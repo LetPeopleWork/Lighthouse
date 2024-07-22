@@ -281,7 +281,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             var isValid = await subject.ValidateConnection(connectionSetting);
 
-            Assert.IsTrue(isValid);
+            Assert.That(isValid, Is.True);
         }
 
         [Test]
@@ -302,7 +302,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             var isValid = await subject.ValidateConnection(connectionSetting);
 
-            Assert.IsFalse(isValid);
+            Assert.That(isValid, Is.False);
         }
 
         private Team CreateTeam(string query)

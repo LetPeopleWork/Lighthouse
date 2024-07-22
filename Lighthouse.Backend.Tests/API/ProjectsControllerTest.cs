@@ -32,9 +32,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = subject.GetProjects();
+            var result = subject.GetProjects().ToList();
 
-            Assert.That(result.Count, Is.EqualTo(testProjects.Count()));
+            Assert.That(result, Has.Count.EqualTo(testProjects.Count()));
         }
 
         [Test]
@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Id, Is.EqualTo(project.Id));
                 Assert.That(projectSettingDto.Name, Is.EqualTo(project.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(project.WorkItemTypes));
-                Assert.That(projectSettingDto.Milestones.Count, Is.EqualTo(project.Milestones.Count));
+                Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(project.Milestones.Count));
                 for (int i = 0; i < project.Milestones.Count; i++)
                 {
                     Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(project.Milestones[i].Id));
@@ -230,7 +230,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(projectSettingDto.Name, Is.EqualTo(newProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(newProjectSettings.WorkItemTypes));
-                Assert.That(projectSettingDto.Milestones.Count, Is.EqualTo(newProjectSettings.Milestones.Count));
+                Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(newProjectSettings.Milestones.Count));
                 for (int i = 0; i < newProjectSettings.Milestones.Count; i++)
                 {
                     Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(newProjectSettings.Milestones[i].Id));
@@ -286,7 +286,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Id, Is.EqualTo(updatedProjectSettings.Id));
                 Assert.That(projectSettingDto.Name, Is.EqualTo(updatedProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(updatedProjectSettings.WorkItemTypes));
-                Assert.That(projectSettingDto.Milestones.Count, Is.EqualTo(updatedProjectSettings.Milestones.Count));
+                Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(updatedProjectSettings.Milestones.Count));
                 for (int i = 0; i < updatedProjectSettings.Milestones.Count; i++)
                 {
                     Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(updatedProjectSettings.Milestones[i].Id));
@@ -320,7 +320,7 @@ namespace Lighthouse.Backend.Tests.API
             return new ProjectsController(projectRepoMock.Object, workItemCollectorServiceMock.Object, monteCarloServiceMock.Object);
         }
 
-        private IEnumerable<Project> GetTestProjects()
+        private List<Project> GetTestProjects()
         {
             return new List<Project>
             {

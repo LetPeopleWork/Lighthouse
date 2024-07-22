@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var subject = new WorkTrackingSystemConnectionDto(workTrackingSystemConnection);
 
-            Assert.That(subject.Options.Count, Is.EqualTo(1));
+            Assert.That(subject.Options, Has.Count.EqualTo(1));
         }
     }
 }

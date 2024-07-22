@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             Assert.Multiple(() =>
             {
-                Assert.That(connection.Options.Count(), Is.EqualTo(2));
+                Assert.That(connection.Options, Has.Count.EqualTo(2));
                 Assert.That(ContainsOption(connection.Options, AzureDevOpsWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(connection.Options, AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, true), Is.True);
             });
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             Assert.Multiple(() =>
             {
-                Assert.That(connection.Options.Count(), Is.EqualTo(3));
+                Assert.That(connection.Options, Has.Count.EqualTo(3));
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Username), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.ApiToken, true), Is.True);
