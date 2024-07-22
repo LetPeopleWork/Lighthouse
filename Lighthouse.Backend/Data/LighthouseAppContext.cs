@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Lighthouse.Backend.Data
 {
@@ -68,6 +71,31 @@ namespace Lighthouse.Backend.Data
             logger.LogInformation("Migrating Database");
             Database.Migrate();
             logger.LogInformation("Migration of Database succeeded");
+        }
+
+        public override int SaveChanges()
+        {
+            RemoveOrphanedFeatures();
+            return base.SaveChanges();
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            RemoveOrphanedFeatures();
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void RemoveOrphanedFeatures()
+        {
+            var orphanedFeatures = Features
+                .Include(f => f.Projects)
+                .Where(f => !f.Projects.Any())
+                .ToList();
+
+            if (orphanedFeatures.Any())
+            {
+                Features.RemoveRange(orphanedFeatures);
+            }
         }
     }
 }
