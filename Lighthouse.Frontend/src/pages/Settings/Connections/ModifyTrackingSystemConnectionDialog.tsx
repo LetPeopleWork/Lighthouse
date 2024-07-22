@@ -85,7 +85,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
         if (selectedWorkTrackingSystem) {
             const updatedSystem: IWorkTrackingSystemConnection = {
                 id: selectedWorkTrackingSystem.id,
-                name: selectedWorkTrackingSystem.name,
+                name: name,
                 workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
                 options: selectedOptions
             };
