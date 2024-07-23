@@ -70,28 +70,14 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogInformation("Running Monte Carlo Forecast For Project {project}", project.Name);
 
-            foreach (var team in project.InvolvedTeams)
-            {
-                await ForecastFeaturesForTeam(team);
-            }
-        }
-
-        public async Task ForecastFeaturesForTeam(Team team)
-        {
-            logger.LogInformation("Running Monte Carlo Forecast For All Fetaures of Team {TeamName}", team.Name);
-
-            var featuresForTeam = featureRepository.GetAll().Where(feature => feature.RemainingWork.Exists(remainingWork => remainingWork.Team == team));
-
-            await ForecastFeatures(featuresForTeam);
+            await ForecastFeatures(project.Features);
 
             await featureRepository.Save();
-
-            logger.LogInformation("Finished running Monte Carlo Forecast For All Fetaures of Team {TeamName}", team.Name);
         }
 
         private async Task ForecastFeatures(IEnumerable<Feature> features)
         {
-            var simulationResults = InitializeSimulationResults(features.OrderBy(f => f, new FeatureComparer()));
+            var simulationResults = InitializeSimulationResults(features);
             await RunMonteCarloSimulation(simulationResults);
             UpdateFeatureForecasts(features, simulationResults);
         }

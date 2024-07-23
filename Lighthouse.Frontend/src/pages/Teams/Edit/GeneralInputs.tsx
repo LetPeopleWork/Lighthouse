@@ -39,7 +39,12 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     type="number"
                     fullWidth
                     margin="normal"
-                    value={teamSettings?.featureWIP || ''}
+                    value={teamSettings?.featureWIP || 1}
+                    InputProps={{
+                        inputProps: { 
+                            min: 10 
+                        }
+                    }}
                     onChange={(e) => onTeamSettingsChange('featureWIP', parseInt(e.target.value, 10))}
                 />
             </Grid>

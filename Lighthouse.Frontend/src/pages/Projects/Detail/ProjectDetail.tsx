@@ -21,6 +21,7 @@ const ProjectDetail: React.FC = () => {
     const [hasError, setHasError] = useState<boolean>(false);
 
     const [isRefreshingFeatures, setIsRefreshingFeatures] = useState<boolean>(false);
+    const [isRefreshingForecasts, setIsRefreshingForecasts] = useState<boolean>(false);
 
     const navigate = useNavigate();
 
@@ -64,6 +65,27 @@ const ProjectDetail: React.FC = () => {
         }
     }
 
+    const onRefreshForecastsClick= async () => {
+        try {
+            if (project == null) {
+                return;
+            }
+
+            setIsRefreshingForecasts(true);
+            const projectData = await apiService.refreshForecastsForProject(project.id);
+
+            if (projectData) {
+                setProject(projectData)
+            }
+        }
+        catch (error) {
+            console.error('Error Refreshing Features:', error);
+        }
+        finally {
+            setIsRefreshingForecasts(false);
+        }
+    }
+
     const onEditProject = () => {
         navigate(`/projects/edit/${id}`);
     }
@@ -90,8 +112,10 @@ const ProjectDetail: React.FC = () => {
                         <Grid item xs={6}>
                             <InvolvedTeamsList teams={project.involvedTeams} />
                         </Grid>
-                        <Grid item xs={12}>
+
+                        <Grid item xs={12} sx={{ display: 'flex', gap: 2 }}>
                             <ActionButton buttonText='Refresh Features' isWaiting={isRefreshingFeatures} onClickHandler={onRefreshFeaturesClick} />
+                            <ActionButton buttonText='Refresh Forecasts' isWaiting={isRefreshingForecasts} onClickHandler={onRefreshForecastsClick} />
                             <Button variant="contained" onClick={onEditProject}>Edit Project</Button>
                         </Grid>
                         <Grid item xs={12}>

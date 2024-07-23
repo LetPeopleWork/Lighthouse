@@ -121,6 +121,14 @@ export class ApiService implements IApiService {
         });
     }
 
+    async refreshForecastsForProject(id: number): Promise<Project | null> {
+        return await this.withErrorHandling(async () => {
+            const response = await this.apiService.post<IProject>(`/forecast/update/${id}`);
+
+            return this.deserializeProject(response.data);
+        });
+    }
+
     async updateThroughput(teamId: number): Promise<void> {
         await this.withErrorHandling(async () => {
             await this.apiService.post<void>(`/throughput/${teamId}`);

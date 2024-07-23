@@ -168,6 +168,15 @@ export class MockApiService implements IApiService {
         return project || null;
     }
 
+    async refreshForecastsForProject(id: number): Promise<Project | null> {
+        console.log(`Refreshing Project with id ${id}`)
+        await this.delay();
+        const projects = await this.getProjects();
+        const project = projects.find(project => project.id === id);
+        await this.delay();
+        return project || null;
+    }
+
     async deleteProject(id: number): Promise<void> {
         console.log(`'Deleting' Project with id ${id}`)
         await this.delay();

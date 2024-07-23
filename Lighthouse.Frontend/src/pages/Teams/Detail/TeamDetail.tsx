@@ -22,7 +22,6 @@ const TeamDetail: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
     const [isUpdatingThroughput, setIsUpdatingThroughput] = useState<boolean>(false);
-    const [isUpdatingForecast, setIsUpdatingForecast] = useState<boolean>(false);
 
     const [remainingItems, setRemainingItems] = useState<number>(10);
     const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(dayjs().add(2, 'week'));
@@ -82,24 +81,6 @@ const TeamDetail: React.FC = () => {
         fetchThroughput();
     };
 
-    const onUpdateForecast = async () => {
-        if (!team) {
-            return;
-        }
-
-        setIsUpdatingForecast(true);
-
-        try {
-            await apiService.updateForecast(team.id);
-            setIsUpdatingForecast(false);
-        } catch (error) {
-            console.error('Error updating Forecasts:', error);
-            setHasError(true);
-        }
-
-        fetchTeam();
-    };
-
     const onRunManualForecast = async () => {
         if (!team || !targetDate) {
             return;
@@ -146,11 +127,6 @@ const TeamDetail: React.FC = () => {
                                 onClickHandler={onUpdateThroughput}
                                 buttonText="Update Throughput"
                                 isWaiting={!team || isUpdatingThroughput}
-                            />
-                            <ActionButton
-                                onClickHandler={onUpdateForecast}
-                                buttonText="Update Forecast"
-                                isWaiting={!team || isUpdatingForecast}
                             />
                             <Button variant="contained" onClick={onEditTeam}>
                                 Edit Team

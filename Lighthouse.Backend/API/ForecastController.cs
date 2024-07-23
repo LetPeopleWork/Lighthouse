@@ -12,26 +12,28 @@ namespace Lighthouse.Backend.API
     {
         private readonly IMonteCarloService monteCarloService;
         private readonly IRepository<Team> teamRepository;
+        private readonly IRepository<Project> projectRepository;
 
-        public ForecastController(IMonteCarloService monteCarloService, IRepository<Team> teamRepository)
+        public ForecastController(IMonteCarloService monteCarloService, IRepository<Team> teamRepository, IRepository<Project> projectRepository)
         {
             this.monteCarloService = monteCarloService;
             this.teamRepository = teamRepository;
+            this.projectRepository = projectRepository;
         }
 
         [HttpPost("update/{id}")]
-        public async Task<ActionResult> UpdateForecastForTeamAsync(int id)
+        public async Task<ActionResult<ProjectDto>> UpdateForecastForProject(int id)
         {
-            var team = teamRepository.GetById(id);
+            var project = projectRepository.GetById(id);
 
-            if (team == null)
+            if (project == null)
             {
                 return NotFound();
             }
 
-            await monteCarloService.ForecastFeaturesForTeam(team);
+            await monteCarloService.UpdateForecastsForProject(project);
 
-            return Ok();
+            return Ok(new ProjectDto(project));
         }
 
         [HttpPost("manual/{id}")]

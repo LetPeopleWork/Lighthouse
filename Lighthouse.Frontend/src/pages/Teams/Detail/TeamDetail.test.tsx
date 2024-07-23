@@ -45,26 +45,4 @@ describe('TeamDetail component', () => {
 
         expect(spy).toHaveBeenCalledTimes(1);
     });
-
-    it('should update forecast on button click', async () => {
-        const spy = vi.spyOn(ApiServiceProvider.getApiService(), "updateForecast");
-        expect(spy.getMockName()).toEqual('updateForecast')
-
-        render(
-            <MemoryRouter initialEntries={['/teams/1']}>
-                <Routes>
-                    <Route path="/teams/:id" element={<TeamDetail />} />
-                </Routes>
-            </MemoryRouter>
-        );
-
-        await waitFor(() => {
-            const runManualForecastButton = screen.getByText('Update Forecast');
-            expect(runManualForecastButton).toBeInTheDocument();
-
-            fireEvent.click(runManualForecastButton);
-        });
-
-        expect(spy).toHaveBeenCalledTimes(1);
-    });
 });

@@ -153,53 +153,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecastForTeam_SingleTeam_ForecastsProperly()
-        {
-            var subject = CreateSubjectWithPersistentThroughput();
-
-            var team = CreateTeam(1, [1]);
-
-            var feature = new Feature(team, 35);
-            SetupFeatures([feature]);
-
-            await subject.ForecastFeaturesForTeam(team);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(35));
-                Assert.That(feature.Forecast.GetProbability(70), Is.EqualTo(35));
-                Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(35));
-                Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(35));
-            });
-        }
-
-        [Test]
-        public async Task FeatureForecastForTeam_MultipleTeams_ForecastsProperly()
-        {
-            var subject = CreateSubjectWithRealThroughput();
-
-            var team1 = CreateTeam(1, [1]);
-            var team2 = CreateTeam(1, [1]);
-
-            var feature1 = new Feature(team1, 35);
-            var feature2 = new Feature(team2, 20);
-
-            SetupFeatures(feature1, feature2);
-
-            await subject.ForecastFeaturesForTeam(team1);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(feature1.Forecast.GetProbability(50), Is.EqualTo(35));
-                Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(35));
-                Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(35));
-                Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(35));
-
-                Assert.That(feature2.Forecast, Is.Null);
-            });
-        }
-
-        [Test]
         public async Task FeatureForecast_SingleTeam_OneFeature_FeatureWIPOne()
         {
             var subject = CreateSubjectWithPersistentThroughput();

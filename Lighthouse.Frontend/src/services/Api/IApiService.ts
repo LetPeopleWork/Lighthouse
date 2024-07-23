@@ -25,6 +25,8 @@ export interface IApiService {
 
     refreshFeaturesForProject(id: number): Promise<Project | null>;
 
+    refreshForecastsForProject(id: number) : Promise<Project | null>;
+
     deleteProject(id: number): Promise<void>;
 
     getProjectSettings(id: number): Promise<IProjectSettings>;
