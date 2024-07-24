@@ -7,11 +7,12 @@ namespace Lighthouse.Backend.API.DTO
         public WorkTrackingSystemConnectionOptionDto()
         {            
         }
+
         public WorkTrackingSystemConnectionOptionDto(WorkTrackingSystemConnectionOption option)
         {
             Key = option.Key;
-            Value = option.Value;
             IsSecret = option.IsSecret;
+            Value = IsSecret ? string.Empty : option.Value;
         }
 
         public string Key { get; set; }

@@ -1,5 +1,4 @@
-﻿using Lighthouse.Backend.Data;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.TestHelpers

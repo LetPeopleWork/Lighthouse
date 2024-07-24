@@ -1,5 +1,4 @@
-﻿using Castle.Core.Logging;
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;

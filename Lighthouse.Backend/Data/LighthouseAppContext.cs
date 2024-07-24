@@ -1,20 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Data
 {
     public class LighthouseAppContext : DbContext
     {
         private readonly ILogger<LighthouseAppContext> logger;
+        private readonly ICryptoService cryptoService;
 
-        public LighthouseAppContext(DbContextOptions<LighthouseAppContext> options, ILogger<LighthouseAppContext> logger)
+        public LighthouseAppContext(DbContextOptions<LighthouseAppContext> options, ILogger<LighthouseAppContext> logger, ICryptoService cryptoService)
             : base(options)
         {
             this.logger = logger;
+            this.cryptoService = cryptoService;
         }
 
         public DbSet<Team> Teams { get; set; } = default!;
@@ -75,14 +75,32 @@ namespace Lighthouse.Backend.Data
 
         public override int SaveChanges()
         {
-            RemoveOrphanedFeatures();
+            PreprocessDataBeforeSave();
             return base.SaveChanges();
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            RemoveOrphanedFeatures();
+            PreprocessDataBeforeSave();
             return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void PreprocessDataBeforeSave()
+        {
+            RemoveOrphanedFeatures();
+            EncryptSecrets();
+        }
+
+        private void EncryptSecrets()
+        {
+            foreach (var entry in ChangeTracker.Entries<WorkTrackingSystemConnectionOption>().Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+            {
+                var option = entry.Entity;
+                if (option.IsSecret)
+                {
+                    option.Value = cryptoService.Encrypt(option.Value);
+                }
+            }
         }
 
         private void RemoveOrphanedFeatures()

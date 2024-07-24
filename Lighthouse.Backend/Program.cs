@@ -31,7 +31,6 @@ namespace Lighthouse.Backend
 
                 var builder = WebApplication.CreateBuilder(args);
 
-                // Need to manually new some services as we need them before DI is ready.
                 var fileSystemService = new FileSystemService();
                 var configFileUpdater = new ConfigFileUpdater(builder.Configuration, fileSystemService);
                 var serilogConfiguration = new SerilogLogConfiguration(builder.Configuration, configFileUpdater, fileSystemService);
@@ -81,6 +80,8 @@ namespace Lighthouse.Backend
                 builder.Services.AddHostedService<WorkItemUpdateService>();
                 builder.Services.AddHostedService<ForecastUpdateService>();
 
+                builder.Services.AddSingleton<ICryptoService, CryptoService>();
+
                 // Add CORS services
                 builder.Services
                     .AddCors(options =>
@@ -113,7 +114,7 @@ namespace Lighthouse.Backend
                 }
 
                 app.UseHttpsRedirection();
-                
+
                 app.UseDefaultFiles();
                 app.UseStaticFiles();
 

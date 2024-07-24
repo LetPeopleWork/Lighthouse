@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Services.Implementation
             
             var featuresForProject = await GetFeaturesForProject(project);
 
-
             project.UpdateFeatures(featuresForProject.OrderBy(f => f, new FeatureComparer()));
 
             await GetRemainingWorkForFeatures(project);
