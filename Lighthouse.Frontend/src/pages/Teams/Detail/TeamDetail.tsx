@@ -12,6 +12,7 @@ import { ManualForecast } from '../../../models/Forecasts/ManualForecast';
 import TeamFeatureList from './TeamFeatureList';
 import ManualForecaster from './ManualForecaster';
 import ActionButton from '../../../components/Common/ActionButton/ActionButton';
+import InputGroup from '../../../components/Common/InputGroup/InputGroup';
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -133,11 +134,11 @@ const TeamDetail: React.FC = () => {
                             </Button>
                         </Grid>
                     </Grid>
-                    <Grid item xs={12}>
+                    <InputGroup title='Features'>
                         {team != null ? (
                             <TeamFeatureList team={team} />) : (<></>)}
-                    </Grid>
-                    <Grid item xs={12}>
+                    </InputGroup>
+                    <InputGroup title='Team Forecast'>
                         <ManualForecaster
                             remainingItems={remainingItems}
                             targetDate={targetDate}
@@ -147,10 +148,10 @@ const TeamDetail: React.FC = () => {
                             onTargetDateChange={setTargetDate}
                             onRunManualForecast={onRunManualForecast}
                         />
-                    </Grid>
-                    <Grid item xs={12}>
+                    </InputGroup>
+                    <InputGroup title='Throughput' initiallyExpanded={false}>
                         <ThroughputBarChart throughputData={throughput} />
-                    </Grid>
+                    </InputGroup>
                 </Grid>
             </LoadingAnimation>
         </Container>
