@@ -1,26 +1,33 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 {
     public class ThroughputUpdateService : UpdateBackgroundServiceBase
     {
-        private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly ILogger<ThroughputUpdateService> logger;
 
-        public ThroughputUpdateService(IConfiguration configuration, IServiceScopeFactory serviceScopeFactory, ILogger<ThroughputUpdateService> logger) : base(configuration, "Throughput", logger)
+        public ThroughputUpdateService(IServiceScopeFactory serviceScopeFactory, ILogger<ThroughputUpdateService> logger) : base(serviceScopeFactory, logger)
         {
-            this.serviceScopeFactory = serviceScopeFactory;
             this.logger = logger;
+        }
+
+        protected override RefreshSettings GetRefreshSettings()
+        {
+            using (var scope = CreateServiceScope())
+            {
+                return GetServiceFromServiceScope<IAppSettingService>(scope).GetThroughputRefreshSettings();
+            }
         }
 
         protected override async Task UpdateAllItems(CancellationToken stoppingToken)
         {
             logger.LogInformation($"Starting Update of Throughput for all Teams");
 
-            using (var scope = serviceScopeFactory.CreateScope())
+            using (var scope = CreateServiceScope())
             {
-                var teamRepository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+                var teamRepository = GetServiceFromServiceScope<IRepository<Team>>(scope);
 
                 foreach (var team in teamRepository.GetAll().ToList())
                 {
@@ -36,11 +43,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - team.ThroughputUpdateTime).TotalMinutes;
 
-            logger.LogInformation("Last Refresh of Throughput for team {TeamName} was {minutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", team.Name, minutesSinceLastUpdate, RefreshAfter);
+            var refreshSettings = GetRefreshSettings();
 
-            if (minutesSinceLastUpdate >= RefreshAfter)
+            logger.LogInformation("Last Refresh of Throughput for team {TeamName} was {minutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", team.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
+
+            if (minutesSinceLastUpdate >= refreshSettings.RefreshAfter)
             {
-                var throughputService = scope.ServiceProvider.GetRequiredService<IThroughputService>();
+                var throughputService = GetServiceFromServiceScope<IThroughputService>(scope);
                 await throughputService.UpdateThroughputForTeam(team).ConfigureAwait(true);
                 await teamRepository.Save();
             }

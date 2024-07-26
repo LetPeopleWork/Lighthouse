@@ -1,8 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Tests.TestHelpers;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,9 +10,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 {
     public class ThroughputUpdateServiceTest
     {
-        private IConfiguration configuration;
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<IThroughputService> throughputServiceMock;
+        private Mock<IAppSettingService> appSettingServiceMock;
+
         private Mock<IServiceScopeFactory> serviceScopeFactoryMock;
         private Mock<ILogger<ThroughputUpdateService>> loggerMock;
 
@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
         {
             teamRepoMock = new Mock<IRepository<Team>>();
             throughputServiceMock = new Mock<IThroughputService>();
+            appSettingServiceMock = new Mock<IAppSettingService>();
 
             serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
             loggerMock = new Mock<ILogger<ThroughputUpdateService>>();
@@ -31,8 +32,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
             scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IRepository<Team>))).Returns(teamRepoMock.Object);
             scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IThroughputService))).Returns(throughputServiceMock.Object);
+            scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IAppSettingService))).Returns(appSettingServiceMock.Object);
 
-            SetupConfiguration(10, 10);
+            SetupRefreshSettings(10, 10);
         }
 
         [Test]
@@ -71,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             var team1 = CreateTeam(DateTime.Now.AddDays(-1));
             var team2 = CreateTeam(DateTime.Now);
 
-            SetupConfiguration(10, 360);
+            SetupRefreshSettings(10, 360);
 
             SetupTeams([team1, team2]);
 
@@ -94,21 +96,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             return new Team { ThroughputUpdateTime = lastThroughputUpdateTime };
         }
 
-        private void SetupConfiguration(int interval, int refreshAfter)
+        private void SetupRefreshSettings(int interval, int refreshAfter)
         {
-            var inMemorySettings = new Dictionary<string, string?> 
-            {
-                { "PeriodicRefresh:Throughput:Interval", interval.ToString() },
-                { "PeriodicRefresh:Throughput:RefreshAfter", refreshAfter.ToString() },
-                { "PeriodicRefresh:Forecast:StartDelay", 0.ToString() },
-            };
-
-            configuration = TestConfiguration.SetupTestConfiguration(inMemorySettings);
+            var refreshSettings = new RefreshSettings { Interval = interval, RefreshAfter = refreshAfter, StartDelay = 0 };
+            appSettingServiceMock.Setup(x => x.GetThroughputRefreshSettings()).Returns(refreshSettings);
         }
 
         private ThroughputUpdateService CreateSubject()
         {
-            return new ThroughputUpdateService(configuration, serviceScopeFactoryMock.Object, loggerMock.Object);
+            return new ThroughputUpdateService(serviceScopeFactoryMock.Object, loggerMock.Object);
         }
     }
 }

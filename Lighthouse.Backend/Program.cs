@@ -58,6 +58,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();
                 builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
                 builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
+                builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
 
                 // Factories
                 builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
@@ -72,12 +73,13 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<ILexoRankService, LexoRankService>();
                 builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
                 builder.Services.AddScoped<IFileSystemService, FileSystemService>();
+                builder.Services.AddScoped<IAppSettingService, AppSettingService>();
 
                 builder.Services.AddScoped<AzureDevOpsWorkItemService>();
                 builder.Services.AddScoped<JiraWorkItemService>();
 
                 builder.Services.AddHostedService<ThroughputUpdateService>();
-                builder.Services.AddHostedService<WorkItemUpdateService>();
+                builder.Services.AddHostedService<FeatureUpdateService>();
                 builder.Services.AddHostedService<ForecastUpdateService>();
 
                 builder.Services.AddSingleton<ICryptoService, CryptoService>();

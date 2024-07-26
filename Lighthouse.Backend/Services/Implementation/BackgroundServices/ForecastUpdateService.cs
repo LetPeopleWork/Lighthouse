@@ -1,23 +1,32 @@
-﻿namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
+﻿using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Services.Interfaces;
+
+namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 {
     public class ForecastUpdateService : UpdateBackgroundServiceBase
     {
-        private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly ILogger<ForecastUpdateService> logger;
 
-        public ForecastUpdateService(IConfiguration configuration, IServiceScopeFactory serviceScopeFactory, ILogger<ForecastUpdateService> logger) : base(configuration, "Forecasts", logger)
+        public ForecastUpdateService(IServiceScopeFactory serviceScopeFactory, ILogger<ForecastUpdateService> logger) : base(serviceScopeFactory, logger)
         {
-            this.serviceScopeFactory = serviceScopeFactory;
             this.logger = logger;
+        }
+
+        protected override RefreshSettings GetRefreshSettings()
+        {
+            using (var scope = CreateServiceScope())
+            {
+                return GetServiceFromServiceScope<IAppSettingService>(scope).GetForecastRefreshSettings();
+            }
         }
 
         protected override async Task UpdateAllItems(CancellationToken stoppingToken)
         {
             logger.LogInformation($"Starting Update of Forecasts for all Features");
 
-            using (var scope = serviceScopeFactory.CreateScope())
+            using (var scope = CreateServiceScope())
             {                
-                var monteCarloService = scope.ServiceProvider.GetRequiredService<IMonteCarloService>();
+                var monteCarloService = GetServiceFromServiceScope<IMonteCarloService>(scope);
                 await monteCarloService.ForecastAllFeatures();
             }
 

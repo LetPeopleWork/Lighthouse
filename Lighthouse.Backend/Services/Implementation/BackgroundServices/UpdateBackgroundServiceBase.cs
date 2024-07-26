@@ -1,24 +1,29 @@
-﻿
+﻿using Lighthouse.Backend.Models.AppSettings;
+
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 {
     public abstract class UpdateBackgroundServiceBase : BackgroundService
     {
+        private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly ILogger<UpdateBackgroundServiceBase> logger;
 
-        protected UpdateBackgroundServiceBase(IConfiguration configuration, string configurationSectionName, ILogger<UpdateBackgroundServiceBase> logger)
+        protected UpdateBackgroundServiceBase(IServiceScopeFactory serviceScopeFactory, ILogger<UpdateBackgroundServiceBase> logger)
         {
-            StartDelay = configuration.GetValue<int>($"PeriodicRefresh:{configurationSectionName}:StartDelay");
-            Interval = configuration.GetValue<int>($"PeriodicRefresh:{configurationSectionName}:Interval");
-            RefreshAfter = configuration.GetValue<int>($"PeriodicRefresh:{configurationSectionName}:RefreshAfter");
-
+            this.serviceScopeFactory = serviceScopeFactory;
             this.logger = logger;
+        }        
+
+        protected abstract RefreshSettings GetRefreshSettings();
+
+        protected T GetServiceFromServiceScope<T>(IServiceScope scope) where T : notnull
+        {
+            return scope.ServiceProvider.GetRequiredService<T>();
         }
 
-        protected int StartDelay { get; }
-
-        protected int Interval { get; }
-
-        protected int RefreshAfter { get; }
+        protected IServiceScope CreateServiceScope()
+        {
+            return serviceScopeFactory.CreateScope();
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -43,8 +48,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 logger.LogInformation("Invoking Update");
                 await UpdateAllItems(stoppingToken);
 
-                logger.LogInformation("Done Updating - Waiting {Interval} Minutes till next execution", Interval);
-                await Task.Delay(TimeSpan.FromMinutes(Interval), stoppingToken);
+                var refreshSettings = GetRefreshSettings();
+
+                logger.LogInformation("Done Updating - Waiting {Interval} Minutes till next execution", refreshSettings.Interval);
+                await Task.Delay(TimeSpan.FromMinutes(refreshSettings.Interval), stoppingToken);
             }
             catch (Exception exception)
             {
@@ -54,8 +61,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         private async Task DelayStart(CancellationToken stoppingToken)
         {
-            logger.LogInformation("Wait {StartDelay} minutes before starting...", StartDelay);
-            await Task.Delay(TimeSpan.FromMinutes(StartDelay), stoppingToken);
+            var refreshSettings = GetRefreshSettings();
+
+            logger.LogInformation("Wait {StartDelay} minutes before starting...", refreshSettings.StartDelay);
+            await Task.Delay(TimeSpan.FromMinutes(refreshSettings.StartDelay), stoppingToken);
         }
     }
 }

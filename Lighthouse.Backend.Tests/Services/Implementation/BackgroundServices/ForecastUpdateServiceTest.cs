@@ -1,7 +1,7 @@
-﻿using Lighthouse.Backend.Services.Implementation;
+﻿using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
-using Lighthouse.Backend.Tests.TestHelpers;
-using Microsoft.Extensions.Configuration;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -10,8 +10,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 {
     public class ForecastUpdateServiceTest
     {
-        private IConfiguration configuration;
         private Mock<IMonteCarloService> monteCarloServiceMock;
+        private Mock<IAppSettingService> appSettingServiceMock;
+
         private Mock<IServiceScopeFactory> serviceScopeFactoryMock;
         private Mock<ILogger<ForecastUpdateService>> loggerMock;
 
@@ -19,6 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
         public void Setup()
         {
             monteCarloServiceMock = new Mock<IMonteCarloService>();
+            appSettingServiceMock = new Mock<IAppSettingService>();
 
             serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
             loggerMock = new Mock<ILogger<ForecastUpdateService>>();
@@ -27,8 +29,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
             scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IMonteCarloService))).Returns(monteCarloServiceMock.Object);
+            scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IAppSettingService))).Returns(appSettingServiceMock.Object);
 
-            SetupConfiguration(10);
+            SetupRefreshSettings(10);
         }
 
         [Test]
@@ -41,20 +44,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             monteCarloServiceMock.Verify(x => x.ForecastAllFeatures());
         }
 
-        private void SetupConfiguration(int interval)
+        private void SetupRefreshSettings(int interval)
         {
-            var inMemorySettings = new Dictionary<string, string?> 
-            {
-                { "PeriodicRefresh:Forecasts:Interval", interval.ToString() },
-                { "PeriodicRefresh:Forecasts:StartDelay", 0.ToString() },
-            };
-
-            configuration = TestConfiguration.SetupTestConfiguration(inMemorySettings);
+            var refreshSettings = new RefreshSettings { Interval = interval, RefreshAfter = 0, StartDelay = 0 };
+            appSettingServiceMock.Setup(x => x.GetForecastRefreshSettings()).Returns(refreshSettings);
         }
 
         private ForecastUpdateService CreateSubject()
         {
-            return new ForecastUpdateService(configuration, serviceScopeFactoryMock.Object, loggerMock.Object);
+            return new ForecastUpdateService(serviceScopeFactoryMock.Object, loggerMock.Object);
         }
     }
 }

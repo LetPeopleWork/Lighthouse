@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Models.AppSettings;
 
 namespace Lighthouse.Backend.Data
 {
@@ -25,8 +26,12 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<WorkTrackingSystemConnection> WorkTrackingSystemConnections { get; set; } = default!;
 
+        public DbSet<AppSetting> AppSettings { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
+
             modelBuilder.Entity<Milestone>()
                 .HasOne(m => m.Project)
                 .WithMany(p => p.Milestones)
@@ -71,6 +76,8 @@ namespace Lighthouse.Backend.Data
             logger.LogInformation("Migrating Database");
             Database.Migrate();
             logger.LogInformation("Migration of Database succeeded");
+
+            SeedAppSettings(modelBuilder);
         }
 
         public override int SaveChanges()
@@ -114,6 +121,23 @@ namespace Lighthouse.Backend.Data
             {
                 Features.RemoveRange(orphanedFeatures);
             }
+        }
+
+        private void SeedAppSettings(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<AppSetting>().HasData(
+                new AppSetting { Id = 0, Key = AppSettingKeys.ThroughputRefreshInterval, Value = "60" },
+                new AppSetting { Id = 1, Key = AppSettingKeys.ThroughputRefreshAfter, Value = "180" },
+                new AppSetting { Id = 2, Key = AppSettingKeys.ThroughputRefreshStartDelay, Value = "1" },
+
+                new AppSetting { Id = 3, Key = AppSettingKeys.FeaturesRefreshInterval, Value = "60" },
+                new AppSetting { Id = 4, Key = AppSettingKeys.FeaturesRefreshAfter, Value = "180" },
+                new AppSetting { Id = 5, Key = AppSettingKeys.FeaturesRefreshStartDelay, Value = "2" },
+
+                new AppSetting { Id = 6, Key = AppSettingKeys.ForecastRefreshInterval, Value = "60" },
+                new AppSetting { Id = 7, Key = AppSettingKeys.ForecastRefreshAfter, Value = "180" },
+                new AppSetting { Id = 8, Key = AppSettingKeys.ForecastRefreshStartDelay, Value = "5" }
+            );
         }
     }
 }
