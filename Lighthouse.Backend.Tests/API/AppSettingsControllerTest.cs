@@ -3,8 +3,6 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using NUnit.Framework;
-using System.Threading.Tasks;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -39,17 +37,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateFeatureRefreshSettings_UpdatesSettings()
+        public async Task UpdateFeatureRefreshSettings_UpdatesSettingsAsync()
         {
             var refreshSettings = new RefreshSettings();
 
             var subject = CreateSubject();
 
-            var result = subject.UpdateFeatureRefreshSettings(refreshSettings);
+            var result = await subject.UpdateFeatureRefreshSettingsAsync(refreshSettings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateFeatureRefreshSettings(refreshSettings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateFeatureRefreshSettingsAsync(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }
@@ -75,17 +73,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateThroughputRefreshSettings_UpdatesSettings()
+        public async Task UpdateThroughputRefreshSettings_UpdatesSettingsAsync()
         {
             var refreshSettings = new RefreshSettings();
 
             var subject = CreateSubject();
 
-            var result = subject.UpdateThroughputRefreshSettings(refreshSettings);
+            var result = await subject.UpdateThroughputRefreshSettingsAsync(refreshSettings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateThroughputRefreshSettings(refreshSettings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateThroughputRefreshSettingsAsync(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }
@@ -111,17 +109,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateForecastRefreshSettings_UpdatesSettings()
+        public async Task UpdateForecastRefreshSettings_UpdatesSettingsAsync()
         {
             var refreshSettings = new RefreshSettings();
 
             var subject = CreateSubject();
 
-            var result = subject.UpdateForecastRefreshSettings(refreshSettings);
+            var result = await subject.UpdateForecastRefreshSettingsAsync(refreshSettings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateForecastRefreshSettings(refreshSettings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateForecastRefreshSettingsAsync(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }

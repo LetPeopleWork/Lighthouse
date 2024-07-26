@@ -42,7 +42,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     value={teamSettings?.featureWIP || 1}
                     InputProps={{
                         inputProps: { 
-                            min: 10 
+                            min: 1 
                         }
                     }}
                     onChange={(e) => onTeamSettingsChange('featureWIP', parseInt(e.target.value, 10))}

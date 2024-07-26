@@ -6,15 +6,15 @@ namespace Lighthouse.Backend.Services.Interfaces
     {
         RefreshSettings GetThroughputRefreshSettings();
 
-        void UpdateThroughputRefreshSettings(RefreshSettings refreshSettings);
+        Task UpdateThroughputRefreshSettingsAsync(RefreshSettings refreshSettings);
         
         RefreshSettings GetFeaturRefreshSettings();
 
-        void UpdateFeatureRefreshSettings(RefreshSettings refreshSettings);
+        Task UpdateFeatureRefreshSettingsAsync(RefreshSettings refreshSettings);
 
         RefreshSettings GetForecastRefreshSettings();
 
-        void UpdateForecastRefreshSettings(RefreshSettings refreshSettings);
+        Task UpdateForecastRefreshSettingsAsync(RefreshSettings refreshSettings);
 
     }
 }

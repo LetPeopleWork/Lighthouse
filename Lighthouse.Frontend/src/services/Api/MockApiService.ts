@@ -13,6 +13,7 @@ import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTracking
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
 import { LoremIpsum } from "lorem-ipsum";
+import { IRefreshSettings, RefreshSettings } from '../../models/AppSettings/RefreshSettings';
 
 export class MockApiService implements IApiService {
     private useDelay: boolean;
@@ -268,6 +269,20 @@ export class MockApiService implements IApiService {
         return lorem.generateParagraphs(7);
     }
 
+    
+    async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
+        console.log(`Getting ${settingName} refresh settings`);
+
+        await this.delay();
+
+        return new RefreshSettings(10, 20, 30);
+    }
+    
+    async updateRefreshSettings(settingName: string, refreshSettings: IRefreshSettings): Promise<void> {
+        console.log(`Update ${settingName} refresh settings: ${refreshSettings}`);
+        
+        await this.delay();
+    }
 
     delay() {
         if (this.throwError) {

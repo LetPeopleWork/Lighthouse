@@ -37,22 +37,22 @@ namespace Lighthouse.Backend.Services.Implementation
                AppSettingKeys.ThroughputRefreshStartDelay);
         }
 
-        public void UpdateFeatureRefreshSettings(RefreshSettings refreshSettings)
+        public async Task UpdateFeatureRefreshSettingsAsync(RefreshSettings refreshSettings)
         {
-            UpdateRefreshSettings(refreshSettings, AppSettingKeys.FeaturesRefreshInterval, AppSettingKeys.FeaturesRefreshAfter, AppSettingKeys.FeaturesRefreshStartDelay);
+            await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.FeaturesRefreshInterval, AppSettingKeys.FeaturesRefreshAfter, AppSettingKeys.FeaturesRefreshStartDelay);
         }
 
-        public void UpdateForecastRefreshSettings(RefreshSettings refreshSettings)
+        public async Task UpdateForecastRefreshSettingsAsync(RefreshSettings refreshSettings)
         {
-            UpdateRefreshSettings(refreshSettings, AppSettingKeys.ForecastRefreshInterval, AppSettingKeys.ForecastRefreshAfter, AppSettingKeys.ForecastRefreshStartDelay);
+            await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.ForecastRefreshInterval, AppSettingKeys.ForecastRefreshAfter, AppSettingKeys.ForecastRefreshStartDelay);
         }
 
-        public void UpdateThroughputRefreshSettings(RefreshSettings refreshSettings)
+        public async Task UpdateThroughputRefreshSettingsAsync(RefreshSettings refreshSettings)
         {
-            UpdateRefreshSettings(refreshSettings, AppSettingKeys.ThroughputRefreshInterval, AppSettingKeys.ThroughputRefreshAfter, AppSettingKeys.ThroughputRefreshStartDelay);
+            await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.ThroughputRefreshInterval, AppSettingKeys.ThroughputRefreshAfter, AppSettingKeys.ThroughputRefreshStartDelay);
         }
 
-        private void UpdateRefreshSettings(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)
+        private async Task UpdateRefreshSettingsAsync(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)
         {
             var interval = GetSettingByKey(intervalKey);
             interval.Value = refreshSettings.Interval.ToString();
@@ -66,6 +66,8 @@ namespace Lighthouse.Backend.Services.Implementation
             repository.Update(interval);
             repository.Update(refreshAfter);
             repository.Update(delay);
+
+            await repository.Save();
         }
 
         private RefreshSettings CreateRefreshSettings(string intervalKey, string refreshAfterKey, string delayKey)

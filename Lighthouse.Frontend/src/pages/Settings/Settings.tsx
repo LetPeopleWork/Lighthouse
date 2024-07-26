@@ -4,9 +4,9 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import GeneralSettings from './General/GeneralSettings';
 import WorkTrackingSystemConnectionSettings from './Connections/WorkTrackingSystemConnectionSettings';
 import LogSettings from './LogSettings/LogSettings';
+import RefreshSettingsTab from './Refresh/RefreshSettingsTab';
 
 const Settings: React.FC = () => {
   const [value, setValue] = React.useState('1');
@@ -19,19 +19,19 @@ const Settings: React.FC = () => {
     <Container>
       <TabContext value={value}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <TabList onChange={handleChange} >
-            <Tab label="General" value="1" />
-            <Tab label="Work Tracking Systems" value="2" />
-            <Tab label="Logs" value="3" />
+          <TabList onChange={handleChange}>
+            <Tab label="Work Tracking Systems" value="1" data-testid="work-tracking-tab" />
+            <Tab label="Refresh" value="2" data-testid="refresh-tab" />
+            <Tab label="Logs" value="3" data-testid="logs-tab" />
           </TabList>
         </Box>
-        <TabPanel value="1">
-          <GeneralSettings />
-        </TabPanel>
-        <TabPanel value="2">
+        <TabPanel value="1" data-testid="work-tracking-panel">
           <WorkTrackingSystemConnectionSettings />
         </TabPanel>
-        <TabPanel value="3">
+        <TabPanel value="2" data-testid="refresh-panel">
+          <RefreshSettingsTab />
+        </TabPanel>
+        <TabPanel value="3" data-testid="logs-panel">
           <LogSettings />
         </TabPanel>
       </TabContext>

@@ -23,9 +23,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("FeatureRefresh")]
-        public ActionResult UpdateFeatureRefreshSettings(RefreshSettings refreshSettings)
+        public async Task<ActionResult> UpdateFeatureRefreshSettingsAsync(RefreshSettings refreshSettings)
         {
-            appSettingService.UpdateFeatureRefreshSettings(refreshSettings);
+            await appSettingService.UpdateFeatureRefreshSettingsAsync(refreshSettings);
             return Ok();
         }
 
@@ -37,9 +37,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("ThroughputRefresh")]
-        public ActionResult UpdateThroughputRefreshSettings(RefreshSettings refreshSettings)
+        public async Task<ActionResult> UpdateThroughputRefreshSettingsAsync(RefreshSettings refreshSettings)
         {
-            appSettingService.UpdateThroughputRefreshSettings(refreshSettings);
+            await appSettingService.UpdateThroughputRefreshSettingsAsync(refreshSettings);
             return Ok();
         }
 
@@ -51,9 +51,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("ForecastRefresh")]
-        public ActionResult UpdateForecastRefreshSettings(RefreshSettings refreshSettings)
+        public async Task<ActionResult> UpdateForecastRefreshSettingsAsync(RefreshSettings refreshSettings)
         {
-            appSettingService.UpdateForecastRefreshSettings(refreshSettings);
+            await appSettingService.UpdateForecastRefreshSettingsAsync(refreshSettings);
             return Ok();
         }
     }

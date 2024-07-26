@@ -68,14 +68,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void UpdateFeatureRefreshSettings_UpdatesCorrectly()
+        public async Task UpdateFeatureRefreshSettings_UpdatesCorrectlyAsync()
         {
             SetupRepositoryForKeys(AppSettingKeys.FeaturesRefreshInterval, "60", AppSettingKeys.FeaturesRefreshAfter, "360", AppSettingKeys.FeaturesRefreshStartDelay, "1");
 
             var service = CreateService();
 
             var newSettings = new RefreshSettings { Interval = 70, RefreshAfter = 370, StartDelay = 10 };
-            service.UpdateFeatureRefreshSettings(newSettings);
+            await service.UpdateFeatureRefreshSettingsAsync(newSettings);
 
             VerifyUpdateCalled(AppSettingKeys.FeaturesRefreshInterval, "70");
             VerifyUpdateCalled(AppSettingKeys.FeaturesRefreshAfter, "370");
@@ -83,14 +83,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void UpdateForecastRefreshSettings_UpdatesCorrectly()
+        public async Task UpdateForecastRefreshSettings_UpdatesCorrectlyAsync()
         {
             SetupRepositoryForKeys(AppSettingKeys.ForecastRefreshInterval, "20", AppSettingKeys.ForecastRefreshAfter, "120", AppSettingKeys.ForecastRefreshStartDelay, "3");
 
             var service = CreateService();
 
             var newSettings = new RefreshSettings { Interval = 25, RefreshAfter = 130, StartDelay = 5 };
-            service.UpdateForecastRefreshSettings(newSettings);
+            await service.UpdateForecastRefreshSettingsAsync(newSettings);
 
             VerifyUpdateCalled(AppSettingKeys.ForecastRefreshInterval, "25");
             VerifyUpdateCalled(AppSettingKeys.ForecastRefreshAfter, "130");
@@ -98,14 +98,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void UpdateThroughputRefreshSettings_UpdatesCorrectly()
+        public async Task UpdateThroughputRefreshSettings_UpdatesCorrectlyAsync()
         {
             SetupRepositoryForKeys(AppSettingKeys.ThroughputRefreshInterval, "30", AppSettingKeys.ThroughputRefreshAfter, "180", AppSettingKeys.ThroughputRefreshStartDelay, "2");
 
             var service = CreateService();
 
             var newSettings = new RefreshSettings { Interval = 35, RefreshAfter = 190, StartDelay = 3 };
-            service.UpdateThroughputRefreshSettings(newSettings);
+            await service.UpdateThroughputRefreshSettingsAsync(newSettings);
 
             VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshInterval, "35");
             VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshAfter, "190");

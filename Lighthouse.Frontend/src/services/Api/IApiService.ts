@@ -5,6 +5,7 @@ import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ITeamSettings } from "../../models/Team/TeamSettings";
 import { IProjectSettings } from "../../models/Project/ProjectSettings";
+import { IRefreshSettings } from "../../models/AppSettings/RefreshSettings";
 
 export interface IApiService {
     deleteTeam(id: number): Promise<void>;
@@ -14,9 +15,9 @@ export interface IApiService {
     getTeam(id: number): Promise<Team | null>;
 
     getTeamSettings(id: number): Promise<ITeamSettings>;
-    
+
     updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
-    
+
     createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
 
     getProjects(): Promise<Project[]>;
@@ -25,14 +26,14 @@ export interface IApiService {
 
     refreshFeaturesForProject(id: number): Promise<Project | null>;
 
-    refreshForecastsForProject(id: number) : Promise<Project | null>;
+    refreshForecastsForProject(id: number): Promise<Project | null>;
 
     deleteProject(id: number): Promise<void>;
 
     getProjectSettings(id: number): Promise<IProjectSettings>;
-    
+
     updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
-    
+
     createProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
 
     getVersion(): Promise<string>;
@@ -56,12 +57,16 @@ export interface IApiService {
     deleteWorkTrackingSystemConnection(connectionId: number): Promise<void>;
 
     validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean>;
-    
+
     getLogLevel(): Promise<string>;
 
     getSupportedLogLevels(): Promise<string[]>;
 
-    setLogLevel(logLevel: string) : Promise<void>;
+    setLogLevel(logLevel: string): Promise<void>;
 
     getLogs(): Promise<string>;
+
+    getRefreshSettings(settingName: string): Promise<IRefreshSettings>;
+
+    updateRefreshSettings(settingName: string, refreshSettings: IRefreshSettings): Promise<void>;
 }

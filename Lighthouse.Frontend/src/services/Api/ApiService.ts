@@ -12,6 +12,7 @@ import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../
 import { IWorkTrackingSystemOption, WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
+import { IRefreshSettings } from '../../models/AppSettings/RefreshSettings';
 
 export class ApiService implements IApiService {
     private apiService!: AxiosInstance;
@@ -233,6 +234,20 @@ export class ApiService implements IApiService {
             const response = await this.apiService.get<string>(`/logs`);
 
             return response.data;
+        });
+    }
+
+    async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<IRefreshSettings>(`/appsettings/${settingName}Refresh`);
+
+            return response.data;
+        });
+    }
+    
+    async updateRefreshSettings(settingName: string, refreshSettings: IRefreshSettings): Promise<void> {
+        this.withErrorHandling(async () => {
+            await this.apiService.put<IRefreshSettings>(`/appsettings/${settingName}Refresh`, refreshSettings);
         });
     }
 
