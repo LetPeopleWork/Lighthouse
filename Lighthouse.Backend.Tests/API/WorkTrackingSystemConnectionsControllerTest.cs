@@ -14,10 +14,12 @@ namespace Lighthouse.Backend.Tests.API
     public class WorkTrackingSystemConnectionsControllerTest
     {
         private Mock<IWorkTrackingSystemFactory> workTrackingSystemsFactoryMock;
-        
+
         private Mock<IRepository<WorkTrackingSystemConnection>> repositoryMock;
 
         private Mock<IWorkItemServiceFactory> workItemServiceFactoryMock;
+
+        private Mock<ICryptoService> cryptoServiceMock;
 
         [SetUp]
         public void Setup()
@@ -25,6 +27,10 @@ namespace Lighthouse.Backend.Tests.API
             workTrackingSystemsFactoryMock = new Mock<IWorkTrackingSystemFactory>();
             repositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
+            cryptoServiceMock = new Mock<ICryptoService>();
+
+            cryptoServiceMock.Setup(x => x.Encrypt(It.IsAny<string>())).Returns((string input) => { return input; });
+            cryptoServiceMock.Setup(x => x.Decrypt(It.IsAny<string>())).Returns((string input) => { return input; });
         }
 
         [Test]
@@ -223,9 +229,28 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        public async Task ValidateConnection_HasSecretConnectionOption_Encrypts()
+        {
+            var subject = CreateSubject();
+
+            var workItemServiceMock = new Mock<IWorkItemService>();
+            workItemServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
+
+            cryptoServiceMock.Setup(x => x.Encrypt("SecretValue")).Returns("EncryptedSecret");
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Key", Value = "SecretValue", IsSecret = true });            
+
+            var result = await subject.ValidateConnection(connectionDto);
+
+            workItemServiceMock.Verify(x => x.ValidateConnection(It.Is<WorkTrackingSystemConnection>(c => c.Options.Single().Value == "EncryptedSecret")));
+        }
+
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionsController(workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workItemServiceFactoryMock.Object);
+            return new WorkTrackingSystemConnectionsController(workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workItemServiceFactoryMock.Object, cryptoServiceMock.Object);
         }
     }
 }

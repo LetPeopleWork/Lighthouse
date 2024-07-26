@@ -15,12 +15,15 @@ namespace Lighthouse.Backend.API
         private readonly IWorkTrackingSystemFactory workTrackingSystemFactory;
         private readonly IRepository<WorkTrackingSystemConnection> repository;
         private readonly IWorkItemServiceFactory workItemServiceFactory;
+        private readonly ICryptoService cryptoService;
 
-        public WorkTrackingSystemConnectionsController(IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkItemServiceFactory workItemServiceFactory)
+        public WorkTrackingSystemConnectionsController(
+            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkItemServiceFactory workItemServiceFactory, ICryptoService cryptoService)
         {
             this.workTrackingSystemFactory = workTrackingSystemFactory;
             this.repository = repository;
             this.workItemServiceFactory = workItemServiceFactory;
+            this.cryptoService = cryptoService;
         }
 
         [HttpGet("supported")]
@@ -98,8 +101,13 @@ namespace Lighthouse.Backend.API
         [HttpPost("validate")]
         public async Task<ActionResult<bool>> ValidateConnection(WorkTrackingSystemConnectionDto connectionDto)
         {
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(connectionDto.WorkTrackingSystem);
+            // Services expect an encrypted value, so we have to manually do that here
+            foreach (var option in connectionDto.Options.Where(o => o.IsSecret))
+            {
+                option.Value = cryptoService.Encrypt(option.Value);
+            }
 
+            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(connectionDto.WorkTrackingSystem);
             var connection = CreateConnectionFromDto(connectionDto);
 
             var isConnectionValid = await workItemService.ValidateConnection(connection);
