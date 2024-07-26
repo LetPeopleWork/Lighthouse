@@ -124,6 +124,12 @@ namespace Lighthouse.Backend
 
                 app.MapControllers();
 
+                app.UseSpa(spa =>
+                {
+                    spa.Options.SourcePath = "wwwroot";
+                    spa.Options.DefaultPage = "/index.html";
+                });
+
                 app.Run();
             }
             catch (Exception ex)
