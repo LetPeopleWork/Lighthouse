@@ -18,12 +18,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         private readonly ILexoRankService lexoRankService;
         private readonly IIssueFactory issueFactory;
         private readonly ILogger<JiraWorkItemService> logger;
+        private readonly ICryptoService cryptoService;
 
-        public JiraWorkItemService(ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkItemService> logger)
+        public JiraWorkItemService(ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkItemService> logger, ICryptoService cryptoService)
         {
             this.lexoRankService = lexoRankService;
             this.issueFactory = issueFactory;
             this.logger = logger;
+            this.cryptoService = cryptoService;
         }
 
         public async Task<int[]> GetClosedWorkItems(int history, Team team)
@@ -324,7 +326,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
             var username = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Username);
-            var apiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
+            var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
+            var apiToken = cryptoService.Decrypt(encryptedApiToken);
             var byteArray = Encoding.ASCII.GetBytes($"{username}:{apiToken}");
 
             var client = new HttpClient();

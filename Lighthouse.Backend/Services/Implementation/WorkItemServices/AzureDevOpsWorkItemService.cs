@@ -15,10 +15,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private readonly string[] closedStates = ["Done", "Closed", "Removed"];
         private readonly ILogger<AzureDevOpsWorkItemService> logger;
+        private readonly ICryptoService cryptoService;
 
-        public AzureDevOpsWorkItemService(ILogger<AzureDevOpsWorkItemService> logger)
+        public AzureDevOpsWorkItemService(ILogger<AzureDevOpsWorkItemService> logger, ICryptoService cryptoService)
         {
             this.logger = logger;
+            this.cryptoService = cryptoService;
         }
 
         public async Task<int[]> GetClosedWorkItems(int history, Team team)
@@ -373,7 +375,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         private WorkItemTrackingHttpClient GetClientService(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             var url = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
-            var personalAccessToken = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
+            var encryptedPersonalAccessToken = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
+
+            var personalAccessToken = cryptoService.Decrypt(encryptedPersonalAccessToken);
 
             var connection = CreateConnection(url, personalAccessToken);
             return connection.GetClient<WorkItemTrackingHttpClient>();

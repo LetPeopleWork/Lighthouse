@@ -71,8 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
         private WorkTrackingSystemConnectionRepository CreateSubject()
         {
-            var cryptoService = ServiceProvider.GetService<ICryptoService>() ?? throw new InvalidOperationException("CryptoService is not configured.");
-            return new WorkTrackingSystemConnectionRepository(DatabaseContext, cryptoService, Mock.Of<ILogger<WorkTrackingSystemConnectionRepository>>());
+            return new WorkTrackingSystemConnectionRepository(DatabaseContext, Mock.Of<ILogger<WorkTrackingSystemConnectionRepository>>());
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
 using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Microsoft.Extensions.Logging;
@@ -376,7 +377,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
         private AzureDevOpsWorkItemService CreateSubject()
         {
-            return new AzureDevOpsWorkItemService(Mock.Of<ILogger<AzureDevOpsWorkItemService>>());
+            return new AzureDevOpsWorkItemService(Mock.Of<ILogger<AzureDevOpsWorkItemService>>(), new FakeCryptoService());
         }
     }
 }

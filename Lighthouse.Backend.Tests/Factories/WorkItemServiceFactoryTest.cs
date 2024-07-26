@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkItemServices;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -18,11 +19,11 @@ namespace Lighthouse.Backend.Tests.Factories
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(AzureDevOpsWorkItemService)))
-            .Returns(new AzureDevOpsWorkItemService(Mock.Of<ILogger<AzureDevOpsWorkItemService>>()));
+            .Returns(new AzureDevOpsWorkItemService(Mock.Of<ILogger<AzureDevOpsWorkItemService>>(), new FakeCryptoService()));
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(JiraWorkItemService)))
-            .Returns(new JiraWorkItemService(Mock.Of<ILexoRankService>(), Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkItemService>>()));
+            .Returns(new JiraWorkItemService(Mock.Of<ILexoRankService>(), Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkItemService>>(), new FakeCryptoService()));
         }
 
         [Test]
