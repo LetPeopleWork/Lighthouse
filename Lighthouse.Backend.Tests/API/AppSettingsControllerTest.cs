@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -120,6 +121,42 @@ namespace Lighthouse.Backend.Tests.API
             Assert.Multiple(() =>
             {
                 appSettingServiceMock.Verify(x => x.UpdateForecastRefreshSettingsAsync(refreshSettings), Times.Once);
+                Assert.That(result, Is.InstanceOf<OkResult>());
+            });
+        }
+
+        [Test]
+        public void GetDefaultTeamSettings_ReturnsSettings()
+        {
+            var settings = new TeamSettingDto();
+            appSettingServiceMock.Setup(x => x.GetDefaultTeamSettings()).Returns(settings);
+
+            var subject = CreateSubject();
+
+            var result = subject.GetDefaultTeamSettings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                Assert.That(okResult.Value, Is.EqualTo(settings));
+            });
+        }
+
+        [Test]
+        public async Task UpdateDefaultTeamSettings_UpdatesSettingsAsync()
+        {
+            var settings = new TeamSettingDto();
+
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateDefaultTeamSettingsAsync(settings);
+
+            Assert.Multiple(() =>
+            {
+                appSettingServiceMock.Verify(x => x.UpdateDefaultTeamSettingsAsync(settings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }

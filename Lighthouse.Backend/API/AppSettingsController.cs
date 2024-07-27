@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models.AppSettings;
+﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -54,6 +55,20 @@ namespace Lighthouse.Backend.API
         public async Task<ActionResult> UpdateForecastRefreshSettingsAsync(RefreshSettings refreshSettings)
         {
             await appSettingService.UpdateForecastRefreshSettingsAsync(refreshSettings);
+            return Ok();
+        }
+
+        [HttpGet("DefaultTeamSettings")]
+        public ActionResult<TeamSettingDto> GetDefaultTeamSettings()
+        {
+            var settings = appSettingService.GetDefaultTeamSettings();
+            return Ok(settings);
+        }
+
+        [HttpPut("DefaultTeamSettings")]
+        public async Task<ActionResult> UpdateDefaultTeamSettingsAsync(TeamSettingDto defaultTeamSetting)
+        {
+            await appSettingService.UpdateDefaultTeamSettingsAsync(defaultTeamSetting);
             return Ok();
         }
     }

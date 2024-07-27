@@ -56,9 +56,14 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             logger.LogInformation("Removing item with {id}", id);
             var itemToRemove = dbSetGetter(Context).Find(id);
 
-            if (itemToRemove != null)
+            Remove(itemToRemove);
+        }
+
+        public void Remove(T? item)
+        {
+            if (item != null)
             {
-                dbSetGetter(Context).Remove(itemToRemove);
+                dbSetGetter(Context).Remove(item);
             }
         }
 
@@ -66,6 +71,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         {
             logger.LogDebug("Saving");
             await Context.SaveChangesAsync();
+        }
+
+        public void SaveSync()
+        {
+            Context.SaveChanges();
         }
 
         public void Update(T item)

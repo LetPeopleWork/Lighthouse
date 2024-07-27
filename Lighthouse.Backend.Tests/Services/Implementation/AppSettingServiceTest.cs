@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Implementation;
 using Moq;
+using Lighthouse.Backend.API.DTO;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -110,6 +111,67 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshInterval, "35");
             VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshAfter, "190");
             VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshStartDelay, "3");
+        }
+
+        [Test]
+        public void GetDefaultTeamSettings_ReturnsCorrectSettings()
+        {
+            SetupRepositoryForKeys(
+                AppSettingKeys.TeamSettingName, "MyTeam",
+                AppSettingKeys.TeamSettingHistory, "90",
+                AppSettingKeys.TeamSettingFeatureWIP, "2",
+                AppSettingKeys.TeamSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.TeamSettingWorkItemTypes, "Product Backlog Item, Bug",
+                AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID");
+
+            var service = CreateService();
+
+            var settings = service.GetDefaultTeamSettings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(settings.Name, Is.EqualTo("MyTeam"));
+                Assert.That(settings.ThroughputHistory, Is.EqualTo(90));
+                Assert.That(settings.FeatureWIP, Is.EqualTo(2));
+                Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
+                Assert.That(settings.RelationCustomField, Is.EqualTo("Custom.RemoteParentID"));
+
+                Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(2));
+                CollectionAssert.Contains(settings.WorkItemTypes, "Product Backlog Item");
+                CollectionAssert.Contains(settings.WorkItemTypes, "Bug");
+            });
+        }
+
+        [Test]
+        public async Task UpdateDefaultTeamSettingsAsync_UpdatesCorrectlyAsync()
+        {
+            SetupRepositoryForKeys(
+                AppSettingKeys.TeamSettingName, "MyTeam",
+                AppSettingKeys.TeamSettingHistory, "90",
+                AppSettingKeys.TeamSettingFeatureWIP, "2",
+                AppSettingKeys.TeamSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.TeamSettingWorkItemTypes, "Product Backlog Item, Bug",
+                AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID");
+
+            var service = CreateService();
+
+            var newSettings = new TeamSettingDto { 
+                Name = "Other Team",
+                ThroughputHistory = 190,
+                FeatureWIP = 3,
+                WorkItemQuery = "project = MyJiraProject",
+                WorkItemTypes = ["Task", "Spike"],
+                RelationCustomField = "CUSTOM_12039213"
+            };
+
+            await service.UpdateDefaultTeamSettingsAsync(newSettings);
+
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingName, "Other Team");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingHistory, "190");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingFeatureWIP, "3");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemQuery, "project = MyJiraProject");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemTypes, "Task,Spike");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingRelationCustomField, "CUSTOM_12039213");
         }
 
         [Test]

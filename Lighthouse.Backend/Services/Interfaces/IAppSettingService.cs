@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models.AppSettings;
+﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models.AppSettings;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
@@ -16,5 +17,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Task UpdateForecastRefreshSettingsAsync(RefreshSettings refreshSettings);
 
+        TeamSettingDto GetDefaultTeamSettings();
+
+        Task UpdateDefaultTeamSettingsAsync(TeamSettingDto defaultTeamSetting);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 
 namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
@@ -7,6 +8,37 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     {
         public AppSettingRepository(LighthouseAppContext context, ILogger<RepositoryBase<AppSetting>> logger) : base(context, (LighthouseAppContext context) => context.AppSettings, logger)
         {
+            SeedAppSettings();
+        }
+
+        private void SeedAppSettings()
+        {
+            AddIfNotExists(new AppSetting { Id = 0, Key = AppSettingKeys.ThroughputRefreshInterval, Value = "60" });
+            AddIfNotExists(new AppSetting { Id = 1, Key = AppSettingKeys.ThroughputRefreshAfter, Value = "180" });
+            AddIfNotExists(new AppSetting { Id = 2, Key = AppSettingKeys.ThroughputRefreshStartDelay, Value = "1" });
+            AddIfNotExists(new AppSetting { Id = 3, Key = AppSettingKeys.FeaturesRefreshInterval, Value = "60" });
+            AddIfNotExists(new AppSetting { Id = 4, Key = AppSettingKeys.FeaturesRefreshAfter, Value = "180" });
+            AddIfNotExists(new AppSetting { Id = 5, Key = AppSettingKeys.FeaturesRefreshStartDelay, Value = "2" });
+            AddIfNotExists(new AppSetting { Id = 6, Key = AppSettingKeys.ForecastRefreshInterval, Value = "60" });
+            AddIfNotExists(new AppSetting { Id = 7, Key = AppSettingKeys.ForecastRefreshAfter, Value = "180" });
+            AddIfNotExists(new AppSetting { Id = 8, Key = AppSettingKeys.ForecastRefreshStartDelay, Value = "5" });
+            AddIfNotExists(new AppSetting { Id = 9, Key = AppSettingKeys.TeamSettingName, Value = "New Team" });
+            AddIfNotExists(new AppSetting { Id = 10, Key = AppSettingKeys.TeamSettingHistory, Value = "30" });
+            AddIfNotExists(new AppSetting { Id = 11, Key = AppSettingKeys.TeamSettingFeatureWIP, Value = "1" });
+            AddIfNotExists(new AppSetting { Id = 12, Key = AppSettingKeys.TeamSettingWorkItemQuery, Value = string.Empty });
+            AddIfNotExists(new AppSetting { Id = 13, Key = AppSettingKeys.TeamSettingWorkItemTypes, Value = "User Story,Bug" });
+            AddIfNotExists(new AppSetting { Id = 14, Key = AppSettingKeys.TeamSettingRelationCustomField, Value = string.Empty });
+
+            SaveSync();
+        }
+
+        private void AddIfNotExists(AppSetting defaultAppSetting)
+        {
+            var existingDefault = GetByPredicate((appSetting) => appSetting.Key == defaultAppSetting.Key);
+            if (existingDefault == null)
+            {
+                Add(defaultAppSetting);
+            }
         }
     }
 }

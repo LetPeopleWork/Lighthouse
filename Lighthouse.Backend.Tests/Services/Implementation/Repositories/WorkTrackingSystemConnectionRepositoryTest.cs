@@ -1,10 +1,8 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Repositories;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
