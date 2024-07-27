@@ -36,11 +36,19 @@ namespace Lighthouse.Backend
                 var serilogConfiguration = new SerilogLogConfiguration(builder.Configuration, configFileUpdater, fileSystemService);
                 builder.Services.AddSingleton<ILogConfiguration>(serilogConfiguration);
 
-                builder.Services.AddSerilog((services, lc) => lc
-                    .ReadFrom.Configuration(builder.Configuration)
-                    .ReadFrom.Services(services)
-                    .MinimumLevel.ControlledBy(serilogConfiguration.LoggingLevelSwitch)
-                    .Enrich.FromLogContext());
+                builder.Services.AddSingleton<Serilog.ILogger>(provider =>
+                {
+                    var configuration = new LoggerConfiguration()
+                        .ReadFrom.Configuration(builder.Configuration)
+                        .ReadFrom.Services(provider)
+                        .MinimumLevel.ControlledBy(serilogConfiguration.LoggingLevelSwitch)
+                        .Enrich.FromLogContext()
+                        .CreateLogger();
+
+                    return configuration;
+                });
+
+                builder.Host.UseSerilog();
 
                 Log.Information("Setting Culture Info to {CultureName}", CultureInfo.CurrentCulture.Name);
 
