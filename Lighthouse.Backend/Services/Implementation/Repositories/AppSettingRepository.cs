@@ -28,6 +28,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 12, Key = AppSettingKeys.TeamSettingWorkItemQuery, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 13, Key = AppSettingKeys.TeamSettingWorkItemTypes, Value = "User Story,Bug" });
             AddIfNotExists(new AppSetting { Id = 14, Key = AppSettingKeys.TeamSettingRelationCustomField, Value = string.Empty });
+            AddIfNotExists(new AppSetting { Id = 9, Key = AppSettingKeys.ProjectSettingName, Value = "New Project" });
+            AddIfNotExists(new AppSetting { Id = 12, Key = AppSettingKeys.ProjectSettingWorkItemQuery, Value = string.Empty });
+            AddIfNotExists(new AppSetting { Id = 13, Key = AppSettingKeys.ProjectSettingWorkItemTypes, Value = "Epic" });
+            AddIfNotExists(new AppSetting { Id = 14, Key = AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, Value = string.Empty });
+            AddIfNotExists(new AppSetting { Id = 14, Key = AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, Value = "10" });
 
             SaveSync();
         }

@@ -32,6 +32,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.TeamSettingWorkItemQuery, "")]
         [TestCase(AppSettingKeys.TeamSettingWorkItemTypes, "User Story,Bug")]
         [TestCase(AppSettingKeys.TeamSettingRelationCustomField, "")]
+        [TestCase(AppSettingKeys.ProjectSettingName, "New Project")]
+        [TestCase(AppSettingKeys.ProjectSettingWorkItemQuery, "")]
+        [TestCase(AppSettingKeys.ProjectSettingWorkItemTypes, "Epic")]
+        [TestCase(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "")]
+        [TestCase(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();

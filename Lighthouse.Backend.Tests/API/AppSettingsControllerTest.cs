@@ -161,6 +161,42 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        public void GetDefaultProjectSettings_ReturnsSettings()
+        {
+            var settings = new ProjectSettingDto();
+            appSettingServiceMock.Setup(x => x.GetDefaultProjectSettings()).Returns(settings);
+
+            var subject = CreateSubject();
+
+            var result = subject.GetDefaultProjectSettings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                Assert.That(okResult.Value, Is.EqualTo(settings));
+            });
+        }
+
+        [Test]
+        public async Task UpdateDefaultProjectSettings_UpdatesSettingsAsync()
+        {
+            var settings = new ProjectSettingDto();
+
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateDefaultProjectSettingsAsync(settings);
+
+            Assert.Multiple(() =>
+            {
+                appSettingServiceMock.Verify(x => x.UpdateDefaultProjectSettingsAsync(settings), Times.Once);
+                Assert.That(result, Is.InstanceOf<OkResult>());
+            });
+        }
+
         private AppSettingsController CreateSubject()
         {
             return new AppSettingsController(appSettingServiceMock.Object);

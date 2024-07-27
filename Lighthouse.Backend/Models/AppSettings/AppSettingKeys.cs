@@ -31,5 +31,15 @@
         public const string TeamSettingWorkItemTypes = "DefaultTeamSetting:WorkItemTypes";
 
         public const string TeamSettingRelationCustomField = "DefaultTeamSetting:RelationCustomField";
+
+        public const string ProjectSettingName = "DefaultProjectSetting:Name";
+
+        public const string ProjectSettingWorkItemQuery = "DefaultProjectSetting:WorkItemQuery";
+
+        public const string ProjectSettingWorkItemTypes = "DefaultProjectSetting:WorkItemTypes";
+
+        public const string ProjectSettingUnparentedWorkItemQuery = "DefaultProjectSetting:UnparentedWorkItemQuery";
+
+        public const string ProjectSettingDefaultAmountOfWorkItemsPerFeature = "DefaultProjectSetting:DefaultAmountOfWorkItemsPerFeature";
     }
 }

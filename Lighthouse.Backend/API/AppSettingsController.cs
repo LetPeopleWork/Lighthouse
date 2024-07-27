@@ -71,5 +71,19 @@ namespace Lighthouse.Backend.API
             await appSettingService.UpdateDefaultTeamSettingsAsync(defaultTeamSetting);
             return Ok();
         }
+
+        [HttpGet("DefaultProjectSettings")]
+        public ActionResult<ProjectSettingDto> GetDefaultProjectSettings()
+        {
+            var settings = appSettingService.GetDefaultProjectSettings();
+            return Ok(settings);
+        }
+
+        [HttpPut("DefaultProjectSettings")]
+        public async Task<ActionResult> UpdateDefaultProjectSettingsAsync(ProjectSettingDto defaultProjectSettings)
+        {
+            await appSettingService.UpdateDefaultProjectSettingsAsync(defaultProjectSettings);
+            return Ok();
+        }
     }
 }

@@ -99,6 +99,47 @@ namespace Lighthouse.Backend.Services.Implementation
             await repository.Save();
         }
 
+        public ProjectSettingDto GetDefaultProjectSettings()
+        {
+            var workItemTypes = GetDefaultWorkItemTypes(AppSettingKeys.ProjectSettingWorkItemTypes);
+
+            var projectSettings = new ProjectSettingDto
+            {
+                Name = GetSettingByKey(AppSettingKeys.ProjectSettingName).Value,
+                WorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemQuery).Value,
+                WorkItemTypes = workItemTypes,
+                UnparentedItemsQuery = GetSettingByKey(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery).Value,
+                DefaultAmountOfWorkItemsPerFeature = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature).Value),
+            };
+
+            return projectSettings;
+        }
+
+        public async Task UpdateDefaultProjectSettingsAsync(ProjectSettingDto defaultProjectSetting)
+        {
+            var name = GetSettingByKey(AppSettingKeys.ProjectSettingName);
+            name.Value = defaultProjectSetting.Name;
+            repository.Update(name);
+
+            var workItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemQuery);
+            workItemQuery.Value = defaultProjectSetting.WorkItemQuery;
+            repository.Update(workItemQuery);
+
+            var workItemTypes = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemTypes);
+            workItemTypes.Value = string.Join(',', defaultProjectSetting.WorkItemTypes);
+            repository.Update(workItemTypes);
+
+            var unparentedItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery);
+            unparentedItemQuery.Value = defaultProjectSetting.UnparentedItemsQuery;
+            repository.Update(unparentedItemQuery);
+
+            var defaultAmountofItems = GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature);
+            defaultAmountofItems.Value = defaultProjectSetting.DefaultAmountOfWorkItemsPerFeature.ToString();
+            repository.Update(defaultAmountofItems);
+
+            await repository.Save();
+        }
+
         private async Task UpdateRefreshSettingsAsync(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)
         {
             var interval = GetSettingByKey(intervalKey);

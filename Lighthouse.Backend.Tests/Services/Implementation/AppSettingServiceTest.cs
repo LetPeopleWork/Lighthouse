@@ -175,6 +175,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetDefaultProjectSettings_ReturnsCorrectSettings()
+        {
+            SetupRepositoryForKeys(
+                AppSettingKeys.ProjectSettingName, "My Project",
+                AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
+                AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15");
+
+            var service = CreateService();
+
+            var settings = service.GetDefaultProjectSettings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(settings.Name, Is.EqualTo("My Project"));
+                Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
+                Assert.That(settings.UnparentedItemsQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
+                Assert.That(settings.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(15));
+
+                Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(1));
+                CollectionAssert.Contains(settings.WorkItemTypes, "Epic");
+            });
+        }
+
+        [Test]
+        public async Task UpdateDefaultProjectSettingsAsync_UpdatesCorrectlyAsync()
+        {
+            SetupRepositoryForKeys(
+                AppSettingKeys.ProjectSettingName, "My Project",
+                AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
+                AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10");
+
+            var service = CreateService();
+
+            var newSettings = new ProjectSettingDto { 
+                Name = "Other Project",
+                WorkItemQuery = "project = MyJiraProject",
+                WorkItemTypes = ["Feature"],
+                UnparentedItemsQuery = "project = MyJiraProject",
+                DefaultAmountOfWorkItemsPerFeature = 22
+            };
+
+            await service.UpdateDefaultProjectSettingsAsync(newSettings);
+
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingName, "Other Project");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingWorkItemQuery, "project = MyJiraProject");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingWorkItemTypes, "Feature");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "project = MyJiraProject");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "22");
+        }
+
+        [Test]
         public void GetSettingByKey_KeyDoesNotExist_ThrowsException()
         {
             repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<AppSetting, bool>>())).Returns((AppSetting)null);

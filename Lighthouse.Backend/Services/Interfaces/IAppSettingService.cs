@@ -20,5 +20,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         TeamSettingDto GetDefaultTeamSettings();
 
         Task UpdateDefaultTeamSettingsAsync(TeamSettingDto defaultTeamSetting);
+
+        ProjectSettingDto GetDefaultProjectSettings();
+
+        Task UpdateDefaultProjectSettingsAsync(ProjectSettingDto defaultProjectSetting);
     }
 }
