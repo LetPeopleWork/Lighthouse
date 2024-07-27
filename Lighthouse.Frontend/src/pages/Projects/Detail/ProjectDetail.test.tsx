@@ -41,8 +41,9 @@ vi.mock('./MilestoneList', () => ({
 }));
 
 vi.mock('../../../components/Common/ActionButton/ActionButton', () => ({
-    default: ({ buttonText, isWaiting, onClickHandler }: { buttonText: string, isWaiting: boolean, onClickHandler: () => void }) => (
-        <button onClick={onClickHandler} disabled={isWaiting}>{isWaiting ? 'Refreshing...' : buttonText}</button>
+    default: ({ buttonText, onClickHandler }: { buttonText: string, onClickHandler: () => Promise<void> }) => (
+
+        <button onClick={onClickHandler}>{buttonText}</button>
     ),
 }));
 
@@ -92,9 +93,6 @@ describe('ProjectDetail component', () => {
 
         const refreshButton = screen.getByText('Refresh Features');
         fireEvent.click(refreshButton);
-
-        expect(refreshButton).toBeDisabled();
-        expect(refreshButton).toHaveTextContent('Refreshing...');
 
         await waitFor(() => {
             expect(refreshButton).not.toBeDisabled();

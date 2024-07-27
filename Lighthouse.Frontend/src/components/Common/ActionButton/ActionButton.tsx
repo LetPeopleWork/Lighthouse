@@ -1,21 +1,29 @@
 import { Button, CircularProgress } from "@mui/material";
-import React from "react";
+import React, { useState } from "react";
 
 type ButtonVariant = "text" | "outlined" | "contained";
 
 interface ActionButtonProps {
     buttonText: string;
-    isWaiting: boolean;
-    onClickHandler: () => void;
+    onClickHandler: () => Promise<void>;
     buttonVariant?: ButtonVariant;
+    disabled? : boolean;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, isWaiting, onClickHandler, buttonVariant = "contained" }) => {
+const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, onClickHandler, buttonVariant = "contained", disabled = false }) => {
+    const [isWaiting, setIsWaiting] = useState<boolean>(false);
+
+    const handleClick = async () => {
+        setIsWaiting(true);
+        await onClickHandler();
+        setIsWaiting(false);
+    }
+
     return (
         <Button 
             variant={buttonVariant} 
-            onClick={onClickHandler} 
-            disabled={isWaiting}
+            onClick={handleClick} 
+            disabled={disabled || isWaiting}
             sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
             {isWaiting && (

@@ -20,9 +20,6 @@ const ProjectDetail: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
 
-    const [isRefreshingFeatures, setIsRefreshingFeatures] = useState<boolean>(false);
-    const [isRefreshingForecasts, setIsRefreshingForecasts] = useState<boolean>(false);
-
     const navigate = useNavigate();
 
     const fetchProject = async () => {
@@ -50,7 +47,6 @@ const ProjectDetail: React.FC = () => {
                 return;
             }
 
-            setIsRefreshingFeatures(true);
             const projectData = await apiService.refreshFeaturesForProject(project.id);
 
             if (projectData) {
@@ -60,9 +56,6 @@ const ProjectDetail: React.FC = () => {
         catch (error) {
             console.error('Error Refreshing Features:', error);
         }
-        finally {
-            setIsRefreshingFeatures(false);
-        }
     }
 
     const onRefreshForecastsClick= async () => {
@@ -71,7 +64,6 @@ const ProjectDetail: React.FC = () => {
                 return;
             }
 
-            setIsRefreshingForecasts(true);
             const projectData = await apiService.refreshForecastsForProject(project.id);
 
             if (projectData) {
@@ -80,9 +72,6 @@ const ProjectDetail: React.FC = () => {
         }
         catch (error) {
             console.error('Error Refreshing Features:', error);
-        }
-        finally {
-            setIsRefreshingForecasts(false);
         }
     }
 
@@ -114,8 +103,8 @@ const ProjectDetail: React.FC = () => {
                         </Grid>
 
                         <Grid item xs={12} sx={{ display: 'flex', gap: 2 }}>
-                            <ActionButton buttonText='Refresh Features' isWaiting={isRefreshingFeatures} onClickHandler={onRefreshFeaturesClick} />
-                            <ActionButton buttonText='Refresh Forecasts' isWaiting={isRefreshingForecasts} onClickHandler={onRefreshForecastsClick} />
+                            <ActionButton buttonText='Refresh Features' onClickHandler={onRefreshFeaturesClick} />
+                            <ActionButton buttonText='Refresh Forecasts' onClickHandler={onRefreshForecastsClick} />
                             <Button variant="contained" onClick={onEditProject}>Edit Project</Button>
                         </Grid>
                         <Grid item xs={12}>

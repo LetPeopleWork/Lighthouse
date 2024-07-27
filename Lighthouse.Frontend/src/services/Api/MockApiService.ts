@@ -284,6 +284,17 @@ export class MockApiService implements IApiService {
         await this.delay();
     }
 
+    async getDefaultTeamSettings(): Promise<ITeamSettings>{
+        await this.delay();
+
+        return new TeamSettings(1, "My Team", 30, 1, "[System.TeamProject] = \"My Team\"", ["User Story", "Bug"], 12, ""); 
+    }
+
+    async updateDefaultTeamSettings(teamSettings: ITeamSettings) : Promise<void>{
+        console.log(`Updating ${teamSettings.name} Team Settings`);
+        await this.delay();
+    }
+
     delay() {
         if (this.throwError) {
             throw new Error('Simulated Error');

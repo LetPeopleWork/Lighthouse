@@ -16,7 +16,6 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
     const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] = useState<IWorkTrackingSystemConnection | null>(null);
     const [selectedOptions, setSelectedOptions] = useState<IWorkTrackingSystemOption[]>([]);
     const [formValid, setFormValid] = useState<boolean>(false);
-    const [isValidating, setIsValidating] = useState<boolean>(false);
 
     useEffect(() => {
         if (open && workTrackingSystems.length > 0) {
@@ -68,9 +67,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 options: selectedOptions
             };
 
-            setIsValidating(true);
             const isValid = await validateSettings(settings);
-            setIsValidating(false);
 
             if (isValid) {
                 setFormValid(true);
@@ -137,7 +134,6 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 <Button onClick={handleClose} variant="outlined" >Cancel</Button>
                 <ActionButton
                     buttonText='Validate'
-                    isWaiting={isValidating}
                     onClickHandler={handleValidate}
                     buttonVariant="outlined"
                 />

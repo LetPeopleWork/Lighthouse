@@ -69,4 +69,8 @@ export interface IApiService {
     getRefreshSettings(settingName: string): Promise<IRefreshSettings>;
 
     updateRefreshSettings(settingName: string, refreshSettings: IRefreshSettings): Promise<void>;
+
+    getDefaultTeamSettings(): Promise<ITeamSettings>;
+
+    updateDefaultTeamSettings(teamSettings: ITeamSettings) : Promise<void>;
 }

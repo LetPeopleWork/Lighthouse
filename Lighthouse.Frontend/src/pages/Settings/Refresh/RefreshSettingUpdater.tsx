@@ -14,7 +14,6 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({ settingNa
     const [refreshSettings, setRefreshSettings] = useState<IRefreshSettings | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
-    const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
     const apiService: IApiService = ApiServiceProvider.getApiService();
 
@@ -23,9 +22,7 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({ settingNa
             return;
         }
 
-        setIsUpdating(true);
         await apiService.updateRefreshSettings(settingName, refreshSettings);
-        setIsUpdating(false);
     };
 
     const fetchData = async () => {
@@ -105,7 +102,6 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({ settingNa
                         <ActionButton
                             buttonVariant="contained"
                             onClickHandler={updateSettings}
-                            isWaiting={isUpdating}
                             buttonText={`Update ${settingName} Settings`} />
                     </Grid>
                 </Grid>

@@ -13,17 +13,15 @@ interface ManualForecasterProps {
     remainingItems: number;
     targetDate: dayjs.Dayjs | null;
     manualForecastResult: ManualForecast | null;
-    waitingForResults: boolean;
     onRemainingItemsChange: (value: number) => void;
     onTargetDateChange: (date: dayjs.Dayjs | null) => void;
-    onRunManualForecast: () => void;
+    onRunManualForecast: () => Promise<void>;
 }
 
 const ManualForecaster: React.FC<ManualForecasterProps> = ({
     remainingItems,
     targetDate,
     manualForecastResult,
-    waitingForResults,
     onRemainingItemsChange,
     onTargetDateChange,
     onRunManualForecast
@@ -53,7 +51,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
                         </LocalizationProvider>
                     </Grid>
                     <Grid item xs={4}>
-                        <ActionButton onClickHandler={onRunManualForecast} buttonText='Forecast' isWaiting={waitingForResults}  />
+                        <ActionButton onClickHandler={onRunManualForecast} buttonText='Forecast'  />
                     </Grid>
                 </Grid>
             </Grid>

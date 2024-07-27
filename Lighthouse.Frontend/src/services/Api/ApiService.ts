@@ -227,7 +227,7 @@ export class ApiService implements IApiService {
         await this.withErrorHandling(async () => {
             await this.apiService.post<void>('/logs/level', { level: logLevel });
         });
-    }    
+    }
 
     async getLogs(): Promise<string> {
         return this.withErrorHandling(async () => {
@@ -244,10 +244,24 @@ export class ApiService implements IApiService {
             return response.data;
         });
     }
-    
+
     async updateRefreshSettings(settingName: string, refreshSettings: IRefreshSettings): Promise<void> {
         this.withErrorHandling(async () => {
             await this.apiService.put<IRefreshSettings>(`/appsettings/${settingName}Refresh`, refreshSettings);
+        });
+    }
+
+    async getDefaultTeamSettings(): Promise<ITeamSettings> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<ITeamSettings>(`/appsettings/defaultteamsettings`);
+
+            return this.deserializeTeamSettings(response.data);
+        });
+    }
+
+    async updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void> {
+        this.withErrorHandling(async () => {
+            await this.apiService.put<ITeamSettings>(`/appsettings/defaultteamsettings`, teamSettings);
         });
     }
 

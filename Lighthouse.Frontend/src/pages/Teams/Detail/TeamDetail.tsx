@@ -22,12 +22,10 @@ const TeamDetail: React.FC = () => {
     const [team, setTeam] = useState<Team>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
-    const [isUpdatingThroughput, setIsUpdatingThroughput] = useState<boolean>(false);
 
     const [remainingItems, setRemainingItems] = useState<number>(10);
     const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(dayjs().add(2, 'week'));
     const [manualForecastResult, setManualForecastResult] = useState<ManualForecast | null>(null);
-    const [waitingForManualForecastResult, setWaitingForManualForecastResult] = useState<boolean>(false);
 
     const [throughput, setThroughput] = useState<Throughput>(new Throughput([]))
 
@@ -69,11 +67,8 @@ const TeamDetail: React.FC = () => {
             return;
         }
 
-        setIsUpdatingThroughput(true);
-
         try {
             await apiService.updateThroughput(team.id);
-            setIsUpdatingThroughput(false);
         } catch (error) {
             console.error('Error updating throughput:', error);
             setHasError(true);
@@ -87,16 +82,12 @@ const TeamDetail: React.FC = () => {
             return;
         }
 
-        setWaitingForManualForecastResult(true);
-
         try {
             const manualForecast = await apiService.runManualForecast(team.id, remainingItems, targetDate?.toDate());
             setManualForecastResult(manualForecast);
         } catch (error) {
             console.error('Error getting throughput:', error);
         }
-
-        setWaitingForManualForecastResult(false);
     };
 
     const onEditTeam = () => {
@@ -127,7 +118,6 @@ const TeamDetail: React.FC = () => {
                             <ActionButton
                                 onClickHandler={onUpdateThroughput}
                                 buttonText="Update Throughput"
-                                isWaiting={!team || isUpdatingThroughput}
                             />
                             <Button variant="contained" onClick={onEditTeam}>
                                 Edit Team
@@ -143,7 +133,6 @@ const TeamDetail: React.FC = () => {
                             remainingItems={remainingItems}
                             targetDate={targetDate}
                             manualForecastResult={manualForecastResult}
-                            waitingForResults={waitingForManualForecastResult}
                             onRemainingItemsChange={setRemainingItems}
                             onTargetDateChange={setTargetDate}
                             onRunManualForecast={onRunManualForecast}
