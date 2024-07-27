@@ -109,7 +109,7 @@ export class MockApiService implements IApiService {
         await this.delay();
     }
 
-    async getTeamSettings(id: number): Promise<ITeamSettings>{
+    async getTeamSettings(id: number): Promise<ITeamSettings> {
         console.log(`Getting Settings for team ${id}`);
 
         await this.delay();
@@ -117,36 +117,36 @@ export class MockApiService implements IApiService {
         return new TeamSettings(1, "My Team", 30, 1, "[System.TeamProject] = \"My Team\"", ["User Story", "Bug"], 12, "");
     }
 
-    async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>{
+    async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
         console.log(`Updating Team ${teamSettings.name}`);
-        
+
         await this.delay();
         return teamSettings;
     }
-    
-    async createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>{
+
+    async createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
         console.log(`Creating Team ${teamSettings.name}`);
 
         await this.delay();
         return teamSettings;
     }
-    
-    async getProjectSettings(id: number): Promise<IProjectSettings>{
+
+    async getProjectSettings(id: number): Promise<IProjectSettings> {
         console.log(`Getting Settings for Project ${id}`);
 
         await this.delay();
 
-        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"",  "[System.TeamProject] = \"My Team\"", 15, 2);
+        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2);
     }
 
-    async updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings>{
+    async updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings> {
         console.log(`Updating Project ${projectSettings.name}`);
-        
+
         await this.delay();
         return projectSettings;
     }
-    
-    async createProject(projectSettings: IProjectSettings): Promise<IProjectSettings>{
+
+    async createProject(projectSettings: IProjectSettings): Promise<IProjectSettings> {
         console.log(`Creating Project ${projectSettings.name}`);
 
         await this.delay();
@@ -236,40 +236,40 @@ export class MockApiService implements IApiService {
         return true;
     }
 
-    async getLogLevel(): Promise<string>{
+    async getLogLevel(): Promise<string> {
         await this.delay();
         return "Information";
     }
 
-    async getSupportedLogLevels(): Promise<string[]>{
+    async getSupportedLogLevels(): Promise<string[]> {
         await this.delay();
 
         return ["Debug", "Information", "Warning", "Error"];
     }
 
-    async setLogLevel(logLevel: string) : Promise<void>{
+    async setLogLevel(logLevel: string): Promise<void> {
         console.log(`Setting log level to ${logLevel}`);
         await this.delay();
     }
 
-    async getLogs(): Promise<string>{
+    async getLogs(): Promise<string> {
         await this.delay();
 
         const lorem = new LoremIpsum({
             sentencesPerParagraph: {
-              max: 4,
-              min: 2
+                max: 4,
+                min: 2
             },
             wordsPerSentence: {
-              max: 10,
-              min: 2
+                max: 10,
+                min: 2
             }
-          });
+        });
 
         return lorem.generateParagraphs(7);
     }
 
-    
+
     async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
         console.log(`Getting ${settingName} refresh settings`);
 
@@ -277,21 +277,32 @@ export class MockApiService implements IApiService {
 
         return new RefreshSettings(10, 20, 30);
     }
-    
+
     async updateRefreshSettings(settingName: string, refreshSettings: IRefreshSettings): Promise<void> {
         console.log(`Update ${settingName} refresh settings: ${refreshSettings}`);
-        
+
         await this.delay();
     }
 
-    async getDefaultTeamSettings(): Promise<ITeamSettings>{
+    async getDefaultTeamSettings(): Promise<ITeamSettings> {
         await this.delay();
 
-        return new TeamSettings(1, "My Team", 30, 1, "[System.TeamProject] = \"My Team\"", ["User Story", "Bug"], 12, ""); 
+        return new TeamSettings(1, "My Team", 30, 1, "[System.TeamProject] = \"My Team\"", ["User Story", "Bug"], 12, "");
     }
 
-    async updateDefaultTeamSettings(teamSettings: ITeamSettings) : Promise<void>{
+    async updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void> {
         console.log(`Updating ${teamSettings.name} Team Settings`);
+        await this.delay();
+    }
+
+    async getDefaultProjectSettings(): Promise<IProjectSettings> {
+        await this.delay();
+
+        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2);
+    }
+
+    async updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void> {
+        console.log(`Updating ${projecSettings.name} Team Settings`);
         await this.delay();
     }
 

@@ -73,4 +73,8 @@ export interface IApiService {
     getDefaultTeamSettings(): Promise<ITeamSettings>;
 
     updateDefaultTeamSettings(teamSettings: ITeamSettings) : Promise<void>;
+
+    getDefaultProjectSettings(): Promise<IProjectSettings>;
+
+    updateDefaultProjectSettings(projecSettings: IProjectSettings) : Promise<void>;
 }

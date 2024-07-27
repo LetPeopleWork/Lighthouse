@@ -265,6 +265,22 @@ export class ApiService implements IApiService {
         });
     }
 
+    
+
+    async getDefaultProjectSettings(): Promise<IProjectSettings> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<IProjectSettings>(`/appsettings/defaultprojectsettings`);
+
+            return this.deserializeProjectSettings(response.data);
+        });
+    }
+
+    async updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void> {
+        this.withErrorHandling(async () => {
+            await this.apiService.put<IProjectSettings>(`/appsettings/defaultprojectsettings`, projecSettings);
+        });
+    }
+
     private deserializeTeams(teams: ITeam[]) {
         return teams.map((item: ITeam) => {
             return this.deserializeTeam(item);
