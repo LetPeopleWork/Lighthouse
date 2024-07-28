@@ -29,4 +29,4 @@ RUN dotnet publish "./Lighthouse.Backend.csproj" -c "$BUILD_CONFIGURATION" -o /a
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Lighthouse.Backend.dll"]
+ENTRYPOINT ["dotnet", "Lighthouse.dll"]
