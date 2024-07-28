@@ -166,6 +166,11 @@ jobs:
           name: Lighthouse ${{ env.DAILY_VERSION }}
           path: ./Lighthouse.Backend/publish
 
+
+      - name: publish app-service
+        run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -o ./publish/app-service
+        working-directory: ./Lighthouse.Backend
+
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -179,7 +184,7 @@ jobs:
         with:  
           app-name: 'LighthouseCloudDemo'  
           slot-name: 'production'  
-          package: ./Lighthouse.Backend/publish/win-x64
+          package: ./Lighthouse.Backend/publish/app-service
       
     outputs:
       created: ${{ steps.version.outputs.created }}
