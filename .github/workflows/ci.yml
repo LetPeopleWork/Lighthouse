@@ -148,8 +148,16 @@ jobs:
         run: jq '.LighthouseVersion = env.DAILY_VERSION' appsettings.json > temp.json && mv temp.json appsettings.json
         working-directory: ./Lighthouse.Backend
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ./publish
+      - name: publish win-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish/win-x64
+        working-directory: ./Lighthouse.Backend
+
+      - name: publish osx-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish/osx-x64
+        working-directory: ./Lighthouse.Backend
+
+      - name: publish linux-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
 
       - name: Upload artifact for deployment job
@@ -171,7 +179,7 @@ jobs:
         with:  
           app-name: 'LighthouseCloudDemo'  
           slot-name: 'production'  
-          package: ./Lighthouse.Backend/publish
+          package: ./Lighthouse.Backend/publish/win-x64
       
     outputs:
       created: ${{ steps.version.outputs.created }}
@@ -210,12 +218,22 @@ jobs:
 
       - uses: vimtor/action-zip@v1.2
         with:
-          files: LighthouseArtifacts
-          dest: Lighthouse ${{ needs.deploy.outputs.version }}.zip
+          files: LighthouseArtifacts/win-x64
+          dest: Lighthouse_${{ needs.deploy.outputs.version }}_win-x64.zip
+
+      - uses: vimtor/action-zip@v1.2
+        with:
+          files: LighthouseArtifacts/osx-x64
+          dest: Lighthouse_${{ needs.deploy.outputs.version }}_osx-x64.zip
+
+      - uses: vimtor/action-zip@v1.2
+        with:
+          files: LighthouseArtifacts/linux-x64
+          dest: Lighthouse_${{ needs.deploy.outputs.version }}_linux-x64.zip
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse ${{ needs.deploy.outputs.version }}.zip"
+          artifacts: "Lighthouse_${{ needs.deploy.outputs.version }}_win-x64.zip,Lighthouse_${{ needs.deploy.outputs.version }}_osx-x64.zip, Lighthouse_${{ needs.deploy.outputs.version }}_linux-x64.zip"
           tag: ${{ needs.deploy.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.deploy.outputs.version }}"
