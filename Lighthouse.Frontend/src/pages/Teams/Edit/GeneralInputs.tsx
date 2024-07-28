@@ -35,21 +35,6 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
             </Grid>
             <Grid item xs={12}>
                 <TextField
-                    label="Feature WIP"
-                    type="number"
-                    fullWidth
-                    margin="normal"
-                    value={teamSettings?.featureWIP || 1}
-                    InputProps={{
-                        inputProps: { 
-                            min: 1 
-                        }
-                    }}
-                    onChange={(e) => onTeamSettingsChange('featureWIP', parseInt(e.target.value, 10))}
-                />
-            </Grid>
-            <Grid item xs={12}>
-                <TextField
                     label="Work Item Query"
                     multiline
                     rows={4}

@@ -12,6 +12,7 @@ import TeamDetail from './pages/Teams/Detail/TeamDetail';
 import EditTeam from './pages/Teams/Edit/EditTeam';
 import EditProject from './pages/Projects/Edit/EditProject';
 import ProjectDetail from './pages/Projects/Detail/ProjectDetail';
+import LighthouseFullTutorial from './components/App/LetPeopleWork/Tutorial/LighthouseFullTutorial';
 
 const App: React.FC = () => {
   return (
@@ -35,6 +36,7 @@ const App: React.FC = () => {
               <Route path="new" element={<EditProject />} />
             </Route>
             <Route path="/settings" element={<Settings />} />
+            <Route path="/tutorial" element={<LighthouseFullTutorial />} />
           </Routes>
         </Box>
         <Footer />

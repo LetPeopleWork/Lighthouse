@@ -13,7 +13,23 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
     onTeamSettingsChange
 }) => {
     return (
-        <InputGroup title={'Advanced Configuration'} initiallyExpanded={false} >
+        <InputGroup title={'Advanced Configuration'} initiallyExpanded={false} >            
+            <Grid item xs={12}>
+                <TextField
+                    label="Feature WIP"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={teamSettings?.featureWIP || 1}
+                    InputProps={{
+                        inputProps: { 
+                            min: 1 
+                        }
+                    }}
+                    onChange={(e) => onTeamSettingsChange('featureWIP', parseInt(e.target.value, 10))}
+                />
+            </Grid>
+
             <Grid item xs={12}>
                 <TextField
                     label="Relation Custom Field"

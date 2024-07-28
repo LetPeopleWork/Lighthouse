@@ -20,6 +20,7 @@ const Header: React.FC = () => {
           <NavigationItem path='/teams' text='Teams' />
           <NavigationItem path='/projects' text='Projects' />
           <NavigationItem path='/settings' text='Settings' />
+          <NavigationItem path='/tutorial' text='Tutorial' />
         </Box>
         <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
           <ExternalLinkButton
