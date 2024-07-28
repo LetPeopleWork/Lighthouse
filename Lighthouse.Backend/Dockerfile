@@ -24,7 +24,7 @@ RUN npm run build-docker
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 COPY --from=node-builder /node/dist ./wwwroot
-RUN dotnet publish "./Lighthouse.Backend.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Lighthouse.Backend.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained
 
 FROM base AS final
 WORKDIR /app
