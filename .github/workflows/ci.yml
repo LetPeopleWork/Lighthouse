@@ -156,9 +156,15 @@ jobs:
         run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o ./publish/osx-x64
         working-directory: ./Lighthouse.Backend
 
+      - name: Set osx executable permission
+        run: chmod +x ./publish/osx-x64/Lighthouse
+
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
+
+      - name: Set linux executable permission
+        run: chmod +x ./publish/linux-x64/Lighthouse
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
