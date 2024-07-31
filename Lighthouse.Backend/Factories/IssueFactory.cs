@@ -27,15 +27,21 @@ namespace Lighthouse.Backend.Factories
             var parentKey = GetParentFromFields(fields);
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
+            var statusCategory = GetStatusFromFields(fields);
 
-            logger.LogDebug("Creating Issue with Key {key}, Title {title}, Resoultion Date {resolutionDate}, Parent Key {parentKey}, Rank {rank}, Issue Type {issueType}", key, title, resolutionDate, parentKey, rank, issueType);
+            logger.LogDebug("Creating Issue with Key {key}, Title {title}, Resoultion Date {resolutionDate}, Parent Key {parentKey}, Rank {rank}, Issue Type {issueType}, Status Category {statusCategory}", key, title, resolutionDate, parentKey, rank, issueType, statusCategory);
 
-            return new Issue(key, title, resolutionDate, parentKey, rank, issueType, fields);
+            return new Issue(key, title, resolutionDate, parentKey, rank, issueType, statusCategory, fields);
         }
 
         private string GetIssueTypeFromFields(JsonElement fields)
         {
             return fields.GetProperty("issuetype").GetProperty("name").ToString();
+        }
+
+        private string GetStatusFromFields(JsonElement fields)
+        {
+            return fields.GetProperty("status").GetProperty("statusCategory").GetProperty("name").ToString();
         }
 
         private string GetRankFromFields(JsonElement fields)

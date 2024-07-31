@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
     {
         private readonly Cache<string, Issue> cache = new Cache<string, Issue>();
 
-        private readonly string[] closedStates = ["Done", "Closed"];
+        private readonly string DoneStatusCategory = "Done";
 
         private readonly ILexoRankService lexoRankService;
         private readonly IIssueFactory issueFactory;
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var jiraRestClient = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
 
-            var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
+            var query = PrepareNotClosedItemsQuery(workItemTypes, workItemQueryOwner);
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
             var workItems = issues.Where(i => workItemTypes.Contains(i.IssueType)).ToList();
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
-            var stateQuery = PrepareStateQuery(closedStates);
+            var stateQuery = PrepareStateQuery();
 
             var jql = $"{unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<int> GetRelatedWorkItems(HttpClient jiraRestClient, Team team, string relatedWorkItemId)
         {
-            var query = PrepareQuery(team.WorkItemTypes, closedStates, team);
+            var query = PrepareNotClosedItemsQuery(team.WorkItemTypes, team);
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
             var relatedItems = issues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).Select(i => i.Key).ToList();
@@ -231,8 +231,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var closedItemsPerDay = new int[history];
             var startDate = DateTime.UtcNow.Date.AddDays(-(history - 1));
 
-            var query = PrepareQuery(team.WorkItemTypes, [], team);
-            query += $" AND ({JiraFieldNames.StatusFieldName} = \"Done\") AND {JiraFieldNames.ResolvedFieldName} >= -{history}d";
+            var query = PrepareClosedItemsQuery(team.WorkItemTypes, team, history);
 
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
@@ -281,13 +280,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             cache.Store(issue.Key, issue, TimeSpan.FromMinutes(5));
         }
 
-        private string PrepareQuery(
+        private string PrepareClosedItemsQuery(
             IEnumerable<string> issueTypes,
-            IEnumerable<string> excludedStates,
+            IWorkItemQueryOwner workitemQueryOwner,
+            int history)
+        {
+            var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
+            var stateQuery = PrepareGenericQuery([DoneStatusCategory], JiraFieldNames.StatusCategoryFieldName, "AND", "=");
+
+            var jql = $"{workitemQueryOwner.WorkItemQuery} " +
+                $"{workItemsQuery} " +
+                $"{stateQuery} " +
+                $"AND {JiraFieldNames.ResolvedFieldName} >= -{history}d";
+
+            return jql;
+        }
+
+        private string PrepareNotClosedItemsQuery(
+            IEnumerable<string> issueTypes,
             IWorkItemQueryOwner workitemQueryOwner)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
-            var stateQuery = PrepareStateQuery(excludedStates);
+            var stateQuery = PrepareStateQuery();
 
             var jql = $"{workitemQueryOwner.WorkItemQuery} " +
                 $"{workItemsQuery} " +
@@ -301,9 +315,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return PrepareGenericQuery(issueTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
         }
 
-        private string PrepareStateQuery(IEnumerable<string> excludedStates)
+        private string PrepareStateQuery()
         {
-            return PrepareGenericQuery(excludedStates, JiraFieldNames.StatusFieldName, "AND", "!=");
+            return PrepareGenericQuery([DoneStatusCategory], JiraFieldNames.StatusCategoryFieldName, "AND", "!=");
         }
 
         private string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
