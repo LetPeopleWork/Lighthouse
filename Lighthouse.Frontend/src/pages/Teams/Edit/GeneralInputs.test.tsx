@@ -40,7 +40,6 @@ describe('GeneralInputsComponent', () => {
         // Check if the TextFields display the correct values
         expect(screen.getByLabelText('Name')).toHaveValue('Test Name');
         expect(screen.getByLabelText('Throughput History')).toHaveValue(10);
-        expect(screen.getByLabelText('Feature WIP')).toHaveValue(20);
         expect(screen.getByLabelText('Work Item Query')).toHaveValue('Test Query');
     });
 
@@ -72,21 +71,6 @@ describe('GeneralInputsComponent', () => {
         });
 
         expect(onTeamSettingsChange).toHaveBeenCalledWith('throughputHistory', 15);
-    });
-
-    it('calls onTeamSettingsChange with correct parameters when Feature WIP TextField value changes', () => {
-        render(
-            <GeneralInputsComponent
-                teamSettings={teamSettings}
-                onTeamSettingsChange={onTeamSettingsChange}
-            />
-        );
-
-        fireEvent.change(screen.getByLabelText('Feature WIP'), {
-            target: { value: '25' }
-        });
-
-        expect(onTeamSettingsChange).toHaveBeenCalledWith('featureWIP', 25);
     });
 
     it('calls onTeamSettingsChange with correct parameters when Work Item Query TextField value changes', () => {

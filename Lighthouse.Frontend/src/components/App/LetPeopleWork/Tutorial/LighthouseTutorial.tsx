@@ -1,13 +1,24 @@
 import React, { useState } from "react";
 import { Box, Stepper, Step, StepLabel, Typography, Button, Paper, Container } from "@mui/material";
-import InputGroup from "../../../Common/InputGroup/InputGroup";
+
+interface StepData {
+    title: string;
+    component: React.FC;
+}
 
 interface LighthouseTutorialProps {
     tutorialTitle: string;
-    steps: React.FC[];
+    steps: StepData[];
+    finalButtonText?: string;
+    onFinalButtonClick?: () => void;
 }
 
-const LighthouseTutorial: React.FC<LighthouseTutorialProps> = ({ tutorialTitle, steps }) => {
+const LighthouseTutorial: React.FC<LighthouseTutorialProps> = ({
+    tutorialTitle,
+    steps,
+    finalButtonText = "Finish",
+    onFinalButtonClick
+}) => {
     const [activeStep, setActiveStep] = useState(0);
 
     const handleNext = () => {
@@ -22,15 +33,24 @@ const LighthouseTutorial: React.FC<LighthouseTutorialProps> = ({ tutorialTitle, 
         setActiveStep(0);
     };
 
-    const StepContent = steps[activeStep];
+    const handleFinalAction = () => {
+        if (onFinalButtonClick) {
+            onFinalButtonClick();
+        } else {
+            handleReset();
+        }
+    };
+
+    const StepContent = steps[activeStep].component;
 
     return (
-        <InputGroup title={tutorialTitle}>            
+        <Container>
+            <Typography variant="h4" align="center">{tutorialTitle}</Typography>
             <Paper>
                 <Stepper activeStep={activeStep}>
-                    {steps.map((StepComponent, index) => (
+                    {steps.map((step, index) => (
                         <Step key={index}>
-                            <StepLabel>{StepComponent.displayName || `Step ${index + 1}`}</StepLabel>
+                            <StepLabel>{step.title}</StepLabel>
                         </Step>
                     ))}
                 </Stepper>
@@ -38,7 +58,7 @@ const LighthouseTutorial: React.FC<LighthouseTutorialProps> = ({ tutorialTitle, 
                     {activeStep === steps.length ? (
                         <Box>
                             <Typography variant="h5" gutterBottom>
-                                Tutorial Complete
+                                {`${tutorialTitle} Complete`}
                             </Typography>
                             <Typography variant="body1">
                                 You've completed the tutorial. You can now use the application with the knowledge you've gained.
@@ -57,16 +77,16 @@ const LighthouseTutorial: React.FC<LighthouseTutorialProps> = ({ tutorialTitle, 
                                 <Button
                                     variant="contained"
                                     color="primary"
-                                    onClick={handleNext}
+                                    onClick={activeStep === steps.length - 1 ? handleFinalAction : handleNext}
                                 >
-                                    {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+                                    {activeStep === steps.length - 1 ? finalButtonText : 'Next'}
                                 </Button>
                             </Box>
                         </Box>
                     )}
                 </Box>
             </Paper>
-        </InputGroup>
+        </Container>
     );
 };
 
