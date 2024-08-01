@@ -22,6 +22,7 @@ const TutorialButton: React.FC<TutorialButtonProps> = ({ tutorialComponent }) =>
             <Tooltip title="Help">
                 <IconButton
                     onClick={handleHelpClick}
+                    style={{ color: 'rgba(48, 87, 78, 1)' }}
                 >
                     <HelpOutlineIcon />
                 </IconButton>

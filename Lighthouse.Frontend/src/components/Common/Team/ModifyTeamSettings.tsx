@@ -8,6 +8,8 @@ import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import WorkTrackingSystemComponent from "../WorkTrackingSystems/WorkTrackingSystemComponent";
 import { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import ActionButton from "../ActionButton/ActionButton";
+import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
+import TeamConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/TeamConfigurationTutorial";
 
 interface ModifyTeamSettingsProps {
     title: string;
@@ -36,7 +38,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
     const handleRemoveWorkItemType = (type: string) => {
         setTeamSettings(prev => prev ? { ...prev, workItemTypes: (prev.workItemTypes || []).filter(item => item !== type) } : prev);
     };
-    
+
     const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
         const selectedWorkTrackingSystemName = event.target.value;
         const selectedWorkTrackingSystem = workTrackingSystems.find(system => system.name === selectedWorkTrackingSystemName) ?? null;
@@ -61,7 +63,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
     useEffect(() => {
         const handleStateChange = () => {
             const isFormValid = teamSettings?.name != '' && (teamSettings?.throughputHistory ?? 0) > 0 && teamSettings?.featureWIP !== undefined &&
-            teamSettings?.workItemQuery != '' && teamSettings?.workItemTypes.length > 0 && (workTrackingSystems.length == 0 || selectedWorkTrackingSystem !== null);
+                teamSettings?.workItemQuery != '' && teamSettings?.workItemTypes.length > 0 && (workTrackingSystems.length == 0 || selectedWorkTrackingSystem !== null);
 
             setFormValid(isFormValid);
         };
@@ -92,8 +94,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
     }, [getTeamSettings, getWorkTrackingSystems]);
 
     return (
-        <LoadingAnimation isLoading={loading} hasError={false} >
+        <LoadingAnimation isLoading={loading} hasError={false}>
             <Container>
+                <Grid container justifyContent="flex-end" spacing={2}>
+                    <Grid item>
+                        <TutorialButton
+                            tutorialComponent={<TeamConfigurationTutorial />}
+                        />
+                    </Grid>
+                </Grid>
                 <Grid container spacing={3}>
                     <Grid item xs={12}>
                         <Typography variant='h4'>{title}</Typography>
@@ -135,7 +144,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                 </Grid>
             </Container>
         </LoadingAnimation>
-    )
-}
+    );
+};
 
 export default ModifyTeamSettings;
