@@ -38,8 +38,17 @@ const TutorialButton: React.FC<TutorialButtonProps> = ({ tutorialComponent }) =>
                     justifyContent="center"
                     alignItems="center"
                     zIndex={1000}
-                    onClick={handleCloseTutorial}
                 >
+                    <Box
+                        position="absolute"
+                        top={0}
+                        left={0}
+                        right={0}
+                        bottom={0}
+                        bgcolor="rgba(0, 0, 0, 0.5)"
+                        onClick={handleCloseTutorial}
+                    />
+
                     <Box
                         bgcolor="white"
                         p={3}
@@ -47,7 +56,8 @@ const TutorialButton: React.FC<TutorialButtonProps> = ({ tutorialComponent }) =>
                         maxWidth="90%"
                         maxHeight="90%"
                         overflow="auto"
-                        onClick={(e) => e.stopPropagation()} // Prevent clicks inside the tutorial from closing it
+                        zIndex={1100}
+                        onClick={(e) => e.stopPropagation()}
                     >
                         {tutorialComponent}
                     </Box>

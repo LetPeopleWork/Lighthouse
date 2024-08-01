@@ -13,6 +13,8 @@ import TeamFeatureList from './TeamFeatureList';
 import ManualForecaster from './ManualForecaster';
 import ActionButton from '../../../components/Common/ActionButton/ActionButton';
 import InputGroup from '../../../components/Common/InputGroup/InputGroup';
+import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/TutorialButton';
+import TeamDetailTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamDetailTutorial';
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -107,8 +109,8 @@ const TeamDetail: React.FC = () => {
     }, [team]);
 
     return (
-        <Container>
-            <LoadingAnimation hasError={hasError} isLoading={isLoading}>
+        <LoadingAnimation hasError={hasError} isLoading={isLoading}>
+            <Container>
                 <Grid container spacing={3}>
                     <Grid item xs={12}>
                         <Typography variant='h3'>{team?.name}</Typography>
@@ -142,8 +144,11 @@ const TeamDetail: React.FC = () => {
                         <ThroughputBarChart throughputData={throughput} />
                     </InputGroup>
                 </Grid>
-            </LoadingAnimation>
-        </Container>
+            </Container>
+            <TutorialButton
+                tutorialComponent={<TeamDetailTutorial />}
+            />
+        </LoadingAnimation>
     );
 };
 

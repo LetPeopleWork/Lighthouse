@@ -4,10 +4,10 @@ import TutorialStep from "../TutorialStep";
 import { Container, Typography } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 
-import TeamForecast from '../../../../../assets/Tutorial/Team/TeamForecast.png'
-import TeamOverview from '../../../../../assets/Tutorial/Team/TeamOverview.png'
-import DeleteTeam from '../../../../../assets/Tutorial/Team/DeleteTeam.gif'
-import TeamDetail from '../../../../../assets/Tutorial/Team/TeamDetail.gif'
+import TeamForecast from '../../../../../assets/Tutorial/Team/TeamForecast.png';
+import TeamOverview from '../../../../../assets/Tutorial/Team/TeamOverview.png';
+import DeleteTeam from '../../../../../assets/Tutorial/Team/DeleteTeam.gif';
+import TeamDetail from '../../../../../assets/Tutorial/Team/TeamDetail.gif';
 
 const TeamsOverview: React.FC = () => (
     <TutorialStep
@@ -17,10 +17,11 @@ const TeamsOverview: React.FC = () => (
     >
         <Container>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {`If you want to start using Lighthouse, you have to create a Team. With every team, you'll get this Teams Throughput, which you can then use for your Forecasts.
+                {`To start using Lighthouse, you need to create a team. Each team has a throughput, which you can use for your forecasts.
                 
-                Read on to see how you can work with Teams within Lighthouse or directly `}
-                <Link to={'/teams/new'}>Create a new Team</Link>
+                Continue reading to learn how to work with teams in Lighthouse, or directly `}
+                <Link to={'/teams/new'}>create a new team</Link>
+                {`.`}
             </Typography>
         </Container>
     </TutorialStep>
@@ -29,19 +30,18 @@ const TeamsOverview: React.FC = () => (
 const TeamsList: React.FC = () => (
     <TutorialStep
         title="Teams Overview"
-        description="See all your configured teams at one glance"
+        description="See all your configured teams at a glance."
         imageSrc={TeamOverview}
     >
         <Container>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {`Once you have at least one team defined, they will show up in a grid view when you navigate to                                 `}
+                {`Once you have at least one team defined, it will appear in a grid view on the `}
                 <Link to={"/teams"}>Teams</Link>
-                {`.
+                {` page.
                 
-                Via this overview, you can add new teams, delete or modify existing ones, or jump into the Team details.
-
-                You can also search for specific teams and, if you've defined any Project, see the number of work items as well as Features the specific Team is currently planned to work on.
-                `}
+                From this overview, you can add new teams, delete or modify existing ones, or view team details.
+                
+                You can also search for specific teams and, if you have defined any projects, see the number of work items and features each team is currently planned to work on.`}
             </Typography>
         </Container>
     </TutorialStep>
@@ -50,13 +50,12 @@ const TeamsList: React.FC = () => (
 const DeleteTeamStep: React.FC = () => (
     <TutorialStep
         title="Delete Team"
-        description="Deleting a Team can be done via the Delete Button in the Overview"
+        description="Delete a team via the Delete button in the overview."
         imageSrc={DeleteTeam}
     >
         <Container>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {`Please be aware that you can't undo the deletion of a Team. If you later on need the same Team again, you will have to re-add it. On delete, all information about a Team is removed from Ligthhouse.
-                `}
+                {`Please be aware that deleting a team is permanent and cannot be undone. If you need the same team later, you will have to re-add it. Deleting a team removes all information about that team from Lighthouse.`}
             </Typography>
         </Container>
     </TutorialStep>
@@ -65,17 +64,16 @@ const DeleteTeamStep: React.FC = () => (
 const TeamDetailsStep: React.FC = () => (
     <TutorialStep
         title="Team Details"
-        description="Dive into the Details of a specific Team"
+        description="Dive into the details of a specific team."
         imageSrc={TeamDetail}
     >
         <Container>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {`If you want to see more details for a Team, you can either click on the Team Name or on the Info Icon in the overview.
+                {`To see more details for a team, you can click on the team name or the info icon in the overview.
 
-                This will bring you to the specific Team page. In there, you can see which Features a Team is working on (if any Projects are defined), the Teams Throughput as well as run manual Forecasts for this specific team.
+                This will bring you to the specific team page, where you can see which features the team is working on (if any projects are defined), the team's throughput, and run manual forecasts for this specific team.
 
-                Note: You can directly link to a Team Detail page by storing the specific url.
-                `}
+                Note: You can directly link to a team detail page by storing the specific URL.`}
             </Typography>
         </Container>
     </TutorialStep>
@@ -89,16 +87,20 @@ const steps = [
 ];
 
 const TeamOverviewTutorial: React.FC = () => {
-
     const navigate = useNavigate();
 
     const createNewTeam = () => {
         navigate('/teams/new');
-    }
+    };
 
     return (
-        <LighthouseTutorial steps={steps} tutorialTitle="Teams" finalButtonText="Create a new Team" onFinalButtonClick={createNewTeam} />
+        <LighthouseTutorial 
+            steps={steps} 
+            tutorialTitle="Teams" 
+            finalButtonText="Create a new Team" 
+            onFinalButtonClick={createNewTeam} 
+        />
     );
-}
+};
 
 export default TeamOverviewTutorial;

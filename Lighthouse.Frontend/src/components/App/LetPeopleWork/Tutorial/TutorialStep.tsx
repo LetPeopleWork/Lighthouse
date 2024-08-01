@@ -28,7 +28,7 @@ const TutorialStep: React.FC<TutorialStepProps> = ({ title, description, imageSr
       <Typography variant="h5" gutterBottom align="center">
         {title}
       </Typography>
-      <Typography variant="subtitle1" gutterBottom align="center" sx={{ whiteSpace: 'pre-line' }}>
+      <Typography variant="subtitle1" fontWeight={'bold'} gutterBottom align="center" sx={{ whiteSpace: 'pre-line' }}>
         {description}
       </Typography>
       {imageSrc && imageDimensions.width > 0 && (
