@@ -6,6 +6,8 @@ import { Team } from '../../../models/Team/Team';
 import { IApiService } from '../../../services/Api/IApiService';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';
+import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/TutorialButton';
+import TeamOverviewTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamOverviewTutorial';
 
 const TeamsOverview: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -57,18 +59,26 @@ const TeamsOverview: React.FC = () => {
 
   return (
     <LoadingAnimation hasError={hasError} isLoading={isLoading}>
+      {teams.length === 0 ? (
+        <TeamOverviewTutorial />
+      ) : (
         <DataOverviewTable
           data={teams}
           api="teams"
           onDelete={handleDelete}
+        />)}
+
+      {selectedTeam && (
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          itemName={selectedTeam.name}
+          onClose={handleDeleteConfirmation}
         />
-        {selectedTeam && (
-          <DeleteConfirmationDialog
-            open={deleteDialogOpen}
-            itemName={selectedTeam.name}
-            onClose={handleDeleteConfirmation}
-          />
-        )}
+      )}
+
+      <TutorialButton
+        tutorialComponent={<TeamOverviewTutorial />}
+      />
     </LoadingAnimation>
   );
 };

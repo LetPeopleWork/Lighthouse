@@ -45,7 +45,7 @@ const LighthouseTutorial: React.FC<LighthouseTutorialProps> = ({
 
     return (
         <Container>
-            <Typography variant="h4" align="center">{tutorialTitle}</Typography>
+            <Typography variant="h4" align="center" margin={2}>{tutorialTitle}</Typography>
             <Paper>
                 <Stepper activeStep={activeStep}>
                     {steps.map((step, index) => (

@@ -7,7 +7,7 @@ import { Project } from '../../models/Project/Project';
 import LoadingAnimation from '../../components/Common/LoadingAnimation/LoadingAnimation';
 import LighthouseAppOverviewTutorial from '../../components/App/LetPeopleWork/Tutorial/Tutorials/LighthouseAppOverviewTutorial';
 import TutorialButton from '../../components/App/LetPeopleWork/Tutorial/TutorialButton';
-import { Container, Box } from '@mui/material';
+import { Container } from '@mui/material';
 
 const OverviewDashboard: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -34,16 +34,7 @@ const OverviewDashboard: React.FC = () => {
     return (
         <LoadingAnimation isLoading={isLoading} hasError={hasError}>
             <Container>
-                <Box display="flex" alignItems="center" mb={2} sx={{ position: 'relative' }}>
-                    <Box sx={{ flexGrow: 1 }}>
-                        <FilterBar filterText={filterText} onFilterTextChange={setFilterText} />
-                    </Box>
-                    <Box ml={2}>
-                        <TutorialButton
-                            tutorialComponent={<LighthouseAppOverviewTutorial />}
-                        />
-                    </Box>
-                </Box>
+                <FilterBar filterText={filterText} onFilterTextChange={setFilterText} />
 
                 {projects.length === 0 ? (
                     <LighthouseAppOverviewTutorial />
@@ -51,6 +42,11 @@ const OverviewDashboard: React.FC = () => {
                     <ProjectOverview projects={projects} filterText={filterText} />
                 )}
             </Container>
+
+
+            <TutorialButton
+                tutorialComponent={<LighthouseAppOverviewTutorial />}
+            />
         </LoadingAnimation>
     );
 };

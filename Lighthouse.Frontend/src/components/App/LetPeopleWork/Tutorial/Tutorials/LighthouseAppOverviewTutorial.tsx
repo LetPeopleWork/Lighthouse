@@ -8,7 +8,7 @@ import OverviewVideo from '../../../../../assets/Tutorial/Overview/LighthouseOve
 import TeamsOverview from '../../../../../assets/Tutorial/Overview/TeamsOverview.png'
 import ProjectOverview from '../../../../../assets/Tutorial/Overview/ProjectOverview.png'
 
-export const LighthouseOverviewStep: React.FC = () => (
+const LighthouseOverviewStep: React.FC = () => (
     <TutorialStep
         title="Welcome"
         description="Lighthouse is a tool that helps you run probabilistic forecasts using Monte Carlo Simulations in a continuous and simple way"
@@ -33,7 +33,7 @@ export const LighthouseOverviewStep: React.FC = () => (
     </TutorialStep>
 );
 
-export const TeamsOverviewStep: React.FC = () => (
+const TeamsOverviewStep: React.FC = () => (
     <TutorialStep
         title="Teams"
         description="Define your Teams to run 'How Many' and 'When' Forecasts"
@@ -51,7 +51,7 @@ export const TeamsOverviewStep: React.FC = () => (
     </TutorialStep>
 );
 
-export const ProjectOverviewStep: React.FC = () => (
+const ProjectOverviewStep: React.FC = () => (
     <TutorialStep
         title="Projects"
         description="Create a Project to keep an overview over when a certain set of Features will be done"
@@ -70,7 +70,7 @@ export const ProjectOverviewStep: React.FC = () => (
 );
 
 const steps = [
-    { title: 'Application Overview', component: LighthouseOverviewStep },
+    { title: 'Lighthouse Application Overview', component: LighthouseOverviewStep },
     { title: 'Teams', component: TeamsOverviewStep },
     { title: 'Projects', component: ProjectOverviewStep },
 ];
@@ -84,7 +84,7 @@ const LighthouseAppOverviewTutorial: React.FC = () => {
     }
 
     return (
-        <LighthouseTutorial steps={steps} tutorialTitle="Welcome to Lighthouse" finalButtonText="Create a new Team" onFinalButtonClick={createNewTeam} />
+        <LighthouseTutorial steps={steps} tutorialTitle="About Lighthouse" finalButtonText="Create a new Team" onFinalButtonClick={createNewTeam} />
     );
 }
 

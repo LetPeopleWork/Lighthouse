@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IconButton, Box } from '@mui/material';
+import { IconButton, Box, Tooltip } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 interface TutorialButtonProps {
@@ -19,11 +19,13 @@ const TutorialButton: React.FC<TutorialButtonProps> = ({ tutorialComponent }) =>
 
     return (
         <>
-            <IconButton
-                onClick={handleHelpClick}
-            >
-                <HelpOutlineIcon />
-            </IconButton>
+            <Tooltip title="Help">
+                <IconButton
+                    onClick={handleHelpClick}
+                >
+                    <HelpOutlineIcon />
+                </IconButton>
+            </Tooltip>
 
             {showTutorial && (
                 <Box
