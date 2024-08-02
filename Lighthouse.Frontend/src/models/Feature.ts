@@ -3,6 +3,7 @@ import { IWhenForecast } from "./Forecasts/WhenForecast";
 export interface IFeature {
     name: string;
     id: number;
+    url: string | null;
     lastUpdated: Date;
     remainingWork: { [key: number]: number };
     milestoneLikelihood: { [key: number]: number };
@@ -18,15 +19,17 @@ export interface DictionaryObject<TValue>{
 export class Feature implements IFeature {
     name!: string;
     id!: number;
+    url: string | null;
     lastUpdated!: Date;
     projects: DictionaryObject<string>;
     remainingWork: DictionaryObject<number>;
     milestoneLikelihood: DictionaryObject<number>;
     forecasts!: IWhenForecast[];
 
-    constructor(name: string, id: number, lastUpdated: Date, projects: DictionaryObject<string>, remainingWork: DictionaryObject<number>, milestoneLikelihood: DictionaryObject<number>, forecasts: IWhenForecast[]) {
+    constructor(name: string, id: number, url: string | null, lastUpdated: Date, projects: DictionaryObject<string>, remainingWork: DictionaryObject<number>, milestoneLikelihood: DictionaryObject<number>, forecasts: IWhenForecast[]) {
         this.name = name;
         this.id = id;
+        this.url = url;
         this.lastUpdated = lastUpdated;
         this.projects = projects;
         this.remainingWork = remainingWork;

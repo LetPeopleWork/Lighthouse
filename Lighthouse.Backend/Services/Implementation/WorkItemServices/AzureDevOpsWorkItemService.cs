@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var workItemTitle = workItem?.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty;
 
-            var url = workItem?.Url ?? string.Empty;
+            var url = ((ReferenceLink)workItem?.Links.Links["html"])?.Href ?? string.Empty;
 
             var workItemOrder = string.Empty;
 

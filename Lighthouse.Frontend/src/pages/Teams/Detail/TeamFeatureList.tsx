@@ -35,7 +35,11 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
                 <TableBody>
                     {team?.features.map((feature) => (
                         <TableRow key={feature.id}>
-                            <TableCell>{feature.name}</TableCell>
+                            <TableCell>
+                                <Link to={feature.url ?? ""} target="_blank" rel="noopener noreferrer">
+                                    {feature.name}
+                                </Link>
+                            </TableCell>
                             <TableCell>
                                 {feature.getRemainingWorkForTeam(team.id)} / {feature.getAllRemainingWork()}
                             </TableCell>

@@ -20,7 +20,7 @@ describe('Feature Class', () => {
             new WhenForecast(0.8, new Date('2023-08-01')),
             new WhenForecast(0.6, new Date('2023-09-01')),
         ];
-        feature = new Feature(name, id, lastUpdated, { 0: "Project" }, remainingWork, milestoneLikelihood, forecasts);
+        feature = new Feature(name, id, "", lastUpdated, { 0: "Project" }, remainingWork, milestoneLikelihood, forecasts);
     });
 
     it('should create an instance of Feature correctly', () => {
