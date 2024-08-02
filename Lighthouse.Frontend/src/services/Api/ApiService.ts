@@ -311,7 +311,7 @@ export class ApiService implements IApiService {
             return new Milestone(milestone.id, milestone.name, new Date(milestone.date))
         })
 
-        return new ProjectSettings(item.id, item.name, item.workItemTypes, milestones, item.workItemQuery, item.unparentedItemsQuery, item.defaultAmountOfWorkItemsPerFeature, item.workTrackingSystemConnectionId);
+        return new ProjectSettings(item.id, item.name, item.workItemTypes, milestones, item.workItemQuery, item.unparentedItemsQuery, item.defaultAmountOfWorkItemsPerFeature, item.workTrackingSystemConnectionId, item.sizeEstimateField);
     }
 
     private deserializeFeatures(featureData: IFeature[]): Feature[] {

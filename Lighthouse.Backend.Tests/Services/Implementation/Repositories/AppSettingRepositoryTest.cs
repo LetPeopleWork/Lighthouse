@@ -37,6 +37,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.ProjectSettingWorkItemTypes, "Epic")]
         [TestCase(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "")]
         [TestCase(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10")]
+        [TestCase(AppSettingKeys.ProjectSettingSizeEstimateField, "")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();

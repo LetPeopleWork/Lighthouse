@@ -4,7 +4,7 @@ import { IProjectSettings, ProjectSettings } from '../../../models/Project/Proje
 import GeneralInputsComponent from './GeneralInputs';
 
 describe('GeneralInputsComponent', () => {
-    const initialSettings: IProjectSettings = new ProjectSettings(1, "Project Name", [], [], "Initial Query", "Unparented Query", 10, 12)
+    const initialSettings: IProjectSettings = new ProjectSettings(1, "Project Name", [], [], "Initial Query", "Unparented Query", 10, 12, "")
 
     const mockOnProjectSettingsChange = vi.fn();
 

@@ -6,7 +6,6 @@ using Lighthouse.Backend.WorkTracking;
 using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Collections.Generic;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 {

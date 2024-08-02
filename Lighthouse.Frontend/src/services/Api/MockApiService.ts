@@ -136,7 +136,7 @@ export class MockApiService implements IApiService {
 
         await this.delay();
 
-        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2);
+        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037");
     }
 
     async updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings> {
@@ -304,7 +304,7 @@ export class MockApiService implements IApiService {
     async getDefaultProjectSettings(): Promise<IProjectSettings> {
         await this.delay();
 
-        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2);
+        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "Microsoft.VSTS.Scheduling.Size");
     }
 
     async updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void> {

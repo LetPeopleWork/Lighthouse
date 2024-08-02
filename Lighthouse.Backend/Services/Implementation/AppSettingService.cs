@@ -110,6 +110,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 WorkItemTypes = workItemTypes,
                 UnparentedItemsQuery = GetSettingByKey(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery).Value,
                 DefaultAmountOfWorkItemsPerFeature = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature).Value),
+                SizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField).Value,
             };
 
             return projectSettings;
@@ -136,6 +137,10 @@ namespace Lighthouse.Backend.Services.Implementation
             var defaultAmountofItems = GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature);
             defaultAmountofItems.Value = defaultProjectSetting.DefaultAmountOfWorkItemsPerFeature.ToString();
             repository.Update(defaultAmountofItems);
+
+            var sizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField);
+            sizeEstimateField.Value = defaultProjectSetting.SizeEstimateField;
+            repository.Update(sizeEstimateField);
 
             await repository.Save();
         }

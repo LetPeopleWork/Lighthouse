@@ -41,5 +41,7 @@
         public const string ProjectSettingUnparentedWorkItemQuery = "DefaultProjectSetting:UnparentedWorkItemQuery";
 
         public const string ProjectSettingDefaultAmountOfWorkItemsPerFeature = "DefaultProjectSetting:DefaultAmountOfWorkItemsPerFeature";
+
+        public const string ProjectSettingSizeEstimateField = "DefaultProjectSetting:SizeEstimateField";
     }
 }

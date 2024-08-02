@@ -18,6 +18,7 @@ namespace Lighthouse.Backend.API.DTO
             UnparentedItemsQuery = project.UnparentedItemsQuery;
             DefaultAmountOfWorkItemsPerFeature = project.DefaultAmountOfWorkItemsPerFeature;
             WorkTrackingSystemConnectionId = project.WorkTrackingSystemConnectionId;
+            SizeEstimateField = project.SizeEstimateField;
         }
 
         public int Id { get; set; } 
@@ -35,5 +36,7 @@ namespace Lighthouse.Backend.API.DTO
         public int DefaultAmountOfWorkItemsPerFeature { get; set; }
 
         public int WorkTrackingSystemConnectionId { get; set; }
+
+        public string SizeEstimateField {  get; set; }
     }
 }

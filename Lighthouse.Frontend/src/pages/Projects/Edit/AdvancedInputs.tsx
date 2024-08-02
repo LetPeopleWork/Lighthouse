@@ -35,6 +35,15 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                     onChange={(e) => onProjectSettingsChange('defaultAmountOfWorkItemsPerFeature', parseInt(e.target.value, 10))}
                 />
             </Grid>
+            <Grid item xs={12}>
+                <TextField
+                    label="Size Estimate Field"
+                    fullWidth
+                    margin="normal"
+                    value={projectSettings?.sizeEstimateField || ''}
+                    onChange={(e) => onProjectSettingsChange('sizeEstimateField', e.target.value)}
+                />
+            </Grid>
         </InputGroup>
     );
 };

@@ -182,7 +182,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
-                AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15");
+                AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15",
+                AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size");
 
             var service = CreateService();
 
@@ -194,6 +195,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.UnparentedItemsQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(15));
+                Assert.That(settings.SizeEstimateField, Is.EqualTo("Microsoft.VSTS.Scheduling.Size"));
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(1));
                 CollectionAssert.Contains(settings.WorkItemTypes, "Epic");
@@ -208,7 +210,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
-                AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10");
+                AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10",
+                AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size");
 
             var service = CreateService();
 
@@ -217,7 +220,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 WorkItemQuery = "project = MyJiraProject",
                 WorkItemTypes = ["Feature"],
                 UnparentedItemsQuery = "project = MyJiraProject",
-                DefaultAmountOfWorkItemsPerFeature = 22
+                DefaultAmountOfWorkItemsPerFeature = 22,
+                SizeEstimateField = "customfield_10037"
             };
 
             await service.UpdateDefaultProjectSettingsAsync(newSettings);
@@ -227,6 +231,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingWorkItemTypes, "Feature");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "22");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingSizeEstimateField, "customfield_10037");
         }
 
         [Test]

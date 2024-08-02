@@ -4,7 +4,7 @@ import { IProjectSettings, ProjectSettings } from '../../../models/Project/Proje
 import AdvancedInputsComponent from './AdvancedInputs';
 
 describe('AdvancedInputsComponent', () => {
-    const initialSettings: IProjectSettings = new ProjectSettings(1, "Settings", [], [], "Initial Query", "Unparented Query", 10, 12)
+    const initialSettings: IProjectSettings = new ProjectSettings(1, "Settings", [], [], "Initial Query", "Unparented Query", 10, 12, "")
 
     const mockOnProjectSettingsChange = vi.fn();
 
@@ -18,6 +18,7 @@ describe('AdvancedInputsComponent', () => {
 
         expect(screen.getByLabelText(/Unparented Work Items Query/i)).toHaveValue('Unparented Query');
         expect(screen.getByLabelText(/Default Number of Items per Feature/i)).toHaveValue(10);
+        expect(screen.getByLabelText(/Size Estimate Field/i)).toHaveValue("");
     });
 
     it('calls onProjectSettingsChange with correct arguments when unparentedItemsQuery changes', () => {
@@ -44,5 +45,18 @@ describe('AdvancedInputsComponent', () => {
         fireEvent.change(screen.getByLabelText(/Default Number of Items per Feature/i), { target: { value: '20' } });
 
         expect(mockOnProjectSettingsChange).toHaveBeenCalledWith('defaultAmountOfWorkItemsPerFeature', 20);
+    });
+
+    it('calls onProjectSettingsChange with correct arguments when sizeEstimateField changes', () => {
+        render(
+            <AdvancedInputsComponent
+                projectSettings={initialSettings}
+                onProjectSettingsChange={mockOnProjectSettingsChange}
+            />
+        );
+
+        fireEvent.change(screen.getByLabelText(/Size Estimate Field/i), { target: { value: 'customfield_133742' } });
+
+        expect(mockOnProjectSettingsChange).toHaveBeenCalledWith('sizeEstimateField', 'customfield_133742');
     });
 });
