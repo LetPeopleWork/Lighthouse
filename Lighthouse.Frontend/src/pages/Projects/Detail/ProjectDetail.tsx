@@ -10,6 +10,8 @@ import ProjectFeatureList from './ProjectFeatureList';
 import InvolvedTeamsList from './InvolvedTeamsList';
 import MilestoneList from './MilestoneList';
 import ActionButton from '../../../components/Common/ActionButton/ActionButton';
+import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/TutorialButton';
+import ProjectDetailTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/ProjectDetailTutorial';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -58,7 +60,7 @@ const ProjectDetail: React.FC = () => {
         }
     }
 
-    const onRefreshForecastsClick= async () => {
+    const onRefreshForecastsClick = async () => {
         try {
             if (project == null) {
                 return;
@@ -86,8 +88,8 @@ const ProjectDetail: React.FC = () => {
 
 
     return (
-        <Container>
-            <LoadingAnimation hasError={hasError} isLoading={isLoading}>
+        <LoadingAnimation hasError={hasError} isLoading={isLoading}>
+            <Container>
                 {project == null ? (<></>) : (
                     <Grid container spacing={3}>
                         <Grid item xs={12}>
@@ -111,8 +113,12 @@ const ProjectDetail: React.FC = () => {
                             <ProjectFeatureList project={project} />
                         </Grid>
                     </Grid>)}
-            </LoadingAnimation>
-        </Container>
+
+            </Container>
+            <TutorialButton
+                tutorialComponent={<ProjectDetailTutorial />}
+            />
+        </LoadingAnimation>
     );
 }
 

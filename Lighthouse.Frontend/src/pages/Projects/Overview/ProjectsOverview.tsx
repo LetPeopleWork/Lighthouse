@@ -6,6 +6,8 @@ import { Project } from '../../../models/Project/Project';
 import { IApiService } from '../../../services/Api/IApiService';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';
+import ProjectOverviewTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/ProjectOverviewTutorial';
+import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/TutorialButton';
 
 const ProjectsOverview: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -57,11 +59,14 @@ const ProjectsOverview: React.FC = () => {
 
   return (
     <LoadingAnimation hasError={hasError} isLoading={isLoading}>
-      <DataOverviewTable
-        data={projects}
-        api="projects"
-        onDelete={handleDelete}
-      />
+      {projects.length === 0 ? (
+        <ProjectOverviewTutorial />
+      ) : (
+        <DataOverviewTable
+          data={projects}
+          api="projects"
+          onDelete={handleDelete}
+        />)}
       {selectedProject && (
         <DeleteConfirmationDialog
           open={deleteDialogOpen}
@@ -69,6 +74,9 @@ const ProjectsOverview: React.FC = () => {
           onClose={handleDeleteConfirmation}
         />
       )}
+      <TutorialButton
+        tutorialComponent={<ProjectOverviewTutorial />}
+      />
     </LoadingAnimation>
   );
 };

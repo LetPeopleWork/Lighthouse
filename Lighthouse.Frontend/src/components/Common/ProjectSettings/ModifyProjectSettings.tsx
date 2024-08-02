@@ -10,6 +10,8 @@ import GeneralInputsComponent from "../../../pages/Projects/Edit/GeneralInputs";
 import { IMilestone } from "../../../models/Project/Milestone";
 import AdvancedInputsComponent from "../../../pages/Projects/Edit/AdvancedInputs";
 import ActionButton from "../ActionButton/ActionButton";
+import ProjectConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/ProjectConfigurationTutorial";
+import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
 
 interface ModifyProjectSettingsProps {
     title: string;
@@ -111,6 +113,13 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
     return (
         <LoadingAnimation isLoading={loading} hasError={false} >
             <Container>
+                <Grid container justifyContent="flex-end" spacing={2}>
+                    <Grid item>
+                        <TutorialButton
+                            tutorialComponent={<ProjectConfigurationTutorial />}
+                        />
+                    </Grid>
+                </Grid>
                 <Grid container spacing={3}>
                     <Grid item xs={12}>
                         <Typography variant='h4'>{title}</Typography>
