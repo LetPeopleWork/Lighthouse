@@ -39,11 +39,11 @@ Download the zip file, and extract it to the location you want to run the applic
 ### Start Lighthouse
 Once extracted, you can run the the `Lighthouse` application (for example: `Lighthouse.exe` on Windows). A terminal will open and you should see a window similar to this:
 
-![Start Lighthouse](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/ce5aae21-d3c6-484a-869d-b23edd3c9011)
+![Starting Lighthouse](https://github.com/user-attachments/assets/9bd034a9-0b5d-48fe-897f-3cc749402b24)
 
 By default, Lighthouse will start running on the system on port 5000. If everything worked as expected, you can open the app now in your browser via [http://localhost:5000](http://localhost:5000).
 You should see the (empty) landing page:
-![Emtpy Landing Page](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/52fb6379-6c8c-4f6f-8213-fd622497163d)
+![Landing Page](https://github.com/user-attachments/assets/06cf29cd-d9a8-4a93-84aa-2335747d8699)
 
 #### Running Lighthouse on a different Port
 If you want to run Lighthouse on a different port, you can do so using the following approaches:
