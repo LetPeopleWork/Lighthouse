@@ -335,12 +335,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task ValidateConnection_GivenInvalidSettings_ReturnsFalse()
+        [TestCase("https://dev.azure.com/huserben", "Yah-yah-yah, Coco Jamboo, yah-yah-yeh")]
+        [TestCase("https://dev.azure.com/huserben", "")]
+        [TestCase("", "PATPATPAT")]
+        [TestCase("https://not.valid", "PATPATPAT")]
+        [TestCase("asdfasdfasdfasdf", "PATPATPAT")]
+        public async Task ValidateConnection_GivenInvalidSettings_ReturnsFalse(string organizationUrl, string personalAccessToken)
         {
             var subject = CreateSubject();
-
-            var organizationUrl = "https://dev.azure.com/huserben";
-            var personalAccessToken = "Yah-yah-yah, Coco Jamboo, yah-yah-yeh";
 
             var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, Name = "Test Setting" };
             connectionSetting.Options.AddRange([

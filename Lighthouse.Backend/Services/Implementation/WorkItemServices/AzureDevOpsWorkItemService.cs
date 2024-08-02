@@ -170,11 +170,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
         {
-            var witClient = GetClientService(connection);
-            var query = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.Id}] = 12";
-
             try
             {
+                var witClient = GetClientService(connection);
+                var query = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.Id}] = 12";
+
                 await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
                 return true;
             }

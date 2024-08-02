@@ -164,10 +164,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
         {
-            var client = GetJiraRestClient(connection);
-            var response = await client.GetAsync("rest/api/2/myself");
+            try
+            {
+                var client = GetJiraRestClient(connection);
+                var response = await client.GetAsync("rest/api/2/myself");
 
-            return response.IsSuccessStatusCode;
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)

@@ -284,13 +284,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task ValidateConnection_GivenInvalidSettings_ReturnsFalse()
+        [TestCase("https://letpeoplework.atlassian.net", "Yah-yah-yah, Coco Jamboo, yah-yah-yeh", "benjhuser@gmail.com")]
+        [TestCase("https://letpeoplework.atlassian.net", "", "benjhuser@gmail.com")]
+        [TestCase("https://letpeoplework.atlassian.net", "PATPATPAT", "")]
+        [TestCase("", "PATPATPAT", "benjhuser@gmail.com")]
+        [TestCase("https://not.valid", "PATPATPAT", "benjhuser@gmail.com")]
+        [TestCase("asdfasdfasdfasdf", "PATPATPAT", "benjhuser@gmail.com")]
+        public async Task ValidateConnection_GivenInvalidSettings_ReturnsFalse(string organizationUrl, string apiToken, string username)
         {
             var subject = CreateSubject();
-
-            var apiToken = "Yah-yah-yah, Coco Jamboo, yah-yah-yeh";
-            var organizationUrl = "https://letpeoplework.atlassian.net";
-            var username = "benjhuser@gmail.com";
 
             var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
             connectionSetting.Options.AddRange([
