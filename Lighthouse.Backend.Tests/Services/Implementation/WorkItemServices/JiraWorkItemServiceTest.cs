@@ -119,12 +119,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
-            var (name, rank) = await subject.GetWorkItemDetails("PROJ-18", team);
+            var (name, rank, url) = await subject.GetWorkItemDetails("PROJ-18", team);
 
             Assert.Multiple(() =>
             {
                 Assert.That(name, Is.EqualTo("Test 32523"));
                 Assert.That(rank, Is.EqualTo("0|i00037:9"));
+                Assert.That(url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
             });
         }
 

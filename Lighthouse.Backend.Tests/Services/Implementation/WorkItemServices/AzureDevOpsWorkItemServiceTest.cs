@@ -190,12 +190,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
-            var (name, rank) = await subject.GetWorkItemDetails("366", team);
+            var (name, rank, url) = await subject.GetWorkItemDetails("366", team);
 
             Assert.Multiple(() =>
             {
                 Assert.That(name, Is.EqualTo("Test Test Test"));
                 Assert.That(rank, Is.EqualTo("1999821120"));
+                Assert.That(url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_apis/wit/workItems/366"));
             });
         }
 

@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return relatedWorkItems;
         }
 
-        public async Task<(string name, string order)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<(string name, string order, string url)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             logger.LogInformation("Getting Work Item Details for {itemId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
@@ -64,6 +64,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var workItem = await GetWorkItemById(witClient, itemId, workItemQueryOwner);
 
             var workItemTitle = workItem?.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty;
+
+            var url = workItem?.Url ?? string.Empty;
+
             var workItemOrder = string.Empty;
 
             if (workItem?.Fields.TryGetValue(AzureDevOpsFieldNames.StackRank, out var stackRank) ?? false)
@@ -75,7 +78,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 workItemOrder = backlogPriority?.ToString() ?? string.Empty;
             }
 
-            return (workItemTitle, workItemOrder);
+            return (workItemTitle, workItemOrder, url);
         }
 
         public async Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)

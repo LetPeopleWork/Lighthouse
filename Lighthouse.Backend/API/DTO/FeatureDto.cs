@@ -8,6 +8,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             Name = feature.Name;
             Id = feature.Id;
+            Url = feature.Url;
             LastUpdated = feature.Forecast?.CreationTime ?? DateTime.MinValue;
 
             Forecasts.AddRange(feature.Forecast?.CreateForecastDtos([50, 70, 85, 95]) ?? Enumerable.Empty<WhenForecastDto>());
@@ -37,6 +38,8 @@ namespace Lighthouse.Backend.API.DTO
         public string Name { get; set; }
 
         public int Id { get; set; }
+
+        public string Url { get; set; }
 
         public Dictionary<int, string> Projects { get; } = new Dictionary<int, string>();
 

@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.Models
 
         public string Order { get; set; }
 
+        public string? Url { get; set; }
+
         public WhenForecast Forecast { get; set; }
 
         public List<RemainingWork> RemainingWork { get; } = new List<RemainingWork>();
