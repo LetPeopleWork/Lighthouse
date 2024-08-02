@@ -9,6 +9,8 @@ import LogSettings from './LogSettings/LogSettings';
 import RefreshSettingsTab from './Refresh/RefreshSettingsTab';
 import DefaultTeamSettings from './DefaultTeamSettings/DefaultTeamSettings';
 import DefaultProjectSettings from './DefaultProjectSettings/DefaultProjectSettings';
+import TutorialButton from '../../components/App/LetPeopleWork/Tutorial/TutorialButton';
+import SettingsTutorial from '../../components/App/LetPeopleWork/Tutorial/Tutorials/SettingsTutorial';
 
 const Settings: React.FC = () => {
   const [value, setValue] = React.useState('1');
@@ -19,16 +21,21 @@ const Settings: React.FC = () => {
 
   return (
     <Container>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <TabContext value={value}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <TabList onChange={handleChange}>
+              <Tab label="Work Tracking Systems" value="1" data-testid="work-tracking-tab" />
+              <Tab label="Default Team Settings" value="2" data-testid="default-team-settings-tab" />
+              <Tab label="Default Project Settings" value="3" data-testid="default-project-settings-tab" />
+              <Tab label="Periodic Refresh Settings" value="4" data-testid="periodic-refresh-settings-tab" />
+              <Tab label="Logs" value="99" data-testid="logs-tab" />
+            </TabList>
+          </Box>
+        </TabContext>
+        <TutorialButton tutorialComponent={<SettingsTutorial />} />
+      </Box>
       <TabContext value={value}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <TabList onChange={handleChange}>
-            <Tab label="Work Tracking Systems" value="1" data-testid="work-tracking-tab" />
-            <Tab label="Default Team Settings" value="2" data-testid="default-team-settings-tab" />
-            <Tab label="Default Project Settings" value="3" data-testid="default-project-settings-tab" />
-            <Tab label="Periodic Refresh Settings" value="4" data-testid="periodic-refresh-settings-tab" />
-            <Tab label="Logs" value="99" data-testid="logs-tab" />
-          </TabList>
-        </Box>
         <TabPanel value="1" data-testid="work-tracking-panel">
           <WorkTrackingSystemConnectionSettings />
         </TabPanel>

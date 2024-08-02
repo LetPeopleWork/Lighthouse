@@ -207,14 +207,20 @@ export class MockApiService implements IApiService {
         await this.delay();
 
         return [
-            new WorkTrackingSystemConnection(12, "My ADO Connection", "AzureDevOps", [new WorkTrackingSystemOption("Azure DevOps Url", "https://dev.azure.com/letpeoplework", false), new WorkTrackingSystemOption("Personal Access Token", "This is a secret token", true)]),
-            new WorkTrackingSystemConnection(42, "My Jira Connection", "Jira", [new WorkTrackingSystemOption("Jira Url", "https://letpeoplework.atlassian.com", false), new WorkTrackingSystemOption("Username", "superuser@letpeople.work", false), new WorkTrackingSystemOption("Api Token", "Secretive Secret", true)])]
+            new WorkTrackingSystemConnection(12, "My ADO Connection", "AzureDevOps", [new WorkTrackingSystemOption("Azure DevOps Url", "https://dev.azure.com/letpeoplework", false), new WorkTrackingSystemOption("Personal Access Token", "", true)]),
+            new WorkTrackingSystemConnection(42, "My Jira Connection", "Jira", [new WorkTrackingSystemOption("Jira Url", "https://letpeoplework.atlassian.com", false), new WorkTrackingSystemOption("Username", "superuser@letpeople.work", false), new WorkTrackingSystemOption("Api Token", "", true)])]
     }
 
     async addNewWorkTrackingSystemConnection(newWorkTrackingSystemConnection: IWorkTrackingSystemConnection): Promise<IWorkTrackingSystemConnection> {
         await this.delay();
 
         newWorkTrackingSystemConnection.id = 12;
+
+        for (const option of newWorkTrackingSystemConnection.options){
+            if (option.isSecret){
+                option.value = "";
+            }
+        }
 
         return newWorkTrackingSystemConnection;
     }
