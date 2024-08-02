@@ -58,12 +58,14 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
 
         const updatedSettings: ITeamSettings = { ...teamSettings, workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0 };
         await saveTeamSettings(updatedSettings);
+
+        setFormValid(false);
     }
 
     useEffect(() => {
         const handleStateChange = () => {
             const isFormValid = teamSettings?.name != '' && (teamSettings?.throughputHistory ?? 0) > 0 && teamSettings?.featureWIP !== undefined &&
-                teamSettings?.workItemQuery != '' && teamSettings?.workItemTypes.length > 0 && (workTrackingSystems.length == 0 || selectedWorkTrackingSystem !== null);
+            (workTrackingSystems.length == 0 || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (workTrackingSystems.length == 0 || selectedWorkTrackingSystem !== null);
 
             setFormValid(isFormValid);
         };

@@ -10,7 +10,7 @@ import WorkItemTypesImage from '../../../../../assets/Tutorial/Project/WorkItemT
 import MilestonesImage from '../../../../../assets/Tutorial/Project/Milestones.gif';
 import AdvancedConfigurationImage from '../../../../../assets/Tutorial/Project/AdvancedConfiguration.png';
 
-import { WorkTrackingSystemsTutorialSteps } from "./SharedSteps";
+import { WorkTrackingSystems } from "./SharedSteps";
 
 const GeneralConfiguration: React.FC = () => (
     <TutorialStep
@@ -134,7 +134,7 @@ Note that as soon as you have a single child item for a Feature, the default won
 const steps = [
     { title: 'General Configuration', component: GeneralConfiguration },
     { title: 'Work Item Types', component: WorkItemTypes },
-    { title: 'Work Tracking Systems', component: WorkTrackingSystemsTutorialSteps },
+    { title: 'Work Tracking Systems', component: WorkTrackingSystems },
     { title: 'Milestones', component: Milestones },
     { title: 'Advanced Configuration', component: AdvancedConfiguration },
 ];

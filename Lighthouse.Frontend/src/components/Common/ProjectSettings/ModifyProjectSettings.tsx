@@ -75,12 +75,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
 
         const updatedSettings: IProjectSettings = { ...projectSettings, workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0 };
         await saveProjectSettings(updatedSettings);
+
+        setFormValid(false);
     }
 
     useEffect(() => {
         const handleStateChange = () => {
             const isFormValid = projectSettings?.name != '' && projectSettings?.defaultAmountOfWorkItemsPerFeature !== undefined &&
-                projectSettings?.workItemQuery != '' && projectSettings?.workItemTypes.length > 0 && (workTrackingSystems.length == 0 || selectedWorkTrackingSystem !== null);
+            (workTrackingSystems.length == 0 || projectSettings?.workItemQuery != '') && projectSettings?.workItemTypes.length > 0 && (workTrackingSystems.length == 0 || selectedWorkTrackingSystem !== null);
 
             setFormValid(isFormValid);
         };
