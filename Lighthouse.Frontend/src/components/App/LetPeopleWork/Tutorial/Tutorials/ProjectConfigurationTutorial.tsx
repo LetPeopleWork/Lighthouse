@@ -122,7 +122,8 @@ An example for this might be a collection of bugs you wanted to deliver with a n
 This query will go through all "Team Backlogs" and see if any item is matching the query that is not part of a feature of this project. All items that are found will be grouped in a "virtual Feature" called "Unparented - Project Name".
 
 As we don't want to waste time breaking down Features into details too early, you might have the situation where you want to plan for a Feature, but it does not have any child items yet, as it has not been refined in more detail.
-For those scenarios, you can specify a "Default Number of Items per Feature" that will be used in order to forecast. The recommendation is to use a historical value of Feature Size (for example: 80% of all your Features used to have 15 items or less).
+For those scenarios, you can specify a "Default Number of Items per Feature" and a "Size Estimation Field" that will be used in order to forecast. If you specify a field, Lighthouse will check the value from that field and assume it's the expected number of items for this feature. You might arrive at this number by doing some comparison to previous Features.
+In case the field is not specified, or there is no value defined, Lighthouse will fall back to the value defined as default. The recommendation is to use a historical value of Feature Size (for example: 80% of all your Features used to have 15 items or less).
 That way you can get a more realistic forecast without too much effort.
 
 Note that as soon as you have a single child item for a Feature, the default won't be used anymore. It's only applied if the number of child items is 0.`}
