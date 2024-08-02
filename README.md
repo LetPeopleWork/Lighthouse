@@ -15,7 +15,56 @@ Lighthouse is provided free of charge as open-source software by [LetPeopleWork]
 
 
 # Installing and Configuring Lighthouse
-See [Installation](./INSTALLATION.md) for more details on the installation.
+Lighthouse is a web application, that is foreseen to run on a server where multiple people have access to it. You can however run it also on your local machine. This might be the preferred option for now, as there is no User Management, nor any authentication/authorization at this point.
+
+## Docker
+The easiest way to run Lighthouse is to use docker. You can either use the `latest` image which reflects the latest version (which might include new features, but might also be not that stable yet), or use one with a specific tag. Check out the [packages](https://github.com/orgs/LetPeopleWork/packages?repo_name=Lighthouse) section to see the images.
+
+You can run Lighthouse in docker using the following command:
+`docker run -d -P -v ".:/app/Data" -v "./logs:/app/logs" -e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest`
+
+This will use the directory you run the command from as storage for your database and logs.
+
+## Regular Installation
+
+### Prerequisites
+The packages provided by Lighthouse have everything included you need to run it, so there are no prerequisites.
+
+Lighthouse runs on Windows, MacOs, and Linux based systems.
+
+### Download Lighthouse
+Download the latest version of Lighthouse for your operating system from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
+Download the zip file, and extract it to the location you want to run the application from.
+
+### Start Lighthouse
+Once extracted, you can run the the `Lighthouse` application (for example: `Lighthouse.exe` on Windows). A terminal will open and you should see a window similar to this:
+
+![Start Lighthouse](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/ce5aae21-d3c6-484a-869d-b23edd3c9011)
+
+By default, Lighthouse will start running on the system on port 5000. If everything worked as expected, you can open the app now in your browser via [http://localhost:5000](http://localhost:5000).
+You should see the (empty) landing page:
+![Emtpy Landing Page](https://github.com/LetPeopleWork/Lighthouse/assets/5486874/52fb6379-6c8c-4f6f-8213-fd622497163d)
+
+#### Running Lighthouse on a different Port
+If you want to run Lighthouse on a different port, you can do so using the following approaches:
+
+##### URLs Parameter
+You can specify the urls the application should listen on during startup. You can also specify multiple URLs, separated by a *;*: 
+
+`Lighthouse.exe --urls "http://0.0.0.0:80;https://0.0.0.0:443"`
+
+##### Setting ASPNETCORE_URLS
+You can set the environment variable *ASPNETCORE_URLS* and then it will automatically be picked up by Lighthouse:
+
+```
+set ASPNETCORE_URLS=https://0.0.0.0:443
+Lighthouse.exe
+```
+
+## Questions & Problems
+The documentation for Lighthouse is built into the application itself. On most pages you will find a "?" help icon in the upper right corner that should guide you through the usage.
+
+If you struggle with something, have an open question, or would like to report a problem, please don't hesitate to open an issue on [github](https://github.com/LetPeopleWork/Lighthouse/issues).
 
 # Contribution
 See [Contribution](./CONTRIBUTING.md) for more details on how you can contribute.
