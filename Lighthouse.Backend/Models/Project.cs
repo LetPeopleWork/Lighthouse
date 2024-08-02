@@ -21,6 +21,8 @@ namespace Lighthouse.Backend.Models
 
         public string? UnparentedItemsQuery { get; set; }
 
+        public string? SizeEstimateField { get; set; }
+
         public void UpdateFeatures(IEnumerable<Feature> features)
         {
             Features.Clear();

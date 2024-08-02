@@ -356,6 +356,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             Assert.That(isValid, Is.False);
         }
 
+        [Test]
+        [TestCase("")]
+        [TestCase("MambooJamboo")]
+        public async Task GetEstimatedSizeForItem_EstimateSizeFieldNotExists_Returns0(string fieldName)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            project.SizeEstimateField = fieldName;
+
+            var estimatedSize = await subject.GetEstimatedSizeForItem("370", project);
+
+            Assert.That(estimatedSize, Is.EqualTo(0));
+        }
+
+        [Test]
+        [TestCase("370", 12)]
+        [TestCase("380", 0)]
+        [TestCase("371", 2)]
+        public async Task GetEstimatedSizeForItem_GivenExistingField_ReturnsCorrectValue(string referenceId, int expectedSize)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            project.SizeEstimateField = "Microsoft.VSTS.Scheduling.Size";
+
+            var estimatedSize = await subject.GetEstimatedSizeForItem(referenceId, project);
+
+            Assert.That(estimatedSize, Is.EqualTo(expectedSize));
+        }
+
         private Team CreateTeam(string query)
         {
             var team = new Team
@@ -364,6 +395,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
                 WorkItemQuery = query
             };
 
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            team.WorkTrackingSystemConnection = workTrackingSystemConnection;
+
+            return team;
+        }
+
+        private Project CreateProject(string query)
+        {
+            var project = new Project
+            {
+                Name = "TestProject",
+                WorkItemQuery = query,
+            };
+
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Feature");
+
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            project.WorkTrackingSystemConnection = workTrackingSystemConnection;
+
+            return project;
+        }
+
+        private WorkTrackingSystemConnection CreateWorkTrackingSystemConnection()
+        {
             var organizationUrl = "https://dev.azure.com/huserben";
             var personalAccessToken = Environment.GetEnvironmentVariable("AzureDevOpsLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'AzureDevOpsLighthouseIntegrationTestToken' is set!");
 
@@ -373,9 +429,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
                 new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = personalAccessToken, IsSecret = true },
                 ]);
 
-            team.WorkTrackingSystemConnection = connectionSetting;
-
-            return team;
+            return connectionSetting;
         }
 
         private AzureDevOpsWorkItemService CreateSubject()

@@ -27,5 +27,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder);
 
         Task<bool> ValidateConnection(WorkTrackingSystemConnection connection);
+
+        Task<int> GetEstimatedSizeForItem(string referenceId, Project project);
     }
 }

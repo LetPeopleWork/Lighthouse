@@ -59,15 +59,29 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
 
                 var numberOfTeams = involvedTeams.Count;
-                var buckets = SplitIntoBuckets(project.DefaultAmountOfWorkItemsPerFeature, numberOfTeams);
+                var remainingWork = await GetExtrapolatedRemainingWork(project, workItemService, feature);
+
+                var buckets = SplitIntoBuckets(remainingWork, numberOfTeams);
                 for (var index = 0; index < numberOfTeams; index++)
                 {
                     var team = involvedTeams[index];
                     feature.AddOrUpdateRemainingWorkForTeam(team, buckets[index]);
                 }
 
-                logger.LogInformation("Added {DefaultAmountOfWorkItemsPerFeature} Items to Feature {FeatureName}", project.DefaultAmountOfWorkItemsPerFeature, feature.Name);
+                logger.LogInformation("Added {remainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
             }
+        }
+
+        private async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkItemService workItemService, Feature? feature)
+        {
+            if (string.IsNullOrEmpty(project.SizeEstimateField))
+            {
+                return project.DefaultAmountOfWorkItemsPerFeature;                
+            }
+
+            var estimatedSize = await workItemService.GetEstimatedSizeForItem(feature.ReferenceId, project);
+
+            return estimatedSize > 0 ? estimatedSize : project.DefaultAmountOfWorkItemsPerFeature;
         }
 
         private void RemoveUninvolvedTeams(Project project)

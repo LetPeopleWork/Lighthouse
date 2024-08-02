@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var jiraRestClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
-            var relatedWorkItems =  GetRelatedWorkItems(jiraRestClient, team, featureId);
+            var relatedWorkItems = GetRelatedWorkItems(jiraRestClient, team, featureId);
 
             return relatedWorkItems;
         }
@@ -100,10 +100,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 $"AND {team.WorkItemQuery}";
 
             var issues = await GetIssuesByQuery(jiraClient, jql);
-            
+
             var openWorkItemKeys = issues.Select(x => x.Key).ToList();
             logger.LogInformation("Found following Open Issues: {IDs}", string.Join(", ", openWorkItemKeys));
-            
+
             return openWorkItemKeys;
         }
 
@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var isRelated = featureIds.Any(f => IsIssueRelated(issue, f, team.AdditionalRelatedField));
             logger.LogInformation("Is Issue {ID} related: {isRelated}", itemId, isRelated);
-            
+
             return isRelated;
         }
 
@@ -176,6 +176,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             catch
             {
                 return false;
+            }
+        }
+
+        public async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
+        {
+            if (string.IsNullOrEmpty(project.SizeEstimateField))
+            {
+                return 0;
+            }
+
+            try
+            {
+                var jiraClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
+                var issue = await GetIssueById(jiraClient, referenceId);
+
+                var estimateRawValue = issue.Fields.GetFieldValue(project.SizeEstimateField);
+
+                // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
+                if (double.TryParse(estimateRawValue, out var estimateAsDouble))
+                {
+                    return (int)estimateAsDouble;
+                }
+
+                return 0;
+            }
+            catch
+            {
+                return 0;
             }
         }
 

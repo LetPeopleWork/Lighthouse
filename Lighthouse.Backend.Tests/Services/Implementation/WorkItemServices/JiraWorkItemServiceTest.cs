@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -307,6 +308,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             Assert.That(isValid, Is.False);
         }
 
+        [Test]
+        [TestCase("")]
+        [TestCase("MambooJamboo")]
+        public async Task GetEstimatedSizeForItem_EstimateSizeFieldNotExists_Returns0(string fieldName)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject("project = LGHTHSDMO");
+            project.SizeEstimateField = fieldName;
+
+            var estimatedSize = await subject.GetEstimatedSizeForItem("LGHTHSDMO-9", project);
+
+            Assert.That(estimatedSize, Is.EqualTo(0));
+        }
+
+        [Test]
+        [TestCase("LGHTHSDMO-9", 12)]
+        [TestCase("LGHTHSDMO-10", 0)]
+        [TestCase("LGHTHSDMO-8", 2)]
+        public async Task GetEstimatedSizeForItem_GivenExistingField_ReturnsCorrectValue(string referenceId, int expectedSize)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject("project = LGHTHSDMO");
+            project.SizeEstimateField = "customfield_10037";
+
+            var estimatedSize = await subject.GetEstimatedSizeForItem(referenceId, project);
+
+            Assert.That(estimatedSize, Is.EqualTo(expectedSize));
+        }
+
         private Team CreateTeam(string query)
         {
             var team = new Team
@@ -319,6 +351,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             team.WorkItemTypes.Add("Story");
             team.WorkItemTypes.Add("Bug");
 
+            var connectionSetting = CreateWorkTrackingSystemConnection();
+            team.WorkTrackingSystemConnection = connectionSetting;
+
+            return team;
+        }
+
+        private Project CreateProject(string query)
+        {
+            var project = new Project
+            {
+                Name = "TestProject",
+                WorkItemQuery = query,
+            };
+
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Epic");
+
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            project.WorkTrackingSystemConnection = workTrackingSystemConnection;
+
+            return project;
+        }
+
+        private WorkTrackingSystemConnection CreateWorkTrackingSystemConnection()
+        {
             var organizationUrl = "https://letpeoplework.atlassian.net";
             var username = "benjhuser@gmail.com";
             var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
@@ -330,9 +387,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
                 ]);
 
-            team.WorkTrackingSystemConnection = connectionSetting;
-
-            return team;
+            return connectionSetting;
         }
 
         private JiraWorkItemService CreateSubject()

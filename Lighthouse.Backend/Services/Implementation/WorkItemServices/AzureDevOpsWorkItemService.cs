@@ -187,6 +187,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
+        public async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
+        {
+            if (string.IsNullOrEmpty(project.SizeEstimateField))
+            {
+                return 0;
+            }
+
+            try
+            {
+                var witClient = GetClientService(project.WorkTrackingSystemConnection);
+
+                var workItem = await GetWorkItemById(witClient, referenceId, project, project.SizeEstimateField);               
+
+                if (workItem == null)
+                {
+                    return 0;
+                }
+
+                var estimateRawValue = workItem.Fields[project.SizeEstimateField].ToString() ?? "0";
+
+                // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
+                if (double.TryParse(estimateRawValue, out var estimateAsDouble))
+                {
+                    return (int)estimateAsDouble;
+                }
+
+                return 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         private List<int> ConvertToIntegers(IEnumerable<string> orderAsStrings)
         {
             var orderAsInt = new List<int>();
@@ -202,9 +236,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return orderAsInt;
         }
 
-        private async Task<WorkItem?> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner)
+        private async Task<WorkItem?> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
         {
-            var query = PrepareQuery([], [], workItemQueryOwner);
+            var query = PrepareQuery([], [], workItemQueryOwner, additionalFields);
             query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
 
             logger.LogDebug("Getting Work Item by Id. ID: {workItemId}. Query: '{query}'", workItemId, query);
@@ -326,10 +360,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         private string PrepareQuery(
             IEnumerable<string> workItemTypes,
             IEnumerable<string> excludedStates,
-            IWorkItemQueryOwner workitemQueryOwner)
+            IWorkItemQueryOwner workitemQueryOwner,
+            params string[] additionalFields)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
             var stateQuery = PrepareStateQuery(excludedStates);
+
+            var additionalFieldsQuery = string.Empty;
+            if (additionalFields.Length > 0)
+            {
+                additionalFieldsQuery =  ", " + string.Join(", ", additionalFields.Select(field => $"[{field}]"));
+            }
 
             var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {workitemQueryOwner.WorkItemQuery} " +
                 $"{workItemsQuery} " +
