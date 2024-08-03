@@ -263,7 +263,8 @@ namespace Lighthouse.Backend.Tests.API
                 WorkItemQuery = "SELECT * FROM UpdatedWorkItems",
                 UnparentedItemsQuery = "SELECT * FROM UpdatedUnparentedItems",
                 DefaultAmountOfWorkItemsPerFeature = 10,
-                WorkTrackingSystemConnectionId = 202
+                WorkTrackingSystemConnectionId = 202,
+                SizeEstimateField = "NewField",
             };
 
             var subject = CreateSubject();
@@ -296,6 +297,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(updatedProjectSettings.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(updatedProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedProjectSettings.WorkTrackingSystemConnectionId));
+                Assert.That(projectSettingDto.SizeEstimateField, Is.EqualTo(updatedProjectSettings.SizeEstimateField));
             });
         }
 

@@ -27,7 +27,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                         </TableCell>
                         {project.milestones.map((milestone) => (
                             <TableCell key={milestone.id}>
-                                <Typography variant="h6" component="div">{milestone.name}</Typography>
+                                <Typography variant="h6" component="div">{milestone.name} (<LocalDateTimeDisplay utcDate={milestone.date} />)</Typography>
                             </TableCell>
                         ))}
                         <TableCell>

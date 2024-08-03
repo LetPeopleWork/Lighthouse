@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { List, ListItem, IconButton, TextField, Button, Grid } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import debounce from 'lodash.debounce';
 import { IMilestone, Milestone } from '../../../models/Project/Milestone';
 import InputGroup from '../InputGroup/InputGroup';
 
 interface MilestonesComponentProps {
     milestones: IMilestone[];
+    initiallyExpanded?: boolean;
     onAddMilestone: (milestone: IMilestone) => void;
     onRemoveMilestone: (name: string) => void;
     onUpdateMilestone: (name: string, updatedMilestone: Partial<IMilestone>) => void;
@@ -14,34 +16,38 @@ interface MilestonesComponentProps {
 
 const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
     milestones,
+    initiallyExpanded = true,
     onAddMilestone,
     onRemoveMilestone,
-    onUpdateMilestone
+    onUpdateMilestone,    
 }) => {
     const [newMilestoneName, setNewMilestoneName] = useState<string>('');
     const [newMilestoneDate, setNewMilestoneDate] = useState<string>('');
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const debouncedUpdateMilestoneName = useCallback(debounce((name: string, updatedMilestone: Partial<IMilestone>) => {
+        onUpdateMilestone(name, updatedMilestone);
+    }, 700), [onUpdateMilestone]);
+
     const handleAddMilestone = () => {
         if (newMilestoneName.trim() && newMilestoneDate) {
             const newMilestone = new Milestone(0, newMilestoneName.trim(), new Date(newMilestoneDate));
-
             onAddMilestone(newMilestone);
             setNewMilestoneName('');
             setNewMilestoneDate('');
         }
     };
 
-    const handleMilestoneNameChange = (oldName: string, newName: string) => {
-        onUpdateMilestone(oldName, { name: newName });
+    const handleMilestoneNameChange = (name: string, newName: string) => {
+        debouncedUpdateMilestoneName(name, { name: newName });
     };
 
     const handleMilestoneDateChange = (name: string, newDate: string) => {
-        const updatedDate = new Date(newDate);
-        onUpdateMilestone(name, { date: updatedDate });
+        onUpdateMilestone(name, { date: new Date(newDate) });
     };
 
     return (
-        <InputGroup title={'Milestones'} >
+        <InputGroup title={'Milestones'} initiallyExpanded={initiallyExpanded}>
             <Grid container spacing={2}>
                 <Grid item xs={6}>
                     <List>
@@ -52,7 +58,7 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
                                         <TextField
                                             fullWidth
                                             label="Milestone Name"
-                                            value={milestone.name}
+                                            defaultValue={milestone.name}
                                             onChange={(e) => handleMilestoneNameChange(milestone.name, e.target.value)}
                                         />
                                     </Grid>
@@ -62,7 +68,7 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
                                             label="Milestone Date"
                                             type="date"
                                             InputLabelProps={{ shrink: true }}
-                                            value={milestone.date.toISOString().slice(0, 10)} // Convert date to yyyy-MM-dd format
+                                            defaultValue={milestone.date.toISOString().slice(0, 10)} // Convert date to yyyy-MM-dd format
                                             onChange={(e) => handleMilestoneDateChange(milestone.name, e.target.value)}
                                         />
                                     </Grid>
@@ -105,7 +111,7 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
                     </Button>
                 </Grid>
             </Grid>
-            </InputGroup>
+        </InputGroup>
     );
 };
 

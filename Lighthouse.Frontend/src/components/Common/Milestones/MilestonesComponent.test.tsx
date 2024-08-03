@@ -46,7 +46,7 @@ describe('MilestonesComponent', () => {
         expect(mockAddMilestone).toHaveBeenCalledWith(new Milestone(0, 'New Milestone', new Date('2024-10-01')));
     });
 
-    it('updates a milestone correctly', () => {
+    it('updates a milestone correctly', async () => {
         render(
             <MilestonesComponent
                 milestones={initialMilestones}
@@ -58,6 +58,9 @@ describe('MilestonesComponent', () => {
 
         fireEvent.change(screen.getByDisplayValue('Milestone 1'), { target: { value: 'Updated Milestone 1' } });
         fireEvent.change(screen.getByDisplayValue('2024-08-01'), { target: { value: '2024-08-15' } });
+
+        // We have to await this as we don't instantly update the name
+        await new Promise(resolve => setTimeout(resolve, 1000))
 
         expect(mockUpdateMilestone).toHaveBeenCalledWith('Milestone 1', { name: 'Updated Milestone 1' });
         expect(mockUpdateMilestone).toHaveBeenCalledWith('Milestone 1', { date: new Date('2024-08-15') });

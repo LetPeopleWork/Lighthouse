@@ -126,6 +126,7 @@ namespace Lighthouse.Backend.API
             project.UnparentedItemsQuery = projectSetting.UnparentedItemsQuery;
             project.DefaultAmountOfWorkItemsPerFeature = projectSetting.DefaultAmountOfWorkItemsPerFeature;
             project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
+            project.SizeEstimateField = projectSetting.SizeEstimateField;
 
             project.Milestones.Clear();
             foreach (var milestone in projectSetting.Milestones)

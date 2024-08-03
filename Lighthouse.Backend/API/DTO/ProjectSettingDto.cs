@@ -37,6 +37,6 @@ namespace Lighthouse.Backend.API.DTO
 
         public int WorkTrackingSystemConnectionId { get; set; }
 
-        public string SizeEstimateField {  get; set; }
+        public string? SizeEstimateField { get; set; } = string.Empty;
     }
 }

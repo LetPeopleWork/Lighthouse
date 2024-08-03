@@ -34,9 +34,9 @@ vi.mock('./InvolvedTeamsList', () => ({
     ),
 }));
 
-vi.mock('./MilestoneList', () => ({
+vi.mock('../../../components/Common/Milestones/MilestonesComponent', () => ({
     default: ({ milestones }: { milestones: Milestone[] }) => (
-        <div data-testid="milestone-list">{milestones.length} milestones</div>
+        <div data-testid="milestone-component">{milestones.length} milestones</div>
     ),
 }));
 
@@ -75,7 +75,7 @@ describe('ProjectDetail component', () => {
 
         expect(screen.getByTestId('project-feature-list')).toHaveTextContent('2 features');
         expect(screen.getByTestId('involved-teams-list')).toHaveTextContent('4 teams');
-        expect(screen.getByTestId('milestone-list')).toHaveTextContent('2 milestones');
+        expect(screen.getByTestId('milestone-component')).toHaveTextContent('1 milestones');
     });
 
     it('should refresh features on button click', async () => {

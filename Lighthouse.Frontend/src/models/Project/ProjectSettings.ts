@@ -9,7 +9,7 @@ export interface IProjectSettings {
     unparentedItemsQuery: string;
     defaultAmountOfWorkItemsPerFeature: number;
     workTrackingSystemConnectionId: number;
-    sizeEstimateField: string;
+    sizeEstimateField?: string;
 }
 
 
@@ -22,7 +22,7 @@ export class ProjectSettings implements IProjectSettings {
     unparentedItemsQuery: string;
     defaultAmountOfWorkItemsPerFeature: number;
     workTrackingSystemConnectionId: number;
-    sizeEstimateField: string;
+    sizeEstimateField?: string;
 
     constructor(
         id: number,
@@ -33,7 +33,7 @@ export class ProjectSettings implements IProjectSettings {
         unparentedItemsQuery: string,
         defaultAmountOfWorkItemsPerFeature: number,
         workTrackingSystemConnectionId: number,
-        sizeEstimateField: string
+        sizeEstimateField: string = ""
     ) {
         this.id = id;
         this.name = name;
