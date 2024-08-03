@@ -86,28 +86,28 @@ const ProjectDetail: React.FC = () => {
         if (!projectSettings) {
             return;
         }
-        
+
         const updatedProjectSettings: IProjectSettings = {
             ...projectSettings,
             milestones: [...(projectSettings.milestones || []), milestone]
         };
-    
+
         await onMilestonesChanged(updatedProjectSettings);
     };
-    
+
     const handleRemoveMilestone = async (name: string) => {
         if (!projectSettings) {
             return;
         }
-    
+
         const updatedProjectSettings: IProjectSettings = {
             ...projectSettings,
             milestones: (projectSettings.milestones || []).filter(milestone => milestone.name !== name)
         };
-    
+
         await onMilestonesChanged(updatedProjectSettings);
     };
-    
+
 
     const handleUpdateMilestone = async (name: string, updatedMilestone: Partial<IMilestone>) => {
         if (!projectSettings) {
@@ -149,11 +149,32 @@ const ProjectDetail: React.FC = () => {
             <Container>
                 {project == null ? (<></>) : (
                     <Grid container spacing={3}>
-                        <Grid item xs={12}>
-                            <Typography variant='h3'>{project.name}</Typography><Typography variant='h6'>
+                        <Grid item xs={6}>
+                            <Typography variant='h3'>{project.name}</Typography>
+                            <Typography variant='h6'>
                                 Last Updated on <LocalDateTimeDisplay utcDate={project.lastUpdated} showTime={true} />
                             </Typography>
                         </Grid>
+                        <Grid item xs={6} sx={{ display: 'flex', gap: 2 }}>
+                            <ActionButton
+                                buttonText='Refresh Features'
+                                onClickHandler={onRefreshFeaturesClick}
+                                maxHeight='40px'
+                            />
+                            <ActionButton
+                                buttonText='Refresh Forecasts'
+                                onClickHandler={onRefreshForecastsClick}
+                                maxHeight='40px'
+                            />
+                            <Button
+                                variant="contained"
+                                onClick={onEditProject}
+                                sx={{ maxHeight: '40px' }}
+                            >
+                                Edit Project
+                            </Button>
+                        </Grid>
+
                         <Grid item xs={12}>
                             <MilestonesComponent
                                 milestones={projectSettings?.milestones || []}
@@ -164,12 +185,6 @@ const ProjectDetail: React.FC = () => {
                         </Grid>
                         <Grid item xs={6}>
                             <InvolvedTeamsList teams={project.involvedTeams} />
-                        </Grid>
-
-                        <Grid item xs={12} sx={{ display: 'flex', gap: 2 }}>
-                            <ActionButton buttonText='Refresh Features' onClickHandler={onRefreshFeaturesClick} />
-                            <ActionButton buttonText='Refresh Forecasts' onClickHandler={onRefreshForecastsClick} />
-                            <Button variant="contained" onClick={onEditProject}>Edit Project</Button>
                         </Grid>
                         <Grid item xs={12}>
                             <ProjectFeatureList project={project} />

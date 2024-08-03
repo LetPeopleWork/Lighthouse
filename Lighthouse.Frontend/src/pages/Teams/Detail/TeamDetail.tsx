@@ -112,19 +112,18 @@ const TeamDetail: React.FC = () => {
         <LoadingAnimation hasError={hasError} isLoading={isLoading}>
             <Container>
                 <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid item xs={6}>
                         <Typography variant='h3'>{team?.name}</Typography>
                     </Grid>
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} sx={{ display: 'flex', gap: 2 }}>
-                            <ActionButton
-                                onClickHandler={onUpdateThroughput}
-                                buttonText="Update Throughput"
-                            />
-                            <Button variant="contained" onClick={onEditTeam}>
-                                Edit Team
-                            </Button>
-                        </Grid>
+                    <Grid item xs={6} sx={{ display: 'flex', gap: 2 }}>
+                        <ActionButton
+                            onClickHandler={onUpdateThroughput}
+                            buttonText="Update Throughput"
+                            maxHeight='40px'
+                        />
+                        <Button variant="contained" onClick={onEditTeam} sx={{ maxHeight: '40px' }}>
+                            Edit Team
+                        </Button>
                     </Grid>
                     <InputGroup title='Features'>
                         {team != null ? (

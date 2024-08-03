@@ -8,9 +8,10 @@ interface ActionButtonProps {
     onClickHandler: () => Promise<void>;
     buttonVariant?: ButtonVariant;
     disabled? : boolean;
+    maxHeight? : string;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, onClickHandler, buttonVariant = "contained", disabled = false }) => {
+const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, onClickHandler, buttonVariant = "contained", disabled = false, maxHeight }) => {
     const [isWaiting, setIsWaiting] = useState<boolean>(false);
 
     const handleClick = async () => {
@@ -24,7 +25,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, onClickHandler,
             variant={buttonVariant} 
             onClick={handleClick} 
             disabled={disabled || isWaiting}
-            sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', maxHeight: {maxHeight} }}
         >
             {isWaiting && (
                 <CircularProgress 
