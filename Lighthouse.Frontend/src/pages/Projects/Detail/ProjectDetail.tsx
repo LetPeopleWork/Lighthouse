@@ -14,6 +14,7 @@ import ProjectDetailTutorial from '../../../components/App/LetPeopleWork/Tutoria
 import { IProjectSettings } from '../../../models/Project/ProjectSettings';
 import { IMilestone } from '../../../models/Project/Milestone';
 import MilestonesComponent from '../../../components/Common/Milestones/MilestonesComponent';
+import { ITeamSettings } from '../../../models/Team/TeamSettings';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -24,6 +25,7 @@ const ProjectDetail: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
     const [projectSettings, setProjectSettings] = useState<IProjectSettings | null>(null);
+    const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
 
     const navigate = useNavigate();
 
@@ -138,6 +140,32 @@ const ProjectDetail: React.FC = () => {
         navigate(`/projects/edit/${id}`);
     }
 
+    const onTeamSettingsChange = async (updatedTeamSettings : ITeamSettings) => {
+        await apiService.updateTeam(updatedTeamSettings);
+        
+        const projectData = await apiService.refreshForecastsForProject(projectId);
+        if (projectData) {
+            setProject(projectData);
+        }
+    }
+
+    useEffect(() => {
+        const fetchInvolvedTeamSettings = async () => {
+            if (project) {
+                const teamSettings : ITeamSettings[] = [];
+
+                for (const involvedTeam of project.involvedTeams) {
+                    const involvedTeamSetting = await apiService.getTeamSettings(involvedTeam.id);
+                    teamSettings.push(involvedTeamSetting);
+                }
+
+                setInvolvedTeams(teamSettings);
+            }
+        }
+
+        fetchInvolvedTeamSettings();
+    }, [apiService, project])
+
     useEffect(() => {
         fetchProject();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -183,8 +211,8 @@ const ProjectDetail: React.FC = () => {
                                 onRemoveMilestone={handleRemoveMilestone}
                                 onUpdateMilestone={handleUpdateMilestone} />
                         </Grid>
-                        <Grid item xs={6}>
-                            <InvolvedTeamsList teams={project.involvedTeams} />
+                        <Grid item xs={12}>
+                            <InvolvedTeamsList teams={involvedTeams} onTeamUpdated={onTeamSettingsChange} />
                         </Grid>
                         <Grid item xs={12}>
                             <ProjectFeatureList project={project} />
