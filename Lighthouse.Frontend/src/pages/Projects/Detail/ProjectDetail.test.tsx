@@ -7,6 +7,7 @@ import { Milestone } from '../../../models/Project/Milestone';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IApiService } from '../../../services/Api/IApiService';
 import { Project } from '../../../models/Project/Project';
+import { TeamSettings } from '../../../models/Team/TeamSettings';
 
 vi.mock('../../../components/Common/LoadingAnimation/LoadingAnimation', () => ({
     default: ({ children, hasError, isLoading }: { children: React.ReactNode, hasError: boolean, isLoading: boolean }) => (
@@ -29,7 +30,7 @@ vi.mock('./ProjectFeatureList', () => ({
 }));
 
 vi.mock('./InvolvedTeamsList', () => ({
-    default: ({ teams }: { teams: Team[] }) => (
+    default: ({ teams }: { teams: TeamSettings[] }) => (
         <div data-testid="involved-teams-list">{teams.length} teams</div>
     ),
 }));
