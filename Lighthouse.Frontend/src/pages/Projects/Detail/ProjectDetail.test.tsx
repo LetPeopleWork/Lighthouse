@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ProjectDetail from './ProjectDetail';
-import { Team } from '../../../models/Team/Team';
 import { Milestone } from '../../../models/Project/Milestone';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IApiService } from '../../../services/Api/IApiService';
