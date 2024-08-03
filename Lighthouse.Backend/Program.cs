@@ -75,6 +75,8 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
                 builder.Services.AddScoped<IFileSystemService, FileSystemService>();
                 builder.Services.AddScoped<IAppSettingService, AppSettingService>();
+                builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
+                builder.Services.AddScoped<IGitHubService, GitHubService>();
 
                 builder.Services.AddScoped<AzureDevOpsWorkItemService>();
                 builder.Services.AddScoped<JiraWorkItemService>();

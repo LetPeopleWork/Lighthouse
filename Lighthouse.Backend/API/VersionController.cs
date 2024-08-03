@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
@@ -6,17 +7,17 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class VersionController : ControllerBase
     {
-        private readonly IConfiguration configuration;
+        private readonly ILighthouseReleaseService lighthouseReleaseService;
 
-        public VersionController(IConfiguration configuration)
+        public VersionController(ILighthouseReleaseService lighthouseReleaseService)
         {
-            this.configuration = configuration;
+            this.lighthouseReleaseService = lighthouseReleaseService;
         }
 
         [HttpGet]
         public IActionResult GetVersion()
         {
-            var version = configuration.GetValue<string>("LighthouseVersion");
+            var version = lighthouseReleaseService.GetCurrentVersion();
 
             if (string.IsNullOrEmpty(version))
             {

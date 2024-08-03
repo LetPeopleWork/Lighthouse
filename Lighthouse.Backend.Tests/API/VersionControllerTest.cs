@@ -1,19 +1,29 @@
 ﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Moq;
 
 namespace Lighthouse.Backend.Tests.API
 {
     public class VersionControllerTest
     {
+        private Mock<ILighthouseReleaseService> lighthouseReleaseServiceMock;
+
+        [SetUp]
+        public void SetUp()
+        {
+            lighthouseReleaseServiceMock = new Mock<ILighthouseReleaseService>();
+        }
+
         [Test]
         [TestCase("1.33.7")]
         [TestCase("DEV")]
-        public void GetVersion_VersionDefinedInAppSettings_ReturnsVersionFromAppSettings(string version)
+        public void GetVersion_VersionDefinedInAppSettings_ReturnsVersionLighthouseReleaseService(string version)
         {
-            var config = SetupConfiguration(version);
-            var subject = new VersionController(config);
+            lighthouseReleaseServiceMock.Setup(x => x.GetCurrentVersion()).Returns(version);
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
             var actual = (ObjectResult)subject.GetVersion();
             Assert.Multiple(() =>
@@ -26,8 +36,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetVersion_VersionNotDefinedInAppSettings_ReturnsNotFound()
         {
-            var config = SetupConfiguration(string.Empty);
-            var subject = new VersionController(config);
+            lighthouseReleaseServiceMock.Setup(x => x.GetCurrentVersion()).Returns(string.Empty);
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
             var actual = (ObjectResult)subject.GetVersion();
             Assert.Multiple(() =>
@@ -35,16 +45,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(actual.StatusCode, Is.EqualTo(404));
                 Assert.That(actual.Value, Is.EqualTo("404"));
             });
-        }
-
-        private IConfiguration SetupConfiguration(string version)
-        {
-            var inMemorySettings = new Dictionary<string, string?>
-            {
-                { "LighthouseVersion", version }
-            };
-
-            return TestConfiguration.SetupTestConfiguration(inMemorySettings);
         }
     }
 }
