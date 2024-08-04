@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Services.Interfaces
     {
         Task<string> GetLatestReleaseVersion();
 
+        Task<IEnumerable<LighthouseRelease>> GetAllReleases();
+
         Task<LighthouseRelease?> GetReleaseByTag(string releaseTagName);
     }
 }

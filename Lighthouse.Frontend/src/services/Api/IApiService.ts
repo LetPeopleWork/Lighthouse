@@ -41,7 +41,7 @@ export interface IApiService {
     
     isUpdateAvailable(): Promise<boolean>;
     
-    getLatestRelease(): Promise<ILighthouseRelease>;
+    getNewReleases(): Promise<ILighthouseRelease[]>;
 
     updateThroughput(teamId: number): Promise<void>;
 

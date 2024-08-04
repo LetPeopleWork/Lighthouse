@@ -38,6 +38,13 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
+        public async Task<IEnumerable<LighthouseRelease>> GetAllReleases()
+        {
+            var allReleases = await client.Repository.Release.GetAll(RepositoryId);
+
+            return allReleases.Where(r => !r.Prerelease).Select(CreateLighthouseRelease);
+        }
+
         private LighthouseRelease CreateLighthouseRelease(Release release)
         {
             var lighthouseRelease = new LighthouseRelease

@@ -52,20 +52,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task GetReleaseByVersion_ReturnsLighthouseReleaseFromGitHubService()
+        public async Task GetNewReleases_GetsAllReleasesFromGitHubService_ReturnsNewerReleases()
         {
-            var releaseVersion = "v13.3.7";
+            var currentReleaseVersion = "v13.3.7";
 
-            var expectedLighthouseRelease = new LighthouseRelease { Name = "Release", Version = releaseVersion };
-            githubServiceMock.Setup(x => x.GetReleaseByTag(releaseVersion)).ReturnsAsync(expectedLighthouseRelease);
-            githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync(releaseVersion);
+            var existingReleases = new List<LighthouseRelease>
+            {
+                new LighthouseRelease { Name = "Release4", Version = "v18.8.6" },
+                new LighthouseRelease { Name = "Release3", Version = "v17.32.33" },
+                new LighthouseRelease { Name = "Release2", Version = currentReleaseVersion },
+                new LighthouseRelease { Name = "Release1", Version = "v10.2.32" },
+            };
 
-            var config = SetupConfiguration();
+            githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync("v18.8.6");
+            githubServiceMock.Setup(x => x.GetAllReleases()).ReturnsAsync(existingReleases);
+
+            var config = SetupConfiguration(currentReleaseVersion);
             var subject = new LighthouseReleaseService(config, githubServiceMock.Object);
 
-            var lighthouseRelease = await subject.GetLatestRelease();
+            var newReleases = (await subject.GetNewReleases()).ToList();
 
-            Assert.That(lighthouseRelease, Is.EqualTo(expectedLighthouseRelease));
+            Assert.Multiple(() =>
+            {
+                Assert.That(newReleases, Has.Count.EqualTo(2));
+                Assert.That(newReleases[0].Name, Is.EqualTo("Release4"));
+                Assert.That(newReleases[1].Name, Is.EqualTo("Release3"));
+            });
+            
+        }
+
+        [Test]
+        public async Task GetNewReleases_CurrentIsLatest_ReturnsEmptyList()
+        {
+            var currentReleaseVersion = "v13.3.7";
+
+            var existingReleases = new List<LighthouseRelease>
+            {
+                new LighthouseRelease { Name = "Release2", Version = currentReleaseVersion },
+                new LighthouseRelease { Name = "Release1", Version = "v10.2.32" },
+            };
+
+            githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync(currentReleaseVersion);
+            githubServiceMock.Setup(x => x.GetAllReleases()).ReturnsAsync(existingReleases);
+
+            var config = SetupConfiguration(currentReleaseVersion);
+            var subject = new LighthouseReleaseService(config, githubServiceMock.Object);
+
+            var newReleases = (await subject.GetNewReleases()).ToList();
+
+            Assert.That(newReleases, Has.Count.EqualTo(0));
+
         }
 
         private IConfiguration SetupConfiguration(string version = "DEV")

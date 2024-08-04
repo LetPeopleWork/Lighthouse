@@ -39,10 +39,10 @@ export class ApiService implements IApiService {
         });
     }
 
-    async getLatestRelease(): Promise<ILighthouseRelease> {
+    async getNewReleases(): Promise<ILighthouseRelease[]> {
         return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<ILighthouseRelease>(`/version/latest`);
-            return this.deserializeRelease(response.data);
+            const response = await this.apiService.get<ILighthouseRelease[]>(`/version/new`);
+            return this.deserializeReleases(response.data);
         });
     }
 
@@ -337,6 +337,10 @@ export class ApiService implements IApiService {
             });
             return new Feature(feature.name, feature.id, feature.url, new Date(feature.lastUpdated), feature.projects, feature.remainingWork, feature.milestoneLikelihood, forecasts);
         });
+    }
+
+    private deserializeReleases(releases: ILighthouseRelease[]): LighthouseRelease[] {
+        return releases.map((release: ILighthouseRelease) => this.deserializeRelease(release));
     }
 
     private deserializeRelease(release: ILighthouseRelease): LighthouseRelease {

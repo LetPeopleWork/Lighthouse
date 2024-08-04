@@ -65,14 +65,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task GetReleaseByVersion_VersionExists_ReturnsVersionFromLighthouseReleaseServiceAsync()
+        public async Task GetNewReleases_ReturnsNewerVersion()
         {
             var lighthouseRelease = new LighthouseRelease { Name = "MyRelease", Version = "v13.3.7" };
-            lighthouseReleaseServiceMock.Setup(x => x.GetLatestRelease()).ReturnsAsync(lighthouseRelease);
+            lighthouseReleaseServiceMock.Setup(x => x.GetNewReleases()).ReturnsAsync([lighthouseRelease]);
 
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
-            var response = await subject.GetLatestRelease();
+            var response = await subject.GetNewReleases();
 
             Assert.Multiple(() =>
             {
@@ -81,18 +81,20 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = response.Result as OkObjectResult;
 
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.EqualTo(lighthouseRelease));
+                var newReleases = okResult.Value as IEnumerable<LighthouseRelease>;
+
+                CollectionAssert.Contains(newReleases, lighthouseRelease);
             });
         }
 
         [Test]
-        public async Task GetReleaseByVersion_VersionDoesNotExist_ReturnsNotFoundAsync()
+        public async Task GetNewReleases_NoNewReleaseExists_ReturnsNotFoundAsync()
         {
-            lighthouseReleaseServiceMock.Setup(x => x.GetLatestRelease()).ReturnsAsync((LighthouseRelease)null);
+            lighthouseReleaseServiceMock.Setup(x => x.GetNewReleases()).ReturnsAsync(Enumerable.Empty<LighthouseRelease>());
 
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
-            var response = await subject.GetLatestRelease();
+            var response = await subject.GetNewReleases();
 
             Assert.Multiple(() =>
             {

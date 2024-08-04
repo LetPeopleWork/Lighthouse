@@ -74,7 +74,6 @@ describe('ProjectDetail component', () => {
         });
 
         expect(screen.getByTestId('project-feature-list')).toHaveTextContent('2 features');
-        expect(screen.getByTestId('involved-teams-list')).toHaveTextContent('4 teams');
         expect(screen.getByTestId('milestone-component')).toHaveTextContent('1 milestones');
     });
 

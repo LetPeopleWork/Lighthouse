@@ -196,22 +196,22 @@ export class MockApiService implements IApiService {
         return true;
     }
 
-    async getLatestRelease(): Promise<ILighthouseRelease> {
+    async getNewReleases(): Promise<ILighthouseRelease[]> {
         await this.delay()
 
-        const assets : ILighthouseReleaseAsset[] = [
+        const assets: ILighthouseReleaseAsset[] = [
             new LighthouseReleaseAsset("Lighthouse_v24.8.3.1040_linux-x64.zip", "https://github.com/LetPeopleWork/Lighthouse/releases/download/v24.8.3.1040/Lighthouse_v24.8.3.1040_linux-x64.zip"),
             new LighthouseReleaseAsset("Lighthouse_v24.8.3.1040_osx-x64.zip", "https://github.com/LetPeopleWork/Lighthouse/releases/download/v24.8.3.1040/Lighthouse_v24.8.3.1040_osx-x64.zip"),
             new LighthouseReleaseAsset("Lighthouse_v24.8.3.1040_win-x64.zip", "https://github.com/LetPeopleWork/Lighthouse/releases/download/v24.8.3.1040/Lighthouse_v24.8.3.1040_win-x64.zip")
         ]
 
-        return new LighthouseRelease(
+        return [new LighthouseRelease(
             "Lighthouse v24.8.3.1040",
             "https://github.com/LetPeopleWork/Lighthouse/releases/tag/v24.8.3.1040",
             "# Highlights\r\n- This release adds interactive tutorials for various pages\r\n- Possibility to adjust milestones via the project view\r\n- Possibility to adjust Feature WIP of involved teams via the project detail view\r\n\r\n**Full Changelog**: https://github.com/LetPeopleWork/Lighthouse/compare/v24.7.28.937...v24.8.3.1040",
             "v24.8.3.1040",
             assets
-        );
+        )];
     }
 
     async getProjects(): Promise<Project[]> {

@@ -13,7 +13,7 @@ const LighthouseVersion: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-  const [latestRelease, setLatestRelease] = useState<ILighthouseRelease | null>(null);
+  const [newReleases, setNewReleases] = useState<ILighthouseRelease[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -27,8 +27,8 @@ const LighthouseVersion: React.FC = () => {
         setIsUpdateAvailable(updateAvailable);
 
         if (updateAvailable) {
-          const releaseData = await apiService.getLatestRelease();
-          setLatestRelease(releaseData);
+          const releaseData = await apiService.getNewReleases();
+          setNewReleases(releaseData);
         }
 
         setIsLoading(false);
@@ -91,7 +91,7 @@ const LighthouseVersion: React.FC = () => {
       <LatestReleaseInformationDialog
         open={isDialogOpen}
         onClose={handleDialogClose}
-        latestRelease={latestRelease}
+        newReleases={newReleases}
       />
     </LoadingAnimation>
   );

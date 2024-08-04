@@ -35,17 +35,17 @@ namespace Lighthouse.Backend.API
             return Ok(isUpdateAvailable);
         }
 
-        [HttpGet("latest")]
-        public async Task<ActionResult<LighthouseRelease>> GetLatestRelease()
+        [HttpGet("new")]
+        public async Task<ActionResult<LighthouseRelease[]>> GetNewReleases()
         {
-            var lighthouseRelease = await lighthouseReleaseService.GetLatestRelease();
+            var lighthouseReleases = await lighthouseReleaseService.GetNewReleases();
 
-            if (lighthouseRelease == null)
+            if (!lighthouseReleases.Any())
             {
                 return NotFound();
             }
             
-            return Ok(lighthouseRelease);
+            return Ok(lighthouseReleases);
         }
     }
 }

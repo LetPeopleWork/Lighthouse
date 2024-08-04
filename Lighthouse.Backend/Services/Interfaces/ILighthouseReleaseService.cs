@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Services.Interfaces
     {
         string GetCurrentVersion();
 
-        Task<LighthouseRelease?> GetLatestRelease();
+        Task<IEnumerable<LighthouseRelease>> GetNewReleases();
 
         Task<bool> UpdateAvailable();
     }

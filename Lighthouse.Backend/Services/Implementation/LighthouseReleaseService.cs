@@ -44,12 +44,24 @@ namespace Lighthouse.Backend.Services.Implementation
             return latestReleaseVersion > currentReleaseVersion;
         }
 
-        public async Task<LighthouseRelease?> GetLatestRelease()
+        public async Task<IEnumerable<LighthouseRelease>> GetNewReleases()
         {
-            var latestReleaseTag = await GetLatestReleaseTag();
-            var latestReleaseVersion = await GetReleaseByVersion(latestReleaseTag);
+            var newReleases = new List<LighthouseRelease>();
 
-            return latestReleaseVersion;
+            var allReleases = await gitHubService.GetAllReleases();
+            var currentVersion = GetCurrentVersion();
+
+            foreach (var release in allReleases)
+            {
+                if (release.Version == currentVersion)
+                {
+                    break;
+                }
+
+                newReleases.Add(release);
+            }
+
+            return newReleases;
         }
 
         private async Task<string> GetLatestReleaseTag()
