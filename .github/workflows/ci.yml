@@ -89,7 +89,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     permissions: write-all
 
-    steps:      
+    steps:          
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
       - name: Create tag if necessary
         id: version
         uses: fregante/daily-version-action@v2
