@@ -116,16 +116,12 @@ jobs:
         with:
           fetch-depth: '0'
 
-      - name: Update AppSettings
-        uses: ./.github/actions/update-appsettings
-        with:
-          app_version: ${{ needs.tag.outputs.version }}
-
       - name: Build and publish a Docker image for ${{ github.repository }}
         uses: macbre/push-to-ghcr@master        
         with:
           image_name: ${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          build_arg: VERSION=${{ needs.tag.outputs.version }}
           dockerfile: Lighthouse.Backend/Dockerfile        
 
   deploy:
@@ -167,14 +163,14 @@ jobs:
           app_version: ${{ needs.tag.outputs.version }}
 
       - name: publish win-x64
-        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish/win-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.version }} -o ./publish/win-x64
         working-directory: ./Lighthouse.Backend
 
       - name: Copy update_windows.ps1
         run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
 
       - name: publish osx-x64
-        run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o ./publish/osx-x64
+        run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.version }} -o ./publish/osx-x64
         working-directory: ./Lighthouse.Backend
 
       - name: Copy update_mac.sh
@@ -185,7 +181,7 @@ jobs:
         working-directory: ./Lighthouse.Backend
 
       - name: publish linux-x64
-        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o ./publish/linux-x64
+        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.version }} -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
 
       - name: Copy update_linux.sh
@@ -202,7 +198,7 @@ jobs:
           path: ./Lighthouse.Backend/publish
 
       - name: publish app-service
-        run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -o ./publish/app-service
+        run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -p:Version=${{ needs.tag.outputs.version }} -o ./publish/app-service
         working-directory: ./Lighthouse.Backend
 
       - name: Login to Azure
@@ -238,11 +234,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: '0'
-
-      - name: Update AppSettings
-        uses: ./.github/actions/update-appsettings
-        with:
-          app_version: ${{ needs.tag.outputs.version }}
 
       - name: Build and publish a Docker image for ${{ github.repository }}
         uses: macbre/push-to-ghcr@master        

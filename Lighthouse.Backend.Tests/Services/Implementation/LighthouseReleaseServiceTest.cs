@@ -1,34 +1,51 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Tests.TestHelpers;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Moq;
+using System;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     public class LighthouseReleaseServiceTest
     {
         private Mock<IGitHubService> githubServiceMock;
+        private Mock<IHostEnvironment> hostEnvironmentMock;
+        private Mock<IAssemblyService> assemblyServiceMock;
 
         [SetUp]
         public void Setup()
         {
             githubServiceMock = new Mock<IGitHubService>();
+            hostEnvironmentMock = new Mock<IHostEnvironment>();
+            assemblyServiceMock = new Mock<IAssemblyService>();
         }
 
         [Test]
-        [TestCase("1.33.7")]
-        [TestCase("DEV")]
+        [TestCase("24.8.4")]
+        [TestCase("24.8.4.1224")]
         [TestCase("")]
-        public void GetVersion_VersionDefinedInAppSettings_ReturnsVersionFromAppSettings(string version)
+        public void GetVersion_ProductionVersion_ReturnsFromAssemblyService(string version)
         {
-            var config = SetupConfiguration(version);
-            var subject = new LighthouseReleaseService(config, githubServiceMock.Object);
+            assemblyServiceMock.Setup(x => x.GetAssemblyVersion()).Returns(version);
+            var subject = CreateSubject();
 
             var currentVersion = subject.GetCurrentVersion();
 
             Assert.That(currentVersion, Is.EqualTo(version));
+        }
+
+        [Test]
+        public void GetVersion_DevVersion_ReturnsDev()
+        {
+            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
+            assemblyServiceMock.Setup(x => x.GetAssemblyVersion()).Returns("1.33.7");
+
+            var subject = CreateSubject();
+
+            var currentVersion = subject.GetCurrentVersion();
+
+            Assert.That(currentVersion, Is.EqualTo("DEV"));
         }
 
         [Test]
@@ -40,11 +57,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [TestCase("v24.8.3.1040", "v24.8.3.1040", false)]
         public async Task HasUpdateAvailable_ReturnsTrueIfNewerVersionAvailableAsync(string currentVersion, string latestVersion, bool newerVersionAvailable)
         {
-            var config = SetupConfiguration(currentVersion);
-
             githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync(latestVersion);
+            assemblyServiceMock.Setup(x => x.GetAssemblyVersion()).Returns(currentVersion);
 
-            var subject = new LighthouseReleaseService(config, githubServiceMock.Object);
+            var subject = CreateSubject();
 
             var updateAvailable = await subject.UpdateAvailable();
 
@@ -66,9 +82,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync("v18.8.6");
             githubServiceMock.Setup(x => x.GetAllReleases()).ReturnsAsync(existingReleases);
+            assemblyServiceMock.Setup(x => x.GetAssemblyVersion()).Returns(currentReleaseVersion);
 
-            var config = SetupConfiguration(currentReleaseVersion);
-            var subject = new LighthouseReleaseService(config, githubServiceMock.Object);
+            var subject = CreateSubject();
 
             var newReleases = (await subject.GetNewReleases()).ToList();
 
@@ -94,24 +110,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync(currentReleaseVersion);
             githubServiceMock.Setup(x => x.GetAllReleases()).ReturnsAsync(existingReleases);
+            assemblyServiceMock.Setup(x => x.GetAssemblyVersion()).Returns(currentReleaseVersion);
 
-            var config = SetupConfiguration(currentReleaseVersion);
-            var subject = new LighthouseReleaseService(config, githubServiceMock.Object);
+            var subject = CreateSubject();
 
             var newReleases = (await subject.GetNewReleases()).ToList();
 
             Assert.That(newReleases, Has.Count.EqualTo(0));
-
         }
 
-        private IConfiguration SetupConfiguration(string version = "DEV")
+        private LighthouseReleaseService CreateSubject()
         {
-            var inMemorySettings = new Dictionary<string, string?>
-            {
-                { "LighthouseVersion", version }
-            };
-
-            return TestConfiguration.SetupTestConfiguration(inMemorySettings);
+            return new LighthouseReleaseService(hostEnvironmentMock.Object, githubServiceMock.Object, assemblyServiceMock.Object);
         }
     }
 }

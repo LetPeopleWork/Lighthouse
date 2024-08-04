@@ -1,25 +1,29 @@
-﻿
-
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
     public class LighthouseReleaseService : ILighthouseReleaseService
     {
-        private IConfiguration configuration;
+        private IHostEnvironment hostEnvironment;
         private readonly IGitHubService gitHubService;
+        private readonly IAssemblyService assemblyService;
 
-        public LighthouseReleaseService(IConfiguration configuration, IGitHubService gitHubService)
+        public LighthouseReleaseService(IHostEnvironment hostEnvironment, IGitHubService gitHubService, IAssemblyService assemblyService)
         {
-            this.configuration = configuration;
+            this.hostEnvironment = hostEnvironment;
             this.gitHubService = gitHubService;
+            this.assemblyService = assemblyService;
         }
 
         public string GetCurrentVersion()
         {
-            var version = configuration.GetValue<string>("LighthouseVersion") ?? string.Empty;
+            if (hostEnvironment.IsDevelopment())
+            {
+                return "DEV";
+            }
 
+            var version = assemblyService.GetAssemblyVersion();
             return version;
         }
 
