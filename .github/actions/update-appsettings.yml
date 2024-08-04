@@ -1,0 +1,20 @@
+name: Update AppSettings
+
+inputs:
+  app_version:
+    description: 'Version of Lighthouse to write to appsettings file'
+    required: true
+    default: 'DEV'
+
+runs:
+  using: 'composite'
+  steps:
+
+    - name: Remove appsettings.Development.json
+      run: rm appsettings.Development.json
+      working-directory: ./Lighthouse.Backend
+
+    - name: Update appsettings.json
+      run: |
+        jq '.LighthouseVersion = ${{ inputs.app_version }}' appsettings.json > temp.json && mv temp.json appsettings.json
+      working-directory: ./Lighthouse.Backend
