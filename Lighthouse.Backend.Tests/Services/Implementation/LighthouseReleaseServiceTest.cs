@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var currentVersion = subject.GetCurrentVersion();
 
-            Assert.That(currentVersion, Is.EqualTo(version));
+            Assert.That(currentVersion, Is.EqualTo($"v{version}"));
         }
 
         [Test]

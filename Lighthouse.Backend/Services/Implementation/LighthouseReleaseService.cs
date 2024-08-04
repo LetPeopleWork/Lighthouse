@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var version = assemblyService.GetAssemblyVersion();
-            return version;
+            return $"v{version}";
         }
 
         public async Task<bool> UpdateAvailable()

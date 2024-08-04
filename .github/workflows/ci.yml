@@ -99,11 +99,23 @@ jobs:
         uses: fregante/daily-version-action@v2
         with:
           prefix: v
+
+      - name: Process version to create fileversion
+        id: process_version
+        run: |
+          # Extract the version from the output of the previous step
+          version=${{ steps.version.outputs.version }}
+          # Remove the prefix 'v' from the version string
+          fileversion=${version#v}
+          # Output the processed fileversion
+          echo "fileversion=$fileversion" >> $GITHUB_ENV
+          echo "fileversion=$fileversion" >> $GITHUB_OUTPUT
     
       
     outputs:
       created: ${{ steps.version.outputs.created }}
       version: ${{ steps.version.outputs.version }}
+      fileversion: ${{ steps.process_version.outputs.fileversion }}
 
   docker:
     runs-on: ubuntu-latest
@@ -121,7 +133,7 @@ jobs:
         with:
           image_name: ${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          build_arg: VERSION=${{ needs.tag.outputs.version }}
+          build_arg: VERSION=${{ needs.tag.outputs.fileversion }}
           dockerfile: Lighthouse.Backend/Dockerfile        
 
   deploy:
@@ -158,14 +170,14 @@ jobs:
         working-directory: ./Lighthouse.Frontend
 
       - name: publish win-x64
-        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.version }} -o ./publish/win-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
         working-directory: ./Lighthouse.Backend
 
       - name: Copy update_windows.ps1
         run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
 
       - name: publish osx-x64
-        run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.version }} -o ./publish/osx-x64
+        run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
         working-directory: ./Lighthouse.Backend
 
       - name: Copy update_mac.sh
@@ -176,7 +188,7 @@ jobs:
         working-directory: ./Lighthouse.Backend
 
       - name: publish linux-x64
-        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.version }} -o ./publish/linux-x64
+        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
 
       - name: Copy update_linux.sh
@@ -193,7 +205,7 @@ jobs:
           path: ./Lighthouse.Backend/publish
 
       - name: publish app-service
-        run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -p:Version=${{ needs.tag.outputs.version }} -o ./publish/app-service
+        run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/app-service
         working-directory: ./Lighthouse.Backend
 
       - name: Login to Azure
@@ -235,7 +247,8 @@ jobs:
         with:
           image_name: ${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          dockerfile: Lighthouse.Backend/Dockerfile
+          dockerfile: Lighthouse.Backend/Dockerfile          
+          build_arg: VERSION=${{ needs.tag.outputs.fileversion }}
           image_tag: ${{ needs.tag.outputs.version }}
 
       - uses: actions/download-artifact@v4
