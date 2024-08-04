@@ -49,12 +49,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [TestCase("v24.8.3.1040", "v24.8.3.1155", true)]
-        [TestCase("v24.8.3", "v24.8.3.1040", true)]
-        [TestCase("v24.8.3", "v23.8.3.1040", false)]
-        [TestCase("v24.8.3", "something went wrong here", false)]
-        [TestCase("DEV", "v23.8.3.1040", true)]
-        [TestCase("v24.8.3.1040", "v24.8.3.1040", false)]
+        [TestCase("24.8.3.1040", "v24.8.3.1155", true)]
+        [TestCase("24.8.3", "v24.8.3.1040", true)]
+        [TestCase("24.8.3", "v23.8.3.1040", false)]
+        [TestCase("24.8.3", "something went wrong here", false)]
+        [TestCase("24.8.3.1040", "v24.8.3.1040", false)]
         public async Task HasUpdateAvailable_ReturnsTrueIfNewerVersionAvailableAsync(string currentVersion, string latestVersion, bool newerVersionAvailable)
         {
             githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync(latestVersion);
@@ -68,15 +67,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task HasUpdateAvailable_DevVersion_ReturnsTrue()
+        {
+            githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync("0.0.0.1");
+            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
+
+            var subject = CreateSubject();
+
+            var updateAvailable = await subject.UpdateAvailable();
+
+            Assert.That(updateAvailable, Is.True);
+        }
+
+        [Test]
         public async Task GetNewReleases_GetsAllReleasesFromGitHubService_ReturnsNewerReleases()
         {
-            var currentReleaseVersion = "v13.3.7";
+            var currentReleaseVersion = "13.3.7";
 
             var existingReleases = new List<LighthouseRelease>
             {
                 new LighthouseRelease { Name = "Release4", Version = "v18.8.6" },
                 new LighthouseRelease { Name = "Release3", Version = "v17.32.33" },
-                new LighthouseRelease { Name = "Release2", Version = currentReleaseVersion },
+                new LighthouseRelease { Name = "Release2", Version = $"v{currentReleaseVersion}" },
                 new LighthouseRelease { Name = "Release1", Version = "v10.2.32" },
             };
 
@@ -100,15 +112,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public async Task GetNewReleases_CurrentIsLatest_ReturnsEmptyList()
         {
-            var currentReleaseVersion = "v13.3.7";
+            var currentReleaseVersion = "13.3.7";
 
             var existingReleases = new List<LighthouseRelease>
             {
-                new LighthouseRelease { Name = "Release2", Version = currentReleaseVersion },
+                new LighthouseRelease { Name = "Release2", Version = $"v{currentReleaseVersion}" },
                 new LighthouseRelease { Name = "Release1", Version = "v10.2.32" },
             };
 
-            githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync(currentReleaseVersion);
+            githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync($"v{currentReleaseVersion}");
             githubServiceMock.Setup(x => x.GetAllReleases()).ReturnsAsync(existingReleases);
             assemblyServiceMock.Setup(x => x.GetAssemblyVersion()).Returns(currentReleaseVersion);
 
