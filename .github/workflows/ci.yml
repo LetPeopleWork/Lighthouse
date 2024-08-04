@@ -173,7 +173,7 @@ jobs:
       - name: Copy update_linux.sh
         run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
 
-      - name: Set linux executable permission
+      - name: Set linux executable permissiondd
         run: chmod +x ./publish/linux-x64/Lighthouse
         working-directory: ./Lighthouse.Backend
 
