@@ -13,8 +13,8 @@ import { IWorkTrackingSystemOption, WorkTrackingSystemOption } from '../../model
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
 import { IRefreshSettings } from '../../models/AppSettings/RefreshSettings';
-import { IRelease, Release } from '../../models/Release/Release';
-import { IReleaseAsset, ReleaseAsset } from '../../models/Release/ReleaseAsset';
+import { ILighthouseRelease, LighthouseRelease } from '../../models/LighthouseRelease/LighthouseRelease';
+import { ILighthouseReleaseAsset, LighthouseReleaseAsset } from '../../models/LighthouseRelease/LighthouseReleaseAsset';
 
 export class ApiService implements IApiService {
     private apiService!: AxiosInstance;
@@ -39,9 +39,9 @@ export class ApiService implements IApiService {
         });
     }
 
-    async getLatestRelease(): Promise<IRelease> {
+    async getLatestRelease(): Promise<ILighthouseRelease> {
         return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<IRelease>(`/version/latest`);
+            const response = await this.apiService.get<ILighthouseRelease>(`/version/latest`);
             return this.deserializeRelease(response.data);
         });
     }
@@ -339,12 +339,12 @@ export class ApiService implements IApiService {
         });
     }
 
-    private deserializeRelease(release: IRelease): Release {
-        const releaseAssets: IReleaseAsset[] = release.assets.map((asset: IReleaseAsset) => {
-            return new ReleaseAsset(asset.name, asset.link);
+    private deserializeRelease(release: ILighthouseRelease): LighthouseRelease {
+        const releaseAssets: ILighthouseReleaseAsset[] = release.assets.map((asset: ILighthouseReleaseAsset) => {
+            return new LighthouseReleaseAsset(asset.name, asset.link);
         })
 
-        return new Release(release.name, release.link, release.highlights, release.version, releaseAssets);
+        return new LighthouseRelease(release.name, release.link, release.highlights, release.version, releaseAssets);
     }
 
     private deserializeProjects(projectData: IProject[]): Project[] {

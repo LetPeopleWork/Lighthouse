@@ -6,14 +6,14 @@ import LoadingAnimation from "../../Common/LoadingAnimation/LoadingAnimation";
 import { Link } from "react-router-dom";
 import UpdateIcon from '@mui/icons-material/Update';
 import LatestReleaseInformationDialog from "./LatestReleaseInformationDialog";
-import { IRelease } from "../../../models/Release/Release";
+import { ILighthouseRelease } from "../../../models/LighthouseRelease/LighthouseRelease";
 
 const LighthouseVersion: React.FC = () => {
   const [version, setVersion] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-  const [latestRelease, setLatestRelease] = useState<IRelease | null>(null);
+  const [latestRelease, setLatestRelease] = useState<ILighthouseRelease | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {

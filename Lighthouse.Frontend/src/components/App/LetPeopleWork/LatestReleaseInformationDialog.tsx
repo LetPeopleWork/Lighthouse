@@ -1,13 +1,13 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogActions, Button, Typography, Grid, List, ListItem, Link as MuiLink } from '@mui/material';
-import { IRelease } from '../../../models/Release/Release';
+import { ILighthouseRelease } from '../../../models/LighthouseRelease/LighthouseRelease';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface LatestReleaseInformationDialogProps {
     open: boolean;
     onClose: () => void;
-    latestRelease: IRelease | null;
+    latestRelease: ILighthouseRelease | null;
 }
 
 const LatestReleaseInformationDialog: React.FC<LatestReleaseInformationDialogProps> = ({ open, onClose, latestRelease }) => {
