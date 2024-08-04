@@ -36,6 +36,12 @@ Lighthouse runs on Windows, MacOs, and Linux based systems.
 Download the latest version of Lighthouse for your operating system from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
 Download the zip file, and extract it to the location you want to run the application from.
 
+### Installation/Update Scripts
+In [Scripts](https://github.com/LetPeopleWork/Lighthouse/tree/main/Scripts) you can find 3 scripts to download the latest version of Lighthouse for [Linux](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_linux.sh), [Mac](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_mac.sh) and [Windows](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_windows.ps1).
+
+The scripts will download the latest version in the folder they are executed from and will replace all existing files in the folder.
+**Important:** The database will not be replaced and the new version will work against the same database.
+
 ### Start Lighthouse
 Once extracted, you can run the the `Lighthouse` application (for example: `Lighthouse.exe` on Windows). A terminal will open and you should see a window similar to this:
 

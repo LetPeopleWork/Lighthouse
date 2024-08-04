@@ -152,9 +152,15 @@ jobs:
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish/win-x64
         working-directory: ./Lighthouse.Backend
 
+      - name: Copy update_windows.ps1
+        run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
+
       - name: publish osx-x64
         run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o ./publish/osx-x64
         working-directory: ./Lighthouse.Backend
+
+      - name: Copy update_mac.sh
+        run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/publish/osx-x64/update_mac.sh
 
       - name: Set osx executable permission
         run: chmod +x ./publish/osx-x64/Lighthouse
@@ -163,6 +169,9 @@ jobs:
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
+
+      - name: Copy update_linux.sh
+        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
 
       - name: Set linux executable permission
         run: chmod +x ./publish/linux-x64/Lighthouse
