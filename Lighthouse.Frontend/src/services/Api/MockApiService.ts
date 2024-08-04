@@ -14,6 +14,8 @@ import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
 import { LoremIpsum } from "lorem-ipsum";
 import { IRefreshSettings, RefreshSettings } from '../../models/AppSettings/RefreshSettings';
+import { IRelease, Release } from '../../models/Release/Release';
+import { IReleaseAsset, ReleaseAsset } from '../../models/Release/ReleaseAsset';
 
 export class MockApiService implements IApiService {
     private useDelay: boolean;
@@ -184,9 +186,32 @@ export class MockApiService implements IApiService {
 
     }
 
-    async getVersion(): Promise<string> {
+    async getCurrentVersion(): Promise<string> {
         await this.delay()
         return "v1.33.7";
+    }
+
+    async isUpdateAvailable(): Promise<boolean> {
+        await this.delay()
+        return true;
+    }
+
+    async getLatestRelease(): Promise<IRelease> {
+        await this.delay()
+
+        const assets : IReleaseAsset[] = [
+            new ReleaseAsset("Lighthouse_v24.8.3.1040_linux-x64.zip", "https://github.com/LetPeopleWork/Lighthouse/releases/download/v24.8.3.1040/Lighthouse_v24.8.3.1040_linux-x64.zip"),
+            new ReleaseAsset("Lighthouse_v24.8.3.1040_osx-x64.zip", "https://github.com/LetPeopleWork/Lighthouse/releases/download/v24.8.3.1040/Lighthouse_v24.8.3.1040_osx-x64.zip"),
+            new ReleaseAsset("Lighthouse_v24.8.3.1040_win-x64.zip", "https://github.com/LetPeopleWork/Lighthouse/releases/download/v24.8.3.1040/Lighthouse_v24.8.3.1040_win-x64.zip")
+        ]
+
+        return new Release(
+            "Lighthouse v24.8.3.1040",
+            "https://github.com/LetPeopleWork/Lighthouse/releases/tag/v24.8.3.1040",
+            "# Highlights\r\n- This release adds interactive tutorials for various pages\r\n- Possibility to adjust milestones via the project view\r\n- Possibility to adjust Feature WIP of involved teams via the project detail view\r\n\r\n**Full Changelog**: https://github.com/LetPeopleWork/Lighthouse/compare/v24.7.28.937...v24.8.3.1040",
+            "v24.8.3.1040",
+            assets
+        );
     }
 
     async getProjects(): Promise<Project[]> {
@@ -216,8 +241,8 @@ export class MockApiService implements IApiService {
 
         newWorkTrackingSystemConnection.id = 12;
 
-        for (const option of newWorkTrackingSystemConnection.options){
-            if (option.isSecret){
+        for (const option of newWorkTrackingSystemConnection.options) {
+            if (option.isSecret) {
                 option.value = "";
             }
         }

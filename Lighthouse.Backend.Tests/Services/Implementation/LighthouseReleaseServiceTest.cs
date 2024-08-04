@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Services.Implementation;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Configuration;
@@ -50,7 +51,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(updateAvailable, Is.EqualTo(newerVersionAvailable));
         }
 
-        private IConfiguration SetupConfiguration(string version)
+        [Test]
+        public async Task GetReleaseByVersion_ReturnsLighthouseReleaseFromGitHubService()
+        {
+            var releaseVersion = "v13.3.7";
+
+            var expectedLighthouseRelease = new LighthouseRelease { Name = "Release", Version = releaseVersion };
+            githubServiceMock.Setup(x => x.GetReleaseByTag(releaseVersion)).ReturnsAsync(expectedLighthouseRelease);
+            githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync(releaseVersion);
+
+            var config = SetupConfiguration();
+            var subject = new LighthouseReleaseService(config, githubServiceMock.Object);
+
+            var lighthouseRelease = await subject.GetLatestRelease();
+
+            Assert.That(lighthouseRelease, Is.EqualTo(expectedLighthouseRelease));
+        }
+
+        private IConfiguration SetupConfiguration(string version = "DEV")
         {
             var inMemorySettings = new Dictionary<string, string?>
             {

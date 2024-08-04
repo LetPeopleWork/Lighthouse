@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
@@ -20,12 +21,12 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         [TestCase("1.33.7")]
         [TestCase("DEV")]
-        public void GetVersion_VersionDefinedInAppSettings_ReturnsVersionLighthouseReleaseService(string version)
+        public void GetVersion_VersionDefinedInAppSettings_ReturnsVersionFromLighthouseReleaseService(string version)
         {
             lighthouseReleaseServiceMock.Setup(x => x.GetCurrentVersion()).Returns(version);
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
-            var actual = (ObjectResult)subject.GetVersion();
+            var actual = (ObjectResult)subject.GetCurrentVersion();
             Assert.Multiple(() =>
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
@@ -39,11 +40,66 @@ namespace Lighthouse.Backend.Tests.API
             lighthouseReleaseServiceMock.Setup(x => x.GetCurrentVersion()).Returns(string.Empty);
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
-            var actual = (ObjectResult)subject.GetVersion();
+            var actual = (ObjectResult)subject.GetCurrentVersion();
             Assert.Multiple(() =>
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(404));
                 Assert.That(actual.Value, Is.EqualTo("404"));
+            });
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task IsUpdateAvailable_ChecksWithLighthouseReleaseServiceAsync(bool isUpdateAvailable)
+        {
+            lighthouseReleaseServiceMock.Setup(x => x.UpdateAvailable()).ReturnsAsync(isUpdateAvailable);
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
+
+            var actual = await subject.IsUpdateAvailable() as ObjectResult;
+            Assert.Multiple(() =>
+            {
+                Assert.That(actual.StatusCode, Is.EqualTo(200));
+                Assert.That(actual.Value, Is.EqualTo(isUpdateAvailable));
+            });
+        }
+
+        [Test]
+        public async Task GetReleaseByVersion_VersionExists_ReturnsVersionFromLighthouseReleaseServiceAsync()
+        {
+            var lighthouseRelease = new LighthouseRelease { Name = "MyRelease", Version = "v13.3.7" };
+            lighthouseReleaseServiceMock.Setup(x => x.GetLatestRelease()).ReturnsAsync(lighthouseRelease);
+
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
+
+            var response = await subject.GetLatestRelease();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = response.Result as OkObjectResult;
+
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                Assert.That(okResult.Value, Is.EqualTo(lighthouseRelease));
+            });
+        }
+
+        [Test]
+        public async Task GetReleaseByVersion_VersionDoesNotExist_ReturnsNotFoundAsync()
+        {
+            lighthouseReleaseServiceMock.Setup(x => x.GetLatestRelease()).ReturnsAsync((LighthouseRelease)null);
+
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
+
+            var response = await subject.GetLatestRelease();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             });
         }
     }

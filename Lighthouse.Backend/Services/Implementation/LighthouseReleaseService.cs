@@ -1,5 +1,6 @@
 ﻿
 
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -31,7 +32,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return true;
             }
 
-            var latestRelease = await gitHubService.GetLatestReleaseVersion();
+            var latestRelease = await GetLatestReleaseTag();
             if (!latestRelease.StartsWith("v"))
             {
                 return false;
@@ -41,6 +42,25 @@ namespace Lighthouse.Backend.Services.Implementation
             var latestReleaseVersion = new Version(latestRelease.Substring(1));
 
             return latestReleaseVersion > currentReleaseVersion;
+        }
+
+        public async Task<LighthouseRelease?> GetLatestRelease()
+        {
+            var latestReleaseTag = await GetLatestReleaseTag();
+            var latestReleaseVersion = await GetReleaseByVersion(latestReleaseTag);
+
+            return latestReleaseVersion;
+        }
+
+        private async Task<string> GetLatestReleaseTag()
+        {
+            return await gitHubService.GetLatestReleaseVersion();
+        }
+
+        private async Task<LighthouseRelease?> GetReleaseByVersion(string version)
+        {
+            var lighthouseRelease = await gitHubService.GetReleaseByTag(version);
+            return lighthouseRelease;
         }
     }
 }

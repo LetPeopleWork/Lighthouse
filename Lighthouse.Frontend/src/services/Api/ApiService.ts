@@ -13,6 +13,8 @@ import { IWorkTrackingSystemOption, WorkTrackingSystemOption } from '../../model
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
 import { IRefreshSettings } from '../../models/AppSettings/RefreshSettings';
+import { IRelease, Release } from '../../models/Release/Release';
+import { IReleaseAsset, ReleaseAsset } from '../../models/Release/ReleaseAsset';
 
 export class ApiService implements IApiService {
     private apiService!: AxiosInstance;
@@ -23,10 +25,24 @@ export class ApiService implements IApiService {
         });
     }
 
-    async getVersion(): Promise<string> {
+    async getCurrentVersion(): Promise<string> {
         return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<string>('/version');
+            const response = await this.apiService.get<string>('/version/current');
             return response.data;
+        });
+    }
+
+    async isUpdateAvailable(): Promise<boolean> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<boolean>('/version/hasupdate');
+            return response.data;
+        });
+    }
+
+    async getLatestRelease(): Promise<IRelease> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<IRelease>(`/version/latest`);
+            return this.deserializeRelease(response.data);
         });
     }
 
@@ -265,7 +281,7 @@ export class ApiService implements IApiService {
         });
     }
 
-    
+
 
     async getDefaultProjectSettings(): Promise<IProjectSettings> {
         return this.withErrorHandling(async () => {
@@ -321,6 +337,14 @@ export class ApiService implements IApiService {
             });
             return new Feature(feature.name, feature.id, feature.url, new Date(feature.lastUpdated), feature.projects, feature.remainingWork, feature.milestoneLikelihood, forecasts);
         });
+    }
+
+    private deserializeRelease(release: IRelease): Release {
+        const releaseAssets: IReleaseAsset[] = release.assets.map((asset: IReleaseAsset) => {
+            return new ReleaseAsset(asset.name, asset.link);
+        })
+
+        return new Release(release.name, release.link, release.highlights, release.version, releaseAssets);
     }
 
     private deserializeProjects(projectData: IProject[]): Project[] {

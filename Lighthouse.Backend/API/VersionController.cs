@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -14,8 +15,8 @@ namespace Lighthouse.Backend.API
             this.lighthouseReleaseService = lighthouseReleaseService;
         }
 
-        [HttpGet]
-        public IActionResult GetVersion()
+        [HttpGet("current")]
+        public IActionResult GetCurrentVersion()
         {
             var version = lighthouseReleaseService.GetCurrentVersion();
 
@@ -25,6 +26,26 @@ namespace Lighthouse.Backend.API
             }
 
             return Ok(version);
+        }
+
+        [HttpGet("hasupdate")]
+        public async Task<ActionResult> IsUpdateAvailable()
+        {
+            var isUpdateAvailable = await lighthouseReleaseService.UpdateAvailable();
+            return Ok(isUpdateAvailable);
+        }
+
+        [HttpGet("latest")]
+        public async Task<ActionResult<LighthouseRelease>> GetLatestRelease()
+        {
+            var lighthouseRelease = await lighthouseReleaseService.GetLatestRelease();
+
+            if (lighthouseRelease == null)
+            {
+                return NotFound();
+            }
+            
+            return Ok(lighthouseRelease);
         }
     }
 }
