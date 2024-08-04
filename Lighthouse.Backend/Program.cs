@@ -76,7 +76,6 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IFileSystemService, FileSystemService>();
                 builder.Services.AddScoped<IAppSettingService, AppSettingService>();
                 builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
-                builder.Services.AddScoped<IGitHubService, GitHubService>();
 
                 builder.Services.AddScoped<AzureDevOpsWorkItemService>();
                 builder.Services.AddScoped<JiraWorkItemService>();
@@ -86,6 +85,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddHostedService<ForecastUpdateService>();
 
                 builder.Services.AddSingleton<ICryptoService, CryptoService>();
+                builder.Services.AddSingleton<IGitHubService, GitHubService>();
 
                 // Add CORS services
                 builder.Services
