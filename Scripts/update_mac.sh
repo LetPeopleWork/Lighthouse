@@ -8,10 +8,10 @@ echo "Fetching the latest release information..."
 RELEASE_INFO=$(curl -s "https://api.github.com/repos/letpeoplework/lighthouse/releases/latest")
 
 # Parse the download URL of the asset that contains the keyword
-ASSET_URL=$(echo "$RELEASE_INFO" | grep "browser_download_url" | grep "mac" | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+ASSET_URL=$(echo "$RELEASE_INFO" | grep "browser_download_url" | grep "osx" | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
 
 if [ -z "$ASSET_URL" ]; then
-  echo "No asset found with the keyword \"mac\""
+  echo "No asset found with the keyword \"osx\""
   exit 1
 fi
 
