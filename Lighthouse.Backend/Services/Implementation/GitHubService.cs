@@ -23,21 +23,6 @@ namespace Lighthouse.Backend.Services.Implementation
             return release.TagName;
         }
 
-        public async Task<LighthouseRelease?> GetReleaseByTag(string releaseTagName)
-        {
-            try
-            {
-                var release = await client.Repository.Release.Get(RepositoryId, releaseTagName);
-                var lighthouseRelease = CreateLighthouseRelease(release);
-
-                return lighthouseRelease;
-            }
-            catch (NotFoundException)
-            {
-                return null;
-            }
-        }
-
         public async Task<IEnumerable<LighthouseRelease>> GetAllReleases()
         {
             var allReleases = await client.Repository.Release.GetAll(RepositoryId);

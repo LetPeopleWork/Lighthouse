@@ -68,11 +68,5 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             return await gitHubService.GetLatestReleaseVersion();
         }
-
-        private async Task<LighthouseRelease?> GetReleaseByVersion(string version)
-        {
-            var lighthouseRelease = await gitHubService.GetReleaseByTag(version);
-            return lighthouseRelease;
-        }
     }
 }
