@@ -13,8 +13,10 @@ runs:
     - name: Remove appsettings.Development.json
       run: rm appsettings.Development.json
       working-directory: ./Lighthouse.Backend
+      shell: bash
 
     - name: Update appsettings.json
       run: |
         jq '.LighthouseVersion = ${{ inputs.app_version }}' appsettings.json > temp.json && mv temp.json appsettings.json
       working-directory: ./Lighthouse.Backend
+      shell: bash
