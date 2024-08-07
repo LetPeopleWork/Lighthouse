@@ -222,6 +222,30 @@ jobs:
           app-name: 'LighthouseCloudDemo'  
           slot-name: 'production'  
           package: ./Lighthouse.Backend/publish/app-service
+
+      - name: Build Demo Frontend
+        run: npm run build-demo
+        working-directory: ./Lighthouse.Frontend
+
+      - name: publish demo-app-service
+        run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/app-service-demo
+        working-directory: ./Lighthouse.Backend
+
+      - name: Login to Azure Demo
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D7E0D36B15D941ADA2E6DC045BD2657C }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_64D9025B99C440B99E3CA60650996BC9 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F83A94E3D5A4415D80A648231AD879CE }}
+
+      - name: Deploy to Azure Demo Web App
+        id: deploy-to-demo-webapp  
+        uses: azure/webapps-deploy@v2  
+        with:  
+          app-name: 'lighthousepublicdemo'  
+          slot-name: 'production'  
+          package: ./Lighthouse.Backend/publish/app-service-demo
+      
   
   release:
     runs-on: ubuntu-latest
