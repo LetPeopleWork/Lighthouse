@@ -10,14 +10,12 @@ interface ThroughputBarChartProps {
 const ThroughputBarChart: React.FC<ThroughputBarChartProps> = ({ throughputData }) => {
 
     const data = Array.from({ length: throughputData.history }, (_, index) => {
-        const currentDate = new Date();
-        const targetDate = new Date(currentDate);
-        const reversedIndex = throughputData.history - 1 - index;
-        targetDate.setDate(currentDate.getDate() - reversedIndex - length);
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() - index - length);
     
         return {
             day: targetDate.toLocaleDateString(),
-            throughput: throughputData.getThroughputOnDay(reversedIndex),
+            throughput: throughputData.getThroughputOnDay(index),
         };
     });    
 

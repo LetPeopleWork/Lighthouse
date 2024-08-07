@@ -21,5 +21,4 @@ export class Throughput implements IThroughput {
         
         return this.throughput[day];
     }
-
 }
