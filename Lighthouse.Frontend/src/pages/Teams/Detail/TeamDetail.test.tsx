@@ -11,7 +11,7 @@ describe('TeamDetail component', () => {
 
     it('should render TeamDetail component with team name', async () => {
         render(
-            <MemoryRouter initialEntries={['/teams/1']}>
+            <MemoryRouter initialEntries={['/teams/0']}>
                 <Routes>
                     <Route path="/teams/:id" element={<TeamDetail />} />
                 </Routes>
@@ -29,7 +29,7 @@ describe('TeamDetail component', () => {
         expect(spy.getMockName()).toEqual('updateThroughput')
 
         render(
-            <MemoryRouter initialEntries={['/teams/1']}>
+            <MemoryRouter initialEntries={['/teams/0']}>
                 <Routes>
                     <Route path="/teams/:id" element={<TeamDetail />} />
                 </Routes>

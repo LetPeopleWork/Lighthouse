@@ -26,28 +26,29 @@ export class MockApiService implements IApiService {
     private dayMultiplier: number = 24 * 60 * 60 * 1000;
     private today: number = Date.now();
 
-    private feature1 = new Feature('Feature 1', 1, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/1", new Date(), { 1: "Release 1.33.7" }, { 1: 10 }, {}, [new WhenForecast(50, new Date(this.today + 5 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 10 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 17 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 25 * this.dayMultiplier))]);
-    private feature2 = new Feature('Feature 2', 2, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/2", new Date(), { 2: "Release 42" }, { 2: 5 }, { 0: 89.3 }, [new WhenForecast(50, new Date(this.today + 15 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 28 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 35 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 45 * this.dayMultiplier))]);
-    private feature3 = new Feature('Feature 3', 3, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/3", new Date(), { 3: "Release Codename Daniel" }, { 3: 7, 2: 15 }, { 1: 78.9, 2: 65.0 }, [new WhenForecast(50, new Date(this.today + 7 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 12 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 14 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 16 * this.dayMultiplier))]);
-    private feature4 = new Feature('Feature 4', 4, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/4", new Date(), { 3: "Release Codename Daniel", 1: "Release 1.33.7" }, { 1: 3, 4: 9 }, { 1: 45.5, 2: 78.0 }, [new WhenForecast(50, new Date(this.today + 21 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 37 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 55 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 71 * this.dayMultiplier))]);
+    private milestones = [
+        new Milestone(0, "Milestone 1", new Date(this.today + 14 * this.dayMultiplier)),
+        new Milestone(1, "Milestone 2", new Date(this.today + 28 * this.dayMultiplier)),
+        new Milestone(2, "Milestone 3", new Date(this.today + 90 * this.dayMultiplier))
+    ];
 
-    private binaryBlazers = new Team("Binary Blazers", 1, [], [this.feature1, this.feature4], 1);
-    private mavericks = new Team("Mavericks", 2, [], [this.feature2, this.feature3], 2);
-    private cyberSultans = new Team("Cyber Sultans", 3, [], [this.feature3], 1);
-    private techEagles = new Team("Tech Eagles", 4, [], [this.feature4], 2);
+    private features: Feature[] = [];
+    private projects: Project[] = [];
+    private teams: Team[] = [];
 
-    private milestone1 = new Milestone(0, "Milestone 1", new Date(this.today + 14 * this.dayMultiplier));
-    private milestone2 = new Milestone(1, "Milestone 2", new Date(this.today + 28 * this.dayMultiplier));
-    private milestone3 = new Milestone(2, "Milestone 3", new Date(this.today + 90 * this.dayMultiplier));
-
-    private release_1337 = new Project("Release 1.33.7", 1, [this.binaryBlazers], [this.feature1], [], this.lastUpdated);
-    private release_42 = new Project("Release 42", 2, [this.mavericks], [this.feature2], [this.milestone1], this.lastUpdated);
-    private release_codename_daniel = new Project("Release Codename Daniel", 3, [this.binaryBlazers, this.techEagles, this.mavericks, this.cyberSultans], [this.feature3, this.feature4], [this.milestone2, this.milestone3], this.lastUpdated);
-
+    private projectSettings = [
+        new ProjectSettings(0, "Release 1.33.7", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
+        new ProjectSettings(1, "Release 42", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
+        new ProjectSettings(2, "Release Codename Daniel", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
+    ];
 
     constructor(useDelay: boolean, throwError: boolean = false) {
         this.useDelay = useDelay;
         this.throwError = throwError;
+
+        this.recreateFeatures();
+        this.recreateTeams();
+        this.recreateProjects();
     }
 
     async updateThroughput(teamId: number): Promise<void> {
@@ -91,12 +92,7 @@ export class MockApiService implements IApiService {
     async getTeams(): Promise<Team[]> {
         await this.delay();
 
-        return [
-            this.binaryBlazers,
-            this.mavericks,
-            this.cyberSultans,
-            this.techEagles,
-        ];
+        return this.teams;
     }
 
     async getTeam(id: number): Promise<Team | null> {
@@ -138,13 +134,25 @@ export class MockApiService implements IApiService {
 
         await this.delay();
 
-        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037");
+        const projectSettings = this.projectSettings.find(project => project.id === id);
+
+        if (projectSettings) {
+            return projectSettings;
+        }
+
+        return this.projectSettings[0];
     }
 
     async updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings> {
         console.log(`Updating Project ${projectSettings.name}`);
 
-        await this.delay();
+        this.projectSettings[projectSettings.id] = projectSettings
+
+        this.milestones = projectSettings.milestones;
+        this.recreateFeatures();
+        this.recreateProjects();
+        this.recreateTeams();
+
         return projectSettings;
     }
 
@@ -176,6 +184,7 @@ export class MockApiService implements IApiService {
         await this.delay();
         const projects = await this.getProjects();
         const project = projects.find(project => project.id === id);
+
         await this.delay();
         return project || null;
     }
@@ -217,7 +226,7 @@ export class MockApiService implements IApiService {
     async getProjects(): Promise<Project[]> {
         await this.delay();
 
-        return [this.release_1337, this.release_42, this.release_codename_daniel];
+        return this.projects;
     }
 
     async getWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]> {
@@ -360,5 +369,41 @@ export class MockApiService implements IApiService {
         }
 
         return randomArray;
+    }
+
+    recreateTeams(): void {
+        this.teams = [
+            new Team("Binary Blazers", 0, [], [this.features[0], this.features[3]], 1),
+            new Team("Mavericks", 1, [], [this.features[1], this.features[2]], 2),
+            new Team("Cyber Sultans", 2, [], [this.features[2]], 1),
+            new Team("Tech Eagles", 3, [], [this.features[3]], 2)
+        ]
+    }
+
+    recreateFeatures(): void {
+
+        const getMileStoneLikelihoods = () => {
+            const getRandomNumber = () => {
+                const random = Math.random() * (100 - 0) + 0;
+                return parseFloat(random.toFixed(2));
+            }
+
+            return { 0: getRandomNumber(), 1: getRandomNumber(), 2: getRandomNumber() }
+        }
+
+        this.features = [
+            new Feature('Feature 1', 0, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/1", new Date(), { 0: "Release 1.33.7" }, { 0: 10 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 5 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 10 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 17 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 25 * this.dayMultiplier))]),
+            new Feature('Feature 2', 1, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/2", new Date(), { 1: "Release 42" }, { 1: 5 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 15 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 28 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 35 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 45 * this.dayMultiplier))]),
+            new Feature('Feature 3', 2, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/3", new Date(), { 2: "Release Codename Daniel" }, { 2: 7, 1: 15 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 7 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 12 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 14 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 16 * this.dayMultiplier))]),
+            new Feature('Feature 4', 3, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/4", new Date(), { 2: "Release Codename Daniel", 1: "Release 1.33.7" }, { 0: 3, 3: 9 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 21 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 37 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 55 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 71 * this.dayMultiplier))]),
+        ];
+    }
+
+    recreateProjects(): void {
+        this.projects = [
+            new Project("Release 1.33.7", 0, [this.teams[0]], [this.features[0]], this.milestones, this.lastUpdated),
+            new Project("Release 42", 1, [this.teams[1]], [this.features[1]], this.milestones, this.lastUpdated),
+            new Project("Release Codename Daniel", 2, [this.teams[0], this.teams[1], this.teams[2], this.teams[3]], [this.features[2], this.features[3]], this.milestones, this.lastUpdated),
+        ]
     }
 }

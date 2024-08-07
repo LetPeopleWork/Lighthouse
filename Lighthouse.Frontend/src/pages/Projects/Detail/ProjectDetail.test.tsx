@@ -60,7 +60,7 @@ describe('ProjectDetail component', () => {
 
     it('should render project details after loading', async () => {
         render(
-            <MemoryRouter initialEntries={['/projects/3']}>
+            <MemoryRouter initialEntries={['/projects/2']}>
                 <Routes>
                     <Route path="/projects/:id" element={<ProjectDetail />} />
                 </Routes>
@@ -74,12 +74,12 @@ describe('ProjectDetail component', () => {
         });
 
         expect(screen.getByTestId('project-feature-list')).toHaveTextContent('2 features');
-        expect(screen.getByTestId('milestone-component')).toHaveTextContent('1 milestones');
+        expect(screen.getByTestId('milestone-component')).toHaveTextContent('3 milestones');
     });
 
     it('should refresh features on button click', async () => {
         render(
-            <MemoryRouter initialEntries={['/projects/3']}>
+            <MemoryRouter initialEntries={['/projects/2']}>
                 <Routes>
                     <Route path="/projects/:id" element={<ProjectDetail />} />
                 </Routes>
@@ -98,6 +98,6 @@ describe('ProjectDetail component', () => {
             expect(refreshButton).toHaveTextContent('Refresh Features');
         });
 
-        expect(apiService.refreshFeaturesForProject).toHaveBeenCalledWith(3);
+        expect(apiService.refreshFeaturesForProject).toHaveBeenCalledWith(2);
     });
 });
