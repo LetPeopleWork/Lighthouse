@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "cross-env VITE_API_BASE_URL=http://localhost:5169/api vite",
-    "dev-mockdata": "cross-env VITE_API_SERVICE_TYPE=MOCK VITE_API_SERVICE_DELAY=TRUE npm run dev",
+    "dev-demo": "cross-env VITE_API_SERVICE_TYPE=DEMO VITE_API_SERVICE_DELAY=TRUE npm run dev",
     "build": "tsc -b && vite build --outDir ../Lighthouse.Backend/wwwroot",
     "build-docker": "tsc -b && vite build --outDir ./dist",
+    "build-demo": "cross-env VITE_API_SERVICE_TYPE=DEMO VITE_API_SERVICE_DELAY=TRUE vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest --reporter=default",

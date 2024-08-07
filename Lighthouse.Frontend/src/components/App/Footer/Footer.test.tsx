@@ -10,14 +10,14 @@ describe('Footer component', () => {
       </Router>
     );
 
-    await screen.findByText('v1.33.7');
+    await screen.findByText('DEMO VERSION');
     
     // Check if LetPeopleWorkLogo component is rendered
     const letPeopleWorkLogo = screen.getByRole('img', { name: "Let People Work Logo" });
     expect(letPeopleWorkLogo).toBeInTheDocument();
 
     // Check if LighthouseVersion component is rendered
-    const lighthouseVersion = screen.getByRole('link', { name: 'v1.33.7'});
+    const lighthouseVersion = screen.getByRole('link', { name: 'DEMO VERSION'});
     expect(lighthouseVersion).toBeInTheDocument();
   });
 });

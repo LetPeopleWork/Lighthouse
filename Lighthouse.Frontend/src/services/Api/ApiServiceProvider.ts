@@ -9,11 +9,11 @@ export class ApiServiceProvider {
     static getApiService(): IApiService {
 
         if (this.instance == null) {
-            if (import.meta.env.VITE_API_SERVICE_TYPE === 'MOCK') {
+            if (import.meta.env.VITE_API_SERVICE_TYPE === 'DEMO') {
 
                 const useDelay : boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
 
-                console.log(`Using Mock API Service - Applaying delay: ${useDelay}`)
+                console.log(`Using DEMO API Service - Applaying delay: ${useDelay}`)
                 this.instance = new MockApiService(useDelay);
             } else {
                 console.log("Using Real API Service")

@@ -188,7 +188,7 @@ export class MockApiService implements IApiService {
 
     async getCurrentVersion(): Promise<string> {
         await this.delay()
-        return "v1.33.7";
+        return "DEMO VERSION";
     }
 
     async isUpdateAvailable(): Promise<boolean> {

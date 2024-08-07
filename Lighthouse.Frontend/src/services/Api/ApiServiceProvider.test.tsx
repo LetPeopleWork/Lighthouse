@@ -9,15 +9,15 @@ describe('ApiServiceProvider', () => {
     ApiServiceProvider['instance'] = null;
   });
 
-  test('returns MockApiService instance when VITE_API_SERVICE_TYPE is MOCK', () => {
-    import.meta.env.VITE_API_SERVICE_TYPE = "MOCK";
+  test('returns MockApiService instance when VITE_API_SERVICE_TYPE is DEMO', () => {
+    import.meta.env.VITE_API_SERVICE_TYPE = "DEMO";
 
     const apiService = ApiServiceProvider.getApiService();
 
     expect(apiService).toBeInstanceOf(MockApiService);
   });
 
-  test('returns ApiService instance with default base URL when VITE_API_SERVICE_TYPE is not MOCK', () => {
+  test('returns ApiService instance with default base URL when VITE_API_SERVICE_TYPE is not DEMO', () => {
     import.meta.env.VITE_API_SERVICE_TYPE = undefined;
 
     const apiService = ApiServiceProvider.getApiService();

@@ -10,7 +10,7 @@ export default defineConfig({
         environment: "jsdom",
         setupFiles: ["./setupTests.ts"],
         env:{
-            VITE_API_SERVICE_TYPE: 'MOCK'
+            VITE_API_SERVICE_TYPE: 'DEMO'
         },
         css: true,
         coverage: {

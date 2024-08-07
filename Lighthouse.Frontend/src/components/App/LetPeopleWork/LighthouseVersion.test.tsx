@@ -10,11 +10,11 @@ describe('LighthouseVersion component', () => {
       </Router>
     );
     
-    await screen.findByText('v1.33.7');
+    await screen.findByText('DEMO VERSION');
 
-    const button = screen.getByRole('link', { name: 'v1.33.7' });
+    const button = screen.getByRole('link', { name: 'DEMO VERSION' });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveAttribute('href', 'https://github.com/LetPeopleWork/Lighthouse/releases/tag/v1.33.7');
+    expect(button).toHaveAttribute('href', 'https://github.com/LetPeopleWork/Lighthouse/releases/tag/DEMO VERSION');
     expect(button).toHaveAttribute('target', '_blank');
     expect(button).toHaveAttribute('rel', 'noopener noreferrer');
   });
