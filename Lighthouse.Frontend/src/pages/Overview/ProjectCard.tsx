@@ -40,8 +40,10 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
   return (
     <ProjectCardStyle>
       <CardContent>
-        <ProjectLink project={project} />
         <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <ProjectLink project={project} />
+          </Grid>
           <Grid item xs={12}>
             <StyledCardTypography text={`${project.remainingWork} Work Items`} icon={ViewKanban} />
 
