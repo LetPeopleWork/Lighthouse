@@ -74,7 +74,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ da
                                         </Link>
                                     </TableCell>
                                     <TableCell>
-                                        <ProgressIndicator progressableItem={item} />
+                                        <ProgressIndicator progressableItem={item} title={""} />
                                     </TableCell>
                                     <TableCell>{item.remainingFeatures}</TableCell>
                                     <TableCell>
