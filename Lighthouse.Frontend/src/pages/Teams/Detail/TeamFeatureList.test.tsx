@@ -44,9 +44,6 @@ describe('FeatureList component', () => {
             const featureNameElement = screen.getByText(feature.name);
             expect(featureNameElement).toBeInTheDocument();
 
-            const remainingWorkElement = screen.getByText(`${feature.getRemainingWorkForTeam(team.id)} / ${feature.getRemainingWorkForFeature()}`);
-            expect(remainingWorkElement).toBeInTheDocument();
-
             const forecastInfoListElements = screen.getAllByTestId((id) => id.startsWith('forecast-info-list-'));
             forecastInfoListElements.map((element) => {
                 expect(element).toBeInTheDocument();

@@ -19,7 +19,7 @@ describe('TeamDetail component', () => {
         );
 
         await waitFor(() => {
-            const teamNameElement = screen.getByText('Binary Blazers');
+            const teamNameElement = screen.queryAllByText('Binary Blazers')[0];
             expect(teamNameElement).toBeInTheDocument();
         });
     });

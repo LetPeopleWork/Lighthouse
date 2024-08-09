@@ -18,9 +18,9 @@ const renderWithRouter = (ui: React.ReactNode) => {
 };
 
 const sampleData: IFeatureOwner[] = [
-    { id: 1, name: 'Item 1', remainingWork: 10, remainingFeatures: 5, features: [] },
-    { id: 2, name: 'Item 2', remainingWork: 20, remainingFeatures: 15, features: [] },
-    { id: 3, name: 'Another Item', remainingWork: 30, remainingFeatures: 25, features: [] },
+    { id: 1, name: 'Item 1', remainingWork: 10, remainingFeatures: 5, features: [], totalWork: 20 },
+    { id: 2, name: 'Item 2', remainingWork: 20, remainingFeatures: 15, features: [], totalWork: 20 },
+    { id: 3, name: 'Another Item', remainingWork: 30, remainingFeatures: 25, features: [], totalWork: 33 },
 ];
 
 describe('DataOverviewTable', () => {

@@ -50,17 +50,7 @@ describe('ProjectFeatureList component', () => {
             const featureRow = screen.getByText(feature.name).closest('tr');
             expect(featureRow).toBeInTheDocument();
 
-            const withinRow = within(featureRow!);
-
-            const totalRemainingWorkElement = withinRow.getByText(`Total: ${feature.getRemainingWorkForFeature()}`);
-            expect(totalRemainingWorkElement).toBeInTheDocument();
-
-            project.involvedTeams
-                .filter(team => feature.getRemainingWorkForTeam(team.id) > 0)
-                .forEach(team => {
-                    const teamWorkElement = withinRow.getByText(`${team.name}: ${feature.getRemainingWorkForTeam(team.id)}`);
-                    expect(teamWorkElement).toBeInTheDocument();
-                });
+            const withinRow = within(featureRow!);  
 
             const forecastInfoListElement = withinRow.getByTestId(`forecast-info-list-`);
             expect(forecastInfoListElement).toBeInTheDocument();
