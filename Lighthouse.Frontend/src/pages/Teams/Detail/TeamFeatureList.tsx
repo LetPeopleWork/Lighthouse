@@ -16,20 +16,20 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell>
+                        <TableCell sx={{ width: '15%' }}>
                             <Typography variant="h6" component="div">Feature Name</Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ width: '30%' }}>
                             <Typography variant="h6" component="div">Progress</Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ width: '20%' }}>
                             <Typography variant="h6" component="div">Forecasts</Typography>
                         </TableCell>
-                        <TableCell>
-                            <Typography variant="h6" component="div">Updated On</Typography>
+                        <TableCell sx={{ width: '15%' }}>
+                            <Typography variant="h6" component="div">Projects</Typography>
                         </TableCell>
-                        <TableCell>
-                            <Typography variant="h6" component="div">Project</Typography>
+                        <TableCell sx={{ width: '15%' }}>
+                            <Typography variant="h6" component="div">Updated On</Typography>
                         </TableCell>
                     </TableRow>
                 </TableHead>
@@ -60,9 +60,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
                                 <ForecastInfoList title={''} forecasts={feature.forecasts} />
                             </TableCell>
                             <TableCell>
-                                <LocalDateTimeDisplay utcDate={feature.lastUpdated} showTime={true} />
-                            </TableCell>
-                            <TableCell>
                                 {Object.entries(feature.projects).map(([projectId, projectName]) => (
                                     <div key={projectId}>
                                         <Link to={`/projects/${projectId}`}>
@@ -70,6 +67,9 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
                                         </Link>
                                     </div>
                                 ))}
+                            </TableCell>
+                            <TableCell>
+                                <LocalDateTimeDisplay utcDate={feature.lastUpdated} showTime={true} />
                             </TableCell>
                         </TableRow>
                     ))}

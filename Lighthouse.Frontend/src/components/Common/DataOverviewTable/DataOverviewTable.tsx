@@ -51,16 +51,16 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ da
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>
+                                <TableCell sx={{ width: '20%' }}>
                                     <Typography variant="h6" component="div">Name</Typography>
                                 </TableCell>
-                                <TableCell>
-                                    <Typography variant="h6" component="div">Progress</Typography>
-                                </TableCell>
-                                <TableCell>
+                                <TableCell sx={{ width: '15%' }}>
                                     <Typography variant="h6" component="div">Features</Typography>
                                 </TableCell>
-                                <TableCell></TableCell>
+                                <TableCell >
+                                    <Typography variant="h6" component="div">Progress</Typography>
+                                </TableCell>
+                                <TableCell sx={{ width: '15%' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -74,9 +74,11 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ da
                                         </Link>
                                     </TableCell>
                                     <TableCell>
+                                        {item.remainingFeatures}
+                                    </TableCell>
+                                    <TableCell>
                                         <ProgressIndicator progressableItem={item} title={""} />
                                     </TableCell>
-                                    <TableCell>{item.remainingFeatures}</TableCell>
                                     <TableCell>
                                         <Tooltip title="Details">
                                             <IconButton component={Link} to={`/${api}/${item.id}`} style={{ color: iconColor }}>

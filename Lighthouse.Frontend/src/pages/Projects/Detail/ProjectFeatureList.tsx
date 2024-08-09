@@ -20,7 +20,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                         <TableCell>
                             <Typography variant="h6" component="div">Feature Name</Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ width: '25%' }}>
                             <Typography variant="h6" component="div">Progress</Typography>
                         </TableCell>
                         <TableCell>
