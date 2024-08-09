@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+            Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
         }
 
         [Test]
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+            Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
         }
 
         [Test]
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(7));
+            Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(7));
         }
 
         [Test]
@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(0));
+            Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(0));
         }
 
         [Test]
@@ -202,8 +202,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var project = CreateProject();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
-            var feature1 = new Feature([(team1, 0), (team2, 0)]) { ReferenceId = "17" };
-            var feature2 = new Feature([(team1, 2), (team2, 2)]) { ReferenceId = "19" };
+            var feature1 = new Feature([(team1, 0, 12), (team2, 0, 10)]) { ReferenceId = "17" };
+            var feature2 = new Feature([(team1, 2, 13), (team2, 2, 3)]) { ReferenceId = "19" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
@@ -214,9 +214,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.Multiple(() =>
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
-                Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                Assert.That(project.Features.First().RemainingWork.First().RemainingWorkItems, Is.EqualTo(6));
-                Assert.That(project.Features.First().RemainingWork.Last().RemainingWorkItems, Is.EqualTo(6));
+                Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(project.Features.First().FeatureWork.First().RemainingWorkItems, Is.EqualTo(6));
+                Assert.That(project.Features.First().FeatureWork.Last().RemainingWorkItems, Is.EqualTo(6));
             });
         }
 
@@ -230,8 +230,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var project = CreateProject();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
-            var feature1 = new Feature([(team1, 0), (team2, 0)]) { ReferenceId = "34" };
-            var feature2 = new Feature([(team1, 2), (team2, 2)]) { ReferenceId = "12" };
+            var feature1 = new Feature([(team1, 0, 13), (team2, 0, 37)]) { ReferenceId = "34" };
+            var feature2 = new Feature([(team1, 2, 42), (team2, 2, 12)]) { ReferenceId = "12" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
@@ -242,8 +242,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.Multiple(() =>
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
-                Assert.That(project.Features.First().RemainingWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                Assert.That(project.Features.First().RemainingWork.Single().RemainingWorkItems, Is.EqualTo(12));
+                Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(project.Features.First().FeatureWork.Single().RemainingWorkItems, Is.EqualTo(12));
             });
         }
 
@@ -357,7 +357,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string>()));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
 
-            workItemServiceMock.Setup(x => x.GetOpenWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery)).Returns(Task.FromResult(new List<string>(unparentedItems)));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery)).Returns(Task.FromResult((new List<string>(unparentedItems), new List<string>())));
             workItemServiceMock.Setup(x => x.GetAdjacentOrderIndex(It.IsAny<IEnumerable<string>>(), RelativeOrder.Above)).Returns(expectedUnparentedOrder);
 
             await subject.UpdateFeaturesForProject(project);

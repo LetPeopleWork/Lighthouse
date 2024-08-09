@@ -5,6 +5,7 @@ import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDispla
 import { Project } from "../../../models/Project/Project";
 import { Link } from "react-router-dom";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
+import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 
 interface ProjectFeatureListProps {
     project: Project
@@ -20,7 +21,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                             <Typography variant="h6" component="div">Feature Name</Typography>
                         </TableCell>
                         <TableCell>
-                            <Typography variant="h6" component="div">Remaining Work</Typography>
+                            <Typography variant="h6" component="div">Progress</Typography>
                         </TableCell>
                         <TableCell>
                             <Typography variant="h6" component="div">Forecasts</Typography>
@@ -48,14 +49,25 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                                 )}
                             </TableCell>
                             <TableCell>
-                                <div><strong>Total: {feature.getAllRemainingWork()}</strong></div>
+                                <ProgressIndicator title="Overall Progress" progressableItem={{
+                                    remainingWork: feature.getRemainingWorkForFeature(),
+                                    totalWork: feature.getTotalWorkForFeature()
+                                }} />
+
                                 {project.involvedTeams
                                     .filter(team => feature.getRemainingWorkForTeam(team.id) > 0)
                                     .map((team) => (
                                         <div key={team.id}>
-                                            <Link to={`/teams/${team.id}`}>
-                                                {`${team.name}: ${feature.getRemainingWorkForTeam(team.id)}`}
-                                            </Link>
+
+                                            <ProgressIndicator title={
+
+                                                <Link to={`/teams/${team.id}`}>
+                                                    {`${team.name}`}
+                                                </Link>
+                                            } progressableItem={{
+                                                remainingWork: feature.getRemainingWorkForTeam(team.id),
+                                                totalWork: feature.getTotalWorkForTeam(team.id)
+                                            }} />
                                         </div>
                                     ))}
                             </TableCell>
@@ -65,7 +77,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                             {project.milestones.map((milestone) => (
                                 <TableCell key={milestone.id}>
                                     <ForecastLikelihood
-                                        remainingItems={feature.getAllRemainingWork()}
+                                        remainingItems={feature.getRemainingWorkForFeature()}
                                         targetDate={milestone.date}
                                         likelihood={feature.getMilestoneLikelihood(milestone.id)}
                                         showText={false}

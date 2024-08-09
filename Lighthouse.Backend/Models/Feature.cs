@@ -5,19 +5,19 @@ namespace Lighthouse.Backend.Models
 {
     public class Feature : IEntity
     {
-        public Feature() : this(Enumerable.Empty<(Team team, int remainingItems)>())
+        public Feature() : this(Enumerable.Empty<(Team team, int remainingItems, int totalItems)>())
         {
         }
 
-        public Feature(Team team, int remainingItems) : this([(team, remainingItems)])
+        public Feature(Team team, int remainingItems) : this([(team, remainingItems, remainingItems)])
         {
         }
 
-        public Feature(IEnumerable<(Team team, int remainingItems)> remainingWork)
+        public Feature(IEnumerable<(Team team, int remainingItems, int totalItems)> remainingWork)
         {
-            foreach (var (team, remainingItems) in remainingWork)
+            foreach (var (team, remainingItems, totalItems) in remainingWork)
             {
-                RemainingWork.Add(new RemainingWork(team, remainingItems, this));
+                FeatureWork.Add(new FeatureWork(team, remainingItems, totalItems, this));
             }
         }
 
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Models
 
         public WhenForecast Forecast { get; set; }
 
-        public List<RemainingWork> RemainingWork { get; } = new List<RemainingWork>();
+        public List<FeatureWork> FeatureWork { get; } = new List<FeatureWork>();
 
         public List<Project> Projects { get; } = [];
 
@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Models
 
         public double GetLikelhoodForDate(DateTime date)
         {
-            if (date != default && RemainingWork.Sum(r => r.RemainingWorkItems) > 0)
+            if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)
             {
                 var timeToTargetDate = (date - DateTime.Today).Days;
 
@@ -51,32 +51,33 @@ namespace Lighthouse.Backend.Models
             return 100;
         }
 
-        public void AddOrUpdateRemainingWorkForTeam(Team team, int remainingWork)
+        public void AddOrUpdateWorkForTeam(Team team, int remainingWork, int totalItems)
         {
-            var existingTeam = RemainingWork.SingleOrDefault(t => t.Team == team);
+            var existingTeam = FeatureWork.SingleOrDefault(t => t.Team == team);
             if (existingTeam == null)
             {
-                var newRemainingWork = new RemainingWork(team, remainingWork, this);
-                RemainingWork.Add(newRemainingWork);
+                var featureWork = new FeatureWork(team, remainingWork, totalItems, this);
+                FeatureWork.Add(featureWork);
             }
             else
             {
                 existingTeam.RemainingWorkItems = remainingWork;
+                existingTeam.TotalWorkItems = totalItems;
             }
         }
 
         public void RemoveTeamFromFeature(Team team)
         {
-            var existingTeam = RemainingWork.SingleOrDefault(t => t.Team == team);
+            var existingTeam = FeatureWork.SingleOrDefault(t => t.Team == team);
             if (existingTeam != null)
             {
-                RemainingWork.Remove(existingTeam);
+                FeatureWork.Remove(existingTeam);
             }
         }
 
         public int GetRemainingWorkForTeam(Team team)
         {
-            var existingTeam = RemainingWork.SingleOrDefault(t => t.Team == team);
+            var existingTeam = FeatureWork.SingleOrDefault(t => t.Team == team);
             if (existingTeam != null)
             {
                 return existingTeam.RemainingWorkItems;

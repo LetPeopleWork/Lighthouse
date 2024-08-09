@@ -4,6 +4,7 @@ import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoL
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import { Team } from "../../../models/Team/Team";
 import { Link } from "react-router-dom";
+import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 
 interface FeatureListProps {
     team: Team
@@ -19,7 +20,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
                             <Typography variant="h6" component="div">Feature Name</Typography>
                         </TableCell>
                         <TableCell>
-                            <Typography variant="h6" component="div">Remaining Work (Team / Total)</Typography>
+                            <Typography variant="h6" component="div">Progress</Typography>
                         </TableCell>
                         <TableCell>
                             <Typography variant="h6" component="div">Forecasts</Typography>
@@ -45,7 +46,15 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
                                 )}
                             </TableCell>
                             <TableCell>
-                                {feature.getRemainingWorkForTeam(team.id)} / {feature.getAllRemainingWork()}
+                                <ProgressIndicator title="Total" progressableItem={{
+                                    remainingWork: feature.getRemainingWorkForFeature(),
+                                    totalWork: feature.getTotalWorkForFeature()
+                                }} />
+
+                                <ProgressIndicator title={team.name} progressableItem={{
+                                    remainingWork: feature.getRemainingWorkForTeam(team.id),
+                                    totalWork: feature.getTotalWorkForTeam(team.id)
+                                }} />
                             </TableCell>
                             <TableCell>
                                 <ForecastInfoList title={''} forecasts={feature.forecasts} />

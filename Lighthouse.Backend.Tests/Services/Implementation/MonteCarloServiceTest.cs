@@ -384,7 +384,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var team1 = CreateTeam(1, [1]);
             var team2 = CreateTeam(1, [1]);
 
-            var feature1 = new Feature([(team1, 20), (team2, 15)]);
+            var feature1 = new Feature([(team1, 20, 37), (team2, 15, 17)]);
 
             SetupFeatures(feature1);
 
@@ -405,7 +405,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var subject = CreateSubjectWithRealThroughput();
             var team = CreateTeam(1, [0, 0, 0 , 0]);
 
-            var feature = new Feature([(team, 20)]);
+            var feature = new Feature([(team, 20, 37)]);
 
             SetupFeatures(feature);
 
@@ -422,7 +422,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var team1 = CreateTeam(1, [0]);
             var team2 = CreateTeam(1, [1]);
 
-            var feature1 = new Feature([(team1, 20), (team2, 15)]);
+            var feature1 = new Feature([(team1, 20, 42), (team2, 15, 17)]);
 
             SetupFeatures(feature1);
 

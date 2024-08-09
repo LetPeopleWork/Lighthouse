@@ -136,9 +136,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
             foreach (var feature in features)
             {
-                foreach (var remainingWork in feature.RemainingWork)
+                foreach (var featureWork in feature.FeatureWork)
                 {
-                    simulationResults.Add(new SimulationResult(remainingWork.Team, feature, remainingWork.RemainingWorkItems));
+                    simulationResults.Add(new SimulationResult(featureWork.Team, feature, featureWork.RemainingWorkItems));
                 }
             }
 

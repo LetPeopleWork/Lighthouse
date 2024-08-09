@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             await DatabaseContext.SaveChangesAsync();
 
             var feature = new Feature { Name = "Feature", Order = "12" };
-            feature.RemainingWork.Add(new RemainingWork(team, 12, feature));
+            feature.FeatureWork.Add(new FeatureWork(team, 12, 37, feature));
 
             project.Features.Add(feature);
 

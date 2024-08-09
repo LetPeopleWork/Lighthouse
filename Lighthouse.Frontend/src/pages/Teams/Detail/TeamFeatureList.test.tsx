@@ -27,8 +27,8 @@ describe('FeatureList component', () => {
         1,
         [],
         [
-            new Feature('Feature 1', 1, "", new Date(), { 0: '' }, { 1: 10 }, {}, [new WhenForecast(80, new Date())]),
-            new Feature('Feature 2', 2, "", new Date(), { 0: '' }, { 1: 5 }, {}, [new WhenForecast(60, new Date())])
+            new Feature('Feature 1', 1, "", new Date(), { 0: '' }, { 1: 10 }, { 1: 10 }, {}, [new WhenForecast(80, new Date())]),
+            new Feature('Feature 2', 2, "", new Date(), { 0: '' }, { 1: 5 }, { 1: 10 }, {}, [new WhenForecast(60, new Date())])
         ],
         1
     );
@@ -44,7 +44,7 @@ describe('FeatureList component', () => {
             const featureNameElement = screen.getByText(feature.name);
             expect(featureNameElement).toBeInTheDocument();
 
-            const remainingWorkElement = screen.getByText(`${feature.getRemainingWorkForTeam(team.id)} / ${feature.getAllRemainingWork()}`);
+            const remainingWorkElement = screen.getByText(`${feature.getRemainingWorkForTeam(team.id)} / ${feature.getRemainingWorkForFeature()}`);
             expect(remainingWorkElement).toBeInTheDocument();
 
             const forecastInfoListElements = screen.getAllByTestId((id) => id.startsWith('forecast-info-list-'));

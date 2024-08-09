@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.API
 
             foreach (var feature in allFeatures)
             {
-                if (feature.RemainingWork.Any(rw => rw.TeamId == team.Id))
+                if (feature.FeatureWork.Any(rw => rw.TeamId == team.Id))
                 {
                     features.Add(feature);
                 }

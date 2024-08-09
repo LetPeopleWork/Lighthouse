@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Models
         public List<string> WorkItemTypes { get; set; } = new List<string> { "Epic" };
 
         [NotMapped]
-        public IEnumerable<Team> InvolvedTeams => Features.SelectMany(f => f.RemainingWork).Select(rw => rw.Team).Distinct();
+        public IEnumerable<Team> InvolvedTeams => Features.SelectMany(f => f.FeatureWork).Select(rw => rw.Team).Distinct();
 
         public List<Feature> Features { get; } = [];
 

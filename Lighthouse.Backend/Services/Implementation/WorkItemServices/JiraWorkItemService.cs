@@ -85,26 +85,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return (issue.Title, issue.Rank, url);
         }
 
-        public async Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
+        public async Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
         {
-            logger.LogInformation("Getting Open Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
+            logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
 
             var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
             var stateQuery = PrepareStateQuery();
 
-            var jql = $"{unparentedItemsQuery} " +
+            var allWorkItemsQuery = $"{unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
-                $"{stateQuery} " +
                 $"AND {team.WorkItemQuery}";
 
-            var issues = await GetIssuesByQuery(jiraClient, jql);
+            var remainingWorkItemsQuery = $"{allWorkItemsQuery} {stateQuery}";
 
-            var openWorkItemKeys = issues.Select(x => x.Key).ToList();
-            logger.LogInformation("Found following Open Issues: {IDs}", string.Join(", ", openWorkItemKeys));
+            var allIssues = await GetIssuesByQuery(jiraClient, allWorkItemsQuery);
+            var remainingIssues = await GetIssuesByQuery(jiraClient, remainingWorkItemsQuery);
 
-            return openWorkItemKeys;
+            var allWorkItemsIds = allIssues.Select(x => x.Key).ToList();
+            var remainingWorkItemIds = remainingIssues.Select(x => x.Key).ToList();
+
+            logger.LogInformation("Found following Issues: {IDs}", string.Join(", ", allWorkItemsIds));
+
+            return (remainingWorkItemIds, allWorkItemsIds);
         }
 
         public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)

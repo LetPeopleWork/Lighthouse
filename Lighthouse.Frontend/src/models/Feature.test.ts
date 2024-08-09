@@ -6,7 +6,8 @@ describe('Feature Class', () => {
     let name: string;
     let id: number;
     let lastUpdated: Date;
-    let remainingWork: { [key: number]: number };
+    let remainingWork: { [key: number]: number };    
+    let totalWork: { [key: number]: number };
     let milestoneLikelihood: { [key: number]: number };
     let forecasts: WhenForecast[];
 
@@ -15,12 +16,13 @@ describe('Feature Class', () => {
         id = 1;
         lastUpdated = new Date('2023-07-11');
         remainingWork = { 1: 10, 2: 20, 3: 30 };
+        totalWork = { 1: 15, 2: 20, 3: 45 }
         milestoneLikelihood = { 0: 97.1, 1: 35.6 };
         forecasts = [
             new WhenForecast(0.8, new Date('2023-08-01')),
             new WhenForecast(0.6, new Date('2023-09-01')),
         ];
-        feature = new Feature(name, id, "", lastUpdated, { 0: "Project" }, remainingWork, milestoneLikelihood, forecasts);
+        feature = new Feature(name, id, "", lastUpdated, { 0: "Project" }, remainingWork, totalWork, milestoneLikelihood, forecasts);
     });
 
     it('should create an instance of Feature correctly', () => {
@@ -39,6 +41,17 @@ describe('Feature Class', () => {
     });
 
     it('should return correct total remaining work', () => {
-        expect(feature.getAllRemainingWork()).toBe(60);
+        expect(feature.getRemainingWorkForFeature()).toBe(60);
+    });
+
+    it('should return correct total work for a team', () => {
+        expect(feature.getTotalWorkForTeam(1)).toBe(15);
+        expect(feature.getTotalWorkForTeam(2)).toBe(20);
+        expect(feature.getTotalWorkForTeam(3)).toBe(45);
+        expect(feature.getTotalWorkForTeam(4)).toBe(0);
+    });
+
+    it('should return correct total work', () => {
+        expect(feature.getTotalWorkForFeature()).toBe(80);
     });
 });

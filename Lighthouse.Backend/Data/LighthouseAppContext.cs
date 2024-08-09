@@ -37,14 +37,14 @@ namespace Lighthouse.Backend.Data
                 .HasForeignKey(m => m.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<RemainingWork>()
+            modelBuilder.Entity<FeatureWork>()
                 .HasOne(rw => rw.Team)
                 .WithMany()
                 .HasForeignKey(rw => rw.TeamId);
 
-            modelBuilder.Entity<RemainingWork>()
+            modelBuilder.Entity<FeatureWork>()
                 .HasOne(rw => rw.Feature)
-                .WithMany(f => f.RemainingWork)
+                .WithMany(f => f.FeatureWork)
                 .HasForeignKey(rw => rw.FeatureId)
                 .OnDelete(DeleteBehavior.Cascade);
 

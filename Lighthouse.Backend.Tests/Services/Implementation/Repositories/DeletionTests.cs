@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             feature.Projects.Add(project);
 
-            feature.RemainingWork.Add(new RemainingWork(team, 12, feature));
+            feature.FeatureWork.Add(new FeatureWork(team, 12, 12, feature));
             project.Features.Add(feature);
 
             var featureRepository = ServiceProvider.GetService<IRepository<Feature>>();
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             feature.Projects.Add(project);
 
-            feature.RemainingWork.Add(new RemainingWork(team, 12, feature));
+            feature.FeatureWork.Add(new FeatureWork(team, 12, 12, feature));
             project.Features.Add(feature);
 
             var featureRepository = ServiceProvider.GetService<IRepository<Feature>>();
@@ -159,8 +159,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             feature.Projects.Add(project);
 
-            feature.RemainingWork.Add(new RemainingWork(team1, 12, feature));
-            feature.RemainingWork.Add(new RemainingWork(team2, 7, feature));
+            feature.FeatureWork.Add(new FeatureWork(team1, 12, 21, feature));
+            feature.FeatureWork.Add(new FeatureWork(team2, 7, 42, feature));
 
             var featureRepository = ServiceProvider.GetService<IRepository<Feature>>();
             featureRepository.Add(feature);
@@ -177,7 +177,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Assert.That(teamRepository.GetAll().ToList(), Has.Count.EqualTo(1));
 
                 var feature = featureRepository.GetAll().Single();
-                Assert.That(feature.RemainingWork, Has.Count.EqualTo(1));
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(1));
             });
         }
     }

@@ -84,27 +84,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return (workItemTitle, workItemOrder, url);
         }
 
-        public async Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
+        public async Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
         {
-            logger.LogInformation("Getting Open Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
+            logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
 
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
             var stateQuery = PrepareStateQuery(closedStates);
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {unparentedItemsQuery} " +
+            var allWorkItemsQuery = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
-                $"{stateQuery}" +
                 $" AND {team.WorkItemQuery}";
 
-            var workItems = await GetWorkItemsByQuery(witClient, wiql);
+            var remainingWorkItemsQuery = allWorkItemsQuery + stateQuery;
 
-            var openWorkItems = workItems.Select(x => x.Id.ToString()).ToList();
+            var allWorkItems = await GetWorkItemsByQuery(witClient, allWorkItemsQuery);
+            var remainingWorkItems = await GetWorkItemsByQuery(witClient, remainingWorkItemsQuery);
 
-            logger.LogInformation("Found following Open Work Items {OpenItems}", string.Join(", ", openWorkItems));
+            var totalWorkItemIds = allWorkItems.Select(x => x.Id.ToString()).ToList();
+            var remainingWorkItemsIds = remainingWorkItems.Select(x => x.Id.ToString()).ToList();
 
-            return openWorkItems;
+            logger.LogInformation("Found following Work Items {totalWorkItemIds}", string.Join(", ", totalWorkItemIds));
+
+            return (remainingWorkItemsIds, totalWorkItemIds);
         }
 
         public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)

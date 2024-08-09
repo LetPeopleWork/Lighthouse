@@ -9,6 +9,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import StyledCardTypography from "./StyledCardTypography";
 import { ViewKanban } from "@mui/icons-material";
 import ForecastInfoList from "../../components/Common/Forecasts/ForecastInfoList";
+import ProgressIndicator from "../../components/Common/ProgressIndicator/ProgressIndicator";
 
 const ProjectCardStyle = styled(Card)({
   marginBottom: 'inherit',
@@ -45,7 +46,7 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
             <ProjectLink project={project} />
           </Grid>
           <Grid item xs={12}>
-            <StyledCardTypography text={`${project.remainingWork} Work Items`} icon={ViewKanban} />
+            <ProgressIndicator title={<StyledCardTypography text={`${project.remainingWork} Work Items Remaining`} icon={ViewKanban} />} progressableItem={project} />
 
             <Typography variant="body1">
               {involvedTeamsList}

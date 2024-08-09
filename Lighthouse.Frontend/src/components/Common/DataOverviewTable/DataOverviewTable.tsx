@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Typography, Container, Button } from '@mui/material';
+import LinearProgress from '@mui/material/LinearProgress';
+
 import { Link, useNavigate } from 'react-router-dom';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';
 
@@ -7,6 +9,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FilterBar from '../FilterBar/FilterBar';
+import ProgressIndicator from '../ProgressIndicator/ProgressIndicator';
 
 const iconColor = 'rgba(48, 87, 78, 1)';
 
@@ -34,11 +37,11 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ da
 
     const handleRedirect = () => {
         navigate(`new`);
-      };
+    };
 
     return (
         <Container>
-            <Button sx={{marginTop: 2, marginBottom: 2}} variant="contained" color="primary" onClick={handleRedirect}>Add New</Button>
+            <Button sx={{ marginTop: 2, marginBottom: 2 }} variant="contained" color="primary" onClick={handleRedirect}>Add New</Button>
             <FilterBar filterText={filterText} onFilterTextChange={setFilterText} data-testid="filter-bar" />
             {filteredData.length === 0 ? (
                 <Typography variant="h6" align="center" data-testid="no-items-message">
@@ -53,7 +56,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ da
                                     <Typography variant="h6" component="div">Name</Typography>
                                 </TableCell>
                                 <TableCell>
-                                    <Typography variant="h6" component="div">Remaining Work</Typography>
+                                    <Typography variant="h6" component="div">Progress</Typography>
                                 </TableCell>
                                 <TableCell>
                                     <Typography variant="h6" component="div">Features</Typography>
@@ -71,7 +74,9 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ da
                                             </Typography>
                                         </Link>
                                     </TableCell>
-                                    <TableCell>{item.remainingWork}</TableCell>
+                                    <TableCell>
+                                        <ProgressIndicator progressableItem={item} />
+                                    </TableCell>
                                     <TableCell>{item.remainingFeatures}</TableCell>
                                     <TableCell>
                                         <Tooltip title="Details">

@@ -13,14 +13,16 @@ namespace Lighthouse.Backend.API.DTO
 
             Forecasts.AddRange(feature.Forecast?.CreateForecastDtos([50, 70, 85, 95]) ?? Enumerable.Empty<WhenForecastDto>());
 
-            foreach (var remainingWork in feature.RemainingWork)
+            foreach (var work in feature.FeatureWork)
             {
-                if (!RemainingWork.ContainsKey(remainingWork.TeamId))
+                if (!RemainingWork.ContainsKey(work.TeamId))
                 {
-                    RemainingWork.Add(remainingWork.TeamId, 0);
+                    RemainingWork.Add(work.TeamId, 0);
+                    TotalWork.Add(work.TeamId, 0);
                 }
 
-                RemainingWork[remainingWork.TeamId] += remainingWork.RemainingWorkItems;
+                RemainingWork[work.TeamId] += work.RemainingWorkItems;
+                TotalWork[work.TeamId] += work.TotalWorkItems;
             }
 
             foreach (var project in feature.Projects)
@@ -46,6 +48,8 @@ namespace Lighthouse.Backend.API.DTO
         public DateTime LastUpdated { get; }
 
         public Dictionary<int, int> RemainingWork { get; } = new Dictionary<int, int>();
+
+        public Dictionary<int, int> TotalWork { get; } = new Dictionary<int, int>();
 
         public Dictionary<int, double> MilestoneLikelihood { get; } = new Dictionary<int, double>();
 

@@ -3,6 +3,7 @@ using System;
 using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lighthouse.Backend.Migrations
 {
     [DbContext(typeof(LighthouseAppContext))]
-    partial class LighthouseAppContextModelSnapshot : ModelSnapshot
+    [Migration("20240809084751_AddTotalWorkItemsToRemainingWork")]
+    partial class AddTotalWorkItemsToRemainingWork
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
@@ -76,33 +79,6 @@ namespace Lighthouse.Backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Features");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.FeatureWork", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("FeatureId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("RemainingWorkItems")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TotalWorkItems")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FeatureId");
-
-                    b.HasIndex("TeamId");
-
-                    b.ToTable("FeatureWork");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.ForecastBase", b =>
@@ -214,6 +190,33 @@ namespace Lighthouse.Backend.Migrations
                     b.HasIndex("WorkTrackingSystemConnectionId");
 
                     b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.RemainingWork", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FeatureId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RemainingWorkItems")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalWorkItems")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeatureId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("RemainingWork");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>
@@ -333,25 +336,6 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.FeatureWork", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.Feature", "Feature")
-                        .WithMany("RemainingWork")
-                        .HasForeignKey("FeatureId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Lighthouse.Backend.Models.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Feature");
-
-                    b.Navigation("Team");
-                });
-
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.IndividualSimulationResult", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Forecast.ForecastBase", "Forecast")
@@ -383,6 +367,25 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("WorkTrackingSystemConnection");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.RemainingWork", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Feature", "Feature")
+                        .WithMany("RemainingWork")
+                        .HasForeignKey("FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lighthouse.Backend.Models.Team", "Team")
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feature");
+
+                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>

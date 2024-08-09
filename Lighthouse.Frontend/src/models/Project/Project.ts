@@ -32,9 +32,11 @@ export class Project implements IProject {
     }
 
     get remainingWork(): number {
-        const totalRemainingWork = this.features.reduce((acc, feature) => acc + feature.getAllRemainingWork(), 0);
-    
-        return totalRemainingWork;
+        return this.features.reduce((acc, feature) => acc + feature.getRemainingWorkForFeature(), 0);
+    }
+
+    get totalWork(): number {
+        return this.features.reduce((acc, feature) => acc + feature.getTotalWorkForFeature(), 0);
     }
 
     get remainingFeatures(): number {

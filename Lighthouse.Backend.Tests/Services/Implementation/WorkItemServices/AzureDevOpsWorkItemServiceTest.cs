@@ -225,9 +225,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
-            var workItems = await subject.GetOpenWorkItemsByQuery(["User Story", "Bug"], team, "[System.Tags] CONTAINS 'ThroughputIgnore'");
-
-            Assert.That(workItems, Has.Count.EqualTo(0));
+            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["User Story", "Bug"], team, "[System.Tags] CONTAINS 'ThroughputIgnore'");
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Has.Count.EqualTo(0));
+                Assert.That(totalItems, Has.Count.EqualTo(1));
+            });
         }
 
         [Test]
@@ -236,9 +240,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
-            var workItems = await subject.GetOpenWorkItemsByQuery(["Bug"], team, "[System.Tags] CONTAINS 'Release1'");
+            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Bug"], team, "[System.Tags] CONTAINS 'Release1'");
 
-            Assert.That(workItems, Has.Count.EqualTo(0));
+            Assert.That(remainingItems, Has.Count.EqualTo(0));
         }
 
         [Test]

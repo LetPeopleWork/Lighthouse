@@ -151,9 +151,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
-            var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "labels = \"LabelOfItemThatIsClosed\"");
-
-            Assert.That(workItems, Has.Count.EqualTo(0));
+            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "labels = \"LabelOfItemThatIsClosed\"");
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Has.Count.EqualTo(0));
+                Assert.That(totalItems, Has.Count.EqualTo(1));
+            });
         }
 
         [Test]
@@ -162,9 +166,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
-            var workItems = await subject.GetOpenWorkItemsByQuery(["Bug"], team, "labels = \"ExistingLabel\"");
+            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Bug"], team, "labels = \"ExistingLabel\"");
 
-            Assert.That(workItems, Has.Count.EqualTo(0));
+            Assert.That(remainingItems, Has.Count.EqualTo(0));
         }
 
         [Test]
@@ -173,9 +177,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
 
-            var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
+            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
 
-            Assert.That(workItems, Has.Count.EqualTo(2));
+            Assert.That(remainingItems, Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -184,9 +188,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"RebelRevolt\"");
 
-            var workItems = await subject.GetOpenWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
+            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
 
-            Assert.That(workItems, Has.Count.EqualTo(0));
+            Assert.That(remainingItems, Has.Count.EqualTo(0));
         }
 
         [Test]

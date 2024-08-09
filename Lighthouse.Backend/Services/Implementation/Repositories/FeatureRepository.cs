@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             var features = Context.Features
                 .Include(f => f.Projects)
                     .ThenInclude(p => p.Milestones)
-                .Include(f => f.RemainingWork).ThenInclude(rw => rw.Team)
+                .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
                 .Include(f => f.Forecast).ThenInclude(f => f.SimulationResults)
                 .ToList();
 

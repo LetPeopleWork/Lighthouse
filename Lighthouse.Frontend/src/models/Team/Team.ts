@@ -29,6 +29,10 @@ export class Team implements ITeam {
         return this.features.reduce((acc, feature) => acc += feature.getRemainingWorkForTeam(this.id), 0);
     }
 
+    get totalWork(): number {
+        return this.features.reduce((acc, feature) => acc += feature.getTotalWorkForTeam(this.id), 0);
+    }
+
     get remainingFeatures(): number {
         return this.features.length;
     }
