@@ -1,20 +1,44 @@
 import React from 'react';
-import { Box, Container, Grid } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import LetPeopleWorkLogo from '../LetPeopleWork/LetPeopleWorkLogo';
 import LighthouseVersion from '../LetPeopleWork/LighthouseVersion';
 
+import GitHubIcon from '@mui/icons-material/GitHub';
+import EmailIcon from '@mui/icons-material/Email';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import ExternalLinkButton from '../Header/ExternalLinkButton';
+
 const Footer: React.FC = () => {
   return (
-    <Box component="footer" className="footer" sx={{ backgroundColor: 'white' }}>
+    <Box component="footer" className="footer" sx={{ backgroundColor: 'white', py: 2 }}>
       <Container>
-        <Grid container justifyContent="space-between" alignItems="center" className="footer-content">
-          <Grid item xs={6} md={10}>
-            <LetPeopleWorkLogo/>
-          </Grid>
-          <Grid item xs={6} md={2}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box>
+            <LetPeopleWorkLogo />
+          </Box>
+
+          <Box textAlign="center">
+            <Typography variant="body2">Contact us:</Typography>
+            <Box>
+              <ExternalLinkButton
+                link="mailto:contact@letpeople.work"
+                icon={EmailIcon}
+              />
+              <ExternalLinkButton
+                link="https://www.linkedin.com/company/let-people-work/?viewAsMember=true"
+                icon={LinkedInIcon}
+              />
+              <ExternalLinkButton
+                link="https://github.com/LetPeopleWork/Lighthouse/issues"
+                icon={GitHubIcon}
+              />
+            </Box>
+          </Box>
+
+          <Box textAlign="right">
             <LighthouseVersion />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Container>
     </Box>
   );
