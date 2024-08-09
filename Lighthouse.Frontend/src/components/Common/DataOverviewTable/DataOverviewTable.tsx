@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Typography, Container, Button } from '@mui/material';
-import LinearProgress from '@mui/material/LinearProgress';
 
 import { Link, useNavigate } from 'react-router-dom';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';
