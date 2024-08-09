@@ -13,7 +13,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
     {
         private readonly Cache<string, WorkItem> workItemCache = new Cache<string, WorkItem>();
 
-        private readonly string[] closedStates = ["Done", "Closed", "Removed"];
+        private readonly string[] closedStates = ["Done", "Closed"];
+
+        private readonly string[] ignoredStates = ["Removed"];
+
         private readonly ILogger<AzureDevOpsWorkItemService> logger;
         private readonly ICryptoService cryptoService;
 
@@ -45,7 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return workItemReferences;
         }
 
-        public async Task<int> GetRemainingRelatedWorkItems(string featureId, Team team)
+        public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
         {
             logger.LogInformation("Getting Related Work Items for Feature {featureId} and Team {TeamName}", featureId, team.Name);
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
@@ -258,14 +261,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return await GetWorkItemFromCache(workItemReference.Id.ToString(), witClient);
         }
 
-        private async Task<int> GetRelatedWorkItems(WorkItemTrackingHttpClient witClient, Team team, string relatedWorkItemId)
+        private async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(WorkItemTrackingHttpClient witClient, Team team, string relatedWorkItemId)
         {
-            var query = PrepareQuery(team.WorkItemTypes, closedStates, team);
-            query += PrepareRelatedItemQuery(relatedWorkItemId, team.AdditionalRelatedField);
+            var relatedItemQuery = PrepareRelatedItemQuery(relatedWorkItemId, team.AdditionalRelatedField);
 
-            var workItems = await GetWorkItemsByQuery(witClient, query);
+            var remainingItemsQuery = PrepareQuery(team.WorkItemTypes, closedStates, team);
+            remainingItemsQuery += relatedItemQuery;
 
-            return workItems.Count();
+            var allItemsQuery = PrepareQuery(team.WorkItemTypes, [], team);
+            allItemsQuery += relatedItemQuery;
+
+            var remainingWorkItems = await GetWorkItemsByQuery(witClient, remainingItemsQuery);
+            var totalWorkItems = await GetWorkItemsByQuery(witClient, allItemsQuery);
+
+            return (remainingWorkItems.Count(), totalWorkItems.Count());
         }
 
         private async Task<WorkItem> GetWorkItemFromCache(string itemId, WorkItemTrackingHttpClient witClient)
@@ -358,12 +367,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         }
 
         private string PrepareQuery(
-            IEnumerable<string> workItemTypes,
+            IEnumerable<string> includedWorkItemTypes,
             IEnumerable<string> excludedStates,
             IWorkItemQueryOwner workitemQueryOwner,
             params string[] additionalFields)
         {
-            var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
+            var workItemsQuery = PrepareWorkItemTypeQuery(includedWorkItemTypes);
             var stateQuery = PrepareStateQuery(excludedStates);
 
             var additionalFieldsQuery = string.Empty;
@@ -386,7 +395,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private string PrepareStateQuery(IEnumerable<string> excludedStates)
         {
-            return PrepareGenericQuery(excludedStates, AzureDevOpsFieldNames.State, "AND", "<>");
+            var allExcludedStates = excludedStates.Union(ignoredStates);
+
+            return PrepareGenericQuery(allExcludedStates, AzureDevOpsFieldNames.State, "AND", "<>");
         }
 
         private string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)

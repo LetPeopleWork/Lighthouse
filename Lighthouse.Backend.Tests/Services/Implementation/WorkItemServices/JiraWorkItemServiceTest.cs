@@ -86,9 +86,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("PROJ-9", team);
+            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-9", team);
 
-            Assert.That(relatedItems, Is.EqualTo(1));
+            Assert.That(remainingItems, Is.EqualTo(1));
+            Assert.That(totalItems, Is.EqualTo(4));
+        }
+
+        [Test]
+        public async Task GetRelatedItems_ItemIdIsParent_OnlyClosedItems_ReturnsCorrectNumber()
+        {
+
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ");
+
+            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-21", team);
+
+            Assert.That(remainingItems, Is.EqualTo(0));
+            Assert.That(totalItems, Is.EqualTo(1));
         }
 
         [Test]
@@ -98,9 +112,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("PROJ-6", team);
+            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-6", team);
 
-            Assert.That(relatedItems, Is.EqualTo(0));
+            Assert.That(remainingItems, Is.EqualTo(0));
+            Assert.That(totalItems, Is.EqualTo(0));
         }
 
         [Test]

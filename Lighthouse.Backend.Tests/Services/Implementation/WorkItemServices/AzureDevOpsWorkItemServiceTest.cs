@@ -97,9 +97,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("370", team);
+            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("370", team);
 
-            Assert.That(relatedItems, Is.EqualTo(2));
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Is.EqualTo(2));
+                Assert.That(totalItems, Is.EqualTo(3));
+            });
+        }
+
+        [Test]
+        public async Task GetRelatedItems_ItemIdIsParent_AllWorkIsDone_ReturnsCorrectNumberOfRemainingAndTotalItems()
+        {
+
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+
+            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("380", team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Is.EqualTo(0));
+                Assert.That(totalItems, Is.EqualTo(1));
+            });
         }
 
         [Test]
@@ -109,7 +129,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("37", team);
+            var (relatedItems, _) = await subject.GetRelatedWorkItems("37", team);
 
             Assert.That(relatedItems, Is.EqualTo(0));
         }
@@ -122,7 +142,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
             team.WorkItemTypes.Add("Feature");
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("366", team);
+            var (relatedItems, _) = await subject.GetRelatedWorkItems("366", team);
 
             Assert.That(relatedItems, Is.EqualTo(0));
         }
@@ -134,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
             team.AdditionalRelatedField = "Custom.RemoteFeatureID";
 
-            var relatedItems = await subject.GetRemainingRelatedWorkItems("279", team);
+            var (relatedItems, _) = await subject.GetRelatedWorkItems("279", team);
 
             Assert.That(relatedItems, Is.EqualTo(1));
         }

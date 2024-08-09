@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return workItems.Select(x => x.Key).ToList();
         }
 
-        public Task<int> GetRemainingRelatedWorkItems(string featureId, Team team)
+        public Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
         {
             logger.LogInformation("Getting Related Issues for Feature {Id} and Team {TeamName}", featureId, team.Name);
 
@@ -234,15 +234,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return issue;
         }
 
-        private async Task<int> GetRelatedWorkItems(HttpClient jiraRestClient, Team team, string relatedWorkItemId)
+        private async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(HttpClient jiraRestClient, Team team, string relatedWorkItemId)
         {
-            var query = PrepareNotClosedItemsQuery(team.WorkItemTypes, team);
+            var workItemsQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
+            var query = $"{team.WorkItemQuery} " +
+                $"{workItemsQuery}";
+
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
-            var relatedItems = issues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).Select(i => i.Key).ToList();
-            logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", relatedItems));
+            var relatedItems = issues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).ToList();
+            logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", relatedItems.Select(i => i.Key)));
 
-            return relatedItems.Count;
+            var remainingItems = relatedItems.Count(i => !DoneStatusCategory.Contains(i.StatusCategory));
+
+            return (remainingItems, relatedItems.Count);
         }
 
         private bool IsIssueRelated(Issue issue, string relatedWorkItemId, string? additionalRelatedField)

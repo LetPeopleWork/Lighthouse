@@ -202,7 +202,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var tasks = teams.Select(async team =>
             {
                 var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
-                var remainingWork = await workItemService.GetRemainingRelatedWorkItems(featureForProject.ReferenceId, team);
+                var (remainingWork, totalWork) = await workItemService.GetRelatedWorkItems(featureForProject.ReferenceId, team);
 
                 logger.LogInformation("Found {remainingWork} Work Item Remaining for Team {TeamName} for Feature {FeatureName}", remainingWork, team.Name, featureForProject.Name);
 

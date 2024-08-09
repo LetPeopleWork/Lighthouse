@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Task<List<string>> GetOpenWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery);
 
-        Task<int> GetRemainingRelatedWorkItems(string featureId, Team team);
+        Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team);
 
         Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team);
 
