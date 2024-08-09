@@ -283,21 +283,21 @@ jobs:
       - uses: vimtor/action-zip@v1.2
         with:
           files: LighthouseArtifacts/win-x64
-          dest: Lighthouse_${{ needs.tag.outputs.version }}_win-x64.zip
+          dest: Lighthouse-win-x64.zip
 
       - uses: vimtor/action-zip@v1.2
         with:
           files: LighthouseArtifacts/osx-x64
-          dest: Lighthouse_${{ needs.tag.outputs.version }}_osx-x64.zip
+          dest: Lighthouse-osx-x64.zip
 
       - uses: vimtor/action-zip@v1.2
         with:
           files: LighthouseArtifacts/linux-x64
-          dest: Lighthouse_${{ needs.tag.outputs.version }}_linux-x64.zip
+          dest: Lighthouse-linux-x64.zip
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse_${{ needs.tag.outputs.version }}_win-x64.zip,Lighthouse_${{ needs.tag.outputs.version }}_osx-x64.zip, Lighthouse_${{ needs.tag.outputs.version }}_linux-x64.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx-x64.zip, Lighthouse-linux-x64.zip"
           tag: ${{ needs.tag.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.tag.outputs.version }}"
