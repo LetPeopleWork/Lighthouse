@@ -61,15 +61,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return workItems.Select(x => x.Key).ToList();
         }
 
-        public Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
+        public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
         {
             logger.LogInformation("Getting Related Issues for Feature {Id} and Team {TeamName}", featureId, team.Name);
 
             var jiraRestClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
-            var relatedWorkItems = GetRelatedWorkItems(jiraRestClient, team, featureId);
+            var (remainingItems, totalItems) = await GetRelatedWorkItems(jiraRestClient, team, featureId);
 
-            return relatedWorkItems;
+            return (remainingItems, totalItems);
         }
 
         public async Task<(string name, string order, string url)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
@@ -240,18 +240,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(HttpClient jiraRestClient, Team team, string relatedWorkItemId)
         {
-            var workItemsQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
-            var query = $"{team.WorkItemQuery} " +
-                $"{workItemsQuery}";
+            var remainingItemsQuery = PrepareNotClosedItemsQuery(team.WorkItemTypes, team);
+            var closedItemsQuery = PrepareClosedItemsQuery(team.WorkItemTypes, team);
 
-            var issues = await GetIssuesByQuery(jiraRestClient, query);
+            var remainingIssues = await GetIssuesByQuery(jiraRestClient, remainingItemsQuery);
+            var closedIssues = await GetIssuesByQuery(jiraRestClient, closedItemsQuery);
 
-            var relatedItems = issues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).ToList();
-            logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", relatedItems.Select(i => i.Key)));
+            var relatedRemainingIssuses = remainingIssues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).Select(i => i.Key).ToList();
+            var relatedClosedIssues = closedIssues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).Select(i => i.Key).ToList();
 
-            var remainingItems = relatedItems.Count(i => !DoneStatusCategory.Contains(i.StatusCategory));
+            logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", relatedRemainingIssuses.Union(relatedClosedIssues)));
 
-            return (remainingItems, relatedItems.Count);
+            return (relatedRemainingIssuses.Count, relatedRemainingIssuses.Count + relatedClosedIssues.Count);
         }
 
         private bool IsIssueRelated(Issue issue, string relatedWorkItemId, string? additionalRelatedField)
@@ -329,15 +329,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         private string PrepareClosedItemsQuery(
             IEnumerable<string> issueTypes,
             IWorkItemQueryOwner workitemQueryOwner,
-            int history)
+            int? history = null)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
             var stateQuery = PrepareGenericQuery([DoneStatusCategory], JiraFieldNames.StatusCategoryFieldName, "AND", "=");
 
+            var historyFilter = string.Empty;
+            if (history != null)
+            {
+                historyFilter = $"AND {JiraFieldNames.ResolvedFieldName} >= -{history}d";
+            }
+
             var jql = $"{workitemQueryOwner.WorkItemQuery} " +
                 $"{workItemsQuery} " +
                 $"{stateQuery} " +
-                $"AND {JiraFieldNames.ResolvedFieldName} >= -{history}d";
+                $"{historyFilter}";
 
             return jql;
         }

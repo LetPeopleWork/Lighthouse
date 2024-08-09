@@ -34,7 +34,7 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({ title, progressab
                         whiteSpace: 'nowrap',
                     }}
                 >
-                    {`${completionPercentage}% (${completedItems}/${progressableItem.totalWork})`}
+                    {progressableItem.totalWork > 0 ? (`${completionPercentage}% (${completedItems}/${progressableItem.totalWork})`) : ('')}
                 </Typography>
             </div>
         </div>
