@@ -7,16 +7,22 @@ namespace Lighthouse.Backend.Models.Forecast
         {            
         }
 
-        public WhenForecast(Dictionary<int, int> simulationResult, int numberOfItems) : base(simulationResult, Comparer<int>.Create((x, y) => x.CompareTo(y)))
+        public WhenForecast(SimulationResult simulationResult) : base(simulationResult.SimulationResults, Comparer<int>.Create((x, y) => x.CompareTo(y)))
         {
-            NumberOfItems = numberOfItems;
+            NumberOfItems = simulationResult.InitialRemainingItems;
+            TeamId = simulationResult.Team?.Id;
+            Team = simulationResult.Team;
         }
 
         public int FeatureId { get; set; }
 
         public Feature Feature { get; set; }
 
-        public int NumberOfItems { get; }
+        public int? TeamId { get; set; }
+
+        public Team? Team { get; set; }
+
+        public int NumberOfItems { get; set; } = 0;
 
         public virtual double GetLikelihood(int daysToTargetDate)
         {
@@ -32,7 +38,12 @@ namespace Lighthouse.Backend.Models.Forecast
                 }
             }
 
-            return 100 / ((double)TotalTrials) * trialCounter;
+            if (trialCounter > 0)
+            {
+                return 100 / ((double)TotalTrials) * trialCounter;
+            }
+
+            return 100;
         }
     }
 }

@@ -121,13 +121,13 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
 
                 var featureForecasts = simulationResultsForFeature.Select(CreateWhenForecastForSimulationResult);
-                feature.SetFeatureForecast(featureForecasts);
+                feature.SetFeatureForecasts(featureForecasts);
             }
         }
 
         private WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult)
         {
-            return new WhenForecast(simulationResult.SimulationResults, simulationResult.InitialRemainingItems);
+            return new WhenForecast(simulationResult);
         }
 
         private List<SimulationResult> InitializeSimulationResults(IEnumerable<Feature> features)

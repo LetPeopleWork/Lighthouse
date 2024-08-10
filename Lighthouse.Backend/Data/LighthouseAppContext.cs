@@ -49,9 +49,8 @@ namespace Lighthouse.Backend.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Feature>()
-                .HasOne(f => f.Forecast)
+                .HasMany(f => f.Forecasts)
                 .WithOne(wf => wf.Feature)
-                .HasForeignKey<WhenForecast>(wf => wf.FeatureId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<IndividualSimulationResult>()

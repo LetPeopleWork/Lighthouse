@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_MulitpleTeams_OnTeamHasNoThroughput_DoesNotGetRemainingWork()
+        public async Task CollectFeaturesForProject_NoRemainingWork_MulitpleTeams_OneTeamHasNoThroughput_DoesNotGetRemainingWork()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam([0]);
@@ -234,7 +234,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature([(team1, 2, 42), (team2, 2, 12)]) { ReferenceId = "12" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
 
             await subject.UpdateFeaturesForProject(project);
@@ -357,7 +357,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string>()));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery)).Returns(Task.FromResult((new List<string>(unparentedItems), new List<string>())));
+            workItemServiceMock.Setup(x => x.GetWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery)).Returns(Task.FromResult((new List<string>(unparentedItems), new List<string>(unparentedItems))));
             workItemServiceMock.Setup(x => x.GetAdjacentOrderIndex(It.IsAny<IEnumerable<string>>(), RelativeOrder.Above)).Returns(expectedUnparentedOrder);
 
             await subject.UpdateFeaturesForProject(project);

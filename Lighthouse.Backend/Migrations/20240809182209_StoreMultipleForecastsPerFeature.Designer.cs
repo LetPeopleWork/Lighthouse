@@ -3,6 +3,7 @@ using System;
 using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lighthouse.Backend.Migrations
 {
     [DbContext(typeof(LighthouseAppContext))]
-    partial class LighthouseAppContextModelSnapshot : ModelSnapshot
+    [Migration("20240809182209_StoreMultipleForecastsPerFeature")]
+    partial class StoreMultipleForecastsPerFeature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
@@ -312,10 +315,7 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("FeatureId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("NumberOfItems")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("TeamId")
+                    b.Property<int>("TeamId")
                         .HasColumnType("INTEGER");
 
                     b.HasIndex("FeatureId");
@@ -424,7 +424,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.HasOne("Lighthouse.Backend.Models.Team", "Team")
                         .WithMany()
-                        .HasForeignKey("TeamId");
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Feature");
 

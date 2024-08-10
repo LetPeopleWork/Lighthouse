@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             foreach (var feature in project.Features.ToList())
             {
-                var uninvolvedTeams = feature.FeatureWork.Where(x => x.RemainingWorkItems == 0).Select(kvp => kvp.Team).ToList();
+                var uninvolvedTeams = feature.FeatureWork.Where(x => x.TotalWorkItems == 0).Select(kvp => kvp.Team).ToList();
                 foreach (var team in uninvolvedTeams)
                 {
                     logger.LogInformation("Removing Team {TeamName} from Feature {FeatureName}", team.Name, feature.Name);

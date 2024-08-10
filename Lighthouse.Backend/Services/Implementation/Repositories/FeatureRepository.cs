@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .Include(f => f.Projects)
                     .ThenInclude(p => p.Milestones)
                 .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
-                .Include(f => f.Forecast).ThenInclude(f => f.SimulationResults)
+                .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
                 .ToList();
 
             return features.OrderBy(f => f, new FeatureComparer());

@@ -14,14 +14,9 @@
 
         public ForecastBase(Dictionary<int, int> simulationResult, IComparer<int> comparer)
         {
-            foreach (var item in simulationResult)
-            {
-                SimulationResults.Add(new IndividualSimulationResult { Key = item.Key, Value = item.Value, Forecast = this, ForecastId = Id });
-            }
-
-            TotalTrials = simulationResult.Values.Sum();
             CreationTime = DateTime.UtcNow;
             this.comparer = comparer;
+            SetSimulationResult(simulationResult);
         }
 
         public int Id { get; set; }
@@ -68,6 +63,17 @@
             }
 
             return -1;
+        }
+
+        protected void SetSimulationResult(Dictionary<int, int> simulationResult)
+        {
+            SimulationResults.Clear();
+            foreach (var item in simulationResult)
+            {
+                SimulationResults.Add(new IndividualSimulationResult { Key = item.Key, Value = item.Value, Forecast = this, ForecastId = Id });
+            }
+
+            TotalTrials = simulationResult.Values.Sum();
         }
     }
 }

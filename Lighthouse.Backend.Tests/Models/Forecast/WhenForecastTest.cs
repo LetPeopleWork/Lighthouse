@@ -1,4 +1,6 @@
-﻿using Lighthouse.Backend.Models.Forecast;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
+using Microsoft.VisualStudio.Services.Common;
 
 namespace Lighthouse.Backend.Tests.Models.Forecast
 {
@@ -13,18 +15,16 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         [TestCase(95, 9)]
         public void GetPercentile_ReturnsCorrectValue(int percentile, int expectedResult)
         {
-            var simulationResult = new Dictionary<int, int>
-            {
-                {5, 3 },
-                {4, 2 },
-                {7, 1 },
-                {3, 1 },
-                {6, 2 },
-                {9, 1 },
-                {8, 0 }
-            };
+            var simulationResult = new SimulationResult(new Team(), new Feature(), 1);
+            simulationResult.SimulationResults.Add(5, 3);
+            simulationResult.SimulationResults.Add(4, 2);
+            simulationResult.SimulationResults.Add(7, 1);
+            simulationResult.SimulationResults.Add(3, 1);
+            simulationResult.SimulationResults.Add(6, 2);
+            simulationResult.SimulationResults.Add(9, 1);
+            simulationResult.SimulationResults.Add(8, 0);
 
-            var subject = new WhenForecast(simulationResult, 1);
+            var subject = new WhenForecast(simulationResult);
 
             var forecast = subject.GetProbability(percentile);
 
@@ -40,18 +40,15 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         [TestCase(12, 100)]
         public void GetLikelihood_ReturnsCorrectValue(int daysToTargetDate, int expecedLikelihood)
         {
-            var simulationResult = new Dictionary<int, int>
-            {
-                
-                {4, 2 },
-                {7, 1 },
-                {5, 3 },
-                {9, 1 },
-                {3, 1 },
-                {6, 2 }
-            };
+            var simulationResult = new SimulationResult(new Team(), new Feature(), 1);
+            simulationResult.SimulationResults.Add(4, 2);
+            simulationResult.SimulationResults.Add(7, 1);
+            simulationResult.SimulationResults.Add(5, 3);
+            simulationResult.SimulationResults.Add(9, 1);
+            simulationResult.SimulationResults.Add(3, 1);
+            simulationResult.SimulationResults.Add(6, 2);
 
-            var subject = new WhenForecast(simulationResult, 1);
+            var subject = new WhenForecast(simulationResult);
 
             var forecast = subject.GetLikelihood(daysToTargetDate);
 

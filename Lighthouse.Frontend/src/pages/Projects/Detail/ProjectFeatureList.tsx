@@ -55,7 +55,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                                 }} />
 
                                 {project.involvedTeams
-                                    .filter(team => feature.getRemainingWorkForTeam(team.id) > 0)
+                                    .filter(team => feature.getTotalWorkForTeam(team.id) > 0)
                                     .map((team) => (
                                         <div key={team.id}>
 

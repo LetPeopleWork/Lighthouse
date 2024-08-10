@@ -31,7 +31,15 @@ namespace Lighthouse.Backend.Models
 
         public string? Url { get; set; }
 
-        public WhenForecast Forecast { get; set; }
+        public WhenForecast Forecast
+        {
+            get
+            {
+                return new AggregatedWhenForecast(Forecasts);
+            }
+        }
+
+        public List<WhenForecast> Forecasts { get; set; } = [];
 
         public List<FeatureWork> FeatureWork { get; } = new List<FeatureWork>();
 
@@ -86,21 +94,15 @@ namespace Lighthouse.Backend.Models
             return -1;
         }
 
-        public void SetFeatureForecast(IEnumerable<WhenForecast> forecasts)
+        public void SetFeatureForecasts(IEnumerable<WhenForecast> forecasts)
         {
-            var worstCaseForecast = int.MinValue;
+            Forecasts.Clear();
 
             foreach (var forecast in forecasts)
             {
-                var result = forecast.GetProbability(85);
-
-                if (result > worstCaseForecast)
-                {
-                    worstCaseForecast = result;
-                    Forecast = forecast;
-                    Forecast.Feature = this;
-                    Forecast.FeatureId = Id;
-                }
+                Forecast.Feature = this;
+                Forecast.FeatureId = Id;
+                Forecasts.Add(forecast);
             }
         }
     }
