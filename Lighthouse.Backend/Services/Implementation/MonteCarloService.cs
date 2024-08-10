@@ -7,15 +7,19 @@ namespace Lighthouse.Backend.Services.Implementation
     public class MonteCarloService : IMonteCarloService
     {
         private readonly int trials;
+        
         private readonly IRandomNumberService randomNumberService;
         private readonly IRepository<Feature> featureRepository;
         private readonly ILogger<MonteCarloService> logger;
 
-        public MonteCarloService(IRandomNumberService randomNumberService, IRepository<Feature> featureRepository, ILogger<MonteCarloService> logger, int trials = 10000)
+        private readonly IFeatureHistoryService featureHistoryService;
+
+        public MonteCarloService(IRandomNumberService randomNumberService, IRepository<Feature> featureRepository, IFeatureHistoryService featureHistoryService, ILogger<MonteCarloService> logger, int trials = 10000)
         {
             this.trials = trials;
             this.randomNumberService = randomNumberService;
             this.featureRepository = featureRepository;
+            this.featureHistoryService = featureHistoryService;
             this.logger = logger;
         }
 
@@ -64,6 +68,8 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogInformation("Finished running Monte Carlo Forecast For All Fetaures");
 
             await featureRepository.Save();
+
+            await ArchiveFeatures(allFeatures);
         }
 
         public async Task UpdateForecastsForProject(Project project)
@@ -73,6 +79,8 @@ namespace Lighthouse.Backend.Services.Implementation
             await ForecastFeatures(project.Features);
 
             await featureRepository.Save();
+
+            await ArchiveFeatures(project.Features);
         }
 
         private async Task ForecastFeatures(IEnumerable<Feature> features)
@@ -209,6 +217,14 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var randomDay = randomNumberService.GetRandomNumber(throughput.History);
             return throughput.GetThroughputOnDay(randomDay);
+        }
+
+        private async Task ArchiveFeatures(IEnumerable<Feature> features)
+        {
+            foreach (var feature in features)
+            {
+                await featureHistoryService.ArchiveFeature(feature);
+            }
         }
     }
 }

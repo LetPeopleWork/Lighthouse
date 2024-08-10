@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Models.History;
 
 namespace Lighthouse.Backend.Data
 {
@@ -22,6 +23,8 @@ namespace Lighthouse.Backend.Data
         public DbSet<Feature> Features { get; set; } = default!;
 
         public DbSet<Project> Projects { get; set; } = default!;
+
+        public DbSet<FeatureHistoryEntry> FeatureHistory { get; set; } = default!;
 
         public DbSet<WorkTrackingSystemConnection> WorkTrackingSystemConnections { get; set; } = default!;
 
@@ -61,7 +64,18 @@ namespace Lighthouse.Backend.Data
 
             modelBuilder.Entity<Feature>()
                 .HasMany(f => f.Projects)
-                .WithMany(p => p.Features);
+                .WithMany(p => p.Features);            
+
+            modelBuilder.Entity<FeatureHistoryEntry>()
+                .HasMany(f => f.Forecasts)
+                .WithOne(wf => wf.FeatureHistoryEntry)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FeatureWorkHistoryEntry>()
+                .HasOne(rw => rw.FeatureHistoryEntry)
+                .WithMany(f => f.FeatureWork)
+                .HasForeignKey(rw => rw.FeatureHistoryEntryId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<WorkTrackingSystemConnection>(entity =>
             {

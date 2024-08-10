@@ -12,6 +12,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Serilog;
 using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
+using Lighthouse.Backend.Models.History;
 
 namespace Lighthouse.Backend
 {
@@ -60,6 +61,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
                 builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
                 builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
+                builder.Services.AddScoped<IRepository<FeatureHistoryEntry>, FeatureHistoryRepository>();
 
                 // Factories
                 builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
@@ -77,6 +79,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IAppSettingService, AppSettingService>();
                 builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
                 builder.Services.AddScoped<IAssemblyService, AssemblyService>();
+                builder.Services.AddScoped<IFeatureHistoryService, FeatureHistoryService>();
 
                 builder.Services.AddScoped<AzureDevOpsWorkItemService>();
                 builder.Services.AddScoped<JiraWorkItemService>();

@@ -14,12 +14,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private Mock<IRepository<Feature>> featureRepositoryMock;
 
+        private Mock<IFeatureHistoryService> featureHistoryServiceMock;
+
         [SetUp]
         public void Setup()
         {
             featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureHistoryServiceMock = new Mock<IFeatureHistoryService>();
         }
-
 
         [Test]
         public void HowMany_ReturnsHowManyForecast()
@@ -458,6 +460,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             });
         }
 
+        [Test]
+        public async Task ForecastAllFeatures_ArchivesFeatures()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            var team = CreateTeam(1, [1]);
+
+            var feature1 = new Feature(team, 35);
+            var feature2 = new Feature(team, 20);
+
+            SetupFeatures(feature1, feature2);
+
+            await subject.ForecastAllFeatures();
+
+            featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature1));
+            featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
+        }
+
+        [Test]
+        public async Task UpdateForecastsForProject_ArchivesFeatures()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            var team = CreateTeam(1, [1]);
+
+            var feature1 = new Feature(team, 35);
+            var feature2 = new Feature(team, 20);
+            var project = new Project();
+
+            project.UpdateFeatures([feature1, feature2]);
+
+            SetupFeatures(feature1, feature2);
+
+            await subject.UpdateForecastsForProject(project);
+
+            featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature1));
+            featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
+        }
+
         private void SetupFeatures(params Feature[] features)
         {
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
@@ -467,12 +508,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             randomNumberService = new NotSoRandomNumberService();
 
-            return new MonteCarloService(new NotSoRandomNumberService(), featureRepositoryMock.Object, Mock.Of<ILogger<MonteCarloService>>());
+            return new MonteCarloService(new NotSoRandomNumberService(), featureRepositoryMock.Object, featureHistoryServiceMock.Object, Mock.Of<ILogger<MonteCarloService>>());
         }
 
         private MonteCarloService CreateSubjectWithRealThroughput()
         {
-            return new MonteCarloService(new RandomNumberService(), featureRepositoryMock.Object, Mock.Of<ILogger<MonteCarloService>>(), 10000);
+            return new MonteCarloService(new RandomNumberService(), featureRepositoryMock.Object, featureHistoryServiceMock.Object, Mock.Of<ILogger<MonteCarloService>>(), 10000);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)

@@ -5,7 +5,9 @@
         private SortedDictionary<int, int> simulationResult;
         private readonly IComparer<int> comparer;
 
-        protected ForecastBase() { }
+        protected ForecastBase()
+        {
+        }
 
         protected ForecastBase(IComparer<int> comparer)
         {
@@ -31,7 +33,7 @@
         {
             get
             {
-                if (simulationResult == null)
+                if (simulationResult == null || simulationResult.Count < 1)
                 {
                     var dictionary = new Dictionary<int, int>();
                     foreach (var item in SimulationResults)
@@ -65,6 +67,28 @@
             return -1;
         }
 
+        public double GetLikelihood(int daysToTargetDate)
+        {
+            var trialCounter = 0;
+
+            foreach (var simulation in SimulationResult)
+            {
+                trialCounter += simulation.Value;
+
+                if (simulation.Key >= daysToTargetDate)
+                {
+                    break;
+                }
+            }
+
+            if (trialCounter > 0)
+            {
+                return 100 / ((double)TotalTrials) * trialCounter;
+            }
+
+            return 100;
+        }
+
         protected void SetSimulationResult(Dictionary<int, int> simulationResult)
         {
             SimulationResults.Clear();
@@ -74,6 +98,7 @@
             }
 
             TotalTrials = simulationResult.Values.Sum();
+            this.simulationResult?.Clear();
         }
     }
 }

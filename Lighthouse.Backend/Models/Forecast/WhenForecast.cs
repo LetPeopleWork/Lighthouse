@@ -23,27 +23,5 @@ namespace Lighthouse.Backend.Models.Forecast
         public Team? Team { get; set; }
 
         public int NumberOfItems { get; set; } = 0;
-
-        public virtual double GetLikelihood(int daysToTargetDate)
-        {
-            var trialCounter = 0;
-
-            foreach (var simulation in SimulationResult)
-            {
-                trialCounter += simulation.Value;
-
-                if (simulation.Key >= daysToTargetDate)
-                {
-                    break;
-                }
-            }
-
-            if (trialCounter > 0)
-            {
-                return 100 / ((double)TotalTrials) * trialCounter;
-            }
-
-            return 100;
-        }
     }
 }
