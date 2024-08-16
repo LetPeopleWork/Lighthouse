@@ -11,7 +11,9 @@ const ThroughputBarChart: React.FC<ThroughputBarChartProps> = ({ throughputData 
 
     const data = Array.from({ length: throughputData.history }, (_, index) => {
         const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() - index - length);
+
+        const dayIndex = throughputData.history - 1 - index;
+        targetDate.setDate(targetDate.getDate() - dayIndex);
     
         return {
             day: targetDate.toLocaleDateString(),
