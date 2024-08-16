@@ -24,6 +24,7 @@ const DefaultProjectSettings: React.FC = () => {
             getProjectSettings={getDefaultProjectSettings}
             saveProjectSettings={saveDefaultProjectSettings}
             getWorkTrackingSystems={getWorkTrackingSystems}
+            modifyDefaultSettings={true}
         />
     )
 }

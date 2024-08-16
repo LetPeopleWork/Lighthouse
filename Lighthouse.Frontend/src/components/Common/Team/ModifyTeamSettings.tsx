@@ -16,9 +16,10 @@ interface ModifyTeamSettingsProps {
     getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
     getTeamSettings: () => Promise<ITeamSettings>;
     saveTeamSettings: (settings: ITeamSettings) => Promise<void>;
+    modifyDefaultSettings? : boolean;
 }
 
-const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkTrackingSystems, getTeamSettings, saveTeamSettings }) => {
+const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkTrackingSystems, getTeamSettings, saveTeamSettings, modifyDefaultSettings = false }) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [teamSettings, setTeamSettings] = useState<ITeamSettings | null>(null);
     const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] = useState<IWorkTrackingSystemConnection | null>(null);
@@ -65,7 +66,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
     useEffect(() => {
         const handleStateChange = () => {
             const isFormValid = teamSettings?.name != '' && (teamSettings?.throughputHistory ?? 0) > 0 && teamSettings?.featureWIP !== undefined &&
-            (workTrackingSystems.length == 0 || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (workTrackingSystems.length == 0 || selectedWorkTrackingSystem !== null);
+            (modifyDefaultSettings || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);
 
             setFormValid(isFormValid);
         };
@@ -121,7 +122,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                         onRemoveWorkItemType={handleRemoveWorkItemType}
                     />
 
-                    {workTrackingSystems.length > 0 ? (
+                    {!modifyDefaultSettings ? (
                         <WorkTrackingSystemComponent
                             workTrackingSystems={workTrackingSystems}
                             selectedWorkTrackingSystem={selectedWorkTrackingSystem}

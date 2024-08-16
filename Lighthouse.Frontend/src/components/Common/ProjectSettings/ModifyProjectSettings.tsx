@@ -18,9 +18,10 @@ interface ModifyProjectSettingsProps {
     getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
     getProjectSettings: () => Promise<IProjectSettings>;
     saveProjectSettings: (settings: IProjectSettings) => Promise<void>;
+    modifyDefaultSettings? : boolean;
 }
 
-const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, getWorkTrackingSystems, getProjectSettings, saveProjectSettings }) => {
+const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, getWorkTrackingSystems, getProjectSettings, saveProjectSettings, modifyDefaultSettings = false }) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [projectSettings, setProjectSettings] = useState<IProjectSettings | null>(null);
     const [workTrackingSystems, setWorkTrackingSystems] = useState<IWorkTrackingSystemConnection[]>([]);
@@ -82,7 +83,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
     useEffect(() => {
         const handleStateChange = () => {
             const isFormValid = projectSettings?.name != '' && projectSettings?.defaultAmountOfWorkItemsPerFeature !== undefined &&
-            (workTrackingSystems.length == 0 || projectSettings?.workItemQuery != '') && projectSettings?.workItemTypes.length > 0 && (workTrackingSystems.length == 0 || selectedWorkTrackingSystem !== null);
+            (modifyDefaultSettings || projectSettings?.workItemQuery != '') && projectSettings?.workItemTypes.length > 0 && (modifyDefaultSettings  || selectedWorkTrackingSystem !== null);
 
             setFormValid(isFormValid);
         };
@@ -138,7 +139,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
                         onRemoveWorkItemType={handleRemoveWorkItemType}
                     />
 
-                    {workTrackingSystems.length > 0 ? (
+                    {!modifyDefaultSettings ? (
                         <>
                             <WorkTrackingSystemComponent
                                 workTrackingSystems={workTrackingSystems}
