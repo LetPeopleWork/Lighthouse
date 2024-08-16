@@ -23,7 +23,7 @@
     "@mui/material": "^5.16.1",
     "@mui/x-charts": "^7.10.0",
     "@mui/x-date-pickers": "^7.10.0",
-    "axios": "^1.7.2",
+    "axios": "^1.7.4",
     "dayjs": "^1.11.11",
     "lodash.debounce": "^4.0.8",
     "lorem-ipsum": "^2.0.8",
