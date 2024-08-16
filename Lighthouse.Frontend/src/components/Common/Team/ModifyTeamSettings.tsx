@@ -72,7 +72,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
         };
 
         handleStateChange();
-    }, [teamSettings, selectedWorkTrackingSystem, workTrackingSystems]);
+    }, [teamSettings, selectedWorkTrackingSystem, workTrackingSystems, modifyDefaultSettings]);
 
     useEffect(() => {
         const fetchData = async () => {

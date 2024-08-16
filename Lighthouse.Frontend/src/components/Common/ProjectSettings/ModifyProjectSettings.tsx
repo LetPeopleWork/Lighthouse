@@ -89,7 +89,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
         };
 
         handleStateChange();
-    }, [projectSettings, selectedWorkTrackingSystem, workTrackingSystems]);
+    }, [projectSettings, selectedWorkTrackingSystem, workTrackingSystems, modifyDefaultSettings]);
 
     useEffect(() => {
         const fetchData = async () => {
