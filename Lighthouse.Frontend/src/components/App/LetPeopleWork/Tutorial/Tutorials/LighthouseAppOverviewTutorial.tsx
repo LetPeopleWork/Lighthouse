@@ -20,7 +20,7 @@ const LighthouseOverviewStep: React.FC = () => (
                 {`It connects to your work tracking tool (currently Jira and Azure DevOps are supported) and will automatically update your team's throughput and your project's forecasted delivery dates.\n
                 You can use it with a single team for manual "When" and "How Many" forecasts, as well as for tracking projects with one or multiple teams.\n
                 The forecasts are created using `}
-                <Link to={"https://medium.com/@benjihuser/an-introduction-and-step-by-step-guide-to-monte-carlo-simulations-4706f675a02f?source=friends_link&sk=5e329d6d9725bbcbf03aad2e970cfae7"}>Monte Carlo Simulations</Link>
+                <Link to={"https://www.letpeople.work/post/an-introduction-and-step-by-step-guide-to-monte-carlo-simulations"}>Monte Carlo Simulations</Link>
 
                 {`. Lighthouse is provided free of charge as open-source software by `}
                 <Link to={"https://letpeople.work"}>Let People Work</Link>
