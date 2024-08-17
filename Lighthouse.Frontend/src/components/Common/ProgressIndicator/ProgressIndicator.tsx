@@ -1,9 +1,10 @@
 import React from "react";
 import { IProgressable } from "../../../models/IProgressable";
-import { LinearProgress, Typography } from "@mui/material";
+import { LinearProgress, Typography, Tooltip, IconButton } from "@mui/material";
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 interface ProgressIndicatorProps {
-    title: React.ReactNode;  // Title can now be any React element
+    title: React.ReactNode;
     progressableItem: IProgressable;
 }
 
@@ -32,9 +33,29 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({ title, progressab
                         fontWeight: 'bold',
                         fontSize: '0.75rem', 
                         whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
                     }}
                 >
-                    {progressableItem.totalWork > 0 ? (`${completionPercentage}% (${completedItems}/${progressableItem.totalWork})`) : ('')}
+                    {progressableItem.totalWork > 0 ? (
+                        `${completionPercentage}% (${completedItems}/${progressableItem.totalWork})`
+                    ) : (
+                        <>
+                            Coult not determine Work
+                            <Tooltip title="The remaining and total work could not be determined. This can happen if the work was added to a team in your work tracking system, but you have not defined this team yet in Lighthouse." arrow>
+                                <IconButton
+                                    size="small"
+                                    style={{
+                                        marginLeft: '4px',
+                                        padding: '0px',
+                                        color: '#fff',
+                                    }}
+                                >
+                                    <InfoOutlinedIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </>
+                    )}
                 </Typography>
             </div>
         </div>
