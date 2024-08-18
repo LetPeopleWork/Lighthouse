@@ -86,7 +86,7 @@ const WorkTrackingSystemConnectionSettings: React.FC = () => {
 
     useEffect(() => {
         initializeData();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <InputGroup title={'Work Tracking Systems'}>

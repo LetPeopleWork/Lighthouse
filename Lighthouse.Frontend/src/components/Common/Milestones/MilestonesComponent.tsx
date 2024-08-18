@@ -24,7 +24,6 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
     const [newMilestoneName, setNewMilestoneName] = useState<string>('');
     const [newMilestoneDate, setNewMilestoneDate] = useState<string>('');
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     const debouncedUpdateMilestoneName = useCallback(debounce((name: string, updatedMilestone: Partial<IMilestone>) => {
         onUpdateMilestone(name, updatedMilestone);
     }, 700), [onUpdateMilestone]);

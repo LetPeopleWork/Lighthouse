@@ -167,8 +167,7 @@ const ProjectDetail: React.FC = () => {
     }, [apiService, project])
 
     useEffect(() => {
-        fetchProject();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        fetchProject();        
     }, []);
 
 

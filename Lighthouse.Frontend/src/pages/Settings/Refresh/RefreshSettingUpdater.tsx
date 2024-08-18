@@ -41,7 +41,7 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({ settingNa
 
     useEffect(() => {
         fetchData();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleInputChange = (field: keyof IRefreshSettings) => (event: React.ChangeEvent<HTMLInputElement>) => {
         if (refreshSettings) {

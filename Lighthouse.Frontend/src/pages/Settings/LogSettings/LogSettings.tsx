@@ -64,7 +64,7 @@ const LogSettings: React.FC = () => {
         };
 
         initialize();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <InputGroup title={'Logs'}>
