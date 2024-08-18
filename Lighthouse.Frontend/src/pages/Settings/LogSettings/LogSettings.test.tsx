@@ -62,13 +62,12 @@ describe('LogSettings Component', () => {
             </MockApiServiceProvider>
         );
 
-        const select = await waitFor(() =>
-            screen.getByTestId("select-id")
-        );
-
-        fireEvent.change(select, { target: { value: 'warn' } });
-
-        expect(mockSetLogLevel).toHaveBeenCalledWith('warn');
+        await waitFor(() => {
+            let select = screen.getByTestId("select-id")
+            fireEvent.change(select, { target: { value: 'warn' } });
+            
+            expect(mockSetLogLevel).toHaveBeenCalledWith('warn');
+        });
     });
 
     it('refreshes logs when refresh button is clicked', () => {
@@ -97,7 +96,7 @@ describe('LogSettings Component', () => {
         const createObjectURL = vi.fn().mockReturnValue('blobUrl');
         const appendChild = vi.fn();
         const removeChild = vi.fn();
-        
+
         URL.createObjectURL = createObjectURL;
         document.body.appendChild = appendChild;
         document.body.removeChild = removeChild;
