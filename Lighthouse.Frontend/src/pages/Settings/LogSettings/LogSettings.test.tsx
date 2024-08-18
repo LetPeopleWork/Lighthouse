@@ -28,7 +28,15 @@ const MockApiServiceProvider = ({ children }: { children: React.ReactNode }) => 
 };
 
 describe('LogSettings Component', () => {
+    let originalCreateObjectURL: typeof URL.createObjectURL;
+    let originalAppendChild: typeof document.body.appendChild;
+    let originalRemoveChild: typeof document.body.removeChild;
+
     beforeEach(() => {
+        originalCreateObjectURL = URL.createObjectURL;
+        originalAppendChild = document.body.appendChild;
+        originalRemoveChild = document.body.removeChild;
+
         mockGetLogs.mockResolvedValue('Sample log data');
         mockGetLogLevel.mockResolvedValue('info');
         mockGetSupportedLogLevels.mockResolvedValue(['info', 'warn', 'error']);
@@ -36,7 +44,12 @@ describe('LogSettings Component', () => {
     });
 
     afterEach(() => {
+        URL.createObjectURL = originalCreateObjectURL;
+        document.body.appendChild = originalAppendChild;
+        document.body.removeChild = originalRemoveChild;
+
         vi.resetAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('renders correctly and loads data', async () => {
