@@ -63,9 +63,9 @@ describe('LogSettings Component', () => {
         );
 
         await waitFor(() => {
-            let select = screen.getByTestId("select-id")
+            const select = screen.getByTestId("select-id")
             fireEvent.change(select, { target: { value: 'warn' } });
-            
+
             expect(mockSetLogLevel).toHaveBeenCalledWith('warn');
         });
     });
