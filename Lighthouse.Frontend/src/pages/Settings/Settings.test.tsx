@@ -1,6 +1,12 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import Settings from "./Settings";
 
+vi.mock("./LogSettings/LogSettings", () => ({
+    default: ({}: {}) => (
+        <div data-testid="LogSettings">Log Settings</div>
+    ),
+}))
+
 describe("Settings", () => {
     it("should render the tabs and their corresponding panels", () => {
         render(<Settings />);
