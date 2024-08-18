@@ -13,13 +13,19 @@ import EditTeam from './pages/Teams/Edit/EditTeam';
 import EditProject from './pages/Projects/Edit/EditProject';
 import ProjectDetail from './pages/Projects/Detail/ProjectDetail';
 import DemoDialog from './components/App/Demo/DemoDialog';
+import { ApiServiceContext, getApiServices, IApiServiceContext } from './services/Api/ApiServiceContext';
 
 const App: React.FC = () => {
   const [isDemoDialogOpen, setIsDemoDialogOpen] = useState(false);
 
+  const [apiServices, setApiServices] = useState<IApiServiceContext | null>(null)
+
   useEffect(() => {
     const isDemoMode = import.meta.env.VITE_API_SERVICE_TYPE === 'DEMO';
     const demoDialogSeen = localStorage.getItem('demoDialogSeen') === 'true';
+
+    const services = getApiServices(isDemoMode);
+    setApiServices(services)
 
     if (isDemoMode && !demoDialogSeen) {
       setIsDemoDialogOpen(true);
@@ -37,34 +43,36 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <Box className="container">
-        <CssBaseline />
-        <Header />
-        <Box component="main" className="main-content">
-          <Routes>
-            <Route path="/" element={<OverviewDashboard />} />
-            <Route path="/teams">
-              <Route index element={<TeamsOverview />} />
-              <Route path=":id" element={<TeamDetail />} />
-              <Route path="edit/:id" element={<EditTeam />} />
-              <Route path="new" element={<EditTeam />} />
-            </Route>
-            <Route path="/projects">
-              <Route index element={<ProjectsOverview />} />
-              <Route path=":id" element={<ProjectDetail />} />
-              <Route path="edit/:id" element={<EditProject />} />
-              <Route path="new" element={<EditProject />} />
-            </Route>
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
+      <ApiServiceContext.Provider value={apiServices}>
+        <Box className="container">
+          <CssBaseline />
+          <Header />
+          <Box component="main" className="main-content">
+            <Routes>
+              <Route path="/" element={<OverviewDashboard />} />
+              <Route path="/teams">
+                <Route index element={<TeamsOverview />} />
+                <Route path=":id" element={<TeamDetail />} />
+                <Route path="edit/:id" element={<EditTeam />} />
+                <Route path="new" element={<EditTeam />} />
+              </Route>
+              <Route path="/projects">
+                <Route index element={<ProjectsOverview />} />
+                <Route path=":id" element={<ProjectDetail />} />
+                <Route path="edit/:id" element={<EditProject />} />
+                <Route path="new" element={<EditProject />} />
+              </Route>
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </Box>
+          <Footer />
         </Box>
-        <Footer />
-      </Box>
-      <DemoDialog
-        open={isDemoDialogOpen}
-        onClose={handleCloseDemoDialog}
-        onDontShowAgain={handleDontShowAgain}
-      />
+        <DemoDialog
+          open={isDemoDialogOpen}
+          onClose={handleCloseDemoDialog}
+          onDontShowAgain={handleDontShowAgain}
+        />
+      </ApiServiceContext.Provider>
     </Router>
   );
 };

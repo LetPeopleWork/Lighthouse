@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import TeamsOverview from './TeamsOverview';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
-import { MockApiService } from '../../../services/Api/MockApiService';
+import { DemoApiService } from '../../../services/Api/DemoApiService';
 
 describe('TeamsOverview component', () => {
     beforeEach(() => {
@@ -26,7 +26,7 @@ describe('TeamsOverview component', () => {
     });
 
     test('displays error message when fetching teams fails', async () => {
-        ApiServiceProvider['instance'] = new MockApiService(false, true);
+        ApiServiceProvider['instance'] = new DemoApiService(false, true);
 
         render(
             <Router>

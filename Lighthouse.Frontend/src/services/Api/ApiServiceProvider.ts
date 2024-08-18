@@ -1,6 +1,6 @@
 import { ApiService } from "./ApiService";
+import { DemoApiService } from "./DemoApiService";
 import { IApiService } from "./IApiService";
-import { MockApiService } from "./MockApiService";
 
 export class ApiServiceProvider {
 
@@ -14,7 +14,7 @@ export class ApiServiceProvider {
                 const useDelay : boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
 
                 console.log(`Using DEMO API Service - Applaying delay: ${useDelay}`)
-                this.instance = new MockApiService(useDelay);
+                this.instance = new DemoApiService(useDelay);
             } else {
                 console.log("Using Real API Service")
                 let baseUrl = "/api";

@@ -24,7 +24,7 @@ const InvolvedTeamsList: React.FC<InvolvedTeamsListProps> = ({ teams, onTeamUpda
         <InputGroup title={'Involved Teams (Feature WIP)'} initiallyExpanded={initiallyExpanded}>
             <Grid container spacing={2}>
                 {teams.map((team) => (
-                    <Grid item xs={3}>
+                    <Grid item xs={3} key={team.id}>
                         <TextField
                             variant='outlined'
                             margin='normal'

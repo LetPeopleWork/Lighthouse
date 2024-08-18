@@ -1,13 +1,13 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ApiServiceProvider } from "../../../services/Api/ApiServiceProvider";
 import RefreshSettingUpdater from "./RefreshSettingUpdater";
-import { MockApiService } from "../../../services/Api/MockApiService";
+import { DemoApiService } from "../../../services/Api/DemoApiService";
 import { vi } from 'vitest';
 
 const mockGetRefreshSettings = vi.fn();
 const mockUpdateRefreshSettings = vi.fn();
 
-const mockApiService = new MockApiService(false, false);
+const mockApiService = new DemoApiService(false, false);
 mockApiService.getRefreshSettings = mockGetRefreshSettings;
 mockApiService.updateRefreshSettings = mockUpdateRefreshSettings;
 

@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ProjectsOverview from './ProjectsOverview';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
-import { MockApiService } from '../../../services/Api/MockApiService';
+import { DemoApiService } from '../../../services/Api/DemoApiService';
 
 describe('ProjectOverview component', () => {
     beforeEach(() => {
@@ -26,7 +26,7 @@ describe('ProjectOverview component', () => {
     });
 
     test('displays error message when fetching projects fails', async () => {
-        ApiServiceProvider['instance'] = new MockApiService(false, true);
+        ApiServiceProvider['instance'] = new DemoApiService(false, true);
 
         render(
             <Router>

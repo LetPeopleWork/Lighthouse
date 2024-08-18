@@ -1,7 +1,6 @@
 import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { Project } from '../../models/Project/Project';
 import { Team } from '../../models/Team/Team';
-import { IApiService } from './IApiService';
 import { Feature } from '../../models/Feature';
 import { Throughput } from '../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../models/Forecasts/ManualForecast';
@@ -16,8 +15,16 @@ import { LoremIpsum } from "lorem-ipsum";
 import { IRefreshSettings, RefreshSettings } from '../../models/AppSettings/RefreshSettings';
 import { ILighthouseRelease, LighthouseRelease } from '../../models/LighthouseRelease/LighthouseRelease';
 import { ILighthouseReleaseAsset, LighthouseReleaseAsset } from '../../models/LighthouseRelease/LighthouseReleaseAsset';
+import { IWorkTrackingSystemService } from './WorkTrackingSystemService';
+import { IForecastService } from './ForecastService';
+import { ILogService } from './LogService';
+import { IProjectService } from './ProjectService';
+import { ISettingsService } from './SettingsService';
+import { ITeamService } from './TeamService';
+import { IVersionService } from './VersionService';
+import { IApiService } from './IApiService';
 
-export class MockApiService implements IApiService {
+export class DemoApiService implements IApiService, IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService {
     private useDelay: boolean;
     private throwError: boolean;
 
