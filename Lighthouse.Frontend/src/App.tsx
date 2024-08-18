@@ -17,15 +17,11 @@ import { ApiServiceContext, getApiServices, IApiServiceContext } from './service
 
 const App: React.FC = () => {
   const [isDemoDialogOpen, setIsDemoDialogOpen] = useState(false);
-
-  const [apiServices, setApiServices] = useState<IApiServiceContext | null>(null)
+  const apiServices: IApiServiceContext = getApiServices();
 
   useEffect(() => {
     const isDemoMode = import.meta.env.VITE_API_SERVICE_TYPE === 'DEMO';
     const demoDialogSeen = localStorage.getItem('demoDialogSeen') === 'true';
-
-    const services = getApiServices(isDemoMode);
-    setApiServices(services)
 
     if (isDemoMode && !demoDialogSeen) {
       setIsDemoDialogOpen(true);

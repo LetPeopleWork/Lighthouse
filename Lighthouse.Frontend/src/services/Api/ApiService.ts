@@ -223,36 +223,6 @@ export class ApiService implements IApiService {
         });
     }
 
-    async getLogLevel(): Promise<string> {
-        return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<string>(`/logs/level`);
-
-            return response.data;
-        });
-    }
-
-    async getSupportedLogLevels(): Promise<string[]> {
-        return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<string[]>(`/logs/level/supported`);
-
-            return response.data;
-        });
-    }
-
-    async setLogLevel(logLevel: string): Promise<void> {
-        await this.withErrorHandling(async () => {
-            await this.apiService.post<void>('/logs/level', { level: logLevel });
-        });
-    }
-
-    async getLogs(): Promise<string> {
-        return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<string>(`/logs`);
-
-            return response.data;
-        });
-    }
-
     async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<IRefreshSettings>(`/appsettings/${settingName}Refresh`);

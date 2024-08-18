@@ -63,14 +63,6 @@ export interface IApiService {
 
     validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean>;
 
-    getLogLevel(): Promise<string>;
-
-    getSupportedLogLevels(): Promise<string[]>;
-
-    setLogLevel(logLevel: string): Promise<void>;
-
-    getLogs(): Promise<string>;
-
     getRefreshSettings(settingName: string): Promise<IRefreshSettings>;
 
     updateRefreshSettings(settingName: string, refreshSettings: IRefreshSettings): Promise<void>;

@@ -41,12 +41,13 @@ const demoServices: IApiServiceContext = {
     workTrackingSystemService: demoApiService,
 }
 
-export function getApiServices(isDemo: boolean): IApiServiceContext {
-    if (isDemo) {
+export function getApiServices(): IApiServiceContext {
+    const isDemoMode = import.meta.env.VITE_API_SERVICE_TYPE === 'DEMO';
+    if (isDemoMode) {
         return demoServices;
     }
 
     return defaultServices;
 }
 
-export const ApiServiceContext = createContext<IApiServiceContext | null>(defaultServices);
+export const ApiServiceContext = createContext<IApiServiceContext>(defaultServices);

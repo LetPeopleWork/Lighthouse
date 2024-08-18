@@ -1,30 +1,30 @@
-import React, { useEffect, useState } from "react";
-import { ApiServiceProvider } from "../../../services/Api/ApiServiceProvider";
+import React, { useContext, useEffect, useState } from "react";
 import LighthouseLogViewer from "./LighthouseLogViewer";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { Button, Grid, Select, MenuItem, FormControl, InputLabel, SelectChangeEvent } from "@mui/material";
 import DownloadIcon from '@mui/icons-material/Download';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 const LogSettings: React.FC = () => {
-    const apiService = ApiServiceProvider.getApiService();
-
     const [logs, setLogs] = useState<string>('Loading...');
     const [logLevel, setLogLevel] = useState<string>('');
     const [supportedLogLevels, setSupportedLogLevels] = useState<string[]>([]);
 
+    const { logService } = useContext(ApiServiceContext);
+
     const refreshLogs = async () => {
-        const currentLogs = await apiService.getLogs();
+        const currentLogs = await logService.getLogs();
         setLogs(currentLogs);
     }
 
     const fetchLogLevel = async () => {
-        const currentLogLevel = await apiService.getLogLevel();
+        const currentLogLevel = await logService.getLogLevel();
         setLogLevel(currentLogLevel);
     }
 
     const fetchSupportedLogLevels = async () => {
-        const currentSupportedLogLevels = await apiService.getSupportedLogLevels();
+        const currentSupportedLogLevels = await logService.getSupportedLogLevels();
         setSupportedLogLevels(currentSupportedLogLevels);
     }
 
@@ -52,7 +52,7 @@ const LogSettings: React.FC = () => {
 
     const onLogLevelChanged = async (event: SelectChangeEvent) => {
         const newLogLevel = event.target.value as string;
-        await apiService.setLogLevel(newLogLevel);
+        await logService.setLogLevel(newLogLevel);
         setLogLevel(newLogLevel);
     }
 
@@ -76,9 +76,12 @@ const LogSettings: React.FC = () => {
                             value={logLevel}
                             onChange={onLogLevelChanged}
                             label="Log Level"
+                            inputProps={{
+                                "data-testid": "select-id"
+                              }}
                         >
                             {supportedLogLevels.map(level => (
-                                <MenuItem key={level} value={level}>
+                                <MenuItem key={level} value={level} data-testId={level}>
                                     {level}
                                 </MenuItem>
                             ))}
