@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import Settings from "./Settings";
 
 vi.mock("./LogSettings/LogSettings", () => ({
-    default: ({}: {}) => (
+    default: () => (
         <div data-testid="LogSettings">Log Settings</div>
     ),
 }))
