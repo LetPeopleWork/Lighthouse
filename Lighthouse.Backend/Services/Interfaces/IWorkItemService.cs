@@ -22,8 +22,6 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Task<(string name, string order, string url)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner);
 
-        Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner);
-
         string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder);
 
         Task<bool> ValidateConnection(WorkTrackingSystemConnection connection);

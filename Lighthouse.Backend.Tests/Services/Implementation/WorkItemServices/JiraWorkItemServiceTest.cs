@@ -227,20 +227,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        [TestCase("PROJ-21", true)]
-        [TestCase("PROJ-10", true)]
-        [TestCase("PROJ-20", false)]
-        public async Task ItemHasChildren_ReturnsTrueIfThereAreChildrenIndependentOfTheirState(string epicReferenceID, bool expectedValue)
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-
-            var result = await subject.ItemHasChildren(epicReferenceID, team);
-
-            Assert.That(result, Is.EqualTo(expectedValue));
-        }
-
-        [Test]
         [TestCase(RelativeOrder.Above)]
         [TestCase(RelativeOrder.Below)]
         public void GetAdjacentOrderIndex_NoFeaturesPassed_ReturnsDefault(RelativeOrder relativeOrder)

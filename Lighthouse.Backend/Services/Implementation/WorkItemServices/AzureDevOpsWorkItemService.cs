@@ -130,22 +130,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return isRelated;
         }
 
-        public async Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            logger.LogInformation("Checking if Item {referenceId} has Children", referenceId);
-
-            var witClient = GetClientService(workTrackingSystemOptionsOwner.WorkTrackingSystemConnection);
-
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}] FROM WorkItemLinks WHERE [Source].[{AzureDevOpsFieldNames.Id}] = '{referenceId}' AND [System.Links.LinkType] = 'System.LinkTypes.Hierarchy-Forward' AND Target.[System.WorkItemType] <> '' MODE (Recursive)";
-            var workItems = await witClient.QueryByWiqlAsync(new Wiql() { Query = wiql });
-
-            var hasChildren = workItems.WorkItemRelations.Count() > 1;
-
-            logger.LogInformation("Item {referenceId} has Children: {hasChildren}", referenceId, hasChildren);
-
-            return hasChildren;
-        }
-
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
             logger.LogInformation("Getting Adjacent Order Index for items {ExistingItemsOrder} in order {relativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);

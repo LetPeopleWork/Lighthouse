@@ -49,14 +49,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            foreach (var feature in project.Features.Where(feature => feature.FeatureWork.Sum(x => x.RemainingWorkItems) == 0))
+            foreach (var feature in project.Features.Where(feature => feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0))
             {
-                logger.LogInformation("Checking Feature {FeatureName}", feature.Name);
-                if (await workItemService.ItemHasChildren(feature.ReferenceId, project))
-                {
-                    logger.LogInformation("Feature has items already done - skipping");
-                    continue;
-                }
+                logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
 
                 var numberOfTeams = involvedTeams.Count;
                 var remainingWork = await GetExtrapolatedRemainingWork(project, workItemService, feature);

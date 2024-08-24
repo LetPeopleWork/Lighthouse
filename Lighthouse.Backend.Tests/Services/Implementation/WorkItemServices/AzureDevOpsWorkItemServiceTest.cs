@@ -291,21 +291,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        [TestCase("371", true)]
-        [TestCase("380", true)]
-        [TestCase("379", false)]
-        [TestCase("374", false)]
-        public async Task ItemHasChildren_ReturnsTrueIfThereAreChildrenIndependentOfTheirState(string featureReferenceId, bool expectedValue)
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-
-            var result = await subject.ItemHasChildren(featureReferenceId, team);
-
-            Assert.That(result, Is.EqualTo(expectedValue));
-        }
-
-        [Test]
         [TestCase(RelativeOrder.Above)]
         [TestCase(RelativeOrder.Below)]
         public void GetAdjacentOrderIndex_NoFeaturesPassed_Returns0(RelativeOrder relativeOrder)

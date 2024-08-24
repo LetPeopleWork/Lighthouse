@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_FeatureHasNoChildren_AddsDefaultRemainingWorkToFeature()
+        public async Task CollectFeaturesForProject_NoRemainingWork_NoTotalWork_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
             var project = CreateProject();
@@ -103,10 +103,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
-
-            workItemServiceMock.Setup(x => x.ItemHasChildren(feature1.ReferenceId, project)).ReturnsAsync(false);
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -115,7 +113,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_FeatureHasNoChildren_SizeEstimateFieldSet_SizeEstimateNotAvailable_AddsDefaultRemainingWorkToFeature()
+        public async Task CollectFeaturesForProject_NoRemainingWork_NotTotalWork_SizeEstimateFieldSet_SizeEstimateNotAvailable_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
             var project = CreateProject();
@@ -128,13 +126,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
 
             workItemServiceMock.Setup(x => x.GetEstimatedSizeForItem(feature1.ReferenceId, project)).Returns(Task.FromResult(0));
 
-            workItemServiceMock.Setup(x => x.ItemHasChildren(feature1.ReferenceId, project)).ReturnsAsync(false);
-
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
@@ -142,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_FeatureHasNoChildren_SizeEstimateFieldSet_SizeEstimateAvailable_AddsEstimatedWorkToFeature()
+        public async Task CollectFeaturesForProject_NoRemainingWork_NoTotalWork_SizeEstimateFieldSet_SizeEstimateAvailable_AddsEstimatedWorkToFeature()
         {
             var team = CreateTeam([1]);
             var project = CreateProject();
@@ -155,12 +151,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
 
             workItemServiceMock.Setup(x => x.GetEstimatedSizeForItem(feature1.ReferenceId, project)).Returns(Task.FromResult(7));
-
-            workItemServiceMock.Setup(x => x.ItemHasChildren(feature1.ReferenceId, project)).ReturnsAsync(false);
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -169,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_FeatureHasChildren_DoesNotAddDefaultRemainingWorkToFeature()
+        public async Task CollectFeaturesForProject_NoRemainingWork_HasTotalWork_DoesNotAddDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
             var project = CreateProject();
@@ -181,10 +175,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 7)));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
-
-            workItemServiceMock.Setup(x => x.ItemHasChildren(feature1.ReferenceId, project)).ReturnsAsync(true);
 
             await subject.UpdateFeaturesForProject(project);
 
@@ -193,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_MulitpleTeams_SplitsDefaultRemainingWorkByTeam()
+        public async Task CollectFeaturesForProject_NoTotalWork_MulitpleTeams_SplitsDefaultRemainingWorkByTeam()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
@@ -206,7 +198,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature([(team1, 2, 13), (team2, 2, 3)]) { ReferenceId = "19" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
 
             await subject.UpdateFeaturesForProject(project);

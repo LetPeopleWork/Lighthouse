@@ -124,21 +124,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return isRelated;
         }
 
-        public async Task<bool> ItemHasChildren(string referenceId, IWorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
-        {
-            logger.LogInformation("Checking if Issue {Key} has Children", referenceId);
-
-            var jiraClient = GetJiraRestClient(workTrackingSystemOptionsOwner.WorkTrackingSystemConnection);
-            var jql = $"parent = \"{referenceId}\"";
-
-            var issues = await GetIssuesByQuery(jiraClient, jql);
-
-            var hasChildren = issues.Any();
-            logger.LogInformation("Issue {Key} has Children: {hasChildren}", referenceId, hasChildren);
-
-            return hasChildren;
-        }
-
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
             logger.LogInformation("Getting Adjacent Order Index for Issues {Items} in order {relativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
