@@ -25,27 +25,6 @@ export class ApiService implements IApiService {
         });
     }
 
-    async getCurrentVersion(): Promise<string> {
-        return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<string>('/version/current');
-            return response.data;
-        });
-    }
-
-    async isUpdateAvailable(): Promise<boolean> {
-        return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<boolean>('/version/hasupdate');
-            return response.data;
-        });
-    }
-
-    async getNewReleases(): Promise<ILighthouseRelease[]> {
-        return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<ILighthouseRelease[]>(`/version/new`);
-            return this.deserializeReleases(response.data);
-        });
-    }
-
     async getProjects(): Promise<Project[]> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<IProject[]>('/projects');

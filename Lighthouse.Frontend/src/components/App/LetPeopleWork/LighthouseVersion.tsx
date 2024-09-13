@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, IconButton, Tooltip } from '@mui/material';
-import { IApiService } from "../../../services/Api/IApiService";
-import { ApiServiceProvider } from "../../../services/Api/ApiServiceProvider";
 import LoadingAnimation from "../../Common/LoadingAnimation/LoadingAnimation";
 import { Link } from "react-router-dom";
 import UpdateIcon from '@mui/icons-material/Update';
 import LatestReleaseInformationDialog from "./LatestReleaseInformationDialog";
 import { ILighthouseRelease } from "../../../models/LighthouseRelease/LighthouseRelease";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 const LighthouseVersion: React.FC = () => {
   const [version, setVersion] = useState<string>();
@@ -16,18 +15,19 @@ const LighthouseVersion: React.FC = () => {
   const [newReleases, setNewReleases] = useState<ILighthouseRelease[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const { versionService } = useContext(ApiServiceContext);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const apiService: IApiService = ApiServiceProvider.getApiService();
-        const versionData = await apiService.getCurrentVersion();
+        const versionData = await versionService.getCurrentVersion();
         setVersion(versionData);
 
-        const updateAvailable = await apiService.isUpdateAvailable();
+        const updateAvailable = await versionService.isUpdateAvailable();
         setIsUpdateAvailable(updateAvailable);
 
         if (updateAvailable) {
-          const releaseData = await apiService.getNewReleases();
+          const releaseData = await versionService.getNewReleases();
           setNewReleases(releaseData);
         }
 

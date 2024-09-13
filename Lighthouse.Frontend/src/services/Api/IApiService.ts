@@ -6,7 +6,6 @@ import { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTra
 import { ITeamSettings } from "../../models/Team/TeamSettings";
 import { IProjectSettings } from "../../models/Project/ProjectSettings";
 import { IRefreshSettings } from "../../models/AppSettings/RefreshSettings";
-import { ILighthouseRelease } from "../../models/LighthouseRelease/LighthouseRelease";
 
 export interface IApiService {
     deleteTeam(id: number): Promise<void>;
@@ -36,12 +35,6 @@ export interface IApiService {
     updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
 
     createProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
-
-    getCurrentVersion(): Promise<string>;
-    
-    isUpdateAvailable(): Promise<boolean>;
-    
-    getNewReleases(): Promise<ILighthouseRelease[]>;
 
     updateThroughput(teamId: number): Promise<void>;
 
