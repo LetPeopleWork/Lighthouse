@@ -17,14 +17,14 @@ export class ProjectService extends BaseApiService implements IProjectService {
     async getProjects(): Promise<Project[]> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<IProject[]>('/projects');
-            return response.data.map(this.deserializeProject);
+            return response.data.map(BaseApiService.deserializeProject);
         });
     }
 
     async getProject(id: number): Promise<Project | null> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<IProject>(`/projects/${id}`);
-            return this.deserializeProject(response.data);
+            return BaseApiService.deserializeProject(response.data);
         });
     }
 
@@ -60,7 +60,7 @@ export class ProjectService extends BaseApiService implements IProjectService {
         return await this.withErrorHandling(async () => {
             const response = await this.apiService.post<IProject>(`/projects/refresh/${id}`);
 
-            return this.deserializeProject(response.data);
+            return BaseApiService.deserializeProject(response.data);
         });
     }
 
@@ -68,7 +68,7 @@ export class ProjectService extends BaseApiService implements IProjectService {
         return await this.withErrorHandling(async () => {
             const response = await this.apiService.post<IProject>(`/forecast/update/${id}`);
 
-            return this.deserializeProject(response.data);
+            return BaseApiService.deserializeProject(response.data);
         });
     }
 }

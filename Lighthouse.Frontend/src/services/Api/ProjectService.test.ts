@@ -3,8 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ProjectService } from './ProjectService';
 import { IProject, Project } from '../../models/Project/Project';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
-import { Team } from '../../models/Team/Team';
-import { Feature } from '../../models/Feature';
 
 vi.mock('axios');
 const mockedAxios = vi.mocked(axios, true);
@@ -19,6 +17,21 @@ describe('ProjectService', () => {
 
     afterEach(() => {
         vi.resetAllMocks();
+    });
+
+    it('should get all projects', async () => {
+        const mockResponse: IProject[] = [
+            new Project("Project 1", 1, [], [], [], new Date('2023-09-01T12:00:00Z'))
+        ];
+
+        mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+        const projects = await projectService.getProjects();
+
+        expect(projects).toEqual([
+            new Project('Project 1', 1, [], [], [], new Date('2023-09-01T12:00:00Z'))
+        ]);
+        expect(mockedAxios.get).toHaveBeenCalledWith('/projects');
     });
 
     it('should get a project by id', async () => {

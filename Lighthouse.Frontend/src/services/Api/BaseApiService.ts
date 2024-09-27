@@ -30,24 +30,24 @@ export class BaseApiService {
         }
     }
 
-    protected deserializeTeam(item: ITeam) {
+    protected static deserializeTeam(item: ITeam) {
         if (item == null){
             return null;
         }
         
-        const projects = item.projects.map(project => this.deserializeProject(project)) ?? [];
-        const features: Feature[] = this.deserializeFeatures(item.features ?? []);
+        const projects = item.projects.map(project => BaseApiService.deserializeProject(project)) ?? [];
+        const features: Feature[] = BaseApiService.deserializeFeatures(item.features ?? []);
         return new Team(item.name, item.id, projects, features, item.featureWip);
     }
 
-    protected deserializeProject(item: IProject): Project {
-        const features = this.deserializeFeatures(item.features);
+    protected static deserializeProject(item: IProject): Project {
+        const features = BaseApiService.deserializeFeatures(item.features);
         const teams = item.involvedTeams.map(team => new Team(team.name, team.id, [], [], team.featureWip));
         const milestones = item.milestones.map(milestone => new Milestone(milestone.id, milestone.name, new Date(milestone.date)));
         return new Project(item.name, item.id, teams, features, milestones, new Date(item.lastUpdated));
     }
 
-    protected deserializeFeatures(featureData: IFeature[]): Feature[] {
+    protected static deserializeFeatures(featureData: IFeature[]): Feature[] {
         return featureData.map((feature: IFeature) => {
             const forecasts: WhenForecast[] = feature.forecasts.map((forecast: IWhenForecast) => {
                 return new WhenForecast(forecast.probability, new Date(forecast.expectedDate));

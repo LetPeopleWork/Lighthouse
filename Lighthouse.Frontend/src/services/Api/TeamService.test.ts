@@ -20,6 +20,23 @@ describe('TeamService', () => {
         vi.resetAllMocks();
     });
 
+    it('should get teams', async () => {
+        const mockResponse: ITeam[] = [
+            new Team("Team A", 1, [], [], 1),
+            new Team("Team B", 2, [], [], 1),
+        ];
+
+        mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+        const teams = await teamService.getTeams();
+
+        expect(teams).toEqual([            
+            new Team("Team A", 1, [], [], 1),
+            new Team("Team B", 2, [], [], 1),
+        ]);
+        expect(mockedAxios.get).toHaveBeenCalledWith('/teams');
+    });
+
     it('should get a single team by id', async () => {
         const mockResponse: ITeam = new Team("Team A", 1, [], [], 1);
 

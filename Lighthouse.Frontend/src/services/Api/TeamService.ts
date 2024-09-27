@@ -18,7 +18,7 @@ export class TeamService extends BaseApiService implements ITeamService {
     async getTeams(): Promise<Team[]> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<ITeam[]>('/teams');
-            return response.data.map(this.deserializeTeam)
+            return response.data.map(BaseApiService.deserializeTeam)
                 .filter((team): team is Team => team !== null);
         });
     }
@@ -26,7 +26,7 @@ export class TeamService extends BaseApiService implements ITeamService {
     async getTeam(id: number): Promise<Team | null> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<ITeam>(`/teams/${id}`);
-            return this.deserializeTeam(response.data);
+            return BaseApiService.deserializeTeam(response.data);
         });
     }
 
