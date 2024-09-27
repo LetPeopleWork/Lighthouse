@@ -284,23 +284,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             logger.LogDebug("Getting Issues by JQL Query: '{query}'", jqlQuery);
             var issues = new List<Issue>();
 
-            var url = $"rest/api/3/search?jql={jqlQuery}";
+            var startAt = 0;
+            var maxResults = 1000;
+            var isLast = false;
 
-            var response = await client.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            var responseBody = await response.Content.ReadAsStringAsync();
-            var jsonResponse = JsonDocument.Parse(responseBody);
-
-            foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
+            while (!isLast)
             {
-                var issue = issueFactory.CreateIssueFromJson(jsonIssue);
+                var url = $"rest/api/3/search?jql={jqlQuery}&startAt={startAt}&maxResults={maxResults}";
 
-                logger.LogDebug("Found Issue {key}", issue.Key);
+                var response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
 
-                issues.Add(issue);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                var jsonResponse = JsonDocument.Parse(responseBody);
 
-                UpdateCache(issue);
+                // Max Results might differ - response will tell how many can be delivered max. Use this value.
+                var maxResultActual = jsonResponse.RootElement.GetProperty("maxResults").ToString();
+                var totalResultsActual = jsonResponse.RootElement.GetProperty("total").ToString();
+
+                maxResults = int.Parse(maxResultActual);
+                startAt += maxResults;
+                isLast = int.Parse(totalResultsActual) < startAt;
+
+                foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
+                {
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue);
+
+                    logger.LogDebug("Found Issue {key}", issue.Key);
+
+                    issues.Add(issue);
+
+                    UpdateCache(issue);
+                }
             }
 
             return issues;

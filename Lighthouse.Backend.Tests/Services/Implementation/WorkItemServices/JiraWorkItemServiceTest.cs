@@ -4,7 +4,6 @@ using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
-using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -90,6 +89,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             Assert.That(remainingItems, Is.EqualTo(1));
             Assert.That(totalItems, Is.EqualTo(4));
+        }
+
+        [Test]
+        public async Task GetRelatedItems_ItemIdIsParent_HasOpenAndClosedItems_ReturnsCorrectNumber()
+        {
+
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = LGHTHSDMO");
+
+            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("LGHTHSDMO-9", team);
+
+            Assert.That(remainingItems, Is.EqualTo(8));
+            Assert.That(totalItems, Is.EqualTo(11));
         }
 
         [Test]
