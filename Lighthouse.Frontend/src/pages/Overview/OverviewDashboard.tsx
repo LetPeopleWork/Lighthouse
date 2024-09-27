@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { ApiServiceProvider } from '../../services/Api/ApiServiceProvider';
-import { IApiService } from '../../services/Api/IApiService';
+import React, { useState, useEffect, useContext } from 'react';
 import FilterBar from '../../components/Common/FilterBar/FilterBar';
 import ProjectOverview from './ProjectOverview';
 import { Project } from '../../models/Project/Project';
@@ -8,6 +6,7 @@ import LoadingAnimation from '../../components/Common/LoadingAnimation/LoadingAn
 import LighthouseAppOverviewTutorial from '../../components/App/LetPeopleWork/Tutorial/Tutorials/LighthouseAppOverviewTutorial';
 import TutorialButton from '../../components/App/LetPeopleWork/Tutorial/TutorialButton';
 import { Container } from '@mui/material';
+import { ApiServiceContext } from '../../services/Api/ApiServiceContext';
 
 const OverviewDashboard: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -15,11 +14,12 @@ const OverviewDashboard: React.FC = () => {
     const [hasError, setHasError] = useState(false);
     const [filterText, setFilterText] = useState('');
 
+    const { projectService } = useContext(ApiServiceContext);
+
     useEffect(() => {
         const fetchData = async () => {
-            try {
-                const apiService: IApiService = ApiServiceProvider.getApiService();
-                const projectData = await apiService.getProjects();
+            try {                
+                const projectData = await projectService.getProjects();
                 setProjects(projectData);
                 setIsLoading(false);
             } catch (error) {

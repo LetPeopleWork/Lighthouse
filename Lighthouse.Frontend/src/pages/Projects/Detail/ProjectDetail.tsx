@@ -1,10 +1,8 @@
 import { Button, Container, Grid, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import { Project } from '../../../models/Project/Project';
-import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
-import { IApiService } from '../../../services/Api/IApiService';
 import LocalDateTimeDisplay from '../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay';
 import ProjectFeatureList from './ProjectFeatureList';
 import InvolvedTeamsList from './InvolvedTeamsList';
@@ -15,10 +13,10 @@ import { IProjectSettings } from '../../../models/Project/ProjectSettings';
 import { IMilestone } from '../../../models/Project/Milestone';
 import MilestonesComponent from '../../../components/Common/Milestones/MilestonesComponent';
 import { ITeamSettings } from '../../../models/Team/TeamSettings';
+import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const apiService: IApiService = ApiServiceProvider.getApiService();
     const projectId = Number(id);
 
     const [project, setProject] = useState<Project>();
@@ -29,11 +27,13 @@ const ProjectDetail: React.FC = () => {
 
     const navigate = useNavigate();
 
+    const { projectService, teamService } = useContext(ApiServiceContext);
+
     const fetchProject = async () => {
         try {
             setIsLoading(true);
-            const projectData = await apiService.getProject(projectId)
-            const settings = await apiService.getProjectSettings(projectId);
+            const projectData = await projectService.getProject(projectId)
+            const settings = await projectService.getProjectSettings(projectId);
 
             if (projectData && settings) {
                 setProject(projectData);
@@ -56,7 +56,7 @@ const ProjectDetail: React.FC = () => {
                 return;
             }
 
-            const projectData = await apiService.refreshFeaturesForProject(project.id);
+            const projectData = await projectService.refreshFeaturesForProject(project.id);
 
             if (projectData) {
                 setProject(projectData)
@@ -73,7 +73,7 @@ const ProjectDetail: React.FC = () => {
                 return;
             }
 
-            const projectData = await apiService.refreshForecastsForProject(project.id);
+            const projectData = await projectService.refreshForecastsForProject(project.id);
 
             if (projectData) {
                 setProject(projectData)
@@ -128,9 +128,9 @@ const ProjectDetail: React.FC = () => {
 
     const onMilestonesChanged = async (updatedProjectSettings: IProjectSettings) => {
         setProjectSettings(updatedProjectSettings);
-        await apiService.updateProject(updatedProjectSettings);
+        await projectService.updateProject(updatedProjectSettings);
 
-        const projectData = await apiService.refreshForecastsForProject(projectId);
+        const projectData = await projectService.refreshForecastsForProject(projectId);
         if (projectData) {
             setProject(projectData);
         }
@@ -141,9 +141,9 @@ const ProjectDetail: React.FC = () => {
     }
 
     const onTeamSettingsChange = async (updatedTeamSettings : ITeamSettings) => {
-        await apiService.updateTeam(updatedTeamSettings);
+        await teamService.updateTeam(updatedTeamSettings);
         
-        const projectData = await apiService.refreshForecastsForProject(projectId);
+        const projectData = await projectService.refreshForecastsForProject(projectId);
         if (projectData) {
             setProject(projectData);
         }
@@ -155,7 +155,7 @@ const ProjectDetail: React.FC = () => {
                 const teamSettings : ITeamSettings[] = [];
 
                 for (const involvedTeam of project.involvedTeams) {
-                    const involvedTeamSetting = await apiService.getTeamSettings(involvedTeam.id);
+                    const involvedTeamSetting = await teamService.getTeamSettings(involvedTeam.id);
                     teamSettings.push(involvedTeamSetting);
                 }
 
@@ -164,7 +164,7 @@ const ProjectDetail: React.FC = () => {
         }
 
         fetchInvolvedTeamSettings();
-    }, [apiService, project])
+    }, [projectService, teamService, project])
 
     useEffect(() => {
         fetchProject();        

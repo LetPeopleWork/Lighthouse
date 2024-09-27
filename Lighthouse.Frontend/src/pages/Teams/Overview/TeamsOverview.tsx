@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import DataOverviewTable from '../../../components/Common/DataOverviewTable/DataOverviewTable';
 import DeleteConfirmationDialog from '../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog';
 import { Team } from '../../../models/Team/Team';
-import { IApiService } from '../../../services/Api/IApiService';
-import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';
 import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/TutorialButton';
 import TeamOverviewTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamOverviewTutorial';
+import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 
 const TeamsOverview: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -16,11 +15,12 @@ const TeamsOverview: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
+  const { teamService } = useContext(ApiServiceContext);
+
   const fetchData = async () => {
     try {
-      setIsLoading(true);
-      const apiService: IApiService = ApiServiceProvider.getApiService();
-      const teamData = await apiService.getTeams();
+      setIsLoading(true);      
+      const teamData = await teamService.getTeams();
       setTeams(teamData);
       setIsLoading(false);
     } catch (error) {
@@ -41,10 +41,9 @@ const TeamsOverview: React.FC = () => {
   const handleDeleteConfirmation = async (confirmed: boolean) => {
     if (confirmed && selectedTeam) {
       try {
-        const apiService: IApiService = ApiServiceProvider.getApiService();
         setIsLoading(true);
 
-        await apiService.deleteTeam(selectedTeam.id);
+        await teamService.deleteTeam(selectedTeam.id);
         await fetchData();
 
       } catch (error) {

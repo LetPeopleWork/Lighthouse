@@ -10,13 +10,16 @@ export interface ITeamService {
     getTeamSettings(id: number): Promise<ITeamSettings>;
     updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
     createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
+    updateThroughput(teamId: number): Promise<void>;
+    getThroughput(teamId: number): Promise<Throughput>;
 }
 
 export class TeamService extends BaseApiService implements ITeamService {
     async getTeams(): Promise<Team[]> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<ITeam[]>('/teams');
-            return response.data.map(this.deserializeTeam);
+            return response.data.map(this.deserializeTeam)
+                .filter((team): team is Team => team !== null);
         });
     }
 

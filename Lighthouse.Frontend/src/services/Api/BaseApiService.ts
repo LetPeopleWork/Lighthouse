@@ -31,8 +31,12 @@ export class BaseApiService {
     }
 
     protected deserializeTeam(item: ITeam) {
-        const projects = item.projects.map(project => this.deserializeProject(project));
-        const features: Feature[] = this.deserializeFeatures(item.features);
+        if (item == null){
+            return null;
+        }
+        
+        const projects = item.projects.map(project => this.deserializeProject(project)) ?? [];
+        const features: Feature[] = this.deserializeFeatures(item.features ?? []);
         return new Team(item.name, item.id, projects, features, item.featureWip);
     }
 

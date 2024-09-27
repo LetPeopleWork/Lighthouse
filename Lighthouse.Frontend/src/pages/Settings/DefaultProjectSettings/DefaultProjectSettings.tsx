@@ -1,17 +1,17 @@
-import React from "react";
-import { ApiServiceProvider } from "../../../services/Api/ApiServiceProvider";
+import React, { useContext } from "react";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import { IProjectSettings } from "../../../models/Project/ProjectSettings";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 const DefaultProjectSettings: React.FC = () => {
-    const apiService = ApiServiceProvider.getApiService();
+    const { settingsService } = useContext(ApiServiceContext);
 
     const getDefaultProjectSettings = async () => {
-        return await apiService.getDefaultProjectSettings();
+        return await settingsService.getDefaultProjectSettings();
     }
 
     const saveDefaultProjectSettings = async (updatedDefaultSettings: IProjectSettings) => {
-        await apiService.updateDefaultProjectSettings(updatedDefaultSettings);
+        await settingsService.updateDefaultProjectSettings(updatedDefaultSettings);
     }
 
     const getWorkTrackingSystems = async () => {

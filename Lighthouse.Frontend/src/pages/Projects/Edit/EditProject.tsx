@@ -1,38 +1,38 @@
-import React, {  } from 'react';
+import React, { useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IProjectSettings } from '../../../models/Project/ProjectSettings';
 import ModifyProjectSettings from '../../../components/Common/ProjectSettings/ModifyProjectSettings';
+import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 
-const EditProjectPage: React.FC = () => {
+const EditProject: React.FC = () => {
     const { id } = useParams<{ id?: string }>();
     const isNewProject = id === undefined;
 
     const navigate = useNavigate();
-    const apiService = ApiServiceProvider.getApiService();
+    const { settingsService, projectService, workTrackingSystemService } = useContext(ApiServiceContext);
 
     const pageTitle = isNewProject ? "Create Project" : "Update Project";    
 
     const getProjectSettings = async () => {
         if (!isNewProject && id) {
-            return await apiService.getProjectSettings(parseInt(id, 10));
+            return await projectService.getProjectSettings(parseInt(id, 10));
         }
         else{
-            return await apiService.getDefaultProjectSettings();
+            return await settingsService.getDefaultProjectSettings();
         }
     }
 
     const getWorkTrackingSystems = async () => {
-        const systems = await apiService.getConfiguredWorkTrackingSystems();
+        const systems = await workTrackingSystemService.getConfiguredWorkTrackingSystems();
         return systems;
     }
 
 
     const saveProjectSettings = async (updatedSettings : IProjectSettings) => {
         if (isNewProject) {
-            updatedSettings = await apiService.createProject(updatedSettings);
+            updatedSettings = await projectService.createProject(updatedSettings);
         } else {
-            updatedSettings = await apiService.updateProject(updatedSettings);
+            updatedSettings = await projectService.updateProject(updatedSettings);
         }
 
         navigate(`/projects/${updatedSettings.id}`);
@@ -47,4 +47,4 @@ const EditProjectPage: React.FC = () => {
     );
 };
 
-export default EditProjectPage;
+export default EditProject;

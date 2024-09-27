@@ -22,9 +22,8 @@ import { IProjectService } from './ProjectService';
 import { ISettingsService } from './SettingsService';
 import { ITeamService } from './TeamService';
 import { IVersionService } from './VersionService';
-import { IApiService } from './IApiService';
 
-export class DemoApiService implements IApiService, IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService {
+export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService {
     private useDelay: boolean;
     private throwError: boolean;
 

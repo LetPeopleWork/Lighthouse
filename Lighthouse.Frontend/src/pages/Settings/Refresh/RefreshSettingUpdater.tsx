@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { IApiService } from "../../../services/Api/IApiService";
-import { ApiServiceProvider } from "../../../services/Api/ApiServiceProvider";
+import React, { useContext, useEffect, useState } from "react";
 import { IRefreshSettings } from "../../../models/AppSettings/RefreshSettings";
 import { Container, Grid, TextField } from "@mui/material";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface RefreshSettingUpdaterProps {
     settingName: string;
@@ -15,14 +14,14 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({ settingNa
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
 
-    const apiService: IApiService = ApiServiceProvider.getApiService();
+    const { settingsService } = useContext(ApiServiceContext);
 
     const updateSettings = async () => {
         if (refreshSettings == null) {
             return;
         }
 
-        await apiService.updateRefreshSettings(settingName, refreshSettings);
+        await settingsService.updateRefreshSettings(settingName, refreshSettings);
     };
 
     const fetchData = async () => {
@@ -30,7 +29,7 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({ settingNa
         setHasError(false);
 
         try {
-            const loadedSettings = await apiService.getRefreshSettings(settingName);
+            const loadedSettings = await settingsService.getRefreshSettings(settingName);
             setRefreshSettings(loadedSettings);
         } catch {
             setHasError(true);

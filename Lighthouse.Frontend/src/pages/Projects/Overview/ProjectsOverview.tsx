@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import DataOverviewTable from '../../../components/Common/DataOverviewTable/DataOverviewTable';
 import DeleteConfirmationDialog from '../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog';
 import { Project } from '../../../models/Project/Project';
-import { IApiService } from '../../../services/Api/IApiService';
-import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import { IFeatureOwner } from '../../../models/IFeatureOwner';
 import ProjectOverviewTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/ProjectOverviewTutorial';
 import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/TutorialButton';
+import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 
 const ProjectsOverview: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -16,11 +15,12 @@ const ProjectsOverview: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
+  const { projectService } = useContext(ApiServiceContext);
+
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const apiService: IApiService = ApiServiceProvider.getApiService();
-      const projectData = await apiService.getProjects();
+      const projectData = await projectService.getProjects();
       setProjects(projectData);
       setIsLoading(false);
     } catch (error) {
@@ -41,10 +41,9 @@ const ProjectsOverview: React.FC = () => {
   const handleDeleteConfirmation = async (confirmed: boolean) => {
     if (confirmed && selectedProject) {
       try {
-        const apiService: IApiService = ApiServiceProvider.getApiService();
         setIsLoading(true);
 
-        await apiService.deleteProject(selectedProject.id);
+        await projectService.deleteProject(selectedProject.id);
         await fetchData();
 
       } catch (error) {

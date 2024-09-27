@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Team } from '../../../models/Team/Team';
-import { IApiService } from '../../../services/Api/IApiService';
-import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import dayjs from 'dayjs';
 import { Typography, Grid, Container, Button } from '@mui/material';
@@ -15,10 +13,10 @@ import ActionButton from '../../../components/Common/ActionButton/ActionButton';
 import InputGroup from '../../../components/Common/InputGroup/InputGroup';
 import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/TutorialButton';
 import TeamDetailTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamDetailTutorial';
+import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const apiService: IApiService = ApiServiceProvider.getApiService();
     const teamId = Number(id);
 
     const [team, setTeam] = useState<Team>();
@@ -33,10 +31,12 @@ const TeamDetail: React.FC = () => {
 
     const navigate = useNavigate();
 
+    const { teamService, forecastService } = useContext(ApiServiceContext);
+
     const fetchTeam = async () => {
         try {
             setIsLoading(true);
-            const teamData = await apiService.getTeam(teamId);
+            const teamData = await teamService.getTeam(teamId);
 
             if (teamData) {
                 setTeam(teamData);
@@ -57,7 +57,7 @@ const TeamDetail: React.FC = () => {
         }
 
         try {
-            const throughputData = await apiService.getThroughput(team.id);
+            const throughputData = await teamService.getThroughput(team.id);
             setThroughput(throughputData)
         } catch (error) {
             console.error('Error getting throughput:', error);
@@ -70,7 +70,7 @@ const TeamDetail: React.FC = () => {
         }
 
         try {
-            await apiService.updateThroughput(team.id);
+            await teamService.updateThroughput(team.id);
         } catch (error) {
             console.error('Error updating throughput:', error);
             setHasError(true);
@@ -85,7 +85,7 @@ const TeamDetail: React.FC = () => {
         }
 
         try {
-            const manualForecast = await apiService.runManualForecast(team.id, remainingItems, targetDate?.toDate());
+            const manualForecast = await forecastService.runManualForecast(team.id, remainingItems, targetDate?.toDate());
             setManualForecastResult(manualForecast);
         } catch (error) {
             console.error('Error getting throughput:', error);

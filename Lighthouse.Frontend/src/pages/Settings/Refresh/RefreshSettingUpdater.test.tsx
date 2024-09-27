@@ -1,31 +1,48 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { ApiServiceProvider } from "../../../services/Api/ApiServiceProvider";
 import RefreshSettingUpdater from "./RefreshSettingUpdater";
-import { DemoApiService } from "../../../services/Api/DemoApiService";
 import { vi } from 'vitest';
+import { ISettingsService } from "../../../services/Api/SettingsService";
+import { createMockApiServiceContext, createMockSettingsService } from "../../../tests/MockApiServiceProvider";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 const mockGetRefreshSettings = vi.fn();
 const mockUpdateRefreshSettings = vi.fn();
 
-const mockApiService = new DemoApiService(false, false);
-mockApiService.getRefreshSettings = mockGetRefreshSettings;
-mockApiService.updateRefreshSettings = mockUpdateRefreshSettings;
+const mockSettingsService: ISettingsService = createMockSettingsService();
+mockSettingsService.updateRefreshSettings = mockUpdateRefreshSettings;
+mockSettingsService.getRefreshSettings = mockGetRefreshSettings;
 
-ApiServiceProvider['instance'] = mockApiService;
+const MockApiServiceProvider = ({ children }: { children: React.ReactNode }) => {
+    const mockContext = createMockApiServiceContext({ settingsService: mockSettingsService });
 
+    return (
+        <ApiServiceContext.Provider value={mockContext} >
+            {children}
+        </ApiServiceContext.Provider>
+    );
+};
 
 describe("RefreshSettingUpdater", () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.resetAllMocks();
+        vi.restoreAllMocks();
     });
 
     it("should fetch data and update the fields", async () => {
         // Arrange
         const mockData = { interval: 5, refreshAfter: 10, startDelay: 2 };
-        mockGetRefreshSettings.mockReturnValue(Promise.resolve(mockData));
+        mockGetRefreshSettings.mockResolvedValue(Promise.resolve(mockData));
 
         // Act
-        render(<RefreshSettingUpdater settingName="test" />);
+        render(
+            <MockApiServiceProvider>
+                <RefreshSettingUpdater settingName="test" />
+            </MockApiServiceProvider>
+        );
+
         await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
 
         // Assert
@@ -37,9 +54,14 @@ describe("RefreshSettingUpdater", () => {
     it("should handle input changes", async () => {
         // Arrange
         const mockData = { interval: 5, refreshAfter: 10, startDelay: 2 };
-        mockGetRefreshSettings.mockReturnValue(Promise.resolve(mockData));
+        mockGetRefreshSettings.mockResolvedValue(Promise.resolve(mockData));
 
-        render(<RefreshSettingUpdater settingName="test" />);
+        render(
+            <MockApiServiceProvider>
+                <RefreshSettingUpdater settingName="test" />
+            </MockApiServiceProvider>
+        );
+
         await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
 
         // Act
@@ -53,19 +75,31 @@ describe("RefreshSettingUpdater", () => {
         expect(screen.getByDisplayValue("5")).toBeInTheDocument();
     });
 
-    it("should call updateSettings when button is clicked", async () => {
+    it("should call updateSettings with new values when button is clicked", async () => {
         // Arrange
         const mockData = { interval: 5, refreshAfter: 10, startDelay: 2 };
-        mockGetRefreshSettings.mockReturnValue(Promise.resolve(mockData));
+        const updatedData = { interval: 10, refreshAfter: 20, startDelay: 5 };
+        mockGetRefreshSettings.mockResolvedValue(Promise.resolve(mockData));
         mockUpdateRefreshSettings.mockReturnValue(Promise.resolve());
 
-        render(<RefreshSettingUpdater settingName="test" />);
+        render(
+            <MockApiServiceProvider>
+                <RefreshSettingUpdater settingName="test" />
+            </MockApiServiceProvider>
+        );
+
         await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
 
-        // Act
+        // Act: Set new values in the input fields
+        fireEvent.change(screen.getByLabelText("Interval (Minutes)"), { target: { value: updatedData.interval } });
+        fireEvent.change(screen.getByLabelText("Refresh After (Minutes)"), { target: { value: updatedData.refreshAfter } });
+        fireEvent.change(screen.getByLabelText("Start Delay (Minutes)"), { target: { value: updatedData.startDelay } });
+
+        // Click the update button
         fireEvent.click(screen.getByText(/Update test Settings/));
 
         // Assert
-        expect(mockUpdateRefreshSettings).toHaveBeenCalledWith("test", mockData);
+        expect(mockUpdateRefreshSettings).toHaveBeenCalledWith("test", updatedData);
     });
+
 });

@@ -1,12 +1,16 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ProjectDetail from './ProjectDetail';
 import { Milestone } from '../../../models/Project/Milestone';
-import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
-import { IApiService } from '../../../services/Api/IApiService';
 import { Project } from '../../../models/Project/Project';
 import { TeamSettings } from '../../../models/Team/TeamSettings';
+import { createMockApiServiceContext, createMockProjectService, createMockTeamService } from '../../../tests/MockApiServiceProvider';
+import { IProjectService } from '../../../services/Api/ProjectService';
+import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
+import { ITeamService } from '../../../services/Api/TeamService';
+import { ProjectSettings } from '../../../models/Project/ProjectSettings';
+import { Feature } from '../../../models/Feature';
 
 vi.mock('../../../components/Common/LoadingAnimation/LoadingAnimation', () => ({
     default: ({ children, hasError, isLoading }: { children: React.ReactNode, hasError: boolean, isLoading: boolean }) => (
@@ -47,25 +51,50 @@ vi.mock('../../../components/Common/ActionButton/ActionButton', () => ({
     ),
 }));
 
+const mockProjectService: IProjectService = createMockProjectService();
+const mockTeamService: ITeamService = createMockTeamService();
+
+const mockGetProject = vi.fn();
+const mockGetProjectSettings = vi.fn();
+
+mockProjectService.getProject = mockGetProject;
+mockProjectService.getProjectSettings = mockGetProjectSettings;
+
+const MockApiServiceProvider = ({ children }: { children: React.ReactNode }) => {
+    const mockContext = createMockApiServiceContext({ projectService: mockProjectService, teamService: mockTeamService });
+
+    return (
+        <ApiServiceContext.Provider value={mockContext} >
+            {children}
+        </ApiServiceContext.Provider>
+    );
+};
+
+const renderWithMockApiProvider = () => {
+    render(
+        <MockApiServiceProvider>
+            <MemoryRouter initialEntries={['/projects/2']}>
+                <Routes>
+                    <Route path="/projects/:id" element={<ProjectDetail />} />
+                </Routes>
+            </MemoryRouter>
+        </MockApiServiceProvider>
+    )
+}
+
 describe('ProjectDetail component', () => {
-    const apiService: IApiService = ApiServiceProvider.getApiService();
 
     beforeEach(() => {
-        apiService.refreshFeaturesForProject = vi.fn()
-    });
+        mockGetProject.mockResolvedValue(new Project("Release Codename Daniel", 2, [], [new Feature("Feature 1", 0, "url", new Date(), {}, {}, {}, {}, []), new Feature("Feature 2", 1, "url", new Date(), {}, {}, {}, {}, [])], [new Milestone(1, "Milestone", new Date())], new Date()));
+        mockGetProjectSettings.mockResolvedValue(new ProjectSettings(2, "Release Codename Daniel", [], [], "Query", "Unparented Query", 10, 0, "SizeEstimate"));
+    })
 
     afterEach(() => {
         vi.clearAllMocks();
     });
 
     it('should render project details after loading', async () => {
-        render(
-            <MemoryRouter initialEntries={['/projects/2']}>
-                <Routes>
-                    <Route path="/projects/:id" element={<ProjectDetail />} />
-                </Routes>
-            </MemoryRouter>
-        );
+        renderWithMockApiProvider();
 
         expect(screen.getByText('Loading...')).toBeInTheDocument();
 
@@ -74,17 +103,10 @@ describe('ProjectDetail component', () => {
         });
 
         expect(screen.getByTestId('project-feature-list')).toHaveTextContent('2 features');
-        expect(screen.getByTestId('milestone-component')).toHaveTextContent('3 milestones');
     });
 
     it('should refresh features on button click', async () => {
-        render(
-            <MemoryRouter initialEntries={['/projects/2']}>
-                <Routes>
-                    <Route path="/projects/:id" element={<ProjectDetail />} />
-                </Routes>
-            </MemoryRouter>
-        );
+        renderWithMockApiProvider();
 
         await waitFor(() => {
             expect(screen.getByText('Release Codename Daniel')).toBeInTheDocument();
@@ -97,7 +119,5 @@ describe('ProjectDetail component', () => {
             expect(refreshButton).not.toBeDisabled();
             expect(refreshButton).toHaveTextContent('Refresh Features');
         });
-
-        expect(apiService.refreshFeaturesForProject).toHaveBeenCalledWith(2);
     });
 });

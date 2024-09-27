@@ -1,17 +1,17 @@
-import React from "react";
-import { ApiServiceProvider } from "../../../services/Api/ApiServiceProvider";
+import React, { useContext } from "react";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 const DefaultTeamSettings: React.FC = () => {
-    const apiService = ApiServiceProvider.getApiService();
+    const { settingsService } = useContext(ApiServiceContext);
 
     const getDefaultTeamSettings = async () => {
-        return await apiService.getDefaultTeamSettings();
+        return await settingsService.getDefaultTeamSettings();
     }
 
     const saveDefaultTeamSettings = async (updatedDefaultSettings: ITeamSettings) => {
-        await apiService.updateDefaultTeamSettings(updatedDefaultSettings);
+        await settingsService.updateDefaultTeamSettings(updatedDefaultSettings);
     }
 
     const getWorkTrackingSystems = async () => {

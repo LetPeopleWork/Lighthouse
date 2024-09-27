@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { FormControl, InputLabel, Select, MenuItem, Button } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material';
 import { IWorkTrackingSystemConnection } from '../../../models/WorkTracking/WorkTrackingSystemConnection';
 import ModifyTrackingSystemConnectionDialog from '../../../pages/Settings/Connections/ModifyTrackingSystemConnectionDialog';
 import InputGroup from '../InputGroup/InputGroup';
-import { ApiServiceProvider } from '../../../services/Api/ApiServiceProvider';
+import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 
 interface WorkTrackingSystemComponentProps {
     workTrackingSystems: IWorkTrackingSystemConnection[];
@@ -22,7 +22,8 @@ const WorkTrackingSystemComponent: React.FC<WorkTrackingSystemComponentProps> = 
     const [defaultWorkTrackingSystems, setDefaultWorkTrackingSystems] = useState<IWorkTrackingSystemConnection[]>([]);
 
     const [openDialog, setOpenDialog] = useState<boolean>(false);
-    const apiService = ApiServiceProvider.getApiService();
+
+    const { workTrackingSystemService } = useContext(ApiServiceContext);
 
     const handleDialogOpen = () => {
         setOpenDialog(true);
@@ -31,19 +32,19 @@ const WorkTrackingSystemComponent: React.FC<WorkTrackingSystemComponentProps> = 
     const handleDialogClose = async (newConnection: IWorkTrackingSystemConnection | null) => {
         setOpenDialog(false);
         if (newConnection) {
-            const addedConnection = await apiService.addNewWorkTrackingSystemConnection(newConnection);
+            const addedConnection = await workTrackingSystemService.addNewWorkTrackingSystemConnection(newConnection);
             onNewWorkTrackingSystemConnectionAdded(addedConnection);
         }
     }
 
     const onValidateConnection = async (settings: IWorkTrackingSystemConnection) => {
-        return await apiService.validateWorkTrackingSystemConnection(settings);
+        return await workTrackingSystemService.validateWorkTrackingSystemConnection(settings);
     }
 
     useEffect(() => {
         const fetchDefaultSystems = async () => {
             try {
-                const systems = await apiService.getWorkTrackingSystems();
+                const systems = await workTrackingSystemService.getWorkTrackingSystems();
                 setDefaultWorkTrackingSystems(systems);
             } catch (error) {
                 console.error('Error fetching default work tracking systems', error);
@@ -51,7 +52,7 @@ const WorkTrackingSystemComponent: React.FC<WorkTrackingSystemComponentProps> = 
         };
 
         fetchDefaultSystems();
-    }, [apiService]);
+    }, [workTrackingSystemService]);
 
     return (
         <InputGroup title="Work Tracking System">
