@@ -7,6 +7,7 @@ import { ITeamService, TeamService } from "./TeamService";
 import { IVersionService, VersionService } from "./VersionService";
 import { IWorkTrackingSystemService, WorkTrackingSystemService } from "./WorkTrackingSystemService";
 import { DemoApiService } from "./DemoApiService";
+import { ChartService, IChartService } from "./ChartService";
 
 export interface IApiServiceContext {
     forecastService: IForecastService;
@@ -16,6 +17,7 @@ export interface IApiServiceContext {
     teamService: ITeamService;
     versionService: IVersionService;
     workTrackingSystemService: IWorkTrackingSystemService;
+    chartService: IChartService;
 }
 
 const defaultServices: IApiServiceContext = {
@@ -26,6 +28,7 @@ const defaultServices: IApiServiceContext = {
     teamService: new TeamService(),
     versionService: new VersionService(),
     workTrackingSystemService: new WorkTrackingSystemService(),
+    chartService: new ChartService(),
 };
 
 const useDelay : boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
@@ -39,6 +42,7 @@ const demoServices: IApiServiceContext = {
     teamService: demoApiService,
     versionService: demoApiService,
     workTrackingSystemService: demoApiService,
+    chartService: demoApiService,
 }
 
 export function getApiServices(): IApiServiceContext {

@@ -14,6 +14,7 @@ import { IMilestone } from '../../../models/Project/Milestone';
 import MilestonesComponent from '../../../components/Common/Milestones/MilestonesComponent';
 import { ITeamSettings } from '../../../models/Team/TeamSettings';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
+import LighthouseChartComponent from './LighthouseChartComponent';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -215,6 +216,10 @@ const ProjectDetail: React.FC = () => {
                         </Grid>
                         <Grid item xs={12}>
                             <ProjectFeatureList project={project} />
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <LighthouseChartComponent />
                         </Grid>
                     </Grid>)}
 
