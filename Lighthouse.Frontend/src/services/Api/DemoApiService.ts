@@ -6,7 +6,7 @@ import { Throughput } from '../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast } from '../../models/Forecasts/HowManyForecast';
 import dayjs from 'dayjs';
-import { Milestone } from '../../models/Project/Milestone';
+import { IMilestone, Milestone } from '../../models/Project/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
@@ -22,8 +22,8 @@ import { IProjectService } from './ProjectService';
 import { ISettingsService } from './SettingsService';
 import { ITeamService } from './TeamService';
 import { IVersionService } from './VersionService';
-import { IChartService, TimeInterval } from './ChartService';
-import { ILighthouseChart, LighthouseChart } from '../../models/Charts/LighthouseChart';
+import { IChartService } from './ChartService';
+import { BurndownEntry, ILighthouseChartData, ILighthouseChartFeatureData, LighthouseChartData, LighthouseChartFeatureData } from '../../models/Charts/LighthouseChartData';
 
 export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService, IChartService {
     private useDelay: boolean;
@@ -354,12 +354,40 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         await this.delay();
     }
 
-    async getLighthouseChartData(projectId: number, interval: TimeInterval): Promise<ILighthouseChart> {
-        console.log(`Getting Lighthouse Chart for project ${projectId} and interval ${interval}`);
+    async getLighthouseChartData(projectId: number): Promise<ILighthouseChartData> {
+        console.log(`Getting Lighthouse Chart for project ${projectId}`);
 
         await this.delay();
 
-        return new LighthouseChart();
+        const featureData: ILighthouseChartFeatureData[] = [
+            new LighthouseChartFeatureData("Feature 1", [new Date("2024-05-17"), new Date("2024-05-28")], [
+                new BurndownEntry(new Date("2024-04-08"), 38),
+                new BurndownEntry(new Date("2024-04-15"), 32),
+                new BurndownEntry(new Date("2024-04-22"), 35),
+                new BurndownEntry(new Date("2024-04-29"), 23),
+                new BurndownEntry(new Date("2024-05-06"), 15),
+            ]),
+            new LighthouseChartFeatureData("Feature 2", [], [
+                new BurndownEntry(new Date("2024-04-08"), 15),
+                new BurndownEntry(new Date("2024-04-15"), 9),
+                new BurndownEntry(new Date("2024-04-22"), 5),
+                new BurndownEntry(new Date("2024-04-29"), 0),
+            ]),
+            new LighthouseChartFeatureData("Feature 3", [new Date("2024-05-23"), new Date("2024-06-03")], [
+                new BurndownEntry(new Date("2024-04-08"), 41),
+                new BurndownEntry(new Date("2024-04-15"), 36),
+                new BurndownEntry(new Date("2024-04-22"), 31),
+                new BurndownEntry(new Date("2024-04-29"), 19),
+                new BurndownEntry(new Date("2024-05-06"), 17),
+            ]),
+        ];
+
+        const milestones: IMilestone[] = [
+            new Milestone(0, "Important Date", new Date("2024-05-04")),
+            new Milestone(0, "Customer Visit", new Date("2024-06-01")),
+        ];        
+
+        return new LighthouseChartData(featureData, milestones);
     }
 
     delay() {

@@ -1,21 +1,19 @@
-import { ILighthouseChart, LighthouseChart } from '../../models/Charts/LighthouseChart';
+import { ILighthouseChartData, LighthouseChartData } from '../../models/Charts/LighthouseChartData';
 import { BaseApiService } from './BaseApiService';
 
-export type TimeInterval = "day" | "week" | "month";
-
 export interface IChartService {
-    getLighthouseChartData(projectId: number, interval: TimeInterval): Promise<ILighthouseChart>;
+    getLighthouseChartData(projectId: number): Promise<ILighthouseChartData>;
 }
 
 export class ChartService extends BaseApiService implements IChartService {
-    async getLighthouseChartData(projectId: number, interval: TimeInterval): Promise<ILighthouseChart> {
+    async getLighthouseChartData(projectId: number): Promise<ILighthouseChartData> {
         return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<ILighthouseChart>(`/charts/lighthouse?projectId=${projectId}&interval=${interval}`);
+            const response = await this.apiService.get<ILighthouseChartData>(`/charts/lighthouse?projectId=${projectId}`);
             return this.deserializeLighthouseChart(response.data);
         });
     }
 
-    private deserializeLighthouseChart(lighthouseChartData: ILighthouseChart): LighthouseChart {
-        return new LighthouseChart();
+    private deserializeLighthouseChart(lighthouseChartData: ILighthouseChartData): LighthouseChartData {
+        return new LighthouseChartData([], []);
     }
 }

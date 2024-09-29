@@ -1,3 +1,5 @@
+@import "../node_modules/@syncfusion/ej2/Material3.css";
+
 /* Reset default margins and paddings */
 body, html {
   margin: 0;

@@ -1,89 +1,165 @@
-import React from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
     ChartComponent,
     SeriesCollectionDirective,
     SeriesDirective,
     Inject,
-    Category,
     ColumnSeries,
-    Highlight,
-    DataLabel,
     Tooltip,
     Legend,
-    LineSeries,
-    AreaSeries,
-    ChartAnnotation,
     DateTime,
     RangeAreaSeries,
     StepLineSeries,
 } from '@syncfusion/ej2-react-charts';
+import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
+import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
+import { ILighthouseChartData, ILighthouseChartFeatureData } from '../../../models/Charts/LighthouseChartData';
 
-const LighthouseChartComponent: React.FC = () => {
+interface LighthouseChartComponentProps {
+    projectId: number;
+}
 
-    const column1 = [
-        { x: new Date("2024-09-01"), y: 20, name:'Feature 1' },
-        { x: new Date("2024-09-08"), y: 17 },
-        { x: new Date("2024-09-15"), y: 11 },
-        { x: new Date("2024-09-22"), y: 7 },
-        { x: new Date("2024-09-29"), y: 4 },
-        { x: new Date("2024-10-15"), y: 0 }
-    ];
+const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ projectId }) => {
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [hasError, setHasError] = useState<boolean>(false);
+    const [chartData, setChartData] = useState<ILighthouseChartData>();
 
-    const column2 = [
-        { x: new Date("2024-09-01"), y: 35 },
-        { x: new Date("2024-09-08"), y: 35 },
-        { x: new Date("2024-09-15"), y: 29 },
-        { x: new Date("2024-09-22"), y: 25 },
-        { x: new Date("2024-09-29"), y: 19 },
-        { x: new Date("2024-10-15"), y: 0 }
-    ];
+    const { chartService } = useContext(ApiServiceContext);
 
-    const column3 = [
-        { x: new Date("2024-09-01"), y: 15 },
-        { x: new Date("2024-09-08"), y: 11 },
-        { x: new Date("2024-09-15"), y: 5 },
-        { x: new Date("2024-09-22"), y: 1 },
-        { x: new Date("2024-09-29"), y: 0 },
-        { x: new Date("2024-10-15"), y: 0 }
-    ];
+    const fetchLighthouseData = async () => {
+        try {
+            setIsLoading(true);
+            const lighthouseChartData = await chartService.getLighthouseChartData(projectId)
 
-    const forecast = [
-        {x: new Date("2024-09-29"), high: 4, low: 4 },
-        {x: new Date("2024-10-01"), high:  2.85, low: 0 },
-        {x: new Date("2024-10-07"), high: 0, low: 0 },
-    ]
+            if (lighthouseChartData) {
+                setChartData(lighthouseChartData);
+            }
+            else {
+                setHasError(true);
+            }
 
-    const milestone = [
-        {x: new Date("2024-10-05"), y: 50, name: "Milestone 1"},
-        {x: new Date("2024-10-05"), y: 0, name: "Milestone 1" }
-    ]
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error fetching project data:', error);
+            setHasError(true);
+        }
+    }
+
+    useEffect(() => {
+        fetchLighthouseData();
+    }, []);
+
+
+    function createForecastForFeature(feature: ILighthouseChartFeatureData): { x: Date, high: number, low: number }[] {
+        const forecast = [];
+
+        const lastBurndownEntry = feature.remainingItemsTrend[feature.remainingItemsTrend.length - 1];
+        forecast.push({
+            x: lastBurndownEntry.date,
+            high: lastBurndownEntry.remainingItems,
+            low: lastBurndownEntry.remainingItems
+        });
+
+        const earliestForecastDate = feature.forecastData[0];
+        const latestForecastDate = feature.forecastData[feature.forecastData.length - 1];
+
+        const highSecondEntry = lastBurndownEntry.remainingItems * (1 - (earliestForecastDate.getTime() - lastBurndownEntry.date.getTime()) / (latestForecastDate.getTime() - lastBurndownEntry.date.getTime()));
+
+        forecast.push({
+            x: earliestForecastDate,
+            high: highSecondEntry,
+            low: 0
+        });
+
+        forecast.push({
+            x: latestForecastDate,
+            high: 0,
+            low: 0
+        });
+
+        return forecast;
+    }
+
 
     return (
-        <div>
-            <ChartComponent
-                id='lighthouse-chart'
-                theme='Material3'
-                legendSettings={{ enableHighlight: true, position: 'Top' }}
-                primaryXAxis={{ labelRotation: 0, valueType: 'DateTime', labelFormat: 'dd.MM.yyyy', interval: 7, intervalType: 'Days', majorGridLines: { width: 0 }, majorTickLines: { width: 0 } }}
-                primaryYAxis={{ title: '# Of Items Left', }}
-                title='Feature Burndown'
-                tooltip={{ enable: true, header: "<b>${point.tooltip}</b>", shared: false }}
-            >
-                <Inject services={[ColumnSeries, ChartAnnotation, AreaSeries, StepLineSeries, LineSeries, Legend, Tooltip, Category, DataLabel, Highlight, DateTime, RangeAreaSeries]} />
+        <LoadingAnimation hasError={hasError} isLoading={isLoading}>
+            {chartData ? (
+                <ChartComponent
+                    id='lighthouse-chart'
+                    theme='Material3'
+                    legendSettings={{ enableHighlight: true, position: 'Top' }}
+                    primaryXAxis={{ labelRotation: 0, valueType: 'DateTime', labelFormat: 'dd.MM.yyyy', minimum: chartData?.startDate, maximum: chartData?.endDate, interval: 7, intervalType: 'Days', majorGridLines: { width: 0 }, majorTickLines: { width: 0 } }}
+                    primaryYAxis={{ title: '# Of Items Left', maximum: chartData?.maxRemainingItems }}
+                    title='Feature Burndown'
+                    tooltip={{ enable: true, header: "<b>${point.tooltip}</b>", shared: false }}
+                >
+                    <Inject services={[ColumnSeries, StepLineSeries, Legend, Tooltip, DateTime, RangeAreaSeries]} />
 
-                <SeriesCollectionDirective>
-                
-                    <SeriesDirective dataSource={column1} tooltipMappingName='name' xName='x' columnSpacing={0.1} yName='y' name='Feature 1' type='Column' fill='purple' />
-                    <SeriesDirective dataSource={forecast} tooltipMappingName='name' xName='x' high='high' low='low'  name='Feature 1 Forecast' type='RangeArea' fill="purple" opacity={0.5} dashArray='1' />
+                    <SeriesCollectionDirective>
 
-                    <SeriesDirective dataSource={column2} xName='x' columnSpacing={0.1} yName='y' name='Feature 2' type='Column' />
-                    <SeriesDirective dataSource={column3} xName='x' columnSpacing={0.1} yName='y' name='Feature 3' type='Column' />
+                        {chartData?.features.map((feature, index) => (
+                            <SeriesDirective
+                                key={index}
+                                dataSource={feature.remainingItemsTrend.map(entry => ({
+                                    x: entry.date,
+                                    y: entry.remainingItems,
+                                    name: feature.name
+                                }))}
+                                tooltipMappingName='name'
+                                xName='x'
+                                yName='y'
+                                name={feature.name}
+                                type='Column'
+                                fill={feature.color}
+                                columnSpacing={0.1}
+                            />
+                        ))}
 
-                    <SeriesDirective dataSource={milestone} xName='x' yName='y' name='Milestone 1' type='StepLine' width={2} dashArray='5' marker={{ isFilled: false, visible: true, width: 4, height: 4 }} tooltipMappingName='name' tooltipFormat='${point.x}'/>
+                        {chartData?.features.map((feature, index) => {
+                            if (feature.forecastData.length > 0) {
+                                const forecastData = createForecastForFeature(feature);
+                                return (
+                                    <SeriesDirective
+                                        key={index}
+                                        dataSource={forecastData}
+                                        tooltipMappingName='name'
+                                        xName='x'
+                                        high='high'
+                                        low='low'
+                                        name={`${feature.name} Forecast`}
+                                        type='RangeArea'
+                                        fill={feature.color}
+                                        opacity={0.5}
+                                        dashArray='1'
+                                    />
+                                );
+                            }
+                        })}
 
-                </SeriesCollectionDirective>
-            </ChartComponent>
-        </div>
+                        {chartData?.milestones.map((milestone, index) => (
+                            <SeriesDirective
+                                key={index}
+                                dataSource={[
+                                    { x: milestone.date, y: chartData.maxRemainingItems, name: milestone.name },
+                                    { x: milestone.date, y: 0, name: milestone.name }
+                                ]}
+                                xName='x'
+                                yName='y'
+                                name={milestone.name}
+                                fill="orange"
+                                opacity={0.7}
+                                type='StepLine'
+                                width={2}
+                                dashArray='5'
+                                marker={{ isFilled: false, visible: true, width: 4, height: 4 }}
+                                tooltipMappingName='name'
+                                tooltipFormat='${point.x}'
+                            />
+                        ))}
+                    </SeriesCollectionDirective>
+                </ChartComponent>
+            ) : (<></>)}
+        </LoadingAnimation>
     );
 };
 
