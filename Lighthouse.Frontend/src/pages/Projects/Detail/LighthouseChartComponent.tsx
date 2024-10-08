@@ -7,6 +7,7 @@ import {
     ColumnSeries,
     Tooltip,
     Legend,
+    Highlight,
     DateTime,
     RangeAreaSeries,
     StepLineSeries,
@@ -60,8 +61,8 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
             low: lastBurndownEntry.remainingItems
         });
 
-        const earliestForecastDate = feature.forecastData[0];
-        const latestForecastDate = feature.forecastData[feature.forecastData.length - 1];
+        const earliestForecastDate = feature.forecasts[0];
+        const latestForecastDate = feature.forecasts[feature.forecasts.length - 1];
 
         const highSecondEntry = lastBurndownEntry.remainingItems * (1 - (earliestForecastDate.getTime() - lastBurndownEntry.date.getTime()) / (latestForecastDate.getTime() - lastBurndownEntry.date.getTime()));
 
@@ -93,7 +94,7 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
                     title='Feature Burndown'
                     tooltip={{ enable: true, header: "<b>${point.tooltip}</b>", shared: false }}
                 >
-                    <Inject services={[ColumnSeries, StepLineSeries, Legend, Tooltip, DateTime, RangeAreaSeries]} />
+                    <Inject services={[ColumnSeries, StepLineSeries, Legend, Tooltip, DateTime, RangeAreaSeries, Highlight ]} />
 
                     <SeriesCollectionDirective>
 
@@ -116,7 +117,7 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
                         ))}
 
                         {chartData?.features.map((feature, index) => {
-                            if (feature.forecastData.length > 0) {
+                            if (feature.forecasts.length > 0) {
                                 const forecastData = createForecastForFeature(feature);
                                 return (
                                     <SeriesDirective
@@ -130,6 +131,7 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
                                         type='RangeArea'
                                         fill={feature.color}
                                         opacity={0.5}
+                                        visible={false}
                                         dashArray='1'
                                     />
                                 );

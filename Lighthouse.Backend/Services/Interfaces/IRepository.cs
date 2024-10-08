@@ -10,6 +10,8 @@
 
         T? GetByPredicate(Func<T, bool> predicate);
 
+        IEnumerable<T> GetAllByPredicate(Func<T, bool> predicate);
+
         void Remove(int id);
 
         void Update(T item);

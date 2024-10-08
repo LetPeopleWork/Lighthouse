@@ -38,7 +38,7 @@ export interface ILighthouseChartData {
 export interface ILighthouseChartFeatureData {
     name: string;
     color: string;
-    forecastData: Date[];
+    forecasts: Date[];
     remainingItemsTrend: IBurndownEntry[];
 }
 
@@ -66,7 +66,7 @@ export class LighthouseChartData implements ILighthouseChartData {
         }
 
         for (const feature of features) {
-            dates.push(...feature.forecastData);
+            dates.push(...feature.forecasts);
             for (const entry of feature.remainingItemsTrend) {
                 dates.push(entry.date);
                 remainingItems.push(entry.remainingItems);
@@ -86,13 +86,13 @@ export class LighthouseChartData implements ILighthouseChartData {
 export class LighthouseChartFeatureData implements ILighthouseChartFeatureData {
     name: string;
     color: string;
-    forecastData: Date[];
+    forecasts: Date[];
     remainingItemsTrend: IBurndownEntry[];
 
     constructor(name: string, forecastData: Date[], remainingItemsTrend: IBurndownEntry[]) {
         this.name = name;
         this.color = this.assignRandomColor(); 
-        this.forecastData = forecastData;
+        this.forecasts = forecastData;
         this.remainingItemsTrend = remainingItemsTrend;
     }
 

@@ -16,5 +16,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .Include(f => f.FeatureWork)
                 .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults);
         }
+
+        public override IEnumerable<FeatureHistoryEntry> GetAllByPredicate(Func<FeatureHistoryEntry, bool> predicate)
+        {
+            return Context.FeatureHistory
+                .Include(f => f.FeatureWork)
+                .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
+                .Where(predicate);
+        }
     }
 }
