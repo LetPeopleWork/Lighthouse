@@ -7,6 +7,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import EmailIcon from '@mui/icons-material/Email';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import ExternalLinkButton from '../Header/ExternalLinkButton';
+import CallIcon from '@mui/icons-material/Call';
 
 const Footer: React.FC = () => {
   return (
@@ -23,6 +24,10 @@ const Footer: React.FC = () => {
               <ExternalLinkButton
                 link="mailto:contact@letpeople.work"
                 icon={EmailIcon}
+              />
+              <ExternalLinkButton
+                link="https://calendly.com/letpeoplework/"
+                icon={CallIcon}
               />
               <ExternalLinkButton
                 link="https://www.linkedin.com/company/let-people-work/?viewAsMember=true"
