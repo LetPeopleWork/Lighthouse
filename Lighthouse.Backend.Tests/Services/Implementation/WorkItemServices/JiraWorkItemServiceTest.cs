@@ -105,6 +105,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        [TestCase(new string[] { "Story" }, 2, 3)]
+        [TestCase(new string[] { "Task" }, 2, 3)]
+        [TestCase(new string[] { "Bug" }, 1, 2)]
+        [TestCase(new string[] { "Story", "Bug" }, 3, 5)]
+        [TestCase(new string[] { "Task", "Bug" }, 3, 5)]
+        [TestCase(new string[] { "Story", "Task" }, 4, 6)]
+        [TestCase(new string[] { "Story", "Task", "Bug" }, 5, 8)]
+        public async Task GetRelatedItems_HasDifferentTypes_ReturnsCorrectNumber(string[] workItemTypes, int expectedRemainingItems, int expectedTotalItems)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = LGHTHSDMO AND labels IN (IntegrationTest)");
+            team.WorkItemTypes.Clear();
+
+            foreach ( var workItemType in workItemTypes)
+            {
+                team.WorkItemTypes.Add(workItemType);
+            }
+
+            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("LGHTHSDMO-1041", team);
+
+            Assert.That(remainingItems, Is.EqualTo(expectedRemainingItems));
+            Assert.That(totalItems, Is.EqualTo(expectedTotalItems));
+        }
+
+        [Test]
         public async Task GetRelatedItems_ItemIdIsParent_OnlyClosedItems_ReturnsCorrectNumber()
         {
 
