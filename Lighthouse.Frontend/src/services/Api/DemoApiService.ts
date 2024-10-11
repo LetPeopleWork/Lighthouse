@@ -354,8 +354,8 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         await this.delay();
     }
 
-    async getLighthouseChartData(projectId: number): Promise<ILighthouseChartData> {
-        console.log(`Getting Lighthouse Chart for project ${projectId}`);
+    async getLighthouseChartData(projectId: number, startDate: Date, sampleRate: number): Promise<ILighthouseChartData> {
+        console.log(`Getting Lighthouse Chart for project ${projectId} starting from ${startDate} with sample rate ${sampleRate}`);
 
         await this.delay();
 

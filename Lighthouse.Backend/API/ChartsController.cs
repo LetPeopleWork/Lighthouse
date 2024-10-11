@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.API
     {
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<FeatureHistoryEntry> featureHistoryRepository;
+        private const int MaxEntries = 30;
 
         public ChartsController(IRepository<Project> projectRepository, IRepository<FeatureHistoryEntry> featureHistoryRepository)
         {
@@ -20,11 +21,11 @@ namespace Lighthouse.Backend.API
             this.featureHistoryRepository = featureHistoryRepository;
         }
 
-        [HttpGet("lighthouse/{projectId}")]
-        public ActionResult<LighthouseChartDto> GetLighthouseChartData(int projectId)
+        [HttpPost("lighthouse/{projectId}")]
+        public ActionResult<LighthouseChartDto> GetLighthouseChartData(int projectId, [FromBody] LighthouseChartDataInput input)
         {
             var project = projectRepository.GetById(projectId);
-            var timespanInDays = 30;
+            var timespanInDays = (DateTime.Today - input.StartDate).Days;
 
             if (project == null)
             {
@@ -48,6 +49,12 @@ namespace Lighthouse.Backend.API
                     .Select(group => group.Last())
                     .ToList();
 
+                int samplingFrequency = CalculateSamplingFrequency(timespanInDays, input.SampleRate);
+
+                featureHistory = FilterHistoryByFrequency(featureHistory, samplingFrequency);
+
+                featureHistory = featureHistory.Take(MaxEntries).ToList();
+
                 foreach (var featureHistoryEntry in featureHistory)
                 {
                     var remainingWork = featureHistoryEntry.FeatureWork.Sum(fw => fw.RemainingWorkItems);
@@ -58,6 +65,24 @@ namespace Lighthouse.Backend.API
             }
 
             return Ok(lighthouseChartDto);
+        }
+
+        private int CalculateSamplingFrequency(int timespanInDays, int userSampleEveryNthDay)
+        {
+            int maxAllowedSampleFrequency = Math.Max(1, timespanInDays / MaxEntries); // Ensure at least 1 day
+            return Math.Max(userSampleEveryNthDay, maxAllowedSampleFrequency); // Auto-correct if needed
+        }
+
+        private List<FeatureHistoryEntry> FilterHistoryByFrequency(List<FeatureHistoryEntry> history, int sampleEveryNthDay)
+        {
+            return history.Where((entry, index) => index % sampleEveryNthDay == 0).ToList();
+        }
+
+        public class LighthouseChartDataInput
+        {
+            public DateTime StartDate { get; set; }
+
+            public int SampleRate { get; set; }
         }
     }
 }

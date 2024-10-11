@@ -1,15 +1,18 @@
-import { BurndownEntry, IBurndownEntry, ILighthouseChartData, ILighthouseChartFeatureData, LighthouseChartData, LighthouseChartFeatureData } from '../../models/Charts/LighthouseChartData';
+import { BurndownEntry, ILighthouseChartData, ILighthouseChartFeatureData, LighthouseChartData, LighthouseChartFeatureData } from '../../models/Charts/LighthouseChartData';
 import { IMilestone, Milestone } from '../../models/Project/Milestone';
 import { BaseApiService } from './BaseApiService';
 
 export interface IChartService {
-    getLighthouseChartData(projectId: number): Promise<ILighthouseChartData>;
+    getLighthouseChartData(projectId: number, startDate: Date, sampleRate: number): Promise<ILighthouseChartData>;
 }
 
 export class ChartService extends BaseApiService implements IChartService {
-    async getLighthouseChartData(projectId: number): Promise<ILighthouseChartData> {
+    async getLighthouseChartData(projectId: number, startDate: Date, sampleRate: number): Promise<ILighthouseChartData> {
         return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<ILighthouseChartData>(`/charts/lighthouse/${projectId}`);
+            const response = await this.apiService.post<ILighthouseChartData>(`/charts/lighthouse/${projectId}`, {
+                startDate: startDate,
+                sampleRate: sampleRate
+            });
             return this.deserializeLighthouseChartData(response.data);
         });
     }
@@ -24,7 +27,7 @@ export class ChartService extends BaseApiService implements IChartService {
         return new LighthouseChartData(featureData, milestones);
     }
 
-    private deserializeLighthouseChartFeatureData(featureData: ILighthouseChartFeatureData){
+    private deserializeLighthouseChartFeatureData(featureData: ILighthouseChartFeatureData) {
         const remainingItems = featureData.remainingItemsTrend.map((entry) => {
             return new BurndownEntry(new Date(entry.date), entry.remainingItems);
         });
