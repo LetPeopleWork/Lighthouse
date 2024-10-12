@@ -53,8 +53,8 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     ];
 
     private previewFeatures = [
-        new PreviewFeature(0, "LighthouseChart", "Lighthouse Chart", "Shows Burndown Chart with Forecasts for each Feature in a Project", false),
-        new PreviewFeature(1, "SomeOtherFeature", "Feature that is longer in Preview already", "Does something else but also somewhat new", true),
+        new PreviewFeature(0, "LighthouseChart", "Lighthouse Chart", "Shows Burndown Chart with Forecasts for each Feature in a Project", true),
+        new PreviewFeature(1, "SomeOtherFeature", "Feature that is longer in Preview already", "Does something else but also somewhat new", false),
     ]
 
     constructor(useDelay: boolean, throwError: boolean = false) {
