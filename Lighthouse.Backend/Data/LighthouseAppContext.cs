@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.History;
+using Lighthouse.Backend.Models.Preview;
 
 namespace Lighthouse.Backend.Data
 {
@@ -30,9 +31,13 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<AppSetting> AppSettings { get; set; } = default!;
 
+        public DbSet<PreviewFeature> PreviewFeatures { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
+
+            modelBuilder.Entity<PreviewFeature>().HasKey(a => a.Key);
 
             modelBuilder.Entity<Milestone>()
                 .HasOne(m => m.Project)

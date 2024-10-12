@@ -24,8 +24,10 @@ import { ITeamService } from './TeamService';
 import { IVersionService } from './VersionService';
 import { IChartService } from './ChartService';
 import { BurndownEntry, ILighthouseChartData, ILighthouseChartFeatureData, LighthouseChartData, LighthouseChartFeatureData } from '../../models/Charts/LighthouseChartData';
+import { IPreviewFeatureService } from './PreviewFeatureService';
+import { PreviewFeature } from '../../models/Preview/PreviewFeature';
 
-export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService, IChartService {
+export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService, IChartService, IPreviewFeatureService {
     private useDelay: boolean;
     private throwError: boolean;
 
@@ -50,6 +52,11 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         new ProjectSettings(2, "Release Codename Daniel", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
     ];
 
+    private previewFeatures = [
+        new PreviewFeature(0, "LighthouseChart", "Lighthouse Chart", "Shows Burndown Chart with Forecasts for each Feature in a Project", false),
+        new PreviewFeature(1, "SomeOtherFeature", "Feature that is longer in Preview already", "Does something else but also somewhat new", true),
+    ]
+
     constructor(useDelay: boolean, throwError: boolean = false) {
         this.useDelay = useDelay;
         this.throwError = throwError;
@@ -57,6 +64,30 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         this.recreateFeatures();
         this.recreateTeams();
         this.recreateProjects();
+    }
+
+    async getAllFeatures(): Promise<PreviewFeature[]> {
+        await this.delay();
+
+        return this.previewFeatures;
+    }
+
+    async getFeatureByKey(key: string): Promise<PreviewFeature | null> {
+        await this.delay();
+
+        const feature = this.previewFeatures.find(feature => feature.key === key);
+        return feature || null;
+    }
+
+    async updateFeature(feature: PreviewFeature): Promise<void> {
+        await this.delay();
+
+        const featureIndex = this.previewFeatures.findIndex(f => f.key === feature.key);
+
+        if (featureIndex >= 0){
+            this.previewFeatures.splice(featureIndex, 1);
+            this.previewFeatures.splice(featureIndex, 0, feature);
+        }
     }
 
     async updateThroughput(teamId: number): Promise<void> {

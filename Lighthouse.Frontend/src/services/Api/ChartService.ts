@@ -9,7 +9,7 @@ export interface IChartService {
 export class ChartService extends BaseApiService implements IChartService {
     async getLighthouseChartData(projectId: number, startDate: Date, sampleRate: number): Promise<ILighthouseChartData> {
         return this.withErrorHandling(async () => {
-            const response = await this.apiService.post<ILighthouseChartData>(`/charts/lighthouse/${projectId}`, {
+            const response = await this.apiService.post<ILighthouseChartData>(`/lighthousechart/${projectId}`, {
                 startDate: startDate,
                 sampleRate: sampleRate
             });

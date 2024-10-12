@@ -113,8 +113,8 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
                 onSampleEveryNthDayChange={setSampleRate}
             />
 
-            <LoadingAnimation hasError={hasError} isLoading={isLoading}>
-                <Grid item xs={12}>
+            <Grid item xs={12}>
+                <LoadingAnimation hasError={hasError} isLoading={isLoading}>
                     <ChartComponent
                         id='lighthouse-chart'
                         theme='Material3'
@@ -199,8 +199,8 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
                             ))}
                         </SeriesCollectionDirective>
                     </ChartComponent>
-                </Grid>
-            </LoadingAnimation>
+                </LoadingAnimation>
+            </Grid>
         </Grid>
     );
 };

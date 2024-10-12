@@ -25,20 +25,23 @@ const ProjectDetail: React.FC = () => {
     const [hasError, setHasError] = useState<boolean>(false);
     const [projectSettings, setProjectSettings] = useState<IProjectSettings | null>(null);
     const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
+    const [showLighthouseChart, setShowLighthouseChart] = useState<boolean>(false);
 
     const navigate = useNavigate();
 
-    const { projectService, teamService } = useContext(ApiServiceContext);
+    const { projectService, teamService, previewFeatureService } = useContext(ApiServiceContext);
 
     const fetchProject = async () => {
         try {
             setIsLoading(true);
             const projectData = await projectService.getProject(projectId)
             const settings = await projectService.getProjectSettings(projectId);
+            const isLighthouseChartFeatureEnabled = await previewFeatureService.getFeatureByKey("LighthouseChart");
 
             if (projectData && settings) {
                 setProject(projectData);
                 setProjectSettings(settings);
+                setShowLighthouseChart(isLighthouseChartFeatureEnabled?.enabled ?? false);
             }
             else {
                 setHasError(true);
@@ -141,9 +144,9 @@ const ProjectDetail: React.FC = () => {
         navigate(`/projects/edit/${id}`);
     }
 
-    const onTeamSettingsChange = async (updatedTeamSettings : ITeamSettings) => {
+    const onTeamSettingsChange = async (updatedTeamSettings: ITeamSettings) => {
         await teamService.updateTeam(updatedTeamSettings);
-        
+
         const projectData = await projectService.refreshForecastsForProject(projectId);
         if (projectData) {
             setProject(projectData);
@@ -153,7 +156,7 @@ const ProjectDetail: React.FC = () => {
     useEffect(() => {
         const fetchInvolvedTeamSettings = async () => {
             if (project) {
-                const teamSettings : ITeamSettings[] = [];
+                const teamSettings: ITeamSettings[] = [];
 
                 for (const involvedTeam of project.involvedTeams) {
                     const involvedTeamSetting = await teamService.getTeamSettings(involvedTeam.id);
@@ -168,7 +171,7 @@ const ProjectDetail: React.FC = () => {
     }, [projectService, teamService, project])
 
     useEffect(() => {
-        fetchProject();        
+        fetchProject();
     }, []);
 
 
@@ -218,9 +221,11 @@ const ProjectDetail: React.FC = () => {
                             <ProjectFeatureList project={project} />
                         </Grid>
 
-                        <Grid item xs={12}>
-                            <LighthouseChartComponent projectId={projectId} />
-                        </Grid>
+                        {showLighthouseChart ? (
+                            <Grid item xs={12}>
+                                <LighthouseChartComponent projectId={projectId} />
+                            </Grid>)
+                            : (<></>)}
                     </Grid>)}
 
             </Container>

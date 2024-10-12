@@ -11,6 +11,7 @@ import DefaultTeamSettings from './DefaultTeamSettings/DefaultTeamSettings';
 import DefaultProjectSettings from './DefaultProjectSettings/DefaultProjectSettings';
 import TutorialButton from '../../components/App/LetPeopleWork/Tutorial/TutorialButton';
 import SettingsTutorial from '../../components/App/LetPeopleWork/Tutorial/Tutorials/SettingsTutorial';
+import PreviewFeaturesTab from './PreviewFeatures/PreviewFeaturesTab';
 
 const Settings: React.FC = () => {
   const [value, setValue] = React.useState('1');
@@ -29,6 +30,7 @@ const Settings: React.FC = () => {
               <Tab label="Default Team Settings" value="2" data-testid="default-team-settings-tab" />
               <Tab label="Default Project Settings" value="3" data-testid="default-project-settings-tab" />
               <Tab label="Periodic Refresh Settings" value="4" data-testid="periodic-refresh-settings-tab" />
+              <Tab label="Preview Features" value="5" data-testid="preview-features-tab" />
               <Tab label="Logs" value="99" data-testid="logs-tab" />
             </TabList>
           </Box>
@@ -47,6 +49,9 @@ const Settings: React.FC = () => {
         </TabPanel>
         <TabPanel value="4" data-testid="periodic-refresh-settings-panel">
           <RefreshSettingsTab />
+        </TabPanel>
+        <TabPanel value="5" data-testid="preview-features-panel">
+          <PreviewFeaturesTab />
         </TabPanel>
         <TabPanel value="99" data-testid="logs-panel">
           <LogSettings />
