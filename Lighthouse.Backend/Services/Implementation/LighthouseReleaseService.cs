@@ -5,7 +5,7 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class LighthouseReleaseService : ILighthouseReleaseService
     {
-        private IHostEnvironment hostEnvironment;
+        private readonly IHostEnvironment hostEnvironment;
         private readonly IGitHubService gitHubService;
         private readonly IAssemblyService assemblyService;
 
@@ -31,13 +31,13 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var currentRelease = GetCurrentVersion();
 
-            if (!currentRelease.StartsWith("v"))
+            if (!currentRelease.StartsWith('v'))
             {
                 return true;
             }
 
             var latestRelease = await GetLatestReleaseTag();
-            if (!latestRelease.StartsWith("v"))
+            if (!latestRelease.StartsWith('v'))
             {
                 return false;
             }

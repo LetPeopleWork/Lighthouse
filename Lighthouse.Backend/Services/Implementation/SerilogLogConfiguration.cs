@@ -7,6 +7,7 @@ namespace Lighthouse.Backend.Services.Implementation
     public class SerilogLogConfiguration : ILogConfiguration
     {
         private const string ConfigurationKeyPath = "Serilog:MinimumLevel:Default";
+        private const string LogsNotFoundMessage = "Logs not Found";
 
         private readonly IConfiguration configuration;
         private readonly IConfigFileUpdater configFileUpdater;
@@ -42,7 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             if (string.IsNullOrEmpty(logFolderPath))
             {
-                return LogsNotFound();
+                return LogsNotFoundMessage;
             }
 
             try
@@ -51,7 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 if (logFiles.Length == 0)
                 {
-                    return LogsNotFound();
+                    return LogsNotFoundMessage;
                 }
 
                 var newestFile = logFiles
@@ -67,7 +68,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
             catch (Exception)
             {
-                return LogsNotFound();
+                return LogsNotFoundMessage;
             }
         }
 
@@ -105,13 +106,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 return string.Empty;
             }
 
-            var logFolderPath = Path.GetDirectoryName(Path.GetFullPath(logFilePathPattern));
-            return logFolderPath ?? string.Empty;
-        }
-
-        private string LogsNotFound()
-        {
-            return "Logs not Found";
+            var path = Path.GetDirectoryName(Path.GetFullPath(logFilePathPattern));
+            return path ?? string.Empty;
         }
     }
 }

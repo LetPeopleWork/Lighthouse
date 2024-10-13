@@ -81,53 +81,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetRelatedItems_ItemIdIsParent_FindsRelation()
         {
-
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-9", team);
-
-            Assert.That(remainingItems, Is.EqualTo(1));
-            Assert.That(totalItems, Is.EqualTo(4));
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Is.EqualTo(1));
+                Assert.That(totalItems, Is.EqualTo(4));
+            });
         }
 
         [Test]
         public async Task GetRelatedItems_ItemIdIsParent_HasOpenAndClosedItems_ReturnsCorrectNumber()
         {
-
             var subject = CreateSubject();
             var team = CreateTeam($"project = LGHTHSDMO");
 
             var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("LGHTHSDMO-9", team);
-
-            Assert.That(remainingItems, Is.EqualTo(8));
-            Assert.That(totalItems, Is.EqualTo(11));
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Is.EqualTo(8));
+                Assert.That(totalItems, Is.EqualTo(11));
+            });
         }
 
         [Test]
         public async Task GetRelatedItems_ItemIdIsParent_OnlyClosedItems_ReturnsCorrectNumber()
         {
-
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-21", team);
-
-            Assert.That(remainingItems, Is.EqualTo(0));
-            Assert.That(totalItems, Is.EqualTo(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Is.EqualTo(0));
+                Assert.That(totalItems, Is.EqualTo(1));
+            });
         }
 
         [Test]
         public async Task GetRelatedItems_ItemIdIsChild_DoesNotFindRelation()
         {
-
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
             var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-6", team);
-
-            Assert.That(remainingItems, Is.EqualTo(0));
-            Assert.That(totalItems, Is.EqualTo(0));
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Is.EqualTo(0));
+                Assert.That(totalItems, Is.EqualTo(0));
+            });
         }
 
         [Test]

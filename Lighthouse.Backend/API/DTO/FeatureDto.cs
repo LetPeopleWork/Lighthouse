@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.API.DTO
             Url = feature.Url;
             LastUpdated = feature.Forecast?.CreationTime ?? DateTime.MinValue;
 
-            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos([50, 70, 85, 95]) ?? Enumerable.Empty<WhenForecastDto>());
+            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(50, 70, 85, 95) ?? Enumerable.Empty<WhenForecastDto>());
 
             foreach (var work in feature.FeatureWork)
             {

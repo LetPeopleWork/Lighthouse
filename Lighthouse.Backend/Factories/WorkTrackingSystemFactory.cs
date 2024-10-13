@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Factories
             return newConnection;
         }
 
-        private IEnumerable<WorkTrackingSystemConnectionOption> CreateOptionsForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
+        private List<WorkTrackingSystemConnectionOption> CreateOptionsForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
             logger.LogDebug("Getting Default WorkTrackingSystemConnectionOption for {workTrackingSystem}", workTrackingSystem);
 

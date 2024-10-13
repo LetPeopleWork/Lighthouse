@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
         private PreviewFeatureRepository CreateSubject()
         {
-            return new PreviewFeatureRepository(DatabaseContext, Mock.Of<ILogger< RepositoryBase<PreviewFeature>>>());
+            return new PreviewFeatureRepository(DatabaseContext, Mock.Of<ILogger<PreviewFeatureRepository>>());
         }
     }
 }

@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.API
             return Ok(teamSettingDto);
         }
 
-        private void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)
+        private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)
         {
             team.Name = teamSetting.Name;
             team.WorkItemQuery = teamSetting.WorkItemQuery;
@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.API
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
         }
 
-        private TeamDto CreateTeamDto(List<Project> allProjects, List<Feature> allFeatures, Team team)
+        private static TeamDto CreateTeamDto(List<Project> allProjects, List<Feature> allFeatures, Team team)
         {
             var teamDto = new TeamDto(team);
 
@@ -128,12 +128,9 @@ namespace Lighthouse.Backend.API
 
             var features = new List<Feature>();
 
-            foreach (var feature in allFeatures)
+            foreach (var feature in allFeatures.Where(f => f.FeatureWork.Exists(rw => rw.TeamId == team.Id)))
             {
-                if (feature.FeatureWork.Any(rw => rw.TeamId == team.Id))
-                {
-                    features.Add(feature);
-                }
+                features.Add(feature);
             }
 
             teamDto.Projects.AddRange(teamProjects.Select(p => new ProjectDto(p)));

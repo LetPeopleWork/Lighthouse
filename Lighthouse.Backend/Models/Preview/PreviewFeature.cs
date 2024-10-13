@@ -4,7 +4,7 @@ namespace Lighthouse.Backend.Models.Preview
 {
     public class PreviewFeature : IEntity
     {
-        public int Id { get; set; }
+        public required int Id { get; set; }
 
         public string Key { get; set; }
 
@@ -12,6 +12,6 @@ namespace Lighthouse.Backend.Models.Preview
 
         public string Description { get; set; }
 
-        public bool Enabled { get; set; }
+        public required bool Enabled { get; set; }
     }
 }

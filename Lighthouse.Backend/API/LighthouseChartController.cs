@@ -33,7 +33,13 @@ namespace Lighthouse.Backend.API
 
             var lighthouseChartDto = CreateLighthouseChartDtoWithMilestones(project);
 
-            var timespanInDays = (DateTime.Today - input.StartDate).Days -1;
+            var timespanInDays = 30;
+
+            if (input.StartDate.HasValue)
+            {
+                timespanInDays = (DateTime.Today - input.StartDate.Value).Days - 1;
+            }
+
             var featureDtos = CreateFeatureDtos(project.Features, input.SampleRate, timespanInDays);
 
             lighthouseChartDto.Features.AddRange(featureDtos);
@@ -52,7 +58,7 @@ namespace Lighthouse.Backend.API
                 var featureDto = new LighthouseChartFeatureDto(feature);
                 var remainingItems = CreateFeatureHistoryTrend(samplingFrequency, timespanInDays, feature.ReferenceId);
                 featureDto.RemainingItemsTrend.AddRange(remainingItems);
-                
+
                 featureDtos.Add(featureDto);
             }
 
@@ -91,22 +97,22 @@ namespace Lighthouse.Backend.API
             return lighthouseChartDto;
         }
 
-        private int CalculateSamplingFrequency(int timespanInDays, int userSampleEveryNthDay)
+        private static int CalculateSamplingFrequency(int timespanInDays, int userSampleEveryNthDay)
         {
             int maxAllowedSampleFrequency = Math.Max(1, timespanInDays / MaxEntries);
             return Math.Max(userSampleEveryNthDay, maxAllowedSampleFrequency);
         }
 
-        private List<FeatureHistoryEntry> FilterHistoryByFrequency(List<FeatureHistoryEntry> history, int sampleEveryNthDay)
+        private static List<FeatureHistoryEntry> FilterHistoryByFrequency(List<FeatureHistoryEntry> history, int sampleEveryNthDay)
         {
             return history.Where((entry, index) => index % sampleEveryNthDay == 0).ToList();
         }
 
         public class LighthouseChartDataInput
         {
-            public DateTime StartDate { get; set; }
+            public DateTime? StartDate { get; set; }
 
-            public int SampleRate { get; set; }
+            public int SampleRate { get; set; } = 1;
         }
     }
 }

@@ -34,12 +34,12 @@ namespace Lighthouse.Backend.Factories
             return new Issue(key, title, resolutionDate, parentKey, rank, issueType, statusCategory, fields);
         }
 
-        private string GetIssueTypeFromFields(JsonElement fields)
+        private static string GetIssueTypeFromFields(JsonElement fields)
         {
             return fields.GetProperty("issuetype").GetProperty("name").ToString();
         }
 
-        private string GetStatusFromFields(JsonElement fields)
+        private static string GetStatusFromFields(JsonElement fields)
         {
             return fields.GetProperty("status").GetProperty("statusCategory").GetProperty("name").ToString();
         }
@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Factories
             return lexoRankService.Default;
         }
 
-        private bool TryGetRankFromKnownFields(JsonElement fields, out string rank)
+        private static bool TryGetRankFromKnownFields(JsonElement fields, out string rank)
         {
             rank = string.Empty;
 
@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Factories
         }
 
 
-        private string GetParentFromFields(JsonElement fields)
+        private static string GetParentFromFields(JsonElement fields)
         {
             var parentKey = string.Empty;
             if (fields.TryGetProperty("parent", out var parent))
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Factories
             return parentKey;
         }
 
-        private DateTime GetResolutionDateFromFields(JsonElement fields)
+        private static DateTime GetResolutionDateFromFields(JsonElement fields)
         {
             var resolutionDate = DateTime.MinValue;
             var resolutionDateString = fields.GetProperty(JiraFieldNames.ResolutionDateFieldName).GetString();
@@ -115,12 +115,12 @@ namespace Lighthouse.Backend.Factories
             return resolutionDate;
         }
 
-        private string GetTitleFromFields(JsonElement fields)
+        private static string GetTitleFromFields(JsonElement fields)
         {
             return fields.GetFieldValue("summary");
         }
 
-        private string GetKeyFromJson(JsonElement json)
+        private static string GetKeyFromJson(JsonElement json)
         {
             return json.GetProperty("key").ToString();
         }

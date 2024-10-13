@@ -115,9 +115,10 @@ namespace Lighthouse.Backend.Data
 
         private void EncryptSecrets()
         {
-            foreach (var entry in ChangeTracker.Entries<WorkTrackingSystemConnectionOption>().Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+            foreach (var option in ChangeTracker.Entries<WorkTrackingSystemConnectionOption>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+                .Select(e => e.Entity))
             {
-                var option = entry.Entity;
                 if (option.IsSecret)
                 {
                     option.Value = cryptoService.Encrypt(option.Value);
@@ -129,10 +130,10 @@ namespace Lighthouse.Backend.Data
         {
             var orphanedFeatures = Features
                 .Include(f => f.Projects)
-                .Where(f => !f.Projects.Any())
+                .Where(f => f.Projects.Count == 0)
                 .ToList();
 
-            if (orphanedFeatures.Any())
+            if (orphanedFeatures.Count > 0)
             {
                 Features.RemoveRange(orphanedFeatures);
             }

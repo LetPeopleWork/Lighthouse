@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var setting = repository.GetByPredicate((setting) => setting.Key == key);
 
-            return setting ?? throw new ArgumentNullException("Setting with Key {key} not found", key);
+            return setting ?? throw new ArgumentNullException(nameof(key), "Setting with Key {key} not found");
         }
 
         private List<string> GetDefaultWorkItemTypes(string appSettingKey)

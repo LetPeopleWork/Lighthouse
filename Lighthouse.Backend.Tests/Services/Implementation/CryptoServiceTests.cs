@@ -1,14 +1,11 @@
 ﻿using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Moq;
-using System;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     public class CryptoServiceTests
     {
-        private ICryptoService subject;
+        private CryptoService subject;
 
         [SetUp]
         public void SetUp()

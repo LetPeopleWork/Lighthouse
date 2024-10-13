@@ -35,7 +35,7 @@ namespace Lighthouse.Backend
                 var builder = WebApplication.CreateBuilder(args);
 
                 var fileSystemService = new FileSystemService();
-                var configFileUpdater = new ConfigFileUpdater(builder.Configuration, fileSystemService);
+                var configFileUpdater = new ConfigFileUpdater(fileSystemService);
                 var serilogConfiguration = new SerilogLogConfiguration(builder.Configuration, configFileUpdater, fileSystemService);
                 builder.Services.AddSingleton<ILogConfiguration>(serilogConfiguration);
 

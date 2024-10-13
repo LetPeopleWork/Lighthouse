@@ -133,12 +133,12 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult)
+        private static WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult)
         {
             return new WhenForecast(simulationResult);
         }
 
-        private List<SimulationResult> InitializeSimulationResults(IEnumerable<Feature> features)
+        private static List<SimulationResult> InitializeSimulationResults(IEnumerable<Feature> features)
         {
             var simulationResults = new List<SimulationResult>();
 
@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return itemToUpdate;
         }
 
-        private int RecalculateFeatureWIP(int featureWIP, int remainingItems)
+        private static int RecalculateFeatureWIP(int featureWIP, int remainingItems)
         {
             var featureWorkedOnIndex = featureWIP;
             if (remainingItems < featureWIP)
@@ -203,7 +203,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private void AddSimulationResult(Dictionary<int, int> simulationResults, int simulationResult)
+        private static void AddSimulationResult(Dictionary<int, int> simulationResults, int simulationResult)
         {
             if (!simulationResults.ContainsKey(simulationResult))
             {

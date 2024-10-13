@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.API.DTO.LighthouseChart
 
             if (feature.Forecast != null && feature.FeatureWork.Sum(r => r.RemainingWorkItems) > 0)
             {
-                var forecastDtos = feature.Forecast.CreateForecastDtos([50, 70, 85, 95]);
+                var forecastDtos = feature.Forecast.CreateForecastDtos(50, 70, 85, 95);
                 Forecasts.AddRange(forecastDtos.Select(f => f.ExpectedDate));
             }
         }

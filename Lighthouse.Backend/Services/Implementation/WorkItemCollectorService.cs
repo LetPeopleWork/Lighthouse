@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkItemService workItemService, Feature? feature)
+        private static async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkItemService workItemService, Feature? feature)
         {
             if (string.IsNullOrEmpty(project.SizeEstimateField))
             {
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private int[] SplitIntoBuckets(int itemCount, int numBuckets)
+        private static int[] SplitIntoBuckets(int itemCount, int numBuckets)
         {
             var buckets = new int[numBuckets];
             int quotient = itemCount / numBuckets;
@@ -248,7 +248,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 feature = new Feature() { ReferenceId = featureId };
             }
 
-            var featureIsAddedToProject = feature.Projects.Any(p => p.Id == project.Id);
+            var featureIsAddedToProject = feature.Projects.Exists(p => p.Id == project.Id);
             if (!featureIsAddedToProject)
             {
                 feature.Projects.Add(project);
