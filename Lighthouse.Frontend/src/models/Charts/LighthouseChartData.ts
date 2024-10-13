@@ -1,6 +1,6 @@
 import { IMilestone } from "../Project/Milestone";
 
-const featureColors = [
+export const featureColors = [
     "#3f51b5", // Indigo
     "#e57373", // Light Red
     "#81c784", // Light Green

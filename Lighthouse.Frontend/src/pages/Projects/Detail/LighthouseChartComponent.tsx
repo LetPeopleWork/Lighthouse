@@ -137,9 +137,9 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
                         <Inject services={[ColumnSeries, StepLineSeries, Legend, Tooltip, DateTime, RangeAreaSeries, Highlight]} />
 
                         <SeriesCollectionDirective>
-                            {chartData?.features.map((feature, index) => (
+                            {chartData?.features.map((feature) => (
                                 <SeriesDirective
-                                    key={index}
+                                    key={feature.name}
                                     dataSource={feature.remainingItemsTrend.map(entry => ({
                                         x: entry.date,
                                         y: entry.remainingItems,
@@ -155,12 +155,12 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
                                 />
                             ))}
 
-                            {chartData?.features.map((feature, index) => {
+                            {chartData?.features.map((feature) => {
                                 if (feature.forecasts.length > 0) {
                                     const forecastData = createForecastForFeature(feature);
                                     return (
                                         <SeriesDirective
-                                            key={index}
+                                            key={feature.name}
                                             dataSource={forecastData}
                                             tooltipMappingName='name'
                                             xName='x'
@@ -177,9 +177,9 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
                                 }
                             })}
 
-                            {chartData?.milestones.map((milestone, index) => (
+                            {chartData?.milestones.map((milestone) => (
                                 <SeriesDirective
-                                    key={index}
+                                    key={milestone.id}
                                     dataSource={[
                                         { x: milestone.date, y: chartData.maxRemainingItems, name: milestone.name },
                                         { x: milestone.date, y: 0, name: milestone.name }
