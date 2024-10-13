@@ -8,7 +8,6 @@ import { createMockApiServiceContext, createMockChartService } from '../../../..
 import { IChartService } from '../../../../../services/Api/ChartService';
 import dayjs, { Dayjs } from 'dayjs';
 import { BurndownEntry, LighthouseChartData, LighthouseChartFeatureData } from '../../../../../models/Charts/LighthouseChartData';
-import { Milestone } from '../../../../../models/Project/Milestone';
 
 // Mocking the dependent components
 vi.mock('../../../../../components/Common/DatePicker/DatePickerComponent', () => ({
