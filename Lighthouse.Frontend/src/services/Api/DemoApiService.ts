@@ -52,7 +52,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         new ProjectSettings(2, "Release Codename Daniel", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
     ];
 
-    private previewFeatures = [
+    private readonly previewFeatures = [
         new PreviewFeature(0, "LighthouseChart", "Lighthouse Chart", "Shows Burndown Chart with Forecasts for each Feature in a Project", true),
         new PreviewFeature(1, "SomeOtherFeature", "Feature that is longer in Preview already", "Does something else but also somewhat new", false),
     ]
