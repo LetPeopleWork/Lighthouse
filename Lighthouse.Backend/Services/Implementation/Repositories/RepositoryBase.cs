@@ -51,6 +51,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return dbSetGetter(Context).SingleOrDefault(predicate);
         }
 
+        public virtual IEnumerable<T> GetAllByPredicate(Func<T, bool> predicate)
+        {
+            return dbSetGetter(Context).Where(predicate);
+        }
+
         public virtual void Remove(int id)
         {
             logger.LogInformation("Removing item with {id}", id);

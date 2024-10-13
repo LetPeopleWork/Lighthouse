@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -20,18 +21,22 @@ namespace Lighthouse.Backend.API.DTO
             RelationCustomField = team.AdditionalRelatedField;
         }
 
+        [JsonRequired]
         public int Id { get; set; }
 
         public string Name { get; set; }
 
+        [JsonRequired]
         public int ThroughputHistory { get; set; }
 
+        [JsonRequired]
         public int FeatureWIP { get; set; }
 
         public string WorkItemQuery { get; set; }
 
         public List<string> WorkItemTypes { get; set; }
 
+        [JsonRequired]
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public string RelationCustomField { get; set; }

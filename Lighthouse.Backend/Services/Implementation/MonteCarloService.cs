@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public HowManyForecast HowMany(Throughput throughput, int days)
         {
-            logger.LogInformation("Running Monte Carlo Forecast How Many for {days} days.", days);
+            logger.LogInformation("Running Monte Carlo Forecast How Many for {Days} days.", days);
 
             var simulationResults = new Dictionary<int, int>();
 
@@ -40,19 +40,19 @@ namespace Lighthouse.Backend.Services.Implementation
                 AddSimulationResult(simulationResults, simulatedThroughput);
             });
 
-            logger.LogInformation("Finished running Monte Carlo How Many for {days} days.", days);
+            logger.LogInformation("Finished running Monte Carlo How Many for {Days} days.", days);
 
             return new HowManyForecast(simulationResults, days);
         }
 
         public async Task<WhenForecast> When(Team team, int remainingItems)
         {
-            logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {remainingItems} items.", team.Name, remainingItems);
+            logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
             var fakeFeature = new Feature(team, remainingItems);
             await ForecastFeatures([fakeFeature]);
 
-            logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {remainingItems} items.", team.Name, remainingItems);
+            logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
             return fakeFeature.Forecast;
         }
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public async Task UpdateForecastsForProject(Project project)
         {
-            logger.LogInformation("Running Monte Carlo Forecast For Project {project}", project.Name);
+            logger.LogInformation("Running Monte Carlo Forecast For Project {Project}", project.Name);
 
             await ForecastFeatures(project.Features);
 
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation
             await Task.WhenAll(tasks);
         }
 
-        private void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults)
+        private static void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults)
         {
             foreach (var feature in features)
             {
@@ -133,12 +133,12 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult)
+        private static WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult)
         {
             return new WhenForecast(simulationResult);
         }
 
-        private List<SimulationResult> InitializeSimulationResults(IEnumerable<Feature> features)
+        private static List<SimulationResult> InitializeSimulationResults(IEnumerable<Feature> features)
         {
             var simulationResults = new List<SimulationResult>();
 
@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private void ReduceRemainingWorkFromFeatureToUpdate(int simulatedDays, SimulationResult featureToUpdate)
+        private static void ReduceRemainingWorkFromFeatureToUpdate(int simulatedDays, SimulationResult featureToUpdate)
         {
             featureToUpdate.RemainingItems -= 1;
 
@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return itemToUpdate;
         }
 
-        private int RecalculateFeatureWIP(int featureWIP, int remainingItems)
+        private static int RecalculateFeatureWIP(int featureWIP, int remainingItems)
         {
             var featureWorkedOnIndex = featureWIP;
             if (remainingItems < featureWIP)
@@ -203,7 +203,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private void AddSimulationResult(Dictionary<int, int> simulationResults, int simulationResult)
+        private static void AddSimulationResult(Dictionary<int, int> simulationResults, int simulationResult)
         {
             if (!simulationResults.ContainsKey(simulationResult))
             {

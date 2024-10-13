@@ -1,6 +1,5 @@
 ﻿using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
-using Microsoft.Extensions.Configuration;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
@@ -14,7 +13,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void Setup()
         {
             fileSystemMock = new Mock<IFileSystemService>();
-            subject = new ConfigFileUpdater(new ConfigurationBuilder().Build(), fileSystemMock.Object);
+            subject = new ConfigFileUpdater(fileSystemMock.Object);
         }
 
         [Test]

@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public DateTime ExpectedDate { get; }
 
-        private DateTime GetFutureDate(int daysInFuture)
+        private static DateTime GetFutureDate(int daysInFuture)
         {
             return DateTime.Today.AddDays(daysInFuture);
         }

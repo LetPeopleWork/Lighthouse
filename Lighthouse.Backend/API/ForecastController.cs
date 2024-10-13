@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API
 {
@@ -54,7 +55,7 @@ namespace Lighthouse.Backend.API
             {
                 var whenForecast = await monteCarloService.When(team, input.RemainingItems);
 
-                manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos([50, 70, 85, 95]));
+                manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
 
                 if (timeToTargetDate > 0)
                 {
@@ -66,7 +67,7 @@ namespace Lighthouse.Backend.API
             {
                 var howManyForecast = monteCarloService.HowMany(team.Throughput, timeToTargetDate);
 
-                manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos([50, 70, 85, 95]));
+                manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
             }
 
             return Ok(manualForecast);
@@ -74,8 +75,10 @@ namespace Lighthouse.Backend.API
 
         public class ManualForecastInputDto
         {
+            [JsonRequired]
             public int RemainingItems { get; set; }
 
+            [JsonRequired]
             public DateTime TargetDate { get; set; }
         }
     }

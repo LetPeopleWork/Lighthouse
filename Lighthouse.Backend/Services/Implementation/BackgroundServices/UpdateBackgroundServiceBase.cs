@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         protected abstract RefreshSettings GetRefreshSettings();
 
-        protected T GetServiceFromServiceScope<T>(IServiceScope scope) where T : notnull
+        protected static T GetServiceFromServiceScope<T>(IServiceScope scope) where T : notnull
         {
             return scope.ServiceProvider.GetRequiredService<T>();
         }

@@ -5,12 +5,14 @@ import ProjectDetail from './ProjectDetail';
 import { Milestone } from '../../../models/Project/Milestone';
 import { Project } from '../../../models/Project/Project';
 import { TeamSettings } from '../../../models/Team/TeamSettings';
-import { createMockApiServiceContext, createMockProjectService, createMockTeamService } from '../../../tests/MockApiServiceProvider';
+import { createMockApiServiceContext, createMockPreviewFeatureService, createMockProjectService, createMockTeamService } from '../../../tests/MockApiServiceProvider';
 import { IProjectService } from '../../../services/Api/ProjectService';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 import { ITeamService } from '../../../services/Api/TeamService';
 import { ProjectSettings } from '../../../models/Project/ProjectSettings';
 import { Feature } from '../../../models/Feature';
+import { IPreviewFeatureService } from '../../../services/Api/PreviewFeatureService';
+import { PreviewFeature } from '../../../models/Preview/PreviewFeature';
 
 vi.mock('../../../components/Common/LoadingAnimation/LoadingAnimation', () => ({
     default: ({ children, hasError, isLoading }: { children: React.ReactNode, hasError: boolean, isLoading: boolean }) => (
@@ -53,15 +55,18 @@ vi.mock('../../../components/Common/ActionButton/ActionButton', () => ({
 
 const mockProjectService: IProjectService = createMockProjectService();
 const mockTeamService: ITeamService = createMockTeamService();
+const mockPreviewFeatureService : IPreviewFeatureService = createMockPreviewFeatureService();
 
 const mockGetProject = vi.fn();
 const mockGetProjectSettings = vi.fn();
+const mockGetPreviewFeatures = vi.fn();
 
 mockProjectService.getProject = mockGetProject;
 mockProjectService.getProjectSettings = mockGetProjectSettings;
+mockPreviewFeatureService.getFeatureByKey = mockGetPreviewFeatures;
 
 const MockApiServiceProvider = ({ children }: { children: React.ReactNode }) => {
-    const mockContext = createMockApiServiceContext({ projectService: mockProjectService, teamService: mockTeamService });
+    const mockContext = createMockApiServiceContext({ projectService: mockProjectService, teamService: mockTeamService, previewFeatureService: mockPreviewFeatureService });
 
     return (
         <ApiServiceContext.Provider value={mockContext} >
@@ -87,6 +92,7 @@ describe('ProjectDetail component', () => {
     beforeEach(() => {
         mockGetProject.mockResolvedValue(new Project("Release Codename Daniel", 2, [], [new Feature("Feature 1", 0, "url", new Date(), {}, {}, {}, {}, []), new Feature("Feature 2", 1, "url", new Date(), {}, {}, {}, {}, [])], [new Milestone(1, "Milestone", new Date())], new Date()));
         mockGetProjectSettings.mockResolvedValue(new ProjectSettings(2, "Release Codename Daniel", [], [], "Query", "Unparented Query", 10, 0, "SizeEstimate"));
+        mockGetPreviewFeatures.mockResolvedValue(new PreviewFeature(0, "Feature", "Feature", "", false));
     })
 
     afterEach(() => {

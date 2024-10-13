@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.10");
 
             modelBuilder.Entity("FeatureProject", b =>
                 {
@@ -220,6 +220,30 @@ namespace Lighthouse.Backend.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("Milestone");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Preview.PreviewFeature", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("PreviewFeatures");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Project", b =>

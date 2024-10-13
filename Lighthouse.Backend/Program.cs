@@ -13,6 +13,7 @@ using Serilog;
 using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
 using Lighthouse.Backend.Models.History;
+using Lighthouse.Backend.Models.Preview;
 
 namespace Lighthouse.Backend
 {
@@ -34,7 +35,7 @@ namespace Lighthouse.Backend
                 var builder = WebApplication.CreateBuilder(args);
 
                 var fileSystemService = new FileSystemService();
-                var configFileUpdater = new ConfigFileUpdater(builder.Configuration, fileSystemService);
+                var configFileUpdater = new ConfigFileUpdater(fileSystemService);
                 var serilogConfiguration = new SerilogLogConfiguration(builder.Configuration, configFileUpdater, fileSystemService);
                 builder.Services.AddSingleton<ILogConfiguration>(serilogConfiguration);
 
@@ -62,6 +63,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
                 builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
                 builder.Services.AddScoped<IRepository<FeatureHistoryEntry>, FeatureHistoryRepository>();
+                builder.Services.AddScoped<IRepository<PreviewFeature>, PreviewFeatureRepository>();
 
                 // Factories
                 builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();

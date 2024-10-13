@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Backend.Services.Implementation;
-using Octokit;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -13,7 +12,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var latestVersion = await subject.GetLatestReleaseVersion();
 
-            Assert.IsNotNull(latestVersion);
+            Assert.That(latestVersion, Is.Not.Null);
         }
 
         [Test]

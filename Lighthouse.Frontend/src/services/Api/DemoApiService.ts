@@ -6,7 +6,7 @@ import { Throughput } from '../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast } from '../../models/Forecasts/HowManyForecast';
 import dayjs from 'dayjs';
-import { Milestone } from '../../models/Project/Milestone';
+import { IMilestone, Milestone } from '../../models/Project/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
@@ -22,8 +22,12 @@ import { IProjectService } from './ProjectService';
 import { ISettingsService } from './SettingsService';
 import { ITeamService } from './TeamService';
 import { IVersionService } from './VersionService';
+import { IChartService } from './ChartService';
+import { BurndownEntry, ILighthouseChartData, ILighthouseChartFeatureData, LighthouseChartData, LighthouseChartFeatureData } from '../../models/Charts/LighthouseChartData';
+import { IPreviewFeatureService } from './PreviewFeatureService';
+import { PreviewFeature } from '../../models/Preview/PreviewFeature';
 
-export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService {
+export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService, IChartService, IPreviewFeatureService {
     private useDelay: boolean;
     private throwError: boolean;
 
@@ -48,6 +52,11 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         new ProjectSettings(2, "Release Codename Daniel", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
     ];
 
+    private readonly previewFeatures = [
+        new PreviewFeature(0, "LighthouseChart", "Lighthouse Chart", "Shows Burndown Chart with Forecasts for each Feature in a Project", true),
+        new PreviewFeature(1, "SomeOtherFeature", "Feature that is longer in Preview already", "Does something else but also somewhat new", false),
+    ]
+
     constructor(useDelay: boolean, throwError: boolean = false) {
         this.useDelay = useDelay;
         this.throwError = throwError;
@@ -55,6 +64,30 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         this.recreateFeatures();
         this.recreateTeams();
         this.recreateProjects();
+    }
+
+    async getAllFeatures(): Promise<PreviewFeature[]> {
+        await this.delay();
+
+        return this.previewFeatures;
+    }
+
+    async getFeatureByKey(key: string): Promise<PreviewFeature | null> {
+        await this.delay();
+
+        const feature = this.previewFeatures.find(feature => feature.key === key);
+        return feature || null;
+    }
+
+    async updateFeature(feature: PreviewFeature): Promise<void> {
+        await this.delay();
+
+        const featureIndex = this.previewFeatures.findIndex(f => f.key === feature.key);
+
+        if (featureIndex >= 0){
+            this.previewFeatures.splice(featureIndex, 1);
+            this.previewFeatures.splice(featureIndex, 0, feature);
+        }
     }
 
     async updateThroughput(teamId: number): Promise<void> {
@@ -352,6 +385,42 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         await this.delay();
     }
 
+    async getLighthouseChartData(projectId: number, startDate: Date, sampleRate: number): Promise<ILighthouseChartData> {
+        console.log(`Getting Lighthouse Chart for project ${projectId} starting from ${startDate} with sample rate ${sampleRate}`);
+
+        await this.delay();
+
+        const featureData: ILighthouseChartFeatureData[] = [
+            new LighthouseChartFeatureData("Feature 1", [new Date("2024-05-17"), new Date("2024-05-28")], [
+                new BurndownEntry(new Date("2024-04-08"), 38),
+                new BurndownEntry(new Date("2024-04-15"), 32),
+                new BurndownEntry(new Date("2024-04-22"), 35),
+                new BurndownEntry(new Date("2024-04-29"), 23),
+                new BurndownEntry(new Date("2024-05-06"), 15),
+            ]),
+            new LighthouseChartFeatureData("Feature 2", [], [
+                new BurndownEntry(new Date("2024-04-08"), 15),
+                new BurndownEntry(new Date("2024-04-15"), 9),
+                new BurndownEntry(new Date("2024-04-22"), 5),
+                new BurndownEntry(new Date("2024-04-29"), 0),
+            ]),
+            new LighthouseChartFeatureData("Feature 3", [new Date("2024-05-23"), new Date("2024-06-03")], [
+                new BurndownEntry(new Date("2024-04-08"), 41),
+                new BurndownEntry(new Date("2024-04-15"), 36),
+                new BurndownEntry(new Date("2024-04-22"), 31),
+                new BurndownEntry(new Date("2024-04-29"), 19),
+                new BurndownEntry(new Date("2024-05-06"), 17),
+            ]),
+        ];
+
+        const milestones: IMilestone[] = [
+            new Milestone(0, "Important Date", new Date("2024-05-04")),
+            new Milestone(0, "Customer Visit", new Date("2024-06-01")),
+        ];        
+
+        return new LighthouseChartData(featureData, milestones);
+    }
+
     delay() {
         if (this.throwError) {
             throw new Error('Simulated Error');
@@ -398,8 +467,8 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         }
 
         this.features = [
-            new Feature('Feature 1', 0, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/1", new Date(), { 0: "Release 1.33.7" }, { 0: 10 }, {0: 15}, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 5 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 10 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 17 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 25 * this.dayMultiplier))]),
-            new Feature('Feature 2', 1, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/2", new Date(), { 1: "Release 42" }, { 1: 5 }, {1: 5}, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 15 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 28 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 35 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 45 * this.dayMultiplier))]),
+            new Feature('Feature 1', 0, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/1", new Date(), { 0: "Release 1.33.7" }, { 0: 10 }, { 0: 15 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 5 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 10 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 17 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 25 * this.dayMultiplier))]),
+            new Feature('Feature 2', 1, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/2", new Date(), { 1: "Release 42" }, { 1: 5 }, { 1: 5 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 15 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 28 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 35 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 45 * this.dayMultiplier))]),
             new Feature('Feature 3', 2, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/3", new Date(), { 2: "Release Codename Daniel" }, { 2: 7, 1: 15 }, { 2: 10, 1: 25 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 7 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 12 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 14 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 16 * this.dayMultiplier))]),
             new Feature('Feature 4', 3, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/4", new Date(), { 2: "Release Codename Daniel", 1: "Release 1.33.7" }, { 0: 3, 3: 9 }, { 0: 12, 3: 10 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 21 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 37 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 55 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 71 * this.dayMultiplier))]),
         ];

@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.WorkTracking;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -18,10 +19,12 @@ namespace Lighthouse.Backend.API.DTO
             Options.AddRange(workTrackingSystemConnection.Options.Select(o => new WorkTrackingSystemConnectionOptionDto(o)));
         }
 
+        [JsonRequired]
         public int Id { get; set; }
 
         public string Name { get; set; }
 
+        [JsonRequired]
         public WorkTrackingSystems WorkTrackingSystem { get; set; }
 
         public List<WorkTrackingSystemConnectionOptionDto> Options { get; set; } = [];

@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetProjects().ToList();
 
-            Assert.That(result, Has.Count.EqualTo(testProjects.Count()));
+            Assert.That(result, Has.Count.EqualTo(testProjects.Count));
         }
 
         [Test]

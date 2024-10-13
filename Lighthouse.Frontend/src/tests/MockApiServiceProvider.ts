@@ -1,4 +1,6 @@
 import { IApiServiceContext } from '../services/Api/ApiServiceContext';
+import { IChartService } from '../services/Api/ChartService';
+import { IPreviewFeatureService } from '../services/Api/PreviewFeatureService';
 import { IProjectService } from '../services/Api/ProjectService';
 import { ISettingsService } from '../services/Api/SettingsService';
 import { ITeamService } from '../services/Api/TeamService';
@@ -13,6 +15,8 @@ export const createMockApiServiceContext = (overrides: Partial<IApiServiceContex
         teamService: null as unknown as IApiServiceContext['teamService'],
         versionService: null as unknown as IApiServiceContext['versionService'],
         workTrackingSystemService: null as unknown as IApiServiceContext['workTrackingSystemService'],
+        chartService: null as unknown as IApiServiceContext['chartService'],
+        previewFeatureService: null as unknown as IApiServiceContext['previewFeatureService'],
         ...overrides,
     };
 };
@@ -63,4 +67,18 @@ export const createMockWorkTrackingSystemService = (): IWorkTrackingSystemServic
         deleteWorkTrackingSystemConnection: vi.fn(),
         validateWorkTrackingSystemConnection: vi.fn(),
     };
+}
+
+export const createMockPreviewFeatureService = () : IPreviewFeatureService => {
+    return {
+        getAllFeatures: vi.fn(),
+        getFeatureByKey: vi.fn(),
+        updateFeature: vi.fn(),
+    }
+}
+
+export const createMockChartService = () : IChartService => {
+    return {
+        getLighthouseChartData : vi.fn(),
+    }
 }

@@ -8,8 +8,8 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class ThroughputController : ControllerBase
     {
-        private IThroughputService throughputService;
-        private IRepository<Team> teamRepository;
+        private readonly IThroughputService throughputService;
+        private readonly IRepository<Team> teamRepository;
 
         public ThroughputController(IThroughputService throughputService, IRepository<Team> teamRepository)
         {

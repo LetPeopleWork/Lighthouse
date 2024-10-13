@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
-        private List<int> ConvertToIntegers(IEnumerable<string> orderAsStrings)
+        private static List<int> ConvertToIntegers(IEnumerable<string> orderAsStrings)
         {
             var orderAsInt = new List<int>();
 
@@ -368,14 +368,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 additionalFieldsQuery =  ", " + string.Join(", ", additionalFields.Select(field => $"[{field}]"));
             }
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {workitemQueryOwner.WorkItemQuery} " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{additionalFieldsQuery} FROM WorkItems WHERE {workitemQueryOwner.WorkItemQuery} " +
                 $"{workItemsQuery} " +
                 $"{stateQuery}";
 
             return wiql;
         }
 
-        private string PrepareWorkItemTypeQuery(IEnumerable<string> workItemTypes)
+        private static string PrepareWorkItemTypeQuery(IEnumerable<string> workItemTypes)
         {
             return PrepareGenericQuery(workItemTypes, AzureDevOpsFieldNames.WorkItemType, "OR", "=");
         }
@@ -387,7 +387,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return PrepareGenericQuery(allExcludedStates, AzureDevOpsFieldNames.State, "AND", "<>");
         }
 
-        private string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
+        private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
             var query = string.Join($" {queryOperator} ", options.Select(options => $"[{fieldName}] {queryComparison} '{options}'"));
 
@@ -403,7 +403,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return query;
         }
 
-        private string PrepareRelatedItemQuery(string relatedItemId, string? additionalRelatedField)
+        private static string PrepareRelatedItemQuery(string relatedItemId, string? additionalRelatedField)
         {
             var additionalRelatedFieldQuery = string.Empty;
             if (!string.IsNullOrEmpty(additionalRelatedField))
@@ -425,7 +425,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return connection.GetClient<WorkItemTrackingHttpClient>();
         }
 
-        private VssConnection CreateConnection(string azureDevOpsUrl, string personalAccessToken)
+        private static VssConnection CreateConnection(string azureDevOpsUrl, string personalAccessToken)
         {
             var azureDevOpsUri = new Uri(azureDevOpsUrl);
             var credentials = new VssBasicCredential(personalAccessToken, string.Empty);

@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -21,6 +22,7 @@ namespace Lighthouse.Backend.API.DTO
             SizeEstimateField = project.SizeEstimateField;
         }
 
+        [JsonRequired]
         public int Id { get; set; } 
 
         public string Name { get; set; }
@@ -33,8 +35,10 @@ namespace Lighthouse.Backend.API.DTO
 
         public string UnparentedItemsQuery { get; set; }
 
+        [JsonRequired]
         public int DefaultAmountOfWorkItemsPerFeature { get; set; }
 
+        [JsonRequired]
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public string? SizeEstimateField { get; set; } = string.Empty;

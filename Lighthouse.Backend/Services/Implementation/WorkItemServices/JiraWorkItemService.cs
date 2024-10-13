@@ -362,7 +362,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return jql;
         }
 
-        private string PrepareWorkItemTypeQuery(IEnumerable<string> issueTypes)
+        private static string PrepareWorkItemTypeQuery(IEnumerable<string> issueTypes)
         {
             return PrepareGenericQuery(issueTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
         }
@@ -372,7 +372,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return PrepareGenericQuery([DoneStatusCategory], JiraFieldNames.StatusCategoryFieldName, "AND", "!=");
         }
 
-        private string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
+        private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
             var query = string.Join($" {queryOperator} ", options.Select(options => $"{fieldName} {queryComparison} \"{options}\""));
 

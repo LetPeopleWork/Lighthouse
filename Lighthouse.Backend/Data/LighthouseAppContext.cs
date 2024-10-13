@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.History;
+using Lighthouse.Backend.Models.Preview;
 
 namespace Lighthouse.Backend.Data
 {
@@ -30,9 +31,13 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<AppSetting> AppSettings { get; set; } = default!;
 
+        public DbSet<PreviewFeature> PreviewFeatures { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
+
+            modelBuilder.Entity<PreviewFeature>().HasKey(a => a.Key);
 
             modelBuilder.Entity<Milestone>()
                 .HasOne(m => m.Project)
@@ -110,9 +115,10 @@ namespace Lighthouse.Backend.Data
 
         private void EncryptSecrets()
         {
-            foreach (var entry in ChangeTracker.Entries<WorkTrackingSystemConnectionOption>().Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+            foreach (var option in ChangeTracker.Entries<WorkTrackingSystemConnectionOption>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+                .Select(e => e.Entity))
             {
-                var option = entry.Entity;
                 if (option.IsSecret)
                 {
                     option.Value = cryptoService.Encrypt(option.Value);
@@ -124,10 +130,10 @@ namespace Lighthouse.Backend.Data
         {
             var orphanedFeatures = Features
                 .Include(f => f.Projects)
-                .Where(f => !f.Projects.Any())
+                .Where(f => f.Projects.Count == 0)
                 .ToList();
 
-            if (orphanedFeatures.Any())
+            if (orphanedFeatures.Count > 0)
             {
                 Features.RemoveRange(orphanedFeatures);
             }
