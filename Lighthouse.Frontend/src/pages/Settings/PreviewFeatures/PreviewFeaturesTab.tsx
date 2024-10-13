@@ -51,6 +51,7 @@ const PreviewFeaturesTab: React.FC = () => {
                             <TableCell>
                                 <Switch
                                     checked={feature.enabled}
+                                    data-testid={`${feature.key}-toggle`}
                                     onChange={() => onToggle(feature)}
                                     color="primary"
                                 />
