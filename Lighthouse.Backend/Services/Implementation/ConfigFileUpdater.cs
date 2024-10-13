@@ -16,9 +16,9 @@ namespace Lighthouse.Backend.Services.Implementation
             configFileDebugPath = "appsettings.Development.json";
         }
 
-        public void UpdateConfigFile<T>(string key, T value)
+        public void UpdateConfigFile<T>(string key, T value) where T : class
         {
-            if (EqualityComparer<T>.Default.Equals(value, default) || value == null)
+            if (value == null)
             {
                 return;
             }

@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation
             await Task.WhenAll(tasks);
         }
 
-        private void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults)
+        private static void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults)
         {
             foreach (var feature in features)
             {
@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private void ReduceRemainingWorkFromFeatureToUpdate(int simulatedDays, SimulationResult featureToUpdate)
+        private static void ReduceRemainingWorkFromFeatureToUpdate(int simulatedDays, SimulationResult featureToUpdate)
         {
             featureToUpdate.RemainingItems -= 1;
 
