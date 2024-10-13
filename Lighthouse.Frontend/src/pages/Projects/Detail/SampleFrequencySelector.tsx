@@ -7,7 +7,7 @@ interface SampleFrequencySelectorProps {
 }
 
 const SampleFrequencySelector: React.FC<SampleFrequencySelectorProps> = ({ sampleEveryNthDay, onSampleEveryNthDayChange }) => {
-    const [isCustom, setIsCustom] = useState<boolean>(false);
+    const [isCustom, setIsCustom] = useState<boolean>(![1, 7, 30].includes(sampleEveryNthDay));
 
     const handlePredefinedChange = (event: SelectChangeEvent<string>) => {
         const value = event.target.value;
@@ -33,6 +33,8 @@ const SampleFrequencySelector: React.FC<SampleFrequencySelectorProps> = ({ sampl
                 <InputLabel id="sample-frequency-label">Sampling Frequency</InputLabel>
                 <Select
                     labelId="sample-frequency-label"
+                    data-testid="frequency-select"
+                    id="frequency-select"
                     value={isCustom ? 'custom' : sampleEveryNthDay.toString()}
                     label="Sampling Frequency"
                     onChange={handlePredefinedChange}
@@ -43,7 +45,7 @@ const SampleFrequencySelector: React.FC<SampleFrequencySelectorProps> = ({ sampl
                     <MenuItem value="custom">Custom</MenuItem>
                 </Select>
             </FormControl>
-            
+
             {isCustom && (
                 <TextField
                     label="Custom Sampling Interval (Days)"
