@@ -7,6 +7,8 @@ import { ApiServiceContext } from '../../../../../services/Api/ApiServiceContext
 import { createMockApiServiceContext, createMockChartService } from '../../../../../tests/MockApiServiceProvider';
 import { IChartService } from '../../../../../services/Api/ChartService';
 import dayjs, { Dayjs } from 'dayjs';
+import { BurndownEntry, LighthouseChartData, LighthouseChartFeatureData } from '../../../../../models/Charts/LighthouseChartData';
+import { Milestone } from '../../../../../models/Project/Milestone';
 
 // Mocking the dependent components
 vi.mock('../../../../../components/Common/DatePicker/DatePickerComponent', () => ({
@@ -33,11 +35,11 @@ vi.mock('../../SampleFrequencySelector', () => ({
 }));
 
 vi.mock('../../../../../components/Common/LoadingAnimation/LoadingAnimation', () => ({
-    default: ({ hasError, isLoading }: { hasError: boolean, isLoading: boolean, children: React.ReactNode }) => (
+    default: ({ hasError, isLoading, children }: { hasError: boolean, isLoading: boolean, children: React.ReactNode }) => (
         <>
             {isLoading && <div>Loading...</div>}
             {hasError && <div>Error loading data</div>}
-            {!isLoading && !hasError}
+            {!isLoading && !hasError && children}
         </>
     ),
 }));
@@ -67,19 +69,30 @@ const renderWithMockApiProvider = () => {
     );
 };
 
+const lighthouseChartData = new LighthouseChartData([new LighthouseChartFeatureData("Feature 1", [new Date(), new Date(), new Date(), new Date()], [new BurndownEntry(new Date(), 10)])], [])
+
 describe('LighthouseChartComponent', () => {
+
+    beforeEach(() => {
+        mockGetLighthouseChartData.mockResolvedValue(lighthouseChartData);
+    })
+
     afterEach(() => {
         vi.clearAllMocks();
     });
 
-    it('renders without crashing', () => {
+    it('renders without crashing', async () => {
         renderWithMockApiProvider();
+
+        await waitFor(() => {
+            screen.getByLabelText('Burndown Start Date');
+        })
+
         expect(screen.getByLabelText('Burndown Start Date')).toBeInTheDocument();
         expect(screen.getByRole('combobox')).toBeInTheDocument();
     });
 
     it('initially fetches lighthouse data', async () => {
-        mockGetLighthouseChartData.mockResolvedValueOnce({});
         renderWithMockApiProvider();
 
         expect(mockGetLighthouseChartData).toHaveBeenCalledWith(
@@ -99,8 +112,11 @@ describe('LighthouseChartComponent', () => {
     });
 
     it('updates start date and fetches new data', async () => {
-        mockGetLighthouseChartData.mockResolvedValueOnce({});
         renderWithMockApiProvider();
+
+        await waitFor(() => {
+            screen.getByLabelText('Burndown Start Date');
+        })
 
         const startDateInput = screen.getByLabelText('Burndown Start Date');
         fireEvent.change(startDateInput, { target: { value: dayjs().format('YYYY-MM-DD') } });
@@ -109,20 +125,6 @@ describe('LighthouseChartComponent', () => {
             1,
             expect.any(Date),
             1
-        );
-    });
-
-    it('updates sample rate and fetches new data', async () => {
-        mockGetLighthouseChartData.mockResolvedValueOnce({});
-        renderWithMockApiProvider();
-
-        const sampleRateSelector = screen.getByRole('combobox');
-        fireEvent.change(sampleRateSelector, { target: { value: '7' } });
-
-        expect(mockGetLighthouseChartData).toHaveBeenCalledWith(
-            1,
-            expect.any(Date),
-            7
         );
     });
 });

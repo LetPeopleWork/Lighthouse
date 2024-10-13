@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Grid } from '@mui/material';
+import { Alert, Grid } from '@mui/material';
 import LighthouseChart from './LighthouseChart';
 import dayjs, { Dayjs } from 'dayjs';
 import { ILighthouseChartData } from '../../../../../models/Charts/LighthouseChartData';
@@ -27,6 +27,7 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
             const lighthouseChartData = await chartService.getLighthouseChartData(projectId, startDate.toDate(), sampleRate);
 
             if (lighthouseChartData) {
+                console.log(lighthouseChartData)
                 setChartData(lighthouseChartData);
             } else {
                 setHasError(true);
@@ -50,20 +51,25 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
     }
 
     return (
-        <Grid container spacing={3}>
-            <Grid item xs={6}>
-                <DatePickerComponent label='Burndown Start Date' value={startDate} onChange={onStartDateChanged} />
-            </Grid>
-            <SampleFrequencySelector
-                sampleEveryNthDay={sampleRate}
-                onSampleEveryNthDayChange={setSampleRate}
-            />
-            <Grid item xs={12}>
-                <LoadingAnimation hasError={hasError} isLoading={isLoading}>
-                    <LighthouseChart data={chartData} />
-                </LoadingAnimation>
-            </Grid>
-        </Grid>
+
+        <LoadingAnimation hasError={hasError} isLoading={isLoading}>
+            {chartData?.features && chartData.features.length > 0 ? (
+                <Grid container spacing={3}>
+                    <Grid item xs={6}>
+                        <DatePickerComponent label='Burndown Start Date' value={startDate} onChange={onStartDateChanged} />
+                    </Grid>
+                    <SampleFrequencySelector
+                        sampleEveryNthDay={sampleRate}
+                        onSampleEveryNthDayChange={setSampleRate}
+                    />
+                    <Grid item xs={12}>
+                        <LighthouseChart data={chartData} />
+                    </Grid>
+                </Grid>) : (
+                <Alert severity="warning">Can't display Burndown as no Feature information is available for this Project.</Alert>
+            )}
+        </LoadingAnimation>
+
     );
 };
 
