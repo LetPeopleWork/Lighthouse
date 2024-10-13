@@ -14,7 +14,7 @@ import { IMilestone } from '../../../models/Project/Milestone';
 import MilestonesComponent from '../../../components/Common/Milestones/MilestonesComponent';
 import { ITeamSettings } from '../../../models/Team/TeamSettings';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
-import LighthouseChartComponent from './LighthouseChartComponent';
+import LighthouseChartComponent from './Charts/LighthouseChart/LighthouseChartComponent';
 
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();

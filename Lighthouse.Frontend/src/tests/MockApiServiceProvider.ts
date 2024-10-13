@@ -1,4 +1,5 @@
 import { IApiServiceContext } from '../services/Api/ApiServiceContext';
+import { IChartService } from '../services/Api/ChartService';
 import { IPreviewFeatureService } from '../services/Api/PreviewFeatureService';
 import { IProjectService } from '../services/Api/ProjectService';
 import { ISettingsService } from '../services/Api/SettingsService';
@@ -73,5 +74,11 @@ export const createMockPreviewFeatureService = () : IPreviewFeatureService => {
         getAllFeatures: vi.fn(),
         getFeatureByKey: vi.fn(),
         updateFeature: vi.fn(),
+    }
+}
+
+export const createMockChartService = () : IChartService => {
+    return {
+        getLighthouseChartData : vi.fn(),
     }
 }
