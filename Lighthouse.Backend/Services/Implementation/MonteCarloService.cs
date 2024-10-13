@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public HowManyForecast HowMany(Throughput throughput, int days)
         {
-            logger.LogInformation("Running Monte Carlo Forecast How Many for {days} days.", days);
+            logger.LogInformation("Running Monte Carlo Forecast How Many for {Days} days.", days);
 
             var simulationResults = new Dictionary<int, int>();
 
@@ -40,19 +40,19 @@ namespace Lighthouse.Backend.Services.Implementation
                 AddSimulationResult(simulationResults, simulatedThroughput);
             });
 
-            logger.LogInformation("Finished running Monte Carlo How Many for {days} days.", days);
+            logger.LogInformation("Finished running Monte Carlo How Many for {Days} days.", days);
 
             return new HowManyForecast(simulationResults, days);
         }
 
         public async Task<WhenForecast> When(Team team, int remainingItems)
         {
-            logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {remainingItems} items.", team.Name, remainingItems);
+            logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
             var fakeFeature = new Feature(team, remainingItems);
             await ForecastFeatures([fakeFeature]);
 
-            logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {remainingItems} items.", team.Name, remainingItems);
+            logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
             return fakeFeature.Forecast;
         }
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public async Task UpdateForecastsForProject(Project project)
         {
-            logger.LogInformation("Running Monte Carlo Forecast For Project {project}", project.Name);
+            logger.LogInformation("Running Monte Carlo Forecast For Project {Project}", project.Name);
 
             await ForecastFeatures(project.Features);
 
