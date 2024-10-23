@@ -228,7 +228,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var remainingItemsQuery = PrepareNotClosedItemsQuery(team.WorkItemTypes, team);
             var closedItemsQuery = PrepareClosedItemsQuery(team.WorkItemTypes, team);
 
+            logger.LogDebug("Getting Remaining Items by Query...");
             var remainingIssues = await GetIssuesByQuery(jiraRestClient, remainingItemsQuery);
+
+            logger.LogDebug("Getting Closed Items by Query...");
             var closedIssues = await GetIssuesByQuery(jiraRestClient, closedItemsQuery);
 
             var relatedRemainingIssuses = remainingIssues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).Select(i => i.Key).ToList();
