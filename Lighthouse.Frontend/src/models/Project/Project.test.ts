@@ -20,10 +20,10 @@ describe('Project Class', () => {
 
         const milestone = new Milestone(0, "Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60));
 
-        const feature1 = new Feature('Feature 1', 1, "", new Date('2023-07-10'), { 1: name }, { 1: 10, 2: 20 }, {1: 10, 2: 20}, { 0: 88.7 }, [
+        const feature1 = new Feature('Feature 1', 1, "", new Date('2023-07-10'), false, { 1: name }, { 1: 10, 2: 20 }, {1: 10, 2: 20}, { 0: 88.7 }, [
             new WhenForecast(0.8, new Date('2023-08-01')),
         ]);
-        const feature2 = new Feature('Feature 2', 2, "", new Date('2023-07-09'), { 1: name }, { 1: 5, 2: 15 }, {1: 5, 2: 15}, { 0: 54.3 }, [
+        const feature2 = new Feature('Feature 2', 2, "", new Date('2023-07-09'), true, { 1: name }, { 1: 5, 2: 15 }, {1: 5, 2: 15}, { 0: 54.3 }, [
             new WhenForecast(0.6, new Date('2023-09-01')),
         ]);
 

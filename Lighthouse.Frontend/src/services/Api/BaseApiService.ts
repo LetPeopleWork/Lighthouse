@@ -52,7 +52,7 @@ export class BaseApiService {
             const forecasts: WhenForecast[] = feature.forecasts.map((forecast: IWhenForecast) => {
                 return new WhenForecast(forecast.probability, new Date(forecast.expectedDate));
             });
-            return new Feature(feature.name, feature.id, feature.url, new Date(feature.lastUpdated), feature.projects, feature.remainingWork, feature.totalWork, feature.milestoneLikelihood, forecasts);
+            return new Feature(feature.name, feature.id, feature.url, new Date(feature.lastUpdated), feature.isUsingDefaultFeatureSize, feature.projects, feature.remainingWork, feature.totalWork, feature.milestoneLikelihood, forecasts);
         });
     }
 

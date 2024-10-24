@@ -90,7 +90,7 @@ const renderWithMockApiProvider = () => {
 describe('ProjectDetail component', () => {
 
     beforeEach(() => {
-        mockGetProject.mockResolvedValue(new Project("Release Codename Daniel", 2, [], [new Feature("Feature 1", 0, "url", new Date(), {}, {}, {}, {}, []), new Feature("Feature 2", 1, "url", new Date(), {}, {}, {}, {}, [])], [new Milestone(1, "Milestone", new Date())], new Date()));
+        mockGetProject.mockResolvedValue(new Project("Release Codename Daniel", 2, [], [new Feature("Feature 1", 0, "url", new Date(), false, {}, {}, {}, {}, []), new Feature("Feature 2", 1, "url", new Date(), true, {}, {}, {}, {}, [])], [new Milestone(1, "Milestone", new Date())], new Date()));
         mockGetProjectSettings.mockResolvedValue(new ProjectSettings(2, "Release Codename Daniel", [], [], "Query", "Unparented Query", 10, 0, "SizeEstimate"));
         mockGetPreviewFeatures.mockResolvedValue(new PreviewFeature(0, "Feature", "Feature", "", false));
     })

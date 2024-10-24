@@ -11,6 +11,8 @@ namespace Lighthouse.Backend.API.DTO
             Url = feature.Url;
             LastUpdated = feature.Forecast?.CreationTime ?? DateTime.MinValue;
 
+            IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
+
             Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(50, 70, 85, 95) ?? Enumerable.Empty<WhenForecastDto>());
 
             foreach (var work in feature.FeatureWork)
@@ -42,6 +44,8 @@ namespace Lighthouse.Backend.API.DTO
         public int Id { get; set; }
 
         public string Url { get; set; }
+
+        public bool IsUsingDefaultFeatureSize { get; set; }
 
         public Dictionary<int, string> Projects { get; } = new Dictionary<int, string>();
 

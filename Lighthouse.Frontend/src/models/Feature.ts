@@ -5,6 +5,7 @@ export interface IFeature {
     id: number;
     url: string | null;
     lastUpdated: Date;
+    isUsingDefaultFeatureSize: boolean;
     remainingWork: { [key: number]: number };
     totalWork: { [key: number]: number };
     milestoneLikelihood: { [key: number]: number };
@@ -22,17 +23,19 @@ export class Feature implements IFeature {
     id!: number;
     url: string | null;
     lastUpdated!: Date;
+    isUsingDefaultFeatureSize!: boolean;
     projects: DictionaryObject<string>;
     remainingWork: DictionaryObject<number>;
     totalWork: { [key: number]: number };
     milestoneLikelihood: DictionaryObject<number>;
     forecasts!: IWhenForecast[];
 
-    constructor(name: string, id: number, url: string | null, lastUpdated: Date, projects: DictionaryObject<string>, remainingWork: DictionaryObject<number>, totalWork: { [key: number]: number }, milestoneLikelihood: DictionaryObject<number>, forecasts: IWhenForecast[]) {
+    constructor(name: string, id: number, url: string | null, lastUpdated: Date, isUsingDefaultFeatureSize: boolean, projects: DictionaryObject<string>, remainingWork: DictionaryObject<number>, totalWork: { [key: number]: number }, milestoneLikelihood: DictionaryObject<number>, forecasts: IWhenForecast[]) {
         this.name = name;
         this.id = id;
         this.url = url;
         this.lastUpdated = lastUpdated;
+        this.isUsingDefaultFeatureSize = isUsingDefaultFeatureSize;
         this.projects = projects;
         this.remainingWork = remainingWork;
         this.totalWork = totalWork;

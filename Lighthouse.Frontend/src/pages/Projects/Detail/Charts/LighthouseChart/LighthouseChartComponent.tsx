@@ -27,7 +27,6 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
             const lighthouseChartData = await chartService.getLighthouseChartData(projectId, startDate.toDate(), sampleRate);
 
             if (lighthouseChartData) {
-                console.log(lighthouseChartData)
                 setChartData(lighthouseChartData);
             } else {
                 setHasError(true);

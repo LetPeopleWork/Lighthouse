@@ -34,8 +34,8 @@ describe('ProjectFeatureList component', () => {
     const milestone1: Milestone = new Milestone(1, 'Milestone 1', new Date('2023-07-01'));
     const milestone2: Milestone = new Milestone(2, 'Milestone 2', new Date('2023-08-01'));
 
-    const feature1: Feature = new Feature('Feature 1', 1, "", new Date(), { 10: '' }, { 1: 5, 2: 5 }, { 1: 5, 2: 5 }, {}, [new WhenForecast(80, new Date())]);
-    const feature2: Feature = new Feature('Feature 2', 2, "", new Date(), { 15: '' }, { 1: 10, 2: 5 }, { 1: 10, 2: 5 }, {}, [new WhenForecast(60, new Date())]);
+    const feature1: Feature = new Feature('Feature 1', 1, "", new Date(), false, { 10: '' }, { 1: 5, 2: 5 }, { 1: 5, 2: 5 }, {}, [new WhenForecast(80, new Date())]);
+    const feature2: Feature = new Feature('Feature 2', 2, "", new Date(), true, { 15: '' }, { 1: 10, 2: 5 }, { 1: 10, 2: 5 }, {}, [new WhenForecast(60, new Date())]);
 
     const project: Project = new Project('Project 1', 1, [team1, team2], [feature1, feature2], [milestone1, milestone2], new Date());
 
@@ -74,6 +74,21 @@ describe('ProjectFeatureList component', () => {
         );
 
         const featureRows = screen.getAllByRole('row');
-        expect(featureRows).toHaveLength(project.features.length + 1); // Including header row
+        expect(featureRows).toHaveLength(project.features.length + 1);
     });
+
+    it('should display the warning icon for features using the default feature size', () => {
+        render(
+            <MemoryRouter>
+                <ProjectFeatureList project={project} />
+            </MemoryRouter>
+        );
+    
+        const featureRowWithDefaultSize = screen.getByText(feature2.name).closest('tr');
+        expect(featureRowWithDefaultSize).toBeInTheDocument();
+    
+        const warningIcon = within(featureRowWithDefaultSize!).getByRole('button');
+        expect(warningIcon).toBeInTheDocument();
+    });
+    
 });
