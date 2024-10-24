@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Lighthouse.Backend.API
 {
@@ -94,9 +95,9 @@ namespace Lighthouse.Backend.API
                 var remainingWork = featureHistoryEntry.FeatureWork.Sum(fw => fw.RemainingWorkItems);
                 remainingItems.Add(new RemainingItemsDto(featureHistoryEntry.Snapshot, remainingWork));
             }
-            else if (remainingItems.Any())
+            else if (remainingItems.Count > 0)
             {
-                var lastEntry = remainingItems.Last();
+                var lastEntry = remainingItems[remainingItems.Count - 1];
                 remainingItems.Add(new RemainingItemsDto(snapshotTime, lastEntry.RemainingItems));
             }
         }
