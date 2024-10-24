@@ -139,6 +139,43 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        public void GetLighthouseChartData_MissingSnapshot_ReturnsRemainingWorkFromPreviousEntry()
+        {
+            var project = new Project();
+            projectRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(project);
+
+            var feature = new Feature { ReferenceId = "Feature1" };
+            project.UpdateFeatures([feature]);
+
+            var featureHistoryEntries = SetupFeatureHistoryForFeature(feature, 30, 10);
+
+            for (var index = 1; index < featureHistoryEntries.Count; index += 2)
+            {
+                featureHistoryEntries.RemoveAt(index);
+            }
+
+            SetupFeatureHistoryRepositoryWithFeatureHistoryEntries(featureHistoryEntries);
+
+            var subject = CreateSubject();
+            var response = subject.GetLighthouseChartData(1, new LighthouseChartController.LighthouseChartDataInput { SampleRate = 1, StartDate = DateTime.Today.AddDays(-30) });
+
+            Assert.Multiple(() =>
+            {
+                var okResult = response.Result as OkObjectResult;
+                var lighthouseChartDto = okResult.Value as LighthouseChartDto;
+                Assert.That(lighthouseChartDto.Features, Has.Count.EqualTo(1));
+
+                var featureDto = lighthouseChartDto.Features.Single();
+                Assert.That(featureDto.RemainingItemsTrend, Has.Count.EqualTo(30));
+
+                foreach (var remainingItem in featureDto.RemainingItemsTrend)
+                {
+                    Assert.That(remainingItem.RemainingItems, Is.EqualTo(10));
+                }
+            });
+        }
+
         private void SetupFeatureHistoryRepositoryWithFeatureHistoryEntries(List<FeatureHistoryEntry> featureHistoryEntries)
         {
             featureHistoryRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Func<FeatureHistoryEntry, bool>>())).Returns((Func<FeatureHistoryEntry, bool> predicate) => featureHistoryEntries.Where(predicate));

@@ -37,10 +37,10 @@ namespace Lighthouse.Backend.API
 
             if (input.StartDate.HasValue)
             {
-                timespanInDays = (DateTime.Today - input.StartDate.Value).Days - 1;
+                timespanInDays = (DateTime.Today - input.StartDate.Value).Days;
             }
 
-            var featureDtos = CreateFeatureDtos(project.Features, input.SampleRate, timespanInDays);
+            var featureDtos = CreateFeatureDtos(project.Features, input.SampleRate, timespanInDays - 1);
 
             lighthouseChartDto.Features.AddRange(featureDtos);
 
@@ -71,19 +71,34 @@ namespace Lighthouse.Backend.API
 
             var featureHistory = featureHistoryRepository
                                 .GetAllByPredicate(fhe => fhe.FeatureReferenceId == featureReferenceId && fhe.Snapshot >= DateOnly.FromDateTime(DateTime.Now.AddDays(-timespanInDays)))
-                                .GroupBy(item => item.Snapshot)
-                                .Select(group => group.Last())
                                 .ToList();
 
-            featureHistory = FilterHistoryByFrequency(featureHistory, samplingFrequency);
+            var daysAgo = timespanInDays;
+            while (daysAgo > -1)
+            {
+                var snapshotTime = DateOnly.FromDateTime(DateTime.Now.AddDays(-daysAgo));
+                var featureHistoryEntry = featureHistory.LastOrDefault(fhe => fhe.Snapshot == snapshotTime);
 
-            foreach (var featureHistoryEntry in featureHistory)
+                AddRemainingItemDtoFromFeatureHistoryEntry(remainingItems, snapshotTime, featureHistoryEntry);
+
+                daysAgo -= samplingFrequency;
+            }
+
+            return remainingItems;
+        }
+
+        private static void AddRemainingItemDtoFromFeatureHistoryEntry(List<RemainingItemsDto> remainingItems, DateOnly snapshotTime, FeatureHistoryEntry? featureHistoryEntry)
+        {
+            if (featureHistoryEntry != null)
             {
                 var remainingWork = featureHistoryEntry.FeatureWork.Sum(fw => fw.RemainingWorkItems);
                 remainingItems.Add(new RemainingItemsDto(featureHistoryEntry.Snapshot, remainingWork));
             }
-
-            return remainingItems;
+            else if (remainingItems.Any())
+            {
+                var lastEntry = remainingItems.Last();
+                remainingItems.Add(new RemainingItemsDto(snapshotTime, lastEntry.RemainingItems));
+            }
         }
 
         private LighthouseChartDto CreateLighthouseChartDtoWithMilestones(Project? project)
@@ -101,11 +116,6 @@ namespace Lighthouse.Backend.API
         {
             int maxAllowedSampleFrequency = Math.Max(1, timespanInDays / MaxEntries);
             return Math.Max(userSampleEveryNthDay, maxAllowedSampleFrequency);
-        }
-
-        private static List<FeatureHistoryEntry> FilterHistoryByFrequency(List<FeatureHistoryEntry> history, int sampleEveryNthDay)
-        {
-            return history.Where((entry, index) => index % sampleEveryNthDay == 0).ToList();
         }
 
         public class LighthouseChartDataInput
