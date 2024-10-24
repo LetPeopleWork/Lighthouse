@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System;
+using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -178,7 +179,9 @@ namespace Lighthouse.Backend.Tests.API
 
         private void SetupFeatureHistoryRepositoryWithFeatureHistoryEntries(List<FeatureHistoryEntry> featureHistoryEntries)
         {
-            featureHistoryRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Func<FeatureHistoryEntry, bool>>())).Returns((Func<FeatureHistoryEntry, bool> predicate) => featureHistoryEntries.Where(predicate));
+            featureHistoryRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureHistoryEntry, bool>>>()))
+                .Returns((Expression<Func<FeatureHistoryEntry, bool>> predicate) => featureHistoryEntries.Where(predicate.Compile()).AsQueryable());
         }
 
         private List<FeatureHistoryEntry> SetupFeatureHistoryForFeature(Feature feature, int days, int remainingItems)

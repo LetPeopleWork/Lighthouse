@@ -1,8 +1,9 @@
-﻿using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Interfaces;
+﻿using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Models.History
 {
+    [Index(nameof(FeatureReferenceId), nameof(Snapshot))]
     public class FeatureHistoryEntry : IEntity
     {
         public FeatureHistoryEntry()

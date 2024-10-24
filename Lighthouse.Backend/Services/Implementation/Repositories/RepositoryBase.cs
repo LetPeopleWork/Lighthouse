@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
@@ -51,7 +53,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return dbSetGetter(Context).SingleOrDefault(predicate);
         }
 
-        public virtual IEnumerable<T> GetAllByPredicate(Func<T, bool> predicate)
+        public virtual IQueryable<T> GetAllByPredicate(Expression<Func<T, bool>> predicate)
         {
             return dbSetGetter(Context).Where(predicate);
         }

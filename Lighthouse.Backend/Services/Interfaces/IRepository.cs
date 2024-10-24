@@ -1,4 +1,6 @@
-﻿namespace Lighthouse.Backend.Services.Interfaces
+﻿using System.Linq.Expressions;
+
+namespace Lighthouse.Backend.Services.Interfaces
 {
     public interface IRepository<T> where T : class
     {
@@ -10,7 +12,7 @@
 
         T? GetByPredicate(Func<T, bool> predicate);
 
-        IEnumerable<T> GetAllByPredicate(Func<T, bool> predicate);
+        IQueryable<T> GetAllByPredicate(Expression<Func<T, bool>> predicate);
 
         void Remove(int id);
 
