@@ -74,14 +74,17 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkItemService workItemService, Feature? feature)
         {
-            if (string.IsNullOrEmpty(project.SizeEstimateField))
+            if (!string.IsNullOrEmpty(project.SizeEstimateField))
             {
-                return await GetDefaultRemainingWork(project, workItemService);
+                var estimatedSize = await workItemService.GetEstimatedSizeForItem(feature.ReferenceId, project);
+
+                if (estimatedSize > 0)
+                {
+                    return estimatedSize;
+                }
             }
 
-            var estimatedSize = await workItemService.GetEstimatedSizeForItem(feature.ReferenceId, project);
-
-            return estimatedSize > 0 ? estimatedSize : project.DefaultAmountOfWorkItemsPerFeature;
+            return await GetDefaultRemainingWork(project, workItemService);
         }
 
         private async Task<int> GetDefaultRemainingWork(Project project, IWorkItemService workItemService)
@@ -100,9 +103,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 if (childItems.Any())
                 {
-                    defaultItems = CalculatePercentile(childItems.ToList(), project.DefaultWokrItemPercentile);
+                    defaultItems = CalculatePercentile(childItems.ToList(), project.DefaultWorkItemPercentile);
 
-                    logger.LogInformation("{Percentile} Percentile Based on Query {Query} is {DefaultItems}", project.DefaultWokrItemPercentile, project.HistoricalFeaturesWorkItemQuery, defaultItems);
+                    logger.LogInformation("{Percentile} Percentile Based on Query {Query} is {DefaultItems}", project.DefaultWorkItemPercentile, project.HistoricalFeaturesWorkItemQuery, defaultItems);
                 }
             }
 

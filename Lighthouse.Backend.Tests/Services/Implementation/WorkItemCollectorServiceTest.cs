@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var project = CreateProject();
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
-            project.DefaultWokrItemPercentile = percentile;
+            project.DefaultWorkItemPercentile = percentile;
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
             SetupTeams(team);
@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var project = CreateProject();
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
-            project.DefaultWokrItemPercentile = 80;
+            project.DefaultWorkItemPercentile = 80;
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
             SetupTeams(team);

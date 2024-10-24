@@ -56,7 +56,7 @@ describe('ProjectService', () => {
     });
 
     it('should get project settings by id', async () => {
-        const mockSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", 10, 0, "Size");
+        const mockSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", false, 10, 85, "", 0, "Size");
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
 
@@ -67,7 +67,7 @@ describe('ProjectService', () => {
     });
 
     it('should update project settings', async () => {
-        const projectSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", 10, 0, "Size");
+        const projectSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", false, 10, 85, "", 0, "Size");
 
         mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
 
@@ -78,9 +78,9 @@ describe('ProjectService', () => {
     });
 
     it('should create a new project', async () => {
-        const newProjectSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", 10, 0, "Size");
+        const newProjectSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", false, 10, 85, "", 0, "Size");
 
-        const mockResponse: IProjectSettings = new ProjectSettings(2, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", 10, 0, "Size");
+        const mockResponse: IProjectSettings = new ProjectSettings(2, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", false, 10, 85, "", 0, "Size");
 
         mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
 

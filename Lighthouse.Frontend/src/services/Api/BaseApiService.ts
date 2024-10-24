@@ -62,7 +62,19 @@ export class BaseApiService {
             return new Milestone(milestone.id, milestone.name, new Date(milestone.date))
         })
 
-        return new ProjectSettings(item.id, item.name, item.workItemTypes, milestones, item.workItemQuery, item.unparentedItemsQuery, item.defaultAmountOfWorkItemsPerFeature, item.workTrackingSystemConnectionId, item.sizeEstimateField);
+        return new ProjectSettings(
+            item.id,
+            item.name, 
+            item.workItemTypes, 
+            milestones, 
+            item.workItemQuery, 
+            item.unparentedItemsQuery, 
+            item.usePercentileToCalculateDefaultAmountOfWorkItems, 
+            item.defaultAmountOfWorkItemsPerFeature, 
+            item.defaultWorkItemPercentile, 
+            item.historicalFeaturesWorkItemQuery, 
+            item.workTrackingSystemConnectionId, 
+            item.sizeEstimateField);
     }
 
     protected deserializeTeamSettings(item: ITeamSettings): TeamSettings {

@@ -34,6 +34,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 14, Key = AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 14, Key = AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, Value = "10" });
             AddIfNotExists(new AppSetting { Id = 15, Key = AppSettingKeys.ProjectSettingSizeEstimateField, Value = "" });
+            AddIfNotExists(new AppSetting { Id = 16, Key = AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, Value = $"{false}" });
+            AddIfNotExists(new AppSetting { Id = 17, Key = AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, Value = "85" });
+            AddIfNotExists(new AppSetting { Id = 18, Key = AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, Value = string.Empty });
 
             SaveSync();
         }

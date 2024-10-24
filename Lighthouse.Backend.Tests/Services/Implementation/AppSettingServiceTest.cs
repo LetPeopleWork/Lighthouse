@@ -182,7 +182,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15",
+                AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
+                AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size");
 
             var service = CreateService();
@@ -194,7 +197,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.Name, Is.EqualTo("My Project"));
                 Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.UnparentedItemsQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
+                Assert.That(settings.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.True);
                 Assert.That(settings.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(15));
+                Assert.That(settings.DefaultWorkItemPercentile, Is.EqualTo(85));
+                Assert.That(settings.HistoricalFeaturesWorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.SizeEstimateField, Is.EqualTo("Microsoft.VSTS.Scheduling.Size"));
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(1));
@@ -210,7 +216,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "false",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10",
+                AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
+                AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size");
 
             var service = CreateService();
@@ -220,7 +229,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 WorkItemQuery = "project = MyJiraProject",
                 WorkItemTypes = ["Feature"],
                 UnparentedItemsQuery = "project = MyJiraProject",
+                UsePercentileToCalculateDefaultAmountOfWorkItems = true,
                 DefaultAmountOfWorkItemsPerFeature = 22,
+                DefaultWorkItemPercentile = 75,
+                HistoricalFeaturesWorkItemQuery = "project = MyJiraProject",
                 SizeEstimateField = "customfield_10037"
             };
 
@@ -230,7 +242,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingWorkItemTypes, "Feature");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "project = MyJiraProject");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "22");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "75");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingSizeEstimateField, "customfield_10037");
         }
 

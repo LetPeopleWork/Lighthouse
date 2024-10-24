@@ -4,7 +4,20 @@ import { IProjectSettings, ProjectSettings } from '../../../models/Project/Proje
 import AdvancedInputsComponent from './AdvancedInputs';
 
 describe('AdvancedInputsComponent', () => {
-    const initialSettings: IProjectSettings = new ProjectSettings(1, "Settings", [], [], "Initial Query", "Unparented Query", 10, 12, "")
+    const initialSettings: IProjectSettings = new ProjectSettings(
+        1,
+        "Settings",
+        [],
+        [],
+        "Initial Query",
+        "Unparented Query",
+        false,
+        10,
+        85,
+        "Historical Feature Query",
+        12,
+        ""
+    );
 
     const mockOnProjectSettingsChange = vi.fn();
 
@@ -58,5 +71,55 @@ describe('AdvancedInputsComponent', () => {
         fireEvent.change(screen.getByLabelText(/Size Estimate Field/i), { target: { value: 'customfield_133742' } });
 
         expect(mockOnProjectSettingsChange).toHaveBeenCalledWith('sizeEstimateField', 'customfield_133742');
+    });
+
+    it('toggles the usePercentileToCalculateDefaultAmountOfWorkItems switch', () => {
+        render(
+            <AdvancedInputsComponent
+                projectSettings={initialSettings}
+                onProjectSettingsChange={mockOnProjectSettingsChange}
+            />
+        );
+
+        const toggleSwitch = screen.getByLabelText(/Use Percentile to Calculate Default Amount of Work Items/i);
+
+        expect(toggleSwitch).not.toBeChecked();
+        fireEvent.click(toggleSwitch);
+        expect(mockOnProjectSettingsChange).toHaveBeenCalledWith('usePercentileToCalculateDefaultAmountOfWorkItems', true);
+    });
+
+    it('renders Default Work Item Percentile and Historical Features Work Item Query when switch is on', () => {
+        const updatedSettings: IProjectSettings = {
+            ...initialSettings,
+            usePercentileToCalculateDefaultAmountOfWorkItems: true,
+        };
+
+        render(
+            <AdvancedInputsComponent
+                projectSettings={updatedSettings}
+                onProjectSettingsChange={mockOnProjectSettingsChange}
+            />
+        );
+
+        expect(screen.getByLabelText(/Default Work Item Percentile/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/Historical Features Work Item Query/i)).toBeInTheDocument();
+    });
+
+    it('calls onProjectSettingsChange with correct arguments when defaultWorkItemPercentile changes', () => {
+        const updatedSettings: IProjectSettings = {
+            ...initialSettings,
+            usePercentileToCalculateDefaultAmountOfWorkItems: true,
+        };
+
+        render(
+            <AdvancedInputsComponent
+                projectSettings={updatedSettings}
+                onProjectSettingsChange={mockOnProjectSettingsChange}
+            />
+        );
+
+        fireEvent.change(screen.getByLabelText(/Default Work Item Percentile/i), { target: { value: '90' } });
+
+        expect(mockOnProjectSettingsChange).toHaveBeenCalledWith('defaultWorkItemPercentile', 90);
     });
 });

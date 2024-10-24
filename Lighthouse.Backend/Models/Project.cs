@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Models
 
         public string HistoricalFeaturesWorkItemQuery { get; set; } = string.Empty;
 
-        public int DefaultWokrItemPercentile { get; set; } = 85;
+        public int DefaultWorkItemPercentile { get; set; } = 85;
 
         public void UpdateFeatures(IEnumerable<Feature> features)
         {

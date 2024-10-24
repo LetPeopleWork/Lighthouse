@@ -61,7 +61,7 @@ describe('SettingsService', () => {
     });
 
     it('should get default project settings', async () => {
-        const mockResponse: IProjectSettings = new ProjectSettings(1, "Project A", ["Epic"], [], "Query", "Unparented Query", 15, 2, "EstimatedSize");
+        const mockResponse: IProjectSettings = new ProjectSettings(1, "Project A", ["Epic"], [], "Query", "Unparented Query", false, 15, 85, "", 2, "EstimatedSize");
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
         const projectSettings = await settingsService.getDefaultProjectSettings();
@@ -71,7 +71,7 @@ describe('SettingsService', () => {
     });
 
     it('should update default project settings', async () => {
-        const mockProjectSettings: IProjectSettings = new ProjectSettings(1, "Project A", ["Epic"], [], "Query", "Unparented Query", 15, 2, "EstimatedSize");
+        const mockProjectSettings: IProjectSettings = new ProjectSettings(1, "Project A", ["Epic"], [], "Query", "Unparented Query", false, 15, 85, "", 2, "EstimatedSize");
         mockedAxios.put.mockResolvedValueOnce({});
 
         await settingsService.updateDefaultProjectSettings(mockProjectSettings);

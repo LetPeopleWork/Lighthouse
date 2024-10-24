@@ -40,7 +40,13 @@
 
         public const string ProjectSettingUnparentedWorkItemQuery = "DefaultProjectSetting:UnparentedWorkItemQuery";
 
+        public const string ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems = "DefaultProjectSetting:UsePercentileToCalculateDefaultAmountOfWorkItems";
+
         public const string ProjectSettingDefaultAmountOfWorkItemsPerFeature = "DefaultProjectSetting:DefaultAmountOfWorkItemsPerFeature";
+
+        public const string ProjectSettingDefaultWorkItemPercentile = "DefaultProjectSetting:DefaultWorkItemPercentile";
+
+        public const string ProjectSettingHistoricalFeaturesWorkItemQuery = "DefaultProjectSetting:HistoricalFeaturesWorkItemQuery";
 
         public const string ProjectSettingSizeEstimateField = "DefaultProjectSetting:SizeEstimateField";
     }

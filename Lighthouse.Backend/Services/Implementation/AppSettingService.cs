@@ -109,7 +109,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 WorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemQuery).Value,
                 WorkItemTypes = workItemTypes,
                 UnparentedItemsQuery = GetSettingByKey(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery).Value,
+
+                UsePercentileToCalculateDefaultAmountOfWorkItems = bool.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems).Value),
                 DefaultAmountOfWorkItemsPerFeature = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature).Value),
+                DefaultWorkItemPercentile = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultWorkItemPercentile).Value),
+                HistoricalFeaturesWorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery).Value,
+
                 SizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField).Value,
             };
 
@@ -134,9 +139,21 @@ namespace Lighthouse.Backend.Services.Implementation
             unparentedItemQuery.Value = defaultProjectSetting.UnparentedItemsQuery;
             repository.Update(unparentedItemQuery);
 
+            var usePercentileToCalculateDefaultAmountOfWorkItems = GetSettingByKey(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems);
+            usePercentileToCalculateDefaultAmountOfWorkItems.Value = defaultProjectSetting.UsePercentileToCalculateDefaultAmountOfWorkItems.ToString();
+            repository.Update(usePercentileToCalculateDefaultAmountOfWorkItems);
+
             var defaultAmountofItems = GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature);
             defaultAmountofItems.Value = defaultProjectSetting.DefaultAmountOfWorkItemsPerFeature.ToString();
             repository.Update(defaultAmountofItems);
+
+            var defaultWorkItemPercentile = GetSettingByKey(AppSettingKeys.ProjectSettingDefaultWorkItemPercentile);
+            defaultWorkItemPercentile.Value = defaultProjectSetting.DefaultWorkItemPercentile.ToString();
+            repository.Update(defaultWorkItemPercentile);
+
+            var historicalFeaturesWorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery);
+            historicalFeaturesWorkItemQuery.Value = defaultProjectSetting.HistoricalFeaturesWorkItemQuery;
+            repository.Update(historicalFeaturesWorkItemQuery);
 
             var sizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField);
             sizeEstimateField.Value = defaultProjectSetting.SizeEstimateField;

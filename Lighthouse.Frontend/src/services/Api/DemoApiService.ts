@@ -47,9 +47,9 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     private teams: Team[] = [];
 
     private projectSettings = [
-        new ProjectSettings(0, "Release 1.33.7", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
-        new ProjectSettings(1, "Release 42", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
-        new ProjectSettings(2, "Release Codename Daniel", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "customfield_10037"),
+        new ProjectSettings(0, "Release 1.33.7", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", false, 15, 85, "", 2, "customfield_10037"),
+        new ProjectSettings(1, "Release 42", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", true, 15, 85, "[System.TeamProject] = \"My Team\"", 2, "customfield_10037"),
+        new ProjectSettings(2, "Release Codename Daniel", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", false, 15, 85, "", 2, "customfield_10037"),
     ];
 
     private readonly previewFeatures = [
@@ -377,7 +377,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     async getDefaultProjectSettings(): Promise<IProjectSettings> {
         await this.delay();
 
-        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", 15, 2, "Microsoft.VSTS.Scheduling.Size");
+        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", false, 15, 85, "", 2, "Microsoft.VSTS.Scheduling.Size");
     }
 
     async updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void> {

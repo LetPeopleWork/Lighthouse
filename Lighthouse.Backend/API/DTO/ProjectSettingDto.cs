@@ -17,7 +17,12 @@ namespace Lighthouse.Backend.API.DTO
             Milestones.AddRange(project.Milestones.Select(m => new MilestoneDto(m)));
             WorkItemQuery = project.WorkItemQuery;
             UnparentedItemsQuery = project.UnparentedItemsQuery;
+
+            UsePercentileToCalculateDefaultAmountOfWorkItems = project.UsePercentileToCalculateDefaultAmountOfWorkItems;
             DefaultAmountOfWorkItemsPerFeature = project.DefaultAmountOfWorkItemsPerFeature;
+            DefaultWorkItemPercentile = project.DefaultWorkItemPercentile;
+            HistoricalFeaturesWorkItemQuery = project.HistoricalFeaturesWorkItemQuery;
+
             WorkTrackingSystemConnectionId = project.WorkTrackingSystemConnectionId;
             SizeEstimateField = project.SizeEstimateField;
         }
@@ -34,6 +39,12 @@ namespace Lighthouse.Backend.API.DTO
         public string WorkItemQuery { get; set; }
 
         public string UnparentedItemsQuery { get; set; }
+
+        public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; }
+
+        public int DefaultWorkItemPercentile { get; set; }
+
+        public string HistoricalFeaturesWorkItemQuery { get; set; }
 
         [JsonRequired]
         public int DefaultAmountOfWorkItemsPerFeature { get; set; }

@@ -7,7 +7,12 @@ export interface IProjectSettings {
     milestones: IMilestone[];
     workItemQuery: string;
     unparentedItemsQuery: string;
+
+    usePercentileToCalculateDefaultAmountOfWorkItems: boolean;
     defaultAmountOfWorkItemsPerFeature: number;
+    defaultWorkItemPercentile: number;
+    historicalFeaturesWorkItemQuery: string;
+
     workTrackingSystemConnectionId: number;
     sizeEstimateField?: string;
 }
@@ -20,7 +25,12 @@ export class ProjectSettings implements IProjectSettings {
     milestones: IMilestone[];
     workItemQuery: string;
     unparentedItemsQuery: string;
+
+    usePercentileToCalculateDefaultAmountOfWorkItems: boolean;
     defaultAmountOfWorkItemsPerFeature: number;
+    defaultWorkItemPercentile: number;
+    historicalFeaturesWorkItemQuery: string;
+
     workTrackingSystemConnectionId: number;
     sizeEstimateField?: string;
 
@@ -31,7 +41,10 @@ export class ProjectSettings implements IProjectSettings {
         milestones: IMilestone[],
         workItemQuery: string,
         unparentedItemsQuery: string,
+        usePercentileToCalculateDefaultAmountOfWorkItems: boolean,
         defaultAmountOfWorkItemsPerFeature: number,
+        defaultWorkItemPercentile: number,
+        historicalFeaturesWorkItemQuery: string,
         workTrackingSystemConnectionId: number,
         sizeEstimateField: string = ""
     ) {
@@ -41,7 +54,10 @@ export class ProjectSettings implements IProjectSettings {
         this.milestones = milestones;
         this.workItemQuery = workItemQuery;
         this.unparentedItemsQuery = unparentedItemsQuery;
+        this.usePercentileToCalculateDefaultAmountOfWorkItems = usePercentileToCalculateDefaultAmountOfWorkItems;
         this.defaultAmountOfWorkItemsPerFeature = defaultAmountOfWorkItemsPerFeature;
+        this.defaultWorkItemPercentile = defaultWorkItemPercentile;
+        this.historicalFeaturesWorkItemQuery = historicalFeaturesWorkItemQuery;
         this.workTrackingSystemConnectionId = workTrackingSystemConnectionId;
         this.sizeEstimateField = sizeEstimateField;
     }
