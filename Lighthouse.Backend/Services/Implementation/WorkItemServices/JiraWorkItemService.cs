@@ -259,21 +259,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(HttpClient jiraRestClient, Team team, string relatedWorkItemId)
         {
-            var remainingItemsQuery = PrepareNotClosedItemsQuery(team.WorkItemTypes, team);
-            var closedItemsQuery = PrepareClosedItemsQuery(team.WorkItemTypes, team);
+            var parentClause = $"AND (parent = {relatedWorkItemId}";
+            if (!string.IsNullOrEmpty(team.AdditionalRelatedField))
+            {
+                parentClause += $" OR {team.AdditionalRelatedField} = {relatedWorkItemId})";
+            }
+            else
+            {
+                parentClause += ")";
+            }
+
+            var remainingItemsQuery = $"{PrepareNotClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
+            var closedItemsQuery = $"{PrepareClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
 
             logger.LogDebug("Getting Remaining Items by Query...");
-            var remainingIssues = await GetIssuesByQuery(jiraRestClient, remainingItemsQuery);
+            var remainingIssues = (await GetIssuesByQuery(jiraRestClient, remainingItemsQuery)).Select(i => i.Key).ToList();
 
             logger.LogDebug("Getting Closed Items by Query...");
-            var closedIssues = await GetIssuesByQuery(jiraRestClient, closedItemsQuery);
+            var closedIssues = (await GetIssuesByQuery(jiraRestClient, closedItemsQuery)).Select(i => i.Key).ToList();
 
-            var relatedRemainingIssuses = remainingIssues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).Select(i => i.Key).ToList();
-            var relatedClosedIssues = closedIssues.Where(i => IsIssueRelated(i, relatedWorkItemId, team.AdditionalRelatedField)).Select(i => i.Key).ToList();
+            logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", remainingIssues.Union(closedIssues)));
 
-            logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", relatedRemainingIssuses.Union(relatedClosedIssues)));
-
-            return (relatedRemainingIssuses.Count, relatedRemainingIssuses.Count + relatedClosedIssues.Count);
+            return (remainingIssues.Count, remainingIssues.Count + closedIssues.Count);
         }
 
         private bool IsIssueRelated(Issue issue, string relatedWorkItemId, string? additionalRelatedField)

@@ -128,8 +128,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("LGHTHSDMO-1041", team);
 
-            Assert.That(remainingItems, Is.EqualTo(expectedRemainingItems));
-            Assert.That(totalItems, Is.EqualTo(expectedTotalItems));
+            Assert.Multiple(() =>
+            {
+                Assert.That(remainingItems, Is.EqualTo(expectedRemainingItems));
+                Assert.That(totalItems, Is.EqualTo(expectedTotalItems));
+            });
         }
 
         [Test]
@@ -390,16 +393,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();
-            var project = CreateProject("project = 'LIG'");
-            var team = CreateTeam("project = 'LIG'");
+            var project = CreateProject("project = LGHTHSDMO");
+            var team = CreateTeam("project = LGHTHSDMO");
 
             project.Features.Add(new Feature(team, 10));
 
-            project.HistoricalFeaturesWorkItemQuery = "project = 'LIG'";
+            project.HistoricalFeaturesWorkItemQuery = "project = LGHTHSDMO";
 
             var childItems = await subject.GetChildItemsForFeaturesInProject(project);
 
-            CollectionAssert.AreEquivalent(new List<int> { 58 }, childItems);
+            CollectionAssert.AreEquivalent(new List<int> { 8, 7, 7, 5, 9, 8, 8, 11, 6, 8 }, childItems);
         }
 
         private Team CreateTeam(string query)
