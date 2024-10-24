@@ -22,7 +22,7 @@ export class WorkTrackingSystemService extends BaseApiService implements IWorkTr
 
     async validateWorkTrackingSystemConnection(workTrackingConnection: IWorkTrackingSystemConnection): Promise<boolean> {
         return this.withErrorHandling(async () => {
-            const response = await this.apiService.post<boolean>(`/worktrackingsystem/validate`, workTrackingConnection);
+            const response = await this.apiService.post<boolean>(`/worktrackingsystemconnections/validate`, workTrackingConnection);
             return response.data;
         });
     }
