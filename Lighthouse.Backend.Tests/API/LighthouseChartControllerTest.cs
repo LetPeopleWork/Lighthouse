@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IRepository<FeatureHistoryEntry>> featureHistoryRepositoryMock;
-        private const int MaxEntries = 30;
 
         [SetUp]
         public void Setup()
@@ -60,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetLighthouseChartData_ProjectExists_HasMilestones_ReturnsDtoWithMilestones()
         {
-            var milestone = new Milestone { Name = "Milestone", Date = new DateTime(2024, 04, 08) };
+            var milestone = new Milestone { Name = "Milestone", Date = new DateTime(2099, 04, 08, 0, 0, 0, DateTimeKind.Utc) };
             var project = new Project();
             project.Milestones.Add(milestone);
 
@@ -78,6 +77,33 @@ namespace Lighthouse.Backend.Tests.API
                 var milestoneDto = lighthouseChartDto.Milestones.Single();
                 Assert.That(milestoneDto.Name, Is.EqualTo(milestone.Name));
                 Assert.That(milestoneDto.Date, Is.EqualTo(milestone.Date));
+            });
+        }
+
+        [Test]
+        public void GetLighthouseChartData_HasMilestones_IgnoresMilestonesInThePast()
+        {
+            var futureMilestone = new Milestone { Name = "Future Milestone", Date = new DateTime(2099, 04, 08, 0, 0, 0, DateTimeKind.Utc) };
+            var pastMilestone = new Milestone { Name = "Past Milestone", Date = new DateTime(1991, 04, 08, 0, 0, 0, DateTimeKind.Utc) };
+            
+            var project = new Project();
+            project.Milestones.Add(futureMilestone);
+            project.Milestones.Add(pastMilestone);
+
+            projectRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(project);
+
+            var subject = CreateSubject();
+            var response = subject.GetLighthouseChartData(1, new LighthouseChartController.LighthouseChartDataInput());
+
+            Assert.Multiple(() =>
+            {
+                var okResult = response.Result as OkObjectResult;
+                var lighthouseChartDto = okResult.Value as LighthouseChartDto;
+                Assert.That(lighthouseChartDto.Milestones, Has.Count.EqualTo(1));
+
+                var milestoneDto = lighthouseChartDto.Milestones.Single();
+                Assert.That(milestoneDto.Name, Is.EqualTo(futureMilestone.Name));
+                Assert.That(milestoneDto.Date, Is.EqualTo(futureMilestone.Date));
             });
         }
 

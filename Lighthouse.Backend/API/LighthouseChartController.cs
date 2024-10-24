@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.API
 
         private LighthouseChartDto CreateLighthouseChartDtoWithMilestones(Project? project)
         {
-            var milestones = project.Milestones.Select(ms => new MilestoneDto(ms));
+            var milestones = project.Milestones.Where(m => m.Date > DateTime.Today).Select(ms => new MilestoneDto(ms));
             var lighthouseChartDto = new LighthouseChartDto
             {
                 Milestones = new List<MilestoneDto>(milestones)
