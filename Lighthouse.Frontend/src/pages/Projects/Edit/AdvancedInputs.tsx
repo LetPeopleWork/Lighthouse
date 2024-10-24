@@ -5,7 +5,7 @@ import { IProjectSettings } from '../../../models/Project/ProjectSettings';
 
 interface AdvancedInputsComponentProps {
     projectSettings: IProjectSettings | null;
-    onProjectSettingsChange: (key: keyof IProjectSettings, value: string | number | boolean) => void; // Updated type to include boolean
+    onProjectSettingsChange: (key: keyof IProjectSettings, value: string | number | boolean) => void;
 }
 
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({

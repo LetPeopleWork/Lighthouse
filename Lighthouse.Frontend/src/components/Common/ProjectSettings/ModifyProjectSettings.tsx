@@ -48,7 +48,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
         setProjectSettings(prev => prev ? { ...prev, workItemTypes: (prev.workItemTypes || []).filter(item => item !== type) } : prev);
     };
 
-    const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number) => {
+    const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number | boolean) => {
         setProjectSettings(prev => prev ? { ...prev, [key]: value } : prev);
     };
 
