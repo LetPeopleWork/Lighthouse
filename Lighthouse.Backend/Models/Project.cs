@@ -23,6 +23,12 @@ namespace Lighthouse.Backend.Models
 
         public string? SizeEstimateField { get; set; }
 
+        public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; } = false;
+
+        public string HistoricalFeaturesWorkItemQuery { get; set; } = string.Empty;
+
+        public int DefaultWokrItemPercentile { get; set; } = 85;
+
         public void UpdateFeatures(IEnumerable<Feature> features)
         {
             Features.Clear();

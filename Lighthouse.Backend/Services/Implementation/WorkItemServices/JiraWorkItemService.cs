@@ -61,6 +61,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return workItems.Select(x => x.Key).ToList();
         }
 
+        public async Task<IEnumerable<int>> GetChildItemsForFeaturesInProject(Project project)
+        {
+            var childItemList = new List<int>();
+
+            logger.LogInformation("Getting Child Items for Features in Project {Project} for Work Item Types {WorkItemTypes} and Query '{Query}'", project.Name, string.Join(", ", project.WorkItemTypes), project.HistoricalFeaturesWorkItemQuery);
+
+            var jiraRestClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
+
+            var workItemsQuery = PrepareWorkItemTypeQuery(project.WorkItemTypes);
+            var jql = $"{project.HistoricalFeaturesWorkItemQuery} " +
+            $"{workItemsQuery} ";
+
+            var issues = await GetIssuesByQuery(jiraRestClient, jql);
+
+            foreach (var issue in issues)
+            {
+                var childItems = 0;
+
+                var tasks = project.InvolvedTeams.Select(async team =>
+                {
+                    var childItemForTeam = await GetRelatedWorkItems($"{issue.Key}", team);
+                    return childItemForTeam.totalItems;
+                }).ToList();
+
+                var results = await Task.WhenAll(tasks);
+
+                childItems = results.Sum();
+
+                childItemList.Add(childItems);
+            }
+
+            return childItemList.Where(i => i > 0);
+        }
+
         public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
         {
             logger.LogInformation("Getting Related Issues for Feature {Id} and Team {TeamName}", featureId, team.Name);

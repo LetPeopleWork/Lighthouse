@@ -226,7 +226,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
             var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["User Story", "Bug"], team, "[System.Tags] CONTAINS 'ThroughputIgnore'");
-            
+
             Assert.Multiple(() =>
             {
                 Assert.That(remainingItems, Has.Count.EqualTo(0));
@@ -393,6 +393,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var estimatedSize = await subject.GetEstimatedSizeForItem(referenceId, project);
 
             Assert.That(estimatedSize, Is.EqualTo(expectedSize));
+        }
+
+        [Test]
+        public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+
+            project.Features.Add(new Feature(team, 10));
+
+            project.HistoricalFeaturesWorkItemQuery = $"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'";
+
+            var childItems = await subject.GetChildItemsForFeaturesInProject(project);
+
+            CollectionAssert.AreEquivalent(new List<int> { 1, 3, 3 }, childItems);
         }
 
         private Team CreateTeam(string query)

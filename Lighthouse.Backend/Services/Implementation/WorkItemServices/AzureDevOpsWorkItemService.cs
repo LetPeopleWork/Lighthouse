@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking.AzureDevOps;
+using Microsoft.TeamFoundation.WorkItemTracking.Process.WebApi.Models.Process;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -39,13 +40,39 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", workItemTypes), workItemQueryOwner.WorkItemQuery);
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
 
-            var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner);
+            var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner.WorkItemQuery);
             var workItems = await GetWorkItemsByQuery(witClient, query);
 
             var workItemReferences = workItems.Select(wi => wi.Id.ToString()).ToList();
             logger.LogInformation("Found Work Items with IDs {WorkItemIDs}", string.Join(", ", workItemReferences));
 
             return workItemReferences;
+        }
+
+        public async Task<IEnumerable<int>> GetChildItemsForFeaturesInProject(Project project)
+        {
+            var childItemList = new List<int>();
+
+            logger.LogInformation("Getting Child Items for Features in Project {Project} for Work Item Types {WorkItemTypes} and Query '{Query}'", project.Name, string.Join(", ", project.WorkItemTypes), project.HistoricalFeaturesWorkItemQuery);
+
+            var witClient = GetClientService(project.WorkTrackingSystemConnection);
+
+            var query = PrepareQuery(project.WorkItemTypes, [], project.HistoricalFeaturesWorkItemQuery);
+            var features = await GetWorkItemsByQuery(witClient, query);
+
+            foreach (var feature in features)
+            {
+                var childItems = 0;
+                foreach (var team in project.InvolvedTeams)
+                {
+                    var childItemForTeam = await GetRelatedWorkItems($"{feature.Id}", team);
+                    childItems += childItemForTeam.totalItems;
+                }
+
+                childItemList.Add(childItems);
+            }
+
+            return childItemList.Where(i => i > 0);
         }
 
         public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
@@ -188,7 +215,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             {
                 var witClient = GetClientService(project.WorkTrackingSystemConnection);
 
-                var workItem = await GetWorkItemById(witClient, referenceId, project, project.SizeEstimateField);               
+                var workItem = await GetWorkItemById(witClient, referenceId, project, project.SizeEstimateField);
 
                 if (workItem == null)
                 {
@@ -228,7 +255,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<WorkItem?> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
         {
-            var query = PrepareQuery([], [], workItemQueryOwner, additionalFields);
+            var query = PrepareQuery([], [], workItemQueryOwner.WorkItemQuery, additionalFields);
             query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
 
             logger.LogDebug("Getting Work Item by Id. ID: {workItemId}. Query: '{query}'", workItemId, query);
@@ -252,10 +279,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             var relatedItemQuery = PrepareRelatedItemQuery(relatedWorkItemId, team.AdditionalRelatedField);
 
-            var remainingItemsQuery = PrepareQuery(team.WorkItemTypes, closedStates, team);
+            var remainingItemsQuery = PrepareQuery(team.WorkItemTypes, closedStates, team.WorkItemQuery);
             remainingItemsQuery += relatedItemQuery;
 
-            var allItemsQuery = PrepareQuery(team.WorkItemTypes, [], team);
+            var allItemsQuery = PrepareQuery(team.WorkItemTypes, [], team.WorkItemQuery);
             allItemsQuery += relatedItemQuery;
 
             var remainingWorkItems = await GetWorkItemsByQuery(witClient, remainingItemsQuery);
@@ -325,7 +352,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var closedItemsPerDay = new int[numberOfDays];
             var startDate = DateTime.UtcNow.Date.AddDays(-(numberOfDays - 1));
 
-            var query = PrepareQuery(team.WorkItemTypes, [], team);
+            var query = PrepareQuery(team.WorkItemTypes, [], team.WorkItemQuery);
             query += $" AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done') AND [{AzureDevOpsFieldNames.ClosedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
 
             logger.LogDebug("Getting closed items per day for thre last {numberOfDays} for team {TeamName} using query '{query}'", numberOfDays, team.Name, query);
@@ -356,7 +383,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         private string PrepareQuery(
             IEnumerable<string> includedWorkItemTypes,
             IEnumerable<string> excludedStates,
-            IWorkItemQueryOwner workitemQueryOwner,
+            string query,
             params string[] additionalFields)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(includedWorkItemTypes);
@@ -365,10 +392,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var additionalFieldsQuery = string.Empty;
             if (additionalFields.Length > 0)
             {
-                additionalFieldsQuery =  ", " + string.Join(", ", additionalFields.Select(field => $"[{field}]"));
+                additionalFieldsQuery = ", " + string.Join(", ", additionalFields.Select(field => $"[{field}]"));
             }
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{additionalFieldsQuery} FROM WorkItems WHERE {workitemQueryOwner.WorkItemQuery} " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{additionalFieldsQuery} FROM WorkItems WHERE {query} " +
                 $"{workItemsQuery} " +
                 $"{stateQuery}";
 

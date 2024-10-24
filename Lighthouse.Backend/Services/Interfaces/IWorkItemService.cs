@@ -27,5 +27,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task<bool> ValidateConnection(WorkTrackingSystemConnection connection);
 
         Task<int> GetEstimatedSizeForItem(string referenceId, Project project);
+
+        Task<IEnumerable<int>> GetChildItemsForFeaturesInProject(Project project);
     }
 }

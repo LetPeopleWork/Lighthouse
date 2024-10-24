@@ -12,6 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IRepository<Team> teamRepository;
         private readonly ILogger<WorkItemCollectorService> logger;
 
+        private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new Dictionary<int, int>();
+
         public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, IRepository<Team> teamRepository, ILogger<WorkItemCollectorService> logger)
         {
             this.workItemServiceFactory = workItemServiceFactory;
@@ -23,7 +25,9 @@ namespace Lighthouse.Backend.Services.Implementation
         public async Task UpdateFeaturesForProject(Project project)
         {
             logger.LogInformation("Updating Features for Project {ProjectName}", project.Name);
-            
+
+            defaultWorkItemsBasedOnPercentile.Remove(project.Id);
+
             var featuresForProject = await GetFeaturesForProject(project);
 
             project.UpdateFeatures(featuresForProject.OrderBy(f => f, new FeatureComparer()));
@@ -31,12 +35,12 @@ namespace Lighthouse.Backend.Services.Implementation
             await GetWorkForFeatures(project);
 
             RemoveUninvolvedTeams(project);
-            await ExtrapolateNotBrokenDownFeaturesAsync(project);
+            await ExtrapolateNotBrokenDownFeatures(project);
 
             logger.LogInformation("Done Updating Features for Project {ProjectName}", project.Name);
         }
 
-        private async Task ExtrapolateNotBrokenDownFeaturesAsync(Project project)
+        private async Task ExtrapolateNotBrokenDownFeatures(Project project)
         {
             var involvedTeams = project.InvolvedTeams.Where(t => t.TotalThroughput > 0).ToList();
 
@@ -68,16 +72,42 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private static async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkItemService workItemService, Feature? feature)
+        private async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkItemService workItemService, Feature? feature)
         {
             if (string.IsNullOrEmpty(project.SizeEstimateField))
             {
-                return project.DefaultAmountOfWorkItemsPerFeature;                
+                return await GetDefaultRemainingWork(project, workItemService);
             }
 
             var estimatedSize = await workItemService.GetEstimatedSizeForItem(feature.ReferenceId, project);
 
             return estimatedSize > 0 ? estimatedSize : project.DefaultAmountOfWorkItemsPerFeature;
+        }
+
+        private async Task<int> GetDefaultRemainingWork(Project project, IWorkItemService workItemService)
+        {
+            if (defaultWorkItemsBasedOnPercentile.TryGetValue(project.Id, out var defaultItems))
+            {
+                return defaultItems;
+            }
+
+            defaultItems = project.DefaultAmountOfWorkItemsPerFeature;
+
+            if (project.UsePercentileToCalculateDefaultAmountOfWorkItems)
+            {
+                logger.LogInformation("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
+                var childItems = await workItemService.GetChildItemsForFeaturesInProject(project);
+
+                if (childItems.Any())
+                {
+                    defaultItems = CalculatePercentile(childItems.ToList(), project.DefaultWokrItemPercentile);
+
+                    logger.LogInformation("{Percentile} Percentile Based on Query {Query} is {DefaultItems}", project.DefaultWokrItemPercentile, project.HistoricalFeaturesWorkItemQuery, defaultItems);
+                }
+            }
+
+            defaultWorkItemsBasedOnPercentile.Add(project.Id, defaultItems);
+            return defaultItems;
         }
 
         private void RemoveUninvolvedTeams(Project project)
@@ -93,6 +123,16 @@ namespace Lighthouse.Backend.Services.Implementation
                     feature.RemoveTeamFromFeature(team);
                 }
             }
+        }
+
+        private static int CalculatePercentile(List<int> items, int percentile)
+        {
+            items.Sort();
+            var index = (int)Math.Floor((percentile / 100.0) * items.Count) - 1;
+
+            index = Math.Min(Math.Max(index, 0), items.Count - 1);
+
+            return items[index];
         }
 
         private static int[] SplitIntoBuckets(int itemCount, int numBuckets)
@@ -171,7 +211,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 unparentedFeature = featureRepository.GetById(unparentedFeatureId.Value) ?? unparentedFeature;
             }
             else
-            {                
+            {
                 project.Features.Add(unparentedFeature);
             }
 

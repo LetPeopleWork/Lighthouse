@@ -103,6 +103,73 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 80, 8)]
+        [TestCase(new[] { 2, 4, 10, 3, 4, 5, 9, 7, 8, 7 }, 80, 8)]
+        [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 120, 10)]
+        [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 0, 1)]
+        [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 1, 1)]
+        [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 65, 6)]
+        [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 85, 8)]
+        public async Task CollectFeaturesForProject_UseCalculatedDefault_AddsDefaultRemainingWorkBasedOnPercentileToFeature(int[] childItemCount, int percentile, int expectedValue)
+        {
+            var team = CreateTeam([1]);
+            var project = CreateProject();
+            project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
+            project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
+            project.DefaultWokrItemPercentile = percentile;
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+
+            SetupTeams(team);
+
+            var feature1 = new Feature(team, 0) { ReferenceId = "42" };
+            var feature2 = new Feature(team, 2) { ReferenceId = "12" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
+            workItemServiceMock.Setup(x => x.GetChildItemsForFeaturesInProject(project)).ReturnsAsync(childItemCount);
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.First();
+                Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedValue));
+                Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseCalculatedDefault_QueryHasNoMatches_AddsDefaultRemainingWork()
+        {
+            var team = CreateTeam([1]);
+            var project = CreateProject();
+            project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
+            project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
+            project.DefaultWokrItemPercentile = 80;
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+
+            SetupTeams(team);
+
+            var feature1 = new Feature(team, 0) { ReferenceId = "42" };
+            var feature2 = new Feature(team, 2) { ReferenceId = "12" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
+            workItemServiceMock.Setup(x => x.GetChildItemsForFeaturesInProject(project)).ReturnsAsync(new List<int>());
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.First();
+                Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
+            });
+        }
+
+        [Test]
         public async Task CollectFeaturesForProject_NoRemainingWork_NotTotalWork_SizeEstimateFieldSet_SizeEstimateNotAvailable_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
@@ -352,7 +419,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(actualFeature.Order, Is.EqualTo(expectedUnparentedOrder));
             });
         }
-
 
         private void SetupTeams(params Team[] teams)
         {

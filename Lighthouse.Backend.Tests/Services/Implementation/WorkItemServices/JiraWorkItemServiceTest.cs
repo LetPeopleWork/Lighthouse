@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -385,6 +386,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             Assert.That(estimatedSize, Is.EqualTo(expectedSize));
         }
 
+        [Test]
+        public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project = 'LIG'");
+            var team = CreateTeam("project = 'LIG'");
+
+            project.Features.Add(new Feature(team, 10));
+
+            project.HistoricalFeaturesWorkItemQuery = "project = 'LIG'";
+
+            var childItems = await subject.GetChildItemsForFeaturesInProject(project);
+
+            CollectionAssert.AreEquivalent(new List<int> { 58 }, childItems);
+        }
+
         private Team CreateTeam(string query)
         {
             var team = new Team
@@ -396,6 +413,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             team.WorkItemTypes.Clear();
             team.WorkItemTypes.Add("Story");
             team.WorkItemTypes.Add("Bug");
+            team.WorkItemTypes.Add("Task");
 
             var connectionSetting = CreateWorkTrackingSystemConnection();
             team.WorkTrackingSystemConnection = connectionSetting;
