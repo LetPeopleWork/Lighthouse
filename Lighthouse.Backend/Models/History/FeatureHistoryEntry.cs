@@ -32,6 +32,9 @@ namespace Lighthouse.Backend.Models.History
             FeatureReferenceId = feature.ReferenceId;
             Snapshot = DateOnly.FromDateTime(DateTime.Today);
 
+            FeatureWork.Clear();
+            Forecasts.Clear();
+
             foreach (var featureWork in feature.FeatureWork)
             {
                 FeatureWork.Add(new FeatureWorkHistoryEntry(featureWork, this));
