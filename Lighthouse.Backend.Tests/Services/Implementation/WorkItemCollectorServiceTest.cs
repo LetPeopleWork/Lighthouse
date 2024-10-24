@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_SingleTeamInvolved_SearchByTag_FindsFeauture()
+        public async Task CollectFeaturesForProject_SingleTeamInvolved_FindsFeauture()
         {
             var team = CreateTeam();
             SetupTeams(team);
@@ -47,10 +47,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.That(project.Features.ToList(), Has.Count.EqualTo(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(project.Features.ToList(), Has.Count.EqualTo(1));
 
-            var actualFeature = project.Features.Single();
-            Assert.That(actualFeature.ReferenceId, Is.EqualTo(feature.ReferenceId));
+                var actualFeature = project.Features.Single();
+                Assert.That(actualFeature.ReferenceId, Is.EqualTo(feature.ReferenceId));
+                Assert.That(feature.IsUsingDefaultFeatureSize, Is.False);
+            });
         }
 
         [Test]
@@ -71,26 +75,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_SingleTeamInvolved_SearchByAreaPath_FindsFeature()
-        {
-            var team = CreateTeam();
-            SetupTeams(team);
-
-            var project = CreateProject();
-            var feature = new Feature(team, 12) { ReferenceId = "12" };
-
-            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((12, 12)));
-
-            await subject.UpdateFeaturesForProject(project);
-
-            Assert.That(project.Features.ToList(), Has.Count.EqualTo(1));
-
-            var actualFeature = project.Features.Single();
-            Assert.That(actualFeature.ReferenceId, Is.EqualTo(feature.ReferenceId));
-        }
-
-        [Test]
         public async Task CollectFeaturesForProject_NoRemainingWork_NoTotalWork_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
@@ -108,8 +92,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+            Assert.Multiple(() =>
+            {
+                Assert.That(project.Features, Has.Count.EqualTo(2));
+
+                var feature = project.Features.First();
+                Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
+            });
         }
 
         [Test]

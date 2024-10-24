@@ -47,6 +47,8 @@ namespace Lighthouse.Backend.Models
 
         public bool IsUnparentedFeature { get; set; }
 
+        public bool IsUsingDefaultFeatureSize { get; set; } = false;
+
         public double GetLikelhoodForDate(DateTime date)
         {
             if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)

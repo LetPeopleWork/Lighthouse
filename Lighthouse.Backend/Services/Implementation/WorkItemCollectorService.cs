@@ -52,6 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation
             foreach (var feature in project.Features.Where(feature => feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0))
             {
                 logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
+                feature.IsUsingDefaultFeatureSize = true;
 
                 var numberOfTeams = involvedTeams.Count;
                 var remainingWork = await GetExtrapolatedRemainingWork(project, workItemService, feature);
@@ -226,6 +227,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 feature.Name = name;
                 feature.Order = order;
                 feature.Url = url;
+                feature.IsUsingDefaultFeatureSize = false;
 
                 logger.LogInformation("Found Feature {Name}, Id {Id}, Order {Order}", feature.Name, featureId, feature.Order);
 
