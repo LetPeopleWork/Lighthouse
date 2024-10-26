@@ -81,14 +81,14 @@ describe('AdvancedInputsComponent', () => {
             />
         );
 
-        const toggleSwitch = screen.getByLabelText(/Use Percentile to Calculate Default Amount of Work Items/i);
+        const toggleSwitch = screen.getByLabelText(/Use Historical Feature Size To Calculate Default/i);
 
         expect(toggleSwitch).not.toBeChecked();
         fireEvent.click(toggleSwitch);
         expect(mockOnProjectSettingsChange).toHaveBeenCalledWith('usePercentileToCalculateDefaultAmountOfWorkItems', true);
     });
 
-    it('renders Default Work Item Percentile and Historical Features Work Item Query when switch is on', () => {
+    it('renders Feature Size Percentile and Historical Features Work Item Query when switch is on', () => {
         const updatedSettings: IProjectSettings = {
             ...initialSettings,
             usePercentileToCalculateDefaultAmountOfWorkItems: true,
@@ -101,7 +101,7 @@ describe('AdvancedInputsComponent', () => {
             />
         );
 
-        expect(screen.getByLabelText(/Default Work Item Percentile/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/Feature Size Percentile/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/Historical Features Work Item Query/i)).toBeInTheDocument();
     });
 
@@ -118,7 +118,7 @@ describe('AdvancedInputsComponent', () => {
             />
         );
 
-        fireEvent.change(screen.getByLabelText(/Default Work Item Percentile/i), { target: { value: '90' } });
+        fireEvent.change(screen.getByLabelText(/Feature Size Percentile/i), { target: { value: '90' } });
 
         expect(mockOnProjectSettingsChange).toHaveBeenCalledWith('defaultWorkItemPercentile', 90);
     });

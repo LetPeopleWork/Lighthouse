@@ -101,6 +101,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 logger.LogInformation("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
                 var childItems = await workItemService.GetChildItemsForFeaturesInProject(project);
 
+                logger.LogInformation("Features had following number of child items: {ChildItems}", string.Join(",", childItems));
+
                 if (childItems.Any())
                 {
                     defaultItems = CalculatePercentile(childItems.ToList(), project.DefaultWorkItemPercentile);

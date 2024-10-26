@@ -21,7 +21,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                     multiline
                     rows={4}
                     margin="normal"
-                    value={projectSettings?.unparentedItemsQuery || ''}
+                    value={projectSettings?.unparentedItemsQuery ?? ''}
                     onChange={(e) => onProjectSettingsChange('unparentedItemsQuery', e.target.value)}
                 />
             </Grid>
@@ -34,7 +34,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                             onChange={(e) => onProjectSettingsChange('usePercentileToCalculateDefaultAmountOfWorkItems', e.target.checked)}
                         />
                     }
-                    label="Use Percentile to Calculate Default Amount of Work Items"
+                    label="Use Historical Feature Size To Calculate Default"
                 />
             </Grid>
 
@@ -42,7 +42,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                 <>
                     <Grid item xs={12}>
                         <TextField
-                            label="Default Work Item Percentile"
+                            label="Feature Size Percentile"
                             type="number"
                             fullWidth
                             margin="normal"
@@ -74,7 +74,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                         type="number"
                         fullWidth
                         margin="normal"
-                        value={projectSettings?.defaultAmountOfWorkItemsPerFeature || ''}
+                        value={projectSettings?.defaultAmountOfWorkItemsPerFeature ?? ''}
                         onChange={(e) => onProjectSettingsChange('defaultAmountOfWorkItemsPerFeature', parseInt(e.target.value, 10))}
                     />
                 </Grid>
@@ -85,7 +85,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                     label="Size Estimate Field"
                     fullWidth
                     margin="normal"
-                    value={projectSettings?.sizeEstimateField || ''}
+                    value={projectSettings?.sizeEstimateField ?? ''}
                     onChange={(e) => onProjectSettingsChange('sizeEstimateField', e.target.value)}
                 />
             </Grid>
