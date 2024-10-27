@@ -412,6 +412,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             CollectionAssert.AreEquivalent(new List<int> { 1, 3, 3 }, childItems);
         }
 
+        [Test]
+        [TestCase("[System.TeamProject] = 'CMFTTestTeamProject'", 3)]
+        [TestCase("[System.TeamProject] = 'CMFTTestTeamProject' AND [System.WorkItemType] = 'Bug'", 1)]
+        [TestCase("[System.TeamProject] = 'CMFTTestTeamProject' AND [System.ID] = '377'", 1)]
+        public async Task GetFeaturesInProgressForTeam_ReturnsCorrectAmount(string teamQuery, int expectedFeaturesInProgress)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam(teamQuery);
+
+            var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
+
+            Assert.That(featuresInProgress.Count, Is.EqualTo(expectedFeaturesInProgress));
+        }
+
         private Team CreateTeam(string query)
         {
             var team = new Team

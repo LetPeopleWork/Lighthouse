@@ -93,6 +93,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return childItemList.Where(i => i > 0);
         }
 
+        public async Task<IEnumerable<string>> GetFeaturesInProgressForTeam(Team team)
+        {
+            logger.LogInformation("Getting Features in Progress for Team {TeamName}", team.Name);
+
+            var jiraRestClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
+
+            var workItemQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
+            var stateQuery = PrepareGenericQuery(team.DoingStates, JiraFieldNames.StatusFieldName, "OR", "=");
+
+            var query = $"{team.WorkItemQuery} {workItemQuery} {stateQuery} ";
+            var issues = await GetIssuesByQuery(jiraRestClient, query);
+
+            return issues.Select(i => i.ParentKey).Distinct();
+        }
+
         public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
         {
             logger.LogInformation("Getting Related Issues for Feature {Id} and Team {TeamName}", featureId, team.Name);

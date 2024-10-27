@@ -12,6 +12,8 @@
 
         public static string AreaPath => "System.AreaPath";
 
+        public static string Parent => "System.Parent";
+
         public static string WorkItemType => "System.WorkItemType";
 
         public static string Tags => "System.Tags";

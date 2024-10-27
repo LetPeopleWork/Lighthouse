@@ -70,6 +70,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return childItemList.Where(i => i > 0);
         }
 
+        public async Task<IEnumerable<string>> GetFeaturesInProgressForTeam(Team team)
+        {
+            logger.LogInformation("Getting Features in Progress for Team {TeamName}", team.Name);
+
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
+
+            var parentField = AzureDevOpsFieldNames.Parent;
+            if (!string.IsNullOrEmpty(team.AdditionalRelatedField))
+            {
+                parentField = team.AdditionalRelatedField;
+            }
+
+            var query = PrepareQuery(team.WorkItemTypes, team.DoingStates, team.WorkItemQuery, parentField);
+            var workItems = await GetWorkItemsByQuery(witClient, query);
+
+            var featuresInProgress = new List<string>();
+
+            foreach (var workItem in workItems)
+            {
+                var item = await GetWorkItemById(witClient, workItem.Id.ToString(), team, parentField);
+
+                var parentId = string.Empty;
+
+                if (item?.Fields.ContainsKey(parentField) ?? false)
+                {
+                    parentId = item.Fields[parentField].ToString() ?? string.Empty;
+                }
+
+                featuresInProgress.Add(parentId);
+            }
+
+            return featuresInProgress.Distinct();
+        }
+
         public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
         {
             logger.LogInformation("Getting Related Work Items for Feature {featureId} and Team {TeamName}", featureId, team.Name);
@@ -388,9 +422,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var stateQuery = PrepareStateQuery(includedStates);
 
             var additionalFieldsQuery = string.Empty;
-            if (additionalFields.Length > 0)
+            if (!string.IsNullOrEmpty(additionalFieldsQuery))
             {
-                additionalFieldsQuery = ", " + string.Join(", ", additionalFields.Select(field => $"[{field}]"));
+                additionalFieldsQuery = ", " + string.Join(", ", additionalFields.Where(f => !string.IsNullOrEmpty(f)).Select(field => $"[{field}]"));
             }
 
             var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{additionalFieldsQuery} FROM WorkItems WHERE {query} " +

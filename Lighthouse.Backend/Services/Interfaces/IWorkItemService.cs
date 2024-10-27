@@ -29,5 +29,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task<int> GetEstimatedSizeForItem(string referenceId, Project project);
 
         Task<IEnumerable<int>> GetChildItemsForFeaturesInProject(Project project);
+
+        Task<IEnumerable<string>> GetFeaturesInProgressForTeam(Team team);
     }
 }

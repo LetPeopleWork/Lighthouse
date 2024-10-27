@@ -108,6 +108,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        [TestCase("project = LGHTHSDMO", 5)]
+        [TestCase("project = LGHTHSDMO and key = LGHTHSDMO-1116", 1)]
+        [TestCase("project = LGHTHSDMO and issuetype = Story", 5)]
+        [TestCase("project = LGHTHSDMO and labels IN (Phoenix)", 1)]
+        [TestCase("project = LGHTHSDMO and labels IN (Phoenix, RebelRevolt)", 2)]
+        public async Task GetFeaturesInProgressForTeam_ReturnsCorrectAmount(string teamQuery, int expectedFeaturesInProgress)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam(teamQuery);
+
+            var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
+
+            Assert.That(featuresInProgress.Count, Is.EqualTo(expectedFeaturesInProgress));
+        }
+
+        [Test]
         [TestCase(new string[] { "Story" }, 2, 3)]
         [TestCase(new string[] { "Task" }, 2, 3)]
         [TestCase(new string[] { "Bug" }, 1, 2)]

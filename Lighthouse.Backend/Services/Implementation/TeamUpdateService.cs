@@ -17,26 +17,29 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public async Task UpdateTeam(Team team)
         {
-            await UpdateThroughputForTeam(team);
-            await UpdateFeatureWipForTeam(team);
+            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+
+            await UpdateThroughputForTeam(team, workItemService);
+            await UpdateFeatureWipForTeam(team, workItemService);
         }
 
-        private async Task UpdateFeatureWipForTeam(Team team)
+        private async Task UpdateFeatureWipForTeam(Team team, IWorkItemService workItemService)
         {
             logger.LogInformation("Updating Feature Wip for Team {TeamName}", team.Name);
 
-            team.ActualFeatureWIP = 0;
+            var featuresInProgress = await workItemService.GetFeaturesInProgressForTeam(team);
 
-            logger.LogInformation("Finished updating Feature Wip for Team {TeamName}", team.Name);
+            var featureWIP = featuresInProgress.Distinct().Count();
+            team.ActualFeatureWIP = featureWIP;
 
-            await Task.CompletedTask;
+            logger.LogDebug("Following Features are In Progress: {Features}", string.Join(",", featureWIP));
+            logger.LogInformation("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureWIP);
         }
 
-        private async Task UpdateThroughputForTeam(Team team)
+        private async Task UpdateThroughputForTeam(Team team, IWorkItemService workItemService)
         {
             logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
 
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
             var throughput = await workItemService.GetClosedWorkItems(team.ThroughputHistory, team);
 
             team.UpdateThroughput(throughput);

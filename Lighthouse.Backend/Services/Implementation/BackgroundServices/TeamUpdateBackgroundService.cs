@@ -4,11 +4,11 @@ using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 {
-    public class TeamUpdateService : UpdateBackgroundServiceBase
+    public class TeamUpdateBackgroundService : UpdateBackgroundServiceBase
     {
-        private readonly ILogger<TeamUpdateService> logger;
+        private readonly ILogger<TeamUpdateBackgroundService> logger;
 
-        public TeamUpdateService(IServiceScopeFactory serviceScopeFactory, ILogger<TeamUpdateService> logger) : base(serviceScopeFactory, logger)
+        public TeamUpdateBackgroundService(IServiceScopeFactory serviceScopeFactory, ILogger<TeamUpdateBackgroundService> logger) : base(serviceScopeFactory, logger)
         {
             this.logger = logger;
         }

@@ -8,14 +8,14 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 {
-    public class ThroughputUpdateServiceTest
+    public class TeamUpdateBackgroundServiceTest
     {
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<ITeamUpdateService> throughputServiceMock;
         private Mock<IAppSettingService> appSettingServiceMock;
 
         private Mock<IServiceScopeFactory> serviceScopeFactoryMock;
-        private Mock<ILogger<TeamUpdateService>> loggerMock;
+        private Mock<ILogger<TeamUpdateBackgroundService>> loggerMock;
 
         [SetUp]
         public void Setup()
@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             appSettingServiceMock = new Mock<IAppSettingService>();
 
             serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
-            loggerMock = new Mock<ILogger<TeamUpdateService>>();
+            loggerMock = new Mock<ILogger<TeamUpdateBackgroundService>>();
 
             var scopeMock = new Mock<IServiceScope>();
 
@@ -102,9 +102,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             appSettingServiceMock.Setup(x => x.GetThroughputRefreshSettings()).Returns(refreshSettings);
         }
 
-        private TeamUpdateService CreateSubject()
+        private TeamUpdateBackgroundService CreateSubject()
         {
-            return new TeamUpdateService(serviceScopeFactoryMock.Object, loggerMock.Object);
+            return new TeamUpdateBackgroundService(serviceScopeFactoryMock.Object, loggerMock.Object);
         }
     }
 }
