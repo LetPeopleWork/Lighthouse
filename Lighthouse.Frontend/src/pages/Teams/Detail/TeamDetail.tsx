@@ -126,7 +126,7 @@ const TeamDetail: React.FC = () => {
                         <Grid item xs={6} sx={{ display: 'flex', gap: 2 }}>
                             <ActionButton
                                 onClickHandler={onUpdateThroughput}
-                                buttonText="Update Throughput"
+                                buttonText="Update Team Data"
                                 maxHeight='40px'
                             />
                             <Button variant="contained" onClick={onEditTeam} sx={{ maxHeight: '40px' }}>
