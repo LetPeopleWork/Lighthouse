@@ -51,7 +51,7 @@ const LogSettings: React.FC = () => {
 
 
     const onLogLevelChanged = async (event: SelectChangeEvent) => {
-        const newLogLevel = event.target.value as string;
+        const newLogLevel = event.target.value;
         await logService.setLogLevel(newLogLevel);
         setLogLevel(newLogLevel);
     }

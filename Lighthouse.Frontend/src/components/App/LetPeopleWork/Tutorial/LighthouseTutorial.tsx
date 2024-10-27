@@ -48,8 +48,8 @@ const LighthouseTutorial: React.FC<LighthouseTutorialProps> = ({
             <Typography variant="h4" align="center" margin={2}>{tutorialTitle}</Typography>
             <Paper>
                 <Stepper activeStep={activeStep}>
-                    {steps.map((step, index) => (
-                        <Step key={index}>
+                    {steps.map((step) => (
+                        <Step key={step.title}>
                             <StepLabel>{step.title}</StepLabel>
                         </Step>
                     ))}

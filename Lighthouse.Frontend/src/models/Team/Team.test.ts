@@ -37,7 +37,7 @@ describe('Team Class', () => {
     });
 
     it('should return correct total remaining work for the team', () => {
-        const expectedRemainingWork = 10 + 5; // Only work for team with id = 1
+        const expectedRemainingWork = 10 + 5;
         expect(team.remainingWork).toBe(expectedRemainingWork);
     });
 

@@ -22,7 +22,7 @@ describe('WorkTrackingSystemService', () => {
     it('should get supported work tracking systems', async () => {
         const mockResponse: IWorkTrackingSystemConnection[] = [
             {
-                id: 1,
+                id: 2,
                 name: 'Jira',
                 workTrackingSystem: 'JIRA',
                 options: [{ key: 'apiToken', value: 'token123', isSecret: true }]
@@ -34,7 +34,7 @@ describe('WorkTrackingSystemService', () => {
         const workTrackingSystems = await workTrackingSystemService.getWorkTrackingSystems();
 
         expect(workTrackingSystems).toEqual([
-            new WorkTrackingSystemConnection(1, 'Jira', 'JIRA', [new WorkTrackingSystemOption('apiToken', 'token123', true)])
+            new WorkTrackingSystemConnection('Jira', 'JIRA', [new WorkTrackingSystemOption('apiToken', 'token123', true)], 2)
         ]);
         expect(mockedAxios.get).toHaveBeenCalledWith('/worktrackingsystemconnections/supported');
     });
@@ -69,7 +69,7 @@ describe('WorkTrackingSystemService', () => {
         const configuredSystems = await workTrackingSystemService.getConfiguredWorkTrackingSystems();
 
         expect(configuredSystems).toEqual([
-            new WorkTrackingSystemConnection(2, 'Azure DevOps', 'ADO', [new WorkTrackingSystemOption('apiToken', 'adoToken', true)])
+            new WorkTrackingSystemConnection('Azure DevOps', 'ADO', [new WorkTrackingSystemOption('apiToken', 'adoToken', true)], 2)
         ]);
         expect(mockedAxios.get).toHaveBeenCalledWith('/worktrackingsystemconnections');
     });
@@ -91,7 +91,7 @@ describe('WorkTrackingSystemService', () => {
 
         const createdConnection = await workTrackingSystemService.addNewWorkTrackingSystemConnection(newConnection);
 
-        expect(createdConnection).toEqual(new WorkTrackingSystemConnection(3, 'Jira', 'JIRA', [new WorkTrackingSystemOption('apiToken', 'token123', true)]));
+        expect(createdConnection).toEqual(new WorkTrackingSystemConnection('Jira', 'JIRA', [new WorkTrackingSystemOption('apiToken', 'token123', true)], 3));
         expect(mockedAxios.post).toHaveBeenCalledWith('/worktrackingsystemconnections', newConnection);
     });
 
@@ -107,7 +107,7 @@ describe('WorkTrackingSystemService', () => {
 
         const result = await workTrackingSystemService.updateWorkTrackingSystemConnection(updatedConnection);
 
-        expect(result).toEqual(new WorkTrackingSystemConnection(1, 'Jira', 'JIRA', [new WorkTrackingSystemOption('apiToken', 'updatedToken123', true)]));
+        expect(result).toEqual(new WorkTrackingSystemConnection('Jira', 'JIRA', [new WorkTrackingSystemOption('apiToken', 'updatedToken123', true)], 1));
         expect(mockedAxios.put).toHaveBeenCalledWith('/worktrackingsystemconnections/1', updatedConnection);
     });
 

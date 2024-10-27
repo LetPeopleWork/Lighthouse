@@ -136,7 +136,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
 
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Select Work Tracking System</InputLabel>
-                    <Select value={selectedWorkTrackingSystem?.workTrackingSystem || ''} onChange={handleSystemChange} label="Select Work Tracking System">
+                    <Select value={selectedWorkTrackingSystem?.workTrackingSystem ?? ''} onChange={handleSystemChange} label="Select Work Tracking System">
                         {workTrackingSystems.map(system => (
                             <MenuItem key={system.workTrackingSystem} value={system.workTrackingSystem}>
                                 {system.workTrackingSystem}

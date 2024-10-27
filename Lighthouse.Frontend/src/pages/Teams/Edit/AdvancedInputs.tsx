@@ -20,7 +20,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                     type="number"
                     fullWidth
                     margin="normal"
-                    value={teamSettings?.featureWIP || 1}
+                    value={teamSettings?.featureWIP ?? 1}
                     InputProps={{
                         inputProps: { 
                             min: 1 
@@ -35,7 +35,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                     label="Relation Custom Field"
                     fullWidth
                     margin="normal"
-                    value={teamSettings?.relationCustomField || ''}
+                    value={teamSettings?.relationCustomField ?? ''}
                     onChange={(e) => onTeamSettingsChange('relationCustomField', e.target.value)}
                 />
             </Grid>

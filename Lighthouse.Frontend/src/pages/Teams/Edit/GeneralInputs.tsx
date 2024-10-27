@@ -19,7 +19,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     label="Name"
                     fullWidth
                     margin="normal"
-                    value={teamSettings?.name || ''}
+                    value={teamSettings?.name ?? ''}
                     onChange={(e) => onTeamSettingsChange('name', e.target.value)}
                 />
             </Grid>
@@ -29,7 +29,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     type="number"
                     fullWidth
                     margin="normal"
-                    value={teamSettings?.throughputHistory || ''}
+                    value={teamSettings?.throughputHistory ?? ''}
                     onChange={(e) => onTeamSettingsChange('throughputHistory', parseInt(e.target.value, 10))}
                 />
             </Grid>
@@ -40,7 +40,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     rows={4}
                     fullWidth
                     margin="normal"
-                    value={teamSettings?.workItemQuery || ''}
+                    value={teamSettings?.workItemQuery ?? ''}
                     onChange={(e) => onTeamSettingsChange('workItemQuery', e.target.value)}
                 />
             </Grid>

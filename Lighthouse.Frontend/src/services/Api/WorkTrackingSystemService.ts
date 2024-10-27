@@ -62,7 +62,7 @@ export class WorkTrackingSystemService extends BaseApiService implements IWorkTr
             return this.deserializeWorkTrackingSystemConnectionOption(option);
         })
 
-        return new WorkTrackingSystemConnection(workTrackingSystemConnection.id, workTrackingSystemConnection.name, workTrackingSystemConnection.workTrackingSystem, workTrackingSystemOptions);
+        return new WorkTrackingSystemConnection(workTrackingSystemConnection.name, workTrackingSystemConnection.workTrackingSystem, workTrackingSystemOptions, workTrackingSystemConnection.id);
     }
 
     private deserializeWorkTrackingSystemConnectionOption(workTrackingSystemConnectionOption: IWorkTrackingSystemOption): WorkTrackingSystemOption {

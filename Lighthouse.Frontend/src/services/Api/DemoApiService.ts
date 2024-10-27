@@ -28,13 +28,11 @@ import { IPreviewFeatureService } from './PreviewFeatureService';
 import { PreviewFeature } from '../../models/Preview/PreviewFeature';
 
 export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService, IChartService, IPreviewFeatureService {
-    private useDelay: boolean;
-    private throwError: boolean;
-
-    private lastUpdated = new Date("06/23/2024 12:41");
-
-    private dayMultiplier: number = 24 * 60 * 60 * 1000;
-    private today: number = Date.now();
+    private readonly useDelay: boolean;
+    private readonly throwError: boolean;
+    private readonly lastUpdated = new Date("06/23/2024 12:41");
+    private readonly dayMultiplier: number = 24 * 60 * 60 * 1000;
+    private readonly today: number = Date.now();
 
     private milestones = [
         new Milestone(0, "Milestone 1", new Date(this.today + 14 * this.dayMultiplier)),
@@ -258,7 +256,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     }
 
     async refreshFeaturesForProject(id: number): Promise<Project | null> {
-        console.log(`Refreshing Project with id ${id}`)
+        console.log(`Refreshing Features for Project with id ${id}`)
         await this.delay();
         const projects = await this.getProjects();
         const project = projects.find(project => project.id === id);
@@ -267,7 +265,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     }
 
     async refreshForecastsForProject(id: number): Promise<Project | null> {
-        console.log(`Refreshing Project with id ${id}`)
+        console.log(`Refreshing Forecasts for Project with id ${id}`)
         await this.delay();
         const projects = await this.getProjects();
         const project = projects.find(project => project.id === id);
@@ -320,16 +318,16 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         await this.delay();
 
         return [
-            new WorkTrackingSystemConnection(null, "New Azure DevOps Connection", "AzureDevOps", [new WorkTrackingSystemOption("Azure DevOps Url", "", false), new WorkTrackingSystemOption("Personal Access Token", "", true)]),
-            new WorkTrackingSystemConnection(null, "New Jira Connection", "Jira", [new WorkTrackingSystemOption("Jira Url", "", false), new WorkTrackingSystemOption("Username", "", false), new WorkTrackingSystemOption("Api Token", "", true)])];
+            new WorkTrackingSystemConnection("New Azure DevOps Connection", "AzureDevOps", [new WorkTrackingSystemOption("Azure DevOps Url", "", false), new WorkTrackingSystemOption("Personal Access Token", "", true)], null),
+            new WorkTrackingSystemConnection("New Jira Connection", "Jira", [new WorkTrackingSystemOption("Jira Url", "", false), new WorkTrackingSystemOption("Username", "", false), new WorkTrackingSystemOption("Api Token", "", true)], null)];
     }
 
     async getConfiguredWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]> {
         await this.delay();
 
         return [
-            new WorkTrackingSystemConnection(12, "My ADO Connection", "AzureDevOps", [new WorkTrackingSystemOption("Azure DevOps Url", "https://dev.azure.com/letpeoplework", false), new WorkTrackingSystemOption("Personal Access Token", "", true)]),
-            new WorkTrackingSystemConnection(42, "My Jira Connection", "Jira", [new WorkTrackingSystemOption("Jira Url", "https://letpeoplework.atlassian.com", false), new WorkTrackingSystemOption("Username", "superuser@letpeople.work", false), new WorkTrackingSystemOption("Api Token", "", true)])]
+            new WorkTrackingSystemConnection("My ADO Connection", "AzureDevOps", [new WorkTrackingSystemOption("Azure DevOps Url", "https://dev.azure.com/letpeoplework", false), new WorkTrackingSystemOption("Personal Access Token", "", true)], 12),
+            new WorkTrackingSystemConnection("My Jira Connection", "Jira", [new WorkTrackingSystemOption("Jira Url", "https://letpeoplework.atlassian.com", false), new WorkTrackingSystemOption("Username", "superuser@letpeople.work", false), new WorkTrackingSystemOption("Api Token", "", true)], 42)]
     }
 
     async addNewWorkTrackingSystemConnection(newWorkTrackingSystemConnection: IWorkTrackingSystemConnection): Promise<IWorkTrackingSystemConnection> {

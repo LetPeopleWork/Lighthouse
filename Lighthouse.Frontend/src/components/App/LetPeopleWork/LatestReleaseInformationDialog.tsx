@@ -33,8 +33,8 @@ const LatestReleaseInformationDialog: React.FC<LatestReleaseInformationDialogPro
                     </Typography>
                 </Box>
 
-                {newReleases && newReleases.map((release, index) => (
-                    <InputGroup key={index} title={release.name} initiallyExpanded={index === 0}>
+                {newReleases?.map((release, index) => (
+                    <InputGroup key={release.name} title={release.name} initiallyExpanded={index === 0}>
                         <Grid item xs={12}>
                             <Typography variant='body2'>
                                 <Markdown remarkPlugins={[remarkGfm]}>
@@ -44,8 +44,8 @@ const LatestReleaseInformationDialog: React.FC<LatestReleaseInformationDialogPro
 
                             <Typography variant='subtitle1'>Downloads:</Typography>
                             <List>
-                                {release.assets.map((asset, index) => (
-                                    <ListItem key={index} sx={{ padding: 0 }}>
+                                {release.assets.map((asset) => (
+                                    <ListItem key={asset.name} sx={{ padding: 0 }}>
                                         <MuiLink href={asset.link} target="_blank" rel="noopener noreferrer">
                                             {asset.name}
                                         </MuiLink>

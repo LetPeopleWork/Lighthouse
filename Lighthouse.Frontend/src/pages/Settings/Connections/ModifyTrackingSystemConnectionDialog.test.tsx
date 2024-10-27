@@ -4,14 +4,16 @@ import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from "../
 
 describe("ModifyTrackingSystemConnectionDialog", () => {
     const mockWorkTrackingSystems: IWorkTrackingSystemConnection[] = [
-        new WorkTrackingSystemConnection(1, "Jira", "Jira", [
+        new WorkTrackingSystemConnection("Jira", "Jira", [
             { key: "url", value: "http://jira.example.com", isSecret: false },
             { key: "apiToken", value: "12345", isSecret: true }
-        ]),
-        new WorkTrackingSystemConnection(2, "ADO", "AzureDevOps", [
+        ],
+            1),
+        new WorkTrackingSystemConnection("ADO", "AzureDevOps", [
             { key: "url", value: "http://ado.example.com", isSecret: false },
             { key: "apiToken", value: "67890", isSecret: true }
-        ]),
+        ],
+            2),
     ];
 
     const mockValidateSettings = vi.fn(async (connection: IWorkTrackingSystemConnection) => connection.name !== "Invalid");
@@ -32,20 +34,20 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
                 validateSettings={mockValidateSettings}
             />
         );
-    
+
         // Check the dialog title
         expect(screen.getByRole('heading', { name: /Create New Connection/i })).toBeInTheDocument();
-        
+
         // Check the input field for the connection name
         expect(screen.getByLabelText("Connection Name")).toHaveValue("Jira");
-    
+
         const urlInput = screen.getByLabelText("url");
         expect(urlInput).toHaveValue("http://jira.example.com");
-    
+
         const apiTokenInput = screen.getByLabelText("apiToken");
         expect(apiTokenInput).toHaveValue("12345");
     });
-    
+
 
     it("should call validateSettings and show validation status", async () => {
         render(

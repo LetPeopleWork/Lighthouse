@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { FormControl, InputLabel, Select, MenuItem, Button } from '@mui/material';
-import { SelectChangeEvent } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Button , SelectChangeEvent } from '@mui/material';
 import { IWorkTrackingSystemConnection } from '../../../models/WorkTracking/WorkTrackingSystemConnection';
 import ModifyTrackingSystemConnectionDialog from '../../../pages/Settings/Connections/ModifyTrackingSystemConnectionDialog';
 import InputGroup from '../InputGroup/InputGroup';

@@ -4,8 +4,8 @@ import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from "../
 
 describe("ConnectionDetailTable", () => {
     const mockConnections: IWorkTrackingSystemConnection[] = [
-        new WorkTrackingSystemConnection(1, "Jira", "Jira", []),
-        new WorkTrackingSystemConnection(1, "ADO", "AzureDevOps", []),
+        new WorkTrackingSystemConnection("Jira", "Jira", [], 1),
+        new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], 1),
     ];
 
     const mockOnEditConnectionButtonClicked = vi.fn();

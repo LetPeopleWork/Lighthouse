@@ -27,19 +27,31 @@ const ForecastInfo: React.FC<ForecastInfoProps> = ({ forecast }) => {
         return (forecast as IHowManyForecast).expectedItems !== undefined;
     };
 
+    const renderForecast = (): React.ReactNode => {
+        if (isWhenForecast(forecast)) {
+            return (
+                <LocalDateTimeDisplay utcDate={forecast.expectedDate} />
+            );
+        }
+    
+        if (isHowManyForecast(forecast)) {
+            return (
+                <Typography variant="body2" >
+                    {forecast.expectedItems} Items
+                </Typography>
+            );
+        }
+    
+        return (
+            <div>Forecast Type not Supported</div>
+        );
+    }
+
     return (
         <Tooltip title={<TooltipText level={forecastLevel.level} percentage={forecast.probability} />} arrow>
             <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
                 <forecastLevel.IconComponent style={{ color: forecastLevel.color, marginRight: 8 }} />
-                {isWhenForecast(forecast) ? (
-                    <LocalDateTimeDisplay utcDate={forecast.expectedDate} />
-                ) : isHowManyForecast(forecast) ? (
-                    <Typography variant="body2" >
-                        {forecast.expectedItems} Items
-                    </Typography>
-                ) : (
-                    <div>Forecast Type not Supported supported</div>
-                )}
+                {renderForecast()}
             </Typography>
         </Tooltip>
     );

@@ -13,7 +13,7 @@ export class WorkTrackingSystemConnection implements IWorkTrackingSystemConnecti
     workTrackingSystem: string;
     options: IWorkTrackingSystemOption[]
 
-    constructor(id: number | null = null, name : string, workTrackingSystem: string, options: IWorkTrackingSystemOption[]) {
+    constructor(name : string, workTrackingSystem: string, options: IWorkTrackingSystemOption[], id: number | null = null) {
         this.id = id;
         this.name = name;
         this.workTrackingSystem = workTrackingSystem;

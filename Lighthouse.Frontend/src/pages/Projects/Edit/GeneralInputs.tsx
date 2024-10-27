@@ -19,7 +19,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     label="Name"
                     fullWidth
                     margin="normal"
-                    value={projectSettings?.name || ''}
+                    value={projectSettings?.name ?? ''}
                     onChange={(e) => onProjectSettingsChange('name', e.target.value)}
                 />
             </Grid>            
@@ -30,7 +30,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     rows={4}
                     fullWidth
                     margin="normal"
-                    value={projectSettings?.workItemQuery || ''}
+                    value={projectSettings?.workItemQuery ?? ''}
                     onChange={(e) => onProjectSettingsChange('workItemQuery', e.target.value)}
                 />
             </Grid>

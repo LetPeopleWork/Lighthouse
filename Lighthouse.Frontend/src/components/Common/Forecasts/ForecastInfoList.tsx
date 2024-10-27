@@ -18,8 +18,8 @@ const ForecastInfoList: React.FC<ForecastInfoListProps> = ({ title, forecasts })
     return (
         <Grid item xs={12}>
             <ForecastsHeader variant="body1">{title}</ForecastsHeader>
-            {forecasts.slice().reverse().map((forecast, index) => (
-                <ForecastInfo key={index} forecast={forecast} />
+            {forecasts.slice().reverse().map((forecast) => (
+                <ForecastInfo key={forecast.probability} forecast={forecast} />
             ))}
         </Grid>
     );
