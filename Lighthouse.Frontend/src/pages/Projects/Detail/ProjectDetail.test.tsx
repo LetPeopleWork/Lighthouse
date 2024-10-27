@@ -8,7 +8,6 @@ import { createMockApiServiceContext, createMockPreviewFeatureService, createMoc
 import { IProjectService } from '../../../services/Api/ProjectService';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 import { ITeamService } from '../../../services/Api/TeamService';
-import { ProjectSettings } from '../../../models/Project/ProjectSettings';
 import { Feature } from '../../../models/Feature';
 import { IPreviewFeatureService } from '../../../services/Api/PreviewFeatureService';
 import { PreviewFeature } from '../../../models/Preview/PreviewFeature';
@@ -91,7 +90,24 @@ describe('ProjectDetail component', () => {
 
     beforeEach(() => {
         mockGetProject.mockResolvedValue(new Project("Release Codename Daniel", 2, [], [new Feature("Feature 1", 0, "url", new Date(), false, {}, {}, {}, {}, []), new Feature("Feature 2", 1, "url", new Date(), true, {}, {}, {}, {}, [])], [new Milestone(1, "Milestone", new Date())], new Date()));
-        mockGetProjectSettings.mockResolvedValue(new ProjectSettings(2, "Release Codename Daniel", [], [], "Query", "Unparented Query", false, 10, 85, "", 0, "SizeEstimate"));
+        mockGetProjectSettings.mockResolvedValue({
+            id: 2,
+            name: "Release Codename Daniel",
+            workItemTypes: [],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 10,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 0,
+            sizeEstimateField: "SizeEstimate",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        });
+        
         mockGetPreviewFeatures.mockResolvedValue(new PreviewFeature(0, "Feature", "Feature", "", false));
     })
 

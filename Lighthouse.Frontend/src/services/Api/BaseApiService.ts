@@ -4,7 +4,7 @@ import { IWhenForecast, WhenForecast } from '../../models/Forecasts/WhenForecast
 import { IProject, Project } from '../../models/Project/Project';
 import { ITeam, Team } from '../../models/Team/Team';
 import { IMilestone, Milestone } from '../../models/Project/Milestone';
-import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
+import { IProjectSettings } from '../../models/Project/ProjectSettings';
 
 export class BaseApiService {
     protected apiService: AxiosInstance;
@@ -55,23 +55,13 @@ export class BaseApiService {
         });
     }
 
-    protected deserializeProjectSettings(item: IProjectSettings): ProjectSettings {
+    protected deserializeProjectSettings(item: IProjectSettings): IProjectSettings {
         const milestones = item.milestones.map((milestone: IMilestone) => {
             return new Milestone(milestone.id, milestone.name, new Date(milestone.date))
         })
 
-        return new ProjectSettings(
-            item.id,
-            item.name, 
-            item.workItemTypes, 
-            milestones, 
-            item.workItemQuery, 
-            item.unparentedItemsQuery, 
-            item.usePercentileToCalculateDefaultAmountOfWorkItems, 
-            item.defaultAmountOfWorkItemsPerFeature, 
-            item.defaultWorkItemPercentile, 
-            item.historicalFeaturesWorkItemQuery, 
-            item.workTrackingSystemConnectionId, 
-            item.sizeEstimateField);
+        item.milestones = milestones;
+
+        return item;
     }
 }

@@ -1,23 +1,26 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { IProjectSettings, ProjectSettings } from '../../../models/Project/ProjectSettings';
+import { IProjectSettings } from '../../../models/Project/ProjectSettings';
 import AdvancedInputsComponent from './AdvancedInputs';
 
 describe('AdvancedInputsComponent', () => {
-    const initialSettings: IProjectSettings = new ProjectSettings(
-        1,
-        "Settings",
-        [],
-        [],
-        "Initial Query",
-        "Unparented Query",
-        false,
-        10,
-        85,
-        "Historical Feature Query",
-        12,
-        ""
-    );
+    const initialSettings: IProjectSettings = {
+        id: 1,
+        name: "Settings",
+        workItemTypes: [],
+        milestones: [],
+        workItemQuery: "Initial Query",
+        unparentedItemsQuery: "Unparented Query",
+        usePercentileToCalculateDefaultAmountOfWorkItems: false,
+        defaultAmountOfWorkItemsPerFeature: 10,
+        defaultWorkItemPercentile: 85,
+        historicalFeaturesWorkItemQuery: "Historical Feature Query",
+        workTrackingSystemConnectionId: 12,
+        sizeEstimateField: "",
+        toDoStates: ["New"],
+        doingStates: ["Active"],
+        doneStates: ["Done"],
+    };    
 
     const mockOnProjectSettingsChange = vi.fn();
 

@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SettingsService } from './SettingsService';
 import { IRefreshSettings, RefreshSettings } from '../../models/AppSettings/RefreshSettings';
 import { ITeamSettings } from '../../models/Team/TeamSettings';
-import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
+import { IProjectSettings } from '../../models/Project/ProjectSettings';
 
 vi.mock('axios');
 const mockedAxios = vi.mocked(axios, true);
@@ -85,7 +85,24 @@ describe('SettingsService', () => {
     });
 
     it('should get default project settings', async () => {
-        const mockResponse: IProjectSettings = new ProjectSettings(1, "Project A", ["Epic"], [], "Query", "Unparented Query", false, 15, 85, "", 2, "EstimatedSize");
+        const mockResponse: IProjectSettings = {
+            id: 1,
+            name: "Project A",
+            workItemTypes: ["Epic"],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 15,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 2,
+            sizeEstimateField: "EstimatedSize",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        };
+
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
         const projectSettings = await settingsService.getDefaultProjectSettings();
@@ -95,7 +112,24 @@ describe('SettingsService', () => {
     });
 
     it('should update default project settings', async () => {
-        const mockProjectSettings: IProjectSettings = new ProjectSettings(1, "Project A", ["Epic"], [], "Query", "Unparented Query", false, 15, 85, "", 2, "EstimatedSize");
+        const mockProjectSettings: IProjectSettings = {
+            id: 1,
+            name: "Project A",
+            workItemTypes: ["Epic"],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 15,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 2,
+            sizeEstimateField: "EstimatedSize",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        };
+
         mockedAxios.put.mockResolvedValueOnce({});
 
         await settingsService.updateDefaultProjectSettings(mockProjectSettings);

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ProjectService } from './ProjectService';
 import { IProject, Project } from '../../models/Project/Project';
-import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
+import { IProjectSettings } from '../../models/Project/ProjectSettings';
 
 vi.mock('axios');
 const mockedAxios = vi.mocked(axios, true);
@@ -56,7 +56,23 @@ describe('ProjectService', () => {
     });
 
     it('should get project settings by id', async () => {
-        const mockSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", false, 10, 85, "", 0, "Size");
+        const mockSettings: IProjectSettings = {
+            id: 1,
+            name: "ProjectSetting",
+            workItemTypes: ["Epic"],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 10,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 0,
+            sizeEstimateField: "Size",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        };
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
 
@@ -67,7 +83,23 @@ describe('ProjectService', () => {
     });
 
     it('should update project settings', async () => {
-        const projectSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", false, 10, 85, "", 0, "Size");
+        const projectSettings: IProjectSettings = {
+            id: 1,
+            name: "ProjectSetting",
+            workItemTypes: ["Epic"],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 10,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 0,
+            sizeEstimateField: "Size",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        };
 
         mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
 
@@ -78,9 +110,41 @@ describe('ProjectService', () => {
     });
 
     it('should create a new project', async () => {
-        const newProjectSettings: IProjectSettings = new ProjectSettings(1, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", false, 10, 85, "", 0, "Size");
+        const newProjectSettings: IProjectSettings = {
+            id: 1,
+            name: "ProjectSetting",
+            workItemTypes: ["Epic"],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 10,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 0,
+            sizeEstimateField: "Size",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        };
 
-        const mockResponse: IProjectSettings = new ProjectSettings(2, "ProjectSetting", ["Epic"], [], "Query", "Unparented Query", false, 10, 85, "", 0, "Size");
+        const mockResponse: IProjectSettings = {
+            id: 2,
+            name: "ProjectSetting",
+            workItemTypes: ["Epic"],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 10,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 0,
+            sizeEstimateField: "Size",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        };
 
         mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
 

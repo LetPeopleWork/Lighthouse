@@ -12,13 +12,14 @@ import AdvancedInputsComponent from "../../../pages/Projects/Edit/AdvancedInputs
 import ActionButton from "../ActionButton/ActionButton";
 import ProjectConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/ProjectConfigurationTutorial";
 import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
+import StatesList from "../StatesList/StatesList";
 
 interface ModifyProjectSettingsProps {
     title: string;
     getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
     getProjectSettings: () => Promise<IProjectSettings>;
     saveProjectSettings: (settings: IProjectSettings) => Promise<void>;
-    modifyDefaultSettings? : boolean;
+    modifyDefaultSettings?: boolean;
 }
 
 const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, getWorkTrackingSystems, getProjectSettings, saveProjectSettings, modifyDefaultSettings = false }) => {
@@ -46,6 +47,36 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
 
     const handleRemoveWorkItemType = (type: string) => {
         setProjectSettings(prev => prev ? { ...prev, workItemTypes: (prev.workItemTypes || []).filter(item => item !== type) } : prev);
+    };
+
+    const handleAddToDoState = (toDoState: string) => {
+        if (toDoState.trim()) {
+            setProjectSettings(prev => prev ? { ...prev, toDoStates: [...(prev.toDoStates || []), toDoState.trim()] } : prev);
+        }
+    };
+
+    const handleRemoveToDoState = (toDoState: string) => {
+        setProjectSettings(prev => prev ? { ...prev, toDoStates: (prev.toDoStates || []).filter(item => item !== toDoState) } : prev);
+    };
+
+    const handleAddDoingState = (doingState: string) => {
+        if (doingState.trim()) {
+            setProjectSettings(prev => prev ? { ...prev, doingStates: [...(prev.doingStates || []), doingState.trim()] } : prev);
+        }
+    };
+
+    const handleRemoveDoingState = (doingState: string) => {
+        setProjectSettings(prev => prev ? { ...prev, doingStates: (prev.doingStates || []).filter(item => item !== doingState) } : prev);
+    };
+
+    const handleAddDoneState = (doneState: string) => {
+        if (doneState.trim()) {
+            setProjectSettings(prev => prev ? { ...prev, doneStates: [...(prev.doneStates || []), doneState.trim()] } : prev);
+        }
+    };
+
+    const handleRemoveDoneState = (doneState: string) => {
+        setProjectSettings(prev => prev ? { ...prev, doneStates: (prev.doneStates || []).filter(item => item !== doneState) } : prev);
     };
 
     const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number | boolean) => {
@@ -83,7 +114,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
     useEffect(() => {
         const handleStateChange = () => {
             const isFormValid = projectSettings?.name != '' && projectSettings?.defaultAmountOfWorkItemsPerFeature !== undefined &&
-            (modifyDefaultSettings || projectSettings?.workItemQuery != '') && projectSettings?.workItemTypes.length > 0 && (modifyDefaultSettings  || selectedWorkTrackingSystem !== null);
+                (modifyDefaultSettings || projectSettings?.workItemQuery != '') && projectSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);
 
             setFormValid(isFormValid);
         };
@@ -137,6 +168,18 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
                         workItemTypes={projectSettings?.workItemTypes || []}
                         onAddWorkItemType={handleAddWorkItemType}
                         onRemoveWorkItemType={handleRemoveWorkItemType}
+                    />
+
+                    <StatesList
+                        toDoStates={projectSettings?.toDoStates || []}
+                        onAddToDoState={handleAddToDoState}
+                        onRemoveToDoState={handleRemoveToDoState}
+                        doingStates={projectSettings?.doingStates || []}
+                        onAddDoingState={handleAddDoingState}
+                        onRemoveDoingState={handleRemoveDoingState}
+                        doneStates={projectSettings?.doneStates || []}
+                        onAddDoneState={handleAddDoneState}
+                        onRemoveDoneState={handleRemoveDoneState}
                     />
 
                     {!modifyDefaultSettings ? (

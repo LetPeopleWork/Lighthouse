@@ -10,7 +10,7 @@ import { IMilestone, Milestone } from '../../models/Project/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
 import { ITeamSettings } from '../../models/Team/TeamSettings';
-import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
+import { IProjectSettings } from '../../models/Project/ProjectSettings';
 import { LoremIpsum } from "lorem-ipsum";
 import { IRefreshSettings, RefreshSettings } from '../../models/AppSettings/RefreshSettings';
 import { ILighthouseRelease, LighthouseRelease } from '../../models/LighthouseRelease/LighthouseRelease';
@@ -46,10 +46,58 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     private projects: Project[] = [];
     private teams: Team[] = [];
 
-    private projectSettings = [
-        new ProjectSettings(0, "Release 1.33.7", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", false, 15, 85, "", 2, "customfield_10037"),
-        new ProjectSettings(1, "Release 42", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", true, 15, 85, "[System.TeamProject] = \"My Team\"", 2, "customfield_10037"),
-        new ProjectSettings(2, "Release Codename Daniel", ["Feature", "Epic"], this.milestones, "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", false, 15, 85, "", 2, "customfield_10037"),
+    private projectSettings : IProjectSettings[] = [
+        {
+            id: 0,
+            name: "Release 1.33.7",
+            workItemTypes: ["Feature", "Epic"],
+            milestones: this.milestones,
+            workItemQuery: "[System.TeamProject] = \"My Team\"",
+            unparentedItemsQuery: "[System.TeamProject] = \"My Team\"",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 15,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 2,
+            sizeEstimateField: "customfield_10037",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        },
+        {
+            id: 1,
+            name: "Release 42",
+            workItemTypes: ["Feature", "Epic"],
+            milestones: this.milestones,
+            workItemQuery: "[System.TeamProject] = \"My Team\"",
+            unparentedItemsQuery: "[System.TeamProject] = \"My Team\"",
+            usePercentileToCalculateDefaultAmountOfWorkItems: true,
+            defaultAmountOfWorkItemsPerFeature: 15,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "[System.TeamProject] = \"My Team\"",
+            workTrackingSystemConnectionId: 2,
+            sizeEstimateField: "customfield_10037",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        },
+        {
+            id: 2,
+            name: "Release Codename Daniel",
+            workItemTypes: ["Feature", "Epic"],
+            milestones: this.milestones,
+            workItemQuery: "[System.TeamProject] = \"My Team\"",
+            unparentedItemsQuery: "[System.TeamProject] = \"My Team\"",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 15,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 2,
+            sizeEstimateField: "customfield_10037",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        },
     ];
 
     private readonly previewFeatures = [
@@ -84,7 +132,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
 
         const featureIndex = this.previewFeatures.findIndex(f => f.key === feature.key);
 
-        if (featureIndex >= 0){
+        if (featureIndex >= 0) {
             this.previewFeatures.splice(featureIndex, 1);
             this.previewFeatures.splice(featureIndex, 0, feature);
         }
@@ -377,7 +425,23 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     async getDefaultProjectSettings(): Promise<IProjectSettings> {
         await this.delay();
 
-        return new ProjectSettings(1, "My Project", ["Feature", "Epic"], [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))], "[System.TeamProject] = \"My Team\"", "[System.TeamProject] = \"My Team\"", false, 15, 85, "", 2, "Microsoft.VSTS.Scheduling.Size");
+        return {
+            id: 1,
+            name: "My Project",
+            workItemTypes: ["Feature", "Epic"],
+            milestones: [new Milestone(1, "Target Date", new Date(this.today + 14 * this.dayMultiplier))],
+            workItemQuery: "[System.TeamProject] = \"My Team\"",
+            unparentedItemsQuery: "[System.TeamProject] = \"My Team\"",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 15,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 2,
+            sizeEstimateField: "Microsoft.VSTS.Scheduling.Size",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        };
     }
 
     async updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void> {
@@ -416,7 +480,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         const milestones: IMilestone[] = [
             new Milestone(0, "Important Date", new Date("2024-05-04")),
             new Milestone(0, "Customer Visit", new Date("2024-06-01")),
-        ];        
+        ];
 
         return new LighthouseChartData(featureData, milestones);
     }
