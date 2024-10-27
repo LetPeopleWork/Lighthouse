@@ -52,6 +52,6 @@ describe('ForecastInfo component', () => {
 
         render(<ForecastInfo forecast={unsupportedForecast as IForecast} />);
 
-        expect(screen.getByText('Forecast Type not Supported supported')).toBeInTheDocument();
+        expect(screen.getByText('Forecast Type not Supported')).toBeInTheDocument();
     });
 });
