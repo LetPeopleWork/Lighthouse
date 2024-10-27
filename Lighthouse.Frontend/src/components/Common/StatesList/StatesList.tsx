@@ -32,7 +32,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
         <InputGroup title="States">
             <Grid container>
                 <Grid item xs={12}>
-                    <Typography variant='h6'>To Do States</Typography>
+                    <Typography variant='h6'>To Do</Typography>
                     <ItemListManager
                         title='To Do States'
                         items={toDoStates}
@@ -41,7 +41,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
                     />
                 </Grid>
                 <Grid item xs={12}>
-                    <Typography variant='h6'>Doing States</Typography>
+                    <Typography variant='h6'>Doing</Typography>
                     <ItemListManager
                         title='Doing States'
                         items={doingStates}
@@ -50,7 +50,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
                     />
                 </Grid>
                 <Grid item xs={12}>
-                    <Typography variant='h6'>Done States</Typography>
+                    <Typography variant='h6'>Done</Typography>
                     <ItemListManager
                         title='Done States'
                         items={doneStates}

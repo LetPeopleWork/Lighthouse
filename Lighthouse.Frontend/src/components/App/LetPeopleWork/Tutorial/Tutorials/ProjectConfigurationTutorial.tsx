@@ -10,7 +10,7 @@ import WorkItemTypesImage from '../../../../../assets/Tutorial/Project/WorkItemT
 import MilestonesImage from '../../../../../assets/Tutorial/Project/Milestones.gif';
 import AdvancedConfigurationImage from '../../../../../assets/Tutorial/Project/AdvancedConfiguration.png';
 
-import { WorkTrackingSystems } from "./SharedSteps";
+import { States, WorkTrackingSystems } from "./SharedSteps";
 
 const GeneralConfiguration: React.FC = () => (
     <TutorialStep
@@ -140,6 +140,7 @@ const steps = [
     { title: 'General Configuration', component: GeneralConfiguration },
     { title: 'Work Item Types', component: WorkItemTypes },
     { title: 'Work Tracking Systems', component: WorkTrackingSystems },
+    { title: 'States', component: States },
     { title: 'Milestones', component: Milestones },
     { title: 'Advanced Configuration', component: AdvancedConfiguration },
 ];

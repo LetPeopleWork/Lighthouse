@@ -5,7 +5,7 @@ import { Container, Typography, Link } from "@mui/material";
 import GeneralConfigurationImage from '../../../../../assets/Tutorial/Team/GeneralConfiguration.png';
 import WorkItemTypesImage from '../../../../../assets/Tutorial/Team/WorkItemTypes.gif';
 import AdvancedConfigurationImage from '../../../../../assets/Tutorial/Team/AdvancedConfiguration.png';
-import { WorkTrackingSystems } from "./SharedSteps";
+import { States, WorkTrackingSystems } from "./SharedSteps";
 import InputGroup from "../../../../Common/InputGroup/InputGroup";
 
 const GeneralConfiguration: React.FC = () => (
@@ -36,7 +36,7 @@ The query should fetch all items that "belong" to this team and the specific syn
                 </Typography>
                 <Typography variant="body1">
                     {`You can use any kind of filtering you'd like and that is valid according to the JQL specification. An extended query that would exclude certain states would look like this:`}
-                </Typography>                
+                </Typography>
                 <Typography variant="body2" fontStyle="italic" sx={{ marginY: 1 }}>
                     {`project = "LGHTHSDMO" AND labels = "Lagunitas" AND status NOT IN (Canceled)`}
                 </Typography>
@@ -107,6 +107,7 @@ const steps = [
     { title: 'General Configuration', component: GeneralConfiguration },
     { title: 'Work Item Types', component: WorkItemTypes },
     { title: 'Work Tracking Systems', component: WorkTrackingSystems },
+    { title: 'States', component: States },
     { title: 'Advanced Configuration', component: AdvancedConfiguration },
 ];
 

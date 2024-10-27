@@ -1,7 +1,12 @@
 import { Container, Typography, Link } from "@mui/material";
 import TutorialStep from "../TutorialStep";
-import WorkTrackingSystemsImage from '../../../../../assets/Tutorial/Team/WorkTrackingSystems.gif';
 import InputGroup from "../../../../Common/InputGroup/InputGroup";
+import ImageComponent from "../../../../Common/ImageComponent/ImageComponent";
+
+import WorkTrackingSystemsImage from '../../../../../assets/Tutorial/Team/WorkTrackingSystems.gif';
+import StatesPicture from '../../../../../assets/Tutorial/States/States.png'
+import JiraStates from '../../../../../assets/Tutorial/States/Jira.png'
+import AdoStates from '../../../../../assets/Tutorial/States/ADO.png'
 
 export const WorkTrackingSystems: React.FC = () => (
     <TutorialStep
@@ -55,6 +60,42 @@ On top of that, you need to specify a `}
             <Typography variant="body1" sx={{ marginTop: 2 }}>
                 {`Before you can save any Work Tracking System, the connection has to be validated. Only if the connection could be established with the specified input, you can save it.`}
             </Typography>
+        </Container>
+    </TutorialStep>
+);
+
+export const States: React.FC = () => (
+    <TutorialStep
+        title="States"
+        description="How to define what is in progress and done?"
+        imageSrc={StatesPicture}
+    >
+        <Container>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
+                {`In order for Lighthouse to know which items to consider, it needs to know in which category the items are. Lighthouse categorizes items as "To Do" (no active work has been done yet), "Doing" (active work is ongoing) and "Done" (the work is completed).
+As every organization, project, and team is potentially using a different workflow, you must "map" the states you use to one of the 3 categories.
+
+If you don't add a state, it will be ignored. This can be useful for states like "Removed" or "Won't Do".
+
+Please make sure to only define states that exist and that you make sure the spelling and casing is similar to what your work tracking system is using.`}
+            </Typography>
+
+            <InputGroup initiallyExpanded={false} title="Jira">
+                <Typography variant="body1">
+                    {`Check your Jira instance and make sure to map every relevant state for the work item types you've selected.`}
+                </Typography>
+                <Typography variant="body1" fontWeight="bold">
+                    Important: Make sure to not add any states that don't exist in your Jira instance, as otherwise there will be an error on fetching any items!
+                </Typography>
+                <ImageComponent src={JiraStates} alt="Jira States" />
+            </InputGroup>
+
+            <InputGroup initiallyExpanded={false} title="Azure DevOps">
+                <Typography variant="body1">
+                    {`Check Azure DevOps instance and make sure to map every relevant state for the work item types you've selected.`}
+                </Typography>
+                <ImageComponent src={AdoStates} alt="Azure DevOps States" />
+            </InputGroup>
         </Container>
     </TutorialStep>
 );
