@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.Models
 
         public string Order { get; set; }
 
+        public string State { get; set; } = string.Empty;
+
         public string? Url { get; set; }
 
         public WhenForecast Forecast

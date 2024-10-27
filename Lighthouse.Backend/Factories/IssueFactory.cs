@@ -27,11 +27,12 @@ namespace Lighthouse.Backend.Factories
             var parentKey = GetParentFromFields(fields);
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
-            var statusCategory = GetStatusFromFields(fields);
+            var state = GetStateFromFields(fields);
+            var statusCategory = GetStatusCategoryFromFields(fields);
 
-            logger.LogDebug("Creating Issue with Key {key}, Title {title}, Resoultion Date {resolutionDate}, Parent Key {parentKey}, Rank {rank}, Issue Type {issueType}, Status Category {statusCategory}", key, title, resolutionDate, parentKey, rank, issueType, statusCategory);
+            logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Resoultion Date {ResolutionDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {issueType}, Status {Status}, Status Category {StatusCategory}", key, title, resolutionDate, parentKey, rank, issueType, state, statusCategory);
 
-            return new Issue(key, title, resolutionDate, parentKey, rank, issueType, statusCategory, fields);
+            return new Issue(key, title, resolutionDate, parentKey, rank, issueType, state, statusCategory, fields);
         }
 
         private static string GetIssueTypeFromFields(JsonElement fields)
@@ -39,7 +40,12 @@ namespace Lighthouse.Backend.Factories
             return fields.GetProperty("issuetype").GetProperty("name").ToString();
         }
 
-        private static string GetStatusFromFields(JsonElement fields)
+        private static string GetStateFromFields(JsonElement fields)
+        {
+            return fields.GetProperty("status").GetProperty("name").ToString();
+        }
+
+        private static string GetStatusCategoryFromFields(JsonElement fields)
         {
             return fields.GetProperty("status").GetProperty("statusCategory").GetProperty("name").ToString();
         }

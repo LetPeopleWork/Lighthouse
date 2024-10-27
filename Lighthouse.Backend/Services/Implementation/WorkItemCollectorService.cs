@@ -268,13 +268,14 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 var feature = GetOrCreateFeature(featureId, project);
 
-                var (name, order, url) = await workItemService.GetWorkItemDetails(featureId, project);
+                var (name, order, url, state) = await workItemService.GetWorkItemDetails(featureId, project);
                 feature.Name = name;
                 feature.Order = order;
                 feature.Url = url;
+                feature.State = state;
                 feature.IsUsingDefaultFeatureSize = false;
 
-                logger.LogInformation("Found Feature {Name}, Id {Id}, Order {Order}", feature.Name, featureId, feature.Order);
+                logger.LogInformation("Found Feature {Name}, Id {Id}, Order {Order}, State {State}", feature.Name, featureId, feature.Order, feature.State);
 
                 return feature;
             }).ToList();

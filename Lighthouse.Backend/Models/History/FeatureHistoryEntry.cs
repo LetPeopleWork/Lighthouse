@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.Models.History
 
         public string FeatureReferenceId { get; set; }
 
+        public string State { get; set; }
+
         public DateOnly Snapshot { get; set; }
 
         public List<FeatureWorkHistoryEntry> FeatureWork { get; } = [];
@@ -31,6 +33,7 @@ namespace Lighthouse.Backend.Models.History
             FeatureId = feature.Id;
             FeatureReferenceId = feature.ReferenceId;
             Snapshot = DateOnly.FromDateTime(DateTime.Today);
+            State = feature.State;
 
             FeatureWork.Clear();
             Forecasts.Clear();

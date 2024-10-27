@@ -80,14 +80,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return relatedWorkItems;
         }
 
-        public async Task<(string name, string order, string url)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<(string name, string order, string url, string state)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             logger.LogInformation("Getting Work Item Details for {itemId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var workItem = await GetWorkItemById(witClient, itemId, workItemQueryOwner);
-
+            var state = workItem?.Fields[AzureDevOpsFieldNames.State].ToString() ?? string.Empty;
             var workItemTitle = workItem?.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty;
 
             var url = ((ReferenceLink)workItem?.Links.Links["html"])?.Href ?? string.Empty;
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 workItemOrder = backlogPriority?.ToString() ?? string.Empty;
             }
 
-            return (workItemTitle, workItemOrder, url);
+            return (workItemTitle, workItemOrder, url, state);
         }
 
         public async Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)

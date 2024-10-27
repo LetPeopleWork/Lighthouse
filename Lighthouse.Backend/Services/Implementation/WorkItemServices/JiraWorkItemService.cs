@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return (remainingItems, totalItems);
         }
 
-        public async Task<(string name, string order, string url)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<(string name, string order, string url, string state)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             logger.LogInformation("Getting Issue Details for {IssueId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var url = $"{jiraRestClient.BaseAddress}browse/{issue.Key}";
 
-            return (issue.Title, issue.Rank, url);
+            return (issue.Title, issue.Rank, url, issue.State);
         }
 
         public async Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
