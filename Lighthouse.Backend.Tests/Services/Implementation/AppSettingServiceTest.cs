@@ -122,6 +122,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingFeatureWIP, "2",
                 AppSettingKeys.TeamSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.TeamSettingWorkItemTypes, "Product Backlog Item, Bug",
+                AppSettingKeys.TeamSettingToDoStates, "New,Planned",
+                AppSettingKeys.TeamSettingDoingStates, "In Progress,Committed",
+                AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
                 AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID");
 
             var service = CreateService();
@@ -139,6 +142,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(2));
                 CollectionAssert.Contains(settings.WorkItemTypes, "Product Backlog Item");
                 CollectionAssert.Contains(settings.WorkItemTypes, "Bug");
+
+                Assert.That(settings.ToDoStates, Has.Count.EqualTo(2));
+                CollectionAssert.Contains(settings.ToDoStates, "New");
+                CollectionAssert.Contains(settings.ToDoStates, "Planned");
+
+                Assert.That(settings.DoingStates, Has.Count.EqualTo(2));
+                CollectionAssert.Contains(settings.DoingStates, "In Progress");
+                CollectionAssert.Contains(settings.DoingStates, "Committed");
+
+                Assert.That(settings.DoneStates, Has.Count.EqualTo(2));
+                CollectionAssert.Contains(settings.DoneStates, "Done");
+                CollectionAssert.Contains(settings.DoneStates, "Closed");
             });
         }
 
@@ -149,6 +164,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingName, "MyTeam",
                 AppSettingKeys.TeamSettingHistory, "90",
                 AppSettingKeys.TeamSettingFeatureWIP, "2",
+                AppSettingKeys.TeamSettingToDoStates, "New,Planned",
+                AppSettingKeys.TeamSettingDoingStates, "In Progress,Committed",
+                AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
                 AppSettingKeys.TeamSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.TeamSettingWorkItemTypes, "Product Backlog Item, Bug",
                 AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID");
@@ -159,6 +177,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Name = "Other Team",
                 ThroughputHistory = 190,
                 FeatureWIP = 3,
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Ongoing"],
+                DoneStates = ["Over"],
                 WorkItemQuery = "project = MyJiraProject",
                 WorkItemTypes = ["Task", "Spike"],
                 RelationCustomField = "CUSTOM_12039213"
@@ -169,6 +190,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.TeamSettingName, "Other Team");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingHistory, "190");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingFeatureWIP, "3");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingToDoStates, "Backlog");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingDoingStates, "Ongoing");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingDoneStates, "Over");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemTypes, "Task,Spike");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingRelationCustomField, "CUSTOM_12039213");
@@ -181,6 +205,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingName, "My Project",
                 AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
+                AppSettingKeys.ProjectSettingToDoStates, "New,Planned",
+                AppSettingKeys.ProjectSettingDoingStates, "In Progress,Committed",
+                AppSettingKeys.ProjectSettingDoneStates, "Closed,Done",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15",
@@ -205,6 +232,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(1));
                 CollectionAssert.Contains(settings.WorkItemTypes, "Epic");
+
+                Assert.That(settings.ToDoStates, Has.Count.EqualTo(2));
+                CollectionAssert.Contains(settings.ToDoStates, "New");
+                CollectionAssert.Contains(settings.ToDoStates, "Planned");
+
+                Assert.That(settings.DoingStates, Has.Count.EqualTo(2));
+                CollectionAssert.Contains(settings.DoingStates, "In Progress");
+                CollectionAssert.Contains(settings.DoingStates, "Committed");
+
+                Assert.That(settings.DoneStates, Has.Count.EqualTo(2));
+                CollectionAssert.Contains(settings.DoneStates, "Done");
+                CollectionAssert.Contains(settings.DoneStates, "Closed");
             });
         }
 
@@ -215,6 +254,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingName, "My Project",
                 AppSettingKeys.ProjectSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingWorkItemTypes, "Epic",
+                AppSettingKeys.ProjectSettingToDoStates, "New,Planned",
+                AppSettingKeys.ProjectSettingDoingStates, "In Progress,Committed",
+                AppSettingKeys.ProjectSettingDoneStates, "Closed,Done",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "false",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10",
@@ -228,6 +270,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Name = "Other Project",
                 WorkItemQuery = "project = MyJiraProject",
                 WorkItemTypes = ["Feature"],
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Ongoing"],
+                DoneStates = ["Over"],
                 UnparentedItemsQuery = "project = MyJiraProject",
                 UsePercentileToCalculateDefaultAmountOfWorkItems = true,
                 DefaultAmountOfWorkItemsPerFeature = 22,
@@ -241,6 +286,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingName, "Other Project");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingWorkItemTypes, "Feature");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingToDoStates, "Backlog");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingDoingStates, "Ongoing");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingDoneStates, "Over");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "22");

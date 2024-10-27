@@ -55,7 +55,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public TeamSettingDto GetDefaultTeamSettings()
         {
-            var workItemTypes = GetDefaultWorkItemTypes(AppSettingKeys.TeamSettingWorkItemTypes);
+            var workItemTypes = GetListByKey(AppSettingKeys.TeamSettingWorkItemTypes);
+
+            var toDoStates = GetListByKey(AppSettingKeys.TeamSettingToDoStates);
+            var doingStates = GetListByKey(AppSettingKeys.TeamSettingDoingStates);
+            var doneStates = GetListByKey(AppSettingKeys.TeamSettingDoneStates);
 
             var teamSettings = new TeamSettingDto
             {
@@ -65,6 +69,9 @@ namespace Lighthouse.Backend.Services.Implementation
                 WorkItemQuery = GetSettingByKey(AppSettingKeys.TeamSettingWorkItemQuery).Value,
                 WorkItemTypes = workItemTypes,
                 RelationCustomField = GetSettingByKey(AppSettingKeys.TeamSettingRelationCustomField).Value,
+                ToDoStates = toDoStates,
+                DoingStates = doingStates,
+                DoneStates = doneStates,
             };
 
             return teamSettings;
@@ -92,6 +99,18 @@ namespace Lighthouse.Backend.Services.Implementation
             workItemTypes.Value = string.Join(',', defaultTeamSetting.WorkItemTypes);
             repository.Update(workItemTypes);
             
+            var todoStates = GetSettingByKey(AppSettingKeys.TeamSettingToDoStates);
+            todoStates.Value = string.Join(',', defaultTeamSetting.ToDoStates);
+            repository.Update(todoStates);
+            
+            var doingStates = GetSettingByKey(AppSettingKeys.TeamSettingDoingStates);
+            doingStates.Value = string.Join(',', defaultTeamSetting.DoingStates);
+            repository.Update(doingStates);
+            
+            var doneStates = GetSettingByKey(AppSettingKeys.TeamSettingDoneStates);
+            doneStates.Value = string.Join(',', defaultTeamSetting.DoneStates);
+            repository.Update(doneStates);
+            
             var relatedField = GetSettingByKey(AppSettingKeys.TeamSettingRelationCustomField);
             relatedField.Value = defaultTeamSetting.RelationCustomField;
             repository.Update(relatedField);
@@ -101,7 +120,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public ProjectSettingDto GetDefaultProjectSettings()
         {
-            var workItemTypes = GetDefaultWorkItemTypes(AppSettingKeys.ProjectSettingWorkItemTypes);
+            var workItemTypes = GetListByKey(AppSettingKeys.ProjectSettingWorkItemTypes);
+
+            var toDoStates = GetListByKey(AppSettingKeys.ProjectSettingToDoStates);
+            var doingStates = GetListByKey(AppSettingKeys.ProjectSettingDoingStates);
+            var doneStates = GetListByKey(AppSettingKeys.ProjectSettingDoneStates);
 
             var projectSettings = new ProjectSettingDto
             {
@@ -114,6 +137,9 @@ namespace Lighthouse.Backend.Services.Implementation
                 DefaultAmountOfWorkItemsPerFeature = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature).Value),
                 DefaultWorkItemPercentile = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultWorkItemPercentile).Value),
                 HistoricalFeaturesWorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery).Value,
+                ToDoStates = toDoStates,
+                DoingStates = doingStates,
+                DoneStates = doneStates,
 
                 SizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField).Value,
             };
@@ -134,6 +160,18 @@ namespace Lighthouse.Backend.Services.Implementation
             var workItemTypes = GetSettingByKey(AppSettingKeys.ProjectSettingWorkItemTypes);
             workItemTypes.Value = string.Join(',', defaultProjectSetting.WorkItemTypes);
             repository.Update(workItemTypes);
+
+            var toDoStates = GetSettingByKey(AppSettingKeys.ProjectSettingToDoStates);
+            toDoStates.Value = string.Join(',', defaultProjectSetting.ToDoStates);
+            repository.Update(toDoStates);
+
+            var doingStates = GetSettingByKey(AppSettingKeys.ProjectSettingDoingStates);
+            doingStates.Value = string.Join(',', defaultProjectSetting.DoingStates);
+            repository.Update(doingStates);
+
+            var doneStates = GetSettingByKey(AppSettingKeys.ProjectSettingDoneStates);
+            doneStates.Value = string.Join(',', defaultProjectSetting.DoneStates);
+            repository.Update(doneStates);
 
             var unparentedItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery);
             unparentedItemQuery.Value = defaultProjectSetting.UnparentedItemsQuery;
@@ -199,16 +237,16 @@ namespace Lighthouse.Backend.Services.Implementation
             return setting ?? throw new ArgumentNullException(nameof(key), "Setting with Key {key} not found");
         }
 
-        private List<string> GetDefaultWorkItemTypes(string appSettingKey)
+        private List<string> GetListByKey(string key)
         {
-            var workItemTypes = new List<string>();
+            var list = new List<string>();
 
-            foreach (var workItemType in GetSettingByKey(appSettingKey).Value.Split(','))
+            foreach (var listItem in GetSettingByKey(key).Value.Split(','))
             {
-                workItemTypes.Add(workItemType.Trim());
+                list.Add(listItem.Trim());
             }
 
-            return workItemTypes;
+            return list;
         }
     }
 }

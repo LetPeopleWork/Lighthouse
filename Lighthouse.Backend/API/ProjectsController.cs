@@ -133,6 +133,10 @@ namespace Lighthouse.Backend.API
             project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
             project.SizeEstimateField = projectSetting.SizeEstimateField;
 
+            project.ToDoStates = projectSetting.ToDoStates;
+            project.DoingStates = projectSetting.DoingStates;
+            project.DoneStates = projectSetting.DoneStates;
+
             project.Milestones.Clear();
             foreach (var milestone in projectSetting.Milestones)
             {

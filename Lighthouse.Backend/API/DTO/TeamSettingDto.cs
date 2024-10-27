@@ -19,6 +19,9 @@ namespace Lighthouse.Backend.API.DTO
             WorkItemTypes = team.WorkItemTypes;
             WorkTrackingSystemConnectionId = team.WorkTrackingSystemConnectionId;
             RelationCustomField = team.AdditionalRelatedField;
+            ToDoStates = team.ToDoStates;
+            DoingStates = team.DoingStates;
+            DoneStates = team.DoneStates;
         }
 
         [JsonRequired]
@@ -35,6 +38,12 @@ namespace Lighthouse.Backend.API.DTO
         public string WorkItemQuery { get; set; }
 
         public List<string> WorkItemTypes { get; set; }
+        
+        public List<string> ToDoStates { get; set; } = [];
+
+        public List<string> DoingStates { get; set; } = [];
+
+        public List<string> DoneStates { get; set; } = [];
 
         [JsonRequired]
         public int WorkTrackingSystemConnectionId { get; set; }

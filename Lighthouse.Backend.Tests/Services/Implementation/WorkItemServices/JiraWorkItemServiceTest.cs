@@ -418,6 +418,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             team.WorkItemTypes.Add("Bug");
             team.WorkItemTypes.Add("Task");
 
+            team.DoneStates.Clear();
+            team.DoneStates.Add("Done");
+
+            team.DoingStates.Clear();
+            team.DoingStates.Add("In Progress");
+
+            team.ToDoStates.Clear();
+            team.ToDoStates.Add("To Do");
+
             var connectionSetting = CreateWorkTrackingSystemConnection();
             team.WorkTrackingSystemConnection = connectionSetting;
 
@@ -434,6 +443,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             project.WorkItemTypes.Clear();
             project.WorkItemTypes.Add("Epic");
+
+            project.DoneStates.Clear();
+            project.DoneStates.Add("Done");
+
+            project.DoingStates.Clear();
+            project.DoingStates.Add("In Progress");
+
+            project.ToDoStates.Clear();
+            project.ToDoStates.Add("To Do");
 
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
             project.WorkTrackingSystemConnection = workTrackingSystemConnection;

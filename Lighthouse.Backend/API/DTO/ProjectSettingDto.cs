@@ -25,6 +25,10 @@ namespace Lighthouse.Backend.API.DTO
 
             WorkTrackingSystemConnectionId = project.WorkTrackingSystemConnectionId;
             SizeEstimateField = project.SizeEstimateField;
+
+            ToDoStates = project.ToDoStates;
+            DoingStates = project.DoingStates;
+            DoneStates = project.DoneStates;
         }
 
         [JsonRequired]
@@ -35,6 +39,12 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> WorkItemTypes { get; set; } = [];
 
         public List<MilestoneDto> Milestones { get; set; } = [];
+
+        public List<string> ToDoStates { get; set; } = [];
+
+        public List<string> DoingStates { get; set; } = [];
+
+        public List<string> DoneStates { get; set; } = [];
 
         public string WorkItemQuery { get; set; }
 

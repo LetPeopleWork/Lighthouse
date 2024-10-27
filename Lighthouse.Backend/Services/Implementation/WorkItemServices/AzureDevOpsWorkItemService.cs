@@ -2,7 +2,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking.AzureDevOps;
-using Microsoft.TeamFoundation.WorkItemTracking.Process.WebApi.Models.Process;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -13,10 +12,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
     public class AzureDevOpsWorkItemService : IWorkItemService
     {
         private readonly Cache<string, WorkItem> workItemCache = new Cache<string, WorkItem>();
-
-        private readonly string[] closedStates = ["Done", "Closed"];
-
-        private readonly string[] ignoredStates = ["Removed"];
 
         private readonly ILogger<AzureDevOpsWorkItemService> logger;
         private readonly ICryptoService cryptoService;
@@ -40,7 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", workItemTypes), workItemQueryOwner.WorkItemQuery);
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
 
-            var query = PrepareQuery(workItemTypes, closedStates, workItemQueryOwner.WorkItemQuery);
+            var query = PrepareQuery(workItemTypes, workItemQueryOwner.OpenStates, workItemQueryOwner.WorkItemQuery);
             var workItems = await GetWorkItemsByQuery(witClient, query);
 
             var workItemReferences = workItems.Select(wi => wi.Id.ToString()).ToList();
@@ -57,7 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var witClient = GetClientService(project.WorkTrackingSystemConnection);
 
-            var query = PrepareQuery(project.WorkItemTypes, [], project.HistoricalFeaturesWorkItemQuery);
+            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.HistoricalFeaturesWorkItemQuery);
             var features = await GetWorkItemsByQuery(witClient, query);
 
             foreach (var feature in features)
@@ -118,23 +113,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
-            var stateQuery = PrepareStateQuery(closedStates);
+            var doneStateQuery = PrepareStateQuery(team.DoneStates);
+            var pendingStateQuery = PrepareStateQuery(team.ToDoStates.Union(team.DoingStates));
 
-            var allWorkItemsQuery = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {unparentedItemsQuery} " +
+            var queryBase = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
                 $" AND {team.WorkItemQuery}";
 
-            var remainingWorkItemsQuery = allWorkItemsQuery + stateQuery;
+            var doneWorkItemsQuery = queryBase + doneStateQuery;
+            var remainingWorkItemsQuery = queryBase + pendingStateQuery;
 
-            var allWorkItems = await GetWorkItemsByQuery(witClient, allWorkItemsQuery);
+            var doneWorkItems = await GetWorkItemsByQuery(witClient, doneWorkItemsQuery);
             var remainingWorkItems = await GetWorkItemsByQuery(witClient, remainingWorkItemsQuery);
 
-            var totalWorkItemIds = allWorkItems.Select(x => x.Id.ToString()).ToList();
+            var doneWorkItemIds = doneWorkItems.Select(x => x.Id.ToString()).ToList();
             var remainingWorkItemsIds = remainingWorkItems.Select(x => x.Id.ToString()).ToList();
 
-            logger.LogInformation("Found following Work Items {totalWorkItemIds}", string.Join(", ", totalWorkItemIds));
+            logger.LogDebug("Found following Done Work Items {DoneWorkItems}", string.Join(", ", doneWorkItems));
+            logger.LogDebug("Found following Undone Work Items {RemainingWorkItems}", string.Join(", ", remainingWorkItemsIds));
 
-            return (remainingWorkItemsIds, totalWorkItemIds);
+            return (remainingWorkItemsIds, remainingWorkItemsIds.Union(doneWorkItemIds).ToList());
         }
 
         public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
@@ -255,7 +253,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<WorkItem?> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
         {
-            var query = PrepareQuery([], [], workItemQueryOwner.WorkItemQuery, additionalFields);
+            var query = PrepareQuery([], workItemQueryOwner.AllStates, workItemQueryOwner.WorkItemQuery, additionalFields);
             query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
 
             logger.LogDebug("Getting Work Item by Id. ID: {workItemId}. Query: '{query}'", workItemId, query);
@@ -279,10 +277,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             var relatedItemQuery = PrepareRelatedItemQuery(relatedWorkItemId, team.AdditionalRelatedField);
 
-            var remainingItemsQuery = PrepareQuery(team.WorkItemTypes, closedStates, team.WorkItemQuery);
+            var remainingItemsQuery = PrepareQuery(team.WorkItemTypes, team.OpenStates, team.WorkItemQuery);
             remainingItemsQuery += relatedItemQuery;
 
-            var allItemsQuery = PrepareQuery(team.WorkItemTypes, [], team.WorkItemQuery);
+            var allItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
             allItemsQuery += relatedItemQuery;
 
             var remainingWorkItems = await GetWorkItemsByQuery(witClient, remainingItemsQuery);
@@ -352,7 +350,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var closedItemsPerDay = new int[numberOfDays];
             var startDate = DateTime.UtcNow.Date.AddDays(-(numberOfDays - 1));
 
-            var query = PrepareQuery(team.WorkItemTypes, [], team.WorkItemQuery);
+            var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
             query += $" AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done') AND [{AzureDevOpsFieldNames.ClosedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
 
             logger.LogDebug("Getting closed items per day for thre last {numberOfDays} for team {TeamName} using query '{query}'", numberOfDays, team.Name, query);
@@ -382,12 +380,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private string PrepareQuery(
             IEnumerable<string> includedWorkItemTypes,
-            IEnumerable<string> excludedStates,
+            IEnumerable<string> includedStates,
             string query,
             params string[] additionalFields)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(includedWorkItemTypes);
-            var stateQuery = PrepareStateQuery(excludedStates);
+            var stateQuery = PrepareStateQuery(includedStates);
 
             var additionalFieldsQuery = string.Empty;
             if (additionalFields.Length > 0)
@@ -407,11 +405,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return PrepareGenericQuery(workItemTypes, AzureDevOpsFieldNames.WorkItemType, "OR", "=");
         }
 
-        private string PrepareStateQuery(IEnumerable<string> excludedStates)
+        private string PrepareStateQuery(IEnumerable<string> includedStates)
         {
-            var allExcludedStates = excludedStates.Union(ignoredStates);
-
-            return PrepareGenericQuery(allExcludedStates, AzureDevOpsFieldNames.State, "AND", "<>");
+            return PrepareGenericQuery(includedStates, AzureDevOpsFieldNames.State, "OR", "=");
         }
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)

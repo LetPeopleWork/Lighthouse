@@ -38,6 +38,14 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 17, Key = AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, Value = "85" });
             AddIfNotExists(new AppSetting { Id = 18, Key = AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, Value = string.Empty });
 
+            AddIfNotExists(new AppSetting { Id = 19, Key = AppSettingKeys.ProjectSettingToDoStates, Value = "New,Proposed,To Do" });
+            AddIfNotExists(new AppSetting { Id = 20, Key = AppSettingKeys.ProjectSettingDoingStates, Value = "Active,Resolved,In Progress,Committed" });
+            AddIfNotExists(new AppSetting { Id = 21, Key = AppSettingKeys.ProjectSettingDoneStates, Value = "Done,Closed" });
+
+            AddIfNotExists(new AppSetting { Id = 22, Key = AppSettingKeys.TeamSettingToDoStates, Value = "New,Proposed,To Do" });
+            AddIfNotExists(new AppSetting { Id = 23, Key = AppSettingKeys.TeamSettingDoingStates, Value = "Active,Resolved,In Progress,Committed" });
+            AddIfNotExists(new AppSetting { Id = 24, Key = AppSettingKeys.TeamSettingDoneStates, Value = "Done,Closed" });
+
             SaveSync();
         }
 

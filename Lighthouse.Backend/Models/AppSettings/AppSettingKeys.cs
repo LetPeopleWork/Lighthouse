@@ -30,6 +30,12 @@
 
         public const string TeamSettingWorkItemTypes = "DefaultTeamSetting:WorkItemTypes";
 
+        public const string TeamSettingToDoStates = "DefaultTeamSetting:ToDoStates";
+
+        public const string TeamSettingDoingStates = "DefaultTeamSetting:DoingStates";
+
+        public const string TeamSettingDoneStates = "DefaultTeamSetting:DoneStates";
+
         public const string TeamSettingRelationCustomField = "DefaultTeamSetting:RelationCustomField";
 
         public const string ProjectSettingName = "DefaultProjectSetting:Name";
@@ -37,6 +43,12 @@
         public const string ProjectSettingWorkItemQuery = "DefaultProjectSetting:WorkItemQuery";
 
         public const string ProjectSettingWorkItemTypes = "DefaultProjectSetting:WorkItemTypes";
+
+        public const string ProjectSettingToDoStates = "DefaultProjectSetting:ToDoStates";
+
+        public const string ProjectSettingDoingStates = "DefaultProjectSetting:DoingStates";
+
+        public const string ProjectSettingDoneStates = "DefaultProjectSetting:DoneStates";
 
         public const string ProjectSettingUnparentedWorkItemQuery = "DefaultProjectSetting:UnparentedWorkItemQuery";
 

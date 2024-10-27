@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
     {
         private readonly Cache<string, Issue> cache = new Cache<string, Issue>();
 
-        private readonly string DoneStatusCategory = "Done";
-
         private readonly ILexoRankService lexoRankService;
         private readonly IIssueFactory issueFactory;
         private readonly ILogger<JiraWorkItemService> logger;
@@ -126,23 +124,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
-            var stateQuery = PrepareStateQuery();
+            var notDoneStateQuery = PrepareStateQuery(team.OpenStates);
+            var doneStateQuery = PrepareStateQuery(team.DoneStates);
 
-            var allWorkItemsQuery = $"{unparentedItemsQuery} " +
+            var baseQuery = $"{unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
                 $"AND {team.WorkItemQuery}";
 
-            var remainingWorkItemsQuery = $"{allWorkItemsQuery} {stateQuery}";
+            var doneWorkItemsQuery = $"{baseQuery} {doneStateQuery}";
+            var remainingWorkItemsQuery = $"{baseQuery} {notDoneStateQuery}";
 
-            var allIssues = await GetIssuesByQuery(jiraClient, allWorkItemsQuery);
+            var doneIssues = await GetIssuesByQuery(jiraClient, doneWorkItemsQuery);
             var remainingIssues = await GetIssuesByQuery(jiraClient, remainingWorkItemsQuery);
 
-            var allWorkItemsIds = allIssues.Select(x => x.Key).ToList();
+            var doneWorkItemsIds = doneIssues.Select(x => x.Key).ToList();
             var remainingWorkItemIds = remainingIssues.Select(x => x.Key).ToList();
 
-            logger.LogInformation("Found following Issues: {IDs}", string.Join(", ", allWorkItemsIds));
+            logger.LogDebug("Found following Done Work Items {DoneWorkItems}", string.Join(", ", doneWorkItemsIds));
+            logger.LogDebug("Found following Undone Work Items {RemainingWorkItems}", string.Join(", ", remainingWorkItemIds));
 
-            return (remainingWorkItemIds, allWorkItemsIds);
+            return (remainingWorkItemIds, doneWorkItemsIds);
         }
 
         public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
@@ -376,7 +377,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             int? history = null)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
-            var stateQuery = PrepareGenericQuery([DoneStatusCategory], JiraFieldNames.StatusCategoryFieldName, "AND", "=");
+            var stateQuery = PrepareGenericQuery(workitemQueryOwner.DoneStates, JiraFieldNames.StatusFieldName, "OR", "=");
 
             var historyFilter = string.Empty;
             if (history != null)
@@ -397,7 +398,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             IWorkItemQueryOwner workitemQueryOwner)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
-            var stateQuery = PrepareStateQuery();
+            var stateQuery = PrepareStateQuery(workitemQueryOwner.OpenStates);
 
             var jql = $"{workitemQueryOwner.WorkItemQuery} " +
                 $"{workItemsQuery} " +
@@ -411,9 +412,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return PrepareGenericQuery(issueTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
         }
 
-        private string PrepareStateQuery()
+        private string PrepareStateQuery(IEnumerable<string> doneStates)
         {
-            return PrepareGenericQuery([DoneStatusCategory], JiraFieldNames.StatusCategoryFieldName, "AND", "!=");
+            return PrepareGenericQuery(doneStates, JiraFieldNames.StatusFieldName, "OR", "=");
         }
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)

@@ -117,6 +117,9 @@ namespace Lighthouse.Backend.API
             team.FeatureWIP = teamSetting.FeatureWIP;
             team.ThroughputHistory = teamSetting.ThroughputHistory;
             team.WorkItemTypes = teamSetting.WorkItemTypes;
+            team.ToDoStates = teamSetting.ToDoStates;
+            team.DoingStates = teamSetting.DoingStates;
+            team.DoneStates = teamSetting.DoneStates;
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
         }
 
