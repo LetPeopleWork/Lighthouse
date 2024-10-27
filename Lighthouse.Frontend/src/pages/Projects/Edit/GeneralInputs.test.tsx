@@ -20,6 +20,7 @@ describe('GeneralInputsComponent', () => {
         toDoStates: ["New"],
         doingStates: ["Active"],
         doneStates: ["Done"],
+        overrideChildCountStates: [""],
     };
 
     const mockOnProjectSettingsChange = vi.fn();

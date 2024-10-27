@@ -8,7 +8,8 @@ import InputGroup from "../../../../Common/InputGroup/InputGroup";
 import GeneralConfigurationImage from '../../../../../assets/Tutorial/Project/GeneralConfiguration.png';
 import WorkItemTypesImage from '../../../../../assets/Tutorial/Project/WorkItemTypes.gif';
 import MilestonesImage from '../../../../../assets/Tutorial/Project/Milestones.gif';
-import AdvancedConfigurationImage from '../../../../../assets/Tutorial/Project/AdvancedConfiguration.png';
+import UnparentedWorkItemsImage from '../../../../../assets/Tutorial/Project/UnparentedWorkItems.png';
+import DefaultFeatureSizeImage from '../../../../../assets/Tutorial/Project/DefaultFeatureSize.png';
 
 import { States, WorkTrackingSystems } from "./SharedSteps";
 
@@ -109,19 +110,30 @@ Milestones have a name and a date, and they will be displayed in the Project Det
     </TutorialStep>
 );
 
-const AdvancedConfiguration: React.FC = () => (
+const UnparentedWorkItems: React.FC = () => (
     <TutorialStep
-        title="Advanced Configuration"
-        description="Advanced Stuff to fine-tune your Projects"
-        imageSrc={AdvancedConfigurationImage}
+        title="Unparented Work Items"
+        description="Deal with Items that are not related to any Feature"
+        imageSrc={UnparentedWorkItemsImage}
     >
         <Container>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`Sometimes you might have a "bunch of items" that are not connected to any Feature, but you still consider them part of the Project.
 An example for this might be a collection of bugs you wanted to deliver with a new version. That you don't have to create "dummy features" just for grouping those bugs, you can use an "Unparented Work Items Query".
-This query will go through all "Team Backlogs" and see if any item is matching the query that is not part of a feature of this project. All items that are found will be grouped in a "virtual Feature" called "Unparented - Project Name".
-
-As we don't want to waste time breaking down Features into details too early, you might have the situation where you want to plan for a Feature, but it does not have any child items yet, as it has not been refined in more detail.
+This query will go through all "Team Backlogs" and see if any item is matching the query that is not part of a feature of this project. All items that are found will be grouped in a "virtual Feature" called "Unparented - Project Name".`}
+            </Typography>
+        </Container>
+    </TutorialStep>
+);
+const FeatureSize: React.FC = () => (
+    <TutorialStep
+        title="Default Feature Size"
+        description="Fine-tune your Forecast, even if you don't all the details yet"
+        imageSrc={DefaultFeatureSizeImage}
+    >
+        <Container>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
+                {`As we don't want to waste time breaking down Features into details too early, you might have the situation where you want to plan for a Feature, but it does not have any child items yet, as it has not been refined in more detail.
 For those scenarios, you can specify a "Default Number of Items per Feature", use your historical feature size, and a "Size Estimation Field" that will be used in order to forecast.
 
 The default number of items is a fixed number that is used if no child items and no estimation is found. If you opt for the historical feature size, you must specify a query so Lighthouse knows which features to get. For example you can filter for all features, or just features are in a specific state, or features that were closed within the last 180 days.
@@ -130,7 +142,8 @@ From all features that match your query, the number of child items is extracted,
 If you specify an estimation field, Lighthouse will check the value from that field and assume it's the expected number of items for this feature. You might arrive at this number by doing some comparison to previous Features.
 In case the field is not specified, or there is no value defined, Lighthouse will fall back to the value defined as default. That way you can get a more realistic forecast without too much effort.
 
-Note that as soon as you have a single child item for a Feature, the default won't be used anymore. It's only applied if the number of child items is 0.`}
+Furthermore, you can specify which states of Features should ignore the real number of items and still fall-back to our default size. This might be useful if you just started refining, and have some items added, but not all yet, and you want to rely on the default still.
+If no overriding state is defined, it means that as soon as you have a single child item for a Feature, the default won't be used anymore. It's only applied if the number of child items is 0.`}
             </Typography>
         </Container>
     </TutorialStep>
@@ -142,7 +155,8 @@ const steps = [
     { title: 'Work Tracking Systems', component: WorkTrackingSystems },
     { title: 'States', component: States },
     { title: 'Milestones', component: Milestones },
-    { title: 'Advanced Configuration', component: AdvancedConfiguration },
+    { title: 'Unparented Work Items', component: UnparentedWorkItems },
+    { title: 'Default Feature Size', component: FeatureSize },
 ];
 
 const ProjectConfigurationTutorial: React.FC = () => (

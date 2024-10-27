@@ -79,7 +79,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
         setProjectSettings(prev => prev ? { ...prev, doneStates: (prev.doneStates || []).filter(item => item !== doneState) } : prev);
     };
 
-    const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number | boolean) => {
+    const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number | boolean | string[] ) => {
         setProjectSettings(prev => prev ? { ...prev, [key]: value } : prev);
     };
 
