@@ -14,6 +14,7 @@ import InputGroup from '../../../components/Common/InputGroup/InputGroup';
 import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/TutorialButton';
 import TeamDetailTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamDetailTutorial';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
+import LocalDateTimeDisplay from '../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay';
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -109,38 +110,42 @@ const TeamDetail: React.FC = () => {
     return (
         <LoadingAnimation hasError={hasError} isLoading={isLoading}>
             <Container>
-                <Grid container spacing={3}>
-                    <Grid item xs={6}>
-                        <Typography variant='h3'>{team?.name}</Typography>
-                    </Grid>
-                    <Grid item xs={6} sx={{ display: 'flex', gap: 2 }}>
-                        <ActionButton
-                            onClickHandler={onUpdateThroughput}
-                            buttonText="Update Throughput"
-                            maxHeight='40px'
-                        />
-                        <Button variant="contained" onClick={onEditTeam} sx={{ maxHeight: '40px' }}>
-                            Edit Team
-                        </Button>
-                    </Grid>
-                    <InputGroup title='Features'>
-                        {team != null ? (
-                            <TeamFeatureList team={team} />) : (<></>)}
-                    </InputGroup>
-                    <InputGroup title='Team Forecast'>
-                        <ManualForecaster
-                            remainingItems={remainingItems}
-                            targetDate={targetDate}
-                            manualForecastResult={manualForecastResult}
-                            onRemainingItemsChange={setRemainingItems}
-                            onTargetDateChange={setTargetDate}
-                            onRunManualForecast={onRunManualForecast}
-                        />
-                    </InputGroup>
-                    <InputGroup title='Throughput' initiallyExpanded={false}>
-                        <ThroughputBarChart throughputData={throughput} />
-                    </InputGroup>
-                </Grid>
+                {team == null ? (<></>) : (
+                    <Grid container spacing={3}>
+                        <Grid item xs={6}>
+                            <Typography variant='h3'>{team.name}</Typography>
+
+                            <Typography variant='h6'>
+                                Last Updated on <LocalDateTimeDisplay utcDate={team.lastUpdated} showTime={true} />
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={6} sx={{ display: 'flex', gap: 2 }}>
+                            <ActionButton
+                                onClickHandler={onUpdateThroughput}
+                                buttonText="Update Throughput"
+                                maxHeight='40px'
+                            />
+                            <Button variant="contained" onClick={onEditTeam} sx={{ maxHeight: '40px' }}>
+                                Edit Team
+                            </Button>
+                        </Grid>
+                        <InputGroup title='Features'>
+                            <TeamFeatureList team={team} />
+                        </InputGroup>
+                        <InputGroup title='Team Forecast'>
+                            <ManualForecaster
+                                remainingItems={remainingItems}
+                                targetDate={targetDate}
+                                manualForecastResult={manualForecastResult}
+                                onRemainingItemsChange={setRemainingItems}
+                                onTargetDateChange={setTargetDate}
+                                onRunManualForecast={onRunManualForecast}
+                            />
+                        </InputGroup>
+                        <InputGroup title='Throughput' initiallyExpanded={false}>
+                            <ThroughputBarChart throughputData={throughput} />
+                        </InputGroup>
+                    </Grid>)}
             </Container>
             <TutorialButton
                 tutorialComponent={<TeamDetailTutorial />}

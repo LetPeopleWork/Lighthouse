@@ -28,8 +28,8 @@ vi.mock('../../../components/Common/Forecasts/ForecastLikelihood', () => ({
 }));
 
 describe('ProjectFeatureList component', () => {
-    const team1: Team = new Team('Team A', 1, [], [], 0);
-    const team2: Team = new Team('Team B', 2, [], [], 0);
+    const team1: Team = new Team('Team A', 1, [], [], 0, new Date());
+    const team2: Team = new Team('Team B', 2, [], [], 0, new Date());
 
     const milestone1: Milestone = new Milestone(1, 'Milestone 1', new Date('2023-07-01'));
     const milestone2: Milestone = new Milestone(2, 'Milestone 2', new Date('2023-08-01'));

@@ -59,13 +59,13 @@ export class TeamService extends BaseApiService implements ITeamService {
 
     async updateThroughput(teamId: number): Promise<void> {
         return this.withErrorHandling(async () => {
-            await this.apiService.post<void>(`/throughput/${teamId}`);
+            await this.apiService.post<void>(`/teams/${teamId}`);
         });
     }
 
     async getThroughput(teamId: number): Promise<Throughput> {
         return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<number[]>(`/throughput/${teamId}`);
+            const response = await this.apiService.get<number[]>(`/teams/${teamId}/throughput`);
             return new Throughput(response.data);
         });
     }

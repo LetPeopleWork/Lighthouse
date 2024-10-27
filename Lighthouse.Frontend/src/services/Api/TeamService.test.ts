@@ -21,9 +21,11 @@ describe('TeamService', () => {
     });
 
     it('should get teams', async () => {
+        var date = new Date();
+
         const mockResponse: ITeam[] = [
-            new Team("Team A", 1, [], [], 1),
-            new Team("Team B", 2, [], [], 1),
+            new Team("Team A", 1, [], [], 1, date),
+            new Team("Team B", 2, [], [], 1, date),
         ];
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -31,20 +33,20 @@ describe('TeamService', () => {
         const teams = await teamService.getTeams();
 
         expect(teams).toEqual([            
-            new Team("Team A", 1, [], [], 1),
-            new Team("Team B", 2, [], [], 1),
+            new Team("Team A", 1, [], [], 1, date),
+            new Team("Team B", 2, [], [], 1, date),
         ]);
         expect(mockedAxios.get).toHaveBeenCalledWith('/teams');
     });
 
     it('should get a single team by id', async () => {
-        const mockResponse: ITeam = new Team("Team A", 1, [], [], 1);
+        const mockResponse: ITeam = new Team("Team A", 1, [], [], 1, new Date());
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
         const team = await teamService.getTeam(1);
 
-        expect(team).toEqual(new Team("Team A", 1, [], [], 1));
+        expect(team).toEqual(new Team("Team A", 1, [], [], 1, new Date()));
         expect(mockedAxios.get).toHaveBeenCalledWith('/teams/1');
     });
 
@@ -140,7 +142,7 @@ describe('TeamService', () => {
 
         await teamService.updateThroughput(1);
 
-        expect(mockedAxios.post).toHaveBeenCalledWith('/throughput/1');
+        expect(mockedAxios.post).toHaveBeenCalledWith('/teams/1');
     });
 
     it('should get throughput for a team', async () => {
@@ -151,7 +153,7 @@ describe('TeamService', () => {
         const throughput = await teamService.getThroughput(1);
 
         expect(throughput).toEqual(new Throughput(mockResponse));
-        expect(mockedAxios.get).toHaveBeenCalledWith('/throughput/1');
+        expect(mockedAxios.get).toHaveBeenCalledWith('/teams/1/throughput');
     });
 
     it('should update forecast for a team', async () => {

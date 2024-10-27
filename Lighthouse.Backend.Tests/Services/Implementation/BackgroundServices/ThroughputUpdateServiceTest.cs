@@ -11,27 +11,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
     public class ThroughputUpdateServiceTest
     {
         private Mock<IRepository<Team>> teamRepoMock;
-        private Mock<IThroughputService> throughputServiceMock;
+        private Mock<ITeamUpdateService> throughputServiceMock;
         private Mock<IAppSettingService> appSettingServiceMock;
 
         private Mock<IServiceScopeFactory> serviceScopeFactoryMock;
-        private Mock<ILogger<ThroughputUpdateService>> loggerMock;
+        private Mock<ILogger<TeamUpdateService>> loggerMock;
 
         [SetUp]
         public void Setup()
         {
             teamRepoMock = new Mock<IRepository<Team>>();
-            throughputServiceMock = new Mock<IThroughputService>();
+            throughputServiceMock = new Mock<ITeamUpdateService>();
             appSettingServiceMock = new Mock<IAppSettingService>();
 
             serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
-            loggerMock = new Mock<ILogger<ThroughputUpdateService>>();
+            loggerMock = new Mock<ILogger<TeamUpdateService>>();
 
             var scopeMock = new Mock<IServiceScope>();
 
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
             scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IRepository<Team>))).Returns(teamRepoMock.Object);
-            scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IThroughputService))).Returns(throughputServiceMock.Object);
+            scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(ITeamUpdateService))).Returns(throughputServiceMock.Object);
             scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IAppSettingService))).Returns(appSettingServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team));
+            throughputServiceMock.Verify(x => x.UpdateTeam(team));
             teamRepoMock.Verify(x => x.Save());
         }
 
@@ -62,8 +62,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team1));
-            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team2));
+            throughputServiceMock.Verify(x => x.UpdateTeam(team1));
+            throughputServiceMock.Verify(x => x.UpdateTeam(team2));
             teamRepoMock.Verify(x => x.Save(), Times.Exactly(2));
         }
 
@@ -81,8 +81,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team1));
-            throughputServiceMock.Verify(x => x.UpdateThroughputForTeam(team2), Times.Never);
+            throughputServiceMock.Verify(x => x.UpdateTeam(team1));
+            throughputServiceMock.Verify(x => x.UpdateTeam(team2), Times.Never);
             teamRepoMock.Verify(x => x.Save(), Times.Exactly(1));
         }
 
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
         private Team CreateTeam(DateTime lastThroughputUpdateTime)
         {
-            return new Team { ThroughputUpdateTime = lastThroughputUpdateTime };
+            return new Team { TeamUpdateTime = lastThroughputUpdateTime };
         }
 
         private void SetupRefreshSettings(int interval, int refreshAfter)
@@ -102,9 +102,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             appSettingServiceMock.Setup(x => x.GetThroughputRefreshSettings()).Returns(refreshSettings);
         }
 
-        private ThroughputUpdateService CreateSubject()
+        private TeamUpdateService CreateSubject()
         {
-            return new ThroughputUpdateService(serviceScopeFactoryMock.Object, loggerMock.Object);
+            return new TeamUpdateService(serviceScopeFactoryMock.Object, loggerMock.Object);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,12 +13,14 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Feature> featureRepository;
+        private readonly ITeamUpdateService teamUpdateService;
 
-        public TeamsController(IRepository<Team> teamRepository, IRepository<Project> projectRepository, IRepository<Feature> featureRepository)
+        public TeamsController(IRepository<Team> teamRepository, IRepository<Project> projectRepository, IRepository<Feature> featureRepository, ITeamUpdateService teamUpdateService)
         {
             this.teamRepository = teamRepository;
             this.projectRepository = projectRepository;
             this.featureRepository = featureRepository;
+            this.teamUpdateService = teamUpdateService;
         }
 
         [HttpGet]
@@ -53,6 +56,37 @@ namespace Lighthouse.Backend.API
             var allFeatures = featureRepository.GetAll().ToList();
 
             return Ok(CreateTeamDto(allProjects, allFeatures, team));
+        }
+
+
+        [HttpGet("{id}/throughput")]
+        public ActionResult GetThroughputForTeam(int id)
+        {
+            var team = teamRepository.GetById(id);
+
+            if (team == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(team.RawThroughput);
+        }
+
+        [HttpPost("{id}")]
+        public async Task<ActionResult> UpdateTeamData(int id)
+        {
+            var team = teamRepository.GetById(id);
+
+            if (team == null)
+            {
+                return NotFound();
+            }
+
+            await teamUpdateService.UpdateTeam(team);
+
+            await teamRepository.Save();
+
+            return Ok();
         }
 
         [HttpDelete("{id}")]

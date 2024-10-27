@@ -8,9 +8,11 @@
 
         public int FeatureWIP { get; set; } = 1;
 
+        public int ActualFeatureWIP { get; set; }
+
         public string? AdditionalRelatedField { get; set; } = string.Empty;
 
-        public DateTime ThroughputUpdateTime { get; set; }
+        public DateTime TeamUpdateTime { get; set; }
 
         public int[] RawThroughput { get; set; } = [1];
 
@@ -23,7 +25,7 @@
         public void UpdateThroughput(int[] throughput)
         {
             RawThroughput = throughput;
-            ThroughputUpdateTime = DateTime.UtcNow;
+            TeamUpdateTime = DateTime.UtcNow;
         }
     }
 }

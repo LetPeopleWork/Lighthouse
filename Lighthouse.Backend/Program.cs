@@ -73,7 +73,7 @@ namespace Lighthouse.Backend
                 // Services
                 builder.Services.AddScoped<IRandomNumberService, RandomNumberService>();
                 builder.Services.AddScoped<IMonteCarloService, MonteCarloService>();
-                builder.Services.AddScoped<IThroughputService, ThroughputService>();
+                builder.Services.AddScoped<ITeamUpdateService, Services.Implementation.TeamUpdateService>();
                 builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
                 builder.Services.AddScoped<ILexoRankService, LexoRankService>();
                 builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
@@ -86,7 +86,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<AzureDevOpsWorkItemService>();
                 builder.Services.AddScoped<JiraWorkItemService>();
 
-                builder.Services.AddHostedService<ThroughputUpdateService>();
+                builder.Services.AddHostedService<Services.Implementation.BackgroundServices.TeamUpdateService>();
                 builder.Services.AddHostedService<FeatureUpdateService>();
                 builder.Services.AddHostedService<ForecastUpdateService>();
 

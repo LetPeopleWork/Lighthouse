@@ -2,8 +2,8 @@
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
-    public interface IThroughputService
+    public interface ITeamUpdateService
     {
-        Task UpdateThroughputForTeam(Team team);
+        Task UpdateTeam(Team team);
     }
 }

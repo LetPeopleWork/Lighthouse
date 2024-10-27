@@ -30,7 +30,8 @@ describe('FeatureList component', () => {
             new Feature('Feature 1', 1, "", new Date(), false, { 0: '' }, { 1: 10 }, { 1: 10 }, {}, [new WhenForecast(80, new Date())]),
             new Feature('Feature 2', 2, "", new Date(), true, { 0: '' }, { 1: 5 }, { 1: 10 }, {}, [new WhenForecast(60, new Date())])
         ],
-        1
+        1,
+        new Date()
     );
 
     it('should render all features with correct data', () => {

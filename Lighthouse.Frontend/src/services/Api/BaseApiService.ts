@@ -36,12 +36,12 @@ export class BaseApiService {
         
         const projects = item.projects.map(project => BaseApiService.deserializeProject(project)) ?? [];
         const features: Feature[] = BaseApiService.deserializeFeatures(item.features ?? []);
-        return new Team(item.name, item.id, projects, features, item.featureWip);
+        return new Team(item.name, item.id, projects, features, item.featureWip, new Date(item.lastUpdated));
     }
 
     protected static deserializeProject(item: IProject): Project {
         const features = BaseApiService.deserializeFeatures(item.features);
-        const teams = item.involvedTeams.map(team => new Team(team.name, team.id, [], [], team.featureWip));
+        const teams = item.involvedTeams.map(team => new Team(team.name, team.id, [], [], team.featureWip, new Date(item.lastUpdated)));
         const milestones = item.milestones.map(milestone => new Milestone(milestone.id, milestone.name, new Date(milestone.date)));
         return new Project(item.name, item.id, teams, features, milestones, new Date(item.lastUpdated));
     }

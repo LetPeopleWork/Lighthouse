@@ -1,22 +1,38 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.WorkTracking;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class ThroughputService : IThroughputService
+    public class TeamUpdateService : ITeamUpdateService
     {
         private readonly IWorkItemServiceFactory workItemServiceFactory;
-        private readonly ILogger<ThroughputService> logger;
+        private readonly ILogger<TeamUpdateService> logger;
 
-        public ThroughputService(IWorkItemServiceFactory workItemServiceFactory, ILogger<ThroughputService> logger)
+        public TeamUpdateService(IWorkItemServiceFactory workItemServiceFactory, ILogger<TeamUpdateService> logger)
         {
             this.workItemServiceFactory = workItemServiceFactory;
             this.logger = logger;
         }
 
-        public async Task UpdateThroughputForTeam(Team team)
+        public async Task UpdateTeam(Team team)
+        {
+            await UpdateThroughputForTeam(team);
+            await UpdateFeatureWipForTeam(team);
+        }
+
+        private async Task UpdateFeatureWipForTeam(Team team)
+        {
+            logger.LogInformation("Updating Feature Wip for Team {TeamName}", team.Name);
+
+            team.ActualFeatureWIP = 0;
+
+            logger.LogInformation("Finished updating Feature Wip for Team {TeamName}", team.Name);
+
+            await Task.CompletedTask;
+        }
+
+        private async Task UpdateThroughputForTeam(Team team)
         {
             logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
 

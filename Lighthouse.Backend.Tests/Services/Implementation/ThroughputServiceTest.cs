@@ -29,9 +29,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             workItemServiceMock.Setup(x => x.GetClosedWorkItems(7, team)).Returns(Task.FromResult(closedItemsPerDay));
 
-            var subject = new ThroughputService(workItemServiceFactoryMock.Object, Mock.Of<ILogger<ThroughputService>>());
+            var subject = new TeamUpdateService(workItemServiceFactoryMock.Object, Mock.Of<ILogger<TeamUpdateService>>());
 
-            await subject.UpdateThroughputForTeam(team);
+            await subject.UpdateTeam(team);
 
             Assert.That(team.Throughput.History, Is.EqualTo(closedItemsPerDay.Length));
             for (var index = 0; index < closedItemsPerDay.Length; index++)
