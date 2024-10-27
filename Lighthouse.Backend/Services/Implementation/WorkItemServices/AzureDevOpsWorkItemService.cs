@@ -405,7 +405,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return PrepareGenericQuery(workItemTypes, AzureDevOpsFieldNames.WorkItemType, "OR", "=");
         }
 
-        private string PrepareStateQuery(IEnumerable<string> includedStates)
+        private static string PrepareStateQuery(IEnumerable<string> includedStates)
         {
             return PrepareGenericQuery(includedStates, AzureDevOpsFieldNames.State, "OR", "=");
         }

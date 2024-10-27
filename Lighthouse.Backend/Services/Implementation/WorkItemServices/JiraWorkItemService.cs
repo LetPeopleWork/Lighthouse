@@ -371,7 +371,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             cache.Store(issue.Key, issue, TimeSpan.FromMinutes(5));
         }
 
-        private string PrepareClosedItemsQuery(
+        private static string PrepareClosedItemsQuery(
             IEnumerable<string> issueTypes,
             IWorkItemQueryOwner workitemQueryOwner,
             int? history = null)
@@ -412,7 +412,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return PrepareGenericQuery(issueTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
         }
 
-        private string PrepareStateQuery(IEnumerable<string> doneStates)
+        private static string PrepareStateQuery(IEnumerable<string> doneStates)
         {
             return PrepareGenericQuery(doneStates, JiraFieldNames.StatusFieldName, "OR", "=");
         }
