@@ -514,10 +514,10 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
 
     recreateTeams(): void {
         this.teams = [
-            new Team("Binary Blazers", 0, [], [this.features[0], this.features[3]], 1, new Date()),
-            new Team("Mavericks", 1, [], [this.features[1], this.features[2]], 2, new Date()),
-            new Team("Cyber Sultans", 2, [], [this.features[2]], 1, new Date()),
-            new Team("Tech Eagles", 3, [], [this.features[3]], 2, new Date())
+            new Team("Binary Blazers", 0, [], [this.features[0], this.features[3]], 1, 2, new Date()),
+            new Team("Mavericks", 1, [], [this.features[1], this.features[2]], 2, 2, new Date()),
+            new Team("Cyber Sultans", 2, [], [this.features[2]], 1, 3, new Date()),
+            new Team("Tech Eagles", 3, [], [this.features[3]], 2, 2, new Date())
         ]
     }
 

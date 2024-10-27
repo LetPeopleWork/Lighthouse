@@ -15,7 +15,7 @@ describe('Project Class', () => {
     beforeEach(() => {
         name = 'New Project';
         id = 1;
-        involvedTeams = [new Team('Team A', 1, [], [], 2, new Date()), new Team('Team B', 2, [], [], 1, new Date())];
+        involvedTeams = [new Team('Team A', 1, [], [], 2, 3, new Date()), new Team('Team B', 2, [], [], 1, 1, new Date())];
         lastUpdated = new Date('2023-07-11');
 
         const milestone = new Milestone(0, "Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60));

@@ -113,7 +113,11 @@ const TeamDetail: React.FC = () => {
                 {team == null ? (<></>) : (
                     <Grid container spacing={3}>
                         <Grid item xs={6}>
-                            <Typography variant='h3'>{team.name}</Typography>
+                            <Typography variant='h3'>{team.name}</Typography>                            
+
+                            <Typography variant='h6'>
+                                Currently working on {team.actualFeatureWip} Features in parallel
+                            </Typography>
 
                             <Typography variant='h6'>
                                 Last Updated on <LocalDateTimeDisplay utcDate={team.lastUpdated} showTime={true} />

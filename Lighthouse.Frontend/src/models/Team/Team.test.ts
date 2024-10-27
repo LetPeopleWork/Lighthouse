@@ -26,7 +26,7 @@ describe('Team Class', () => {
         ]);
         features = [feature1, feature2];
 
-        team = new Team(name, id, projects, features, 1, new Date());
+        team = new Team(name, id, projects, features, 1, 1, new Date());
     });
 
     it('should create an instance of Team correctly', () => {

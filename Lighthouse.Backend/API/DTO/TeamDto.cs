@@ -9,6 +9,7 @@ namespace Lighthouse.Backend.API.DTO
             Name = team.Name;
             Id = team.Id;
             FeatureWip = team.FeatureWIP;
+            ActualFeatureWip = team.ActualFeatureWIP;
             LastUpdated = team.TeamUpdateTime;
         }
 
@@ -17,6 +18,8 @@ namespace Lighthouse.Backend.API.DTO
         public int Id { get; set; }
 
         public int FeatureWip { get; set; }
+
+        public int ActualFeatureWip { get; set; }
 
         public DateTime LastUpdated { get; set; }
 

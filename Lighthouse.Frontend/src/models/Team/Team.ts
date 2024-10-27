@@ -8,6 +8,7 @@ export interface ITeam extends IFeatureOwner {
     id: number;
     projects: IProject[];
     featureWip: number;
+    actualFeatureWip: number;
     lastUpdated: Date;
 }
 
@@ -17,14 +18,16 @@ export class Team implements ITeam {
     projects!: Project[];
     features!: Feature[];
     featureWip: number;
+    actualFeatureWip: number;
     lastUpdated: Date;
 
-    constructor(name: string, id: number, projects: Project[], features: Feature[], featureWip: number, lastUpdated: Date) {
+    constructor(name: string, id: number, projects: Project[], features: Feature[], featureWip: number, actualFeatureWip: number, lastUpdated: Date) {
         this.name = name;
         this.id = id;
         this.projects = projects;
         this.features = features;
         this.featureWip = featureWip;
+        this.actualFeatureWip = actualFeatureWip;
         this.lastUpdated = lastUpdated;
     }
 
