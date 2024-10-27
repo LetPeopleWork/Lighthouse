@@ -21,7 +21,7 @@ describe('TeamService', () => {
     });
 
     it('should get teams', async () => {
-        var date = new Date();
+        const date = new Date();
 
         const mockResponse: ITeam[] = [
             new Team("Team A", 1, [], [], 1, 1, date),
