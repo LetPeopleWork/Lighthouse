@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 23, Key = AppSettingKeys.TeamSettingDoingStates, Value = "Active,Resolved,In Progress,Committed" });
             AddIfNotExists(new AppSetting { Id = 24, Key = AppSettingKeys.TeamSettingDoneStates, Value = "Done,Closed" });
 
+            AddIfNotExists(new AppSetting { Id = 25, Key = AppSettingKeys.ProjectSettingOverrideRealChildCountStates, Value = string.Empty });
+
             SaveSync();
         }
 

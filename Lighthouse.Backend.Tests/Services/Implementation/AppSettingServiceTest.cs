@@ -208,6 +208,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingToDoStates, "New,Planned",
                 AppSettingKeys.ProjectSettingDoingStates, "In Progress,Committed",
                 AppSettingKeys.ProjectSettingDoneStates, "Closed,Done",
+                AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "New,Proposed",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15",
@@ -244,6 +245,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.DoneStates, Has.Count.EqualTo(2));
                 CollectionAssert.Contains(settings.DoneStates, "Done");
                 CollectionAssert.Contains(settings.DoneStates, "Closed");
+
+                Assert.That(settings.OverrideRealChildCountStates, Has.Count.EqualTo(2));
+                CollectionAssert.Contains(settings.OverrideRealChildCountStates, "New");
+                CollectionAssert.Contains(settings.OverrideRealChildCountStates, "Proposed");
             });
         }
 
@@ -257,6 +262,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingToDoStates, "New,Planned",
                 AppSettingKeys.ProjectSettingDoingStates, "In Progress,Committed",
                 AppSettingKeys.ProjectSettingDoneStates, "Closed,Done",
+                AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "New,Proposed",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "false",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10",
@@ -273,6 +279,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ToDoStates = ["Backlog"],
                 DoingStates = ["Ongoing"],
                 DoneStates = ["Over"],
+                OverrideRealChildCountStates = ["Backlog,Proposed"],
                 UnparentedItemsQuery = "project = MyJiraProject",
                 UsePercentileToCalculateDefaultAmountOfWorkItems = true,
                 DefaultAmountOfWorkItemsPerFeature = 22,
@@ -289,6 +296,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingToDoStates, "Backlog");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDoingStates, "Ongoing");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDoneStates, "Over");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "Backlog,Proposed");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "22");

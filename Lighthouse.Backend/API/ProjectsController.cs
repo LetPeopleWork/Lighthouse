@@ -129,9 +129,10 @@ namespace Lighthouse.Backend.API
             project.DefaultAmountOfWorkItemsPerFeature = projectSetting.DefaultAmountOfWorkItemsPerFeature;
             project.DefaultWorkItemPercentile = projectSetting.DefaultWorkItemPercentile;
             project.HistoricalFeaturesWorkItemQuery = projectSetting.HistoricalFeaturesWorkItemQuery;
+            project.SizeEstimateField = projectSetting.SizeEstimateField;
+            project.OverrideRealChildCountStates = projectSetting.OverrideRealChildCountStates;
 
             project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
-            project.SizeEstimateField = projectSetting.SizeEstimateField;
 
             project.ToDoStates = projectSetting.ToDoStates;
             project.DoingStates = projectSetting.DoingStates;

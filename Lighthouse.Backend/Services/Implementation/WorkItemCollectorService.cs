@@ -162,6 +162,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private async Task GetWorkForFeatures(Project project)
         {
             var tasks = project.Features
+                .Where(f => !project.OverrideRealChildCountStates.Contains(f.State))
                 .Select(featureForProject => GetRemainingWorkForFeature(featureForProject, project.WorkTrackingSystemConnection.WorkTrackingSystem))
                 .ToList();
 

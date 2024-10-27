@@ -22,9 +22,10 @@ namespace Lighthouse.Backend.API.DTO
             DefaultAmountOfWorkItemsPerFeature = project.DefaultAmountOfWorkItemsPerFeature;
             DefaultWorkItemPercentile = project.DefaultWorkItemPercentile;
             HistoricalFeaturesWorkItemQuery = project.HistoricalFeaturesWorkItemQuery;
+            SizeEstimateField = project.SizeEstimateField;
+            OverrideRealChildCountStates = project.OverrideRealChildCountStates;
 
             WorkTrackingSystemConnectionId = project.WorkTrackingSystemConnectionId;
-            SizeEstimateField = project.SizeEstimateField;
 
             ToDoStates = project.ToDoStates;
             DoingStates = project.DoingStates;
@@ -45,6 +46,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> DoingStates { get; set; } = [];
 
         public List<string> DoneStates { get; set; } = [];
+
+        public List<string> OverrideRealChildCountStates { get; set; } = [];
 
         public string WorkItemQuery { get; set; }
 

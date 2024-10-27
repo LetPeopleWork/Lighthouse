@@ -50,6 +50,8 @@
 
         public const string ProjectSettingDoneStates = "DefaultProjectSetting:DoneStates";
 
+        public const string ProjectSettingOverrideRealChildCountStates = "DefaultProjectSetting:OverrideRealChildCountStates";
+
         public const string ProjectSettingUnparentedWorkItemQuery = "DefaultProjectSetting:UnparentedWorkItemQuery";
 
         public const string ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems = "DefaultProjectSetting:UsePercentileToCalculateDefaultAmountOfWorkItems";

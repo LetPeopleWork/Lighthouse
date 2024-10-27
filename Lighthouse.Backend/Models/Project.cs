@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.Models
 
         public int DefaultWorkItemPercentile { get; set; } = 85;
 
+        public List<string> OverrideRealChildCountStates { get; set; } = new List<string>();
+
         public void UpdateFeatures(IEnumerable<Feature> features)
         {
             Features.Clear();

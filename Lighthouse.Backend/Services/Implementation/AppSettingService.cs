@@ -126,6 +126,8 @@ namespace Lighthouse.Backend.Services.Implementation
             var doingStates = GetListByKey(AppSettingKeys.ProjectSettingDoingStates);
             var doneStates = GetListByKey(AppSettingKeys.ProjectSettingDoneStates);
 
+            var overrideRealChildCountStates = GetListByKey(AppSettingKeys.ProjectSettingOverrideRealChildCountStates);
+
             var projectSettings = new ProjectSettingDto
             {
                 Name = GetSettingByKey(AppSettingKeys.ProjectSettingName).Value,
@@ -140,6 +142,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
                 DoneStates = doneStates,
+
+                OverrideRealChildCountStates = overrideRealChildCountStates,
 
                 SizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField).Value,
             };
@@ -172,6 +176,10 @@ namespace Lighthouse.Backend.Services.Implementation
             var doneStates = GetSettingByKey(AppSettingKeys.ProjectSettingDoneStates);
             doneStates.Value = string.Join(',', defaultProjectSetting.DoneStates);
             repository.Update(doneStates);
+
+            var overrideRealChildCountStates = GetSettingByKey(AppSettingKeys.ProjectSettingOverrideRealChildCountStates);
+            overrideRealChildCountStates.Value = string.Join(',', defaultProjectSetting.OverrideRealChildCountStates);
+            repository.Update(overrideRealChildCountStates);
 
             var unparentedItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery);
             unparentedItemQuery.Value = defaultProjectSetting.UnparentedItemsQuery;

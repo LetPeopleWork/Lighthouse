@@ -75,6 +75,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        [TestCase("Analysis in Progress", 2, 42, 42)]
+        [TestCase("Analysis Done", 7, 42, 7)]
+        public async Task CollectFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_UsesDefaultItems(string featureState, int remainingWork, int defaultWork, int expectedWork)
+        {
+            var team = CreateTeam();
+            SetupTeams(team);
+
+            var project = CreateProject();
+            project.DefaultAmountOfWorkItemsPerFeature = defaultWork;
+            project.OverrideRealChildCountStates.Add("Analysis in Progress");
+
+            var feature1 = new Feature(team, 2) { ReferenceId = "12", State = featureState };
+            var feature2 = new Feature(team, 2) { ReferenceId = "1337" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature1.Name, feature1.Order, feature1.Url ?? string.Empty, feature1.State));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((remainingWork, 20)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(project.Features, Has.Count.EqualTo(2));
+
+                var feature = project.Features.First();
+
+                var isDefault = defaultWork == expectedWork;
+                Assert.That(feature.IsUsingDefaultFeatureSize, Is.EqualTo(isDefault));
+                Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedWork));
+            });
+        }
+
+        [Test]
         public async Task CollectFeaturesForProject_NoRemainingWork_NoTotalWork_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
