@@ -2,7 +2,7 @@ import axios from 'axios';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TeamService } from './TeamService';
 import { ITeam, Team } from '../../models/Team/Team';
-import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
+import { ITeamSettings } from '../../models/Team/TeamSettings';
 import { Throughput } from '../../models/Forecasts/Throughput';
 
 vi.mock('axios');
@@ -66,7 +66,19 @@ describe('TeamService', () => {
     });
 
     it('should get team settings', async () => {
-        const mockResponse: ITeamSettings = new TeamSettings(1, "Team A", 30, 1, "Query", ["Epic"], 12, "");
+        const mockResponse: ITeamSettings = {
+            id: 1,
+            name: "Team A",
+            throughputHistory: 30,
+            featureWIP: 1,
+            workItemQuery: "Query",
+            workItemTypes: ["Epic"],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };        
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
@@ -77,7 +89,19 @@ describe('TeamService', () => {
     });
 
     it('should create a team', async () => {
-        const newTeamSettings: ITeamSettings = new TeamSettings(0, "New Team", 30, 1, "Query", ["Epic"], 12, "");
+        const newTeamSettings: ITeamSettings = {
+            id: 0,
+            name: "New Team",
+            throughputHistory: 30,
+            featureWIP: 1,
+            workItemQuery: "Query",
+            workItemTypes: ["Epic"],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };        
         const mockResponse: ITeamSettings = { ...newTeamSettings, id: 1 };
 
         mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
@@ -89,7 +113,19 @@ describe('TeamService', () => {
     });
 
     it('should update a team', async () => {
-        const updatedTeamSettings: ITeamSettings = new TeamSettings(1, "Updated Team", 30, 1, "Query", ["Epic"], 12, "");
+        const updatedTeamSettings: ITeamSettings = {
+            id: 1,
+            name: "Updated Team",
+            throughputHistory: 30,
+            featureWIP: 1,
+            workItemQuery: "Query",
+            workItemTypes: ["Epic"],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };        
 
         mockedAxios.put.mockResolvedValueOnce({ data: updatedTeamSettings });
 

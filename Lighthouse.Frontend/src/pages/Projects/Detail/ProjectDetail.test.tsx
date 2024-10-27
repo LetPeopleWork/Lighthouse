@@ -4,7 +4,6 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ProjectDetail from './ProjectDetail';
 import { Milestone } from '../../../models/Project/Milestone';
 import { Project } from '../../../models/Project/Project';
-import { TeamSettings } from '../../../models/Team/TeamSettings';
 import { createMockApiServiceContext, createMockPreviewFeatureService, createMockProjectService, createMockTeamService } from '../../../tests/MockApiServiceProvider';
 import { IProjectService } from '../../../services/Api/ProjectService';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
@@ -13,6 +12,7 @@ import { ProjectSettings } from '../../../models/Project/ProjectSettings';
 import { Feature } from '../../../models/Feature';
 import { IPreviewFeatureService } from '../../../services/Api/PreviewFeatureService';
 import { PreviewFeature } from '../../../models/Preview/PreviewFeature';
+import { ITeamSettings } from '../../../models/Team/TeamSettings';
 
 vi.mock('../../../components/Common/LoadingAnimation/LoadingAnimation', () => ({
     default: ({ children, hasError, isLoading }: { children: React.ReactNode, hasError: boolean, isLoading: boolean }) => (
@@ -35,7 +35,7 @@ vi.mock('./ProjectFeatureList', () => ({
 }));
 
 vi.mock('./InvolvedTeamsList', () => ({
-    default: ({ teams }: { teams: TeamSettings[] }) => (
+    default: ({ teams }: { teams: ITeamSettings[] }) => (
         <div data-testid="involved-teams-list">{teams.length} teams</div>
     ),
 }));

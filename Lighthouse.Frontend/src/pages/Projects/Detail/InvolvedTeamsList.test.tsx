@@ -2,13 +2,38 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import InvolvedTeamsList from './InvolvedTeamsList';
-import { ITeamSettings, TeamSettings } from '../../../models/Team/TeamSettings';
+import { ITeamSettings } from '../../../models/Team/TeamSettings';
 
 describe('InvolvedTeamsList component', () => {
     const teams: ITeamSettings[] = [
-        new TeamSettings(1, "Team 1", 30, 2, "", [], 5, ""),
-        new TeamSettings(2, "Team 2", 30, 1, "", [], 5, ""),
+        {
+            id: 1,
+            name: "Team 1",
+            throughputHistory: 30,
+            featureWIP: 2,
+            workItemQuery: "",
+            workItemTypes: [],
+            workTrackingSystemConnectionId: 5,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        },
+        {
+            id: 2,
+            name: "Team 2",
+            throughputHistory: 30,
+            featureWIP: 1,
+            workItemQuery: "",
+            workItemTypes: [],
+            workTrackingSystemConnectionId: 5,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+        }
     ];
+    
 
     it('should render without errors when there are teams', () => {
         render(

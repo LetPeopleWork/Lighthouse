@@ -10,13 +10,14 @@ import { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/Work
 import ActionButton from "../ActionButton/ActionButton";
 import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
 import TeamConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/TeamConfigurationTutorial";
+import StatesList from "../StatesList/StatesList";
 
 interface ModifyTeamSettingsProps {
     title: string;
     getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
     getTeamSettings: () => Promise<ITeamSettings>;
     saveTeamSettings: (settings: ITeamSettings) => Promise<void>;
-    modifyDefaultSettings? : boolean;
+    modifyDefaultSettings?: boolean;
 }
 
 const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkTrackingSystems, getTeamSettings, saveTeamSettings, modifyDefaultSettings = false }) => {
@@ -38,6 +39,36 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
 
     const handleRemoveWorkItemType = (type: string) => {
         setTeamSettings(prev => prev ? { ...prev, workItemTypes: (prev.workItemTypes || []).filter(item => item !== type) } : prev);
+    };
+
+    const handleAddToDoState = (toDoState: string) => {
+        if (toDoState.trim()) {
+            setTeamSettings(prev => prev ? { ...prev, toDoStates: [...(prev.toDoStates || []), toDoState.trim()] } : prev);
+        }
+    };
+
+    const handleRemoveToDoState = (toDoState: string) => {
+        setTeamSettings(prev => prev ? { ...prev, toDoStates: (prev.toDoStates || []).filter(item => item !== toDoState) } : prev);
+    };
+
+    const handleAddDoingState = (doingState: string) => {
+        if (doingState.trim()) {
+            setTeamSettings(prev => prev ? { ...prev, doingStates: [...(prev.doingStates || []), doingState.trim()] } : prev);
+        }
+    };
+
+    const handleRemoveDoingState = (doingState: string) => {
+        setTeamSettings(prev => prev ? { ...prev, doingStates: (prev.doingStates || []).filter(item => item !== doingState) } : prev);
+    };
+
+    const handleAddDoneState = (doneState: string) => {
+        if (doneState.trim()) {
+            setTeamSettings(prev => prev ? { ...prev, doneStates: [...(prev.doneStates || []), doneState.trim()] } : prev);
+        }
+    };
+
+    const handleRemoveDoneState = (doneState: string) => {
+        setTeamSettings(prev => prev ? { ...prev, doneStates: (prev.doneStates || []).filter(item => item !== doneState) } : prev);
     };
 
     const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
@@ -66,7 +97,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
     useEffect(() => {
         const handleStateChange = () => {
             const isFormValid = teamSettings?.name != '' && (teamSettings?.throughputHistory ?? 0) > 0 && teamSettings?.featureWIP !== undefined &&
-            (modifyDefaultSettings || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);
+                (modifyDefaultSettings || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);
 
             setFormValid(isFormValid);
         };
@@ -120,6 +151,18 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                         workItemTypes={teamSettings?.workItemTypes || []}
                         onAddWorkItemType={handleAddWorkItemType}
                         onRemoveWorkItemType={handleRemoveWorkItemType}
+                    />
+
+                    <StatesList
+                        toDoStates={teamSettings?.toDoStates || []}
+                        onAddToDoState={handleAddToDoState}
+                        onRemoveToDoState={handleRemoveToDoState}
+                        doingStates={teamSettings?.doingStates || []}
+                        onAddDoingState={handleAddDoingState}
+                        onRemoveDoingState={handleRemoveDoingState}
+                        doneStates={teamSettings?.doneStates || []}
+                        onAddDoneState={handleAddDoneState}
+                        onRemoveDoneState={handleRemoveDoneState}
                     />
 
                     {!modifyDefaultSettings ? (

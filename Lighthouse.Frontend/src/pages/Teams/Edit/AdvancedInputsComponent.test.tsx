@@ -1,11 +1,23 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { ITeamSettings, TeamSettings } from '../../../models/Team/TeamSettings';
+import { ITeamSettings } from '../../../models/Team/TeamSettings';
 import AdvancedInputsComponent from './AdvancedInputs';
 
 describe('AdvancedInputsComponent', () => {
     it('renders correctly with provided teamSettings', () => {
-        const teamSettings: ITeamSettings = new TeamSettings(0, "setting", 2, 20, "", [], 12, "Test Field");
+        const teamSettings: ITeamSettings = {
+            id: 0,
+            name: "setting",
+            throughputHistory: 2,
+            featureWIP: 20,
+            workItemQuery: "",
+            workItemTypes: [],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "Test Field",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };        
 
         render(
             <AdvancedInputsComponent
@@ -21,7 +33,19 @@ describe('AdvancedInputsComponent', () => {
 
     it('calls onTeamSettingsChange with the correct parameters when the TextField value changes', () => {
         const onTeamSettingsChange = vi.fn();
-        const teamSettings: ITeamSettings = new TeamSettings(0, "setting", 2, 2, "", [], 12, "");
+        const teamSettings: ITeamSettings = {
+            id: 0,
+            name: "setting",
+            throughputHistory: 2,
+            featureWIP: 2,
+            workItemQuery: "",
+            workItemTypes: [],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };        
 
         render(
             <AdvancedInputsComponent
@@ -41,7 +65,19 @@ describe('AdvancedInputsComponent', () => {
 
     it('calls onTeamSettingsChange with correct parameters when Feature WIP TextField value changes', () => {
         const onTeamSettingsChange = vi.fn();
-        const teamSettings: ITeamSettings = new TeamSettings(0, "setting", 2, 2, "", [], 12, "");
+        const teamSettings: ITeamSettings = {
+            id: 0,
+            name: "setting",
+            throughputHistory: 2,
+            featureWIP: 2,
+            workItemQuery: "",
+            workItemTypes: [],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };        
 
         render(
             <AdvancedInputsComponent

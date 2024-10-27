@@ -5,7 +5,6 @@ import { IProject, Project } from '../../models/Project/Project';
 import { ITeam, Team } from '../../models/Team/Team';
 import { IMilestone, Milestone } from '../../models/Project/Milestone';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
-import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
 
 export class BaseApiService {
     protected apiService: AxiosInstance;
@@ -56,7 +55,6 @@ export class BaseApiService {
         });
     }
 
-
     protected deserializeProjectSettings(item: IProjectSettings): ProjectSettings {
         const milestones = item.milestones.map((milestone: IMilestone) => {
             return new Milestone(milestone.id, milestone.name, new Date(milestone.date))
@@ -75,18 +73,5 @@ export class BaseApiService {
             item.historicalFeaturesWorkItemQuery, 
             item.workTrackingSystemConnectionId, 
             item.sizeEstimateField);
-    }
-
-    protected deserializeTeamSettings(item: ITeamSettings): TeamSettings {
-        return new TeamSettings(
-            item.id,
-            item.name,
-            item.throughputHistory,
-            item.featureWIP,
-            item.workItemQuery,
-            item.workItemTypes,
-            item.workTrackingSystemConnectionId,
-            item.relationCustomField
-        );
     }
 }

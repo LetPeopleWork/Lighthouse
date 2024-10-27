@@ -39,21 +39,21 @@ export class TeamService extends BaseApiService implements ITeamService {
     async getTeamSettings(id: number): Promise<ITeamSettings> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<ITeamSettings>(`/teams/${id}/settings`);
-            return this.deserializeTeamSettings(response.data);
+            return response.data;
         });
     }
 
     async createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
         return await this.withErrorHandling(async () => {
             const response = await this.apiService.post<ITeamSettings>(`/teams`, teamSettings);
-            return this.deserializeTeamSettings(response.data);
+            return response.data;
         });
     }
 
     async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.put<ITeamSettings>(`/teams/${teamSettings.id}`, teamSettings);
-            return this.deserializeTeamSettings(response.data);
+            return response.data;
         });
     }
 

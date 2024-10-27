@@ -32,7 +32,7 @@ export class SettingsService extends BaseApiService implements ISettingsService 
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<ITeamSettings>(`/appsettings/defaultteamsettings`);
 
-            return this.deserializeTeamSettings(response.data);
+            return response.data;
         });
     }
 

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SettingsService } from './SettingsService';
 import { IRefreshSettings, RefreshSettings } from '../../models/AppSettings/RefreshSettings';
-import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
+import { ITeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
 
 vi.mock('axios');
@@ -42,7 +42,19 @@ describe('SettingsService', () => {
     });
 
     it('should get default team settings', async () => {
-        const mockResponse: ITeamSettings = new TeamSettings(1, "Team 1", 30, 1, "Query", ["Epic"], 12, "");
+        const mockResponse: ITeamSettings = {
+            id: 1,
+            name: "Team 1",
+            throughputHistory: 30,
+            featureWIP: 1,
+            workItemQuery: "Query",
+            workItemTypes: ["Epic"],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };        
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
         const teamSettings = await settingsService.getDefaultTeamSettings();
@@ -52,7 +64,19 @@ describe('SettingsService', () => {
     });
 
     it('should update default team settings', async () => {
-        const mockTeamSettings: ITeamSettings = new TeamSettings(1, "Team 1", 30, 1, "Query", ["User Story", "Bug"], 12, "");
+        const mockTeamSettings: ITeamSettings = {
+            id: 1,
+            name: "Team 1",
+            throughputHistory: 30,
+            featureWIP: 1,
+            workItemQuery: "Query",
+            workItemTypes: ["User Story", "Bug"],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };        
         mockedAxios.put.mockResolvedValueOnce({});
 
         await settingsService.updateDefaultTeamSettings(mockTeamSettings);

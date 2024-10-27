@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { ITeamSettings, TeamSettings } from '../../../models/Team/TeamSettings';
+import { ITeamSettings } from '../../../models/Team/TeamSettings';
 import GeneralInputsComponent from './GeneralInputs';
 
 // Mock InputGroup component
@@ -18,16 +18,19 @@ vi.mock('../../../components/Common/InputGroup/InputGroup', () => ({
 describe('GeneralInputsComponent', () => {
     const onTeamSettingsChange = vi.fn();
 
-    const teamSettings: ITeamSettings = new TeamSettings(
-        0,
-        'Test Name',
-        10,
-        20,
-        'Test Query',
-        [],
-        12,
-        'Test Field'
-    );
+    const teamSettings: ITeamSettings = {
+        id: 0,
+        name: 'Test Name',
+        throughputHistory: 10,
+        featureWIP: 20,
+        workItemQuery: 'Test Query',
+        workItemTypes: [],
+        workTrackingSystemConnectionId: 12,
+        relationCustomField: 'Test Field',
+        toDoStates: ["New"],
+        doingStates: ["Active"],
+        doneStates: ["Done"]
+    };    
 
     it('renders correctly with provided teamSettings', () => {
         render(

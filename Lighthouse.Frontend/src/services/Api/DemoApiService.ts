@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import { IMilestone, Milestone } from '../../models/Project/Milestone';
 import { IWorkTrackingSystemConnection, WorkTrackingSystemConnection } from '../../models/WorkTracking/WorkTrackingSystemConnection';
 import { WorkTrackingSystemOption } from '../../models/WorkTracking/WorkTrackingSystemOption';
-import { ITeamSettings, TeamSettings } from '../../models/Team/TeamSettings';
+import { ITeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings, ProjectSettings } from '../../models/Project/ProjectSettings';
 import { LoremIpsum } from "lorem-ipsum";
 import { IRefreshSettings, RefreshSettings } from '../../models/AppSettings/RefreshSettings';
@@ -151,7 +151,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
 
         await this.delay();
 
-        return new TeamSettings(1, "My Team", 30, 1, "[System.TeamProject] = \"My Team\"", ["User Story", "Bug"], 12, "");
+        return { id: 1, name: 'My Team', throughputHistory: 30, featureWIP: 1, workItemQuery: "[System.TeamProject] = \"My Team\"", workItemTypes: ["User Story", "Bug"], workTrackingSystemConnectionId: 12, relationCustomField: '', toDoStates: ["New"], doingStates: ["Active"], doneStates: ["Done"] }
     }
 
     async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
@@ -366,7 +366,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     async getDefaultTeamSettings(): Promise<ITeamSettings> {
         await this.delay();
 
-        return new TeamSettings(1, "My Team", 30, 1, "[System.TeamProject] = \"My Team\"", ["User Story", "Bug"], 12, "");
+        return { id: 1, name: 'My Team', throughputHistory: 30, featureWIP: 1, workItemQuery: "[System.TeamProject] = \"My Team\"", workItemTypes: ["User Story", "Bug"], workTrackingSystemConnectionId: 12, relationCustomField: '', toDoStates: ["New"], doingStates: ["Active"], doneStates: ["Done"] }
     }
 
     async updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void> {
