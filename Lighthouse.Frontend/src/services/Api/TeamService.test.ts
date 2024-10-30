@@ -40,13 +40,14 @@ describe('TeamService', () => {
     });
 
     it('should get a single team by id', async () => {
-        const mockResponse: ITeam = new Team("Team A", 1, [], [], 1, 2, new Date());
+        var date = new Date();
+        const mockResponse: ITeam = new Team("Team A", 1, [], [], 1, 2, date);
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
         const team = await teamService.getTeam(1);
 
-        expect(team).toEqual(new Team("Team A", 1, [], [], 1, 2, new Date()));
+        expect(team).toEqual(new Team("Team A", 1, [], [], 1, 2, date));
         expect(mockedAxios.get).toHaveBeenCalledWith('/teams/1');
     });
 
