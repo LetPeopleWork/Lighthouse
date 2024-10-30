@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var supportedLogLevels = subject.SupportedLogLevels;
 
-            CollectionAssert.Contains(supportedLogLevels, logLevel.ToString());
+            Assert.That(supportedLogLevels, Does.Contain(logLevel.ToString()));
         }
 
         [Test]

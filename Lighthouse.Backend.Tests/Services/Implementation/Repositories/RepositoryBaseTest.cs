@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             await subject.Save();
 
             var items = subject.GetAll();
-            CollectionAssert.DoesNotContain(items, item);
+            Assert.That(items, Does.Not.Contain(item));
         }
 
         [Test]

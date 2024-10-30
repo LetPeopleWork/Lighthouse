@@ -409,7 +409,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             var childItems = await subject.GetChildItemsForFeaturesInProject(project);
 
-            CollectionAssert.AreEquivalent(new List<int> { 1, 3, 3 }, childItems);
+            Assert.That(new List<int> { 1, 3, 3 }, Is.EquivalentTo(childItems));
         }
 
         [Test]

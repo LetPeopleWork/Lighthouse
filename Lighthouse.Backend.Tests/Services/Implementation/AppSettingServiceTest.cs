@@ -140,20 +140,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.RelationCustomField, Is.EqualTo("Custom.RemoteParentID"));
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(2));
-                CollectionAssert.Contains(settings.WorkItemTypes, "Product Backlog Item");
-                CollectionAssert.Contains(settings.WorkItemTypes, "Bug");
+                Assert.That(settings.WorkItemTypes, Does.Contain("Product Backlog Item"));
+                Assert.That(settings.WorkItemTypes, Does.Contain("Bug"));
 
                 Assert.That(settings.ToDoStates, Has.Count.EqualTo(2));
-                CollectionAssert.Contains(settings.ToDoStates, "New");
-                CollectionAssert.Contains(settings.ToDoStates, "Planned");
+                Assert.That(settings.ToDoStates, Does.Contain("New"));
+                Assert.That(settings.ToDoStates, Does.Contain("Planned"));
 
                 Assert.That(settings.DoingStates, Has.Count.EqualTo(2));
-                CollectionAssert.Contains(settings.DoingStates, "In Progress");
-                CollectionAssert.Contains(settings.DoingStates, "Committed");
+                Assert.That(settings.DoingStates, Does.Contain("In Progress"));
+                Assert.That(settings.DoingStates, Does.Contain("Committed"));
 
                 Assert.That(settings.DoneStates, Has.Count.EqualTo(2));
-                CollectionAssert.Contains(settings.DoneStates, "Done");
-                CollectionAssert.Contains(settings.DoneStates, "Closed");
+                Assert.That(settings.DoneStates, Does.Contain("Done"));
+                Assert.That(settings.DoneStates, Does.Contain("Closed"));
             });
         }
 
@@ -232,23 +232,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.SizeEstimateField, Is.EqualTo("Microsoft.VSTS.Scheduling.Size"));
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(1));
-                CollectionAssert.Contains(settings.WorkItemTypes, "Epic");
+                Assert.That(settings.WorkItemTypes, Does.Contain("Epic"));
 
                 Assert.That(settings.ToDoStates, Has.Count.EqualTo(2));
-                CollectionAssert.Contains(settings.ToDoStates, "New");
-                CollectionAssert.Contains(settings.ToDoStates, "Planned");
+                Assert.That(settings.ToDoStates, Does.Contain("New"));
+                Assert.That(settings.ToDoStates, Does.Contain("Planned"));
 
                 Assert.That(settings.DoingStates, Has.Count.EqualTo(2));
-                CollectionAssert.Contains(settings.DoingStates, "In Progress");
-                CollectionAssert.Contains(settings.DoingStates, "Committed");
+                Assert.That(settings.DoingStates, Does.Contain("In Progress"));
+                Assert.That(settings.DoingStates, Does.Contain("Committed"));
 
                 Assert.That(settings.DoneStates, Has.Count.EqualTo(2));
-                CollectionAssert.Contains(settings.DoneStates, "Done");
-                CollectionAssert.Contains(settings.DoneStates, "Closed");
+                Assert.That(settings.DoneStates, Does.Contain("Done"));
+                Assert.That(settings.DoneStates, Does.Contain("Closed"));
 
                 Assert.That(settings.OverrideRealChildCountStates, Has.Count.EqualTo(2));
-                CollectionAssert.Contains(settings.OverrideRealChildCountStates, "New");
-                CollectionAssert.Contains(settings.OverrideRealChildCountStates, "Proposed");
+                Assert.That(settings.OverrideRealChildCountStates, Does.Contain("New"));
+                Assert.That(settings.OverrideRealChildCountStates, Does.Contain("Proposed"));
             });
         }
 

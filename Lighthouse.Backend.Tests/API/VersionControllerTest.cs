@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 var newReleases = okResult.Value as IEnumerable<LighthouseRelease>;
 
-                CollectionAssert.Contains(newReleases, lighthouseRelease);
+                Assert.That(newReleases, Does.Contain(lighthouseRelease));
             });
         }
 

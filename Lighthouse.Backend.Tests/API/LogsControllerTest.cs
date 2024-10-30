@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
                 var supportedLogLevels = okResult.Value as string[];
-                CollectionAssert.AreEquivalent(expectedLogLevels, supportedLogLevels);
+                Assert.That(supportedLogLevels, Is.EquivalentTo(expectedLogLevels));
             });
         }
 

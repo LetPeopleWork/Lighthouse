@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var foundConnection = subject.GetById(connection.Id);
 
             Assert.That(foundConnection, Is.EqualTo(connection));
-            CollectionAssert.AreEquivalent(foundConnection.Options, new List<WorkTrackingSystemConnectionOption> { workTrackingOption });
+            Assert.That(foundConnection.Options, Is.EquivalentTo(new List<WorkTrackingSystemConnectionOption> { workTrackingOption }));
         }
 
         [Test]
