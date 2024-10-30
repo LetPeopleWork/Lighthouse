@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Update npm dependencies in `Lighthouse.Frontend/package.json`
+  - package-ecosystem: "npm"
+    directory: "/Lighthouse.Frontend"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    open-pull-requests-limit: 5
+
+  # Update .NET NuGet dependencies in the C# projects
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    open-pull-requests-limit: 5
