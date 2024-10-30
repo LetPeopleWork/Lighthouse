@@ -24,18 +24,22 @@ const Footer: React.FC = () => {
               <ExternalLinkButton
                 link="mailto:contact@letpeople.work"
                 icon={EmailIcon}
+                tooltip='Send an Email'
               />
               <ExternalLinkButton
                 link="https://calendly.com/letpeoplework/"
                 icon={CallIcon}
+                tooltip='Schedule a Call'
               />
               <ExternalLinkButton
                 link="https://www.linkedin.com/company/let-people-work/?viewAsMember=true"
                 icon={LinkedInIcon}
+                tooltip='View our LinkedIn Page'
               />
               <ExternalLinkButton
                 link="https://github.com/LetPeopleWork/Lighthouse/issues"
                 icon={GitHubIcon}
+                tooltip='Raise an Issue on GitHub'
               />
             </Box>
           </Box>

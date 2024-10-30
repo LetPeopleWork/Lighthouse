@@ -6,7 +6,7 @@ import { SvgIconComponent } from '@mui/icons-material';
 
 describe('ExternalLinkButton component', () => {
   const renderComponent = (link: string, icon: SvgIconComponent) => 
-    render(<ExternalLinkButton link={link} icon={icon} />);
+    render(<ExternalLinkButton link={link} icon={icon} tooltip='' />);
 
   it('should render with the correct href', () => {
     const link = "https://github.com/LetPeopleWork/Lighthouse/issues";
