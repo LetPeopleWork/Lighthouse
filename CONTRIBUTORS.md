@@ -23,15 +23,19 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 
 Our project wouldn’t be where it is today without the support of the following companies. Thank you for your sponsorship, resources, and collaboration!
 
-<a href="https://lambentspaces.com/">
-  <img src="https://lambentspaces.com/wp-content/uploads/2022/08/Lambent_horizontal_color.png" alt="Lambent" width="200">
-</a>
+  <a href="https://lambentspaces.com/">  
+    <div style="background-color: black; padding: 10px; display: inline-block; border-radius: 8px;">
+        <img src="images/Lambent.svg" alt="Lambent" width="200">
+    </div>
+  </a>
 
-<br>
+  <br>
 
-<a href="https://focusrite.com/">
-  <img src="https://cdn11.bigcommerce.com/s-7exlzlf13h/images/stencil/250x100/focusrite-logo_1670497975__72107.original.png" alt="Focusrite" width="200">
-</a>
+  <a href="https://focusrite.com/">
+    <div style="background-color: black; padding: 10px; display: inline-block; border-radius: 8px;">
+      <img src="https://cdn11.bigcommerce.com/s-7exlzlf13h/images/stencil/250x100/focusrite-logo_1670497975__72107.original.png" alt="Focusrite" width="200">
+    </div>
+  </a>
 
 ---
 
