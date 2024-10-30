@@ -72,7 +72,7 @@ describe('ProjectService', () => {
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
-            overrideChildCountStates: [""],
+            overrideRealChildCountStates: [""],
         };
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
@@ -100,7 +100,7 @@ describe('ProjectService', () => {
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
-            overrideChildCountStates: [""],
+            overrideRealChildCountStates: [""],
         };
 
         mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
@@ -128,7 +128,7 @@ describe('ProjectService', () => {
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
-            overrideChildCountStates: [""],
+            overrideRealChildCountStates: [""],
         };
 
         const mockResponse: IProjectSettings = {
@@ -147,7 +147,7 @@ describe('ProjectService', () => {
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
-            overrideChildCountStates: [""],
+            overrideRealChildCountStates: [""],
         };
 
         mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });

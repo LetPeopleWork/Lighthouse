@@ -84,6 +84,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             });
         }
 
+        [Test]
+        public async Task AddOverrideSetting_SavesCorrectly()
+        {
+            var subject = CreateSubject();
+
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection
+            {
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Name = "Connection"
+            };
+
+            workTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "Key", Value = "Value" });
+
+            var project = new Project { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
+
+            project.OverrideRealChildCountStates.Add("New");
+            project.OverrideRealChildCountStates.Add("AnalysisInProgress");
+
+            // Act
+            subject.Add(project);
+            await subject.Save();
+
+            var foundProject = subject.GetById(project.Id);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(foundProject.OverrideRealChildCountStates, Has.Count.EqualTo(2));
+                Assert.That(foundProject.OverrideRealChildCountStates, Does.Contain("New"));
+                Assert.That(foundProject.OverrideRealChildCountStates, Does.Contain("AnalysisInProgress"));
+            });
+        }
+
         private ProjectRepository CreateSubject()
         {
             return new ProjectRepository(DatabaseContext, Mock.Of<ILogger<ProjectRepository>>());

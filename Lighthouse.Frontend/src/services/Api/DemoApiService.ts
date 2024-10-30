@@ -61,7 +61,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
-            overrideChildCountStates: ["Analysis In Progress"],
+            overrideRealChildCountStates: ["Analysis In Progress"],
         },
         {
             id: 1,
@@ -79,7 +79,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
-            overrideChildCountStates: ["Analysis In Progress"],
+            overrideRealChildCountStates: ["Analysis In Progress"],
         },
         {
             id: 2,
@@ -97,7 +97,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
-            overrideChildCountStates: ["Analysis In Progress"],
+            overrideRealChildCountStates: ["Analysis In Progress"],
         },
     ];
 
@@ -442,7 +442,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
-            overrideChildCountStates: ["Analysis In Progress"],
+            overrideRealChildCountStates: ["Analysis In Progress"],
         };
     }
 

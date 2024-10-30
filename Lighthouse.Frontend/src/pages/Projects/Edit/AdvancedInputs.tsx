@@ -17,19 +17,19 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
     const handleAddOverrideChildCountState = (overrideChildCountState: string) => {
         if (overrideChildCountState.trim()) {
             const newStates = projectSettings
-                ? [...(projectSettings.overrideChildCountStates || []), overrideChildCountState.trim()]
+                ? [...(projectSettings.overrideRealChildCountStates || []), overrideChildCountState.trim()]
                 : [overrideChildCountState.trim()];
 
-            onProjectSettingsChange('overrideChildCountStates', newStates);
+            onProjectSettingsChange('overrideRealChildCountStates', newStates);
         }
     };
 
     const handleRemoveOverrideChildCountState = (overrideChildCountState: string) => {
         const newStates = projectSettings
-            ? (projectSettings.overrideChildCountStates || []).filter(item => item !== overrideChildCountState)
+            ? (projectSettings.overrideRealChildCountStates || []).filter(item => item !== overrideChildCountState)
             : [];
 
-        onProjectSettingsChange('overrideChildCountStates', newStates);
+        onProjectSettingsChange('overrideRealChildCountStates', newStates);
     };
 
     return (
@@ -120,7 +120,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                     <Typography variant='body1'>Use Default Size instead of real Child Items for Features in these States:</Typography>
                     <ItemListManager
                         title='Size Override State'
-                        items={projectSettings?.overrideChildCountStates ?? []}
+                        items={projectSettings?.overrideRealChildCountStates ?? []}
                         onAddItem={handleAddOverrideChildCountState}
                         onRemoveItem={handleRemoveOverrideChildCountState}
                     />
