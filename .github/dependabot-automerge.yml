@@ -1,0 +1,41 @@
+name: Dependabot Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Wait for CI to pass
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = pr.number;
+
+            let status;
+            do {
+              await new Promise(resolve => setTimeout(resolve, 10000));
+              status = await github.rest.repos.getCombinedStatusForRef({
+                owner,
+                repo,
+                ref: pr.head.sha
+              });
+            } while (status.data.state === 'pending');
+
+            if (status.data.state === 'success') {
+              await github.rest.pulls.merge({
+                owner,
+                repo,
+                pull_number: prNumber,
+                merge_method: 'squash'
+              });
+            }
