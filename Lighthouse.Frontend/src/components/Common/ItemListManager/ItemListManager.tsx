@@ -32,7 +32,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
         <Grid container spacing={3}>
             <Grid item xs={3}>
                 <List>
-                    {items.map(item => (
+                    {items.filter(item => item.trim()).map(item => (
                         <ListItem key={item}>
                             <Typography variant="body1">{item}</Typography>
                             <IconButton aria-label="delete" edge="end" onClick={() => onRemoveItem(item)}>

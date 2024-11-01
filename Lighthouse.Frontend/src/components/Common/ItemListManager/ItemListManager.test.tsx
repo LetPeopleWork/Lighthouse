@@ -33,6 +33,18 @@ describe('ItemListManager', () => {
         expect(input).toHaveValue('');
     });
 
+    it('does not call onAddItem when the input is only whitespace', () => {
+        render(<ItemListManager title={title} items={items} onAddItem={mockOnAddItem} onRemoveItem={mockOnRemoveItem} />);
+        
+        const input = screen.getByLabelText(`New ${title}`);
+        const addButton = screen.getByRole('button', { name: `Add ${title}` });
+
+        fireEvent.change(input, { target: { value: '   ' } });
+        fireEvent.click(addButton);
+
+        expect(mockOnAddItem).not.toHaveBeenCalled();
+    });
+
     it('does not call onAddItem when the input is empty', () => {
         render(<ItemListManager title={title} items={items} onAddItem={mockOnAddItem} onRemoveItem={mockOnRemoveItem} />);
         
