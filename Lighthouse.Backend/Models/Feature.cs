@@ -109,5 +109,13 @@ namespace Lighthouse.Backend.Models
                 Forecasts.Add(forecast);
             }
         }
+
+        public void ClearFeatureWork()
+        {
+            foreach (var featureWork in FeatureWork)
+            {
+                featureWork.Clear();
+            }
+        }
     }
 }

@@ -42,6 +42,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private async Task ExtrapolateNotBrokenDownFeatures(Project project)
         {
+            foreach (var feature in project.Features.Where(f => project.OverrideRealChildCountStates.Contains(f.State)))
+            {
+                feature.ClearFeatureWork();
+            }
+
             var involvedTeams = project.InvolvedTeams.Where(t => t.TotalThroughput > 0).ToList();
 
             if (involvedTeams.Count <= 0)
@@ -162,7 +167,6 @@ namespace Lighthouse.Backend.Services.Implementation
         private async Task GetWorkForFeatures(Project project)
         {
             var tasks = project.Features
-                .Where(f => !project.OverrideRealChildCountStates.Contains(f.State))
                 .Select(featureForProject => GetRemainingWorkForFeature(featureForProject, project.WorkTrackingSystemConnection.WorkTrackingSystem))
                 .ToList();
 

@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -105,6 +106,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var isDefault = defaultWork == expectedWork;
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.EqualTo(isDefault));
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedWork));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_ItemWasMovedBack_UsesDefaultItems()
+        {
+            var team = CreateTeam();
+            SetupTeams(team);
+
+            var project = CreateProject();
+            project.DefaultAmountOfWorkItemsPerFeature = 7;
+            project.OverrideRealChildCountStates.Add("Analysis in Progress");
+
+            var feature1 = new Feature(team, 2) { ReferenceId = "12", State = "Analysis in Progress" };
+            var feature2 = new Feature(team, 2) { ReferenceId = "1337" };
+
+            var features = new List<Feature>() { feature1, feature2 };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature1.Name, feature1.Order, feature1.Url ?? string.Empty, feature1.State));
+
+            featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => features.SingleOrDefault(predicate));
+
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((10, 20)));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(project.Features, Has.Count.EqualTo(2));
+
+                var feature = project.Features.Single(f => f.ReferenceId == "12");
+                Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
+                Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(7));
             });
         }
 

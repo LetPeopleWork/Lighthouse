@@ -29,5 +29,11 @@
         public int FeatureId { get; set; }
 
         public Feature Feature { get; set; }
+
+        public void Clear()
+        {
+            RemainingWorkItems = 0;
+            TotalWorkItems = 0;
+        }
     }
 }
