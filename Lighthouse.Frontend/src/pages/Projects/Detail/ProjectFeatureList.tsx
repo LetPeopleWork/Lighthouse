@@ -1,12 +1,12 @@
 import React from "react";
-import { IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material";
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import { Project } from "../../../models/Project/Project";
 import { Link } from "react-router-dom";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
-import GppMaybeOutlinedIcon from '@mui/icons-material/GppMaybeOutlined';
+import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 
 interface ProjectFeatureListProps {
     project: Project
@@ -41,20 +41,14 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                     {project?.features.map((feature) => (
                         <TableRow key={feature.id}>
                             <TableCell>
-                                {feature.url ? (
-                                    <Link to={feature.url} target="_blank" rel="noopener noreferrer">
-                                        {feature.name}
-                                    </Link>
-                                ) : (
-                                    feature.name
-                                )}
-                                {feature.isUsingDefaultFeatureSize && (
-                                        <Tooltip title="No child items were found for this Feature. The remaining items displayed are based on the default feature size specified in the advanced project settings.">
-                                            <IconButton size="small" sx={{ ml: 1 }}>
-                                                <GppMaybeOutlinedIcon sx={{ color: 'warning.main' }} />
-                                            </IconButton>
-                                        </Tooltip>
+                                <FeatureName
+                                    name={feature.name}
+                                    url={feature.url ?? ""}
+                                    isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
+                                    teamsWorkIngOnFeature={project.involvedTeams.filter(team =>
+                                        team.featuresInProgress.includes(feature.featureReference)
                                     )}
+                                />
                             </TableCell>
                             <TableCell>
                                 <ProgressIndicator title="Overall Progress" progressableItem={{

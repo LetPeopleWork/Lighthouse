@@ -10,7 +10,7 @@ export interface ITeamService {
     getTeamSettings(id: number): Promise<ITeamSettings>;
     updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
     createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
-    updateThroughput(teamId: number): Promise<void>;
+    updateTeamData(teamId: number): Promise<void>;
     getThroughput(teamId: number): Promise<Throughput>;
 }
 
@@ -57,7 +57,7 @@ export class TeamService extends BaseApiService implements ITeamService {
         });
     }
 
-    async updateThroughput(teamId: number): Promise<void> {
+    async updateTeamData(teamId: number): Promise<void> {
         return this.withErrorHandling(async () => {
             await this.apiService.post<void>(`/teams/${teamId}`);
         });

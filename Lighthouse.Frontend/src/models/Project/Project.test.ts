@@ -15,15 +15,15 @@ describe('Project Class', () => {
     beforeEach(() => {
         name = 'New Project';
         id = 1;
-        involvedTeams = [new Team('Team A', 1, [], [], 2, 3, new Date()), new Team('Team B', 2, [], [], 1, 1, new Date())];
+        involvedTeams = [new Team('Team A', 1, [], [], 2, ["FTR-1", "FTR-2"], new Date()), new Team('Team B', 2, [], [], 1, ["FTR-2"], new Date())];
         lastUpdated = new Date('2023-07-11');
 
         const milestone = new Milestone(0, "Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60));
 
-        const feature1 = new Feature('Feature 1', 1, "", new Date('2023-07-10'), false, { 1: name }, { 1: 10, 2: 20 }, {1: 10, 2: 20}, { 0: 88.7 }, [
+        const feature1 = new Feature('Feature 1', 1, "FTR-1", "", new Date('2023-07-10'), false, { 1: name }, { 1: 10, 2: 20 }, {1: 10, 2: 20}, { 0: 88.7 }, [
             new WhenForecast(0.8, new Date('2023-08-01')),
         ]);
-        const feature2 = new Feature('Feature 2', 2, "", new Date('2023-07-09'), true, { 1: name }, { 1: 5, 2: 15 }, {1: 5, 2: 15}, { 0: 54.3 }, [
+        const feature2 = new Feature('Feature 2', 2, "FTR-2", "", new Date('2023-07-09'), true, { 1: name }, { 1: 5, 2: 15 }, {1: 5, 2: 15}, { 0: 54.3 }, [
             new WhenForecast(0.6, new Date('2023-09-01')),
         ]);
 

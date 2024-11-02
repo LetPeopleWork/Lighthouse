@@ -18,15 +18,15 @@ describe('Team Class', () => {
         const project2 = new Project('Project 2', 2, [], [], [], new Date('2023-07-10'));
         projects = [project1, project2];
 
-        const feature1 = new Feature('Feature 1', 1, "", new Date('2023-07-10'), false, { 1: "Project 1" }, { 1: 10, 2: 20 }, { 1: 10, 2: 20 }, {}, [
+        const feature1 = new Feature('Feature 1', 1, "FTR-1", "", new Date('2023-07-10'), false, { 1: "Project 1" }, { 1: 10, 2: 20 }, { 1: 10, 2: 20 }, {}, [
             new WhenForecast(0.8, new Date('2023-08-01')),
         ]);
-        const feature2 = new Feature('Feature 2', 2, "", new Date('2023-07-09'), true, { 2: "Project 2" }, { 1: 5, 2: 15 }, { 1: 5, 2: 15 }, {}, [
+        const feature2 = new Feature('Feature 2', 2, "FTR-2", "", new Date('2023-07-09'), true, { 2: "Project 2" }, { 1: 5, 2: 15 }, { 1: 5, 2: 15 }, {}, [
             new WhenForecast(0.6, new Date('2023-09-01')),
         ]);
         features = [feature1, feature2];
 
-        team = new Team(name, id, projects, features, 1, 1, new Date());
+        team = new Team(name, id, projects, features, 1, ["FTR-1"], new Date());
     });
 
     it('should create an instance of Team correctly', () => {

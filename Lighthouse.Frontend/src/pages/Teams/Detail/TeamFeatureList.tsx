@@ -5,6 +5,7 @@ import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDispla
 import { Team } from "../../../models/Team/Team";
 import { Link } from "react-router-dom";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
+import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 
 interface FeatureListProps {
     team: Team
@@ -37,13 +38,12 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
                     {team?.features.map((feature) => (
                         <TableRow key={feature.id}>
                             <TableCell>
-                                {feature.url ? (
-                                    <Link to={feature.url} target="_blank" rel="noopener noreferrer">
-                                        {feature.name}
-                                    </Link>
-                                ) : (
-                                    feature.name
-                                )}
+                                <FeatureName
+                                    name={feature.name}
+                                    url={feature.url ?? ""}
+                                    isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
+                                    teamsWorkIngOnFeature={team.featuresInProgress.includes(feature.featureReference) ? [team] : []}
+                                />
                             </TableCell>
                             <TableCell>
                                 <ProgressIndicator title="Total" progressableItem={{

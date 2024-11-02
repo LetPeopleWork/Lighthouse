@@ -139,7 +139,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         }
     }
 
-    async updateThroughput(teamId: number): Promise<void> {
+    async updateTeamData(teamId: number): Promise<void> {
         console.log(`Updating Throughput for Team ${teamId}`);
 
         await this.delay();
@@ -514,10 +514,10 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
 
     recreateTeams(): void {
         this.teams = [
-            new Team("Binary Blazers", 0, [], [this.features[0], this.features[3]], 1, 2, new Date()),
-            new Team("Mavericks", 1, [], [this.features[1], this.features[2]], 2, 2, new Date()),
-            new Team("Cyber Sultans", 2, [], [this.features[2]], 1, 3, new Date()),
-            new Team("Tech Eagles", 3, [], [this.features[3]], 2, 2, new Date())
+            new Team("Binary Blazers", 0, [], [this.features[0], this.features[3]], 1, ["FTR-1", "FTR-3"], new Date()),
+            new Team("Mavericks", 1, [], [this.features[1], this.features[2]], 2, ["FTR-2", "FTR-3"], new Date()),
+            new Team("Cyber Sultans", 2, [], [this.features[2]], 1, ["FTR-3"], new Date()),
+            new Team("Tech Eagles", 3, [], [this.features[3]], 2, ["FTR-4"], new Date())
         ]
     }
 
@@ -533,10 +533,10 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         }
 
         this.features = [
-            new Feature('Feature 1', 0, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/1", new Date(), false, { 0: "Release 1.33.7" }, { 0: 10 }, { 0: 15 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 5 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 10 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 17 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 25 * this.dayMultiplier))]),
-            new Feature('Feature 2', 1, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/2", new Date(), false, { 1: "Release 42" }, { 1: 5 }, { 1: 5 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 15 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 28 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 35 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 45 * this.dayMultiplier))]),
-            new Feature('Feature 3', 2, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/3", new Date(), true, { 2: "Release Codename Daniel" }, { 2: 7, 1: 15 }, { 2: 10, 1: 25 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 7 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 12 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 14 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 16 * this.dayMultiplier))]),
-            new Feature('Feature 4', 3, "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/4", new Date(), false, { 2: "Release Codename Daniel", 1: "Release 1.33.7" }, { 0: 3, 3: 9 }, { 0: 12, 3: 10 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 21 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 37 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 55 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 71 * this.dayMultiplier))]),
+            new Feature('Feature 1', 0, "FTR-1", "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/1", new Date(), false, { 0: "Release 1.33.7" }, { 0: 10 }, { 0: 15 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 5 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 10 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 17 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 25 * this.dayMultiplier))]),
+            new Feature('Feature 2', 1, "FTR-2", "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/2", new Date(), false, { 1: "Release 42" }, { 1: 5 }, { 1: 5 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 15 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 28 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 35 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 45 * this.dayMultiplier))]),
+            new Feature('Feature 3', 2, "FTR-3", "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/3", new Date(), true, { 2: "Release Codename Daniel" }, { 2: 7, 1: 15 }, { 2: 10, 1: 25 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 7 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 12 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 14 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 16 * this.dayMultiplier))]),
+            new Feature('Feature 4', 3, "FTR-4", "https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/4", new Date(), false, { 2: "Release Codename Daniel", 1: "Release 1.33.7" }, { 0: 3, 3: 9 }, { 0: 12, 3: 10 }, getMileStoneLikelihoods(), [new WhenForecast(50, new Date(this.today + 21 * this.dayMultiplier)), new WhenForecast(70, new Date(this.today + 37 * this.dayMultiplier)), new WhenForecast(85, new Date(this.today + 55 * this.dayMultiplier)), new WhenForecast(95, new Date(this.today + 71 * this.dayMultiplier))]),
         ];
     }
 

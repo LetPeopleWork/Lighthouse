@@ -71,12 +71,13 @@ const TeamDetail: React.FC = () => {
         }
 
         try {
-            await teamService.updateThroughput(team.id);
+            await teamService.updateTeamData(team.id);
         } catch (error) {
             console.error('Error updating throughput:', error);
             setHasError(true);
         }
 
+        fetchTeam();
         fetchThroughput();
     };
 
@@ -116,7 +117,7 @@ const TeamDetail: React.FC = () => {
                             <Typography variant='h3'>{team.name}</Typography>                            
 
                             <Typography variant='h6'>
-                                Currently working on {team.actualFeatureWip} Features in parallel
+                                Currently working on {team.featuresInProgress.length} Features in parallel
                             </Typography>
 
                             <Typography variant='h6'>

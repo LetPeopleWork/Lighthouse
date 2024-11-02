@@ -29,11 +29,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var featuresInProgress = await workItemService.GetFeaturesInProgressForTeam(team);
 
-            var featureWIP = featuresInProgress.Distinct().Count();
-            team.ActualFeatureWIP = featureWIP;
+            var featureReferences = featuresInProgress.Distinct();
+            team.SetFeaturesInProgress(featureReferences);
 
-            logger.LogDebug("Following Features are In Progress: {Features}", string.Join(",", featureWIP));
-            logger.LogInformation("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureWIP);
+            logger.LogDebug("Following Features are In Progress: {Features}", string.Join(",", featureReferences));
+            logger.LogInformation("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count());
         }
 
         private async Task UpdateThroughputForTeam(Team team, IWorkItemService workItemService)

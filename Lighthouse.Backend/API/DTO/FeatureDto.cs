@@ -8,6 +8,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             Name = feature.Name;
             Id = feature.Id;
+            FeatureReference = feature.ReferenceId;
             Url = feature.Url;
             LastUpdated = feature.Forecast?.CreationTime ?? DateTime.MinValue;
 
@@ -42,6 +43,8 @@ namespace Lighthouse.Backend.API.DTO
         public string Name { get; set; }
 
         public int Id { get; set; }
+
+        public string FeatureReference { get; set; }
 
         public string Url { get; set; }
 

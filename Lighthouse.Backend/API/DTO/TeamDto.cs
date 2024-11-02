@@ -9,8 +9,8 @@ namespace Lighthouse.Backend.API.DTO
             Name = team.Name;
             Id = team.Id;
             FeatureWip = team.FeatureWIP;
-            ActualFeatureWip = team.ActualFeatureWIP;
             LastUpdated = team.TeamUpdateTime;
+            FeaturesInProgress = team.FeaturesInProgress;
         }
 
         public string Name { get; set; }
@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public int FeatureWip { get; set; }
 
-        public int ActualFeatureWip { get; set; }
+        public List<string> FeaturesInProgress { get; } = new List<string>();
 
         public DateTime LastUpdated { get; set; }
 

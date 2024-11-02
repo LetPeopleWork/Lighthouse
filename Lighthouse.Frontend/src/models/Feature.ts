@@ -3,6 +3,7 @@ import { IWhenForecast } from "./Forecasts/WhenForecast";
 export interface IFeature {
     name: string;
     id: number;
+    featureReference: string;
     url: string | null;
     lastUpdated: Date;
     isUsingDefaultFeatureSize: boolean;
@@ -21,6 +22,7 @@ export interface DictionaryObject<TValue> {
 export class Feature implements IFeature {
     name!: string;
     id!: number;
+    featureReference!: string;
     url: string | null;
     lastUpdated!: Date;
     isUsingDefaultFeatureSize!: boolean;
@@ -30,9 +32,10 @@ export class Feature implements IFeature {
     milestoneLikelihood: DictionaryObject<number>;
     forecasts!: IWhenForecast[];
 
-    constructor(name: string, id: number, url: string | null, lastUpdated: Date, isUsingDefaultFeatureSize: boolean, projects: DictionaryObject<string>, remainingWork: DictionaryObject<number>, totalWork: { [key: number]: number }, milestoneLikelihood: DictionaryObject<number>, forecasts: IWhenForecast[]) {
+    constructor(name: string, id: number, featureReference: string, url: string | null, lastUpdated: Date, isUsingDefaultFeatureSize: boolean, projects: DictionaryObject<string>, remainingWork: DictionaryObject<number>, totalWork: { [key: number]: number }, milestoneLikelihood: DictionaryObject<number>, forecasts: IWhenForecast[]) {
         this.name = name;
         this.id = id;
+        this.featureReference = featureReference;
         this.url = url;
         this.lastUpdated = lastUpdated;
         this.isUsingDefaultFeatureSize = isUsingDefaultFeatureSize;

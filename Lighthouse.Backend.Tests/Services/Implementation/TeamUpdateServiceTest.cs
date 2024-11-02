@@ -55,13 +55,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [TestCase(new[] { "12" }, 1)]
-        [TestCase(new[] { "" }, 1)]
-        [TestCase(new[] { "12", "12" }, 1)]
-        [TestCase(new[] { "12", "" }, 2)]
-        [TestCase(new[] { "12", "123", "34", "231324" }, 4)]
-        [TestCase(new string[0] , 0)]
-        public async Task UpdateTeam_GetsOpenItemsFromWorkItemService_SetsActualWip(string[] inProgressFeatures, int expectedActaulFeatureWIP)
+        [TestCase(new[] { "12" }, new[] { "12" })]
+        [TestCase(new[] { "" }, new[] { "" })]
+        [TestCase(new[] { "12", "12" }, new[] { "12" })]
+        [TestCase(new[] { "12", "" }, new[] { "12", "" })]
+        [TestCase(new[] { "12", "123", "34", "231324" }, new[] { "12", "123", "34", "231324" })]
+        [TestCase(new string[0], new string[0])]
+        public async Task UpdateTeam_GetsOpenItemsFromWorkItemService_SetsActualWip(string[] inProgressFeatures, string[] expectedFeaturesInProgress)
         {
             workItemServiceMock.Setup(x => x.GetFeaturesInProgressForTeam(team)).ReturnsAsync(inProgressFeatures);
 
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.UpdateTeam(team);
 
-            Assert.That(team.ActualFeatureWIP, Is.EqualTo(expectedActaulFeatureWIP));
+            Assert.That(team.FeaturesInProgress, Is.EquivalentTo(expectedFeaturesInProgress));
         }
 
         private TeamUpdateService CreateSubject()

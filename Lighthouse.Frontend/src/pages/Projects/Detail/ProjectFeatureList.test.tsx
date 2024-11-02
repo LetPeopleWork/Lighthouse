@@ -12,8 +12,8 @@ import { Project } from '../../../models/Project/Project';
 vi.mock('../../../components/Common/Forecasts/ForecastInfoList', () => ({
     default: ({ title, forecasts }: { title: string; forecasts: IForecast[] }) => (
         <div data-testid={`forecast-info-list-${title}`}>
-            {forecasts.map((forecast: IForecast, index: number) => (
-                <div key={index}>{forecast.probability}%</div>
+            {forecasts.map((forecast: IForecast) => (
+                <div key={forecast.probability}>{forecast.probability}%</div>
             ))}
         </div>
     ),
@@ -28,14 +28,14 @@ vi.mock('../../../components/Common/Forecasts/ForecastLikelihood', () => ({
 }));
 
 describe('ProjectFeatureList component', () => {
-    const team1: Team = new Team('Team A', 1, [], [], 1, 1, new Date());
-    const team2: Team = new Team('Team B', 2, [], [], 1, 2, new Date());
+    const team1: Team = new Team('Team A', 1, [], [], 1, ["FTR-1"], new Date());
+    const team2: Team = new Team('Team B', 2, [], [], 1, ["FTR-1"], new Date());
 
     const milestone1: Milestone = new Milestone(1, 'Milestone 1', new Date('2023-07-01'));
     const milestone2: Milestone = new Milestone(2, 'Milestone 2', new Date('2023-08-01'));
 
-    const feature1: Feature = new Feature('Feature 1', 1, "", new Date(), false, { 10: '' }, { 1: 5, 2: 5 }, { 1: 5, 2: 5 }, {}, [new WhenForecast(80, new Date())]);
-    const feature2: Feature = new Feature('Feature 2', 2, "", new Date(), true, { 15: '' }, { 1: 10, 2: 5 }, { 1: 10, 2: 5 }, {}, [new WhenForecast(60, new Date())]);
+    const feature1: Feature = new Feature('Feature 1', 1, "FTR-1", "", new Date(), false, { 10: '' }, { 1: 5, 2: 5 }, { 1: 5, 2: 5 }, {}, [new WhenForecast(80, new Date())]);
+    const feature2: Feature = new Feature('Feature 2', 2, "FTR-2", "", new Date(), true, { 15: '' }, { 1: 10, 2: 5 }, { 1: 10, 2: 5 }, {}, [new WhenForecast(60, new Date())]);
 
     const project: Project = new Project('Project 1', 1, [team1, team2], [feature1, feature2], [milestone1, milestone2], new Date());
 

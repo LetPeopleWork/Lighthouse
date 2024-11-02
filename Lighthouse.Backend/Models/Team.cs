@@ -8,7 +8,7 @@
 
         public int FeatureWIP { get; set; } = 1;
 
-        public int ActualFeatureWIP { get; set; }
+        public List<string> FeaturesInProgress { get; set; } = new List<string>();
 
         public string? AdditionalRelatedField { get; set; } = string.Empty;
 
@@ -26,6 +26,12 @@
         {
             RawThroughput = throughput;
             TeamUpdateTime = DateTime.UtcNow;
+        }
+
+        public void SetFeaturesInProgress(IEnumerable<string> featureReferences)
+        {
+            FeaturesInProgress.Clear();
+            FeaturesInProgress.AddRange(featureReferences);
         }
     }
 }

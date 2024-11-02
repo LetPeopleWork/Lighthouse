@@ -5,6 +5,7 @@ describe('Feature Class', () => {
     let feature: Feature;
     let name: string;
     let id: number;
+    let referenceId: string;
     let lastUpdated: Date;
     let remainingWork: { [key: number]: number };    
     let totalWork: { [key: number]: number };
@@ -14,6 +15,7 @@ describe('Feature Class', () => {
     beforeEach(() => {
         name = 'New Feature';
         id = 1;
+        referenceId = "FTR-1";
         lastUpdated = new Date('2023-07-11');
         remainingWork = { 1: 10, 2: 20, 3: 30 };
         totalWork = { 1: 15, 2: 20, 3: 45 }
@@ -22,12 +24,13 @@ describe('Feature Class', () => {
             new WhenForecast(0.8, new Date('2023-08-01')),
             new WhenForecast(0.6, new Date('2023-09-01')),
         ];
-        feature = new Feature(name, id, "", lastUpdated, false, { 0: "Project" }, remainingWork, totalWork, milestoneLikelihood, forecasts);
+        feature = new Feature(name, id, referenceId, "", lastUpdated, false, { 0: "Project" }, remainingWork, totalWork, milestoneLikelihood, forecasts);
     });
 
     it('should create an instance of Feature correctly', () => {
         expect(feature.name).toBe(name);
         expect(feature.id).toBe(id);
+        expect(feature.featureReference).toBe(referenceId);
         expect(feature.lastUpdated).toBe(lastUpdated);
         expect(feature.remainingWork).toEqual(remainingWork);
         expect(feature.forecasts).toEqual(forecasts);

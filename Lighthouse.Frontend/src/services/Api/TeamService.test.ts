@@ -24,8 +24,8 @@ describe('TeamService', () => {
         const date = new Date();
 
         const mockResponse: ITeam[] = [
-            new Team("Team A", 1, [], [], 1, 1, date),
-            new Team("Team B", 2, [], [], 1, 2, date),
+            new Team("Team A", 1, [], [], 1, ["1"], date),
+            new Team("Team B", 2, [], [], 1, ["2"], date),
         ];
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -33,21 +33,21 @@ describe('TeamService', () => {
         const teams = await teamService.getTeams();
 
         expect(teams).toEqual([            
-            new Team("Team A", 1, [], [], 1, 1, date),
-            new Team("Team B", 2, [], [], 1, 2, date),
+            new Team("Team A", 1, [], [], 1, ["1"], date),
+            new Team("Team B", 2, [], [], 1, ["2"], date),
         ]);
         expect(mockedAxios.get).toHaveBeenCalledWith('/teams');
     });
 
     it('should get a single team by id', async () => {
         const date = new Date();
-        const mockResponse: ITeam = new Team("Team A", 1, [], [], 1, 2, date);
+        const mockResponse: ITeam = new Team("Team A", 1, [], [], 1, ["2"], date);
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
         const team = await teamService.getTeam(1);
 
-        expect(team).toEqual(new Team("Team A", 1, [], [], 1, 2, date));
+        expect(team).toEqual(new Team("Team A", 1, [], [], 1, ["2"], date));
         expect(mockedAxios.get).toHaveBeenCalledWith('/teams/1');
     });
 
@@ -141,7 +141,7 @@ describe('TeamService', () => {
     it('should update throughput for a team', async () => {
         mockedAxios.post.mockResolvedValueOnce({});
 
-        await teamService.updateThroughput(1);
+        await teamService.updateTeamData(1);
 
         expect(mockedAxios.post).toHaveBeenCalledWith('/teams/1');
     });
