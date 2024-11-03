@@ -25,7 +25,7 @@
     "@mui/x-date-pickers": "^7.22.0",
     "@syncfusion/ej2": "^27.1.57",
     "@syncfusion/ej2-base": "^27.1.50",
-    "@syncfusion/ej2-react-charts": "^27.1.50",
+    "@syncfusion/ej2-react-charts": "^27.1.57",
     "axios": "^1.7.4",
     "dayjs": "^1.11.12",
     "lodash.debounce": "^4.0.8",
