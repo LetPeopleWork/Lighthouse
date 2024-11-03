@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,14 +13,24 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Feature> featureRepository;
+        private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
         private readonly ITeamUpdateService teamUpdateService;
+        private readonly IWorkItemServiceFactory workItemServiceFactory;
 
-        public TeamsController(IRepository<Team> teamRepository, IRepository<Project> projectRepository, IRepository<Feature> featureRepository, ITeamUpdateService teamUpdateService)
+        public TeamsController(
+            IRepository<Team> teamRepository,
+            IRepository<Project> projectRepository,
+            IRepository<Feature> featureRepository,
+            IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
+            ITeamUpdateService teamUpdateService,
+            IWorkItemServiceFactory workItemServiceFactory)
         {
             this.teamRepository = teamRepository;
             this.projectRepository = projectRepository;
             this.featureRepository = featureRepository;
+            this.workTrackingSystemConnectionRepository = workTrackingSystemConnectionRepository;
             this.teamUpdateService = teamUpdateService;
+            this.workItemServiceFactory = workItemServiceFactory;
         }
 
         [HttpGet]
@@ -141,6 +151,26 @@ namespace Lighthouse.Backend.API
             var teamSettingDto = new TeamSettingDto(team);
 
             return Ok(teamSettingDto);
+        }
+
+        [HttpPost("validate")]
+        public async Task<ActionResult<bool>> ValidateTeamSettings(TeamSettingDto teamSettingDto)
+        {
+            var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(teamSettingDto.WorkTrackingSystemConnectionId);
+
+            if (workTrackingSystem == null)
+            {
+                return NotFound();
+            }
+
+            var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
+            SyncTeamWithTeamSettings(team, teamSettingDto);
+
+            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+
+            var result = await workItemService.ValidateTeamSettings(team);
+
+            return Ok(result);
         }
 
         private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)

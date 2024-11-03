@@ -1,7 +1,9 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.WorkTracking;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -12,8 +14,10 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
 
         private Mock<ITeamUpdateService> teamUpdateServiceMock;
+        private Mock<IWorkItemServiceFactory> workItemServiceFactoryMock;
 
         [SetUp]
         public void Setup()
@@ -21,8 +25,10 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock = new Mock<IRepository<Team>>();
             projectRepositoryMock = new Mock<IRepository<Project>>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
+            workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
 
             teamUpdateServiceMock = new Mock<ITeamUpdateService>();
+            workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
         }
 
         [Test]
@@ -440,6 +446,55 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task ValidateTeamSettings_GivenTeamSettings_ReturnsResultFromWorkItemService(bool expectedResult)
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            var teamSettings = new TeamSettingDto { WorkTrackingSystemConnectionId = 1886 };
+
+            var workItemServiceMock = new Mock<IWorkItemService>();
+            workTrackingSystemConnectionRepositoryMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
+            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workItemServiceMock.Object);            
+            workItemServiceMock.Setup(x => x.ValidateTeamSettings(It.IsAny<Team>())).ReturnsAsync(expectedResult);
+
+            var subject = CreateSubject();
+
+            var response = await subject.ValidateTeamSettings(teamSettings);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                
+                var okObjectResult = response.Result as OkObjectResult;
+                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
+
+                var value = okObjectResult.Value;
+                Assert.That(value, Is.EqualTo(expectedResult));
+            });
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_WorkTrackingSystemNotFound_ReturnsNotFound()
+        {
+            var teamSettings = new TeamSettingDto { WorkTrackingSystemConnectionId = 1886 };
+
+            workTrackingSystemConnectionRepositoryMock.Setup(x => x.GetById(1886)).Returns((WorkTrackingSystemConnection)null);            
+
+            var subject = CreateSubject();
+
+            var response = await subject.ValidateTeamSettings(teamSettings);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+                
+                var okObjectResult = response.Result as NotFoundResult;
+                Assert.That(okObjectResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
         private Team CreateTeam(int id, string name)
         {
             return new Team { Id = id, Name = name };
@@ -468,7 +523,7 @@ namespace Lighthouse.Backend.Tests.API
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
-            return new TeamsController(teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, teamUpdateServiceMock.Object);
+            return new TeamsController(teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workItemServiceFactoryMock.Object);
         }
     }
 }

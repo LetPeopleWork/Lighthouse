@@ -236,6 +236,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
+        public Task<bool> ValidateTeamSettings(Team team)
+        {
+            return Task.FromResult(false);
+        }
+
         public async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
         {
             if (string.IsNullOrEmpty(project.SizeEstimateField))

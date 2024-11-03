@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public int FeatureWip { get; set; }
 
-        public List<string> FeaturesInProgress { get; } = new List<string>();
+        public List<string> FeaturesInProgress { get; }
 
         public DateTime LastUpdated { get; set; }
 
