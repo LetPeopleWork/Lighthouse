@@ -15,7 +15,7 @@
     "sonarreport": "vitest run --coverage --reporter=vitest-sonar-reporter --outputFile=./sonar-report.xml"
   },
   "dependencies": {
-    "@emotion/react": "^11.13.3",
+    "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.0",
     "@melloware/react-logviewer": "^5.3.2",
     "@mui/icons-material": "^5.16.7",
