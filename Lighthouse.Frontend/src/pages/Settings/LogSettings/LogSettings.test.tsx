@@ -27,7 +27,7 @@ const MockApiServiceProvider = ({ children }: { children: React.ReactNode }) => 
     );
 };
 
-describe('LogSettings Component', () => {
+describe('LogSettings', () => {
     let originalCreateObjectURL: typeof URL.createObjectURL;
     let originalAppendChild: typeof document.body.appendChild;
     let originalRemoveChild: typeof document.body.removeChild;
