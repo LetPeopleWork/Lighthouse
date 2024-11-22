@@ -9,4 +9,4 @@ class MockResizeObserver {
     disconnect() { /* Just declared to fulfill the interface */ }
   }
   
-  global.ResizeObserver = MockResizeObserver as any;
+  global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
