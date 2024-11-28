@@ -18,7 +18,7 @@
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
     "@melloware/react-logviewer": "^6.0.3",
-    "@mui/icons-material": "^5.16.7",
+    "@mui/icons-material": "^6.1.9",
     "@mui/lab": "^5.0.0-alpha.173",
     "@mui/material": "^5.16.7",
     "@mui/x-charts": "^7.22.3",
