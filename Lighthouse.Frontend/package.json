@@ -31,7 +31,7 @@
     "lodash.debounce": "^4.0.8",
     "lorem-ipsum": "^2.0.8",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.0.0",
     "react-markdown": "^9.0.1",
     "react-router-dom": "^7.0.2",
     "remark-gfm": "^4.0.0"
@@ -46,7 +46,7 @@
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^22.10.1",
     "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react-dom": "^19.0.2",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
     "@vitejs/plugin-react": "^4.3.4",
