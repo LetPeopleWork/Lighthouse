@@ -19,7 +19,7 @@
     "@emotion/styled": "^11.13.5",
     "@melloware/react-logviewer": "^6.1.0",
     "@mui/icons-material": "^6.2.0",
-    "@mui/lab": "^6.0.0-beta.18",
+    "@mui/lab": "^6.0.0-beta.19",
     "@mui/material": "^6.2.0",
     "@mui/x-charts": "^7.23.1",
     "@mui/x-date-pickers": "^7.23.1",
