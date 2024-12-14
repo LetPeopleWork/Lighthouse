@@ -53,7 +53,7 @@ describe('SampleFrequencySelector component', () => {
     test.each(defaultDisplayFrequencyTestCases)(
         'should switch to selected frequency for $sampleEveryNthDay',
         async ({ sampleEveryNthDay, expectedText }) => {
-            render(<SampleFrequencySelector sampleEveryNthDay={42} onSampleEveryNthDayChange={onSampleEveryNthDayChange} />);
+            render(<SampleFrequencySelector sampleEveryNthDay={7} onSampleEveryNthDayChange={onSampleEveryNthDayChange} />);
             const dropdown = within(await screen.findByTestId("frequency-select")).getByRole('combobox');
             await userEvent.click(dropdown);
 
@@ -86,8 +86,8 @@ describe('SampleFrequencySelector component', () => {
 
         expect(screen.getByText("Custom")).toBeInTheDocument();
         const customValue = screen.getByLabelText("Custom Sampling Interval (Days)");
-        fireEvent.change(customValue, { target: { value: '42' } })
+        fireEvent.change(customValue, { target: { value: '7' } })
 
-        expect(onSampleEveryNthDayChange).toHaveBeenCalledWith(42);
+        expect(onSampleEveryNthDayChange).toHaveBeenCalledWith(7);
     });
 });
