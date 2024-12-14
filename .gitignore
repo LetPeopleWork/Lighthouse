@@ -405,3 +405,4 @@ FodyWeavers.xsd
 Lighthouse.Frontend/sonar-report.xml
 Lighthouse.Frontend/coverage/*
 /Lighthouse.Backend/wwwroot/index.html
+.idea/*
