@@ -5,7 +5,7 @@ import App from './App.tsx'
 import { createTheme, ThemeOptions, ThemeProvider } from '@mui/material/styles';
 import { registerLicense } from '@syncfusion/ej2-base';
 
-registerLicense('ORg4AjUWIQA/Gnt2UlhhQlVMfV5AQmBIYVp/TGpJfl96cVxMZVVBJAtUQF1hTX9Td0RjUHxcc3xTQ2Bd');
+registerLicense('Ngo9BigBOggjHTQxAR8/V1NMaF5cXmBCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH1fdHRTQmFcVENwXUo=');
 
 const themeOptions: ThemeOptions = createTheme({
     palette: {
