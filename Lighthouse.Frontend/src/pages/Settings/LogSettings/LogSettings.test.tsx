@@ -74,14 +74,23 @@ describe('LogSettings', () => {
                 <LogSettings />
             </MockApiServiceProvider>
         );
-
+    
+        // Wait for initial data to load
         await waitFor(() => {
-            const select = screen.getByTestId("select-id")
-            fireEvent.change(select, { target: { value: 'warn' } });
-
+            expect(mockGetLogs).toHaveBeenCalled();
+            expect(mockGetLogLevel).toHaveBeenCalled();
+            expect(mockGetSupportedLogLevels).toHaveBeenCalled();
+        });
+    
+        // Fire event to change the select value
+        const select = screen.getByTestId("select-id");
+        fireEvent.change(select, { target: { value: 'warn' } });
+    
+        // Wait for the mockSetLogLevel to be called
+        await waitFor(() => {
             expect(mockSetLogLevel).toHaveBeenCalledWith('warn');
         });
-    });
+    });    
 
     it('refreshes logs when refresh button is clicked', () => {
         render(
