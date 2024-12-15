@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private async Task ExtrapolateNotBrokenDownFeatures(Project project)
         {
-            foreach (var feature in project.Features.Where(f => project.OverrideRealChildCountStates.Contains(f.State)))
+            foreach (var feature in project.Features.Where(f => !f.IsUnparentedFeature && project.OverrideRealChildCountStates.Contains(f.State)))
             {
                 feature.ClearFeatureWork();
             }
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            foreach (var feature in project.Features.Where(feature => feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0))
+            foreach (var feature in project.Features.Where(feature => !feature.IsUnparentedFeature && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0))
             {
                 logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
                 feature.IsUsingDefaultFeatureSize = true;
@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private Feature GetOrAddUnparentedFeature(Project project)
         {
-            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = $"{int.MaxValue - 1}", IsUnparentedFeature = true };
+            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = $"{int.MaxValue - 1}", IsUnparentedFeature = true, State = "In Progress" };
             unparentedFeature.Projects.Add(project);
 
             var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;

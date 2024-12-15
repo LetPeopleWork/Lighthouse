@@ -461,17 +461,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_UnparentedItems_CreatesDummyFeatureForUnparented()
+        [TestCase(new[] { "12", "1337", "42" }, new string[0], 3)]
+        [TestCase(new[] { "12", "1337", "42" }, new string[] { "In Progress" }, 3)]
+        public async Task CollectFeaturesForProject_UnparentedItems_CreatesDummyFeatureForUnparented(string[] unparentedItems, string[] overrideStates, int expectedItems)
         {
             var expectedUnparentedOrder = "123";
             var team = CreateTeam();
             SetupTeams(team);
 
             var project = CreateProject();
+            project.OverrideRealChildCountStates.AddRange(overrideStates);
 
             project.UnparentedItemsQuery = "[System.Tags] CONTAINS Release 123";
-
-            var unparentedItems = new string[] { "12", "1337", "42" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string>()));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(It.IsAny<string>(), It.IsAny<Team>())).Returns(Task.FromResult((0, 12)));
@@ -485,7 +486,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.Multiple(() =>
             {
                 Assert.That(actualFeature.Name, Is.EqualTo("Release 1 - Unparented"));
-                Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(unparentedItems.Length));
+                Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(expectedItems));
                 Assert.That(actualFeature.Order, Is.EqualTo(expectedUnparentedOrder));
             });
         }
