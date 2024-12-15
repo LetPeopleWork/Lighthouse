@@ -63,5 +63,7 @@
         public const string ProjectSettingHistoricalFeaturesWorkItemQuery = "DefaultProjectSetting:HistoricalFeaturesWorkItemQuery";
 
         public const string ProjectSettingSizeEstimateField = "DefaultProjectSetting:SizeEstimateField";
+
+        public const string CleanUpDataHistorySettingsMaxStorageTimeInDays = "CleanUpDataHistorySettings:MaxStorageTimeInDays";
     }
 }

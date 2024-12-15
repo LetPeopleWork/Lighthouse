@@ -208,6 +208,23 @@ namespace Lighthouse.Backend.Services.Implementation
             await repository.Save();
         }
 
+        public CleanUpDataHistorySettings GetCleanUpDataHistorySettings()
+        {
+            return new CleanUpDataHistorySettings
+            {
+                MaxStorageTimeInDays = int.Parse(GetSettingByKey(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays).Value)
+            };
+        }
+
+        public async Task UpdateCleanUpDataHistorySetting(CleanUpDataHistorySettings cleanUpDataHistorySettings)
+        {
+            var maxStorageTimeInDays = GetSettingByKey(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays);
+            maxStorageTimeInDays.Value = cleanUpDataHistorySettings.MaxStorageTimeInDays.ToString();
+            repository.Update(maxStorageTimeInDays);
+
+            await repository.Save();
+        }
+
         private async Task UpdateRefreshSettingsAsync(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)
         {
             var interval = GetSettingByKey(intervalKey);

@@ -315,6 +315,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.Throws<ArgumentNullException>(() => service.GetFeaturRefreshSettings());
         }
 
+        [Test]
+        public void GetCleanUpDataHistorySettings_ReturnsCorrectSettings()
+        {
+            SetupRepositoryForKeys(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, "42");
+
+            var service = CreateService();
+
+            var settings = service.GetCleanUpDataHistorySettings();
+
+            Assert.That(settings.MaxStorageTimeInDays, Is.EqualTo(42));
+        }
+
+        [Test]
+        public async Task UpdateCleanUpDataHistorySettings_UpdatesCorrectlyAsync()
+        {
+            SetupRepositoryForKeys(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, "60");
+
+            var service = CreateService();
+
+            var cleanUpDataHistorySettings = new CleanUpDataHistorySettings { MaxStorageTimeInDays = 42 };
+            await service.UpdateCleanUpDataHistorySetting(cleanUpDataHistorySettings);
+
+            VerifyUpdateCalled(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, "42");
+        }
+
         private AppSettingService CreateService()
         {
             return new AppSettingService(repositoryMock.Object);
