@@ -1,6 +1,7 @@
 import React from 'react';
 import dayjs from 'dayjs';
-import { Grid, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -28,9 +29,9 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 }) => {
     return (
         <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid  size={{ xs: 12 }}>
                 <Grid container spacing={2}>
-                    <Grid item xs={4}>
+                    <Grid  size={{ xs: 4}}>
                         <TextField
                             label="Number of Items to Forecast"
                             type="number"
@@ -39,7 +40,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
                             onChange={(e) => onRemainingItemsChange(Number(e.target.value))}
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid  size={{ xs: 4}}>
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
                                 label="Target Date"
@@ -50,28 +51,28 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
                             />
                         </LocalizationProvider>
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid  size={{ xs: 4}}>
                         <ActionButton onClickHandler={onRunManualForecast} buttonText='Forecast'  />
                     </Grid>
                 </Grid>
             </Grid>
-            <Grid item xs={12}>
+            <Grid  size={{ xs: 12 }}>
                 {manualForecastResult != null ? (
                     <Grid container spacing={2}>
-                        <Grid item xs={4}>
+                        <Grid  size={{ xs: 4}}>
                             <ForecastInfoList
                                 title={`When will ${manualForecastResult.remainingItems} items be done?`}
                                 forecasts={manualForecastResult.whenForecasts}
                             />
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid  size={{ xs: 4}}>
                             <ForecastInfoList
                                 title={`How Many Items will you get done till ${manualForecastResult.targetDate.toLocaleDateString()}?`}
                                 forecasts={manualForecastResult.howManyForecasts}
                             />
                         </Grid>
                         {manualForecastResult.likelihood > 0 && (
-                            <Grid item xs={4}>
+                            <Grid  size={{ xs: 4}}>
                                 <ForecastLikelihood
                                     remainingItems={manualForecastResult.remainingItems}
                                     targetDate={manualForecastResult.targetDate}

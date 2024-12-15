@@ -1,5 +1,6 @@
 import React from 'react';
-import { Grid, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import { Project } from '../../models/Project/Project';
 import ProjectCard from './ProjectCard';
 
@@ -24,14 +25,14 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ projects, filterText 
   return (
     <Grid container spacing={2}>
       {filteredProjects.length === 0 ? (
-        <Grid item xs={12} data-testid="no-projects-message">
+        <Grid size={{ xs: 12 }} data-testid="no-projects-message">
           <Typography variant="h6" align="center">
             No projects found matching the filter.
           </Typography>
         </Grid>
       ) : (
         filteredProjects.map((project) => (
-          <Grid item xs={12} sm={6} md={4} lg={4} key={project.id}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }} key={project.id}>
             <div style={{ width: '100%', maxWidth: 1920 }} data-testid={`project-card-${project.id}`}>
               <ProjectCard key={project.id} project={project} />
             </div>

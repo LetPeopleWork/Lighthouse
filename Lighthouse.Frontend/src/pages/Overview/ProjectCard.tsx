@@ -1,5 +1,6 @@
 import React from "react";
-import { Card, CardContent, Typography, Grid } from '@mui/material';
+import { Card, CardContent, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import { styled } from '@mui/system';
 import { Project } from "../../models/Project/Project";
 import TeamLink from "./TeamLink";
@@ -42,17 +43,17 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
     <ProjectCardStyle>
       <CardContent>
         <Grid container spacing={2}>
-          <Grid item xs={12}>
+          <Grid  size={{ xs: 12 }}>
             <ProjectLink project={project} />
           </Grid>
-          <Grid item xs={12}>
+          <Grid  size={{ xs: 12 }}>
             <ProgressIndicator title={<StyledCardTypography text={`${project.remainingWork} Work Items Remaining`} icon={ViewKanban} />} progressableItem={project} />
 
             <Typography variant="body1">
               {involvedTeamsList}
             </Typography>
           </Grid>
-          <Grid item xs={12}>
+          <Grid  size={{ xs: 12 }}>
             {featureWithLatestForecast !== undefined ? (
               <ForecastInfoList
                 title="Projected Completion"

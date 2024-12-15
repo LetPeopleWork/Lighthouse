@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { List, ListItem, Typography, IconButton, TextField, Button, Grid } from '@mui/material';
+import { List, ListItem, Typography, IconButton, TextField, Button } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import DeleteIcon from '@mui/icons-material/Delete';
 
 interface ItemListManagerProps {
@@ -30,7 +31,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 
     return (
         <Grid container spacing={3}>
-            <Grid item xs={3}>
+            <Grid size={{ xs: 3 }}>
                 <List>
                     {items.filter(item => item.trim()).map(item => (
                         <ListItem key={item}>
@@ -42,7 +43,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
                     ))}
                 </List>
             </Grid>
-            <Grid item xs={9}>
+            <Grid size={{ xs: 9}}>
                 <TextField
                     label={`New ${title}`}
                     fullWidth

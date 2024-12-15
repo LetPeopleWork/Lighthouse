@@ -15,7 +15,7 @@ const ProjectsOverview: React.FC = () => (
         description="Projects are an essential building block for using Lighthouse. You can use Projects to keep track of when a set of Features that one or more teams are working on will be done."
         imageSrc={ProjectForecast}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`A feature that sets Lighthouse apart is that you can forecast Projects where one or more teams contribute to a set of Features.
 Whether you are in a scaled setup where many teams contribute to a shared goal, or simply want to keep track on potential target dates for multiple features, you want to use a Project.
@@ -34,7 +34,7 @@ const ProjectsList: React.FC = () => (
         description="See all your configured Projects at a glance."
         imageSrc={ProjectOverview}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Once you have at least one project defined, it will appear in a grid view on the `}
                 <Link to="/projects">Teams</Link>
@@ -54,7 +54,7 @@ const DeleteProjectStep: React.FC = () => (
         description="Delete a project via the Delete button in the overview."
         imageSrc={DeleteProject}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Please be aware that deleting a project is permanent and cannot be undone. If you need the same project later, you will have to re-add it. Deleting a project removes all information about that project from Lighthouse.`}
             </Typography>
@@ -68,7 +68,7 @@ const ProjectDetailStep: React.FC = () => (
         description="Dive into the details of a specific Project."
         imageSrc={ProjectForecast}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`To see more details for a project, you can click on the project name or the info icon in the overview.
 

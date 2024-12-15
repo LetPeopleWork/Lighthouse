@@ -1,4 +1,5 @@
-import { Container, Grid, Typography, SelectChangeEvent } from "@mui/material";
+import { Container, Typography, SelectChangeEvent } from "@mui/material";
+import Grid from '@mui/material/Grid2'
 import React, { useEffect, useState } from "react";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import MilestonesComponent from "../Milestones/MilestonesComponent";
@@ -146,16 +147,16 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
 
     return (
         <LoadingAnimation isLoading={loading} hasError={false} >
-            <Container>
+            <Container maxWidth={false}>
                 <Grid container justifyContent="flex-end" spacing={2}>
-                    <Grid item>
+                    <Grid >
                         <TutorialButton
                             tutorialComponent={<ProjectConfigurationTutorial />}
                         />
                     </Grid>
                 </Grid>
                 <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <Typography variant='h4'>{title}</Typography>
                     </Grid>
 
@@ -205,7 +206,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
                         onProjectSettingsChange={handleProjectSettingsChange}
                     />
 
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <ActionButton
                             buttonVariant="contained"
                             buttonText="Save"

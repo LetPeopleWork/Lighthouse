@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Alert, Grid } from '@mui/material';
+import { Alert } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import LighthouseChart from './LighthouseChart';
 import dayjs, { Dayjs } from 'dayjs';
 import { ILighthouseChartData } from '../../../../../models/Charts/LighthouseChartData';
@@ -54,14 +55,14 @@ const LighthouseChartComponent: React.FC<LighthouseChartComponentProps> = ({ pro
         <LoadingAnimation hasError={hasError} isLoading={isLoading}>
             {chartData?.features && chartData.features.length > 0 ? (
                 <Grid container spacing={3}>
-                    <Grid item xs={6}>
+                    <Grid  size={{ xs: 6 }}>
                         <DatePickerComponent label='Burndown Start Date' value={startDate} onChange={onStartDateChanged} />
                     </Grid>
                     <SampleFrequencySelector
                         sampleEveryNthDay={sampleRate}
                         onSampleEveryNthDayChange={setSampleRate}
                     />
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <LighthouseChart data={chartData} />
                     </Grid>
                 </Grid>) : (

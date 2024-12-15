@@ -14,7 +14,7 @@ const TeamDetailOverview: React.FC = () => (
         description="Details of a Team including Forecasts"
         imageSrc={TeamDetailsVideo}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Once you have created your team, you can see all the details on this page.
                 
@@ -33,7 +33,7 @@ const Features: React.FC = () => (
         description="Which features is this team contributing to?"
         imageSrc={FeatureImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`The feature table gives you an overview of all features defined in any project this team is contributing to.
                 For each feature, you'll see the name, how much work is remaining on this feature in total and for this specific team (if multiple teams contribute to it).
@@ -52,7 +52,7 @@ const Forecasts: React.FC = () => (
         description="Answer 'How Many Items Will Be Done' and 'When Will They Be Done?'"
         imageSrc={TeamForecastImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Based on the team's throughput (see next step), you can run Monte Carlo simulations to answer two important questions for many teams and organizations.
 
@@ -73,7 +73,7 @@ const Throughput: React.FC = () => (
         description="What's the historical performance of the team?"
         imageSrc={ThroughputImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Throughput is the historical performance of the team, measured in items closed per unit of time, and is the input to any forecast done within Lighthouse.
                 

@@ -16,7 +16,7 @@ const WorkTrackingSystemsStep: React.FC = () => (
         description="How to connect to the System that hosts your Work Items?"
         imageSrc={WorkTrackingSystemsVideo}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`In order for Lighthouse to get the data it needs for forecasting, it needs to connect to your Work Tracking System.
 Work Tracking Systems are stored in the Lighthouse Settings and can be reused across Teams and Projects.
@@ -71,7 +71,7 @@ const DefaultTeamSettingsSteps: React.FC = () => (
         title="Default Team Settings"
         description="Simplify Team Creation by Adjusting the Default Values"
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`While teams might organize differently to some degree, chances are that some parts are done the same across your organization.
                 If you want to add multiple teams, it can be a time-saver if you set up the defaults for your teams here.
@@ -89,7 +89,7 @@ const DefaultProjectSettingsStep: React.FC = () => (
         title="Default Project Settings"
         description="Simplify Project Creation by Adjusting the Default Values"
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Similar to the teams, you can also set up default values for new Project creation.
                 
@@ -107,7 +107,7 @@ const PeriodicRefreshSettingsStep: React.FC = () => (
         description="Configure how frequently Lighthouse is refreshing the data"
         imageSrc={RefreshSettings}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`A key benefit of Lighthouse is the idea of continuous forecasting. In the Refresh Settings, you can specify how often Lighthouse should check for updated data on your Work Tracking System.
                 
@@ -134,7 +134,7 @@ const LogsStep: React.FC = () => (
         description="See what's going on in Detail"
         imageSrc={LogsOverview}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`While we're trying everything to make sure Lighthouse is running as flawless as possible, it's realistic that occasionally it doesn't
 

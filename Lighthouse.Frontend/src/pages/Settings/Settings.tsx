@@ -21,7 +21,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <Container>
+    <Container maxWidth={false}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <TabContext value={value}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

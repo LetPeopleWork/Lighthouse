@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { IRefreshSettings } from "../../../models/AppSettings/RefreshSettings";
-import { Container, Grid, TextField } from "@mui/material";
+import { Container, TextField } from "@mui/material";
+import Grid from '@mui/material/Grid2'
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -53,51 +54,51 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({ settingNa
 
     return (
         <LoadingAnimation isLoading={isLoading} hasError={hasError}>
-            <Container>
+            <Container maxWidth={false}>
                 <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <TextField
                             label="Interval (Minutes)"
                             type="number"
                             value={refreshSettings?.interval ?? ""}
                             onChange={handleInputChange("interval")}
                             fullWidth
-                            InputProps={{
-                                inputProps: {
+                            slotProps={{
+                                htmlInput: {
                                     min: 1
                                 }
                             }}
                         />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <TextField
                             label="Refresh After (Minutes)"
                             type="number"
                             value={refreshSettings?.refreshAfter ?? ""}
                             onChange={handleInputChange("refreshAfter")}
                             fullWidth
-                            InputProps={{
-                                inputProps: {
+                            slotProps={{
+                                htmlInput: {
                                     min: 1
                                 }
                             }}
                         />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <TextField
                             label="Start Delay (Minutes)"
                             type="number"
                             value={refreshSettings?.startDelay ?? ""}
                             onChange={handleInputChange("startDelay")}
                             fullWidth
-                            InputProps={{
-                                inputProps: {
+                            slotProps={{
+                                htmlInput: {
                                     min: 1
                                 }
                             }}
                         />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <ActionButton
                             buttonVariant="contained"
                             onClickHandler={updateSettings}

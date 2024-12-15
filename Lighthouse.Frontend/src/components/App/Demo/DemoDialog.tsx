@@ -1,5 +1,6 @@
 import React from 'react';
-import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Box, Grid, Typography } from '@mui/material';
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Box, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import { Link } from 'react-router-dom';
 import LighthouseLogo from '../LetPeopleWork/LighthouseLogo';
 import LetPeopleWorkLogo from '../LetPeopleWork/LetPeopleWorkLogo';
@@ -15,12 +16,12 @@ const DemoDialog: React.FC<DemoDialogProps> = ({ open, onClose, onDontShowAgain 
         <Dialog open={open} onClose={onClose}>
             <DialogTitle>
                 <Grid container>
-                    <Grid item xs={6}>
+                    <Grid  size={{ xs: 6 }}>
                         <Box display="flex" justifyContent="flex-start">
                             <LighthouseLogo />
                         </Box>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid  size={{ xs: 6 }}>
                         <Box display="flex" justifyContent="flex-end">
                             <LetPeopleWorkLogo />
                         </Box>

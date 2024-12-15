@@ -39,7 +39,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({ da
     };
 
     return (
-        <Container>
+        <Container maxWidth={false}>
             <Button sx={{ marginTop: 2, marginBottom: 2 }} variant="contained" color="primary" onClick={handleRedirect}>Add New</Button>
             <FilterBar filterText={filterText} onFilterTextChange={setFilterText} data-testid="filter-bar" />
             {filteredData.length === 0 ? (

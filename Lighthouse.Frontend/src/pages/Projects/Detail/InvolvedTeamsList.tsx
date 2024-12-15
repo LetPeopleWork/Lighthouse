@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Grid, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import InputGroup from '../../../components/Common/InputGroup/InputGroup';
 import { ITeamSettings } from '../../../models/Team/TeamSettings';
 
@@ -24,7 +25,7 @@ const InvolvedTeamsList: React.FC<InvolvedTeamsListProps> = ({ teams, onTeamUpda
         <InputGroup title={'Involved Teams (Feature WIP)'} initiallyExpanded={initiallyExpanded}>
             <Grid container spacing={2}>
                 {teams.map((team) => (
-                    <Grid item xs={3} key={team.id}>
+                    <Grid  size={{ xs: 3}} key={team.id}>
                         <TextField
                             variant='outlined'
                             margin='normal'
@@ -32,8 +33,8 @@ const InvolvedTeamsList: React.FC<InvolvedTeamsListProps> = ({ teams, onTeamUpda
                             type='number'
                             onChange={(e) => onTeamFeatureWIPUpdated(team, parseInt(e.target.value, 10))}
                             defaultValue={team.featureWIP}
-                            InputProps={{
-                                inputProps: {
+                            slotProps={{
+                                htmlInput: {
                                     min: 1
                                 }
                             }}

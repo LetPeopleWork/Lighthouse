@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Team } from '../../../models/Team/Team';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import dayjs from 'dayjs';
-import { Typography, Grid, Container, Button } from '@mui/material';
+import { Typography, Container, Button } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import ThroughputBarChart from './ThroughputChart';
 import { Throughput } from '../../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../../models/Forecasts/ManualForecast';
@@ -110,10 +111,10 @@ const TeamDetail: React.FC = () => {
 
     return (
         <LoadingAnimation hasError={hasError} isLoading={isLoading}>
-            <Container>
+            <Container maxWidth={false}>
                 {team == null ? (<></>) : (
                     <Grid container spacing={3}>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                             <Typography variant='h3'>{team.name}</Typography>                            
 
                             <Typography variant='h6'>
@@ -124,7 +125,7 @@ const TeamDetail: React.FC = () => {
                                 Last Updated on <LocalDateTimeDisplay utcDate={team.lastUpdated} showTime={true} />
                             </Typography>
                         </Grid>
-                        <Grid item xs={6} sx={{ display: 'flex', gap: 2 }}>
+                        <Grid size={{ xs: 6 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                             <ActionButton
                                 onClickHandler={onUpdateThroughput}
                                 buttonText="Update Team Data"

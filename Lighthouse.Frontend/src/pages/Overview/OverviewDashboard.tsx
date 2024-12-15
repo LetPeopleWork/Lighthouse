@@ -33,7 +33,7 @@ const OverviewDashboard: React.FC = () => {
 
     return (
         <LoadingAnimation isLoading={isLoading} hasError={hasError}>
-            <Container>
+            <Container maxWidth={false}>
                 <FilterBar filterText={filterText} onFilterTextChange={setFilterText} />
 
                 {projects.length === 0 ? (

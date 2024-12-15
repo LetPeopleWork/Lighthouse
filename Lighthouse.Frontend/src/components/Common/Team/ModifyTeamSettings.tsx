@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ITeamSettings } from "../../../models/Team/TeamSettings";
-import { Container, Grid, Typography, SelectChangeEvent } from "@mui/material";
+import { Container, Typography, SelectChangeEvent } from "@mui/material";
+import Grid from '@mui/material/Grid2'
 import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
 import GeneralInputsComponent from "../../../pages/Teams/Edit/GeneralInputs";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
@@ -129,16 +130,16 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
 
     return (
         <LoadingAnimation isLoading={loading} hasError={false}>
-            <Container>
+            <Container maxWidth={false}>
                 <Grid container justifyContent="flex-end" spacing={2}>
-                    <Grid item>
+                    <Grid >
                         <TutorialButton
                             tutorialComponent={<TeamConfigurationTutorial />}
                         />
                     </Grid>
                 </Grid>
                 <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <Typography variant='h4'>{title}</Typography>
                     </Grid>
 
@@ -180,7 +181,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                         onTeamSettingsChange={handleTeamSettingsChange}
                     />
 
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <ActionButton
                             buttonVariant="contained"
                             buttonText="Save"

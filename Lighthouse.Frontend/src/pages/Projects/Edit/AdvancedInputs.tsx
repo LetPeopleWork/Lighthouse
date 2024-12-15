@@ -1,5 +1,6 @@
 import React from 'react';
-import { TextField, Grid, FormControlLabel, Switch, Typography } from '@mui/material';
+import { TextField, FormControlLabel, Switch, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import InputGroup from '../../../components/Common/InputGroup/InputGroup';
 import { IProjectSettings } from '../../../models/Project/ProjectSettings';
 import ItemListManager from '../../../components/Common/ItemListManager/ItemListManager';
@@ -35,7 +36,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
     return (
         <>
             <InputGroup title={'Unparented Work Items'} initiallyExpanded={false}>
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <TextField
                         label="Unparented Work Items Query"
                         fullWidth
@@ -50,7 +51,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 
             <InputGroup title={'Default Feature Size'} initiallyExpanded={false}>
 
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <FormControlLabel
                         control={
                             <Switch
@@ -65,22 +66,22 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                 {
                     projectSettings?.usePercentileToCalculateDefaultAmountOfWorkItems ? (
                         <>
-                            <Grid item xs={12}>
+                            <Grid  size={{ xs: 12 }}>
                                 <TextField
                                     label="Feature Size Percentile"
                                     type="number"
                                     fullWidth
                                     margin="normal"
                                     value={projectSettings?.defaultWorkItemPercentile || ''}
-                                    InputProps={{
-                                        inputProps: {
+                                    slotProps={{
+                                        htmlInput: {
                                             max: 95, min: 50
                                         }
                                     }}
                                     onChange={(e) => onProjectSettingsChange('defaultWorkItemPercentile', parseInt(e.target.value, 10))}
                                 />
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid  size={{ xs: 12 }}>
                                 <TextField
                                     label="Historical Features Work Item Query"
                                     fullWidth
@@ -93,7 +94,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                             </Grid>
                         </>
                     ) : (
-                        <Grid item xs={12}>
+                        <Grid  size={{ xs: 12 }}>
                             <TextField
                                 label="Default Number of Items per Feature"
                                 type="number"
@@ -106,7 +107,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                     )
                 }
 
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <TextField
                         label="Size Estimate Field"
                         fullWidth
@@ -116,7 +117,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                     />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <Typography variant='body1'>Use Default Size instead of real Child Items for Features in these States:</Typography>
                     <ItemListManager
                         title='Size Override State'

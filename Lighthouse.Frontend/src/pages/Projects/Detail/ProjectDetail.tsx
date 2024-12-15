@@ -1,4 +1,5 @@
-import { Button, Container, Grid, Typography } from '@mui/material';
+import { Button, Container, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
@@ -61,23 +62,6 @@ const ProjectDetail: React.FC = () => {
             }
 
             const projectData = await projectService.refreshFeaturesForProject(project.id);
-
-            if (projectData) {
-                setProject(projectData)
-            }
-        }
-        catch (error) {
-            console.error('Error Refreshing Features:', error);
-        }
-    }
-
-    const onRefreshForecastsClick = async () => {
-        try {
-            if (project == null) {
-                return;
-            }
-
-            const projectData = await projectService.refreshForecastsForProject(project.id);
 
             if (projectData) {
                 setProject(projectData)
@@ -177,24 +161,20 @@ const ProjectDetail: React.FC = () => {
 
     return (
         <LoadingAnimation hasError={hasError} isLoading={isLoading}>
-            <Container>
+            <Container maxWidth={false}>
                 {project == null ? (<></>) : (
                     <Grid container spacing={3}>
-                        <Grid item xs={6}>
+                        <Grid size={{ xs: 6 }}>
                             <Typography variant='h3'>{project.name}</Typography>
                             <Typography variant='h6'>
                                 Last Updated on <LocalDateTimeDisplay utcDate={project.lastUpdated} showTime={true} />
                             </Typography>
                         </Grid>
-                        <Grid item xs={6} sx={{ display: 'flex', gap: 2 }}>
+                        
+                        <Grid size={{ xs: 6 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                             <ActionButton
                                 buttonText='Refresh Features'
                                 onClickHandler={onRefreshFeaturesClick}
-                                maxHeight='40px'
-                            />
-                            <ActionButton
-                                buttonText='Refresh Forecasts'
-                                onClickHandler={onRefreshForecastsClick}
                                 maxHeight='40px'
                             />
                             <Button
@@ -206,7 +186,7 @@ const ProjectDetail: React.FC = () => {
                             </Button>
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                             <MilestonesComponent
                                 milestones={projectSettings?.milestones || []}
                                 initiallyExpanded={false}
@@ -214,15 +194,15 @@ const ProjectDetail: React.FC = () => {
                                 onRemoveMilestone={handleRemoveMilestone}
                                 onUpdateMilestone={handleUpdateMilestone} />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                             <InvolvedTeamsList teams={involvedTeams} onTeamUpdated={onTeamSettingsChange} />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                             <ProjectFeatureList project={project} />
                         </Grid>
 
                         {showLighthouseChart ? (
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <LighthouseChartComponent projectId={projectId} />
                             </Grid>)
                             : (<></>)}

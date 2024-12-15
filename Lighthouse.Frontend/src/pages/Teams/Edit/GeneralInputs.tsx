@@ -1,5 +1,6 @@
 import React from 'react';
-import { TextField, Grid } from '@mui/material';
+import { TextField } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import { ITeamSettings } from '../../../models/Team/TeamSettings';
 import InputGroup from '../../../components/Common/InputGroup/InputGroup';
 
@@ -14,7 +15,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
 }) => {
     return (
         <InputGroup title={'General Configuration'} >
-            <Grid item xs={12}>
+            <Grid  size={{ xs: 12 }}>
                 <TextField
                     label="Name"
                     fullWidth
@@ -23,7 +24,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     onChange={(e) => onTeamSettingsChange('name', e.target.value)}
                 />
             </Grid>
-            <Grid item xs={12}>
+            <Grid  size={{ xs: 12 }}>
                 <TextField
                     label="Throughput History"
                     type="number"
@@ -33,7 +34,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     onChange={(e) => onTeamSettingsChange('throughputHistory', parseInt(e.target.value, 10))}
                 />
             </Grid>
-            <Grid item xs={12}>
+            <Grid  size={{ xs: 12 }}>
                 <TextField
                     label="Work Item Query"
                     multiline

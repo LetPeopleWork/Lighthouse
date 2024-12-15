@@ -1,7 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import LighthouseLogViewer from "./LighthouseLogViewer";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
-import { Button, Grid, Select, MenuItem, FormControl, InputLabel, SelectChangeEvent } from "@mui/material";
+import { Button, Select, MenuItem, FormControl, InputLabel, SelectChangeEvent } from "@mui/material";
+import Grid from '@mui/material/Grid2'
 import DownloadIcon from '@mui/icons-material/Download';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -69,7 +70,7 @@ const LogSettings: React.FC = () => {
     return (
         <InputGroup title={'Logs'}>
             <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <FormControl fullWidth margin="normal">
                         <InputLabel>Log Level</InputLabel>
                         <Select
@@ -88,7 +89,7 @@ const LogSettings: React.FC = () => {
                         </Select>
                     </FormControl>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <Button onClick={onDownload} variant="outlined" startIcon={<DownloadIcon />}>
                         Download
                     </Button>
@@ -96,7 +97,7 @@ const LogSettings: React.FC = () => {
                         Refresh
                     </Button>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <LighthouseLogViewer data={logs} />
                 </Grid>
             </Grid>

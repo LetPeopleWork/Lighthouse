@@ -15,7 +15,7 @@ const LighthouseOverviewStep: React.FC = () => (
         description="Lighthouse is a tool that helps you run probabilistic forecasts using Monte Carlo Simulations in a continuous and simple way."
         imageSrc={OverviewVideo}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`It connects to your work tracking tool (currently Jira and Azure DevOps are supported) and will automatically update your team's throughput and your project's forecasted delivery dates.\n
                 You can use it with a single team for manual "When" and "How Many" forecasts, as well as for tracking projects with one or multiple teams.\n
@@ -38,7 +38,7 @@ const TeamsOverviewStep: React.FC = () => (
         description="Define your teams to run 'How Many' and 'When' forecasts."
         imageSrc={TeamsOverview}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`A team has a throughput (the number of items the team finishes over a certain period). This throughput is used to run forecasts.
                 After you create a team, you can run individual "How Many" and "When" forecasts for this team.\n
@@ -54,7 +54,7 @@ const ProjectOverviewStep: React.FC = () => (
         description="Create a project to keep track of when a certain set of features will be done."
         imageSrc={ProjectOverview}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`A project consists of features (for example, 'Epics') that one or multiple teams contribute towards.
                 Lighthouse will forecast when these features are expected to be completed, based on the remaining work for each of the involved teams.\n
@@ -70,7 +70,7 @@ const SettingsOverviewStep: React.FC = () => (
         description="Fine-tune Lighthouse to match your needs."
         imageSrc={SettingsOverview}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`You can adjust various settings, from the default values for creating new teams and projects, to the connections to your work tracking systems like Jira and Azure DevOps, and the frequency at which Lighthouse updates the data for your teams, projects, and forecasts.\n
                 If something doesn't work, you can also find additional logs. These logs can be useful for identifying and solving specific issues.`}

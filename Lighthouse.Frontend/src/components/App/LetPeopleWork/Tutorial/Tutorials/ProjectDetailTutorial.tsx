@@ -15,7 +15,7 @@ const ProjectDetailOverview: React.FC = () => (
         description="Details of a Projects including Forecasts"
         imageSrc={ProjectDetails}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Once you have created your Project, you can see all the details on this page.
                 
@@ -33,7 +33,7 @@ const Features: React.FC = () => (
         description="Which features are part of this Project?"
         imageSrc={ProjectForecast}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`The feature table gives you an overview of all features that are part of the project.
 For each feature, you'll see the name, how much work is remaining on this feature in total, and split by individual teams.
@@ -51,7 +51,7 @@ const Milestones: React.FC = () => (
         description="Which Milestones do we need to hit for this project?"
         imageSrc={MilestonesDynamicUpdate}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Each project can have many milestones. You can dynamically add and remove them, or modify existing ones.
                 Maybe that customer visit was moved one week ahead? Let's adjust the milestone and see what we manage to deliver till then.
@@ -69,7 +69,7 @@ const InvolvedTeamsFeatureWIP: React.FC = () => (
         description="On How Many Features In Parallel are our Teams working on?"
         imageSrc={FeatureWIpDynamicUpdate}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Each team works on one or multiple features in parallel. If a team focuses on a few Features, they will get delivered more early, while the next Features will get started later.
                 On the other hand, if we have a high Feature WIP, Features that might not have a high priority get started earlier and delievered before the most important features.

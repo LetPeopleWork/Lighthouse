@@ -1,5 +1,6 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogActions, Button, Typography, Grid, List, ListItem, Link as MuiLink, DialogTitle, Box } from '@mui/material';
+import { Dialog, DialogContent, DialogActions, Button, Typography, List, ListItem, Link as MuiLink, DialogTitle, Box } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import { ILighthouseRelease } from '../../../models/LighthouseRelease/LighthouseRelease';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -35,7 +36,7 @@ const LatestReleaseInformationDialog: React.FC<LatestReleaseInformationDialogPro
 
                 {newReleases?.map((release, index) => (
                     <InputGroup key={release.name} title={release.name} initiallyExpanded={index === 0}>
-                        <Grid item xs={12}>
+                        <Grid  size={{ xs: 12 }}>
                             <Typography variant='body2'>
                                 <Markdown remarkPlugins={[remarkGfm]}>
                                     {release.highlights}

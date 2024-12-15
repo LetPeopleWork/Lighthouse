@@ -14,7 +14,7 @@ export const WorkTrackingSystems: React.FC = () => (
         description="How to connect to the System that hosts your Work Items?"
         imageSrc={WorkTrackingSystemsImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`In order for Lighthouse to get the data it needs for forecasting, it needs to connect to your Work Tracking System.
 Work Tracking Systems are stored in the Lighthouse Settings and can be reused across Teams and Projects.
@@ -70,7 +70,7 @@ export const States: React.FC = () => (
         description="How to define what is in progress and done?"
         imageSrc={StatesPicture}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`In order for Lighthouse to know which items to consider, it needs to know in which category the items are. Lighthouse categorizes items as "To Do" (no active work has been done yet), "Doing" (active work is ongoing) and "Done" (the work is completed).
 As every organization, project, and team is potentially using a different workflow, you must "map" the states you use to one of the 3 categories.

@@ -1,4 +1,5 @@
-import { Button, Container, Grid } from "@mui/material";
+import { Button, Container } from "@mui/material";
+import Grid from '@mui/material/Grid2'
 import React, { useContext, useEffect } from "react";
 import ModifyTrackingSystemConnectionDialog from "./ModifyTrackingSystemConnectionDialog";
 import { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -90,9 +91,9 @@ const WorkTrackingSystemConnectionSettings: React.FC = () => {
 
     return (
         <InputGroup title={'Work Tracking Systems'}>
-            <Container>
+            <Container maxWidth={false}>
                 <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <Button variant="contained" onClick={onAddConnectionButtonClicked}>Add Connection</Button>
                         <ModifyTrackingSystemConnectionDialog
                             open={openNewConnection}
@@ -101,7 +102,7 @@ const WorkTrackingSystemConnectionSettings: React.FC = () => {
                             validateSettings={onValidateConnection}
                         />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid  size={{ xs: 12 }}>
                         <ConnectionDetailTable
                             workTrackingSystemConnections={workTrackingSystemConnections}
                             onEditConnectionButtonClicked={onEditConnectionButtonClicked}

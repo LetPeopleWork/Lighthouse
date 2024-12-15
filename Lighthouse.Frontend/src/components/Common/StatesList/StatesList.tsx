@@ -1,7 +1,8 @@
 import React from 'react';
 import InputGroup from '../InputGroup/InputGroup';
 import ItemListManager from '../ItemListManager/ItemListManager';
-import { Grid, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 
 interface StatesListComponentProps {
     toDoStates: string[];
@@ -31,7 +32,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
     return (
         <InputGroup title="States">
             <Grid container>
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <Typography variant='h6'>To Do</Typography>
                     <ItemListManager
                         title='To Do States'
@@ -40,7 +41,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
                         onRemoveItem={onRemoveToDoState}
                     />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <Typography variant='h6'>Doing</Typography>
                     <ItemListManager
                         title='Doing States'
@@ -49,7 +50,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
                         onRemoveItem={onRemoveDoingState}
                     />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                     <Typography variant='h6'>Done</Typography>
                     <ItemListManager
                         title='Done States'

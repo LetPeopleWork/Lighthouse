@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Grid, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, TextField } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, TextField } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 
 interface SampleFrequencySelectorProps {
     sampleEveryNthDay: number;
@@ -28,7 +29,7 @@ const SampleFrequencySelector: React.FC<SampleFrequencySelectorProps> = ({ sampl
     };
 
     return (
-        <Grid item xs={6}>
+        <Grid  size={{ xs: 6 }}>
             <FormControl fullWidth>
                 <InputLabel id="sample-frequency-label">Sampling Frequency</InputLabel>
                 <Select
@@ -54,7 +55,7 @@ const SampleFrequencySelector: React.FC<SampleFrequencySelectorProps> = ({ sampl
                     onChange={handleCustomChange}
                     fullWidth
                     margin="normal"
-                    inputProps={{ min: 1 }}
+                    slotProps={{ htmlInput: {min: 1} }}
                 />
             )}
         </Grid>

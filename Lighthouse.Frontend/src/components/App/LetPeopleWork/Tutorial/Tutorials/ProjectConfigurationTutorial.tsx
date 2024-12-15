@@ -19,7 +19,7 @@ const GeneralConfiguration: React.FC = () => (
         description="Mandatory Configuration Options for Your Projects"
         imageSrc={GeneralConfigurationImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`Enter the name of the project you want to create as well as the Work Item Query.
 
@@ -79,7 +79,7 @@ const WorkItemTypes: React.FC = () => (
         description="Which types of Work Items are in your Project?"
         imageSrc={WorkItemTypesImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`In order to properly collect your Features for the Project, Lighthouse needs to know which item types you are using.
 We want to get the items that are the "direct parent" of the work items that your teams are working on.
@@ -99,7 +99,7 @@ const Milestones: React.FC = () => (
         description="What are important target dates?"
         imageSrc={MilestonesImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`While sometimes we just want to know "When will our Features be done", in other scenarios we have special events happening at a certain date.
 You can track such events (like Sprint Reviews, an important customer visit, that conference where you wanted to share the new version of your app, etc.) as Milestones.
@@ -116,7 +116,7 @@ const UnparentedWorkItems: React.FC = () => (
         description="Deal with Items that are not related to any Feature"
         imageSrc={UnparentedWorkItemsImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`Sometimes you might have a "bunch of items" that are not connected to any Feature, but you still consider them part of the Project.
 An example for this might be a collection of bugs you wanted to deliver with a new version. That you don't have to create "dummy features" just for grouping those bugs, you can use an "Unparented Work Items Query".
@@ -131,7 +131,7 @@ const FeatureSize: React.FC = () => (
         description="Fine-tune your Forecast, even if you don't all the details yet"
         imageSrc={DefaultFeatureSizeImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`As we don't want to waste time breaking down Features into details too early, you might have the situation where you want to plan for a Feature, but it does not have any child items yet, as it has not been refined in more detail.
 For those scenarios, you can specify a "Default Number of Items per Feature", use your historical feature size, and a "Size Estimation Field" that will be used in order to forecast.

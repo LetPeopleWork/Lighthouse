@@ -15,7 +15,7 @@ const TeamsOverview: React.FC = () => (
         description="Teams are an essential building block for using Lighthouse. You must define at least one team to run any kind of forecasts."
         imageSrc={TeamForecast}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`To start using Lighthouse, you need to create a team. Each team has a throughput, which you can use for your forecasts.
                 
@@ -33,7 +33,7 @@ const TeamsList: React.FC = () => (
         description="See all your configured teams at a glance."
         imageSrc={TeamOverview}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Once you have at least one team defined, it will appear in a grid view on the `}
                 <Link to={"/teams"}>Teams</Link>
@@ -53,7 +53,7 @@ const DeleteTeamStep: React.FC = () => (
         description="Delete a team via the Delete button in the overview."
         imageSrc={DeleteTeam}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`Please be aware that deleting a team is permanent and cannot be undone. If you need the same team later, you will have to re-add it. Deleting a team removes all information about that team from Lighthouse.`}
             </Typography>
@@ -67,7 +67,7 @@ const TeamDetailsStep: React.FC = () => (
         description="Dive into the details of a specific team."
         imageSrc={TeamDetail}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {`To see more details for a team, you can click on the team name or the info icon in the overview.
 

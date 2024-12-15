@@ -12,7 +12,7 @@ import CallIcon from '@mui/icons-material/Call';
 const Footer: React.FC = () => {
   return (
     <Box component="footer" className="footer" sx={{ backgroundColor: 'white', py: 2 }}>
-      <Container>
+      <Container maxWidth={false}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
             <LetPeopleWorkLogo />

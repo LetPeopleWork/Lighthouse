@@ -1,5 +1,6 @@
 import React from "react";
-import { Grid, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
+import Grid from '@mui/material/Grid2'
 import ForecastInfo from "./ForecastInfo";
 import { styled } from '@mui/system';
 import { IForecast } from "../../../models/Forecasts/IForecast";
@@ -16,7 +17,7 @@ interface ForecastInfoListProps {
 
 const ForecastInfoList: React.FC<ForecastInfoListProps> = ({ title, forecasts }) => {
     return (
-        <Grid item xs={12}>
+        <Grid  size={{ xs: 12 }}>
             <ForecastsHeader variant="body1">{title}</ForecastsHeader>
             {forecasts.slice().reverse().map((forecast) => (
                 <ForecastInfo key={forecast.probability} forecast={forecast} />

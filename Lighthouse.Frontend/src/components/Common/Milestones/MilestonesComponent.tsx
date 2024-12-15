@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { List, ListItem, IconButton, TextField, Button, Grid } from '@mui/material';
+import { List, ListItem, IconButton, TextField, Button } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import debounce from 'lodash.debounce';
@@ -19,7 +20,7 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
     initiallyExpanded = true,
     onAddMilestone,
     onRemoveMilestone,
-    onUpdateMilestone,    
+    onUpdateMilestone,
 }) => {
     const [newMilestoneName, setNewMilestoneName] = useState<string>('');
     const [newMilestoneDate, setNewMilestoneDate] = useState<string>('');
@@ -48,12 +49,12 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
     return (
         <InputGroup title={'Milestones'} initiallyExpanded={initiallyExpanded}>
             <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                     <List>
                         {milestones.map(milestone => (
                             <ListItem key={milestone.name}>
                                 <Grid container spacing={2} alignItems="center">
-                                    <Grid item xs={4}>
+                                    <Grid size={{ xs: 4 }}>
                                         <TextField
                                             fullWidth
                                             label="Milestone Name"
@@ -61,17 +62,17 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
                                             onChange={(e) => handleMilestoneNameChange(milestone.name, e.target.value)}
                                         />
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid size={{ xs: 4 }}>
                                         <TextField
                                             fullWidth
                                             label="Milestone Date"
                                             type="date"
-                                            InputLabelProps={{ shrink: true }}
+                                            slotProps={{ inputLabel: { shrink: true } }}
                                             defaultValue={milestone.date.toISOString().slice(0, 10)} // Convert date to yyyy-MM-dd format
                                             onChange={(e) => handleMilestoneDateChange(milestone.name, e.target.value)}
                                         />
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid size={{ xs: 4 }}>
                                         <IconButton aria-label="delete" onClick={() => onRemoveMilestone(milestone.name)}>
                                             <DeleteIcon />
                                         </IconButton>
@@ -81,7 +82,7 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
                         ))}
                     </List>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                     <TextField
                         fullWidth
                         label="New Milestone Name"
@@ -94,7 +95,7 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
                         label="New Milestone Date"
                         type="date"
                         margin="normal"
-                        InputLabelProps={{ shrink: true }}
+                        slotProps={{ inputLabel: { shrink: true } }}
                         value={newMilestoneDate}
                         onChange={(e) => setNewMilestoneDate(e.target.value)}
                     />

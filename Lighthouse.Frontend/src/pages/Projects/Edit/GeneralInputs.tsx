@@ -1,5 +1,6 @@
 import React from 'react';
-import { TextField, Grid } from '@mui/material';
+import { TextField } from '@mui/material';
+import Grid from '@mui/material/Grid2'
 import InputGroup from '../../../components/Common/InputGroup/InputGroup';
 import { IProjectSettings } from '../../../models/Project/ProjectSettings';
 
@@ -14,7 +15,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
 }) => {
     return (
         <InputGroup title={'General Configuration'} >
-            <Grid item xs={12}>
+            <Grid  size={{ xs: 12 }}>
                 <TextField
                     label="Name"
                     fullWidth
@@ -23,7 +24,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
                     onChange={(e) => onProjectSettingsChange('name', e.target.value)}
                 />
             </Grid>            
-            <Grid item xs={12}>
+            <Grid  size={{ xs: 12 }}>
                 <TextField
                     label="Work Item Query"
                     multiline

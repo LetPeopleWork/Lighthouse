@@ -14,7 +14,7 @@ const GeneralConfiguration: React.FC = () => (
         description="Mandatory Configuration Options for Your Teams"
         imageSrc={GeneralConfigurationImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`Enter the name of the team you want to create as well as the Throughput History. This is the number of days of the past you want to include when running forecasts for this team.
 In general this should be more than 10 days, and represent a period where this team was somewhat working in a stable fashion. Common values are 30 to 90 days.
@@ -70,7 +70,7 @@ const WorkItemTypes: React.FC = () => (
         description="Which types of Work Items are in your Teams Backlog'"
         imageSrc={WorkItemTypesImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`In order to properly forecast, Lighthouse needs to know which items your team works on that are relevant for the forecast.
 Thus you can define the item types that should be taken into account for this specific team.
@@ -91,7 +91,7 @@ const AdvancedConfiguration: React.FC = () => (
         description="Advanced Stuff to fine-tune your teams"
         imageSrc={AdvancedConfigurationImage}
     >
-        <Container>
+        <Container maxWidth={false}>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-line', marginBottom: 2 }}>
                 {`If your team is working on multiple Features at the same time, you want to adjust the Feature WIP to this number.
 This will impact your forecasts for projects, and will lead to different predicted delivery times.
