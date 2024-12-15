@@ -13,15 +13,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
     public class AzureDevOpsWorkItemServiceTest
     {
         [Test]
-        public async Task GetClosedWorkItemsForTeam_FullHistory_TestProject_ReturnsCorrectAmountOfItems()
+        [TestCase(new[] { "Closed" }, 5)]
+        [TestCase(new[] { "Closed", "Resolved" }, 6)]
+        [TestCase(new[] { "Closed", "Resolved", "Active" }, 9)]
+        public async Task GetClosedWorkItemsForTeam_FullHistory_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
         {
+            // Use history since beginning of 2024
+            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
+
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Tags] NOT CONTAINS 'ThroughputIgnore'");
 
-            var closedItems = await subject.GetClosedWorkItems(720, team);
+            team.DoneStates.Clear();
+            team.DoneStates.AddRange(doneStates);
 
-            Assert.That(closedItems.Count, Is.EqualTo(720));
-            Assert.That(closedItems.Sum(), Is.EqualTo(5));
+            var closedItems = await subject.GetClosedWorkItems(history, team);
+
+            Assert.That(closedItems.Count, Is.EqualTo(history));
+            Assert.That(closedItems.Sum(), Is.EqualTo(expectedItems));
         }
 
         [Test]

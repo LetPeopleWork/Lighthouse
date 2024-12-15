@@ -389,8 +389,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var closedItemsPerDay = new int[numberOfDays];
             var startDate = DateTime.UtcNow.Date.AddDays(-(numberOfDays - 1));
 
-            var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
-            query += $" AND ([{AzureDevOpsFieldNames.State}] = 'Closed' OR [{AzureDevOpsFieldNames.State}] = 'Done') AND [{AzureDevOpsFieldNames.ClosedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z'";
+            var query = PrepareQuery(team.WorkItemTypes, team.DoneStates, team.WorkItemQuery);
+            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z')";
 
             logger.LogDebug("Getting closed items per day for thre last {numberOfDays} for team {TeamName} using query '{query}'", numberOfDays, team.Name, query);
 
@@ -399,7 +399,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             foreach (WorkItemReference workItemRef in workItems)
             {
                 var workItem = await GetWorkItemFromCache(workItemRef.Id.ToString(), witClient);
-                var closedDate = workItem.Fields[AzureDevOpsFieldNames.ClosedDate].ToString();
+                string? closedDate = GetClosedDateFromWorkItem(workItem);
 
                 if (!string.IsNullOrEmpty(closedDate))
                 {
@@ -415,6 +415,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
 
             return closedItemsPerDay;
+        }
+
+        private static string? GetClosedDateFromWorkItem(WorkItem workItem)
+        {
+            if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ClosedDate, out var closedDate))
+            {
+                return closedDate.ToString();
+            }
+
+            if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ResolvedDate, out var resolvedDate))
+            {
+                return resolvedDate.ToString();
+            }
+
+            if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ActivatedDate, out var activatedDate))
+            {
+                return activatedDate.ToString();
+            }
+
+            return null;
         }
 
         private string PrepareQuery(

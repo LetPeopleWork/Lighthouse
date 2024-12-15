@@ -49,6 +49,9 @@ dotnet_diagnostic.CS8602.severity = none
 # CS8601: Possible null reference assignment.
 dotnet_diagnostic.CS8601.severity = none
 
+# S6561: Avoid using "DateTime.Now" for benchmarking or timing operations
+dotnet_diagnostic.S6561.severity = suggestion
+
 [*.{cs,vb}]
 #### Naming styles ####
 

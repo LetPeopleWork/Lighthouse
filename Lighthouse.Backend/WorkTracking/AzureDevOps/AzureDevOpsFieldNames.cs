@@ -18,6 +18,10 @@
 
         public static string Tags => "System.Tags";
 
+        public static string ActivatedDate => "Microsoft.VSTS.Common.ActivatedDate";
+
+        public static string ResolvedDate => "Microsoft.VSTS.Common.ResolvedDate";
+
         public static string ClosedDate => "Microsoft.VSTS.Common.ClosedDate";
 
         public static string StackRank => "Microsoft.VSTS.Common.StackRank";
