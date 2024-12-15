@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
         private CleanupDataService CreateSubject()
         {
-            return new CleanupDataService(serviceScopeFactoryMock.Object, loggerMock.Object);
+            return new CleanupDataService(serviceScopeFactoryMock.Object, loggerMock.Object, 0);
         }
     }
 }

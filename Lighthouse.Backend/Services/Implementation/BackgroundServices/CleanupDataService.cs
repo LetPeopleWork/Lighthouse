@@ -6,16 +6,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
     {
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly ILogger<CleanupDataService> logger;
+        private readonly int startupDelayInMinutes;
 
-        public CleanupDataService(IServiceScopeFactory serviceScopeFactory, ILogger<CleanupDataService> logger)
+        public CleanupDataService(IServiceScopeFactory serviceScopeFactory, ILogger<CleanupDataService> logger, int startupDelayInMinutes = 30)
         {
             this.serviceScopeFactory = serviceScopeFactory;
             this.logger = logger;
+            this.startupDelayInMinutes = startupDelayInMinutes;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             logger.LogInformation("Cleanup Data Service started");
+
+            await AwaitStartupDelay(stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -53,6 +57,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
             logger.LogInformation("Waiting {Time} hours for next execution of Data Cleanup", waitTimeInHours);
             await Task.Delay(TimeSpan.FromHours(waitTimeInHours), token);
+        }
+
+        private async Task AwaitStartupDelay(CancellationToken token)
+        {
+            logger.LogInformation("Waiting {Time} minutes before invoking Data Cleanup", startupDelayInMinutes);
+            await Task.Delay(TimeSpan.FromMinutes(startupDelayInMinutes), token);
         }
     }
 }
