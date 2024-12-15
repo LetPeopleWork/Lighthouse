@@ -86,9 +86,11 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<AzureDevOpsWorkItemService>();
                 builder.Services.AddScoped<JiraWorkItemService>();
 
-                builder.Services.AddHostedService<Services.Implementation.BackgroundServices.TeamUpdateBackgroundService>();
+                // Background Services
+                builder.Services.AddHostedService<TeamUpdateBackgroundService>();
                 builder.Services.AddHostedService<FeatureUpdateService>();
                 builder.Services.AddHostedService<ForecastUpdateService>();
+                builder.Services.AddHostedService<CleanupDataService>();
 
                 builder.Services.AddSingleton<ICryptoService, CryptoService>();
                 builder.Services.AddSingleton<IGitHubService, GitHubService>();

@@ -30,6 +30,11 @@ namespace Lighthouse.Backend.Services.Implementation
             await repository.Save();
         }
 
+        public async Task CleanupData()
+        {
+            await Task.Delay(0);
+        }
+
         private void UpdateExistingFeatureHistoryEntry(Feature feature, FeatureHistoryEntry? historyEntry)
         {
             historyEntry.Update(feature);
