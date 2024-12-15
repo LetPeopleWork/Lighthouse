@@ -13,6 +13,18 @@ interface ProjectFeatureListProps {
 }
 
 const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
+    const currentOrFutureMilestones = project.milestones.filter(
+        (milestone) => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const milestoneDate = new Date(milestone.date);
+            milestoneDate.setHours(0, 0, 0, 0);
+    
+            return milestoneDate >= today;
+        }
+    );   
+
     return (
         <TableContainer component={Paper}>
             <Table>
@@ -27,7 +39,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                         <TableCell>
                             <Typography variant="h6" component="div">Forecasts</Typography>
                         </TableCell>
-                        {project.milestones.map((milestone) => (
+                        {currentOrFutureMilestones.map((milestone) => (
                             <TableCell key={milestone.id}>
                                 <Typography variant="h6" component="div">{milestone.name} (<LocalDateTimeDisplay utcDate={milestone.date} />)</Typography>
                             </TableCell>
@@ -60,9 +72,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                                     .filter(team => feature.getTotalWorkForTeam(team.id) > 0)
                                     .map((team) => (
                                         <div key={team.id}>
-
                                             <ProgressIndicator title={
-
                                                 <Link to={`/teams/${team.id}`}>
                                                     {`${team.name}`}
                                                 </Link>
@@ -76,7 +86,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                             <TableCell>
                                 <ForecastInfoList title={''} forecasts={feature.forecasts} />
                             </TableCell>
-                            {project.milestones.map((milestone) => (
+                            {currentOrFutureMilestones.map((milestone) => (
                                 <TableCell key={milestone.id}>
                                     <ForecastLikelihood
                                         remainingItems={feature.getRemainingWorkForFeature()}
@@ -94,7 +104,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
                 </TableBody>
             </Table>
         </TableContainer>
-    )
-}
+    );
+};
 
 export default ProjectFeatureList;
