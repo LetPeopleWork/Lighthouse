@@ -26,6 +26,7 @@ import { IChartService } from './ChartService';
 import { BurndownEntry, ILighthouseChartData, ILighthouseChartFeatureData, LighthouseChartData, LighthouseChartFeatureData } from '../../models/Charts/LighthouseChartData';
 import { IPreviewFeatureService } from './PreviewFeatureService';
 import { PreviewFeature } from '../../models/Preview/PreviewFeature';
+import { IDataRetentionSettings } from '../../models/AppSettings/DataRetentionSettings';
 
 export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService, IChartService, IPreviewFeatureService {
     private readonly useDelay: boolean;
@@ -43,6 +44,8 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     private features: Feature[] = [];
     private projects: Project[] = [];
     private teams: Team[] = [];
+
+    private dataRetentionSettings : IDataRetentionSettings = { maxStorageTimeInDays: 90 };
 
     private projectSettings : IProjectSettings[] = [
         {
@@ -485,6 +488,16 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         ];
 
         return new LighthouseChartData(featureData, milestones);
+    }
+
+    async getDataRetentionSettings(): Promise<IDataRetentionSettings> {
+        await this.delay();
+        return this.dataRetentionSettings;
+    }
+
+    async updateDataRetentionSettings(dataRetentionSettings: IDataRetentionSettings): Promise<void> {
+        await this.delay();
+        this.dataRetentionSettings = dataRetentionSettings;
     }
 
     delay() {

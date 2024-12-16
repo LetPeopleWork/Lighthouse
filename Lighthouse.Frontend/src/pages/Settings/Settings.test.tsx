@@ -60,6 +60,12 @@ describe('Settings Component', () => {
         expect(screen.getByTestId('work-tracking-panel')).not.toBeVisible();
     });
 
+    it('should switch to Data Retention Settings tab when clicked', () => {
+        fireEvent.click(screen.getByTestId('data-retention-settings-tab'));
+        expect(screen.getByTestId('data-retention-settings-panel')).toBeVisible();
+        expect(screen.getByTestId('work-tracking-panel')).not.toBeVisible();
+    });
+
     it('should switch to Preview Features tab when clicked', () => {
         fireEvent.click(screen.getByTestId('preview-features-tab'));
         expect(screen.getByTestId('preview-features-panel')).toBeVisible();

@@ -29,6 +29,8 @@ export const createMockSettingsService = (): ISettingsService => {
         getDefaultTeamSettings: vi.fn(),
         updateDefaultTeamSettings: vi.fn(),
         updateDefaultProjectSettings: vi.fn(),
+        getDataRetentionSettings: vi.fn(),
+        updateDataRetentionSettings: vi.fn(),
     };
 };
 

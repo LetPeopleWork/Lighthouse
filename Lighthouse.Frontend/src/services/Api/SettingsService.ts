@@ -11,6 +11,8 @@ export interface ISettingsService {
     updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void>;
     getDefaultProjectSettings(): Promise<IProjectSettings>;
     updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void>;
+    getDataRetentionSettings(): Promise<IDataRetentionSettings>;
+    updateDataRetentionSettings(dataRetentionSettings : IDataRetentionSettings): Promise<void>
 }
 
 export class SettingsService extends BaseApiService implements ISettingsService {
