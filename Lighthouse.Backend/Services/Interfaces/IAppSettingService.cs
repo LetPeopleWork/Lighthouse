@@ -7,23 +7,23 @@ namespace Lighthouse.Backend.Services.Interfaces
     {
         RefreshSettings GetThroughputRefreshSettings();
 
-        Task UpdateThroughputRefreshSettingsAsync(RefreshSettings refreshSettings);
+        Task UpdateThroughputRefreshSettings(RefreshSettings refreshSettings);
         
         RefreshSettings GetFeaturRefreshSettings();
 
-        Task UpdateFeatureRefreshSettingsAsync(RefreshSettings refreshSettings);
+        Task UpdateFeatureRefreshSettings(RefreshSettings refreshSettings);
 
         RefreshSettings GetForecastRefreshSettings();
 
-        Task UpdateForecastRefreshSettingsAsync(RefreshSettings refreshSettings);
+        Task UpdateForecastRefreshSettings(RefreshSettings refreshSettings);
 
         TeamSettingDto GetDefaultTeamSettings();
 
-        Task UpdateDefaultTeamSettingsAsync(TeamSettingDto defaultTeamSetting);
+        Task UpdateDefaultTeamSettings(TeamSettingDto defaultTeamSetting);
 
         ProjectSettingDto GetDefaultProjectSettings();
 
-        Task UpdateDefaultProjectSettingsAsync(ProjectSettingDto defaultProjectSetting);
+        Task UpdateDefaultProjectSettings(ProjectSettingDto defaultProjectSetting);
 
         DataRetentionSettings GetDataRetentionSettings();
 

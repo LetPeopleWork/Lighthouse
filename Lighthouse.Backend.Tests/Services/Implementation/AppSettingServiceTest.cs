@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var service = CreateService();
 
             var newSettings = new RefreshSettings { Interval = 70, RefreshAfter = 370, StartDelay = 10 };
-            await service.UpdateFeatureRefreshSettingsAsync(newSettings);
+            await service.UpdateFeatureRefreshSettings(newSettings);
 
             VerifyUpdateCalled(AppSettingKeys.FeaturesRefreshInterval, "70");
             VerifyUpdateCalled(AppSettingKeys.FeaturesRefreshAfter, "370");
@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var service = CreateService();
 
             var newSettings = new RefreshSettings { Interval = 25, RefreshAfter = 130, StartDelay = 5 };
-            await service.UpdateForecastRefreshSettingsAsync(newSettings);
+            await service.UpdateForecastRefreshSettings(newSettings);
 
             VerifyUpdateCalled(AppSettingKeys.ForecastRefreshInterval, "25");
             VerifyUpdateCalled(AppSettingKeys.ForecastRefreshAfter, "130");
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var service = CreateService();
 
             var newSettings = new RefreshSettings { Interval = 35, RefreshAfter = 190, StartDelay = 3 };
-            await service.UpdateThroughputRefreshSettingsAsync(newSettings);
+            await service.UpdateThroughputRefreshSettings(newSettings);
 
             VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshInterval, "35");
             VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshAfter, "190");
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 RelationCustomField = "CUSTOM_12039213"
             };
 
-            await service.UpdateDefaultTeamSettingsAsync(newSettings);
+            await service.UpdateDefaultTeamSettings(newSettings);
 
             VerifyUpdateCalled(AppSettingKeys.TeamSettingName, "Other Team");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingHistory, "190");
@@ -288,7 +288,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 SizeEstimateField = "customfield_10037"
             };
 
-            await service.UpdateDefaultProjectSettingsAsync(newSettings);
+            await service.UpdateDefaultProjectSettings(newSettings);
 
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingName, "Other Project");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingWorkItemQuery, "project = MyJiraProject");

@@ -38,17 +38,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateFeatureRefreshSettings_UpdatesSettingsAsync()
+        public async Task UpdateFeatureRefreshSettings_UpdatesSettings()
         {
             var refreshSettings = new RefreshSettings();
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateFeatureRefreshSettingsAsync(refreshSettings);
+            var result = await subject.UpdateFeatureRefreshSettings(refreshSettings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateFeatureRefreshSettingsAsync(refreshSettings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateFeatureRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }
@@ -74,17 +74,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateThroughputRefreshSettings_UpdatesSettingsAsync()
+        public async Task UpdateThroughputRefreshSettings_UpdatesSettings()
         {
             var refreshSettings = new RefreshSettings();
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateThroughputRefreshSettingsAsync(refreshSettings);
+            var result = await subject.UpdateThroughputRefreshSettings(refreshSettings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateThroughputRefreshSettingsAsync(refreshSettings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateThroughputRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }
@@ -110,17 +110,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateForecastRefreshSettings_UpdatesSettingsAsync()
+        public async Task UpdateForecastRefreshSettings_UpdatesSettings()
         {
             var refreshSettings = new RefreshSettings();
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateForecastRefreshSettingsAsync(refreshSettings);
+            var result = await subject.UpdateForecastRefreshSettings(refreshSettings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateForecastRefreshSettingsAsync(refreshSettings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateForecastRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }
@@ -146,17 +146,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateDefaultTeamSettings_UpdatesSettingsAsync()
+        public async Task UpdateDefaultTeamSettings_UpdatesSettings()
         {
             var settings = new TeamSettingDto();
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateDefaultTeamSettingsAsync(settings);
+            var result = await subject.UpdateDefaultTeamSettings(settings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateDefaultTeamSettingsAsync(settings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateDefaultTeamSettings(settings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }
@@ -182,17 +182,53 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateDefaultProjectSettings_UpdatesSettingsAsync()
+        public async Task UpdateDefaultProjectSettings_UpdatesSettings()
         {
             var settings = new ProjectSettingDto();
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateDefaultProjectSettingsAsync(settings);
+            var result = await subject.UpdateDefaultProjectSettings(settings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateDefaultProjectSettingsAsync(settings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateDefaultProjectSettings(settings), Times.Once);
+                Assert.That(result, Is.InstanceOf<OkResult>());
+            });
+        }
+
+        [Test]
+        public void GetDataRetentionSettings_ReturnsSettings()
+        {
+            var settings = new DataRetentionSettings { MaxStorageTimeInDays = 12 };
+            appSettingServiceMock.Setup(x => x.GetDataRetentionSettings()).Returns(settings);
+
+            var subject = CreateSubject();
+
+            var result = subject.GetDataRetentionSettings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                Assert.That(okResult.Value, Is.EqualTo(settings));
+            });
+        }
+
+        [Test]
+        public async Task UpdateDataRetentionSettings_UpdatesSettings()
+        {
+            var settings = new DataRetentionSettings { MaxStorageTimeInDays = 1337 };
+
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateDataRetentionSettings(settings);
+
+            Assert.Multiple(() =>
+            {
+                appSettingServiceMock.Verify(x => x.UpdateDataRetentionSettings(settings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }

@@ -38,17 +38,17 @@ namespace Lighthouse.Backend.Services.Implementation
                AppSettingKeys.ThroughputRefreshStartDelay);
         }
 
-        public async Task UpdateFeatureRefreshSettingsAsync(RefreshSettings refreshSettings)
+        public async Task UpdateFeatureRefreshSettings(RefreshSettings refreshSettings)
         {
             await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.FeaturesRefreshInterval, AppSettingKeys.FeaturesRefreshAfter, AppSettingKeys.FeaturesRefreshStartDelay);
         }
 
-        public async Task UpdateForecastRefreshSettingsAsync(RefreshSettings refreshSettings)
+        public async Task UpdateForecastRefreshSettings(RefreshSettings refreshSettings)
         {
             await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.ForecastRefreshInterval, AppSettingKeys.ForecastRefreshAfter, AppSettingKeys.ForecastRefreshStartDelay);
         }
 
-        public async Task UpdateThroughputRefreshSettingsAsync(RefreshSettings refreshSettings)
+        public async Task UpdateThroughputRefreshSettings(RefreshSettings refreshSettings)
         {
             await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.ThroughputRefreshInterval, AppSettingKeys.ThroughputRefreshAfter, AppSettingKeys.ThroughputRefreshStartDelay);
         }
@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return teamSettings;
         }
 
-        public async Task UpdateDefaultTeamSettingsAsync(TeamSettingDto defaultTeamSetting)
+        public async Task UpdateDefaultTeamSettings(TeamSettingDto defaultTeamSetting)
         {
             var name = GetSettingByKey(AppSettingKeys.TeamSettingName);
             name.Value = defaultTeamSetting.Name;
@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return projectSettings;
         }
 
-        public async Task UpdateDefaultProjectSettingsAsync(ProjectSettingDto defaultProjectSetting)
+        public async Task UpdateDefaultProjectSettings(ProjectSettingDto defaultProjectSetting)
         {
             var name = GetSettingByKey(AppSettingKeys.ProjectSettingName);
             name.Value = defaultProjectSetting.Name;

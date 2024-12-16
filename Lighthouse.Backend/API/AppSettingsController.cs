@@ -24,9 +24,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("FeatureRefresh")]
-        public async Task<ActionResult> UpdateFeatureRefreshSettingsAsync(RefreshSettings refreshSettings)
+        public async Task<ActionResult> UpdateFeatureRefreshSettings(RefreshSettings refreshSettings)
         {
-            await appSettingService.UpdateFeatureRefreshSettingsAsync(refreshSettings);
+            await appSettingService.UpdateFeatureRefreshSettings(refreshSettings);
             return Ok();
         }
 
@@ -38,9 +38,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("ThroughputRefresh")]
-        public async Task<ActionResult> UpdateThroughputRefreshSettingsAsync(RefreshSettings refreshSettings)
+        public async Task<ActionResult> UpdateThroughputRefreshSettings(RefreshSettings refreshSettings)
         {
-            await appSettingService.UpdateThroughputRefreshSettingsAsync(refreshSettings);
+            await appSettingService.UpdateThroughputRefreshSettings(refreshSettings);
             return Ok();
         }
 
@@ -52,9 +52,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("ForecastRefresh")]
-        public async Task<ActionResult> UpdateForecastRefreshSettingsAsync(RefreshSettings refreshSettings)
+        public async Task<ActionResult> UpdateForecastRefreshSettings(RefreshSettings refreshSettings)
         {
-            await appSettingService.UpdateForecastRefreshSettingsAsync(refreshSettings);
+            await appSettingService.UpdateForecastRefreshSettings(refreshSettings);
             return Ok();
         }
 
@@ -66,9 +66,9 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("DefaultTeamSettings")]
-        public async Task<ActionResult> UpdateDefaultTeamSettingsAsync(TeamSettingDto defaultTeamSetting)
+        public async Task<ActionResult> UpdateDefaultTeamSettings(TeamSettingDto defaultTeamSetting)
         {
-            await appSettingService.UpdateDefaultTeamSettingsAsync(defaultTeamSetting);
+            await appSettingService.UpdateDefaultTeamSettings(defaultTeamSetting);
             return Ok();
         }
 
@@ -80,9 +80,23 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("DefaultProjectSettings")]
-        public async Task<ActionResult> UpdateDefaultProjectSettingsAsync(ProjectSettingDto defaultProjectSettings)
+        public async Task<ActionResult> UpdateDefaultProjectSettings(ProjectSettingDto defaultProjectSettings)
         {
-            await appSettingService.UpdateDefaultProjectSettingsAsync(defaultProjectSettings);
+            await appSettingService.UpdateDefaultProjectSettings(defaultProjectSettings);
+            return Ok();
+        }
+
+        [HttpGet("DataRetentionSettings")]
+        public ActionResult<DataRetentionSettings> GetDataRetentionSettings()
+        {
+            var settings = appSettingService.GetDataRetentionSettings();
+            return Ok(settings);
+        }
+
+        [HttpPut("DataRetentionSettings")]
+        public async Task<ActionResult> UpdateDataRetentionSettings(DataRetentionSettings dataRetentionSettings)
+        {
+            await appSettingService.UpdateDataRetentionSettings(dataRetentionSettings);
             return Ok();
         }
     }
