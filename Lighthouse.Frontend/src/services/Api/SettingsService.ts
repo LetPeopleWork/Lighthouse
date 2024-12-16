@@ -1,3 +1,4 @@
+import { IDataRetentionSettings } from '../../models/AppSettings/DataRetentionSettings';
 import { IRefreshSettings } from '../../models/AppSettings/RefreshSettings';
 import { IProjectSettings } from '../../models/Project/ProjectSettings';
 import { ITeamSettings } from '../../models/Team/TeamSettings';
@@ -54,6 +55,20 @@ export class SettingsService extends BaseApiService implements ISettingsService 
     async updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void> {
         this.withErrorHandling(async () => {
             await this.apiService.put<IProjectSettings>(`/appsettings/defaultprojectsettings`, projecSettings);
+        });
+    }
+
+    async getDataRetentionSettings(): Promise<IDataRetentionSettings> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.get<IDataRetentionSettings>(`/appsettings/dataRetentionSettings`);
+
+            return response.data;
+        });
+    }
+
+    async updateDataRetentionSettings(dataRetentionSettings: IDataRetentionSettings): Promise<void> {
+        this.withErrorHandling(async () => {
+            await this.apiService.put<IDataRetentionSettings>(`/appsettings/dataRetentionSettings`, dataRetentionSettings);
         });
     }
 }

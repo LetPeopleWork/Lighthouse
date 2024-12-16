@@ -4,6 +4,7 @@ import { SettingsService } from './SettingsService';
 import { IRefreshSettings, RefreshSettings } from '../../models/AppSettings/RefreshSettings';
 import { ITeamSettings } from '../../models/Team/TeamSettings';
 import { IProjectSettings } from '../../models/Project/ProjectSettings';
+import { IDataRetentionSettings } from '../../models/AppSettings/DataRetentionSettings';
 
 vi.mock('axios');
 const mockedAxios = vi.mocked(axios, true);
@@ -137,5 +138,33 @@ describe('SettingsService', () => {
         await settingsService.updateDefaultProjectSettings(mockProjectSettings);
 
         expect(mockedAxios.put).toHaveBeenCalledWith(`/appsettings/defaultprojectsettings`, mockProjectSettings);
+    });
+
+    it('should get data retention settings', async () => {
+        const mockResponse: IDataRetentionSettings = {
+            maxStorageTimeInDays: 30
+        };
+
+        mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
+
+        const dataRetentionSettings = await settingsService.getDataRetentionSettings();
+
+        expect(dataRetentionSettings).toEqual(mockResponse);
+        expect(mockedAxios.get).toHaveBeenCalledWith('/appsettings/dataRetentionSettings');
+    });
+
+    it('should update data retention settings', async () => {
+        const mockDataRetentionSettings: IDataRetentionSettings = {
+            maxStorageTimeInDays: 45
+        };
+
+        mockedAxios.put.mockResolvedValueOnce({});
+
+        await settingsService.updateDataRetentionSettings(mockDataRetentionSettings);
+
+        expect(mockedAxios.put).toHaveBeenCalledWith(
+            '/appsettings/dataRetentionSettings',
+            mockDataRetentionSettings
+        );
     });
 });
