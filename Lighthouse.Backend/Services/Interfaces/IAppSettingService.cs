@@ -25,8 +25,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Task UpdateDefaultProjectSettingsAsync(ProjectSettingDto defaultProjectSetting);
 
-        CleanUpDataHistorySettings GetCleanUpDataHistorySettings();
+        DataRetentionSettings GetDataRetentionSettings();
 
-        Task UpdateCleanUpDataHistorySetting(CleanUpDataHistorySettings cleanUpDataHistorySettings);
+        Task UpdateDataRetentionSettings(DataRetentionSettings cleanUpDataHistorySettings);
     }
 }

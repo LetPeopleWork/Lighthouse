@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogInformation("Cleaning Up Feature History Entry Data");
 
-            var cleanUpDataHistorySettings = appSettingsService.GetCleanUpDataHistorySettings();
+            var cleanUpDataHistorySettings = appSettingsService.GetDataRetentionSettings();
             var cutOffDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-cleanUpDataHistorySettings.MaxStorageTimeInDays));
 
             var oldEntries = repository.GetAllByPredicate(fh => fh.Snapshot < cutOffDate);

@@ -2,7 +2,7 @@
 
 namespace Lighthouse.Backend.Models.AppSettings
 {
-    public class CleanUpDataHistorySettings
+    public class DataRetentionSettings
     {
         [JsonRequired]
         public int MaxStorageTimeInDays {  get; set; }

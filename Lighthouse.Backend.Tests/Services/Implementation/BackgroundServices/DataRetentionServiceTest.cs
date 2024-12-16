@@ -6,10 +6,10 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 {
-    public class CleanupDataServiceTest
+    public class DataRetentionServiceTest
     {
         private Mock<IServiceScopeFactory> serviceScopeFactoryMock;
-        private Mock<ILogger<CleanupDataService>> loggerMock;
+        private Mock<ILogger<DataRetentionService>> loggerMock;
 
         private Mock<IFeatureHistoryService> featureHistoryServiceMock;
 
@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
         public void SetUp()
         {
             serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
-            loggerMock = new Mock<ILogger<CleanupDataService>>();
+            loggerMock = new Mock<ILogger<DataRetentionService>>();
 
             featureHistoryServiceMock = new Mock<IFeatureHistoryService>();
 
@@ -37,9 +37,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             featureHistoryServiceMock.Verify(x => x.CleanupData());
         }
 
-        private CleanupDataService CreateSubject()
+        private DataRetentionService CreateSubject()
         {
-            return new CleanupDataService(serviceScopeFactoryMock.Object, loggerMock.Object, 0);
+            return new DataRetentionService(serviceScopeFactoryMock.Object, loggerMock.Object, 0);
         }
     }
 }

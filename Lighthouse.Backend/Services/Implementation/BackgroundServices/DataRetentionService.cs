@@ -2,13 +2,13 @@
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 {
-    public class CleanupDataService : BackgroundService
+    public class DataRetentionService : BackgroundService
     {
         private readonly IServiceScopeFactory serviceScopeFactory;
-        private readonly ILogger<CleanupDataService> logger;
+        private readonly ILogger<DataRetentionService> logger;
         private readonly int startupDelayInMinutes;
 
-        public CleanupDataService(IServiceScopeFactory serviceScopeFactory, ILogger<CleanupDataService> logger, int startupDelayInMinutes = 30)
+        public DataRetentionService(IServiceScopeFactory serviceScopeFactory, ILogger<DataRetentionService> logger, int startupDelayInMinutes = 30)
         {
             this.serviceScopeFactory = serviceScopeFactory;
             this.logger = logger;
@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            logger.LogInformation("Cleanup Data Service started");
+            logger.LogInformation("Data Retention Service started");
 
             await AwaitStartupDelay(stoppingToken);
 
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 await WaitForNextExecution(stoppingToken);
             }
 
-            logger.LogInformation("Cleanup Data Service was stopped");
+            logger.LogInformation("Data Retention Service was stopped");
         }
 
         private async Task InvokeDataCleanUp()

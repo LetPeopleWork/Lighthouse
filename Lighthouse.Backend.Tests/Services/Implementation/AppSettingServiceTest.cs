@@ -322,7 +322,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var service = CreateService();
 
-            var settings = service.GetCleanUpDataHistorySettings();
+            var settings = service.GetDataRetentionSettings();
 
             Assert.That(settings.MaxStorageTimeInDays, Is.EqualTo(42));
         }
@@ -334,8 +334,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var service = CreateService();
 
-            var cleanUpDataHistorySettings = new CleanUpDataHistorySettings { MaxStorageTimeInDays = 42 };
-            await service.UpdateCleanUpDataHistorySetting(cleanUpDataHistorySettings);
+            var cleanUpDataHistorySettings = new DataRetentionSettings { MaxStorageTimeInDays = 42 };
+            await service.UpdateDataRetentionSettings(cleanUpDataHistorySettings);
 
             VerifyUpdateCalled(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, "42");
         }

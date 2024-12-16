@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             repositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureHistoryEntry, bool>>>()))
                 .Returns((Expression<Func<FeatureHistoryEntry, bool>> predicate) => currentArchive.Where(predicate.Compile()).AsQueryable());
 
-            appSettingServiceMock.Setup(x => x.GetCleanUpDataHistorySettings()).Returns(new CleanUpDataHistorySettings { MaxStorageTimeInDays = removeOlderThanDays });
+            appSettingServiceMock.Setup(x => x.GetDataRetentionSettings()).Returns(new DataRetentionSettings { MaxStorageTimeInDays = removeOlderThanDays });
 
             var subject = CreateSubject();
             await subject.CleanupData();

@@ -90,7 +90,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddHostedService<TeamUpdateBackgroundService>();
                 builder.Services.AddHostedService<FeatureUpdateService>();
                 builder.Services.AddHostedService<ForecastUpdateService>();
-                builder.Services.AddHostedService<CleanupDataService>();
+                builder.Services.AddHostedService<DataRetentionService>();
 
                 builder.Services.AddSingleton<ICryptoService, CryptoService>();
                 builder.Services.AddSingleton<IGitHubService, GitHubService>();
