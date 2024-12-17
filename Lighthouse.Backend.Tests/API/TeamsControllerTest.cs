@@ -55,6 +55,8 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team = CreateTeam(1, "Numero Uno");
             var project = CreateProject(42, "My Project");
+            project.UpdateTeams([team]);
+
             var feature = CreateFeature(project, team, 12);
 
             var subject = CreateSubject([team], [project], [feature]);
@@ -76,6 +78,8 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team = CreateTeam(1, "Numero Uno");
             var project = CreateProject(42, "My Project");
+            project.UpdateTeams([team]);
+
             var feature1 = CreateFeature(project, team, 12);
             var feature2 = CreateFeature(project, team, 42);
 
@@ -98,10 +102,14 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team = CreateTeam(1, "Numero Uno");
             var project1 = CreateProject(42, "My Project");
+            project1.UpdateTeams([team]);
+
             var feature1 = CreateFeature(project1, team, 12);
             var feature2 = CreateFeature(project1, team, 42);
 
             var project2 = CreateProject(13, "My Other Project");
+            project2.UpdateTeams([team]);
+
             var feature3 = CreateFeature(project2, team, 5);
 
             var subject = CreateSubject([team], [project1, project2], [feature1, feature2, feature3]);
@@ -123,11 +131,15 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team1 = CreateTeam(1, "Numero Uno");
             var project1 = CreateProject(42, "My Project");
+            project1.UpdateTeams([team1]);
+
             var feature1 = CreateFeature(project1, team1, 12);
             var feature2 = CreateFeature(project1, team1, 42);
 
             var team2 = CreateTeam(2, "Una Mas");
             var project2 = CreateProject(13, "My Other Project");
+            project2.UpdateTeams([team2]);
+
             var feature3 = CreateFeature(project2, team2, 5);
 
             var subject = CreateSubject([team1, team2], [project1, project2], [feature1, feature2, feature3]);
@@ -170,10 +182,14 @@ namespace Lighthouse.Backend.Tests.API
         {
             var team = CreateTeam(1, "Numero Uno");
             var project1 = CreateProject(42, "My Project");
+            project1.UpdateTeams([team]);
+
             var feature1 = CreateFeature(project1, team, 12);
             var feature2 = CreateFeature(project1, team, 42);
 
             var project2 = CreateProject(13, "My Other Project");
+            project2.UpdateTeams([team]);
+
             var feature3 = CreateFeature(project2, team, 5);
 
             teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);

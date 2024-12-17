@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             {
                 var childItems = 0;
 
-                var tasks = project.InvolvedTeams.Select(async team =>
+                var tasks = project.Teams.Select(async team =>
                 {
                     var childItemForTeam = await GetRelatedWorkItems($"{issue.Key}", team);
                     return childItemForTeam.totalItems;

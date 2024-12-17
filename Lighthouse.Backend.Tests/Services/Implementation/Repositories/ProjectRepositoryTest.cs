@@ -38,6 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             feature.FeatureWork.Add(new FeatureWork(team, 12, 37, feature));
 
             project.Features.Add(feature);
+            project.UpdateTeams([team]);
 
             // Act
             subject.Add(project);
@@ -48,8 +49,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.Multiple(() =>
             {
                 Assert.That(foundProject, Is.EqualTo(project));
-                Assert.That(foundProject.InvolvedTeams.ToList(), Has.Count.EqualTo(1));
-                Assert.That(foundProject.InvolvedTeams.Single().WorkTrackingSystemConnection.Options, Has.Count.EqualTo(1));
+                Assert.That(foundProject.Teams.ToList(), Has.Count.EqualTo(1));
+                Assert.That(foundProject.Teams.Single().WorkTrackingSystemConnection.Options, Has.Count.EqualTo(1));
             });
         }
 

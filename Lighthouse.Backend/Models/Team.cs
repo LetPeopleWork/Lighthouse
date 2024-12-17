@@ -20,6 +20,8 @@
 
         public Throughput Throughput => new Throughput(RawThroughput);
 
+        public List<Project> Projects { get; } = [];
+
         public int TotalThroughput => RawThroughput.Sum();
 
         public void UpdateThroughput(int[] throughput)

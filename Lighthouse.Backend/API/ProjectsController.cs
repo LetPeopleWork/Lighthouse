@@ -10,13 +10,15 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class ProjectsController : ControllerBase
     {
-        private readonly IRepository<Project> repository;
+        private readonly IRepository<Project> projectRepository;
+        private readonly IRepository<Team> teamRepository;
         private readonly IWorkItemCollectorService workItemCollectorService;
         private readonly IMonteCarloService monteCarloService;
 
-        public ProjectsController(IRepository<Project> repository, IWorkItemCollectorService workItemCollectorService, IMonteCarloService monteCarloService)
+        public ProjectsController(IRepository<Project> projectRepository, IRepository<Team> teamRepository, IWorkItemCollectorService workItemCollectorService, IMonteCarloService monteCarloService)
         {
-            this.repository = repository;
+            this.projectRepository = projectRepository;
+            this.teamRepository = teamRepository;
             this.workItemCollectorService = workItemCollectorService;
             this.monteCarloService = monteCarloService;
         }
@@ -26,7 +28,7 @@ namespace Lighthouse.Backend.API
         {
             var projectDtos = new List<ProjectDto>();
 
-            var allProjects = repository.GetAll();
+            var allProjects = projectRepository.GetAll();
 
             foreach (var project in allProjects)
             {
@@ -40,7 +42,7 @@ namespace Lighthouse.Backend.API
         [HttpGet("{id}")]
         public ActionResult<ProjectDto> Get(int id)
         {
-            var project = repository.GetById(id);
+            var project = projectRepository.GetById(id);
             if (project == null)
             {
                 return NotFound();
@@ -52,14 +54,14 @@ namespace Lighthouse.Backend.API
         [HttpPost("refresh/{id}")]
         public async Task<ActionResult> UpdateFeaturesForProject(int id)
         {
-            var project = repository.GetById(id);
+            var project = projectRepository.GetById(id);
             if (project == null)
             {
                 return NotFound();
             }
 
             await workItemCollectorService.UpdateFeaturesForProject(project);
-            await repository.Save();
+            await projectRepository.Save();
             await monteCarloService.UpdateForecastsForProject(project);
 
             return Ok(new ProjectDto(project));
@@ -68,14 +70,14 @@ namespace Lighthouse.Backend.API
         [HttpDelete("{id}")]
         public void DeleteProject(int id)
         {
-            repository.Remove(id);
-            repository.Save();
+            projectRepository.Remove(id);
+            projectRepository.Save();
         }
 
         [HttpGet("{id}/settings")]
         public ActionResult<ProjectSettingDto> GetProjectSettings(int id)
         {
-            var project = repository.GetById(id);
+            var project = projectRepository.GetById(id);
 
             if (project == null)
             {
@@ -89,7 +91,7 @@ namespace Lighthouse.Backend.API
         [HttpPut("{id}")]
         public async Task<ActionResult<ProjectSettingDto>> UpdateProject(int id, ProjectSettingDto projectSetting)
         {
-            var project = repository.GetById(id);
+            var project = projectRepository.GetById(id);
 
             if (project == null)
             {
@@ -98,8 +100,8 @@ namespace Lighthouse.Backend.API
 
             SyncProjectWithProjectSettings(project, projectSetting);
 
-            repository.Update(project);
-            await repository.Save();
+            projectRepository.Update(project);
+            await projectRepository.Save();
 
             var updatedProjectSettingDto = new ProjectSettingDto(project);
             return Ok(updatedProjectSettingDto);
@@ -111,8 +113,8 @@ namespace Lighthouse.Backend.API
             var newProject = new Project();
             SyncProjectWithProjectSettings(newProject, projectSetting);
 
-            repository.Add(newProject);
-            await repository.Save();
+            projectRepository.Add(newProject);
+            await projectRepository.Save();
 
             var projectSettingDto = new ProjectSettingDto(newProject);
             return Ok(projectSettingDto);
@@ -134,10 +136,35 @@ namespace Lighthouse.Backend.API
 
             project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
 
+            SyncStates(project, projectSetting);
+            SyncMilestones(project, projectSetting);
+            SyncTeams(project, projectSetting);
+        }
+
+        private static void SyncStates(Project project, ProjectSettingDto projectSetting)
+        {
             project.ToDoStates = projectSetting.ToDoStates;
             project.DoingStates = projectSetting.DoingStates;
             project.DoneStates = projectSetting.DoneStates;
+        }
 
+        private void SyncTeams(Project project, ProjectSettingDto projectSetting)
+        {
+            var teams = new List<Team>();
+            foreach (var teamDto in projectSetting.InvolvedTeams)
+            {
+                var team = teamRepository.GetById(teamDto.Id);
+                if (team != null)
+                {
+                    teams.Add(team);
+                }
+            }
+
+            project.UpdateTeams(teams);
+        }
+
+        private static void SyncMilestones(Project project, ProjectSettingDto projectSetting)
+        {
             project.Milestones.Clear();
             foreach (var milestone in projectSetting.Milestones)
             {

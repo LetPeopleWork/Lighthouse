@@ -5,11 +5,10 @@ namespace Lighthouse.Backend.Models
     public class Project : WorkTrackingSystemOptionsOwner
     {
         public string Name { get; set; }
-        
+
         public List<string> WorkItemTypes { get; set; } = new List<string> { "Epic" };
 
-        [NotMapped]
-        public IEnumerable<Team> InvolvedTeams => Features.SelectMany(f => f.FeatureWork).Select(rw => rw.Team).Distinct();
+        public List<Team> Teams { get; } = new List<Team>();
 
         public List<Feature> Features { get; } = [];
 
@@ -35,6 +34,14 @@ namespace Lighthouse.Backend.Models
         {
             Features.Clear();
             Features.AddRange(features);
+
+            ProjectUpdateTime = DateTime.UtcNow;
+        }
+
+        public void UpdateTeams(IEnumerable<Team> teams)
+        {
+            Teams.Clear();
+            Teams.AddRange(teams);
 
             ProjectUpdateTime = DateTime.UtcNow;
         }

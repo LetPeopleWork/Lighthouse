@@ -11,6 +11,7 @@ namespace Lighthouse.Backend.Tests.API
     public class ProjectsControllerTest
     {
         private Mock<IRepository<Project>> projectRepoMock;
+        private Mock<IRepository<Team>> teamRepoMock;
 
         private Mock<IWorkItemCollectorService> workItemCollectorServiceMock;
 
@@ -20,6 +21,7 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             projectRepoMock = new Mock<IRepository<Project>>();
+            teamRepoMock = new Mock<IRepository<Team>>();
             workItemCollectorServiceMock = new Mock<IWorkItemCollectorService>();
             monteCarloServiceMock = new Mock<IMonteCarloService>();
         }
@@ -247,8 +249,10 @@ namespace Lighthouse.Backend.Tests.API
         public async Task UpdateProject_GivenNewProjectSettings_UpdatesProjectAsync()
         {
             var existingProject = new Project { Id = 132 };
+            var existingTeam = new Team { Id = 42, Name = "My Team" };
 
             projectRepoMock.Setup(x => x.GetById(132)).Returns(existingProject);
+            teamRepoMock.Setup(x => x.GetById(42)).Returns(existingTeam);
 
             var updatedProjectSettings = new ProjectSettingDto
             {
@@ -265,6 +269,10 @@ namespace Lighthouse.Backend.Tests.API
                 DefaultAmountOfWorkItemsPerFeature = 10,
                 WorkTrackingSystemConnectionId = 202,
                 SizeEstimateField = "NewField",
+                InvolvedTeams = new List<TeamDto>
+                {
+                    new TeamDto(existingTeam)
+                }
             };
 
             var subject = CreateSubject();
@@ -288,16 +296,23 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(updatedProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(updatedProjectSettings.WorkItemTypes));
                 Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(updatedProjectSettings.Milestones.Count));
+                
                 for (int i = 0; i < updatedProjectSettings.Milestones.Count; i++)
                 {
                     Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(updatedProjectSettings.Milestones[i].Id));
                     Assert.That(projectSettingDto.Milestones[i].Name, Is.EqualTo(updatedProjectSettings.Milestones[i].Name));
                 }
+
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(updatedProjectSettings.WorkItemQuery));
                 Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(updatedProjectSettings.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(updatedProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedProjectSettings.WorkTrackingSystemConnectionId));
                 Assert.That(projectSettingDto.SizeEstimateField, Is.EqualTo(updatedProjectSettings.SizeEstimateField));
+
+                Assert.That(projectSettingDto.InvolvedTeams, Has.Count.EqualTo(1));
+                var teamDto = projectSettingDto.InvolvedTeams.Single();
+                Assert.That(teamDto.Id, Is.EqualTo(existingTeam.Id));
+                Assert.That(teamDto.Name, Is.EqualTo(existingTeam.Name));
             });
         }
 
@@ -319,7 +334,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private ProjectsController CreateSubject()
         {
-            return new ProjectsController(projectRepoMock.Object, workItemCollectorServiceMock.Object, monteCarloServiceMock.Object);
+            return new ProjectsController(projectRepoMock.Object, teamRepoMock.Object, workItemCollectorServiceMock.Object, monteCarloServiceMock.Object);
         }
 
         private List<Project> GetTestProjects()

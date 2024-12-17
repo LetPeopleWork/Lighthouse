@@ -9,16 +9,14 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private readonly IWorkItemServiceFactory workItemServiceFactory;
         private readonly IRepository<Feature> featureRepository;
-        private readonly IRepository<Team> teamRepository;
         private readonly ILogger<WorkItemCollectorService> logger;
 
         private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new Dictionary<int, int>();
 
-        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, IRepository<Team> teamRepository, ILogger<WorkItemCollectorService> logger)
+        public WorkItemCollectorService(IWorkItemServiceFactory workItemServiceFactory, IRepository<Feature> featureRepository, ILogger<WorkItemCollectorService> logger)
         {
             this.workItemServiceFactory = workItemServiceFactory;
             this.featureRepository = featureRepository;
-            this.teamRepository = teamRepository;
             this.logger = logger;
         }
 
@@ -34,7 +32,6 @@ namespace Lighthouse.Backend.Services.Implementation
 
             await GetWorkForFeatures(project);
 
-            RemoveUninvolvedTeams(project);
             await ExtrapolateNotBrokenDownFeatures(project);
 
             logger.LogInformation("Done Updating Features for Project {ProjectName}", project.Name);
@@ -47,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 feature.ClearFeatureWork();
             }
 
-            var involvedTeams = project.InvolvedTeams.Where(t => t.TotalThroughput > 0).ToList();
+            var involvedTeams = project.Teams.Where(t => t.TotalThroughput > 0).ToList();
 
             if (involvedTeams.Count <= 0)
             {
@@ -120,21 +117,6 @@ namespace Lighthouse.Backend.Services.Implementation
             return defaultItems;
         }
 
-        private void RemoveUninvolvedTeams(Project project)
-        {
-            logger.LogInformation("Removing uninvolved teams for Project {ProjectName}", project.Name);
-
-            foreach (var feature in project.Features.ToList())
-            {
-                var uninvolvedTeams = feature.FeatureWork.Where(x => x.TotalWorkItems == 0).Select(kvp => kvp.Team).ToList();
-                foreach (var team in uninvolvedTeams)
-                {
-                    logger.LogInformation("Removing Team {TeamName} from Feature {FeatureName}", team.Name, feature.Name);
-                    feature.RemoveTeamFromFeature(team);
-                }
-            }
-        }
-
         private static int CalculatePercentile(List<int> items, int percentile)
         {
             items.Sort();
@@ -167,7 +149,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private async Task GetWorkForFeatures(Project project)
         {
             var tasks = project.Features
-                .Select(featureForProject => GetRemainingWorkForFeature(featureForProject, project.WorkTrackingSystemConnection.WorkTrackingSystem))
+                .Select(featureForProject => GetRemainingWorkForFeature(featureForProject, project.Teams))
                 .ToList();
 
             await Task.WhenAll(tasks);
@@ -188,7 +170,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var unparentedFeature = GetOrAddUnparentedFeature(project);
 
-            foreach (var team in teamRepository.GetAll().Where(t => t.WorkTrackingSystemConnection.WorkTrackingSystem == project.WorkTrackingSystemConnection.WorkTrackingSystem))
+            foreach (var team in project.Teams)
             {
                 var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
                 var (remainingWorkItems, totalWorkItems) = await workItemService.GetWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery);
@@ -245,11 +227,9 @@ namespace Lighthouse.Backend.Services.Implementation
             return unrelatedItems;
         }
 
-        private async Task GetRemainingWorkForFeature(Feature featureForProject, WorkTrackingSystems workTrackingSystem)
+        private async Task GetRemainingWorkForFeature(Feature featureForProject, IEnumerable<Team> involvedTeams)
         {
-            var teams = teamRepository.GetAll().Where(t => t.WorkTrackingSystemConnection.WorkTrackingSystem == workTrackingSystem).ToList();
-
-            var tasks = teams.Select(async team =>
+            var tasks = involvedTeams.Select(async team =>
             {
                 var workItemService = GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
                 var (remainingWork, totalWork) = await workItemService.GetRelatedWorkItems(featureForProject.ReferenceId, team);

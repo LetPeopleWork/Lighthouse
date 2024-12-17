@@ -4,6 +4,10 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class TeamDto
     {
+        public TeamDto()
+        {
+        }
+
         public TeamDto(Team team)
         {
             Name = team.Name;
@@ -19,7 +23,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public int FeatureWip { get; set; }
 
-        public List<string> FeaturesInProgress { get; }
+        public List<string> FeaturesInProgress { get; } = new List<string>();
 
         public DateTime LastUpdated { get; set; }
 

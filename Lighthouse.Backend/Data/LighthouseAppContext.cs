@@ -69,7 +69,11 @@ namespace Lighthouse.Backend.Data
 
             modelBuilder.Entity<Feature>()
                 .HasMany(f => f.Projects)
-                .WithMany(p => p.Features);            
+                .WithMany(p => p.Features);
+
+            modelBuilder.Entity<Team>()
+                .HasMany(t => t.Projects)
+                .WithMany(p => p.Teams);
 
             modelBuilder.Entity<FeatureHistoryEntry>()
                 .HasMany(f => f.Forecasts)

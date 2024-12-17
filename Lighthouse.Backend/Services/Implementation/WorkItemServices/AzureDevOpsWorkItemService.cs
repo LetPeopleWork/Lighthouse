@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             foreach (var feature in features)
             {
                 var childItems = 0;
-                foreach (var team in project.InvolvedTeams)
+                foreach (var team in project.Teams)
                 {
                     var childItemForTeam = await GetRelatedWorkItems($"{feature.Id}", team);
                     childItems += childItemForTeam.totalItems;

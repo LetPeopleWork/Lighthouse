@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models.Forecast;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -27,6 +28,14 @@ namespace Lighthouse.Backend.API.DTO
             }
 
             return forecastDtos;
+        }
+
+        public static IEnumerable<TeamDto> CreateInvolvedTeamDtos(this Project project)
+        {
+            foreach (var team in project.Teams)
+            {
+                yield return new TeamDto(team);
+            }
         }
     }
 }

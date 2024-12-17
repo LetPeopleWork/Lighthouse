@@ -410,8 +410,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();
-            var project = CreateProject("project = LGHTHSDMO");
             var team = CreateTeam("project = LGHTHSDMO");
+            var project = CreateProject("project = LGHTHSDMO", team);
 
             project.Features.Add(new Feature(team, 10));
 
@@ -450,7 +450,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             return team;
         }
 
-        private Project CreateProject(string query)
+        private Project CreateProject(string query, params Team[] teams)
         {
             var project = new Project
             {
@@ -469,6 +469,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             project.ToDoStates.Clear();
             project.ToDoStates.Add("To Do");
+
+            project.UpdateTeams(teams);
 
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
             project.WorkTrackingSystemConnection = workTrackingSystemConnection;

@@ -5,7 +5,6 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -15,8 +14,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private Mock<IRepository<Feature>> featureRepositoryMock;
 
-        private Mock<IRepository<Team>> teamRepositoryMock;
-
         private WorkItemCollectorService subject;
 
         [SetUp]
@@ -24,23 +21,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             workItemServiceMock = new Mock<IWorkItemService>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
-            teamRepositoryMock = new Mock<IRepository<Team>>();
 
             var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
             workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(It.IsAny<IEnumerable<string>>(), It.IsAny<Team>())).Returns(Task.FromResult(new List<string>()));
 
-            subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object, featureRepositoryMock.Object, teamRepositoryMock.Object, Mock.Of<ILogger<WorkItemCollectorService>>());
+            subject = new WorkItemCollectorService(workItemServiceFactoryMock.Object, featureRepositoryMock.Object, Mock.Of<ILogger<WorkItemCollectorService>>());
         }
 
         [Test]
         public async Task CollectFeaturesForProject_SingleTeamInvolved_FindsFeauture()
         {
             var team = CreateTeam();
-            SetupTeams(team);
 
-            var project = CreateProject();
+            var project = CreateProject(team);
             var feature = new Feature(team, 12) { ReferenceId = "12" };
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
@@ -62,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_GivenExistingFeatures_ClearsExistingFeatures()
         {
             var team = CreateTeam();
-            var project = CreateProject();
+            var project = CreateProject(team);
             var existingFeature = new Feature(team, 12) { Id = 12 };
 
             project.Features.Add(existingFeature);
@@ -81,9 +76,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_UsesDefaultItems(string featureState, int remainingWork, int defaultWork, int expectedWork)
         {
             var team = CreateTeam();
-            SetupTeams(team);
+            var project = CreateProject(team);
 
-            var project = CreateProject();
             project.DefaultAmountOfWorkItemsPerFeature = defaultWork;
             project.OverrideRealChildCountStates.Add("Analysis in Progress");
 
@@ -113,9 +107,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_ItemWasMovedBack_UsesDefaultItems()
         {
             var team = CreateTeam();
-            SetupTeams(team);
+            var project = CreateProject(team);
 
-            var project = CreateProject();
             project.DefaultAmountOfWorkItemsPerFeature = 7;
             project.OverrideRealChildCountStates.Add("Analysis in Progress");
 
@@ -148,10 +141,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_NoRemainingWork_NoTotalWork_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
-            var project = CreateProject();
+            var project = CreateProject(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-
-            SetupTeams(team);
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
@@ -183,13 +174,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_UseCalculatedDefault_AddsDefaultRemainingWorkBasedOnPercentileToFeature(int[] childItemCount, int percentile, int expectedValue)
         {
             var team = CreateTeam([1]);
-            var project = CreateProject();
+            var project = CreateProject(team);
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
             project.DefaultWorkItemPercentile = percentile;
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-
-            SetupTeams(team);
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
@@ -213,13 +202,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_UseCalculatedDefault_QueryHasNoMatches_AddsDefaultRemainingWork()
         {
             var team = CreateTeam([1]);
-            var project = CreateProject();
+            var project = CreateProject(team);
+
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
             project.DefaultWorkItemPercentile = 80;
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-
-            SetupTeams(team);
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
@@ -243,11 +231,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_NoRemainingWork_NotTotalWork_SizeEstimateFieldSet_SizeEstimateNotAvailable_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
-            var project = CreateProject();
+            var project = CreateProject(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.SizeEstimateField = "customfield_10037";
-
-            SetupTeams(team);
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
@@ -268,11 +254,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_NoRemainingWork_NoTotalWork_SizeEstimateFieldSet_SizeEstimateAvailable_AddsEstimatedWorkToFeature()
         {
             var team = CreateTeam([1]);
-            var project = CreateProject();
+            var project = CreateProject(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.SizeEstimateField = "customfield_10037";
-
-            SetupTeams(team);
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
@@ -293,10 +277,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_NoRemainingWork_HasTotalWork_DoesNotAddDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam([1]);
-            var project = CreateProject();
+            var project = CreateProject(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-
-            SetupTeams(team);
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
@@ -316,9 +298,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
-            SetupTeams(team1, team2);
+            var project = CreateProject(team1, team2);
 
-            var project = CreateProject();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
             var feature1 = new Feature([(team1, 0, 12), (team2, 0, 10)]) { ReferenceId = "17" };
@@ -344,9 +325,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam([0]);
-            SetupTeams(team1, team2);
+            var project = CreateProject(team1, team2);
 
-            var project = CreateProject();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
             var feature1 = new Feature([(team1, 0, 13), (team2, 0, 37)]) { ReferenceId = "34" };
@@ -362,7 +342,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
                 Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                Assert.That(project.Features.First().FeatureWork.Single().RemainingWorkItems, Is.EqualTo(12));
+                Assert.That(project.Features.First().FeatureWork.First().RemainingWorkItems, Is.EqualTo(12));
+                Assert.That(project.Features.First().FeatureWork.Last().RemainingWorkItems, Is.EqualTo(0));
             });
         }
 
@@ -370,9 +351,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task CollectFeaturesForProject_SingleTeamInvolved_FindsRemainingWorkByTeam()
         {
             var team = CreateTeam();
-            SetupTeams(team);
-
-            var project = CreateProject();
+            var project = CreateProject(team);
 
             var remainingWorkItems = 12;
             var feature = new Feature(team, remainingWorkItems) { ReferenceId = "42" };
@@ -392,9 +371,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
-            var project = CreateProject();
-
-            SetupTeams(team1, team2);
+            var project = CreateProject(team1, team2);
 
             workItemServiceMock.Setup(x => x.GetOpenWorkItems(It.IsAny<IEnumerable<string>>(), It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string>()));
 
@@ -410,9 +387,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
-            SetupTeams(team1, team2);
 
-            var project = CreateProject();
+            var project = CreateProject(team1, team2);
 
             var remainingWorkItemsFeature1 = 12;
             var remainingWorkItemsFeature2 = 1337;
@@ -437,9 +413,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
-            SetupTeams(team1, team2);
 
-            var project = CreateProject();
+            var project = CreateProject(team1, team2);
 
             var remainingWorkItemsTeam1 = 12;
             var remainingWorkItemsTeam2 = 7;
@@ -467,9 +442,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var expectedUnparentedOrder = "123";
             var team = CreateTeam();
-            SetupTeams(team);
+            var project = CreateProject(team);
 
-            var project = CreateProject();
             project.OverrideRealChildCountStates.AddRange(overrideStates);
 
             project.UnparentedItemsQuery = "[System.Tags] CONTAINS Release 123";
@@ -491,11 +465,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             });
         }
 
-        private void SetupTeams(params Team[] teams)
-        {
-            teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
-        }
-
         private Team CreateTeam(int[]? throughput = null)
         {
             var team = new Team { Name = "Team" };
@@ -514,7 +483,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             return team;
         }
 
-        private Project CreateProject()
+        private Project CreateProject(params Team[] teams)
         {
             var project = new Project
             {
@@ -522,6 +491,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             };
 
             project.WorkItemTypes.Add("Feature");
+            project.UpdateTeams(teams);
 
             var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
             project.WorkTrackingSystemConnection = workTrackingConnection;

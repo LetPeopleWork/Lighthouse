@@ -10,10 +10,7 @@ namespace Lighthouse.Backend.API.DTO
             Id = project.Id;
             LastUpdated = project.ProjectUpdateTime;
 
-            foreach (var team in project.InvolvedTeams)
-            {
-                InvolvedTeams.Add(new TeamDto(team));
-            }
+            InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
 
             foreach (var feature in project.Features)
             {

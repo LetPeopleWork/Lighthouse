@@ -191,7 +191,7 @@ namespace Lighthouse.Backend.API
         {
             var teamDto = new TeamDto(team);
 
-            var teamProjects = allProjects.Where(p => p.InvolvedTeams.Any(t => t.Id == team.Id)).ToList();
+            var teamProjects = allProjects.Where(p => p.Teams.Any(t => t.Id == team.Id)).ToList();
 
             var features = new List<Feature>();
 

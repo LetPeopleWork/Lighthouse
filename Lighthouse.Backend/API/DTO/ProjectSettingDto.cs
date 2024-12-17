@@ -30,6 +30,8 @@ namespace Lighthouse.Backend.API.DTO
             ToDoStates = project.ToDoStates;
             DoingStates = project.DoingStates;
             DoneStates = project.DoneStates;
+
+            InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
         }
 
         [JsonRequired]
@@ -66,5 +68,7 @@ namespace Lighthouse.Backend.API.DTO
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public string? SizeEstimateField { get; set; } = string.Empty;
+
+        public List<TeamDto> InvolvedTeams { get; set; } = new List<TeamDto>();
     }
 }
