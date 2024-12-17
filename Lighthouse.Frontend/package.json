@@ -17,7 +17,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@melloware/react-logviewer": "^6.1.0",
+    "@melloware/react-logviewer": "^6.1.1",
     "@mui/icons-material": "^6.2.0",
     "@mui/lab": "^6.0.0-beta.19",
     "@mui/material": "^6.2.0",
@@ -47,7 +47,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^18.3.1",
-    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
     "@typescript-eslint/parser": "^8.17.0",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^2.1.8",
@@ -56,7 +56,7 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "jsdom": "^25.0.1",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.0",
+    "typescript-eslint": "^8.18.1",
     "vite": "^6.0.3",
     "vitest": "^2.1.8",
     "vitest-sonar-reporter": "^2.0.0"
