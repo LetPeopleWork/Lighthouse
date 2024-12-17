@@ -375,6 +375,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        [TestCase("[System.TeamProject] = 'CMFTTestTeamProject'", true)]
+        [TestCase("[System.TeamProject] = 'CMFTTestTeamProject' AND [System.Tags] CONTAINS 'NotExistingTag'", false)]
+        [TestCase("[System.TeamProject] = 'SomethingThatDoesNotExist'", false)]
+        public async Task ValidateTeamSettings_ValidConnectionSettings_ReturnsTrueIfTeamHasThroughput(string query, bool expectedValue)
+        {
+            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
+
+            var team = CreateTeam(query);
+            team.ThroughputHistory = history;
+
+            var subject = CreateSubject();
+
+            var isValid = await subject.ValidateTeamSettings(team);
+
+            Assert.That(isValid, Is.EqualTo(expectedValue));
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_InvalidConnectionSettings_ReturnsFalse()
+        {
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            var subject = CreateSubject();
+
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, Value = "https://dev.azure.com/huserben", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = "dsakjflasdkjflasdkfjlaskdjflskdjfa", IsSecret = true },
+                ]);
+
+            team.WorkTrackingSystemConnection = connectionSetting;
+
+            var isValid = await subject.ValidateTeamSettings(team);
+
+            Assert.That(isValid, Is.False);
+        }
+
+        [Test]
         [TestCase("")]
         [TestCase("MambooJamboo")]
         public async Task GetEstimatedSizeForItem_EstimateSizeFieldNotExists_Returns0(string fieldName)

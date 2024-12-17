@@ -236,9 +236,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
-        public Task<bool> ValidateTeamSettings(Team team)
+        public async Task<bool> ValidateTeamSettings(Team team)
         {
-            return Task.FromResult(false);
+            try
+            {
+                logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
+                var witClient = GetClientService(team.WorkTrackingSystemConnection);
+
+                var throughput = await GetClosedItemsPerDay(witClient, team.ThroughputHistory, team);
+                var totalThroughput = throughput.Sum();
+
+                logger.LogInformation("Found a total of {NumberOfWorkItems} Closed Work Items with specified Query in the last {Days} days", totalThroughput, team.ThroughputHistory);
+
+                return totalThroughput > 0;
+            }
+            catch
+            {
+                logger.LogInformation("Error during Validation of Team Settings for Team {TeamName}", team.Name);
+                return false;
+            }
         }
 
         public async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)

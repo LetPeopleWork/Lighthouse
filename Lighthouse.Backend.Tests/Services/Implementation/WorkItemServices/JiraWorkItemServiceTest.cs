@@ -4,7 +4,6 @@ using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
-using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -25,12 +24,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task GetClosedWorkItemsForTeam_FullHistory_TestProject_ReturnsCorrectAmountOfItems()
         {
+            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
-            var closedItems = await subject.GetClosedWorkItems(720, team);
+            var closedItems = await subject.GetClosedWorkItems(history, team);
 
-            Assert.That(closedItems.Count, Is.EqualTo(720));
+            Assert.That(closedItems.Count, Is.EqualTo(history));
             Assert.That(closedItems.Sum(), Is.EqualTo(6));
         }
 
@@ -371,6 +371,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
                 ]);
 
             var isValid = await subject.ValidateConnection(connectionSetting);
+
+            Assert.That(isValid, Is.False);
+        }
+
+        [Test]
+        [TestCase("project = LGHTHSDMO", true)]
+        [TestCase("project = LGHTHSDMO AND labels = 'NotExisting'", false)]
+        [TestCase("project = SomethingThatDoesNotExist", false)]
+        public async Task ValidateTeamSettings_ValidConnectionSettings_ReturnsTrueIfTeamHasThroughput(string query, bool expectedValue)
+        {
+            var team = CreateTeam(query);
+
+            var subject = CreateSubject();
+
+            var isValid = await subject.ValidateTeamSettings(team);
+
+            Assert.That(isValid, Is.EqualTo(expectedValue));
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_InvalidConnectionSettings_ReturnsFalse()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO");
+
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = "https://letpeoplework.atlassian.net", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = "Benji", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = "JennifferAniston", IsSecret = true },
+                ]);
+
+            team.WorkTrackingSystemConnection = connectionSetting;
+
+            var isValid = await subject.ValidateTeamSettings(team);
 
             Assert.That(isValid, Is.False);
         }
