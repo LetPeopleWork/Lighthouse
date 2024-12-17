@@ -65,6 +65,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: ["Analysis In Progress"],
+            involvedTeams: [],
         },
         {
             id: 1,
@@ -83,6 +84,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: ["Analysis In Progress"],
+            involvedTeams: [],
         },
         {
             id: 2,
@@ -101,6 +103,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: ["Analysis In Progress"],
+            involvedTeams: [],
         },
     ];
 
@@ -116,6 +119,10 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         this.recreateFeatures();
         this.recreateTeams();
         this.recreateProjects();
+
+        for (const projectSetting of this.projectSettings){
+            projectSetting.involvedTeams = [this.teams[0], this.teams[1], this.teams[2], this.teams[3]]
+        }
     }
 
     async getAllFeatures(): Promise<PreviewFeature[]> {
@@ -446,6 +453,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: ["Analysis In Progress"],
+            involvedTeams: [],
         };
     }
 

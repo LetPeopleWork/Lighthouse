@@ -18,12 +18,17 @@ const DefaultProjectSettings: React.FC = () => {
         return Promise.resolve([]);
     }
 
+    const getAllTeams = () => {
+        return Promise.resolve([]);
+    };
+
     return (
         <ModifyProjectSettings
             title=""
             getProjectSettings={getDefaultProjectSettings}
             saveProjectSettings={saveDefaultProjectSettings}
             getWorkTrackingSystems={getWorkTrackingSystems}
+            getAllTeams={getAllTeams}
             modifyDefaultSettings={true}
         />
     )

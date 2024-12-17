@@ -73,6 +73,7 @@ describe('ProjectService', () => {
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: [""],
+            involvedTeams: [],
         };
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
@@ -101,6 +102,7 @@ describe('ProjectService', () => {
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: [""],
+            involvedTeams: [],
         };
 
         mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
@@ -129,6 +131,7 @@ describe('ProjectService', () => {
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: [""],
+            involvedTeams: [],
         };
 
         const mockResponse: IProjectSettings = {
@@ -148,6 +151,7 @@ describe('ProjectService', () => {
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: [""],
+            involvedTeams: [],
         };
 
         mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });

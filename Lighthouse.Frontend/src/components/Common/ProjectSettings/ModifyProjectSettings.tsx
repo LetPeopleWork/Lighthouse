@@ -1,5 +1,5 @@
 import { Container, Typography, SelectChangeEvent } from "@mui/material";
-import Grid from '@mui/material/Grid2'
+import Grid from '@mui/material/Grid2';
 import React, { useEffect, useState } from "react";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import MilestonesComponent from "../Milestones/MilestonesComponent";
@@ -14,28 +14,46 @@ import ActionButton from "../ActionButton/ActionButton";
 import ProjectConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/ProjectConfigurationTutorial";
 import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
 import StatesList from "../StatesList/StatesList";
+import { ITeam } from "../../../models/Team/Team";
+import TeamsList from "../TeamsList/TeamsList";
 
 interface ModifyProjectSettingsProps {
     title: string;
     getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
     getProjectSettings: () => Promise<IProjectSettings>;
+    getAllTeams: () => Promise<ITeam[]>;
     saveProjectSettings: (settings: IProjectSettings) => Promise<void>;
     modifyDefaultSettings?: boolean;
 }
 
-const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, getWorkTrackingSystems, getProjectSettings, saveProjectSettings, modifyDefaultSettings = false }) => {
+const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
+    title,
+    getWorkTrackingSystems,
+    getProjectSettings,
+    getAllTeams,
+    saveProjectSettings,
+    modifyDefaultSettings = false
+}) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [projectSettings, setProjectSettings] = useState<IProjectSettings | null>(null);
     const [workTrackingSystems, setWorkTrackingSystems] = useState<IWorkTrackingSystemConnection[]>([]);
+    const [teams, setTeams] = useState<ITeam[]>([]);
+    const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
     const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] = useState<IWorkTrackingSystemConnection | null>(null);
     const [formValid, setFormValid] = useState<boolean>(false);
+
+    const handleTeamSelectionChange = (teamIds: number[]) => {
+        setSelectedTeams(teamIds);
+    };
 
     const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
         const selectedWorkTrackingSystemName = event.target.value;
         const selectedWorkTrackingSystem = workTrackingSystems.find(system => system.name === selectedWorkTrackingSystemName) ?? null;
 
         setSelectedWorkTrackingSystem(selectedWorkTrackingSystem);
-    }; const handleOnNewWorkTrackingSystemConnectionAddedDialogClosed = async (newConnection: IWorkTrackingSystemConnection) => {
+    };
+
+    const handleOnNewWorkTrackingSystemConnectionAddedDialogClosed = async (newConnection: IWorkTrackingSystemConnection) => {
         setWorkTrackingSystems(prevSystems => [...prevSystems, newConnection]);
         setSelectedWorkTrackingSystem(newConnection);
     };
@@ -80,7 +98,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
         setProjectSettings(prev => prev ? { ...prev, doneStates: (prev.doneStates || []).filter(item => item !== doneState) } : prev);
     };
 
-    const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number | boolean | string[] ) => {
+    const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number | boolean | string[]) => {
         setProjectSettings(prev => prev ? { ...prev, [key]: value } : prev);
     };
 
@@ -106,22 +124,26 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
             return;
         }
 
-        const updatedSettings: IProjectSettings = { ...projectSettings, workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0 };
-        await saveProjectSettings(updatedSettings);
+        const updatedSettings: IProjectSettings = {
+            ...projectSettings,
+            workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
+            involvedTeams: teams.filter(team => selectedTeams.includes(team.id))
+        };
 
+        await saveProjectSettings(updatedSettings);
         setFormValid(false);
-    }
+    };
 
     useEffect(() => {
         const handleStateChange = () => {
-            const isFormValid = projectSettings?.name != '' && projectSettings?.defaultAmountOfWorkItemsPerFeature !== undefined &&
-                (modifyDefaultSettings || projectSettings?.workItemQuery != '') && projectSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);
+            const isFormValid = projectSettings?.name != '' && projectSettings?.defaultAmountOfWorkItemsPerFeature !== undefined && projectSettings?.workItemTypes.length > 0 &&
+            (modifyDefaultSettings || (selectedTeams.length > 0 && projectSettings?.workItemQuery != '' && selectedWorkTrackingSystem !== null));
 
             setFormValid(isFormValid);
         };
 
         handleStateChange();
-    }, [projectSettings, selectedWorkTrackingSystem, workTrackingSystems, modifyDefaultSettings]);
+    }, [projectSettings, selectedWorkTrackingSystem, workTrackingSystems, modifyDefaultSettings, selectedTeams]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -129,9 +151,13 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
             try {
                 const settings = await getProjectSettings();
                 setProjectSettings(settings);
+                setSelectedTeams(settings.involvedTeams.map(team => team.id));
 
                 const systems = await getWorkTrackingSystems();
                 setWorkTrackingSystems(systems);
+
+                const fetchedTeams = await getAllTeams();
+                setTeams(fetchedTeams);
 
                 setSelectedWorkTrackingSystem(systems.find(system => system.id === settings.workTrackingSystemConnectionId) ?? null);
 
@@ -143,7 +169,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
         };
 
         fetchData();
-    }, [getProjectSettings, getWorkTrackingSystems]);
+    }, [getProjectSettings, getWorkTrackingSystems, getAllTeams]);
 
     return (
         <LoadingAnimation isLoading={loading} hasError={false} >
@@ -156,7 +182,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
                     </Grid>
                 </Grid>
                 <Grid container spacing={3}>
-                    <Grid  size={{ xs: 12 }}>
+                    <Grid size={{ xs: 12 }}>
                         <Typography variant='h4'>{title}</Typography>
                     </Grid>
 
@@ -170,6 +196,16 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
                         onAddWorkItemType={handleAddWorkItemType}
                         onRemoveWorkItemType={handleRemoveWorkItemType}
                     />
+
+                    {!modifyDefaultSettings ? (
+                        <TeamsList
+                            allTeams={teams}
+                            selectedTeams={selectedTeams}
+                            onSelectionChange={handleTeamSelectionChange}
+                        />) :
+                        (
+                            <></>
+                        )}
 
                     <StatesList
                         toDoStates={projectSettings?.toDoStates || []}
@@ -206,7 +242,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
                         onProjectSettingsChange={handleProjectSettingsChange}
                     />
 
-                    <Grid  size={{ xs: 12 }}>
+                    <Grid size={{ xs: 12 }}>
                         <ActionButton
                             buttonVariant="contained"
                             buttonText="Save"
@@ -216,7 +252,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({ title, ge
                 </Grid>
             </Container>
         </LoadingAnimation>
-    )
-}
+    );
+};
 
 export default ModifyProjectSettings;

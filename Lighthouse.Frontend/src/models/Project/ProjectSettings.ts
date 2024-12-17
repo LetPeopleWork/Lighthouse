@@ -1,3 +1,4 @@
+import { ITeam } from "../Team/Team";
 import { IMilestone } from "./Milestone";
 
 export interface IProjectSettings {
@@ -7,6 +8,7 @@ export interface IProjectSettings {
     milestones: IMilestone[];
     workItemQuery: string;
     unparentedItemsQuery: string;
+    involvedTeams: ITeam[];
     
     toDoStates: string[];
     doingStates: string[];

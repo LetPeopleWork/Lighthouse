@@ -9,26 +9,27 @@ const EditProject: React.FC = () => {
     const isNewProject = id === undefined;
 
     const navigate = useNavigate();
-    const { settingsService, projectService, workTrackingSystemService } = useContext(ApiServiceContext);
+    const { settingsService, projectService, workTrackingSystemService, teamService } = useContext(ApiServiceContext);
 
     const pageTitle = isNewProject ? "Create Project" : "Update Project";    
 
     const getProjectSettings = async () => {
         if (!isNewProject && id) {
             return await projectService.getProjectSettings(parseInt(id, 10));
-        }
-        else{
+        } else {
             return await settingsService.getDefaultProjectSettings();
         }
-    }
+    };
 
     const getWorkTrackingSystems = async () => {
-        const systems = await workTrackingSystemService.getConfiguredWorkTrackingSystems();
-        return systems;
-    }
+        return await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+    };
 
+    const getAllTeams = async () => {
+        return await teamService.getTeams();
+    };
 
-    const saveProjectSettings = async (updatedSettings : IProjectSettings) => {
+    const saveProjectSettings = async (updatedSettings: IProjectSettings) => {
         if (isNewProject) {
             updatedSettings = await projectService.createProject(updatedSettings);
         } else {
@@ -43,6 +44,7 @@ const EditProject: React.FC = () => {
             title={pageTitle}
             getProjectSettings={getProjectSettings}
             getWorkTrackingSystems={getWorkTrackingSystems}
+            getAllTeams={getAllTeams}
             saveProjectSettings={saveProjectSettings} />
     );
 };

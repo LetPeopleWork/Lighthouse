@@ -21,6 +21,7 @@ describe('AdvancedInputsComponent', () => {
         doingStates: ["Active"],
         doneStates: ["Done"],
         overrideRealChildCountStates: [""],
+        involvedTeams: [],
     };    
 
     const mockOnProjectSettingsChange = vi.fn();

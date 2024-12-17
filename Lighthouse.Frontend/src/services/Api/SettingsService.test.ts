@@ -103,6 +103,7 @@ describe('SettingsService', () => {
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: [""],
+            involvedTeams: [],
         };
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -131,6 +132,7 @@ describe('SettingsService', () => {
             doingStates: ["Active"],
             doneStates: ["Done"],
             overrideRealChildCountStates: [""],
+            involvedTeams: [],
         };
 
         mockedAxios.put.mockResolvedValueOnce({});
