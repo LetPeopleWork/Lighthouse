@@ -232,9 +232,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
                 return totalThroughput > 0;
             }
-            catch
+            catch (Exception exception)
             {
-                logger.LogInformation("Error during Validation of Team Settings for Team {TeamName}", team.Name);
+                logger.LogInformation(exception, "Error during Validation of Team Settings for Team {TeamName}", team.Name);
                 return false;
             }
         }
