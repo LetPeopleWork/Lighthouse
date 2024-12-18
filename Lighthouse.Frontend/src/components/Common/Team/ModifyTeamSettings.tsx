@@ -13,20 +13,28 @@ import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
 import TeamConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/TeamConfigurationTutorial";
 import StatesList from "../StatesList/StatesList";
 
+import CheckIcon from '@mui/icons-material/Check';
+import ErrorIcon from '@mui/icons-material/Error';
+import PendingIcon from '@mui/icons-material/HourglassEmpty';
+
 interface ModifyTeamSettingsProps {
     title: string;
     getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
     getTeamSettings: () => Promise<ITeamSettings>;
     saveTeamSettings: (settings: ITeamSettings) => Promise<void>;
+    validateTeamSettings: (settings: ITeamSettings) => Promise<boolean>;
     modifyDefaultSettings?: boolean;
 }
 
-const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkTrackingSystems, getTeamSettings, saveTeamSettings, modifyDefaultSettings = false }) => {
+type ValidationState = 'pending' | 'success' | 'failed';
+
+const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkTrackingSystems, getTeamSettings, saveTeamSettings, validateTeamSettings, modifyDefaultSettings = false }) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [teamSettings, setTeamSettings] = useState<ITeamSettings | null>(null);
     const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] = useState<IWorkTrackingSystemConnection | null>(null);
     const [workTrackingSystems, setWorkTrackingSystems] = useState<IWorkTrackingSystemConnection[]>([]);
     const [formValid, setFormValid] = useState<boolean>(false);
+    const [validationState, setValidationState] = useState<ValidationState>(modifyDefaultSettings ? 'success' : 'pending');
 
     const handleTeamSettingsChange = (key: keyof ITeamSettings, value: string | number) => {
         setTeamSettings(prev => prev ? { ...prev, [key]: value } : prev);
@@ -93,6 +101,10 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
         await saveTeamSettings(updatedSettings);
 
         setFormValid(false);
+
+        if (!modifyDefaultSettings) {
+            setValidationState('pending');
+        }
     }
 
     useEffect(() => {
@@ -101,6 +113,10 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                 (modifyDefaultSettings || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);
 
             setFormValid(isFormValid);
+
+            if (!modifyDefaultSettings) {
+                setValidationState('pending');
+            }
         };
 
         handleStateChange();
@@ -128,6 +144,35 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
         fetchData();
     }, [getTeamSettings, getWorkTrackingSystems]);
 
+    const getValidationIcon = () => {
+        switch (validationState) {
+            case 'success':
+                return <CheckIcon color="success" />;
+            case 'failed':
+                return <ErrorIcon color="error" />;
+            default:
+                return <PendingIcon color="action" />;
+        }
+    };
+
+    const handleValidate = async () => {
+        setValidationState('pending');
+
+        if (!teamSettings || modifyDefaultSettings) {
+            return;
+        }
+
+        const updatedSettings: ITeamSettings = { ...teamSettings, workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0 };
+        const validationResult = await validateTeamSettings(updatedSettings);
+
+        if (validationResult) {
+            setValidationState('success');
+        }
+        else {
+            setValidationState('failed')
+        }
+    };
+
     return (
         <LoadingAnimation isLoading={loading} hasError={false}>
             <Container maxWidth={false}>
@@ -139,7 +184,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                     </Grid>
                 </Grid>
                 <Grid container spacing={3}>
-                    <Grid  size={{ xs: 12 }}>
+                    <Grid size={{ xs: 12 }}>
                         <Typography variant='h4'>{title}</Typography>
                     </Grid>
 
@@ -181,13 +226,28 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                         onTeamSettingsChange={handleTeamSettingsChange}
                     />
 
-                    <Grid  size={{ xs: 12 }}>
+
+                    <Grid size={{ xs: 12 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                        {!modifyDefaultSettings ? getValidationIcon() : (<></>)}
+
+                        {!modifyDefaultSettings ? (
+
+                            <ActionButton
+                                buttonText="Validate"
+                                onClickHandler={handleValidate}
+                                buttonVariant="outlined"
+                                disabled={!formValid}
+                            />) : (
+                            <></>
+                        )}
+
                         <ActionButton
                             buttonVariant="contained"
                             buttonText="Save"
                             onClickHandler={handleSave}
-                            disabled={!formValid} />
+                            disabled={validationState != 'success' && formValid} />
                     </Grid>
+
                 </Grid>
             </Container>
         </LoadingAnimation>

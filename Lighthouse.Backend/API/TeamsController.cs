@@ -160,7 +160,7 @@ namespace Lighthouse.Backend.API
 
             if (workTrackingSystem == null)
             {
-                return NotFound();
+                return NotFound(false);
             }
 
             var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };

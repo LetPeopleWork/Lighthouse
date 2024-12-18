@@ -164,4 +164,50 @@ describe('TeamService', () => {
 
         expect(mockedAxios.post).toHaveBeenCalledWith('/forecast/update/1');
     });
+
+    it('should validate team settings successfully', async () => {
+        const mockTeamSettings: ITeamSettings = {
+            id: 1,
+            name: "Team A",
+            throughputHistory: 30,
+            featureWIP: 1,
+            workItemQuery: "Query",
+            workItemTypes: ["Epic"],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };
+    
+        mockedAxios.post.mockResolvedValueOnce({ data: true });
+    
+        const isValid = await teamService.validateTeamSettings(mockTeamSettings);
+    
+        expect(isValid).toBe(true);
+        expect(mockedAxios.post).toHaveBeenCalledWith('/teams/validate', mockTeamSettings);
+    });
+    
+    it('should return false for invalid team settings', async () => {
+        const mockTeamSettings: ITeamSettings = {
+            id: 1,
+            name: "Team A",
+            throughputHistory: 30,
+            featureWIP: 1,
+            workItemQuery: "Query",
+            workItemTypes: ["Epic"],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"]
+        };
+    
+        mockedAxios.post.mockResolvedValueOnce({ data: false });
+    
+        const isValid = await teamService.validateTeamSettings(mockTeamSettings);
+    
+        expect(isValid).toBe(false);
+        expect(mockedAxios.post).toHaveBeenCalledWith('/teams/validate', mockTeamSettings);
+    });    
 });

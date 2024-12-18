@@ -13,6 +13,10 @@ const EditTeamPage: React.FC = () => {
     const navigate = useNavigate();
     const { settingsService, teamService, workTrackingSystemService } = useContext(ApiServiceContext);
 
+    const validateTeamSettings = async (updatedTeamSettings: ITeamSettings) => {
+        return teamService.validateTeamSettings(updatedTeamSettings);
+    }
+
     const saveTeamSettings = async (updatedSettings: ITeamSettings) => {
         if (isNewTeam) {
             updatedSettings = await teamService.createTeam(updatedSettings);
@@ -43,6 +47,7 @@ const EditTeamPage: React.FC = () => {
             title={pageTitle}
             getWorkTrackingSystems={getWorkTrackingSystems}
             getTeamSettings={getTeamSettings} 
+            validateTeamSettings={validateTeamSettings}
             saveTeamSettings={saveTeamSettings}/>
     );
 };

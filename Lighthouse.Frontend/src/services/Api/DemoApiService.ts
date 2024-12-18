@@ -213,6 +213,14 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         return { id: 1, name: 'My Team', throughputHistory: 30, featureWIP: 1, workItemQuery: "[System.TeamProject] = \"My Team\"", workItemTypes: ["User Story", "Bug"], workTrackingSystemConnectionId: 12, relationCustomField: '', toDoStates: ["New"], doingStates: ["Active"], doneStates: ["Done"] }
     }
 
+    async validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean>{
+        console.log(`Validating Team ${teamSettings.name}`);
+
+        await this.delay();
+
+        return true;
+    }
+
     async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
         console.log(`Updating Team ${teamSettings.name}`);
 

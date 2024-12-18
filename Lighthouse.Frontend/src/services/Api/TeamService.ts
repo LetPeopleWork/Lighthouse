@@ -8,6 +8,7 @@ export interface ITeamService {
     getTeam(id: number): Promise<Team | null>;
     deleteTeam(id: number): Promise<void>;
     getTeamSettings(id: number): Promise<ITeamSettings>;
+    validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean>;
     updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
     createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
     updateTeamData(teamId: number): Promise<void>;
@@ -46,6 +47,13 @@ export class TeamService extends BaseApiService implements ITeamService {
     async createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
         return await this.withErrorHandling(async () => {
             const response = await this.apiService.post<ITeamSettings>(`/teams`, teamSettings);
+            return response.data;
+        });
+    }
+
+    async validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean>{
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.post<boolean>(`/teams/validate`, teamSettings);
             return response.data;
         });
     }
