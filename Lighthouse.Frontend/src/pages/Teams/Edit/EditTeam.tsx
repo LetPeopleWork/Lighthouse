@@ -24,7 +24,7 @@ const EditTeamPage: React.FC = () => {
             updatedSettings = await teamService.updateTeam(updatedSettings);
         }
 
-        navigate(`/teams/${updatedSettings.id}`);
+        navigate(`/teams/${updatedSettings.id}?triggerUpdate=true`);
     };
 
     const getTeamSettings = async () => {

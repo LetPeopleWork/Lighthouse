@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Team } from '../../../models/Team/Team';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import dayjs from 'dayjs';
@@ -19,6 +19,7 @@ import LocalDateTimeDisplay from '../../../components/Common/LocalDateTimeDispla
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const [searchParams] = useSearchParams();
     const teamId = Number(id);
 
     const [team, setTeam] = useState<Team>();
@@ -105,9 +106,18 @@ const TeamDetail: React.FC = () => {
 
     useEffect(() => {
         if (team) {
+
+
             fetchThroughput();
         }
     }, [team]);
+
+    useEffect(() => {
+        const shouldTriggerUpdate = searchParams.get('triggerUpdate') === 'true';
+        if (shouldTriggerUpdate) {
+            onUpdateThroughput();
+        }
+    }, [searchParams]);
 
     return (
         <LoadingAnimation hasError={hasError} isLoading={isLoading}>
