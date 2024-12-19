@@ -479,6 +479,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        [TestCase("")]
+        [TestCase("MambooJamboo")]
+        public async Task GetFeatureOwnerByField_FeatureOwnerFieldDoesNotExist_ReturnsEmptyString(string fieldName)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            project.FeatureOwnerField = fieldName;
+
+            var featureOwnerFieldContent = await subject.GetFeatureOwnerByField("370", project);
+
+            Assert.That(featureOwnerFieldContent, Is.Empty);
+        }
+
+        [Test]
+        [TestCase("370", "Microsoft.VSTS.Scheduling.Size", "12")]
+        [TestCase("377", "System.AreaPath", "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths")]
+        [TestCase("370", "System.Tags", "Release1")]
+        public async Task GetFeatureOwnerByField_GivenExistingField_ReturnsCorrectValue(string referenceId, string fieldName, string expectedValue)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            project.FeatureOwnerField = fieldName;
+
+            var estimatedSize = await subject.GetFeatureOwnerByField(referenceId, project);
+
+            Assert.That(estimatedSize, Is.EqualTo(expectedValue));
+        }
+
+        [Test]
         public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();

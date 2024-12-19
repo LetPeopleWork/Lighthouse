@@ -480,6 +480,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        [TestCase("")]
+        [TestCase("MambooJamboo")]
+        public async Task GetFeatureOwnerByField_FeatureOwnerFieldDoesNotExist_ReturnsEmptyString(string fieldName)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject("project = LGHTHSDMO");
+            project.FeatureOwnerField = fieldName;
+
+            var featureOwnerFieldContent = await subject.GetFeatureOwnerByField("LGHTHSDMO-9", project);
+
+            Assert.That(featureOwnerFieldContent, Is.Empty);
+        }
+
+        [Test]
+        [TestCase("LGHTHSDMO-9", "customfield_10037", "12.0")]
+        [TestCase("LGHTHSDMO-9", "fixVersions", "Elixir Project")]
+        [TestCase("LGHTHSDMO-1393", "labels", "Brownies")]
+        [TestCase("LGHTHSDMO-5", "labels", "Phoenix")]
+        [TestCase("LGHTHSDMO-5", "labels", "RebelRevolt")]
+        public async Task GetFeatureOwnerByField_GivenExistingField_ReturnsCorrectValue(string referenceId, string fieldName, string expectedContent)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject("project = LGHTHSDMO");
+            project.FeatureOwnerField = fieldName;
+
+            var featureOwnerFieldContent = await subject.GetFeatureOwnerByField(referenceId, project);
+
+            Assert.That(featureOwnerFieldContent, Contains.Substring(expectedContent));
+        }
+
+        [Test]
         public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();

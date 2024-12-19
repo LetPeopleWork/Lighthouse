@@ -321,33 +321,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task CollectFeaturesForProject_NoRemainingWork_MulitpleTeams_OneTeamHasNoThroughput_DoesNotGetRemainingWork()
-        {
-            var team1 = CreateTeam();
-            var team2 = CreateTeam([0]);
-            var project = CreateProject(team1, team2);
-
-            project.DefaultAmountOfWorkItemsPerFeature = 12;
-
-            var feature1 = new Feature([(team1, 0, 13), (team2, 0, 37)]) { ReferenceId = "34" };
-            var feature2 = new Feature([(team1, 2, 42), (team2, 2, 12)]) { ReferenceId = "12" };
-
-            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
-            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
-
-            await subject.UpdateFeaturesForProject(project);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(project.Features, Has.Count.EqualTo(2));
-                Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                Assert.That(project.Features.First().FeatureWork.First().RemainingWorkItems, Is.EqualTo(12));
-                Assert.That(project.Features.First().FeatureWork.Last().RemainingWorkItems, Is.EqualTo(0));
-            });
-        }
-
-        [Test]
         public async Task CollectFeaturesForProject_SingleTeamInvolved_FindsRemainingWorkByTeam()
         {
             var team = CreateTeam();
@@ -464,6 +437,266 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(actualFeature.Order, Is.EqualTo(expectedUnparentedOrder));
             });
         }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseDefaultWork_NoOwningTeam_SplitsWorkByAllInvolvedTeams()
+        {
+            var team1 = CreateTeam([1]);
+            var team2 = CreateTeam([1]);
+
+            var project = CreateProject(team1, team2);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+
+            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
+            var feature = new Feature(teams) { ReferenceId = "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.Single();
+
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
+                Assert.That(feature.FeatureWork.First().TotalWorkItems, Is.EqualTo(6));
+                Assert.That(feature.FeatureWork.Last().TotalWorkItems, Is.EqualTo(6));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseDefaultWork_OwningTeam_AssignsAllWorkToOwningTeam()
+        {
+            var team1 = CreateTeam([1]);
+            var team2 = CreateTeam([1]);
+
+            var project = CreateProject(team1, team2);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+            project.OwningTeam = team2;
+
+            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
+            var feature = new Feature(teams) { ReferenceId = "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.Single();
+
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
+                Assert.That(feature.FeatureWork.Last().TotalWorkItems, Is.EqualTo(12));
+                Assert.That(feature.FeatureWork.Last().Team, Is.EqualTo(team2));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseDefaultWork_NoOwningTeam_FeatureOwnerDefined_AssignsAllWorkToOwningTeam()
+        {
+            var team1 = CreateTeam([1]);
+            team1.Name = "Godzilla";
+
+            var team2 = CreateTeam([1]);
+            team2.Name = "The Most Awesome";
+
+            var project = CreateProject(team1, team2);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+            project.OwningTeam = null;
+            project.FeatureOwnerField = "System.AreaPath";
+
+            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
+            var feature = new Feature(teams) { ReferenceId = "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+            workItemServiceMock.Setup(x => x.GetFeatureOwnerByField(feature.ReferenceId, project)).ReturnsAsync("Project\\The Most Awesome\\Features");
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.Single();
+
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
+                Assert.That(feature.FeatureWork.Last().TotalWorkItems, Is.EqualTo(12));
+                Assert.That(feature.FeatureWork.Last().Team, Is.EqualTo(team2));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseDefaultWork_OwningTeam_FeatureOwnerDefined_AssignsAllWorkToFeatureOwningTeam()
+        {
+            var team1 = CreateTeam([1]);
+            var team2 = CreateTeam([1]);
+            team2.Name = "The Most Awesome";
+
+            var project = CreateProject(team1, team2);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+            project.OwningTeam = team1;
+            project.FeatureOwnerField = "System.AreaPath";
+
+            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
+            var feature = new Feature(teams) { ReferenceId = "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+            workItemServiceMock.Setup(x => x.GetFeatureOwnerByField(feature.ReferenceId, project)).ReturnsAsync("Project\\The Most Awesome\\Features");
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.Single();
+
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
+                Assert.That(feature.FeatureWork.Last().TotalWorkItems, Is.EqualTo(12));
+                Assert.That(feature.FeatureWork.Last().Team, Is.EqualTo(team2));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseDefaultWork_NoOwningTeam_MultipleFeatureOwnerDefined_SplitsAllWorkAcrossFeatureOwningTeams()
+        {
+            var team1 = CreateTeam([1]);
+            var team2 = CreateTeam([1]);
+            team2.Name = "The Most Awesome";
+
+            var team3 = CreateTeam([1]);
+            team3.Name = "Other";
+
+            var project = CreateProject(team1, team2, team3);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+            project.FeatureOwnerField = "System.Tags";
+
+            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
+            var feature = new Feature(teams) { ReferenceId = "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+            workItemServiceMock.Setup(x => x.GetFeatureOwnerByField(feature.ReferenceId, project)).ReturnsAsync("The Most Awesome;Other");
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.Single();
+
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(3));
+                Assert.That(feature.FeatureWork[1].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(feature.FeatureWork[1].Team, Is.EqualTo(team2));
+                Assert.That(feature.FeatureWork[2].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(feature.FeatureWork[2].Team, Is.EqualTo(team3));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseDefaultWork_OwningTeam_MultipleFeatureOwnerDefined_SplitsAllWorkAcrossFeatureOwningTeams()
+        {
+            var team1 = CreateTeam([1]);
+            var team2 = CreateTeam([1]);
+            team2.Name = "The Most Awesome";
+
+            var team3 = CreateTeam([1]);
+            team3.Name = "Other";
+
+            var project = CreateProject(team1, team2, team3);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+            project.FeatureOwnerField = "System.Tags";
+            project.OwningTeam = team1;
+
+            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
+            var feature = new Feature(teams) { ReferenceId = "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+            workItemServiceMock.Setup(x => x.GetFeatureOwnerByField(feature.ReferenceId, project)).ReturnsAsync("The Most Awesome;Other");
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.Single();
+
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(3));
+                Assert.That(feature.FeatureWork[1].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(feature.FeatureWork[1].Team, Is.EqualTo(team2));
+                Assert.That(feature.FeatureWork[2].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(feature.FeatureWork[2].Team, Is.EqualTo(team3));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseDefaultWork_OwningTeam_FeatureOwnerNotFound_AssignsWorkToOwningTeam()
+        {
+            var team1 = CreateTeam([1]);
+            var team2 = CreateTeam([1]);
+            team2.Name = "The Most Awesome";
+
+            var team3 = CreateTeam([1]);
+            team3.Name = "Other";
+
+            var project = CreateProject(team1, team2, team3);
+            project.DefaultAmountOfWorkItemsPerFeature = 12;
+            project.FeatureOwnerField = "System.Tags";
+            project.OwningTeam = team1;
+
+            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
+            var feature = new Feature(teams) { ReferenceId = "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+            workItemServiceMock.Setup(x => x.GetFeatureOwnerByField(feature.ReferenceId, project)).ReturnsAsync("Some Random String That does not contain a team name!");
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.Single();
+
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(3));
+                Assert.That(feature.FeatureWork.First().TotalWorkItems, Is.EqualTo(12));
+                Assert.That(feature.FeatureWork.First().Team, Is.EqualTo(team1));
+            });
+        }
+
+        [Test]
+        public async Task CollectFeaturesForProject_UseDefaultWork_NoOwningTeam_FeatureOwnerNotFound_SplitsAcrossAllTeams()
+        {
+            var team1 = CreateTeam([1]);
+            var team2 = CreateTeam([1]);
+            team2.Name = "The Most Awesome";
+
+            var team3 = CreateTeam([1]);
+            team3.Name = "Other";
+
+            var project = CreateProject(team1, team2, team3);
+            project.DefaultAmountOfWorkItemsPerFeature = 15;
+            project.FeatureOwnerField = "System.Tags";
+
+            var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
+            var feature = new Feature(teams) { ReferenceId = "42" };
+
+            workItemServiceMock.Setup(x => x.GetOpenWorkItems(project.WorkItemTypes, It.IsAny<IWorkItemQueryOwner>())).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((0, 0)));
+            workItemServiceMock.Setup(x => x.GetFeatureOwnerByField(feature.ReferenceId, project)).ReturnsAsync("Some Random String That does not contain a team name!");
+
+            await subject.UpdateFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                var feature = project.Features.Single();
+
+                Assert.That(feature.FeatureWork, Has.Count.EqualTo(3));
+
+                foreach (var fw in feature.FeatureWork)
+                {
+                    Assert.That(fw.TotalWorkItems, Is.EqualTo(5));
+                }
+            });
+        }   
 
         private Team CreateTeam(int[]? throughput = null)
         {

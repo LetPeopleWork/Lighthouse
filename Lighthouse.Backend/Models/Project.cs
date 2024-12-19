@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace Lighthouse.Backend.Models
+﻿namespace Lighthouse.Backend.Models
 {
     public class Project : WorkTrackingSystemOptionsOwner
     {
@@ -15,6 +13,12 @@ namespace Lighthouse.Backend.Models
         public List<Milestone> Milestones { get; } = new List<Milestone>();
 
         public int DefaultAmountOfWorkItemsPerFeature { get; set; } = 25;
+
+        public int? OwningTeamId { get; set; }
+
+        public Team? OwningTeam { get; set; }
+
+        public string? FeatureOwnerField { get; set; }
 
         public DateTime ProjectUpdateTime { get; set; }
 

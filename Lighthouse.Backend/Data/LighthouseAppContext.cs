@@ -75,6 +75,12 @@ namespace Lighthouse.Backend.Data
                 .HasMany(t => t.Projects)
                 .WithMany(p => p.Teams);
 
+            modelBuilder.Entity<Project>()
+                .HasOne(p => p.OwningTeam)
+                .WithMany()
+                .HasForeignKey(p => p.OwningTeamId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<FeatureHistoryEntry>()
                 .HasMany(f => f.Forecasts)
                 .WithOne(wf => wf.FeatureHistoryEntry)

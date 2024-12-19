@@ -44,33 +44,56 @@ namespace Lighthouse.Backend.Services.Implementation
                 feature.ClearFeatureWork();
             }
 
-            var involvedTeams = project.Teams.Where(t => t.TotalThroughput > 0).ToList();
-
-            if (involvedTeams.Count <= 0)
-            {
-                return;
-            }
-
             logger.LogInformation("Extrapolating Not Broken Down Features for Project {ProjectName}", project.Name);
 
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            foreach (var feature in project.Features.Where(feature => !feature.IsUnparentedFeature && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0))
+            foreach (Feature feature in project.Features.Where(feature => !feature.IsUnparentedFeature && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0))
             {
                 logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
                 feature.IsUsingDefaultFeatureSize = true;
 
-                var numberOfTeams = involvedTeams.Count;
                 var remainingWork = await GetExtrapolatedRemainingWork(project, workItemService, feature);
 
-                var buckets = SplitIntoBuckets(remainingWork, numberOfTeams);
-                for (var index = 0; index < numberOfTeams; index++)
-                {
-                    var team = involvedTeams[index];
-                    feature.AddOrUpdateWorkForTeam(team, buckets[index], buckets[index]);
-                }
+                await AssignExtrapolatedWorkToTeams(project, feature, remainingWork, workItemService);
 
                 logger.LogInformation("Added {remainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
+            }
+        }
+
+        private async Task AssignExtrapolatedWorkToTeams(Project project, Feature feature, int remainingWork, IWorkItemService workItemService)
+        {
+            var owningTeams = project.Teams.ToList();
+
+            if (project.OwningTeam != null)
+            {
+                logger.LogInformation("Owning Team for Project is {TeamName} - using this for Default Work Assignment", project.OwningTeam.Name);
+                owningTeams = new List<Team> { project.OwningTeam };
+            }
+
+            if (!string.IsNullOrEmpty(project.FeatureOwnerField))
+            {
+                logger.LogInformation("Feature Owner Field for Project is {FeatureOwnerField} - Getting value for Feature {FeatureName}", project.FeatureOwnerField, feature.Name);
+
+                var featureOwnerFieldValue = await workItemService.GetFeatureOwnerByField(feature.ReferenceId, project);
+                var featureOwners = project.Teams.Where(t => featureOwnerFieldValue.Contains(t.Name)).ToList();
+
+                logger.LogInformation("Found following teams defined in {FeatureOwnerField}: {Owners}", project.FeatureOwnerField, string.Join(",", featureOwners));
+                if (featureOwners.Any())
+                {
+                    owningTeams = featureOwners;
+                }
+            }
+
+            var numberOfTeams = owningTeams.Count;
+            var buckets = SplitIntoBuckets(remainingWork, numberOfTeams);
+            for (var index = 0; index < numberOfTeams; index++)
+            {
+                var team = owningTeams[index];
+                var totalWork = buckets[index];
+                feature.AddOrUpdateWorkForTeam(team, totalWork, totalWork);
+
+                logger.LogInformation("Added {TotalWork} Items for Feature {FeatureName} to Team {TeamName}", totalWork, feature.Name, team.Name);
             }
         }
 

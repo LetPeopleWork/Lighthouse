@@ -283,30 +283,49 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 return 0;
             }
 
+            var estimationFieldValue = await GetFieldValue(referenceId, project, project.SizeEstimateField);
+
+            // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
+            if (double.TryParse(estimationFieldValue, out var estimateAsDouble))
+            {
+                return (int)estimateAsDouble;
+            }
+
+            return 0;
+        }
+
+        
+
+        public async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
+        {
+            if (string.IsNullOrEmpty(project.FeatureOwnerField))
+            {
+                return string.Empty;
+            }
+
+            var featureOwnerFieldValue = await GetFieldValue(referenceId, project, project.FeatureOwnerField);
+
+            return featureOwnerFieldValue;
+        }
+
+        private async Task<string> GetFieldValue(string referenceId, Project project, string fieldName)
+        {
             try
             {
                 var witClient = GetClientService(project.WorkTrackingSystemConnection);
 
-                var workItem = await GetWorkItemById(witClient, referenceId, project, project.SizeEstimateField);
+                var workItem = await GetWorkItemById(witClient, referenceId, project, fieldName);
 
                 if (workItem == null)
                 {
-                    return 0;
+                    return string.Empty;
                 }
 
-                var estimateRawValue = workItem.Fields[project.SizeEstimateField].ToString() ?? "0";
-
-                // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
-                if (double.TryParse(estimateRawValue, out var estimateAsDouble))
-                {
-                    return (int)estimateAsDouble;
-                }
-
-                return 0;
+                return workItem.Fields[fieldName].ToString() ?? string.Empty;
             }
             catch
             {
-                return 0;
+                return string.Empty;
             }
         }
 

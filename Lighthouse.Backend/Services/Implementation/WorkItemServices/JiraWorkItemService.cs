@@ -266,24 +266,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 return 0;
             }
 
+            var estimateRawValue = await GetFieldValue(referenceId, project, project.SizeEstimateField);
+            // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
+            if (double.TryParse(estimateRawValue, out var estimateAsDouble))
+            {
+                return (int)estimateAsDouble;
+            }
+
+            return 0;
+        }
+
+        public async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
+        {
+            if (string.IsNullOrEmpty(project.FeatureOwnerField))
+            {
+                return string.Empty;
+            }
+
+            return await GetFieldValue(referenceId, project, project.FeatureOwnerField);
+        }
+
+        private async Task<string> GetFieldValue(string referenceId, Project project, string fieldName)
+        {
             try
             {
                 var jiraClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
                 var issue = await GetIssueById(jiraClient, referenceId);
 
-                var estimateRawValue = issue.Fields.GetFieldValue(project.SizeEstimateField);
-
-                // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
-                if (double.TryParse(estimateRawValue, out var estimateAsDouble))
-                {
-                    return (int)estimateAsDouble;
-                }
-
-                return 0;
+                return issue.Fields.GetFieldValue(fieldName) ?? string.Empty;
             }
             catch
             {
-                return 0;
+                return string.Empty;
             }
         }
 
