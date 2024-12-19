@@ -239,6 +239,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
+        public async Task<bool> ValidateProjectSettings(Project project)
+        {
+            try
+            {
+                logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
+                var restClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
+
+                var features = await GetOpenWorkItems(project.WorkItemTypes, project);
+                var totalFeatures = features.Count;
+
+                logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);
+
+                return totalFeatures > 0;
+            }
+            catch (Exception exception)
+            {
+                logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", project.Name);
+                return false;
+            }
+        }
+
         public async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
         {
             if (string.IsNullOrEmpty(project.SizeEstimateField))
@@ -265,11 +286,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             {
                 return 0;
             }
-        }
-
-        public Task<bool> ValidateProjectSettings(Project project)
-        {
-            return Task.FromResult(true);
         }
 
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)

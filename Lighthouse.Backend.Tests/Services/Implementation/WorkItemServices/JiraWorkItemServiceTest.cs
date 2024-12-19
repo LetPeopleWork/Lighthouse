@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -406,6 +407,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             team.WorkTrackingSystemConnection = connectionSetting;
 
             var isValid = await subject.ValidateTeamSettings(team);
+
+            Assert.That(isValid, Is.False);
+        }
+
+        [Test]
+        [TestCase("project = LGHTHSDMO", true)]
+        [TestCase("project = LGHTHSDMO AND labels = 'NotExisting'", false)]
+        [TestCase("project = SomethingThatDoesNotExist", false)]
+        public async Task ValidateProjectSettings_ValidConnectionSettings_ReturnsTrueIfFeaturesAreFound(string query, bool expectedValue)
+        {
+            var team = CreateTeam("project = LGHTHSDMO");
+            var project = CreateProject(query, team);
+
+            var subject = CreateSubject();
+
+            var isValid = await subject.ValidateProjectSettings(project);
+
+            Assert.That(isValid, Is.EqualTo(expectedValue));
+        }
+
+        [Test]
+        public async Task ValidateProjectSettings_InvalidConnectionSettings_ReturnsFalse()
+        {
+            var team = CreateTeam("project = LGHTHSDMO");
+            var project = CreateProject("project = LGHTHSDMO");
+            var subject = CreateSubject();
+
+            var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, Name = "Test Setting" };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = "https://letpeoplework.atlassian.net", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = "Benji", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = "JennifferAniston", IsSecret = true },
+                ]);
+
+            project.WorkTrackingSystemConnection = connectionSetting;
+
+            var isValid = await subject.ValidateProjectSettings(project);
 
             Assert.That(isValid, Is.False);
         }
