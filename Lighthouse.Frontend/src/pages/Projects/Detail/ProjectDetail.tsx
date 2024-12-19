@@ -1,7 +1,7 @@
 import { Button, Container, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2'
 import React, { useContext, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import { Project } from '../../../models/Project/Project';
 import LocalDateTimeDisplay from '../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay';
@@ -20,10 +20,13 @@ import LighthouseChartComponent from './Charts/LighthouseChart/LighthouseChartCo
 const ProjectDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const projectId = Number(id);
+    const [searchParams] = useSearchParams();
 
     const [project, setProject] = useState<Project>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
+    const [triggerUpdate, setTriggerUpdate] = useState<boolean>(false);
+
     const [projectSettings, setProjectSettings] = useState<IProjectSettings | null>(null);
     const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
     const [showLighthouseChart, setShowLighthouseChart] = useState<boolean>(false);
@@ -60,6 +63,8 @@ const ProjectDetail: React.FC = () => {
             if (project == null) {
                 return;
             }
+
+            setTriggerUpdate(false);
 
             const projectData = await projectService.refreshFeaturesForProject(project.id);
 
@@ -155,7 +160,13 @@ const ProjectDetail: React.FC = () => {
     }, [projectService, teamService, project])
 
     useEffect(() => {
-        fetchProject();
+        if (!project) {
+            fetchProject();
+        }
+
+        if (searchParams.get('triggerUpdate') === 'true') {
+            setTriggerUpdate(true);
+        }        
     }, []);
 
 
@@ -176,6 +187,7 @@ const ProjectDetail: React.FC = () => {
                                 buttonText='Refresh Features'
                                 onClickHandler={onRefreshFeaturesClick}
                                 maxHeight='40px'
+                                triggerUpdate={triggerUpdate}
                             />
                             <Button
                                 variant="contained"

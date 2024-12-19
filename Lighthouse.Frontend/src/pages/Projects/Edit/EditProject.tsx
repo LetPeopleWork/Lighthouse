@@ -40,7 +40,7 @@ const EditProject: React.FC = () => {
             updatedSettings = await projectService.updateProject(updatedSettings);
         }
 
-        navigate(`/projects/${updatedSettings.id}`);
+        navigate(`/projects/${updatedSettings.id}?triggerUpdate=true`);
     };
 
     return (
