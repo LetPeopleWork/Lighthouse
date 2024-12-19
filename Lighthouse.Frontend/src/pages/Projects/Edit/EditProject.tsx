@@ -29,6 +29,10 @@ const EditProject: React.FC = () => {
         return await teamService.getTeams();
     };
 
+    const validateProjectSettings = async (updatedProjectSettings: IProjectSettings) => {
+        return await projectService.validateProjectSettings(updatedProjectSettings);
+    }
+
     const saveProjectSettings = async (updatedSettings: IProjectSettings) => {
         if (isNewProject) {
             updatedSettings = await projectService.createProject(updatedSettings);
@@ -45,6 +49,7 @@ const EditProject: React.FC = () => {
             getProjectSettings={getProjectSettings}
             getWorkTrackingSystems={getWorkTrackingSystems}
             getAllTeams={getAllTeams}
+            validateProjectSettings={validateProjectSettings}
             saveProjectSettings={saveProjectSettings} />
     );
 };

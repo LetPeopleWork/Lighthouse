@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Alert } from '@mui/material';
+import { Button, Alert, Stack } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import ErrorIcon from '@mui/icons-material/Error';
 import PendingIcon from '@mui/icons-material/HourglassEmpty';
@@ -58,9 +58,9 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
     }
 
     return (
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <Stack direction="row" spacing={1} alignItems="center">
             {validationState === 'failed' && validationFailedMessage && (
-                <Alert severity="error" style={{ marginTop: '16px' }}>
+                <Alert severity="error" sx={{ mt: 2 }}>
                     {validationFailedMessage}
                 </Alert>
             )}
@@ -90,7 +90,7 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
             >
                 {saveButtonText}
             </Button>
-        </div>
+        </Stack>
     );
 };
 

@@ -29,6 +29,7 @@ const DefaultProjectSettings: React.FC = () => {
             saveProjectSettings={saveDefaultProjectSettings}
             getWorkTrackingSystems={getWorkTrackingSystems}
             getAllTeams={getAllTeams}
+            validateProjectSettings={() => Promise.resolve(true)}
             modifyDefaultSettings={true}
         />
     )

@@ -23,6 +23,7 @@ interface ModifyProjectSettingsProps {
     getProjectSettings: () => Promise<IProjectSettings>;
     getAllTeams: () => Promise<ITeam[]>;
     saveProjectSettings: (settings: IProjectSettings) => Promise<void>;
+    validateProjectSettings: (settings: IProjectSettings) => Promise<boolean>;
     modifyDefaultSettings?: boolean;
 }
 
@@ -32,6 +33,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
     getProjectSettings,
     getAllTeams,
     saveProjectSettings,
+    validateProjectSettings,
     modifyDefaultSettings = false
 }) => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -132,6 +134,19 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
         await saveProjectSettings(updatedSettings);
         setFormValid(false);
+    };
+
+    const handleValidate = async () => {
+        if (!projectSettings || modifyDefaultSettings) {
+            return false;
+        }
+
+        const updatedSettings: IProjectSettings = {
+            ...projectSettings,
+            workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
+            involvedTeams: teams.filter(team => selectedTeams.includes(team.id))
+        };
+        return await validateProjectSettings(updatedSettings);
     };
 
     useEffect(() => {
@@ -244,6 +259,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
                     <Grid size={{ xs: 12 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                         <ValidationActions 
+                            onValidate={modifyDefaultSettings ? undefined : handleValidate}
                             onSave={handleSave}
                             inputsValid={formValid}
                             validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no Features could be found. Check the logs for additional details."
