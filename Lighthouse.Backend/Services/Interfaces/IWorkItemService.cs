@@ -33,5 +33,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task<IEnumerable<string>> GetFeaturesInProgressForTeam(Team team);
 
         Task<bool> ValidateTeamSettings(Team team);
+
+        Task<bool> ValidateProjectSettings(Project project);
     }
 }

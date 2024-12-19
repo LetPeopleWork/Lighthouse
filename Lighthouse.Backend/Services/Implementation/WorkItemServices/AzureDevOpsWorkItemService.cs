@@ -291,6 +291,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
+        public Task<bool> ValidateProjectSettings(Project project)
+        {
+            return Task.FromResult(true);
+        }
+
         private static List<int> ConvertToIntegers(IEnumerable<string> orderAsStrings)
         {
             var orderAsInt = new List<int>();

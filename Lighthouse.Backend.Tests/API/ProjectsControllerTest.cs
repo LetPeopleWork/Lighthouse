@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.WorkTracking;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -16,6 +18,10 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemCollectorService> workItemCollectorServiceMock;
 
         private Mock<IMonteCarloService> monteCarloServiceMock;
+        
+        private Mock<IWorkItemServiceFactory> workItemServiceFactoryMock;
+
+        private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
 
         [SetUp]
         public void Setup()
@@ -24,6 +30,8 @@ namespace Lighthouse.Backend.Tests.API
             teamRepoMock = new Mock<IRepository<Team>>();
             workItemCollectorServiceMock = new Mock<IWorkItemCollectorService>();
             monteCarloServiceMock = new Mock<IMonteCarloService>();
+            workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
+            workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
         }
 
         [Test]
@@ -332,9 +340,68 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task ValidateTeamSettings_GivenTeamSettings_ReturnsResultFromWorkItemService(bool expectedResult)
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            var projectSettings = new ProjectSettingDto { WorkTrackingSystemConnectionId = 1886 };
+
+            var workItemServiceMock = new Mock<IWorkItemService>();
+            workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
+            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workItemServiceMock.Object);
+            workItemServiceMock.Setup(x => x.ValidateProjectSettings(It.IsAny<Project>())).ReturnsAsync(expectedResult);
+
+            var subject = CreateSubject();
+
+            var response = await subject.ValidateProjectSettings(projectSettings);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okObjectResult = response.Result as OkObjectResult;
+                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
+
+                var value = okObjectResult.Value;
+                Assert.That(value, Is.EqualTo(expectedResult));
+            });
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_WorkTrackingSystemNotFound_ReturnsNotFound()
+        {
+            var projectSettings = new ProjectSettingDto { WorkTrackingSystemConnectionId = 1886 };
+
+            workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns((WorkTrackingSystemConnection)null);
+
+            var subject = CreateSubject();
+
+            var response = await subject.ValidateProjectSettings(projectSettings);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundObjectResult>());
+
+                var notFoundObjectResult = response.Result as NotFoundObjectResult;
+                Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
+
+                var value = notFoundObjectResult.Value;
+                Assert.That(value, Is.False);
+            });
+        }
+
         private ProjectsController CreateSubject()
         {
-            return new ProjectsController(projectRepoMock.Object, teamRepoMock.Object, workItemCollectorServiceMock.Object, monteCarloServiceMock.Object);
+            return new ProjectsController(
+                projectRepoMock.Object,
+                teamRepoMock.Object,
+                workItemCollectorServiceMock.Object,
+                monteCarloServiceMock.Object,
+                workItemServiceFactoryMock.Object,
+                workTrackingSystemConnectionRepoMock.Object
+            );
         }
 
         private List<Project> GetTestProjects()

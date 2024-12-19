@@ -249,6 +249,12 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         return this.projectSettings[0];
     }
 
+    async validateProjectSettings(projectSettings: IProjectSettings): Promise<boolean> {
+        console.log(`Validating Project ${projectSettings.name}`);
+        await this.delay();
+        return Math.random() >= 0.5;
+    }
+
     async updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings> {
         console.log(`Updating Project ${projectSettings.name}`);
 

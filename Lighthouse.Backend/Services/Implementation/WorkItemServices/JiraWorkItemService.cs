@@ -267,6 +267,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
+        public Task<bool> ValidateProjectSettings(Project project)
+        {
+            return Task.FromResult(true);
+        }
+
         private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)
         {
             logger.LogDebug("Getting Issue by Key '{Key}'", issueId);

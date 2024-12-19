@@ -44,6 +44,7 @@ export const createMockProjectService = (): IProjectService => {
         getProject: vi.fn(),
         refreshFeaturesForProject: vi.fn(),
         refreshForecastsForProject: vi.fn(),
+        validateProjectSettings: vi.fn(),
     };
 }
 

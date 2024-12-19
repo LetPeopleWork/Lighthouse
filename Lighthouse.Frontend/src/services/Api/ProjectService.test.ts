@@ -187,4 +187,62 @@ describe('ProjectService', () => {
         );
         expect(mockedAxios.post).toHaveBeenCalledWith('/forecast/update/1');
     });
+
+    it('should validate project settings successfully', async () => {
+        const mockProjectSettings: IProjectSettings = {
+            id: 1,
+            name: "Project A",
+            workItemTypes: ["Epic"],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 10,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 0,
+            sizeEstimateField: "Size",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+            overrideRealChildCountStates: [""],
+            involvedTeams: []
+        };
+
+        mockedAxios.post.mockResolvedValueOnce({ data: true });
+
+        const isValid = await projectService.validateProjectSettings(mockProjectSettings);
+
+        expect(isValid).toBe(true);
+        expect(mockedAxios.post).toHaveBeenCalledWith('/projects/validate', mockProjectSettings);
+    });
+
+    it('should return false for invalid project settings', async () => {
+        const mockProjectSettings: IProjectSettings = {
+            id: 1,
+            name: "Project A",
+            workItemTypes: ["Epic"],
+            milestones: [],
+            workItemQuery: "Query",
+            unparentedItemsQuery: "Unparented Query",
+            usePercentileToCalculateDefaultAmountOfWorkItems: false,
+            defaultAmountOfWorkItemsPerFeature: 10,
+            defaultWorkItemPercentile: 85,
+            historicalFeaturesWorkItemQuery: "",
+            workTrackingSystemConnectionId: 0,
+            sizeEstimateField: "Size",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+            overrideRealChildCountStates: [""],
+            involvedTeams: []
+        };
+
+        mockedAxios.post.mockResolvedValueOnce({ data: false });
+
+        const isValid = await projectService.validateProjectSettings(mockProjectSettings);
+
+        expect(isValid).toBe(false);
+        expect(mockedAxios.post).toHaveBeenCalledWith('/projects/validate', mockProjectSettings);
+    });
 });

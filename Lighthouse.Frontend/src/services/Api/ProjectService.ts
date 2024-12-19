@@ -11,6 +11,7 @@ export interface IProjectService {
     createProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
     refreshFeaturesForProject(id: number): Promise<Project | null>;
     refreshForecastsForProject(id: number): Promise<Project | null>;
+    validateProjectSettings(projectSettings: IProjectSettings): Promise<boolean>;
 }
 
 export class ProjectService extends BaseApiService implements IProjectService {
@@ -69,6 +70,13 @@ export class ProjectService extends BaseApiService implements IProjectService {
             const response = await this.apiService.post<IProject>(`/forecast/update/${id}`);
 
             return BaseApiService.deserializeProject(response.data);
+        });
+    }
+
+    async validateProjectSettings(projectSettings: IProjectSettings): Promise<boolean> {
+        return this.withErrorHandling(async () => {
+            const response = await this.apiService.post<boolean>(`/projects/validate`, projectSettings);
+            return response.data;
         });
     }
 }
