@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ITeamSettings } from "../../../models/Team/TeamSettings";
-import { Container, Typography, SelectChangeEvent } from "@mui/material";
+import { Container, Typography, SelectChangeEvent, Alert } from "@mui/material";
 import Grid from '@mui/material/Grid2'
 import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
 import GeneralInputsComponent from "../../../pages/Teams/Edit/GeneralInputs";
@@ -248,6 +248,9 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                             disabled={validationState != 'success' && formValid} />
                     </Grid>
 
+                    {validationState === 'failed' && (
+                        <Alert severity="error">Validation failed - either the connection failed, the query is wrong, or no closed items in the specified history could be found. Check the logs for additional detials.</Alert>
+                    )}
                 </Grid>
             </Container>
         </LoadingAnimation>
