@@ -244,7 +244,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             try
             {
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
-                var restClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
 
                 var features = await GetOpenWorkItems(project.WorkItemTypes, project);
                 var totalFeatures = features.Count;
