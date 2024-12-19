@@ -10,7 +10,7 @@ import { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import GeneralInputsComponent from "../../../pages/Projects/Edit/GeneralInputs";
 import { IMilestone } from "../../../models/Project/Milestone";
 import AdvancedInputsComponent from "../../../pages/Projects/Edit/AdvancedInputs";
-import ActionButton from "../ActionButton/ActionButton";
+import ValidationActions from "../ValidationActions/ValidationActions";
 import ProjectConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/ProjectConfigurationTutorial";
 import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
 import StatesList from "../StatesList/StatesList";
@@ -242,12 +242,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
                         onProjectSettingsChange={handleProjectSettingsChange}
                     />
 
-                    <Grid size={{ xs: 12 }}>
-                        <ActionButton
-                            buttonVariant="contained"
-                            buttonText="Save"
-                            onClickHandler={handleSave}
-                            disabled={!formValid} />
+                    <Grid size={{ xs: 12 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                        <ValidationActions 
+                            onSave={handleSave}
+                            inputsValid={formValid}
+                            validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no Features could be found. Check the logs for additional details."
+                        />
                     </Grid>
                 </Grid>
             </Container>

@@ -195,7 +195,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
                             onValidate={modifyDefaultSettings ? undefined : handleValidate}
                             onSave={handleSave}
                             inputsValid={inputsValid}
-                            validationFailedMessage="Validation failed - either the connection failed, the query is wrong, or no closed items in the specified history could be found. Check the logs for additional details."
+                            validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no closed items in the specified history could be found. Check the logs for additional details."
                         />
                     </Grid>
                 </Grid>
