@@ -1,5 +1,5 @@
 import { Button, CircularProgress } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type ButtonVariant = "text" | "outlined" | "contained";
 
@@ -9,9 +9,10 @@ interface ActionButtonProps {
     buttonVariant?: ButtonVariant;
     disabled? : boolean;
     maxHeight? : string;
+    triggerUpdate?: boolean;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, onClickHandler, buttonVariant = "contained", disabled = false, maxHeight }) => {
+const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, onClickHandler, buttonVariant = "contained", disabled = false, maxHeight, triggerUpdate = false }) => {
     const [isWaiting, setIsWaiting] = useState<boolean>(false);
 
     const handleClick = async () => {
@@ -19,6 +20,12 @@ const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, onClickHandler,
         await onClickHandler();
         setIsWaiting(false);
     }
+
+    useEffect(() => {
+        if (triggerUpdate) {
+            handleClick();
+        }
+    }, [triggerUpdate]);
 
     return (
         <Button 

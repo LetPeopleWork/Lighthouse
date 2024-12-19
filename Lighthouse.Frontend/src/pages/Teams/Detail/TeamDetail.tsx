@@ -25,6 +25,7 @@ const TeamDetail: React.FC = () => {
     const [team, setTeam] = useState<Team>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
+    const [triggerUpdate, setTriggerUpdate] = useState<boolean>(false);
 
     const [remainingItems, setRemainingItems] = useState<number>(10);
     const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(dayjs().add(2, 'week'));
@@ -72,6 +73,8 @@ const TeamDetail: React.FC = () => {
             return;
         }
 
+        setTriggerUpdate(false);
+
         try {
             await teamService.updateTeamData(team.id);
         } catch (error) {
@@ -79,7 +82,6 @@ const TeamDetail: React.FC = () => {
             setHasError(true);
         }
 
-        fetchTeam();
         fetchThroughput();
     };
 
@@ -106,26 +108,22 @@ const TeamDetail: React.FC = () => {
 
     useEffect(() => {
         if (team) {
-
-
-            fetchThroughput();
+            if (searchParams.get('triggerUpdate') === 'true') {
+                setTriggerUpdate(true);
+            }
+            else {
+                fetchThroughput();
+            }
         }
     }, [team]);
-
-    useEffect(() => {
-        const shouldTriggerUpdate = searchParams.get('triggerUpdate') === 'true';
-        if (shouldTriggerUpdate) {
-            onUpdateThroughput();
-        }
-    }, [searchParams]);
 
     return (
         <LoadingAnimation hasError={hasError} isLoading={isLoading}>
             <Container maxWidth={false}>
                 {team == null ? (<></>) : (
                     <Grid container spacing={3}>
-                        <Grid  size={{ xs: 6 }}>
-                            <Typography variant='h3'>{team.name}</Typography>                            
+                        <Grid size={{ xs: 6 }}>
+                            <Typography variant='h3'>{team.name}</Typography>
 
                             <Typography variant='h6'>
                                 Currently working on {team.featuresInProgress.length} Features in parallel
@@ -140,6 +138,7 @@ const TeamDetail: React.FC = () => {
                                 onClickHandler={onUpdateThroughput}
                                 buttonText="Update Team Data"
                                 maxHeight='40px'
+                                triggerUpdate={triggerUpdate}
                             />
                             <Button variant="contained" onClick={onEditTeam} sx={{ maxHeight: '40px' }}>
                                 Edit Team
