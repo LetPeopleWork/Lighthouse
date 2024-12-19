@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ITeamSettings } from "../../../models/Team/TeamSettings";
-import { Container, Typography, SelectChangeEvent, Alert } from "@mui/material";
+import { Container, Typography, SelectChangeEvent } from "@mui/material";
 import Grid from '@mui/material/Grid2'
 import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
 import GeneralInputsComponent from "../../../pages/Teams/Edit/GeneralInputs";
@@ -8,14 +8,10 @@ import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import WorkTrackingSystemComponent from "../WorkTrackingSystems/WorkTrackingSystemComponent";
 import { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import ActionButton from "../ActionButton/ActionButton";
 import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
 import TeamConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/TeamConfigurationTutorial";
 import StatesList from "../StatesList/StatesList";
-
-import CheckIcon from '@mui/icons-material/Check';
-import ErrorIcon from '@mui/icons-material/Error';
-import PendingIcon from '@mui/icons-material/HourglassEmpty';
+import ValidationActions from "../ValidationActions/ValidationActions";
 
 interface ModifyTeamSettingsProps {
     title: string;
@@ -26,15 +22,12 @@ interface ModifyTeamSettingsProps {
     modifyDefaultSettings?: boolean;
 }
 
-type ValidationState = 'pending' | 'success' | 'failed';
-
 const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkTrackingSystems, getTeamSettings, saveTeamSettings, validateTeamSettings, modifyDefaultSettings = false }) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [teamSettings, setTeamSettings] = useState<ITeamSettings | null>(null);
     const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] = useState<IWorkTrackingSystemConnection | null>(null);
     const [workTrackingSystems, setWorkTrackingSystems] = useState<IWorkTrackingSystemConnection[]>([]);
-    const [formValid, setFormValid] = useState<boolean>(false);
-    const [validationState, setValidationState] = useState<ValidationState>(modifyDefaultSettings ? 'success' : 'pending');
+    const [inputsValid, setInputsValid] = useState<boolean>(false);
 
     const handleTeamSettingsChange = (key: keyof ITeamSettings, value: string | number) => {
         setTeamSettings(prev => prev ? { ...prev, [key]: value } : prev);
@@ -99,24 +92,14 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
 
         const updatedSettings: ITeamSettings = { ...teamSettings, workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0 };
         await saveTeamSettings(updatedSettings);
-
-        setFormValid(false);
-
-        if (!modifyDefaultSettings) {
-            setValidationState('pending');
-        }
     }
 
     useEffect(() => {
         const handleStateChange = () => {
-            const isFormValid = teamSettings?.name != '' && (teamSettings?.throughputHistory ?? 0) > 0 && teamSettings?.featureWIP !== undefined &&
+            const areInputsValid = teamSettings?.name != '' && (teamSettings?.throughputHistory ?? 0) > 0 && teamSettings?.featureWIP !== undefined &&
                 (modifyDefaultSettings || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);
 
-            setFormValid(isFormValid);
-
-            if (!modifyDefaultSettings) {
-                setValidationState('pending');
-            }
+            setInputsValid(areInputsValid);
         };
 
         handleStateChange();
@@ -144,33 +127,13 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
         fetchData();
     }, [getTeamSettings, getWorkTrackingSystems]);
 
-    const getValidationIcon = () => {
-        switch (validationState) {
-            case 'success':
-                return <CheckIcon color="success" />;
-            case 'failed':
-                return <ErrorIcon color="error" />;
-            default:
-                return <PendingIcon color="action" />;
-        }
-    };
-
     const handleValidate = async () => {
-        setValidationState('pending');
-
         if (!teamSettings || modifyDefaultSettings) {
-            return;
+            return false;
         }
 
         const updatedSettings: ITeamSettings = { ...teamSettings, workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0 };
-        const validationResult = await validateTeamSettings(updatedSettings);
-
-        if (validationResult) {
-            setValidationState('success');
-        }
-        else {
-            setValidationState('failed')
-        }
+        return await validateTeamSettings(updatedSettings);
     };
 
     return (
@@ -228,29 +191,13 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
 
 
                     <Grid size={{ xs: 12 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                        {!modifyDefaultSettings ? getValidationIcon() : (<></>)}
-
-                        {!modifyDefaultSettings ? (
-
-                            <ActionButton
-                                buttonText="Validate"
-                                onClickHandler={handleValidate}
-                                buttonVariant="outlined"
-                                disabled={!formValid}
-                            />) : (
-                            <></>
-                        )}
-
-                        <ActionButton
-                            buttonVariant="contained"
-                            buttonText="Save"
-                            onClickHandler={handleSave}
-                            disabled={validationState != 'success' && formValid} />
+                        <ValidationActions 
+                            onValidate={modifyDefaultSettings ? undefined : handleValidate}
+                            onSave={handleSave}
+                            inputsValid={inputsValid}
+                            validationFailedMessage="Validation failed - either the connection failed, the query is wrong, or no closed items in the specified history could be found. Check the logs for additional details."
+                        />
                     </Grid>
-
-                    {validationState === 'failed' && (
-                        <Alert severity="error">Validation failed - either the connection failed, the query is wrong, or no closed items in the specified history could be found. Check the logs for additional detials.</Alert>
-                    )}
                 </Grid>
             </Container>
         </LoadingAnimation>

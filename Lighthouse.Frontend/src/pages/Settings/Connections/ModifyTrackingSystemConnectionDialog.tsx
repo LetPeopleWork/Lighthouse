@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import { SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Button } from "@mui/material";
-import CheckIcon from '@mui/icons-material/Check';
-import ErrorIcon from '@mui/icons-material/Error';
-import PendingIcon from '@mui/icons-material/HourglassEmpty';
+import { SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
 import { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
-import ActionButton from "../../../components/Common/ActionButton/ActionButton";
+import ValidationActions from "../../../components/Common/ValidationActions/ValidationActions";
 
 interface ModifyWorkTrackingSystemConnectionDialogProps {
     open: boolean;
@@ -14,14 +11,11 @@ interface ModifyWorkTrackingSystemConnectionDialogProps {
     validateSettings: (connection: IWorkTrackingSystemConnection) => Promise<boolean>;
 }
 
-type ValidationState = 'pending' | 'success' | 'failed';
-
 const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemConnectionDialogProps> = ({ open, onClose, workTrackingSystems, validateSettings }) => {
     const [name, setName] = useState<string>('');
     const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] = useState<IWorkTrackingSystemConnection | null>(null);
     const [selectedOptions, setSelectedOptions] = useState<IWorkTrackingSystemOption[]>([]);
-    const [formValid, setFormValid] = useState<boolean>(false);
-    const [validationState, setValidationState] = useState<ValidationState>('pending');
+    const [inputsValid, setInputsValid] = useState<boolean>(false);
 
     useEffect(() => {
         if (open && workTrackingSystems.length > 0) {
@@ -33,7 +27,6 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 value: option.value,
                 isSecret: option.isSecret
             })));
-            setValidationState('pending');
         }
     }, [open, workTrackingSystems]);
 
@@ -47,9 +40,15 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 value: option.value,
                 isSecret: option.isSecret
             })));
-            setValidationState('pending');
         }
     };
+
+    const onInputsChanged = () => {
+        let optionsValid = selectedOptions.every(option => option.value !== '');
+        let nameValid = name !== '';
+
+        setInputsValid(optionsValid && nameValid);
+    }
 
     const handleOptionChange = (changedOption: IWorkTrackingSystemOption, newValue: string) => {
         setSelectedOptions(prevOptions =>
@@ -58,14 +57,12 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
             )
         );
 
-        setFormValid(false);
-        setValidationState('pending');
+        onInputsChanged();
     };
 
     const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value);
-        setFormValid(false);
-        setValidationState('pending');
+        onInputsChanged();
     };
 
     const handleValidate = async () => {
@@ -77,20 +74,10 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 options: selectedOptions
             };
 
-            const isValid = await validateSettings(settings);
-
-            if (isValid) {
-                setFormValid(true);
-                setValidationState('success');
-                return;
-            } else {
-                setValidationState('failed');
-            }
-        } else {
-            setValidationState('failed');
+            return await validateSettings(settings);
         }
 
-        setFormValid(false);
+        return false;
     };
 
     const handleSubmit = () => {
@@ -109,17 +96,6 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
 
     const handleClose = () => {
         onClose(null);
-    };
-
-    const getValidationIcon = () => {
-        switch (validationState) {
-            case 'success':
-                return <CheckIcon color="success" />;
-            case 'failed':
-                return <ErrorIcon color="error" />;
-            default:
-                return <PendingIcon color="action" />;
-        }
     };
 
     return (
@@ -157,22 +133,15 @@ const ModifyTrackingSystemConnectionDialog: React.FC<ModifyWorkTrackingSystemCon
                 ))}
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClose} variant="outlined">Cancel</Button>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <ActionButton
-                        buttonText="Validate"
-                        onClickHandler={handleValidate}
-                        buttonVariant="outlined"
-                    />
-                    <div style={{ marginLeft: 8 }}>
-                        {getValidationIcon()}
-                    </div>
-                </div>
-                <Button onClick={handleSubmit} variant="outlined" disabled={!formValid}>
-                    {workTrackingSystems.length === 1 ? "Save" : "Create"}
-                </Button>
+                <ValidationActions 
+                    onCancel={handleClose}
+                    onValidate={handleValidate}
+                    onSave={handleSubmit}
+                    inputsValid={inputsValid}
+                    validationFailedMessage="Could not connect to the work tracking system with the provided settings. Please review and try again."
+                    saveButtonText={workTrackingSystems.length === 1 ? "Save" : "Create"}
+                />
             </DialogActions>
-
         </Dialog>
     );
 };

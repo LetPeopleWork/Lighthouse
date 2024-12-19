@@ -218,7 +218,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
 
         await this.delay();
 
-        return true;
+        return Math.random() >= 0.5;
     }
 
     async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
@@ -379,7 +379,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     async validateWorkTrackingSystemConnection(connection: IWorkTrackingSystemConnection): Promise<boolean> {
         console.log(`Validating connection for ${connection.name}`);
         await this.delay();
-        return true;
+        return Math.random() >= 0.5;
     }
 
     async getLogLevel(): Promise<string> {
