@@ -72,6 +72,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(team.FeaturesInProgress, Is.EquivalentTo(expectedFeaturesInProgress));
         }
 
+        [Test]
+        [TestCase(true, new[] { "13", "37", "42" }, 3)]
+        [TestCase(false, new[] { "13", "37", "42" }, 2)]
+        public async Task UpdateTeam_UpdatesFeatureWIP_DependingOnSetting(bool automaticallyAdjustFeatureWIP, string[] inProgressFeatures, int expectedFeatureWIP)
+        {
+            workItemServiceMock.Setup(x => x.GetFeaturesInProgressForTeam(team)).ReturnsAsync(inProgressFeatures);
+            team.FeatureWIP = 2;
+            team.AutomaticallyAdjustFeatureWIP = automaticallyAdjustFeatureWIP;
+
+            var subject = CreateSubject();
+
+            await subject.UpdateTeam(team);
+
+            Assert.That(team.FeatureWIP, Is.EqualTo(expectedFeatureWIP));
+        }
+
         private TeamUpdateService CreateSubject()
         {
             return new TeamUpdateService(workItemServiceFactoryMock.Object, Mock.Of<ILogger<TeamUpdateService>>());

@@ -8,6 +8,8 @@
 
         public int FeatureWIP { get; set; } = 1;
 
+        public bool AutomaticallyAdjustFeatureWIP { get; set; }
+
         public List<string> FeaturesInProgress { get; set; } = new List<string>();
 
         public string? AdditionalRelatedField { get; set; } = string.Empty;
@@ -34,6 +36,11 @@
         {
             FeaturesInProgress.Clear();
             FeaturesInProgress.AddRange(featureReferences);
+
+            if (AutomaticallyAdjustFeatureWIP)
+            {
+                FeatureWIP = FeaturesInProgress.Count;
+            }
         }
     }
 }
