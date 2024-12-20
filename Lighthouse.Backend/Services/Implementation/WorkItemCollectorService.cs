@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var featureOwners = project.Teams.Where(t => featureOwnerFieldValue.Contains(t.Name)).ToList();
 
                 logger.LogInformation("Found following teams defined in {FeatureOwnerField}: {Owners}", project.FeatureOwnerField, string.Join(",", featureOwners));
-                if (featureOwners.Any())
+                if (featureOwners.Count <= 0)
                 {
                     owningTeams = featureOwners;
                 }
