@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -19,12 +20,15 @@ namespace Lighthouse.Backend.API.DTO
 
         public string Name { get; set; }
 
+        [JsonRequired]
         public int Id { get; set; }
 
+        [JsonRequired]
         public int FeatureWip { get; set; }
 
         public List<string> FeaturesInProgress { get; } = new List<string>();
 
+        [JsonRequired]
         public DateTime LastUpdated { get; set; }
 
         public List<FeatureDto> Features { get; } = new List<FeatureDto>();

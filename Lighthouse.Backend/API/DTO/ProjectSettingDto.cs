@@ -80,6 +80,6 @@ namespace Lighthouse.Backend.API.DTO
 
         public TeamDto? OwningTeam { get; set; }
 
-        public string FeatureOwnerField { get; set; }
+        public string? FeatureOwnerField { get; set; }
     }
 }
