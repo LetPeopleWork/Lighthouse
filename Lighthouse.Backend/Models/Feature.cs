@@ -65,6 +65,12 @@ namespace Lighthouse.Backend.Models
 
         public void AddOrUpdateWorkForTeam(Team team, int remainingWork, int totalItems)
         {
+            // In some instances, we may have multiple entries for the same team. We should remove all but the first one.
+            foreach (var workForTeam in FeatureWork.Where(t => t.Team == team).Skip(1).ToList())
+            {
+                FeatureWork.Remove(workForTeam);
+            }
+
             var existingTeam = FeatureWork.SingleOrDefault(t => t.Team == team);
             if (existingTeam == null)
             {

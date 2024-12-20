@@ -259,10 +259,15 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 logger.LogInformation("Found {remainingWork} Work Item Remaining for Team {TeamName} for Feature {FeatureName}", remainingWork, team.Name, featureForProject.Name);
 
-                featureForProject.AddOrUpdateWorkForTeam(team, remainingWork, totalWork);
+                return (team, remainingWork, totalWork);
             }).ToList();
 
             await Task.WhenAll(tasks);
+
+            foreach (var (team, remainingWork, totalWork) in tasks.Select(t => t.Result))
+            {
+                featureForProject.AddOrUpdateWorkForTeam(team, remainingWork, totalWork);
+            }
         }
 
         private async Task<List<Feature>> GetFeaturesForProject(Project project)
