@@ -340,7 +340,8 @@ namespace Lighthouse.Backend.Tests.API
                 WorkItemQuery = "project = MyProject",
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
-                RelationCustomField = "CUSTOM.AdditionalField"
+                RelationCustomField = "CUSTOM.AdditionalField",
+                AutomaticallyAdjustFeatureWIP = true,
             };
 
             var subject = CreateSubject();
@@ -367,9 +368,9 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(updatedTeamSettings.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedTeamSettings.WorkTrackingSystemConnectionId));
                 Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(updatedTeamSettings.RelationCustomField));
+                Assert.That(teamSettingDto.AutomaticallyAdjustFeatureWIP, Is.EqualTo(updatedTeamSettings.AutomaticallyAdjustFeatureWIP));
             });
         }
-
 
         [Test]
         public async Task UpdateTeam_TeamNotFound_ReturnsNotFoundResultAsync()

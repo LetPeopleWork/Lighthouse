@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.API.DTO
             ToDoStates = team.ToDoStates;
             DoingStates = team.DoingStates;
             DoneStates = team.DoneStates;
+            AutomaticallyAdjustFeatureWIP = team.AutomaticallyAdjustFeatureWIP;
         }
 
         [JsonRequired]
@@ -49,5 +50,7 @@ namespace Lighthouse.Backend.API.DTO
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public string RelationCustomField { get; set; }
+
+        public bool AutomaticallyAdjustFeatureWIP { get; set; }
     }
 }

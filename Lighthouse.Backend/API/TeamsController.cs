@@ -185,6 +185,7 @@ namespace Lighthouse.Backend.API
             team.DoingStates = teamSetting.DoingStates;
             team.DoneStates = teamSetting.DoneStates;
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
+            team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
         }
 
         private static TeamDto CreateTeamDto(List<Project> allProjects, List<Feature> allFeatures, Team team)
