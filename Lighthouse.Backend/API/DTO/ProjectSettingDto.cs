@@ -32,6 +32,13 @@ namespace Lighthouse.Backend.API.DTO
             DoneStates = project.DoneStates;
 
             InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
+
+            if (project.OwningTeam != null)
+            {
+                OwningTeam = new TeamDto(project.OwningTeam);
+            }
+
+            FeatureOwnerField = project.FeatureOwnerField;
         }
 
         [JsonRequired]
@@ -70,5 +77,9 @@ namespace Lighthouse.Backend.API.DTO
         public string? SizeEstimateField { get; set; } = string.Empty;
 
         public List<TeamDto> InvolvedTeams { get; set; } = new List<TeamDto>();
+
+        public TeamDto? OwningTeam { get; set; }
+
+        public string FeatureOwnerField { get; set; }
     }
 }

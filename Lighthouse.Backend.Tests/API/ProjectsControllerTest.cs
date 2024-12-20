@@ -280,7 +280,9 @@ namespace Lighthouse.Backend.Tests.API
                 InvolvedTeams = new List<TeamDto>
                 {
                     new TeamDto(existingTeam)
-                }
+                },
+                OwningTeam = new TeamDto(existingTeam),
+                FeatureOwnerField = "OwnerField",
             };
 
             var subject = CreateSubject();
@@ -321,6 +323,10 @@ namespace Lighthouse.Backend.Tests.API
                 var teamDto = projectSettingDto.InvolvedTeams.Single();
                 Assert.That(teamDto.Id, Is.EqualTo(existingTeam.Id));
                 Assert.That(teamDto.Name, Is.EqualTo(existingTeam.Name));
+
+                Assert.That(projectSettingDto.OwningTeam.Id, Is.EqualTo(existingTeam.Id));
+                Assert.That(projectSettingDto.OwningTeam.Name, Is.EqualTo(existingTeam.Name));
+                Assert.That(projectSettingDto.FeatureOwnerField, Is.EqualTo(updatedProjectSettings.FeatureOwnerField));
             });
         }
 

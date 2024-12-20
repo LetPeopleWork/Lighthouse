@@ -16,6 +16,7 @@ import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
 import StatesList from "../StatesList/StatesList";
 import { ITeam } from "../../../models/Team/Team";
 import TeamsList from "../TeamsList/TeamsList";
+import OwnershipComponent from "../../../pages/Projects/Edit/Ownership";
 
 interface ModifyProjectSettingsProps {
     title: string;
@@ -46,6 +47,11 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
     const handleTeamSelectionChange = (teamIds: number[]) => {
         setSelectedTeams(teamIds);
+        
+        // Clear owning team if it's no longer in the selected teams
+        if (projectSettings?.owningTeam && !teamIds.includes(projectSettings.owningTeam.id)) {
+            setProjectSettings(prev => prev ? { ...prev, owningTeam: undefined } : prev);
+        }
     };
 
     const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
@@ -100,7 +106,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
         setProjectSettings(prev => prev ? { ...prev, doneStates: (prev.doneStates || []).filter(item => item !== doneState) } : prev);
     };
 
-    const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number | boolean | string[]) => {
+    const handleProjectSettingsChange = (key: keyof IProjectSettings, value: string | number | boolean | string[] | ITeam | null) => {
         setProjectSettings(prev => prev ? { ...prev, [key]: value } : prev);
     };
 
@@ -255,6 +261,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
                     <AdvancedInputsComponent
                         projectSettings={projectSettings}
                         onProjectSettingsChange={handleProjectSettingsChange}
+                    />
+
+                    <OwnershipComponent 
+                        projectSettings={projectSettings}
+                        onProjectSettingsChange={handleProjectSettingsChange}
+                        currentInvolvedTeams={teams.filter(team => selectedTeams.includes(team.id))}
                     />
 
                     <Grid size={{ xs: 12 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>

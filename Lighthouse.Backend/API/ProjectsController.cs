@@ -168,6 +168,8 @@ namespace Lighthouse.Backend.API
 
             project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
 
+            project.FeatureOwnerField = projectSetting.FeatureOwnerField;
+
             SyncStates(project, projectSetting);
             SyncMilestones(project, projectSetting);
             SyncTeams(project, projectSetting);
@@ -193,6 +195,12 @@ namespace Lighthouse.Backend.API
             }
 
             project.UpdateTeams(teams);
+
+            project.OwningTeam = null;
+            if (projectSetting.OwningTeam != null)
+            {
+                project.OwningTeam = teamRepository.GetById(projectSetting.OwningTeam.Id);
+            }
         }
 
         private static void SyncMilestones(Project project, ProjectSettingDto projectSetting)

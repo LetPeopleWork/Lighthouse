@@ -9,6 +9,7 @@ export interface IProjectSettings {
     workItemQuery: string;
     unparentedItemsQuery: string;
     involvedTeams: ITeam[];
+    owningTeam?: ITeam;
     
     toDoStates: string[];
     doingStates: string[];
@@ -23,4 +24,5 @@ export interface IProjectSettings {
 
     workTrackingSystemConnectionId: number;
     sizeEstimateField?: string;
+    featureOwnerField?: string;
 }
