@@ -29,7 +29,8 @@ describe('GeneralInputsComponent', () => {
         relationCustomField: 'Test Field',
         toDoStates: ["New"],
         doingStates: ["Active"],
-        doneStates: ["Done"]
+        doneStates: ["Done"],
+        automaticallyAdjustFeatureWIP: false
     };    
 
     it('renders correctly with provided teamSettings', () => {

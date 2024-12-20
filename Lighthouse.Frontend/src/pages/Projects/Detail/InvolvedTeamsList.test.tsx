@@ -18,6 +18,7 @@ describe('InvolvedTeamsList component', () => {
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         },
         {
             id: 2,
@@ -31,6 +32,7 @@ describe('InvolvedTeamsList component', () => {
             toDoStates: ["New"],
             doingStates: ["Active"],
             doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         }
     ];
     

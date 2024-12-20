@@ -80,7 +80,8 @@ describe('TeamService', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };        
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -103,7 +104,8 @@ describe('TeamService', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };        
         const mockResponse: ITeamSettings = { ...newTeamSettings, id: 1 };
 
@@ -127,7 +129,8 @@ describe('TeamService', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };        
 
         mockedAxios.put.mockResolvedValueOnce({ data: updatedTeamSettings });
@@ -177,7 +180,8 @@ describe('TeamService', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };
     
         mockedAxios.post.mockResolvedValueOnce({ data: true });
@@ -200,7 +204,8 @@ describe('TeamService', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: true
         };
     
         mockedAxios.post.mockResolvedValueOnce({ data: false });

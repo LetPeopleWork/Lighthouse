@@ -54,7 +54,8 @@ describe('SettingsService', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };        
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
@@ -76,7 +77,8 @@ describe('SettingsService', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };        
         mockedAxios.put.mockResolvedValueOnce({});
 

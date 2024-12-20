@@ -45,9 +45,9 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     private projects: Project[] = [];
     private teams: Team[] = [];
 
-    private dataRetentionSettings : IDataRetentionSettings = { maxStorageTimeInDays: 90 };
+    private dataRetentionSettings: IDataRetentionSettings = { maxStorageTimeInDays: 90 };
 
-    private projectSettings : IProjectSettings[] = [
+    private projectSettings: IProjectSettings[] = [
         {
             id: 0,
             name: "Release 1.33.7",
@@ -120,7 +120,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         this.recreateTeams();
         this.recreateProjects();
 
-        for (const projectSetting of this.projectSettings){
+        for (const projectSetting of this.projectSettings) {
             projectSetting.involvedTeams = [this.teams[0], this.teams[1], this.teams[2], this.teams[3]]
         }
     }
@@ -210,10 +210,10 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
 
         await this.delay();
 
-        return { id: 1, name: 'My Team', throughputHistory: 30, featureWIP: 1, workItemQuery: "[System.TeamProject] = \"My Team\"", workItemTypes: ["User Story", "Bug"], workTrackingSystemConnectionId: 12, relationCustomField: '', toDoStates: ["New"], doingStates: ["Active"], doneStates: ["Done"] }
+        return { id: 1, name: 'My Team', throughputHistory: 30, featureWIP: 1, workItemQuery: "[System.TeamProject] = \"My Team\"", workItemTypes: ["User Story", "Bug"], workTrackingSystemConnectionId: 12, relationCustomField: '', toDoStates: ["New"], doingStates: ["Active"], doneStates: ["Done"], automaticallyAdjustFeatureWIP: false }
     }
 
-    async validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean>{
+    async validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean> {
         console.log(`Validating Team ${teamSettings.name}`);
 
         await this.delay();
@@ -439,7 +439,9 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
     async getDefaultTeamSettings(): Promise<ITeamSettings> {
         await this.delay();
 
-        return { id: 1, name: 'My Team', throughputHistory: 30, featureWIP: 1, workItemQuery: "[System.TeamProject] = \"My Team\"", workItemTypes: ["User Story", "Bug"], workTrackingSystemConnectionId: 12, relationCustomField: '', toDoStates: ["New"], doingStates: ["Active"], doneStates: ["Done"] }
+        return {
+            id: 1, name: 'My Team', throughputHistory: 30, featureWIP: 1, workItemQuery: "[System.TeamProject] = \"My Team\"", workItemTypes: ["User Story", "Bug"], workTrackingSystemConnectionId: 12, relationCustomField: '', toDoStates: ["New"], doingStates: ["Active"], doneStates: ["Done"], automaticallyAdjustFeatureWIP: false
+        }
     }
 
     async updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void> {

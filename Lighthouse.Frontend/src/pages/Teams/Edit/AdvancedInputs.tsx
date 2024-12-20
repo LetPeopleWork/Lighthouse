@@ -1,12 +1,12 @@
 import React from 'react';
-import { TextField } from '@mui/material';
+import { TextField, FormControlLabel, Checkbox } from '@mui/material';
 import Grid from '@mui/material/Grid2'
 import { ITeamSettings } from '../../../models/Team/TeamSettings';
 import InputGroup from '../../../components/Common/InputGroup/InputGroup';
 
 interface AdvancedInputsComponentProps {
     teamSettings: ITeamSettings | null;
-    onTeamSettingsChange: (key: keyof ITeamSettings, value: string | number) => void;
+    onTeamSettingsChange: (key: keyof ITeamSettings, value: string | number | boolean) => void;
 }
 
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
@@ -28,6 +28,15 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
                         }
                     }}
                     onChange={(e) => onTeamSettingsChange('featureWIP', parseInt(e.target.value, 10))}
+                />
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={teamSettings?.automaticallyAdjustFeatureWIP ?? false}
+                            onChange={(e) => onTeamSettingsChange('automaticallyAdjustFeatureWIP', e.target.checked)}
+                        />
+                    }
+                    label="Automatically Adjust Feature WIP based on actual WIP"
                 />
             </Grid>
 

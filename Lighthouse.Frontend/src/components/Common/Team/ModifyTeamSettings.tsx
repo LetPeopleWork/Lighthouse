@@ -29,7 +29,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
     const [workTrackingSystems, setWorkTrackingSystems] = useState<IWorkTrackingSystemConnection[]>([]);
     const [inputsValid, setInputsValid] = useState<boolean>(false);
 
-    const handleTeamSettingsChange = (key: keyof ITeamSettings, value: string | number) => {
+    const handleTeamSettingsChange = (key: keyof ITeamSettings, value: string | number | boolean) => {
         setTeamSettings(prev => prev ? { ...prev, [key]: value } : prev);
     };
 

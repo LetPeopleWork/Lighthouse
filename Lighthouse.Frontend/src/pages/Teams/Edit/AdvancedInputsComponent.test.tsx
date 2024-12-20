@@ -16,7 +16,8 @@ describe('AdvancedInputsComponent', () => {
             relationCustomField: "Test Field",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };        
 
         render(
@@ -44,7 +45,8 @@ describe('AdvancedInputsComponent', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };        
 
         render(
@@ -76,7 +78,8 @@ describe('AdvancedInputsComponent', () => {
             relationCustomField: "",
             toDoStates: ["New"],
             doingStates: ["Active"],
-            doneStates: ["Done"]
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
         };        
 
         render(
@@ -91,5 +94,34 @@ describe('AdvancedInputsComponent', () => {
         });
 
         expect(onTeamSettingsChange).toHaveBeenCalledWith('featureWIP', 25);
+    });
+
+    it('calls onTeamSettingsChange with correct parameters when automaticallyAdjustFeatureWIP checkbox is toggled', () => {
+        const onTeamSettingsChange = vi.fn();
+        const teamSettings: ITeamSettings = {
+            id: 0,
+            name: "setting",
+            throughputHistory: 2,
+            featureWIP: 2,
+            workItemQuery: "",
+            workItemTypes: [],
+            workTrackingSystemConnectionId: 12,
+            relationCustomField: "",
+            toDoStates: ["New"],
+            doingStates: ["Active"],
+            doneStates: ["Done"],
+            automaticallyAdjustFeatureWIP: false
+        };        
+
+        render(
+            <AdvancedInputsComponent
+                teamSettings={teamSettings}
+                onTeamSettingsChange={onTeamSettingsChange}
+            />
+        );
+
+        fireEvent.click(screen.getByLabelText('Automatically Adjust Feature WIP based on actual WIP'));
+
+        expect(onTeamSettingsChange).toHaveBeenCalledWith('automaticallyAdjustFeatureWIP', true);
     });
 });
