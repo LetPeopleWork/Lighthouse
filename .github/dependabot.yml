@@ -17,3 +17,12 @@ updates:
     commit-message:
       prefix: "deps"
     open-pull-requests-limit: 5
+
+  # Update npm dependencies in `Lighthouse.EndToEndTests/package.json`
+  - package-ecosystem: "npm"
+    directory: "/Lighthouse.EndToEndTests"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "deps"
+    open-pull-requests-limit: 5
