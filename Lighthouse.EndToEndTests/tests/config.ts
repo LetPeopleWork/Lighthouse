@@ -15,8 +15,7 @@ const getEnvVariable = (name: string, defaultValue: string): string => {
         console.log(`No value found for ${name} - using default`);
         return defaultValue;
     }
-
-    console.log(`Found value for ${name} - reading from environment variable`);
+    
     return value;
 };
 
