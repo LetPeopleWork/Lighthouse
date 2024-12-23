@@ -209,22 +209,31 @@ jobs:
       - name: Copy update_linux.sh
         run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
 
-      - name: Set linux executable permission
-        run: chmod +x ./publish/linux-x64/Lighthouse
-        working-directory: ./Lighthouse.Backend
+      - name: Run Command
+        run: |
+          find $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64 -type f
 
-      - name: List all files under $GITHUB_WORKSPACE
-        run: find $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64 -type f
+          chmod +x $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse
+
+          $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse &
+
+          echo "Waiting for server to be ready..."
+
+          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
 
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
           run-command: |
+            find $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64 -type f
+
             chmod +x $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse
+
             $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse &
+
             echo "Waiting for server to be ready..."
+
             timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
-            echo "Server is ready!"
 
           base-url: 'http://localhost:5000'
 
