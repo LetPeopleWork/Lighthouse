@@ -31,11 +31,20 @@ jobs:
       - name: Check for changes
         id: check
         run: |
-          git fetch origin ${{ github.base_ref }}
-          github_changes=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^.github/ && echo 'true' || echo 'false')
-          backend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
-          frontend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
-          e2e=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          base_ref=${{ github.base_ref }}
+          if [ -z "$base_ref" ]; then
+            # Default to checking against the previous commit on the current branch if no base_ref is provided
+            base_ref=$(git rev-parse HEAD^)
+          else
+            git fetch origin $base_ref
+            base_ref="origin/$base_ref"
+          fi
+
+          github_changes=$(git diff --name-only $base_ref HEAD | grep -q ^.github/ && echo 'true' || echo 'false')
+          backend=$(git diff --name-only $base_ref HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          frontend=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          e2e=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+
           echo "backend=$backend"
           echo "frontend=$frontend"
           echo "e2e=$e2e"
