@@ -203,7 +203,6 @@ jobs:
 
       - uses: ./.github/workflows/playwright-tests.yml
         with:
-          working-directory: ./Lighthouse.EndToEndTests
           base-url: 'http://localhost:5000'
 
       - name: Stop Lighthouse Server
