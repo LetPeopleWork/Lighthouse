@@ -217,7 +217,9 @@ jobs:
         name: Playwright Tests
         with:
           run-command: |
-            cd ./Lighthouse.Backend
+            cd $GITHUB_WORKSPACE/Lighthouse.Backend
+            echo "Current directory: $(pwd)"
+
             ./publish/linux-x64/Lighthouse &
             echo "Waiting for server to be ready..."
             timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
