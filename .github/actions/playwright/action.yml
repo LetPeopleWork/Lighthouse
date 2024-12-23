@@ -27,6 +27,13 @@ runs:
       shell: bash
       working-directory: ./Lighthouse.EndToEndTests
 
+    - name: Wait for Lighthouse to start
+      run: |
+        echo "Waiting for server to be ready..."
+        timeout 30 bash -c 'until curl --silent --fail ${{ inputs.base-url }}; do sleep 1; done'
+        echo "Server is ready!"
+      shell: bash
+
     - name: Run Playwright tests
       run: npx playwright test
       shell: bash
