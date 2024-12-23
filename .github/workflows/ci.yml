@@ -215,7 +215,7 @@ jobs:
 
       - name: Run Command
         run: |
-          sudo $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse &
+          $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse &
 
           echo "Waiting for server to be ready..."
 
@@ -235,7 +235,14 @@ jobs:
 
       - name: Stop Lighthouse Server
         if: always()
-        run: pkill Lighthouse || true
+        run: |
+          pkill Lighthouse || true
+          echo "Writing logs..."
+          for file in $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/logs/*; do
+            cat "$file"
+          done
+          echo "Deleting logs folder..."
+          rm -rf $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/logs
 
       - name: publish win-x64
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
