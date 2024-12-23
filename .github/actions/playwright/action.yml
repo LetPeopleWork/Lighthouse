@@ -6,6 +6,10 @@ inputs:
     description: 'The URL of the application to test'
     required: true
     type: string
+  run-command:
+    description: 'The command to start Lighthouse before running the tests'
+    required: true
+    type: string
 
 
 runs:
@@ -22,13 +26,15 @@ runs:
       shell: bash
       working-directory: ./Lighthouse.EndToEndTests
 
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+    - name: Install Chromium
+      run: npx playwright install chromium --with-deps
       shell: bash
       working-directory: ./Lighthouse.EndToEndTests
 
     - name: Run Playwright tests
-      run: npx playwright test
+      run: |
+        ${{ inputs.run-command }}
+        npx playwright test
       shell: bash
       working-directory: ./Lighthouse.EndToEndTests
       env:

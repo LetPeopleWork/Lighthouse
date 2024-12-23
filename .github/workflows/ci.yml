@@ -243,6 +243,12 @@ jobs:
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
+          run-command: |
+            ./Lighthouse.Backend/publish/linux-x64/Lighthouse &
+            echo "Waiting for server to be ready..."
+            timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+            echo "Server is ready!"
+
           base-url: 'http://localhost:5000'
 
       - name: Stop Lighthouse Server
@@ -279,12 +285,11 @@ jobs:
           build_arg: VERSION=${{ needs.tag.outputs.fileversion }}
           dockerfile: Lighthouse.Backend/Dockerfile        
 
-      - name: Start Lighthouse in Docker
-        run: |
-          docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:latest
-
       - uses: ./.github/actions/playwright
+        name: Playwright Tests
         with:
+          run-command: |
+            docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:latest
           base-url: 'http://localhost:8080'
 
   deploy:
