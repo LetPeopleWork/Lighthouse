@@ -150,7 +150,7 @@ jobs:
     permissions: write-all
 
     needs: [backend, frontend, e2etests]
-    if: always()
+    if: success()
 
     steps:          
       - uses: actions/checkout@v4
@@ -184,6 +184,8 @@ jobs:
     name: Package and Test App
     runs-on: ubuntu-latest
     needs: tag
+
+    if: success()
 
     permissions: write-all
 
