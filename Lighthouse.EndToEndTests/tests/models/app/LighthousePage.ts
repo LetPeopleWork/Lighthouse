@@ -60,7 +60,7 @@ export class LighthousePage extends Header {
 
     private async GetContributorsButton(): Promise<Locator> {
         return this.page.getByTestId('https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md');
-    };
+    }
 
     private async GetReportIssueButton(): Promise<Locator> {
         return this.page.getByLabel('Report an Issue');
