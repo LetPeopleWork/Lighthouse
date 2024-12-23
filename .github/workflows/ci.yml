@@ -147,10 +147,6 @@ jobs:
 
   tag:
     runs-on: ubuntu-latest
-    needs:
-      - backend
-      - frontend
-      - e2etests
 
     permissions: write-all
 
