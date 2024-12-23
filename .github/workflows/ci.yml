@@ -179,6 +179,7 @@ jobs:
       fileversion: ${{ steps.process_version.outputs.fileversion }}
 
   packageapp:
+    name: Package and Test App
     runs-on: ubuntu-latest
     needs: tag
 
