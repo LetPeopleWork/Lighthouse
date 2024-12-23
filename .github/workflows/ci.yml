@@ -216,7 +216,15 @@ jobs:
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
-          run-command: 'Lighthouse &'  
+          run-command: |
+            echo "Current directory: $(pwd)"
+            echo "Listing files in $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64:"
+            ls -la $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64
+            echo "Setting executable permission for Lighthouse"
+            chmod +x $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse
+            echo "Starting Lighthouse"
+            nohup $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse > lighthouse.log 2>&1 &
+            
           run-command-working-directory: ./Lighthouse.Backend/publish/linux-x64
           base-url: 'http://localhost:5000'
 
