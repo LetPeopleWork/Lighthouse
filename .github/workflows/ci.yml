@@ -239,6 +239,14 @@ jobs:
           build_arg: VERSION=${{ needs.tag.outputs.fileversion }}
           dockerfile: Lighthouse.Backend/Dockerfile        
 
+      - name: Start Lighthouse in Docker
+        run: |
+          docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:latest
+
+      - uses: ./.github/actions/playwright
+        with:
+          base-url: 'http://localhost:8080'
+
   deploy:
     runs-on: ubuntu-latest
     needs:
