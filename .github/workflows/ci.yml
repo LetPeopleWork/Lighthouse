@@ -214,7 +214,7 @@ jobs:
         working-directory: ./Lighthouse.Backend
 
       - name: Run Lighthouse
-        run: nohup ./Lighthouse > lighthouse.log 2>&1 &
+        run: ./Lighthouse > lighthouse.log 2>&1 &
         working-directory: ./Lighthouse.Backend/publish/linux-x64
 
       - uses: ./.github/actions/playwright
