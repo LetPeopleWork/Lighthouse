@@ -218,9 +218,9 @@ jobs:
         name: Playwright Tests
         with:
           run-command: |
-            ls -la ./Lighthouse.Backend/publish/linux-x64
-            chmod +x ./Lighthouse/publish/linux-x64/Lighthouse
-            ./Lighthouse.Backend/publish/linux-x64/Lighthouse &
+            ls -la $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64
+            chmod +x $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse
+            $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse &
             echo "Waiting for server to be ready..."
             timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
             echo "Server is ready!"
