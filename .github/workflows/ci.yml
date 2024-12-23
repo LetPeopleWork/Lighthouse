@@ -219,7 +219,7 @@ jobs:
 
       - name: Run Lighthouse
         run: |
-          nohup ./Lighthouse > lighthouse.log 2>&1 &
+          ./Lighthouse > lighthouse.log 2>&1 &
         working-directory: ./Lighthouse.Backend/publish/linux-x64
 
       - name: Wait for Lighthouse to start
