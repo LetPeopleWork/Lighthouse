@@ -202,6 +202,7 @@ jobs:
         working-directory: ./Lighthouse.Backend
 
       - uses: ./.github/actions/playwright
+        name: Playwright Tests
         with:
           base-url: 'http://localhost:5000'
 

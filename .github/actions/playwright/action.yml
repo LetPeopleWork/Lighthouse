@@ -32,7 +32,7 @@ runs:
       shell: bash
       working-directory: ./Lighthouse.EndToEndTests
       env:
-        LIGHTHOUSEURLNAME: ${{ inputs.base-url }}
+        LIGHTHOUSEURL: ${{ inputs.base-url }}
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
