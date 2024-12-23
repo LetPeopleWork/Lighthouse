@@ -201,7 +201,7 @@ jobs:
           echo "Server is ready!"
         working-directory: ./Lighthouse.Backend
 
-      - uses: ./.github/workflows/playwright-tests.yml
+      - uses: ./.github/actions/playwright
         with:
           base-url: 'http://localhost:5000'
 
