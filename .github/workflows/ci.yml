@@ -193,70 +193,35 @@ jobs:
         run: chmod +x ./publish/linux-x64/Lighthouse
         working-directory: ./Lighthouse.Backend
 
+      - name: Start Lighthouse Server
+        run: |
+          ./publish/linux-x64/Lighthouse &
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+          echo "Server is ready!"
+        working-directory: ./Lighthouse.Backend
+
+      - uses: ./.github/workflows/playwright-tests.yml
+        with:
+          working-directory: ./Lighthouse.EndToEndTests
+          base-url: 'http://localhost:5000'
+
+      - name: Stop Lighthouse Server
+        if: always()
+        run: pkill Lighthouse || true
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: Lighthouse ${{ needs.tag.outputs.version }}
           path: ./Lighthouse.Backend/publish      
 
-  runE2ETests:
-    runs-on: ubuntu-latest
-    needs:
-      - packageapp
-      - tag
-
-    permissions: write-all
-
-    steps:
-
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: '0'
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: LighthouseArtifacts          
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./Lighthouse.EndToEndTests
-
-      - name: Start Lighthouse Server
-        run: |
-          chmod +x ./LighthouseArtifacts/linux-x64/lighthouse
-          ./LighthouseArtifacts/linux-x64/lighthouse &
-          echo "Waiting for server to be ready..."
-          # Wait for server to respond (timeout after 30s)
-          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
-          echo "Server is ready!"
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-        working-directory: ./Lighthouse.EndToEndTests
-
-      - name: Run Playwright tests
-        run: npx playwright test
-        working-directory: ./Lighthouse.EndToEndTests
-        env:
-          LIGHTHOUSEURLNAME: 'http://localhost:5000'
-
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
 
   docker:
     runs-on: ubuntu-latest
     needs:
       - tag
-      - runE2ETests
+      - packageapp
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
@@ -279,7 +244,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - tag
-      - runE2ETests
+      - packageapp
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
