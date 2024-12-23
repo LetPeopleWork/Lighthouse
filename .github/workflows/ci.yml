@@ -215,7 +215,7 @@ jobs:
         working-directory: ./Lighthouse.Backend
 
       - name: List all directories under $GITHUB_WORKSPACE
-        run: find $GITHUB_WORKSPACE -type d
+        run: find $GITHUB_WORKSPACE/Lighthouse.Backend -type d
 
       - uses: ./.github/actions/playwright
         name: Playwright Tests
