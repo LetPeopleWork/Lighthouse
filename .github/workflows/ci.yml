@@ -216,7 +216,7 @@ jobs:
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
-          run-command: './Lighthouse &'  
+          run-command: 'Lighthouse &'  
           run-command-working-directory: ./Lighthouse.Backend/publish/linux-x64
           base-url: 'http://localhost:5000'
 
