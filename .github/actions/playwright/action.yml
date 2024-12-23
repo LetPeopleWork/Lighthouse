@@ -34,10 +34,10 @@ runs:
     - name: Run Playwright tests
       run: |
         ${{ inputs.run-command }}
-        
+
+        cd ./Lighthouse.EndToEndTests
         npx playwright test
       shell: bash
-      working-directory: ./Lighthouse.EndToEndTests
       env:
         LIGHTHOUSEURL: ${{ inputs.base-url }}
 

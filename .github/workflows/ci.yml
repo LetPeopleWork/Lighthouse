@@ -213,18 +213,12 @@ jobs:
         run: sudo chmod +x ./publish/linux-x64/Lighthouse
         working-directory: ./Lighthouse.Backend
 
-      - name: Run Command
-        run: |
-          ./publish/linux-x64/Lighthouse &
-          echo "Waiting for server to be ready..."
-          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
-        working-directory: ./Lighthouse.Backend
-
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
           run-command: |
-            ./Lighthouse.Backend/publish/linux-x64/Lighthouse &
+            cd ./Lighthouse.Backend
+            ./publish/linux-x64/Lighthouse &
             echo "Waiting for server to be ready..."
             timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
           base-url: 'http://localhost:5000'
