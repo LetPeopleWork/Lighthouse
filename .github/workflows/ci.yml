@@ -210,7 +210,7 @@ jobs:
         run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
 
       - name: Set linux executable permission
-        run: sudo chmod +x ./publish/linux-x64/Lighthouse
+        run: sudo chmod -R +x ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
 
       - uses: ./.github/actions/playwright
