@@ -43,9 +43,9 @@ export class LighthousePage extends Header {
             const rejectButton = youtubePage.getByRole('button', { name: 'Reject all' });
             await rejectButton.click({ timeout: 5000 });
         } catch (error) {
-            // Button not found, continue
+            console.log(error);
         }
-        
+
         await youtubePage.waitForLoadState('networkidle');
         return youtubePage;
     }
