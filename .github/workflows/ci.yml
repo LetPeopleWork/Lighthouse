@@ -221,6 +221,10 @@ jobs:
           echo "Server is ready!"
         working-directory: ./Lighthouse.Backend/publish/linux-x64
 
+      - name: Lighthouse Log
+        run: cat lighthouse.log
+        working-directory: ./Lighthouse.Backend/publish/linux-x64
+
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
