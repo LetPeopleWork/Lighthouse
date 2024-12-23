@@ -33,10 +33,16 @@ jobs:
         run: |
           git fetch origin ${{ github.base_ref }}
           github_changes=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^.github/ && echo 'true' || echo 'false')
-          echo "backend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "frontend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "e2e=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-
+          backend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          frontend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          e2e=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          echo "backend=$backend"
+          echo "frontend=$frontend"
+          echo "e2e=$e2e"
+          echo "backend=$backend" >> $GITHUB_OUTPUT
+          echo "frontend=$frontend" >> $GITHUB_OUTPUT
+          echo "e2e=$e2e" >> $GITHUB_OUTPUT
+          
   backend:
     name: Verify Backend
     needs: changes
