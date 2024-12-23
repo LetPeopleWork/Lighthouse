@@ -213,28 +213,34 @@ jobs:
         run: sudo chmod +x ./publish/linux-x64/Lighthouse
         working-directory: ./Lighthouse.Backend
 
+      - name: Run Command
+        run: |
+          nohup ./publish/linux-x64/Lighthouse > lighthouse.log 2>&1 &
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+        working-directory: ./Lighthouse.Backend
+
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
           run-command: |
-            cd $GITHUB_WORKSPACE/Lighthouse.Backend
-            echo "Current directory: $(pwd)"
-
-            ./publish/linux-x64/Lighthouse &
-            echo "Waiting for server to be ready..."
-            timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+            ls
           base-url: 'http://localhost:5000'
 
       - name: Stop Lighthouse Server
         if: always()
         run: |
           pkill Lighthouse || true
+
+          cat lighthouse.log
+
           echo "Writing logs..."
-          for file in $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/logs/*; do
+          for file in ./publish/linux-x64/logs/*; do
             cat "$file"
           done
           echo "Deleting logs folder..."
           rm -rf $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/logs
+        working-directory: ./Lighthouse.Backend
 
       - name: publish win-x64
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
