@@ -15,8 +15,33 @@ on:
   workflow_dispatch:  
 
 jobs:
-  backend:
 
+  changes:
+    name: Check for changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.check.outputs.backend }}
+      frontend: ${{ steps.check.outputs.frontend }}
+      e2e: ${{ steps.check.outputs.e2e }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for changes
+        id: check
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          github_changes=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep ^.github/ && echo 'true' || echo 'false')
+          echo "backend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | (grep -E '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ]) && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "frontend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | (grep ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ]) && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "e2e=$(git diff --name-only origin/${{ github.base_ref }} HEAD | (grep ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ]) && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+  backend:
+    name: Verify Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    
     runs-on: ubuntu-latest
 
     steps:
@@ -41,6 +66,9 @@ jobs:
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
   
   frontend:
+    name: Verify Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -80,7 +108,11 @@ jobs:
         npm install -g sonarqube-scanner
         sonar-scanner
 
-  buildE2Etests:
+  e2etests:
+    name: Verify End to End Tests
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+
     runs-on: ubuntu-latest
 
     steps:
@@ -108,7 +140,7 @@ jobs:
     needs:
       - backend
       - frontend
-      - buildE2Etests
+      - e2etests
 
     permissions: write-all
 
