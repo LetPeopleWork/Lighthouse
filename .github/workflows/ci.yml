@@ -147,8 +147,10 @@ jobs:
 
   tag:
     runs-on: ubuntu-latest
-
     permissions: write-all
+    
+    needs: [backend, frontend, e2etests]
+    if: always()
 
     steps:          
       - uses: actions/checkout@v4
