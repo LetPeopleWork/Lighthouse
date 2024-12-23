@@ -15,8 +15,40 @@ on:
   workflow_dispatch:  
 
 jobs:
-  backend:
 
+  changes:
+    name: Check for changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.check.outputs.backend }}
+      frontend: ${{ steps.check.outputs.frontend }}
+      e2e: ${{ steps.check.outputs.e2e }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for changes
+        id: check
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          github_changes=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^.github/ && echo 'true' || echo 'false')
+          backend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          frontend=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          e2e=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          echo "backend=$backend"
+          echo "frontend=$frontend"
+          echo "e2e=$e2e"
+          echo "backend=$backend" >> $GITHUB_OUTPUT
+          echo "frontend=$frontend" >> $GITHUB_OUTPUT
+          echo "e2e=$e2e" >> $GITHUB_OUTPUT
+
+  backend:
+    name: Verify Backend
+    needs: changes
+    
+    if: needs.changes.outputs.backend == 'true'
+    
     runs-on: ubuntu-latest
 
     steps:
@@ -41,6 +73,10 @@ jobs:
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
   
   frontend:
+    name: Verify Frontend
+    needs: changes
+    
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -80,7 +116,12 @@ jobs:
         npm install -g sonarqube-scanner
         sonar-scanner
 
-  buildE2Etests:
+  e2etests:
+    name: Verify End to End Tests
+    needs: changes
+
+    if: needs.changes.outputs.e2e == 'true'
+
     runs-on: ubuntu-latest
 
     steps:
@@ -105,11 +146,6 @@ jobs:
 
   tag:
     runs-on: ubuntu-latest
-    needs:
-      - backend
-      - frontend
-      - buildE2Etests
-
     permissions: write-all
 
     steps:          
@@ -141,6 +177,7 @@ jobs:
       fileversion: ${{ steps.process_version.outputs.fileversion }}
 
   packageapp:
+    name: Package and Test App
     runs-on: ubuntu-latest
     needs: tag
 
@@ -156,6 +193,10 @@ jobs:
         with:
           dotnet-version: ${{env.DOTNET_ROOT}}
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Install npm dependencies
         run: npm install
         working-directory: ./Lighthouse.Frontend
@@ -163,6 +204,63 @@ jobs:
       - name: Build Frontend
         run: npm run build
         working-directory: ./Lighthouse.Frontend
+
+      - name: publish linux-x64
+        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
+        working-directory: ./Lighthouse.Backend
+
+      - name: Copy update_linux.sh
+        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
+
+      - name: Set linux executable permission
+        run: sudo chmod -R +x ./publish/linux-x64
+        working-directory: ./Lighthouse.Backend
+
+      - name: Install E2E dependencies
+        run: npm ci
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+  
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Run Lighthouse
+        run: |
+          ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: ./Lighthouse.Backend/publish/linux-x64
+
+      - name: Wait for Lighthouse to start
+        run: |
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+          echo "Server is ready!"
+
+          cat lighthouse.log
+        working-directory: ./Lighthouse.Backend/publish/linux-x64
+  
+      - name: Run Playwright tests
+        run: npx playwright test
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+        env:
+          LIGHTHOUSEURL: http://localhost:5000
+  
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: ./Lighthouse.EndToEndTests/playwright-report/
+          retention-days: 30
+
+      - name: Stop Lighthouse Server
+        if: always()
+        run: |
+          pkill Lighthouse || true
+          cat ./publish/linux-x64/lighthouse.log
+          rm -rf ./publish/linux-x64/logs
+        working-directory: ./Lighthouse.Backend
 
       - name: publish win-x64
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
@@ -179,18 +277,7 @@ jobs:
         run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/publish/osx-x64/update_mac.sh
 
       - name: Set osx executable permission
-        run: chmod +x ./publish/osx-x64/Lighthouse
-        working-directory: ./Lighthouse.Backend
-
-      - name: publish linux-x64
-        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
-        working-directory: ./Lighthouse.Backend
-
-      - name: Copy update_linux.sh
-        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
-
-      - name: Set linux executable permission
-        run: chmod +x ./publish/linux-x64/Lighthouse
+        run: sudo chmod +x ./publish/osx-x64/Lighthouse
         working-directory: ./Lighthouse.Backend
 
       - name: Upload artifact for deployment job
@@ -199,64 +286,12 @@ jobs:
           name: Lighthouse ${{ needs.tag.outputs.version }}
           path: ./Lighthouse.Backend/publish      
 
-  runE2ETests:
-    runs-on: ubuntu-latest
-    needs:
-      - packageapp
-      - tag
-
-    permissions: write-all
-
-    steps:
-
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: '0'
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: LighthouseArtifacts          
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./Lighthouse.EndToEndTests
-
-      - name: Start Lighthouse Server
-        run: |
-          chmod +x ./LighthouseArtifacts/linux-x64/lighthouse
-          ./LighthouseArtifacts/linux-x64/lighthouse &
-          echo "Waiting for server to be ready..."
-          # Wait for server to respond (timeout after 30s)
-          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
-          echo "Server is ready!"
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-        working-directory: ./Lighthouse.EndToEndTests
-
-      - name: Run Playwright tests
-        run: npx playwright test
-        working-directory: ./Lighthouse.EndToEndTests
-        env:
-          LIGHTHOUSEURLNAME: 'http://localhost:5000'
-
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
 
   docker:
     runs-on: ubuntu-latest
     needs:
       - tag
-      - runE2ETests
+      - packageapp
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
@@ -267,19 +302,57 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Build and publish a Docker image for ${{ github.repository }}
         uses: macbre/push-to-ghcr@master        
         with:
           image_name: ${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
           build_arg: VERSION=${{ needs.tag.outputs.fileversion }}
-          dockerfile: Lighthouse.Backend/Dockerfile        
+          dockerfile: Lighthouse.Backend/Dockerfile     
+
+      - name: Install E2E dependencies
+        run: npm ci
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+  
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+          
+      - name: Run Lighthouse
+        run: docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:latest
+        working-directory: ./Lighthouse.Backend
+
+      - name: Wait for Lighthouse to start
+        run: |
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail http://localhost:8080; do sleep 1; done'
+          echo "Server is ready!"
+  
+      - name: Run Playwright tests
+        run: npx playwright test
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+        env:
+          LIGHTHOUSEURL: http://localhost:8080
+  
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: ./Lighthouse.EndToEndTests/playwright-report/
+          retention-days: 30
 
   deploy:
     runs-on: ubuntu-latest
     needs:
       - tag
-      - runE2ETests
+      - packageapp
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 

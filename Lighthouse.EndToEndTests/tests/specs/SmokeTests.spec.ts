@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { LighthousePage } from '../models/app/LighthousePage';
-import config from '../config';
 
 test('should open all pages from the header', async ({ page }) => {
     const lighthousePage = new LighthousePage(page);
 
-    await lighthousePage.open(config.baseUrl);
+    await lighthousePage.open();
     await lighthousePage.goToTeams();
     await lighthousePage.goToProjects();
     await lighthousePage.goToSettings();
@@ -13,7 +12,7 @@ test('should open all pages from the header', async ({ page }) => {
 
 test('should open the contributors page', async ({ page }) => {
     const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open(config.baseUrl);
+    await lighthousePage.open();
     const contributorsPage = await lighthousePage.goToContributors();
 
     const pageTitle = await contributorsPage.title();
@@ -22,7 +21,7 @@ test('should open the contributors page', async ({ page }) => {
 
 test('should open the issues page', async ({ page }) => {
     const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open(config.baseUrl);
+    await lighthousePage.open();
     const reportIssuePage = await lighthousePage.goToReportIssue();
 
     const pageTitle = await reportIssuePage.title();
@@ -31,7 +30,7 @@ test('should open the issues page', async ({ page }) => {
 
 test('should open the youtube page', async ({ page }) => {
     const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open(config.baseUrl);
+    await lighthousePage.open();
     const youtubePage = await lighthousePage.goToYoutube();
 
     const pageTitle = await youtubePage.title();
@@ -40,7 +39,7 @@ test('should open the youtube page', async ({ page }) => {
 
 test('should open the blog posts page', async ({ page }) => {
     const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open(config.baseUrl);
+    await lighthousePage.open();
     const blogPostPage = await lighthousePage.goToBlogPosts();
 
     const pageTitle = await blogPostPage.title();
@@ -50,7 +49,7 @@ test('should open the blog posts page', async ({ page }) => {
 
 test('should open the github page', async ({ page }) => {
     const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open(config.baseUrl);
+    await lighthousePage.open();
     const gitHubPage = await lighthousePage.goToGitHub();
 
     const pageTitle = await gitHubPage.title();
