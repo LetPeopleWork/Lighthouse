@@ -194,6 +194,10 @@ jobs:
         with:
           dotnet-version: ${{env.DOTNET_ROOT}}
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Install npm dependencies
         run: npm install
         working-directory: ./Lighthouse.Frontend
@@ -216,17 +220,40 @@ jobs:
       - name: Run Lighthouse
         run: |
           nohup ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: ./Lighthouse.Backend/publish/linux-x64
+
+      - name: Wait for Lighthouse to start
+        run: |
           echo "Waiting for server to be ready..."
           timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
           echo "Server is ready!"
-          
+
           cat lighthouse.log
         working-directory: ./Lighthouse.Backend/publish/linux-x64
 
-      - uses: ./.github/actions/playwright
-        name: Playwright Tests
+      - name: Install E2E dependencies
+        run: npm ci
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+  
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+  
+      - name: Run Playwright tests
+        run: npx playwright test
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+        env:
+          LIGHTHOUSEURL: http://localhost:5000
+  
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
-          base-url: 'http://localhost:5000'
+          name: playwright-report
+          path: ./Lighthouse.EndToEndTests/playwright-report/
+          retention-days: 30
 
       - name: Stop Lighthouse Server
         if: always()
@@ -276,6 +303,10 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Build and publish a Docker image for ${{ github.repository }}
         uses: macbre/push-to-ghcr@master        
         with:
@@ -288,10 +319,35 @@ jobs:
         run: docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:latest
         working-directory: ./Lighthouse.Backend
 
-      - uses: ./.github/actions/playwright
-        name: Playwright Tests
+      - name: Install E2E dependencies
+        run: npm ci
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+  
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Wait for Lighthouse to start
+        run: |
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail http://localhost:8080; do sleep 1; done'
+          echo "Server is ready!"
+  
+      - name: Run Playwright tests
+        run: npx playwright test
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+        env:
+          LIGHTHOUSEURL: http://localhost:8080
+  
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
-          base-url: 'http://localhost:8080'
+          name: playwright-report
+          path: ./Lighthouse.EndToEndTests/playwright-report/
+          retention-days: 30
 
   deploy:
     runs-on: ubuntu-latest
