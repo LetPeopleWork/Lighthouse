@@ -211,15 +211,13 @@ jobs:
 
       - name: Run Command
         run: |
-          find $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64 -type f
-
           chmod +x $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse
 
           $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse &
 
           echo "Waiting for server to be ready..."
 
-          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+          timeout 60 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
 
       - uses: ./.github/actions/playwright
         name: Playwright Tests
