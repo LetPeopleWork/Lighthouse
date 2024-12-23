@@ -148,7 +148,7 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     permissions: write-all
-    
+
     needs: [backend, frontend, e2etests]
     if: always()
 
@@ -216,14 +216,13 @@ jobs:
         run: chmod +x ./publish/linux-x64/Lighthouse
         working-directory: ./Lighthouse.Backend
 
-      - name: List all directories under $GITHUB_WORKSPACE
-        run: find $GITHUB_WORKSPACE/Lighthouse.Backend -type d
+      - name: List all files under $GITHUB_WORKSPACE
+        run: find $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64 -type f
 
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
           run-command: |
-            ls -la $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64
             chmod +x $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse
             $GITHUB_WORKSPACE/Lighthouse.Backend/publish/linux-x64/Lighthouse &
             echo "Waiting for server to be ready..."
