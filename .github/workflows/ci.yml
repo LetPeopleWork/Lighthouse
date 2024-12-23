@@ -42,7 +42,7 @@ jobs:
           echo "backend=$backend" >> $GITHUB_OUTPUT
           echo "frontend=$frontend" >> $GITHUB_OUTPUT
           echo "e2e=$e2e" >> $GITHUB_OUTPUT
-          
+
   backend:
     name: Verify Backend
     needs: changes
@@ -233,7 +233,8 @@ jobs:
 
       - name: Start Lighthouse Server
         run: |
-          ./publish/linux-x64/Lighthouse &
+          chmod +x ./publish/linux-x64/Lighthouse
+          nohup ./publish/linux-x64/Lighthouse > server.log 2>&1 &
           echo "Waiting for server to be ready..."
           timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
           echo "Server is ready!"
