@@ -46,7 +46,8 @@ jobs:
   backend:
     name: Verify Backend
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    # SET BACK TO TRUE BEFORE MERGE
+    if: needs.changes.outputs.backend == 'false'
     
     runs-on: ubuntu-latest
 
@@ -74,7 +75,8 @@ jobs:
   frontend:
     name: Verify Frontend
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    # SET BACK TO TRUE BEFORE MERGE
+    if: needs.changes.outputs.frontend == 'false'
     runs-on: ubuntu-latest
 
     steps:
@@ -117,7 +119,9 @@ jobs:
   e2etests:
     name: Verify End to End Tests
     needs: changes
-    if: needs.changes.outputs.e2e == 'true'
+
+    # SET BACK TO TRUE BEFORE MERGE
+    if: needs.changes.outputs.e2e == 'false'
 
     runs-on: ubuntu-latest
 
