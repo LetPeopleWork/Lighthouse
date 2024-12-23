@@ -216,15 +216,15 @@ jobs:
       - name: Run Command
         run: |
           nohup ./publish/linux-x64/Lighthouse > lighthouse.log 2>&1 &
-          echo "Waiting for server to be ready..."
-          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
         working-directory: ./Lighthouse.Backend
 
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
-          run-command: |
-            ls
+          run-command: |            
+            echo "Waiting for server to be ready..."
+            timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+            echo "Server is ready!"
           base-url: 'http://localhost:5000'
 
       - name: Stop Lighthouse Server
