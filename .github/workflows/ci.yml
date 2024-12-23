@@ -213,22 +213,22 @@ jobs:
         run: sudo chmod -R +x ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
 
+      - name: Run Lighthouse
+        run: nohup ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: ./Lighthouse.Backend/publish/linux-x64
+
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
-          run-command: |
-            ls -la
-            nohup ./Lighthouse > lighthouse.log 2>&1 &
-          run-command-working-directory: ./Lighthouse.Backend/publish/linux-x64
           base-url: 'http://localhost:5000'
 
       - name: Stop Lighthouse Server
         if: always()
         run: |
           pkill Lighthouse || true
-          cat lighthouse.log
-          rm -rf logs
-        working-directory: ./Lighthouse.Backend/publish/linux-x64
+          cat ./publish/linux-x64/lighthouse.log
+          rm -rf ./publish/linux-x64/logs
+        working-directory: ./Lighthouse.Backend
 
       - name: publish win-x64
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
@@ -276,13 +276,15 @@ jobs:
           image_name: ${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
           build_arg: VERSION=${{ needs.tag.outputs.fileversion }}
-          dockerfile: Lighthouse.Backend/Dockerfile        
+          dockerfile: Lighthouse.Backend/Dockerfile     
+          
+      - name: Run Lighthouse
+        run: docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:latest
+        working-directory: ./Lighthouse.Backend
 
       - uses: ./.github/actions/playwright
         name: Playwright Tests
         with:
-          run-command: 'docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:latest'
-          run-command-working-directory: ./Lighthouse.Backend
           base-url: 'http://localhost:8080'
 
   deploy:

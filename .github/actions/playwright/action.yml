@@ -6,15 +6,6 @@ inputs:
     description: 'The URL of the application to test'
     required: true
     type: string
-  run-command:
-    description: 'The command to start Lighthouse before running the tests'
-    required: true
-    type: string
-
-  run-command-working-directory:
-    description: 'The working directory to run the command in'
-    required: true
-    type: string
 
 
 runs:
@@ -35,12 +26,6 @@ runs:
       run: npx playwright install chromium --with-deps
       shell: bash
       working-directory: ./Lighthouse.EndToEndTests
-
-    - name: Run Lighthouse
-      run: |
-        ${{ inputs.run-command }}
-      shell: bash
-      working-directory: ${{ inputs.run-command-working-directory }}
 
     - name: Wait for Lighthouse to start
       run: |
