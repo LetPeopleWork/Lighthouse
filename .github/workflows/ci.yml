@@ -203,6 +203,34 @@ jobs:
         run: npm run build
         working-directory: ./Lighthouse.Frontend
 
+      - name: publish linux-x64
+        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
+        working-directory: ./Lighthouse.Backend
+
+      - name: Copy update_linux.sh
+        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
+
+      - name: Set linux executable permission
+        run: chmod +x ./publish/linux-x64/Lighthouse
+        working-directory: ./Lighthouse.Backend
+
+      - uses: ./.github/actions/playwright
+        name: Playwright Tests
+        with:
+          run-command: |
+            ls -la ./Lighthouse.Backend/publish/linux-x64
+            chmod +x ./Lighthouse/publish/linux-x64/Lighthouse
+            ./Lighthouse.Backend/publish/linux-x64/Lighthouse &
+            echo "Waiting for server to be ready..."
+            timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+            echo "Server is ready!"
+
+          base-url: 'http://localhost:5000'
+
+      - name: Stop Lighthouse Server
+        if: always()
+        run: pkill Lighthouse || true
+
       - name: publish win-x64
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
         working-directory: ./Lighthouse.Backend
@@ -220,32 +248,6 @@ jobs:
       - name: Set osx executable permission
         run: chmod +x ./publish/osx-x64/Lighthouse
         working-directory: ./Lighthouse.Backend
-
-      - name: publish linux-x64
-        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
-        working-directory: ./Lighthouse.Backend
-
-      - name: Copy update_linux.sh
-        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
-
-      - name: Set linux executable permission
-        run: chmod +x ./publish/linux-x64/Lighthouse
-        working-directory: ./Lighthouse.Backend
-
-      - uses: ./.github/actions/playwright
-        name: Playwright Tests
-        with:
-          run-command: |
-            ./Lighthouse.Backend/publish/linux-x64/Lighthouse &
-            echo "Waiting for server to be ready..."
-            timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
-            echo "Server is ready!"
-
-          base-url: 'http://localhost:5000'
-
-      - name: Stop Lighthouse Server
-        if: always()
-        run: pkill Lighthouse || true
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
