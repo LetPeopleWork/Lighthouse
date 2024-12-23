@@ -216,7 +216,9 @@ jobs:
       - name: Run Lighthouse
         run: |
           ./Lighthouse > lighthouse.log 2>&1 &
-          tail -f lighthouse.log
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+          echo "Server is ready!"
         working-directory: ./Lighthouse.Backend/publish/linux-x64
 
       - uses: ./.github/actions/playwright
