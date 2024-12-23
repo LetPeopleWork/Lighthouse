@@ -10,8 +10,8 @@ export class LighthousePage extends Header {
         this.page = page;
     }
 
-    async open(pageUrl: string): Promise<OverviewPage> {
-        await this.page.goto(pageUrl);
+    async open(): Promise<OverviewPage> {
+        await this.page.goto('/');
         return this.goToOverview();
     }
 
