@@ -259,7 +259,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-linux
           path: ./Lighthouse.EndToEndTests/playwright-report/
           retention-days: 30
 
@@ -353,7 +353,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-docker
           path: ./Lighthouse.EndToEndTests/playwright-report/
           retention-days: 30
 
