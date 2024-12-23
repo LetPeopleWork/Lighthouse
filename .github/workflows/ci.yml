@@ -215,9 +215,10 @@ jobs:
 
       - name: Run Command
         run: |
-          ./Lighthouse.Backend/publish/linux-x64/Lighthouse &
+          ./publish/linux-x64/Lighthouse &
           echo "Waiting for server to be ready..."
           timeout 30 bash -c 'until curl --silent --fail http://localhost:5000; do sleep 1; done'
+        working-directory: ./Lighthouse.Backend
 
       - uses: ./.github/actions/playwright
         name: Playwright Tests
