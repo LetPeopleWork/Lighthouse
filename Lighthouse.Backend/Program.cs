@@ -112,6 +112,10 @@ namespace Lighthouse.Backend
                         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     });
 
+                // Add Swagger services
+                builder.Services.AddEndpointsApiExplorer();
+                builder.Services.AddSwaggerGen();
+
                 var app = builder.Build();
 
                 // Configure the HTTP request pipeline.
@@ -125,6 +129,17 @@ namespace Lighthouse.Backend
                     app.UseExceptionHandler("/Error");
                     app.UseHsts();
                 }
+
+
+                app.UseSwagger(c =>
+                {
+                    c.RouteTemplate = "api/swagger/{documentName}/swagger.json";
+                });
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "Lighthouse API V1");
+                    c.RoutePrefix = "api/swagger";
+                });
 
                 app.UseHttpsRedirection();
 

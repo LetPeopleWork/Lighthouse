@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10")]
         [TestCase(AppSettingKeys.ProjectSettingSizeEstimateField, "")]
         [TestCase(AppSettingKeys.ProjectSettingsFeatureOwnerField, "")]
-        [TestCase(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "false")]
+        [TestCase(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "False")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();
