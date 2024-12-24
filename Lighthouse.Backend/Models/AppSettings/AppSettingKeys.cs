@@ -38,6 +38,8 @@
 
         public const string TeamSettingRelationCustomField = "DefaultTeamSetting:RelationCustomField";
 
+        public const string TeamSettingAutomaticallyAdjustFeatureWIP = "DefaultTeamSetting:AutomaticallyAdjustFeatureWIP";
+
         public const string ProjectSettingName = "DefaultProjectSetting:Name";
 
         public const string ProjectSettingWorkItemQuery = "DefaultProjectSetting:WorkItemQuery";
@@ -63,6 +65,8 @@
         public const string ProjectSettingHistoricalFeaturesWorkItemQuery = "DefaultProjectSetting:HistoricalFeaturesWorkItemQuery";
 
         public const string ProjectSettingSizeEstimateField = "DefaultProjectSetting:SizeEstimateField";
+
+        public const string ProjectSettingsFeatureOwnerField = "DefaultProjectSetting:FeatureOwnerField";
 
         public const string CleanUpDataHistorySettingsMaxStorageTimeInDays = "CleanUpDataHistorySettings:MaxStorageTimeInDays";
     }

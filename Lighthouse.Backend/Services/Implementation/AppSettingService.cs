@@ -69,6 +69,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 WorkItemQuery = GetSettingByKey(AppSettingKeys.TeamSettingWorkItemQuery).Value,
                 WorkItemTypes = workItemTypes,
                 RelationCustomField = GetSettingByKey(AppSettingKeys.TeamSettingRelationCustomField).Value,
+                AutomaticallyAdjustFeatureWIP = bool.Parse(GetSettingByKey(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP).Value),
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
                 DoneStates = doneStates,
@@ -114,6 +115,10 @@ namespace Lighthouse.Backend.Services.Implementation
             var relatedField = GetSettingByKey(AppSettingKeys.TeamSettingRelationCustomField);
             relatedField.Value = defaultTeamSetting.RelationCustomField;
             repository.Update(relatedField);
+            
+            var autoAdjustWIPField = GetSettingByKey(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP);
+            autoAdjustWIPField.Value = defaultTeamSetting.AutomaticallyAdjustFeatureWIP.ToString();
+            repository.Update(autoAdjustWIPField);
 
             await repository.Save();
         }
@@ -146,6 +151,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 OverrideRealChildCountStates = overrideRealChildCountStates,
 
                 SizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField).Value,
+                FeatureOwnerField = GetSettingByKey(AppSettingKeys.ProjectSettingsFeatureOwnerField).Value,
             };
 
             return projectSettings;
@@ -204,6 +210,10 @@ namespace Lighthouse.Backend.Services.Implementation
             var sizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField);
             sizeEstimateField.Value = defaultProjectSetting.SizeEstimateField;
             repository.Update(sizeEstimateField);
+
+            var featureOwnerField = GetSettingByKey(AppSettingKeys.ProjectSettingsFeatureOwnerField);
+            featureOwnerField.Value = defaultProjectSetting.FeatureOwnerField;
+            repository.Update(featureOwnerField);
 
             await repository.Save();
         }

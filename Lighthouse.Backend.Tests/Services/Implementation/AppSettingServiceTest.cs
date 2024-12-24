@@ -125,7 +125,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingToDoStates, "New,Planned",
                 AppSettingKeys.TeamSettingDoingStates, "In Progress,Committed",
                 AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
-                AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID");
+                AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID",
+                AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "true"
+                );
 
             var service = CreateService();
 
@@ -138,6 +140,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.FeatureWIP, Is.EqualTo(2));
                 Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.RelationCustomField, Is.EqualTo("Custom.RemoteParentID"));
+                Assert.That(settings.AutomaticallyAdjustFeatureWIP, Is.True);
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(2));
                 Assert.That(settings.WorkItemTypes, Does.Contain("Product Backlog Item"));
@@ -169,11 +172,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
                 AppSettingKeys.TeamSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.TeamSettingWorkItemTypes, "Product Backlog Item, Bug",
-                AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID");
+                AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID",
+                AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "False"
+                );
 
             var service = CreateService();
 
-            var newSettings = new TeamSettingDto { 
+            var newSettings = new TeamSettingDto
+            {
                 Name = "Other Team",
                 ThroughputHistory = 190,
                 FeatureWIP = 3,
@@ -182,7 +188,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 DoneStates = ["Over"],
                 WorkItemQuery = "project = MyJiraProject",
                 WorkItemTypes = ["Task", "Spike"],
-                RelationCustomField = "CUSTOM_12039213"
+                RelationCustomField = "CUSTOM_12039213",
+                AutomaticallyAdjustFeatureWIP = true,
             };
 
             await service.UpdateDefaultTeamSettings(newSettings);
@@ -196,6 +203,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemTypes, "Task,Spike");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingRelationCustomField, "CUSTOM_12039213");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "True");
         }
 
         [Test]
@@ -214,7 +222,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15",
                 AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
                 AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
-                AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size");
+                AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size",
+                AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.AreaPath"
+                );
 
             var service = CreateService();
 
@@ -230,6 +240,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.DefaultWorkItemPercentile, Is.EqualTo(85));
                 Assert.That(settings.HistoricalFeaturesWorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.SizeEstimateField, Is.EqualTo("Microsoft.VSTS.Scheduling.Size"));
+                Assert.That(settings.FeatureOwnerField, Is.EqualTo("System.AreaPath"));
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(1));
                 Assert.That(settings.WorkItemTypes, Does.Contain("Epic"));
@@ -264,15 +275,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingDoneStates, "Closed,Done",
                 AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "New,Proposed",
                 AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
-                AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "false",
+                AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "False",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10",
                 AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
                 AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
-                AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size");
+                AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size",
+                AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.Tags"
+                );
 
             var service = CreateService();
 
-            var newSettings = new ProjectSettingDto { 
+            var newSettings = new ProjectSettingDto
+            {
                 Name = "Other Project",
                 WorkItemQuery = "project = MyJiraProject",
                 WorkItemTypes = ["Feature"],
@@ -285,7 +299,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 DefaultAmountOfWorkItemsPerFeature = 22,
                 DefaultWorkItemPercentile = 75,
                 HistoricalFeaturesWorkItemQuery = "project = MyJiraProject",
-                SizeEstimateField = "customfield_10037"
+                SizeEstimateField = "customfield_10037",
+                FeatureOwnerField = "labels"
             };
 
             await service.UpdateDefaultProjectSettings(newSettings);
@@ -303,6 +318,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "75");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingSizeEstimateField, "customfield_10037");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingsFeatureOwnerField, "labels");
         }
 
         [Test]

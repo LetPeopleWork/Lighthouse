@@ -1,10 +1,6 @@
-﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
+﻿using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.WorkTracking;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -38,6 +34,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.ProjectSettingUnparentedWorkItemQuery, "")]
         [TestCase(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10")]
         [TestCase(AppSettingKeys.ProjectSettingSizeEstimateField, "")]
+        [TestCase(AppSettingKeys.ProjectSettingsFeatureOwnerField, "")]
+        [TestCase(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "false")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();
