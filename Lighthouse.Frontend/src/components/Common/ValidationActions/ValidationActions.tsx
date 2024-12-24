@@ -83,13 +83,12 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
                 </>
             )}
 
-            <Button
-                onClick={handleSave}
-                variant="contained"
+            <ActionButton
+                buttonText={saveButtonText}
+                onClickHandler={handleSave}
+                buttonVariant="contained"
                 disabled={(!onValidate && !inputsValid) || (onValidate && validationState !== 'success')}
-            >
-                {saveButtonText}
-            </Button>
+            />
         </Stack>
     );
 };

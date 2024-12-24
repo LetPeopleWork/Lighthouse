@@ -17,7 +17,12 @@ const ActionButton: React.FC<ActionButtonProps> = ({ buttonText, onClickHandler,
 
     const handleClick = async () => {
         setIsWaiting(true);
-        await onClickHandler();
+        await Promise.all([
+            onClickHandler(),
+
+            // At least switch to waiting state for 300ms to avoid flickering
+            new Promise(resolve => setTimeout(resolve, 300))
+        ]);
         setIsWaiting(false);
     }
 

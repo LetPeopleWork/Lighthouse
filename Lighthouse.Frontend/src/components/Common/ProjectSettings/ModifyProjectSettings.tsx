@@ -139,7 +139,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
         };
 
         await saveProjectSettings(updatedSettings);
-        setFormValid(false);
     };
 
     const handleValidate = async () => {
