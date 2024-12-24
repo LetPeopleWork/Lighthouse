@@ -15,10 +15,6 @@ export class LighthousePage extends Header {
         return this.goToOverview();
     }
 
-    async waitForLoad() {
-        await this.page.waitForSelector('main[role="main"] img[role="img"]', { state: 'hidden' });
-    }
-
     async goToContributors(): Promise<Page> {
         return this.OpenInNewTab(async () => {
             const contributorsButton = await this.GetContributorsButton();
