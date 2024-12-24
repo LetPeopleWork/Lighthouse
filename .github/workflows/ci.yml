@@ -165,8 +165,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: '0'
+      
+      - name: Set version based on branch
+        id: set_version
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "Running on main branch, creating tag if necessary"
+            echo "create_tag=true" >> $GITHUB_ENV
+          else
+            echo "Not on main branch, setting version to current build number"
+            echo "version=${{ github.run_number }}" >> $GITHUB_ENV
+            echo "create_tag=false" >> $GITHUB_ENV
+          fi
 
       - name: Create tag if necessary
+        if: env.create_tag == 'true'
         id: version
         uses: fregante/daily-version-action@v2
         with:
@@ -175,9 +188,12 @@ jobs:
       - name: Process version to create fileversion
         id: process_version
         run: |
-          # Extract the version from the output of the previous step
-          version=${{ steps.version.outputs.version }}
-          # Remove the prefix 'v' from the version string
+          if [ "${{ env.create_tag }}" == "true" ]; then
+            version=${{ steps.version.outputs.version }}
+          else
+            version=${{ env.version }}
+          fi
+          # Remove the prefix 'v' from the version string if it exists
           fileversion=${version#v}
           # Output the processed fileversion
           echo "fileversion=$fileversion" >> $GITHUB_ENV
