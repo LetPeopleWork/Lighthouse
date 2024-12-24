@@ -27,6 +27,27 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
     onTargetDateChange,
     onRunManualForecast
 }) => {
+
+    function getLocaleDateFormat(): string {
+        const date = new Date(2000, 0, 2);
+        const formatter = new Intl.DateTimeFormat(undefined);
+        const parts = formatter.formatToParts(date);
+        const format = parts
+            .map(part => {
+                switch (part.type) {
+                    case "day": return "DD";
+                    case "month": return "MM";
+                    case "year": return "YYYY";
+                    default: return part.value;
+                }
+            })
+            .join('');
+
+        return format;
+    }
+
+
+
     return (
         <Grid container spacing={3}>
             <Grid  size={{ xs: 12 }}>
@@ -47,6 +68,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
                                 value={targetDate}
                                 onChange={onTargetDateChange}
                                 minDate={dayjs()}
+                                format={getLocaleDateFormat()}
                                 sx={{ width: '100%' }}
                             />
                         </LocalizationProvider>
