@@ -5,7 +5,8 @@
   "scripts": {
     "lint": "eslint \"**/*.ts\" --report-unused-disable-directives --max-warnings 0",
     "build": "tsc",
-    "test": "playwright test"
+    "test": "playwright test",
+    "test-local": "docker run -p 8888:8080 -d --restart always --name lighthouse_test ghcr.io/letpeoplework/lighthouse:latest && cross-env LIGHTHOUSEURL=http://localhost:8888 npm run test && docker stop lighthouse_test && docker rm lighthouse_test"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
     "@typescript-eslint/parser": "^8.17.0",
     "eslint": "^9.17.0",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.2"
+    "typescript-eslint": "^8.18.2",
+    "cross-env": "^7.0.3"
   }
 }
