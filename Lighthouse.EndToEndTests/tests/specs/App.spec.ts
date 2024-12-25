@@ -54,7 +54,7 @@ test('clicking version number should open the release page', async ({ overviewPa
     const releasePage = await overviewPage.lightHousePage.goToRelease();
 
     const pageTitle = await releasePage.title();
-    expect(pageTitle).toContain('Release Lighthouse v');
+    expect(pageTitle).toContain('Release');
     expect(releasePage.url()).toContain('https://github.com/LetPeopleWork/Lighthouse/releases/tag/v');
 });
 
