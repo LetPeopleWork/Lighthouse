@@ -15,7 +15,6 @@ export class TeamsPage {
     }
 
     async getTeamLink(team: { name: string, id: number }): Promise<Locator> {
-
         const teamLink = this.page.getByRole('link', { name: team.name });
         return teamLink;
     }
