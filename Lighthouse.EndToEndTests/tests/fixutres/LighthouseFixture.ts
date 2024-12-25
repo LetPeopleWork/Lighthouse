@@ -31,13 +31,13 @@ export const testWithData = test.extend<LighthouseWithDataFixtures>({
         const adoConnection = await createAzureDevOpsConnection(request, 'Azure DevOps Connection');
         const jiraConnection = await createJiraConnection(request, 'Jira Connection');
 
-        const team1 = await createTeam(request, 'Team 1', adoConnection.id);
-        const team2 = await createTeam(request, 'Team 2', adoConnection.id);
-        const team3 = await createTeam(request, 'Team 3', jiraConnection.id);
+        const team1 = await createTeam(request, 'Space Hamsters', adoConnection.id);
+        const team2 = await createTeam(request, 'Apollo', adoConnection.id);
+        const team3 = await createTeam(request, 'Sputnik', jiraConnection.id);
 
-        const project1 = await createProject(request, 'Project 1', [team1], adoConnection.id);
-        const project2 = await createProject(request, 'Project 2', [team1, team2], adoConnection.id);
-        const project3 = await createProject(request, 'Project 3', [team3], jiraConnection.id);
+        const project1 = await createProject(request, 'Moon', [team1], adoConnection.id);
+        const project2 = await createProject(request, 'Mars', [team1, team2], adoConnection.id);
+        const project3 = await createProject(request, 'Beyond', [team3], jiraConnection.id);
 
         await use({
             projects: [project1, project2, project3],

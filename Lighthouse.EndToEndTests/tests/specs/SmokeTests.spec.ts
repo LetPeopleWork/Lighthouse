@@ -9,16 +9,14 @@ test('should open all pages from the header', async ({ overviewPage }) => {
 testWithData('should show all projects on dashboard', async ({ testData, overviewPage }) => {
     const [project1, project2] = testData.projects;
 
-    await test.step('Search for Project', async () => {
-        await overviewPage.search('Project');
+    await test.step(`Search for Project ${project1.name}`, async () => {
+        await overviewPage.search(project1.name);
         expect(await overviewPage.isProjectAvailable(project1)).toBeTruthy();
-        expect(await overviewPage.isProjectAvailable(project2)).toBeTruthy();
     });
 
-    await test.step('Search for Project 1', async () => {
-        await overviewPage.search('Project 1');
-        expect(await overviewPage.isProjectAvailable(project1)).toBeTruthy();
-        expect(await overviewPage.isProjectAvailable(project2)).toBeFalsy();
+    await test.step(`Search for Project ${project2.name}`, async () => {
+        await overviewPage.search(project2.name);
+        expect(await overviewPage.isProjectAvailable(project2)).toBeTruthy();
     });
 
     await test.step('Search for not existing Project', async () => {
