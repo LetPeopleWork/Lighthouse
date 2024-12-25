@@ -1,57 +1,33 @@
-import { expect, test } from '@playwright/test';
-import { LighthousePage } from '../models/app/LighthousePage';
-import { createProject, deleteProject } from '../helpers/api/projects';
-import { createAzureDevOpsConnection, deleteWorkTrackingSystemConnection } from '../helpers/api/workTrackingSystemConnections';
-import { createTeam, deleteTeam } from '../helpers/api/teams';
+import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
 
-let adoConnection: { id: number, name: string };
-let team: { id: number, name: string };
-let project1: { id: number, name: string };
-let project2: { id: number, name: string };
-
-test.beforeAll(async ({ request }) => {
-    adoConnection = await createAzureDevOpsConnection(request, 'Azure DevOps Connection');
-    team = await createTeam(request, 'Team 1', adoConnection.id);
-    project1 = await createProject(request, 'Project 1', [team], adoConnection.id);
-    project2 = await createProject(request, 'Project 2', [team], adoConnection.id);
+test('should open all pages from the header', async ({ overviewPage }) => {
+    await overviewPage.lightHousePage.goToTeams();
+    await overviewPage.lighthousePage.goToProjects();
+    await overviewPage.lighthousePage.goToSettings();
 });
 
-test.afterAll(async ({ request }) => {    
-    await deleteProject(request, project1.id);
-    await deleteProject(request, project2.id);
+testWithData('should show all projects on dashboard', async ({ testData, overviewPage }) => {
+    const [project1, project2] = testData.projects;
 
-    await deleteTeam(request, team.id);
-
-    await deleteWorkTrackingSystemConnection(request, adoConnection.id);
-});
-
-test('should open all pages from the header', async ({ page }) => {
-    const lighthousePage = new LighthousePage(page);
-
-    await lighthousePage.open();
-    await lighthousePage.goToTeams();
-    await lighthousePage.goToProjects();
-    await lighthousePage.goToSettings();
-});
-
-test('should show all projects on dashboard', async ({ page }) => {
-
-    await test.step('Open dashboard', async () => {
-        const lighthousePage = new LighthousePage(page);
-        const overviewPage = await lighthousePage.open();
-
+    await test.step('Search for Project', async () => {
         await overviewPage.search('Project');
         expect(await overviewPage.isProjectAvailable(project1)).toBeTruthy();
         expect(await overviewPage.isProjectAvailable(project2)).toBeTruthy();
+    });
 
+    await test.step('Search for Project 1', async () => {
         await overviewPage.search('Project 1');
         expect(await overviewPage.isProjectAvailable(project1)).toBeTruthy();
         expect(await overviewPage.isProjectAvailable(project2)).toBeFalsy();
+    });
 
+    await test.step('Search for not existing Project', async () => {
         await overviewPage.search('Jambalaya');
         expect(await overviewPage.isProjectAvailable(project1)).toBeFalsy();
         expect(await overviewPage.isProjectAvailable(project2)).toBeFalsy();
+    });
 
+    await test.step('Clear Search', async () => {
         await overviewPage.search('');
         expect(await overviewPage.isProjectAvailable(project1)).toBeTruthy();
         expect(await overviewPage.isProjectAvailable(project2)).toBeTruthy();
@@ -59,47 +35,37 @@ test('should show all projects on dashboard', async ({ page }) => {
     });
 });
 
-test('should open the contributors page', async ({ page }) => {
-    const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open();
-    const contributorsPage = await lighthousePage.goToContributors();
+test('should open the contributors page', async ({ overviewPage }) => {
+    const contributorsPage = await overviewPage.lightHousePage.goToContributors();
 
     const pageTitle = await contributorsPage.title();
     expect(pageTitle).toContain('CONTRIBUTORS.md');
 });
 
-test('should open the issues page', async ({ page }) => {
-    const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open();
-    const reportIssuePage = await lighthousePage.goToReportIssue();
+test('should open the issues page', async ({ overviewPage }) => {
+    const reportIssuePage = await overviewPage.lightHousePage.goToReportIssue();
 
     const pageTitle = await reportIssuePage.title();
     expect(pageTitle).toContain('Issues');
 });
 
-test('should open the youtube page', async ({ page }) => {
-    const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open();
-    const youtubePage = await lighthousePage.goToYoutube();
+test('should open the youtube page', async ({ overviewPage }) => {
+    const youtubePage = await overviewPage.lightHousePage.goToYoutube();
 
     const pageTitle = await youtubePage.title();
     expect(pageTitle).toContain('LetPeopleWork');
 });
 
-test('should open the blog posts page', async ({ page }) => {
-    const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open();
-    const blogPostPage = await lighthousePage.goToBlogPosts();
+test('should open the blog posts page', async ({ overviewPage }) => {
+    const blogPostPage = await overviewPage.lightHousePage.goToBlogPosts();
 
     const pageTitle = await blogPostPage.title();
     expect(pageTitle).toContain('Let People Work');
     expect(blogPostPage.url()).toBe('https://blog.letpeople.work/');
 });
 
-test('should open the github page', async ({ page }) => {
-    const lighthousePage = new LighthousePage(page);
-    await lighthousePage.open();
-    const gitHubPage = await lighthousePage.goToGitHub();
+test('should open the github page', async ({ overviewPage }) => {
+    const gitHubPage = await overviewPage.lightHousePage.goToGitHub();
 
     const pageTitle = await gitHubPage.title();
     expect(pageTitle).toBe('LetPeopleWork · GitHub');
