@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Locator, Page } from '@playwright/test';
 import { LighthousePage } from '../app/LighthousePage';
 import { ProjectDetailPage } from '../projects/ProjectDetailPage';
 import { TeamDetailPage } from '../teams/TeamDetailPage';
@@ -18,10 +18,10 @@ export class OverviewPage {
 
     async search(searchTerm: string): Promise<void> {
         await this.page.getByPlaceholder('Search').fill(searchTerm);
-    }    
+    }
 
     async goToProject(project: { name: string, id: number }): Promise<ProjectDetailPage> {
-        const projectLink = this.page.getByTestId(`project-card-${project.id}`).getByRole('link', { name: project.name });
+        const projectLink = await this.getProjectLink(project);
         await projectLink.click();
         return new ProjectDetailPage(this.page);
     }
@@ -34,18 +34,19 @@ export class OverviewPage {
     }
 
     async getTeamsForProject(project: { name: string, id: number }): Promise<string[]> {
-        const projectCard = this.page.getByTestId(`project-card-${project.id}`);
+        const projectCard = await this.getProjectCard(project);
         const teamLinks = await projectCard.getByRole('link').allTextContents();
         return teamLinks;
     }
 
-    async isProjectAvailable(project : {name: string, id: number}): Promise<boolean> {
-        try{
-            const projectLink = this.page.getByTestId(`project-card-${project.id}`).getByRole('link', { name: project.name });
-            return projectLink.isVisible();
-        }
-        catch{
-            return false;   
-        }
+    async getProjectCard(project: { name: string, id: number }): Promise<Locator> {
+        const projectCard = this.page.getByTestId(`project-card-${project.id}`);
+        return projectCard;
+    }
+
+    async getProjectLink(project: { name: string, id: number }): Promise<Locator> {
+        const projectCard = await this.getProjectCard(project);
+        const projectLink = projectCard.getByRole('link', { name: project.name });
+        return projectLink;
     }
 }
