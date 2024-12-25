@@ -60,23 +60,21 @@ jobs:
     name: Verify Backend
     needs: changes
     
-    if: needs.changes.outputs.backend == 'true'
-    
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+      if: needs.changes.outputs.backend == 'true'
       with:
         fetch-depth: '0'
 
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-
     - name: Remove Frontend sonar-project.properties
+      if: needs.changes.outputs.backend == 'true'
       run: |
         rm ./Lighthouse.Frontend/sonar-project.properties
 
     - name: Backend Build Test SonarCloud
+      if: needs.changes.outputs.backend == 'true'
       uses: highbyte/sonarscan-dotnet@v2.3.1
       with:
         sonarProjectKey: LetPeopleWork_Lighthouse
@@ -89,38 +87,45 @@ jobs:
     name: Verify Frontend
     needs: changes
     
-    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+      if: needs.changes.outputs.frontend == 'true'
       with:
         fetch-depth: '0'
 
     - name: Use Node.js
+      if: needs.changes.outputs.frontend == 'true'
       uses: actions/setup-node@v4
 
     - name: Install npm dependencies
+      if: needs.changes.outputs.frontend == 'true'
       run: npm install
       working-directory: ./Lighthouse.Frontend
 
     - name: Lint Frontend
+      if: needs.changes.outputs.frontend == 'true'
       run: npm run lint
       working-directory: ./Lighthouse.Frontend
 
     - name: Build Frontend
+      if: needs.changes.outputs.frontend == 'true'
       run: npm run build
       working-directory: ./Lighthouse.Frontend
 
     - name: Test Frontend
+      if: needs.changes.outputs.frontend == 'true'
       run: npm test
       working-directory: ./Lighthouse.Frontend
 
     - name: Generate Sonar Files
+      if: needs.changes.outputs.frontend == 'true'
       run: npm run sonarreport
       working-directory: ./Lighthouse.Frontend
 
     - name: Frontend SonarCloud
+      if: needs.changes.outputs.frontend == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -133,27 +138,30 @@ jobs:
     name: Verify End to End Tests
     needs: changes
 
-    if: needs.changes.outputs.e2e == 'true'
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+      if: needs.changes.outputs.e2e == 'true'
       with:
         fetch-depth: '0'
 
     - name: Use Node.js
+      if: needs.changes.outputs.e2e == 'true'
       uses: actions/setup-node@v4
 
     - name: Install npm dependencies
+      if: needs.changes.outputs.e2e == 'true'
       run: npm install
       working-directory: ./Lighthouse.EndToEndTests
 
     - name: Lint Frontend
+      if: needs.changes.outputs.e2e == 'true'
       run: npm run lint
       working-directory: ./Lighthouse.EndToEndTests
 
     - name: Build Frontend
+      if: needs.changes.outputs.e2e == 'true'
       run: npm run build
       working-directory: ./Lighthouse.EndToEndTests
 
