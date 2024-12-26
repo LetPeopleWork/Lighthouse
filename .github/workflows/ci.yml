@@ -242,6 +242,24 @@ jobs:
         run: npm run build
         working-directory: ./Lighthouse.Frontend
 
+      - name: publish win-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
+        working-directory: ./Lighthouse.Backend
+
+      - name: Copy update_windows.ps1
+        run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
+
+      - name: publish osx-x64
+        run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
+        working-directory: ./Lighthouse.Backend
+
+      - name: Copy update_mac.sh
+        run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/publish/osx-x64/update_mac.sh
+
+      - name: Set osx executable permission
+        run: sudo chmod +x ./publish/osx-x64/Lighthouse
+        working-directory: ./Lighthouse.Backend
+
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
@@ -252,6 +270,12 @@ jobs:
       - name: Set linux executable permission
         run: sudo chmod -R +x ./publish/linux-x64
         working-directory: ./Lighthouse.Backend
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse ${{ needs.tag.outputs.version }}
+          path: ./Lighthouse.Backend/publish      
 
       - name: Install E2E dependencies
         run: npm ci
@@ -298,31 +322,6 @@ jobs:
           cat ./publish/linux-x64/lighthouse.log
           rm -rf ./publish/linux-x64/logs
         working-directory: ./Lighthouse.Backend
-
-      - name: publish win-x64
-        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
-        working-directory: ./Lighthouse.Backend
-
-      - name: Copy update_windows.ps1
-        run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
-
-      - name: publish osx-x64
-        run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
-        working-directory: ./Lighthouse.Backend
-
-      - name: Copy update_mac.sh
-        run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/publish/osx-x64/update_mac.sh
-
-      - name: Set osx executable permission
-        run: sudo chmod +x ./publish/osx-x64/Lighthouse
-        working-directory: ./Lighthouse.Backend
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: ./Lighthouse.Backend/publish      
-
 
   docker:
     runs-on: ubuntu-latest

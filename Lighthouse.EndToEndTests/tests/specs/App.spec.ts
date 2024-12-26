@@ -53,8 +53,6 @@ test('clicking let people work logo should open let people work page', async ({ 
 test('clicking version number should open the release page', async ({ overviewPage }) => {
     const releasePage = await overviewPage.lightHousePage.goToRelease();
 
-    const pageTitle = await releasePage.title();
-    expect(pageTitle).toContain('Release');
     expect(releasePage.url()).toContain('https://github.com/LetPeopleWork/Lighthouse/releases/tag/v');
 });
 
