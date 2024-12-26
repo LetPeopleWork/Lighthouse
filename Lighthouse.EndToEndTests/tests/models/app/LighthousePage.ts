@@ -148,7 +148,7 @@ export class LighthousePage {
 
     private async GetVersionNumberButton(): Promise<Locator> {
         // Match version number scheme like 'v1.33.7' or 'v24.12.20.1852'
-        return this.page.getByRole('link', { name: /^v\d{2}(\.\d{1,4}){2,3}$/ })
+        return this.page.getByRole('link', { name: /^v\d{2,4}(\.\d{1,4}){2,3}$/ })
     }
 
     private async OpenInNewTab(openInNewTabAction: () => Promise<void>): Promise<Page> {
