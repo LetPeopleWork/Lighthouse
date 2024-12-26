@@ -45,3 +45,13 @@ async function createWorkTrackingSystemConnection(api: APIRequestContext, workTr
 export async function deleteWorkTrackingSystemConnection(api: APIRequestContext, workTrackingSystemConnectionId: number) {
     await api.delete(`/api/WorkTrackingSystemConnections/${workTrackingSystemConnectionId}`);
 }
+
+export async function deleteWorkTrackingSystemConnectionByName(api: APIRequestContext, workTrackingSystemConnectionName: string) {
+    const response = await api.get('/api/WorkTrackingSystemConnections');
+    const workTrackingSystems = await response.json();
+
+    const systemToDelete = workTrackingSystems.find((system: { name: string }) => system.name === workTrackingSystemConnectionName);
+    if (systemToDelete) {
+        await deleteWorkTrackingSystemConnection(api, systemToDelete.id);
+    }
+}

@@ -14,7 +14,7 @@ export async function createTeam(
             workItemQuery:workItemQuery,
             workItemTypes: workItemTypes,
             toDoStates: states.toDo,
-            inProgressStates: states.inProgress,
+            doingStates: states.inProgress,
             doneStates: states.done,
             relationCustomField: '',
             automaticallyAdjustFeatureWIP: false,

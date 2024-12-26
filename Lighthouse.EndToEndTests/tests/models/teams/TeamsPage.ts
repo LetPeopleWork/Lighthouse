@@ -36,6 +36,12 @@ export class TeamsPage {
 
         return new TeamEditPage(this.page);
     }
+    
+    async addNewTeam() {
+        await this.page.getByRole('button', { name: 'Add New' }).click();
+
+        return new TeamEditPage(this.page);
+    }
 
     async deleteTeam(team : { name: string, id: number }): Promise<TeamDeletionDialog> {
         await this.search(team.name);
