@@ -169,6 +169,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
 
+    needs: 
+      - frontend
+      - backend
+      - e2etests
+
     steps:          
       - uses: actions/checkout@v4
         with:
@@ -328,8 +333,9 @@ jobs:
     needs:
       - tag
       - packageapp
+      - changes
 
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true')
 
     permissions: write-all
 
