@@ -1,18 +1,23 @@
 import { expect, testWithData } from '../fixutres/LighthouseFixture';
 
-testWithData('should allow save after validate when editing existing team', async ({ testData, overviewPage }) => {
-    const [team] = testData.teams;
+[
+    { teamIndex: 0, workTrackingSystem: 'Azure DevOps' },
+    { teamIndex: 2, workTrackingSystem: 'Jira' },
+].forEach(({ teamIndex, workTrackingSystem }) => {
+    testWithData(`should allow save after validate when editing existing ${workTrackingSystem} team`, async ({ testData, overviewPage }) => {
+        const team = testData.teams[teamIndex];
 
-    const teamsPage = await overviewPage.lightHousePage.goToTeams();
-    const teamDetailPage = await teamsPage.editTeam(team);
+        const teamsPage = await overviewPage.lightHousePage.goToTeams();
+        const teamDetailPage = await teamsPage.editTeam(team);
 
-    await expect(teamDetailPage.validateButton).toBeEnabled();
-    await expect(teamDetailPage.saveButton).toBeDisabled();
+        await expect(teamDetailPage.validateButton).toBeEnabled();
+        await expect(teamDetailPage.saveButton).toBeDisabled();
 
-    await teamDetailPage.validate();
+        await teamDetailPage.validate();
 
-    await expect(teamDetailPage.validateButton).toBeEnabled();
-    await expect(teamDetailPage.saveButton).toBeEnabled();
+        await expect(teamDetailPage.validateButton).toBeEnabled();
+        await expect(teamDetailPage.saveButton).toBeEnabled();
+    });
 });
 
 // Validation valid/invalid scenarios
