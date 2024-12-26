@@ -3,8 +3,8 @@ import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
 testWithData('should show all projects on dashboard', async ({ testData, overviewPage }) => {
     const [project1, project2] = testData.projects;
 
-    expect(await overviewPage.getProjectLink(project1)).toBeVisible();
-    expect(await overviewPage.getProjectLink(project2)).toBeVisible();
+    await expect(await overviewPage.getProjectLink(project1)).toBeVisible();
+    await expect(await overviewPage.getProjectLink(project2)).toBeVisible();
 });
 
 testWithData('should filter projects on dashboard', async ({ testData, overviewPage }) => {
@@ -12,24 +12,37 @@ testWithData('should filter projects on dashboard', async ({ testData, overviewP
 
     await test.step(`Search for Project ${project1.name}`, async () => {
         await overviewPage.search(project1.name);
-        expect(await overviewPage.getProjectLink(project1)).toBeVisible();
+
+        const projectLink = await overviewPage.getProjectLink(project1);
+
+        await expect(projectLink).toBeVisible();
     });
 
     await test.step(`Search for Project ${project2.name}`, async () => {
         await overviewPage.search(project2.name);
-        expect(await overviewPage.getProjectLink(project2)).toBeVisible();
+
+        const projectLink = await overviewPage.getProjectLink(project2);
+        await expect(projectLink).toBeVisible();
     });
 
     await test.step('Search for not existing Project', async () => {
         await overviewPage.search('Jambalaya');
-        expect(await overviewPage.getProjectLink(project1)).not.toBeVisible();
-        expect(await overviewPage.getProjectLink(project2)).not.toBeVisible();
+
+        const projectLink1 = await overviewPage.getProjectLink(project1);
+        const projectLink2 = await overviewPage.getProjectLink(project2);
+
+        await expect(projectLink1).not.toBeVisible();
+        await expect(projectLink2).not.toBeVisible();
     });
 
     await test.step('Clear Search', async () => {
         await overviewPage.search('');
-        expect(await overviewPage.getProjectLink(project1)).toBeVisible();
-        expect(await overviewPage.getProjectLink(project2)).toBeVisible();
+
+        const projectLink1 = await overviewPage.getProjectLink(project1);
+        const projectLink2 = await overviewPage.getProjectLink(project2);
+
+        await expect(projectLink1).toBeVisible();
+        await expect(projectLink2).toBeVisible();
 
     });
 });
@@ -40,7 +53,7 @@ testWithData('should show involved teams for projects', async ({ testData, overv
 
     await test.step(`Check Teams for Project ${project1.name}`, async () => {
         await overviewPage.search(project1.name);
-        
+
         const involvedTeams = await overviewPage.getTeamsForProject(project1);
         expect(involvedTeams).toContain(team1.name);
         expect(involvedTeams).not.toContain(team2.name);
@@ -49,7 +62,7 @@ testWithData('should show involved teams for projects', async ({ testData, overv
 
     await test.step(`Check Teams for Project ${project2.name}`, async () => {
         await overviewPage.search(project2.name);
-        
+
         const involvedTeams = await overviewPage.getTeamsForProject(project2);
         expect(involvedTeams).toContain(team1.name);
         expect(involvedTeams).toContain(team2.name);
@@ -58,7 +71,7 @@ testWithData('should show involved teams for projects', async ({ testData, overv
 
     await test.step(`Check Teams for Project ${project3.name}`, async () => {
         await overviewPage.search(project3.name);
-        
+
         const involvedTeams = await overviewPage.getTeamsForProject(project3);
         expect(involvedTeams).not.toContain(team1.name);
         expect(involvedTeams).not.toContain(team2.name);

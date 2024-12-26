@@ -5,9 +5,13 @@ testWithData('should show all teams on Teams Overview', async ({ testData, overv
 
     const teamsPage = await overviewPage.lightHousePage.goToTeams();
 
-    expect(await teamsPage.getTeamLink(team1)).toBeVisible();
-    expect(await teamsPage.getTeamLink(team2)).toBeVisible();
-    expect(await teamsPage.getTeamLink(team3)).toBeVisible();
+    const teamLink1 = await teamsPage.getTeamLink(team1);
+    const teamLink2 = await teamsPage.getTeamLink(team2);
+    const teamLink3 = await teamsPage.getTeamLink(team3);
+
+    await expect(teamLink1).toBeVisible();
+    await expect(teamLink2).toBeVisible();
+    await expect(teamLink3).toBeVisible();
 });
 
 
@@ -18,20 +22,32 @@ testWithData('should filter teams on Teams Overview', async ({ testData, overvie
 
     await test.step(`Search for Team ${team1.name}`, async () => {
             await teamsPage.search(team1.name);
-            expect(await teamsPage.getTeamLink(team1)).toBeVisible();
-            expect(await teamsPage.getTeamLink(team2)).not.toBeVisible();
+
+            const teamLink1 = await teamsPage.getTeamLink(team1);
+            const teamLink2 = await teamsPage.getTeamLink(team2);
+
+            await expect(teamLink1).toBeVisible();
+            await expect(teamLink2).not.toBeVisible();
         });
 
         await test.step(`Search for Team ${team2.name}`, async () => {
             await teamsPage.search(team2.name);
-            expect(await teamsPage.getTeamLink(team1)).not.toBeVisible();
-            expect(await teamsPage.getTeamLink(team2)).toBeVisible();
+
+            const teamLink1 = await teamsPage.getTeamLink(team1);
+            const teamLink2 = await teamsPage.getTeamLink(team2);
+
+            await expect(teamLink1).not.toBeVisible();
+            await expect(teamLink2).toBeVisible();
         });
 
         await test.step('Search for not existing Team', async () => {
             await teamsPage.search('Jambalaya');
-            expect(await teamsPage.getTeamLink(team1)).not.toBeVisible();
-            expect(await teamsPage.getTeamLink(team2)).not.toBeVisible();
+
+            const teamLink1 = await teamsPage.getTeamLink(team1);
+            const teamLink2 = await teamsPage.getTeamLink(team2);
+
+            await expect(teamLink1).not.toBeVisible();
+            await expect(teamLink2).not.toBeVisible();
         });
 });
 
@@ -65,7 +81,9 @@ testWithData('should delete Team when clicking on Delete Icon and confirming', a
 
     await test.step(`Search for Team ${team1.name}`, async () => {
         await teamsPage.search(team1.name);
-        expect(await teamsPage.getTeamLink(team1)).not.toBeVisible();
+        const teamLink = await teamsPage.getTeamLink(team1);
+
+        await expect(teamLink).not.toBeVisible();
     });
 });
 
@@ -81,6 +99,8 @@ testWithData('should not delete Team when clicking on Delete Icon and cancelling
 
     await test.step(`Search for Team ${team1.name}`, async () => {
         await teamsPage.search(team1.name);
-        expect(await teamsPage.getTeamLink(team1)).toBeVisible();
+        
+        const teamLink = await teamsPage.getTeamLink(team1);
+        await expect(teamLink).toBeVisible();
     });
 });

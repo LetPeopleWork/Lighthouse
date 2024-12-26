@@ -31,17 +31,17 @@ export const testWithData = test.extend<LighthouseWithDataFixtures>({
         const adoConnection = await createAzureDevOpsConnection(request, 'Azure DevOps Connection');
         const jiraConnection = await createJiraConnection(request, 'Jira Connection');
 
-        const team1 = await createTeam(request, 'Space Hamsters', adoConnection.id);
-        const team2 = await createTeam(request, 'Apollo', adoConnection.id);
-        const team3 = await createTeam(request, 'Sputnik', jiraConnection.id);
+        const binaryBlazers = await createTeam(request, 'Binary Blazers', adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"', ['User Story', 'Bug'], { toDo: ['New'], inProgress: ['Active', 'Resolved'], done: ['Closed'] });
+        const cyberSultans = await createTeam(request, 'Cyber Sultans', adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Cyber Sultans"', ['User Story', 'Bug'], { toDo: ['New'], inProgress: ['Active', 'Resolved'], done: ['Closed'] });
+        const lagunitas = await createTeam(request, 'Lagunitas', jiraConnection.id, 'project = "LGHTHSDMO" AND labels = "Lagunitas"', ['Story', 'Bug'], { toDo: ['To Do'], inProgress: ['In Progress'], done: ['Done'] });
 
-        const project1 = await createProject(request, 'Moon', [team1], adoConnection.id);
-        const project2 = await createProject(request, 'Mars', [team1, team2], adoConnection.id);
-        const project3 = await createProject(request, 'Beyond', [team3], jiraConnection.id);
+        const project1 = await createProject(request, 'Release 1.33.7', [binaryBlazers], adoConnection.id);
+        const project2 = await createProject(request, 'Release Codename Daniel', [binaryBlazers, cyberSultans], adoConnection.id);
+        const project3 = await createProject(request, 'Oberon', [lagunitas], jiraConnection.id);
 
         await use({
             projects: [project1, project2, project3],
-            teams: [team1, team2, team3],
+            teams: [binaryBlazers, cyberSultans, lagunitas],
             connections: [adoConnection, jiraConnection]
         });
 
@@ -49,9 +49,9 @@ export const testWithData = test.extend<LighthouseWithDataFixtures>({
         await deleteProject(request, project2.id);
         await deleteProject(request, project3.id);
 
-        await deleteTeam(request, team1.id);
-        await deleteTeam(request, team2.id);
-        await deleteTeam(request, team3.id);
+        await deleteTeam(request, binaryBlazers.id);
+        await deleteTeam(request, cyberSultans.id);
+        await deleteTeam(request, lagunitas.id);
 
         await deleteWorkTrackingSystemConnection(request, adoConnection.id);
         await deleteWorkTrackingSystemConnection(request, jiraConnection.id);

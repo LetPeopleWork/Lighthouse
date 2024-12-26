@@ -10,7 +10,7 @@ type WorkTrackingSystemOption = {
 
 export async function createAzureDevOpsConnection(api: APIRequestContext, connectionName: string): Promise<{ id: number, name: string }> {
     const options: WorkTrackingSystemOption[] = [];
-    options.push({ key: 'Azure DevOps Url', value: 'https://dev.azure.com/huserben', isSecret: false });
+    options.push({ key: 'Azure DevOps Url', value: 'https://dev.azure.com/letpeoplework', isSecret: false });
     options.push({ key: 'Personal Access Token', value: TestConfig.AzureDevOpsToken, isSecret: true });
 
     return createWorkTrackingSystemConnection(api, { name: connectionName, workTrackingSystem: 'AzureDevOps', options: options });

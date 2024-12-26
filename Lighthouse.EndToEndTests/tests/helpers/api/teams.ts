@@ -1,6 +1,7 @@
 import { APIRequestContext } from '@playwright/test';
 
-export async function createTeam(api: APIRequestContext, name: string, workTrackingSystemConnectionId: number)
+export async function createTeam(
+    api: APIRequestContext, name: string, workTrackingSystemConnectionId: number, workItemQuery: string, workItemTypes: string[], states: { toDo: string[], inProgress: string[], done: string[] })
     : Promise<{ id: number, name: string }> {
 
 
@@ -10,11 +11,11 @@ export async function createTeam(api: APIRequestContext, name: string, workTrack
             name: name,
             throughputHistory: 30,
             featureWIP: 1,
-            workItemQuery: `System.TeamProject = ${name}`,
-            workItemTypes: ['User Story', 'Bug'],
-            toDoStates: ['New'],
-            inProgressStates: ['Active', 'Resolved'],
-            doneStates: ['Closed'],
+            workItemQuery:workItemQuery,
+            workItemTypes: workItemTypes,
+            toDoStates: states.toDo,
+            inProgressStates: states.inProgress,
+            doneStates: states.done,
             relationCustomField: '',
             automaticallyAdjustFeatureWIP: false,
             workTrackingSystemConnectionId: workTrackingSystemConnectionId,
