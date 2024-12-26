@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export class TestConfig {
-  static readonly ADOTOKENNAME: string = 'AzureDevOpsLighthouseIntegrationTestToken';
+  static readonly ADOTOKENNAME: string = 'AzureDevOpsLighthouseE2ETestToken';
   static readonly JIRATOKENNAME: string = 'JiraLighthouseIntegrationTestToken'
   static readonly LIGHTHOUSEURLNAME: string = 'LIGHTHOUSEURL';
 
