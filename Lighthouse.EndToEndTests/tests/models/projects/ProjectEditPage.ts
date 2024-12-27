@@ -131,7 +131,7 @@ export class ProjectEditPage {
         }
     }
 
-    async addNewWorkTrackingSystem() : Promise<EditWorkTrackingSystemDialog> {
+    async addNewWorkTrackingSystem() : Promise<EditWorkTrackingSystemDialog<ProjectEditPage>> {
         await this.page.getByRole('button', { name: 'Add New Work Tracking System' }).click();
 
         return new EditWorkTrackingSystemDialog(this.page, (page) => new ProjectEditPage(page));

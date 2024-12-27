@@ -1,10 +1,12 @@
 import { Locator, Page } from '@playwright/test';
+import { ProjectEditPage } from '../../projects/ProjectEditPage';
+import { TeamEditPage } from '../../teams/TeamEditPage';
 
-export class EditWorkTrackingSystemDialog {
+export class EditWorkTrackingSystemDialog<T extends ProjectEditPage | TeamEditPage> {
     page: Page;
-    createPageHandler: (page: Page) => any;
+    createPageHandler: (page: Page) => T;
 
-    constructor(page: Page, createPageHandler: (page: Page) => any) {
+    constructor(page: Page, createPageHandler: (page: Page) => T) {
         this.page = page;
         this.createPageHandler = createPageHandler;
     }
@@ -23,7 +25,7 @@ export class EditWorkTrackingSystemDialog {
         await this.page.getByLabel(optionName).fill(optionValue);
     }
 
-    async cancel(): Promise<any> {
+    async cancel(): Promise<T> {
         await this.page.getByRole('button', { name: 'Cancel' }).click();
 
         return this.createPageHandler(this.page);
@@ -33,7 +35,7 @@ export class EditWorkTrackingSystemDialog {
         await this.page.getByRole('button', { name: 'Validate' }).click();
     }
 
-    async create(): Promise<any> {
+    async create(): Promise<T> {
         await this.createButton.click();
         
         return this.createPageHandler(this.page);
