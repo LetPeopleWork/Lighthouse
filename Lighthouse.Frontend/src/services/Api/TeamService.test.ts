@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TeamService } from './TeamService';
 import { ITeam, Team } from '../../models/Team/Team';
 import { ITeamSettings } from '../../models/Team/TeamSettings';
-import { Throughput } from '../../models/Forecasts/Throughput';
 
 vi.mock('axios');
 const mockedAxios = vi.mocked(axios, true);
@@ -24,8 +23,8 @@ describe('TeamService', () => {
         const date = new Date();
 
         const mockResponse: ITeam[] = [
-            new Team("Team A", 1, [], [], 1, ["1"], date),
-            new Team("Team B", 2, [], [], 1, ["2"], date),
+            new Team("Team A", 1, [], [], 1, ["1"], date, [1]),
+            new Team("Team B", 2, [], [], 1, ["2"], date, [1]),
         ];
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -33,21 +32,21 @@ describe('TeamService', () => {
         const teams = await teamService.getTeams();
 
         expect(teams).toEqual([            
-            new Team("Team A", 1, [], [], 1, ["1"], date),
-            new Team("Team B", 2, [], [], 1, ["2"], date),
+            new Team("Team A", 1, [], [], 1, ["1"], date, [1]),
+            new Team("Team B", 2, [], [], 1, ["2"], date, [1]),
         ]);
         expect(mockedAxios.get).toHaveBeenCalledWith('/teams');
     });
 
     it('should get a single team by id', async () => {
         const date = new Date();
-        const mockResponse: ITeam = new Team("Team A", 1, [], [], 1, ["2"], date);
+        const mockResponse: ITeam = new Team("Team A", 1, [], [], 1, ["2"], date, [1]);
 
         mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
         const team = await teamService.getTeam(1);
 
-        expect(team).toEqual(new Team("Team A", 1, [], [], 1, ["2"], date));
+        expect(team).toEqual(new Team("Team A", 1, [], [], 1, ["2"], date, [1]));
         expect(mockedAxios.get).toHaveBeenCalledWith('/teams/1');
     });
 
@@ -147,17 +146,6 @@ describe('TeamService', () => {
         await teamService.updateTeamData(1);
 
         expect(mockedAxios.post).toHaveBeenCalledWith('/teams/1');
-    });
-
-    it('should get throughput for a team', async () => {
-        const mockResponse: number[] = [5, 10, 15];
-
-        mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
-
-        const throughput = await teamService.getThroughput(1);
-
-        expect(throughput).toEqual(new Throughput(mockResponse));
-        expect(mockedAxios.get).toHaveBeenCalledWith('/teams/1/throughput');
     });
 
     it('should update forecast for a team', async () => {

@@ -6,7 +6,6 @@ import dayjs from 'dayjs';
 import { Typography, Container, Button } from '@mui/material';
 import Grid from '@mui/material/Grid2'
 import ThroughputBarChart from './ThroughputChart';
-import { Throughput } from '../../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../../models/Forecasts/ManualForecast';
 import TeamFeatureList from './TeamFeatureList';
 import ManualForecaster from './ManualForecaster';
@@ -23,6 +22,7 @@ const TeamDetail: React.FC = () => {
     const teamId = Number(id);
 
     const [team, setTeam] = useState<Team>();
+
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasError, setHasError] = useState<boolean>(false);
     const [triggerUpdate, setTriggerUpdate] = useState<boolean>(false);
@@ -30,8 +30,6 @@ const TeamDetail: React.FC = () => {
     const [remainingItems, setRemainingItems] = useState<number>(10);
     const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(dayjs().add(2, 'week'));
     const [manualForecastResult, setManualForecastResult] = useState<ManualForecast | null>(null);
-
-    const [throughput, setThroughput] = useState<Throughput>(new Throughput([]))
 
     const navigate = useNavigate();
 
@@ -55,20 +53,7 @@ const TeamDetail: React.FC = () => {
         }
     };
 
-    const fetchThroughput = async () => {
-        if (!team) {
-            return;
-        }
-
-        try {
-            const throughputData = await teamService.getThroughput(team.id);
-            setThroughput(throughputData)
-        } catch (error) {
-            console.error('Error getting throughput:', error);
-        }
-    }
-
-    const onUpdateThroughput = async () => {
+    const onUpdateTeamData = async () => {
         if (!team) {
             return;
         }
@@ -76,13 +61,14 @@ const TeamDetail: React.FC = () => {
         setTriggerUpdate(false);
 
         try {
-            await teamService.updateTeamData(team.id);
+            const updatedTeam = await teamService.updateTeamData(team.id);
+            if (updatedTeam) {
+                setTeam(updatedTeam);
+            }
         } catch (error) {
             console.error('Error updating throughput:', error);
             setHasError(true);
         }
-
-        fetchThroughput();
     };
 
     const onRunManualForecast = async () => {
@@ -103,17 +89,13 @@ const TeamDetail: React.FC = () => {
     }
 
     useEffect(() => {
-        fetchTeam();
-    }, []);
-
-    useEffect(() => {
         if (team) {
             if (searchParams.get('triggerUpdate') === 'true') {
                 setTriggerUpdate(true);
             }
-            else {
-                fetchThroughput();
-            }
+        }
+        else{
+            fetchTeam();
         }
     }, [team]);
 
@@ -135,7 +117,7 @@ const TeamDetail: React.FC = () => {
                         </Grid>
                         <Grid size={{ xs: 6 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                             <ActionButton
-                                onClickHandler={onUpdateThroughput}
+                                onClickHandler={onUpdateTeamData}
                                 buttonText="Update Team Data"
                                 maxHeight='40px'
                                 triggerUpdate={triggerUpdate}
@@ -158,7 +140,7 @@ const TeamDetail: React.FC = () => {
                             />
                         </InputGroup>
                         <InputGroup title='Throughput' initiallyExpanded={false}>
-                            <ThroughputBarChart throughputData={throughput} />
+                            <ThroughputBarChart throughputData={team.throughput} />
                         </InputGroup>
                     </Grid>)}
             </Container>

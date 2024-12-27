@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using Newtonsoft.Json.Linq;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -180,7 +181,10 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTeam_TeamExists_ReturnsTeam()
         {
+            var expectedThroughput = new int[] { 1, 1, 0, 2, 0, 1, 0, 0, 1, 2, 3, 0, 0, 0, 0 };
             var team = CreateTeam(1, "Numero Uno");
+            team.UpdateThroughput(expectedThroughput);
+
             var project1 = CreateProject(42, "My Project");
             project1.UpdateTeams([team]);
 
@@ -189,6 +193,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var project2 = CreateProject(13, "My Other Project");
             project2.UpdateTeams([team]);
+
 
             var feature3 = CreateFeature(project2, team, 5);
 
@@ -211,6 +216,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(returnedTeamDto.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(returnedTeamDto.Projects, Has.Count.EqualTo(2));
                 Assert.That(returnedTeamDto.Features, Has.Count.EqualTo(3));
+                Assert.That(returnedTeamDto.Throughput, Is.EqualTo(expectedThroughput));
             });
         }
 
@@ -396,16 +402,19 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateTeamData(12);
+            var response = await subject.UpdateTeamData(12);
 
             teamUpdateServiceMock.Verify(x => x.UpdateTeam(expectedTeam));
             teamRepositoryMock.Verify(x => x.Save());
 
-            var okResult = result as OkResult;
             Assert.Multiple(() =>
             {
-                Assert.That(result, Is.InstanceOf<OkResult>());
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var okObjectResult = response.Result as OkObjectResult;
+                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
+
+                var value = okObjectResult.Value;
+                Assert.That(value, Is.InstanceOf<TeamDto>());
             });
         }
 
@@ -414,52 +423,15 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var result = await subject.UpdateTeamData(12);
+            var response = await subject.UpdateTeamData(12);
 
-            var notFoundResult = result as NotFoundResult;
+            Assert.That(response.Result, Is.InstanceOf<NotFoundObjectResult>());
+            var notFoundObjectResult = response.Result as NotFoundObjectResult;
             Assert.Multiple(() =>
             {
-                Assert.That(result, Is.InstanceOf<NotFoundResult>());
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
-        }
-
-        [Test]
-        public void GetThroughputForTeam_TeamExists_ReturnsRawThroughput()
-        {
-            var expectedThroughput = new int[] { 1, 1, 0, 2, 0, 1, 0, 0, 1, 2, 3, 0, 0, 0, 0 };
-            var team = new Team();
-
-            team.UpdateThroughput(expectedThroughput);
-            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
-
-            var subject = CreateSubject();
-
-            var result = subject.GetThroughputForTeam(12);
-
-            var okResult = result as OkObjectResult;
-            Assert.Multiple(() =>
-            {
-                Assert.That(result, Is.InstanceOf<OkObjectResult>());
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-
-                var value = okResult.Value;
-                Assert.That(value, Is.EqualTo(expectedThroughput));
-            });
-        }
-
-        [Test]
-        public void GetThroughputForTeam_TeamDoesNotExist_ReturnsNotFound()
-        {
-            var subject = CreateSubject();
-
-            var result = subject.GetThroughputForTeam(12);
-
-            var notFoundResult = result as NotFoundResult;
-            Assert.Multiple(() =>
-            {
-                Assert.That(result, Is.InstanceOf<NotFoundResult>());
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+                Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
+                var value = notFoundObjectResult.Value;
+                Assert.That(value, Is.Null);
             });
         }
 

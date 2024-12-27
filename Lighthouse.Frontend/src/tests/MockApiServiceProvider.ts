@@ -58,7 +58,6 @@ export const createMockTeamService = (): ITeamService => {
         updateTeam: vi.fn(),
         createTeam: vi.fn(),
         updateTeamData: vi.fn(),
-        getThroughput: vi.fn(),    
     }
 }
 

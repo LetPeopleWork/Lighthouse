@@ -1,28 +1,30 @@
 import React from 'react';
 import { BarChart } from '@mui/x-charts';
-import { IThroughput } from '../../../models/Forecasts/Throughput';
+import { Throughput } from '../../../models/Forecasts/Throughput';
 import { CircularProgress } from '@mui/material';
 
 interface ThroughputBarChartProps {
-    throughputData: IThroughput;
+    throughputData: number[];
 }
 
 const ThroughputBarChart: React.FC<ThroughputBarChartProps> = ({ throughputData }) => {
 
-    const data = Array.from({ length: throughputData.history }, (_, index) => {
+    const throughput = new Throughput(throughputData);
+
+    const data = Array.from({ length: throughput.history }, (_, index) => {
         const targetDate = new Date();
 
-        const dayIndex = throughputData.history - 1 - index;
+        const dayIndex = throughput.history - 1 - index;
         targetDate.setDate(targetDate.getDate() - dayIndex);
     
         return {
             day: targetDate.toLocaleDateString(),
-            throughput: throughputData.getThroughputOnDay(index),
+            throughput: throughput.getThroughputOnDay(index),
         };
     });    
 
     return (
-        throughputData.history > 0 ?
+        throughput.history > 0 ?
             <BarChart
                 dataset={data}
                 xAxis={[{ scaleType: 'band', dataKey: 'day' }]}

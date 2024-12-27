@@ -2,7 +2,6 @@ import { WhenForecast } from '../../models/Forecasts/WhenForecast';
 import { Project } from '../../models/Project/Project';
 import { Team } from '../../models/Team/Team';
 import { Feature } from '../../models/Feature';
-import { Throughput } from '../../models/Forecasts/Throughput';
 import { ManualForecast } from '../../models/Forecasts/ManualForecast';
 import { HowManyForecast } from '../../models/Forecasts/HowManyForecast';
 import dayjs from 'dayjs';
@@ -149,19 +148,26 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         }
     }
 
-    async updateTeamData(teamId: number): Promise<void> {
+    async updateTeamData(teamId: number): Promise<Team | null> {
         console.log(`Updating Throughput for Team ${teamId}`);
 
         await this.delay();
-    }
 
-    async getThroughput(teamId: number): Promise<Throughput> {
-        console.log(`Getting Throughput for Team ${teamId}`);
+        const team = await this.getTeam(teamId);
+        if (team) {
+            return new Team(
+                team.name,
+                team.id,
+                [...team.projects],
+                [...team.features],
+                team.featureWip,
+                [...team.featuresInProgress],
+                new Date(),
+                team.throughput
+            );
+        }
 
-        await this.delay();
-
-        const randomThroughput = this.generateThroughput();
-        return new Throughput(randomThroughput);
+        return null;
     }
 
     async updateForecast(teamId: number): Promise<void> {
@@ -551,10 +557,10 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
 
     recreateTeams(): void {
         this.teams = [
-            new Team("Binary Blazers", 0, [], [this.features[0], this.features[3]], 1, ["FTR-1", "FTR-3"], new Date()),
-            new Team("Mavericks", 1, [], [this.features[1], this.features[2]], 2, ["FTR-2", "FTR-3"], new Date()),
-            new Team("Cyber Sultans", 2, [], [this.features[2]], 1, ["FTR-3"], new Date()),
-            new Team("Tech Eagles", 3, [], [this.features[3]], 2, ["FTR-4"], new Date())
+            new Team("Binary Blazers", 0, [], [this.features[0], this.features[3]], 1, ["FTR-1", "FTR-3"], new Date(), this.generateThroughput()),
+            new Team("Mavericks", 1, [], [this.features[1], this.features[2]], 2, ["FTR-2", "FTR-3"], new Date(), this.generateThroughput()),
+            new Team("Cyber Sultans", 2, [], [this.features[2]], 1, ["FTR-3"], new Date(), this.generateThroughput()),
+            new Team("Tech Eagles", 3, [], [this.features[3]], 2, ["FTR-4"], new Date(), this.generateThroughput())
         ]
     }
 

@@ -28,8 +28,8 @@ vi.mock('../../../components/Common/Forecasts/ForecastLikelihood', () => ({
 }));
 
 describe('ProjectFeatureList component', () => {
-    const team1: Team = new Team('Team A', 1, [], [], 1, ["FTR-1"], new Date());
-    const team2: Team = new Team('Team B', 2, [], [], 1, ["FTR-1"], new Date());
+    const team1: Team = new Team('Team A', 1, [], [], 1, ["FTR-1"], new Date(), [1]);
+    const team2: Team = new Team('Team B', 2, [], [], 1, ["FTR-1"], new Date(), [1]);
 
     const pastDate = new Date();
     pastDate.setDate(pastDate.getDate() - 1);

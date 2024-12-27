@@ -6,9 +6,9 @@ import { ITeam } from '../../../models/Team/Team';
 describe('TeamsList', () => {
     const mockOnSelectionChange = vi.fn();
     const allTeams: ITeam[] = [
-        { id: 1, name: 'Team Alpha', projects: [], features: [], featureWip: 1, featuresInProgress: [], remainingFeatures: 1, lastUpdated: new Date(), remainingWork: 1, totalWork: 12 },
-        { id: 2, name: 'Team Beta', projects: [], features: [], featureWip: 1, featuresInProgress: [], remainingFeatures: 1, lastUpdated: new Date(), remainingWork: 1, totalWork: 12 },
-        { id: 3, name: 'Team Gamma', projects: [], features: [], featureWip: 1, featuresInProgress: [], remainingFeatures: 1, lastUpdated: new Date(), remainingWork: 1, totalWork: 12 }
+        { id: 1, name: 'Team Alpha', projects: [], features: [], featureWip: 1, featuresInProgress: [], remainingFeatures: 1, lastUpdated: new Date(), remainingWork: 1, totalWork: 12, throughput: [1] },
+        { id: 2, name: 'Team Beta', projects: [], features: [], featureWip: 1, featuresInProgress: [], remainingFeatures: 1, lastUpdated: new Date(), remainingWork: 1, totalWork: 12, throughput: [1] },
+        { id: 3, name: 'Team Gamma', projects: [], features: [], featureWip: 1, featuresInProgress: [], remainingFeatures: 1, lastUpdated: new Date(), remainingWork: 1, totalWork: 12, throughput: [1] }
     ];
     const selectedTeams = [1, 3];
 

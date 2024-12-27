@@ -1,10 +1,9 @@
 import { render, screen } from '@testing-library/react';
-import { Throughput } from '../../../models/Forecasts/Throughput';
 import ThroughputBarChart from './ThroughputChart';
 
 describe('ThroughputBarChart component', () => {
     it('should render BarChart when throughputData.history > 0', () => {
-        const mockThroughputData = new Throughput([10, 20, 30]);
+        const mockThroughputData = [10, 20, 30];
 
         render(<ThroughputBarChart throughputData={mockThroughputData} />);
 
@@ -14,7 +13,7 @@ describe('ThroughputBarChart component', () => {
     });
 
     it('should render CircularProgress when throughputData.history <= 0', () => {
-        const mockThroughputData = new Throughput([]);
+        const mockThroughputData : number[] = [];
 
         render(<ThroughputBarChart throughputData={mockThroughputData} />);
 

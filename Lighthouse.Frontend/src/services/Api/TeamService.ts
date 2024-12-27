@@ -1,7 +1,6 @@
 import { BaseApiService } from './BaseApiService';
 import { ITeam, Team } from '../../models/Team/Team';
 import { ITeamSettings } from '../../models/Team/TeamSettings';
-import { Throughput } from '../../models/Forecasts/Throughput';
 
 export interface ITeamService {
     getTeams(): Promise<Team[]>;
@@ -11,8 +10,7 @@ export interface ITeamService {
     validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean>;
     updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
     createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
-    updateTeamData(teamId: number): Promise<void>;
-    getThroughput(teamId: number): Promise<Throughput>;
+    updateTeamData(teamId: number): Promise<Team | null>;
 }
 
 export class TeamService extends BaseApiService implements ITeamService {
@@ -65,16 +63,10 @@ export class TeamService extends BaseApiService implements ITeamService {
         });
     }
 
-    async updateTeamData(teamId: number): Promise<void> {
+    async updateTeamData(teamId: number): Promise<Team | null> {
         return this.withErrorHandling(async () => {
-            await this.apiService.post<void>(`/teams/${teamId}`);
-        });
-    }
-
-    async getThroughput(teamId: number): Promise<Throughput> {
-        return this.withErrorHandling(async () => {
-            const response = await this.apiService.get<number[]>(`/teams/${teamId}/throughput`);
-            return new Throughput(response.data);
+            const response = await this.apiService.post<ITeam>(`/teams/${teamId}`);
+            return BaseApiService.deserializeTeam(response.data);
         });
     }
 

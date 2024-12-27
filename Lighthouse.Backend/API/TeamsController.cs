@@ -68,35 +68,21 @@ namespace Lighthouse.Backend.API
             return Ok(CreateTeamDto(allProjects, allFeatures, team));
         }
 
-
-        [HttpGet("{id}/throughput")]
-        public ActionResult GetThroughputForTeam(int id)
-        {
-            var team = teamRepository.GetById(id);
-
-            if (team == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(team.RawThroughput);
-        }
-
         [HttpPost("{id}")]
-        public async Task<ActionResult> UpdateTeamData(int id)
+        public async Task<ActionResult<TeamDto>> UpdateTeamData(int id)
         {
             var team = teamRepository.GetById(id);
 
             if (team == null)
             {
-                return NotFound();
+                return NotFound(null);
             }
 
             await teamUpdateService.UpdateTeam(team);
 
             await teamRepository.Save();
 
-            return Ok();
+            return GetTeam(id);
         }
 
         [HttpDelete("{id}")]

@@ -82,8 +82,8 @@ describe('ModifyProjectSettings', () => {
     ];
 
     const teams: ITeam[] = [
-        { id: 1, name: 'Team 1', features: [], featuresInProgress: [], featureWip: 1, lastUpdated: new Date(), projects: [], remainingFeatures: 1, remainingWork: 1, totalWork: 12 },
-        { id: 2, name: 'Team 2', features: [], featuresInProgress: [], featureWip: 1, lastUpdated: new Date(), projects: [], remainingFeatures: 1, remainingWork: 1, totalWork: 12 },
+        { id: 1, name: 'Team 1', features: [], featuresInProgress: [], featureWip: 1, lastUpdated: new Date(), projects: [], remainingFeatures: 1, remainingWork: 1, totalWork: 12, throughput: [1] },
+        { id: 2, name: 'Team 2', features: [], featuresInProgress: [], featureWip: 1, lastUpdated: new Date(), projects: [], remainingFeatures: 1, remainingWork: 1, totalWork: 12, throughput: [1] },
     ];
 
     const projectSettings: IProjectSettings = {

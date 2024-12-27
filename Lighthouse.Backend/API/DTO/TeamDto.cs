@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.API.DTO
             FeatureWip = team.FeatureWIP;
             LastUpdated = team.TeamUpdateTime;
             FeaturesInProgress = team.FeaturesInProgress;
+            Throughput = team.RawThroughput;
         }
 
         public string Name { get; set; }
@@ -27,6 +28,8 @@ namespace Lighthouse.Backend.API.DTO
         public int FeatureWip { get; set; }
 
         public List<string> FeaturesInProgress { get; } = new List<string>();
+
+        public int[] Throughput { get; set; }
 
         [JsonRequired]
         public DateTime LastUpdated { get; set; }

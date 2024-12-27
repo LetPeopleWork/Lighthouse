@@ -32,7 +32,8 @@ describe('FeatureList component', () => {
         ],
         1,
         ["FTR-1"],
-        new Date()
+        new Date(),
+        [1]
     );
 
     it('should render all features with correct data', () => {
