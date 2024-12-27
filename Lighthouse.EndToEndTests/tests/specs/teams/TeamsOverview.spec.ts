@@ -1,4 +1,4 @@
-import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
+import { expect, test, testWithData } from '../../fixutres/LighthouseFixture';
 
 testWithData('should show all teams on Teams Overview', async ({ testData, overviewPage }) => {
     const [team1, team2, team3] = testData.teams;

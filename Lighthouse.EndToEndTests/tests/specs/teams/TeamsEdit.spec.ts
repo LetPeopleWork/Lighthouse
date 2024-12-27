@@ -1,7 +1,7 @@
-import { TestConfig } from '../../playwright.config';
-import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
-import { deleteTeam } from '../helpers/api/teams';
-import { deleteWorkTrackingSystemConnectionByName } from '../helpers/api/workTrackingSystemConnections';
+import { TestConfig } from '../../../playwright.config';
+import { expect, test, testWithData } from '../../fixutres/LighthouseFixture';
+import { deleteTeam } from '../../helpers/api/teams';
+import { deleteWorkTrackingSystemConnectionByName } from '../../helpers/api/workTrackingSystemConnections';
 
 [
     { name: "Azure DevOps", index: 0 },

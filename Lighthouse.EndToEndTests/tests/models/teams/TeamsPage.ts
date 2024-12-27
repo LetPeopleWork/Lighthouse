@@ -37,7 +37,7 @@ export class TeamsPage {
         return new TeamEditPage(this.page);
     }
     
-    async addNewTeam() {
+    async addNewTeam() : Promise<TeamEditPage> {
         await this.page.getByRole('button', { name: 'Add New' }).click();
 
         return new TeamEditPage(this.page);
