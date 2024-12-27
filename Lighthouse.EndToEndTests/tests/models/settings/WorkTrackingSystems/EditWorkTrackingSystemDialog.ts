@@ -1,11 +1,12 @@
 import { Locator, Page } from '@playwright/test';
-import { TeamEditPage } from '../../teams/TeamEditPage';
 
 export class EditWorkTrackingSystemDialog {
     page: Page;
+    createPageHandler: (page: Page) => any;
 
-    constructor(page: Page) {
+    constructor(page: Page, createPageHandler: (page: Page) => any) {
         this.page = page;
+        this.createPageHandler = createPageHandler;
     }
 
     async setConnectionName(name: string): Promise<void>{
@@ -22,20 +23,20 @@ export class EditWorkTrackingSystemDialog {
         await this.page.getByLabel(optionName).fill(optionValue);
     }
 
-    async cancel(): Promise<TeamEditPage> {
+    async cancel(): Promise<any> {
         await this.page.getByRole('button', { name: 'Cancel' }).click();
 
-        return new TeamEditPage(this.page);
+        return this.createPageHandler(this.page);
     }
 
     async validate(): Promise<void> {
         await this.page.getByRole('button', { name: 'Validate' }).click();
     }
 
-    async create(): Promise<TeamEditPage> {
+    async create(): Promise<any> {
         await this.createButton.click();
         
-        return new TeamEditPage(this.page);
+        return this.createPageHandler(this.page);
     }
 
     get createButton(): Locator {

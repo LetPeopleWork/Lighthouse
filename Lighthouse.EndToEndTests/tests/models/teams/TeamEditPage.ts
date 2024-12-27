@@ -105,7 +105,7 @@ export class TeamEditPage {
     async addNewWorkTrackingSystem() : Promise<EditWorkTrackingSystemDialog> {
         await this.page.getByRole('button', { name: 'Add New Work Tracking System' }).click();
 
-        return new EditWorkTrackingSystemDialog(this.page);
+        return new EditWorkTrackingSystemDialog(this.page, (page) => new TeamEditPage(page));
     }
 
     get saveButton(): Locator {

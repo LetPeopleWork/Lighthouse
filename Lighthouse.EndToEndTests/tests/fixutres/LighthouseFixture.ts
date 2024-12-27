@@ -1,8 +1,8 @@
-import { test as base } from '@playwright/test';
+import { APIRequestContext, test as base } from '@playwright/test';
 import { LighthousePage } from '../models/app/LighthousePage';
 import { OverviewPage } from '../models/overview/OverviewPage';
 import { createAzureDevOpsConnection, createJiraConnection, deleteWorkTrackingSystemConnection } from '../helpers/api/workTrackingSystemConnections';
-import { createTeam, deleteTeam } from '../helpers/api/teams';
+import { createTeam, deleteTeam, updateTeam } from '../helpers/api/teams';
 import { createProject, deleteProject } from '../helpers/api/projects';
 
 type LighthouseFixtures = {
@@ -10,11 +10,14 @@ type LighthouseFixtures = {
 };
 
 type LighthouseWithDataFixtures = {
-    testData: {
-        projects: { name: string, id: number }[];
-        teams: { name: string, id: number }[];
-        connections: { name: string, id: number }[];
-    };
+    testData: TestData;
+}
+
+type TestData = { projects: ModelIdentifier[], teams: ModelIdentifier[], connections: ModelIdentifier[] };
+
+type ModelIdentifier = {
+    id: number,
+    name: string
 }
 
 function generateRandomString(): string {
@@ -26,6 +29,48 @@ function generateRandomString(): string {
     return `E2ETests_${result}`;
 }
 
+async function deleteTestData(request: APIRequestContext, testData: TestData): Promise<void> {
+    for (const project of testData.projects) {
+        await deleteProject(request, project.id);
+    }
+
+    for (const team of testData.teams) {
+        await deleteTeam(request, team.id);
+    }
+
+    for (const connection of testData.connections) {
+        await deleteWorkTrackingSystemConnection(request, connection.id);
+    }
+}
+
+async function generateTestData(request: APIRequestContext, updateTeams: boolean): Promise<TestData> {
+    const adoConnection = await createAzureDevOpsConnection(request, generateRandomString());
+    const jiraConnection = await createJiraConnection(request, generateRandomString());
+
+    const adoStates = { toDo: ['New'], doing: ['Active', 'Resolved'], done: ['Closed'] };
+    const jiraStates = { toDo: ['To Do'], doing: ['In Progress'], done: ['Done'] };
+
+    const team1 = await createTeam(request, generateRandomString(), adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"', ['User Story', 'Bug'], adoStates);
+    const team2 = await createTeam(request, generateRandomString(), adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Cyber Sultans"', ['User Story', 'Bug'], adoStates);
+    const team3 = await createTeam(request, generateRandomString(), jiraConnection.id, 'project = "LGHTHSDMO" AND labels = "Lagunitas"', ['Story', 'Bug'], jiraStates);
+
+    if (updateTeams) {
+        await updateTeam(request, team1.id);
+        await updateTeam(request, team2.id);
+        await updateTeam(request, team3.id);
+    }
+
+    const project1 = await createProject(request, generateRandomString(), [team1], adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"', ["Epic"], adoStates);
+    const project2 = await createProject(request, generateRandomString(), [team1, team2], adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release Codename Daniel"', ["Epic"], adoStates);
+    const project3 = await createProject(request, generateRandomString(), [team3], jiraConnection.id, 'project = "LGHTHSDMO" AND fixVersion = "Oberon Initiative"', ["Epic"], jiraStates);
+
+    return {
+        projects: [project1, project2, project3],
+        teams: [team1, team2, team3],
+        connections: [adoConnection, jiraConnection]
+    }
+}
+
 export const test = base.extend<LighthouseFixtures>({
     overviewPage: async ({ page }, use) => {
         const lighthousePage = new LighthousePage(page);
@@ -35,35 +80,23 @@ export const test = base.extend<LighthouseFixtures>({
     },
 });
 
+export const testWithUpdatedTeams = test.extend<LighthouseWithDataFixtures>({
+    testData: async ({ request }, use) => {
+        const data = await generateTestData(request, true);
+
+        await use(data);
+
+        await deleteTestData(request, data);
+    },
+});
+
 export const testWithData = test.extend<LighthouseWithDataFixtures>({
     testData: async ({ request }, use) => {
-        const adoConnection = await createAzureDevOpsConnection(request, generateRandomString());
-        const jiraConnection = await createJiraConnection(request, generateRandomString());
+        const data = await generateTestData(request, false);
 
-        const team1 = await createTeam(request, generateRandomString(), adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"', ['User Story', 'Bug'], { toDo: ['New'], inProgress: ['Active', 'Resolved'], done: ['Closed'] });
-        const team2 = await createTeam(request, generateRandomString(), adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Cyber Sultans"', ['User Story', 'Bug'], { toDo: ['New'], inProgress: ['Active', 'Resolved'], done: ['Closed'] });
-        const team3 = await createTeam(request, generateRandomString(), jiraConnection.id, 'project = "LGHTHSDMO" AND labels = "Lagunitas"', ['Story', 'Bug'], { toDo: ['To Do'], inProgress: ['In Progress'], done: ['Done'] });
+        await use(data);
 
-        const project1 = await createProject(request, generateRandomString(), [team1], adoConnection.id);
-        const project2 = await createProject(request, generateRandomString(), [team1, team2], adoConnection.id);
-        const project3 = await createProject(request, generateRandomString(), [team3], jiraConnection.id);
-
-        await use({
-            projects: [project1, project2, project3],
-            teams: [team1, team2, team3],
-            connections: [adoConnection, jiraConnection]
-        });
-
-        await deleteProject(request, project1.id);
-        await deleteProject(request, project2.id);
-        await deleteProject(request, project3.id);
-
-        await deleteTeam(request, team1.id);
-        await deleteTeam(request, team2.id);
-        await deleteTeam(request, team3.id);
-
-        await deleteWorkTrackingSystemConnection(request, adoConnection.id);
-        await deleteWorkTrackingSystemConnection(request, jiraConnection.id);
+        await deleteTestData(request, data);
     },
 });
 

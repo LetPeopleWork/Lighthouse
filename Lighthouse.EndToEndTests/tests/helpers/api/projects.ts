@@ -1,12 +1,13 @@
 import { APIRequestContext } from '@playwright/test';
 
-export async function createProject(api: APIRequestContext, projectName: string, involvedTeams: { id: number, name: string }[], workTrackingSystemConnectionId: number)
+export async function createProject(api: APIRequestContext, projectName: string, involvedTeams: { id: number, name: string }[], workTrackingSystemConnectionId: number, workItemQuery: string, workItemTypes: string[], states: { toDo: string[], doing: string[], done: string[] })
     : Promise<{ id: number, name: string }> {
+
     const involvedTeamsData = involvedTeams.map(team => ({
         id: team.id,
         name: team.name,
         featureWip: 1,
-        lastUpdated: new Date(),
+        lastUpdated: new Date().toISOString(),
         throughput: [],
     }));
 
@@ -14,13 +15,13 @@ export async function createProject(api: APIRequestContext, projectName: string,
         data: {
             id: 0,
             name: projectName,
-            workItemTypes: ['Epic'],
+            workItemTypes: workItemTypes,
             milestones: [],
-            toDoStates: ['New'],
-            doingStates: ['Active', 'Resolved'],
-            doneStates: ['Closed'],
+            toDoStates: states.toDo,
+            doingStates: states.doing,
+            doneStates: states.done,
             overrideRealChildCountStates: [],
-            workItemQuery: `[System.Tags] CONTAINS ${projectName}`,
+            workItemQuery: workItemQuery,
             unparentedItemsQuery: '',
             usePercentileToCalculateDefaultAmountOfWorkItems: false,
             defaultWorkItemPercentile: 85,
