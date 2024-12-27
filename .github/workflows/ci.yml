@@ -29,16 +29,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Check for changes
         id: check
         run: |
           base_ref=${{ github.base_ref }}
           if [ -z "$base_ref" ]; then
-            # Default to checking against the previous commit on the current branch if no base_ref is provided
-            base_ref=$(git rev-parse HEAD^)
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            # On main branch, use the last version tag as base
+            base_ref=$(git describe --tags --abbrev=0)
           else
-            git fetch origin $base_ref
-            base_ref="origin/$base_ref"
+            # Default to checking against the previous commit on other branches
+            base_ref=$(git rev-parse HEAD^)
+          fi
+          else
+          git fetch origin $base_ref
+          base_ref="origin/$base_ref"
           fi
 
           # Print all changed files
