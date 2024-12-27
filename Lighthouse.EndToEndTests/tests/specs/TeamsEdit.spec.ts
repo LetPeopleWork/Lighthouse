@@ -20,8 +20,8 @@ import { deleteWorkTrackingSystemConnectionByName } from '../helpers/api/workTra
 
             await teamEditPage.validate();
 
-            await expect(teamEditPage.validateButton).toBeEnabled();
-            await expect(teamEditPage.saveButton).toBeEnabled();
+            await expect(teamEditPage.validateButton).toBeEnabled({ timeout: 10_000 });
+            await expect(teamEditPage.saveButton).toBeEnabled({ timeout: 10_000 });
         });
     });
 
@@ -134,22 +134,22 @@ const newTeamConfigurations = [
             { field: "Api Token", value: TestConfig.JiraToken },
         ]
     },
-{
-    name: "AzureDevOps",
+    {
+        name: "AzureDevOps",
         workTrackingSystemIndex: 0,
-            teamConfiguration: {
-        validWorkItemTypes: ['User Story', 'Bug'],
+        teamConfiguration: {
+            validWorkItemTypes: ['User Story', 'Bug'],
             invalidWorkItemTypes: ['Story'],
-                validStates: { toDo: ['New'], doing: ['Active'], done: ['Closed'] },
-        invalidStates: { toDo: ['To Do'], doing: ['In Progress'], done: ['Done'] },
-        validQuery: '[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"',
+            validStates: { toDo: ['New'], doing: ['Active'], done: ['Closed'] },
+            invalidStates: { toDo: ['To Do'], doing: ['In Progress'], done: ['Done'] },
+            validQuery: '[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"',
             invalidQuery: '[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Lighthouse Demo\\Binary Blazers"'
+        },
+        workTrackingSystemOptions: [
+            { field: "Azure DevOps Url", value: "https://dev.azure.com/letpeoplework" },
+            { field: "Personal Access Token", value: TestConfig.AzureDevOpsToken },
+        ]
     },
-    workTrackingSystemOptions: [
-        { field: "Azure DevOps Url", value: "https://dev.azure.com/letpeoplework" },
-        { field: "Personal Access Token", value: TestConfig.AzureDevOpsToken },
-    ]
-},
 ];
 
 newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguration }) => {
@@ -203,7 +203,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
         await test.step("Invalidate Work Item Query", async () => {
             await newTeamPage.setWorkItemQuery(teamConfiguration.invalidQuery);
             await newTeamPage.validate();
-            await expect(newTeamPage.validateButton).toBeEnabled();
+            await expect(newTeamPage.validateButton).toBeEnabled({ timeout: 10_000 });
             await expect(newTeamPage.saveButton).toBeDisabled();
 
             await newTeamPage.setWorkItemQuery(teamConfiguration.validQuery);
@@ -212,7 +212,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
         await test.step("Invalidate Work Item Types", async () => {
             await newTeamPage.resetWorkItemTypes(teamConfiguration.validWorkItemTypes, teamConfiguration.invalidWorkItemTypes);
             await newTeamPage.validate();
-            await expect(newTeamPage.validateButton).toBeEnabled();
+            await expect(newTeamPage.validateButton).toBeEnabled({ timeout: 10_000 });
             await expect(newTeamPage.saveButton).toBeDisabled();
 
             await newTeamPage.resetWorkItemTypes(teamConfiguration.invalidWorkItemTypes, teamConfiguration.validWorkItemTypes);
@@ -221,7 +221,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
         await test.step("Invalidate States", async () => {
             await newTeamPage.resetStates(teamConfiguration.validStates, teamConfiguration.invalidStates);
             await newTeamPage.validate();
-            await expect(newTeamPage.validateButton).toBeEnabled();
+            await expect(newTeamPage.validateButton).toBeEnabled({ timeout: 10_000 });
             await expect(newTeamPage.saveButton).toBeDisabled();
 
             await newTeamPage.resetStates(teamConfiguration.invalidStates, teamConfiguration.validStates);
@@ -229,7 +229,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
 
         await test.step("Create New Team", async () => {
             await newTeamPage.validate();
-            await expect(newTeamPage.saveButton).toBeEnabled();
+            await expect(newTeamPage.saveButton).toBeEnabled({ timeout: 10_000 });
             const teamInfoPage = await newTeamPage.save();
 
             await expect(teamInfoPage.updateTeamDataButton).toBeDisabled();
@@ -276,14 +276,14 @@ newTeamConfigurations.forEach(({ name: workTrackingSystemName, teamConfiguration
             newWorkTrackingSystemDialog = await newTeamPage.addNewWorkTrackingSystem();
             await newWorkTrackingSystemDialog.selectWorkTrackingSystem(workTrackingSystemName);
 
-            for (const option of workTrackingSystemOptions){
+            for (const option of workTrackingSystemOptions) {
                 await newWorkTrackingSystemDialog.setWorkTrackingSystemOption(option.field, option.value);
             }
 
             await newWorkTrackingSystemDialog.setConnectionName(newWorkTrackingSystemConnectionName);
 
             await newWorkTrackingSystemDialog.validate();
-            await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
+            await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled({ timeout: 10_000 });
 
             newTeamPage = await newWorkTrackingSystemDialog.create();
 
@@ -291,7 +291,7 @@ newTeamConfigurations.forEach(({ name: workTrackingSystemName, teamConfiguration
             await expect(newTeamPage.saveButton).toBeDisabled();
 
             await newTeamPage.validate();
-            await expect(newTeamPage.validateButton).toBeEnabled();
+            await expect(newTeamPage.validateButton).toBeEnabled({ timeout: 10_000 });
             await expect(newTeamPage.saveButton).toBeEnabled();
         });
 

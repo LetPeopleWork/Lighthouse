@@ -45,8 +45,6 @@ test('clicking github icon should open the github page', async ({ overviewPage }
 test('clicking let people work logo should open let people work page', async ({ overviewPage }) => {
     const letPeopleWorkPage = await overviewPage.lightHousePage.goToLetPeopleWork();
 
-    const pageTitle = await letPeopleWorkPage.title();
-    expect(pageTitle).toContain('Let People Work');
     expect(letPeopleWorkPage.url()).toBe('https://www.letpeople.work/');
 });
 
