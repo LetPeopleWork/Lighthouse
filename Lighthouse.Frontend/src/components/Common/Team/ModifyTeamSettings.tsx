@@ -96,9 +96,18 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
 
     useEffect(() => {
         const handleStateChange = () => {
-            const areInputsValid = teamSettings?.name != '' && (teamSettings?.throughputHistory ?? 0) > 0 && teamSettings?.featureWIP !== undefined &&
-                (modifyDefaultSettings || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);
+            let areInputsValid = false;
+            if (teamSettings) {
+                const hasValidName = teamSettings.name != '';
+                const hasValidThroughputHistory = (teamSettings.throughputHistory ?? 0) > 0;
+                const hasValidFeatureWIP = teamSettings.featureWIP !== undefined;
+                const hasAllNecessaryStates = teamSettings.toDoStates.length > 0 && teamSettings.doingStates.length > 0 && teamSettings.doneStates.length > 0;
+                const hasValidWorkItemTypes = teamSettings.workItemTypes.length > 0;
 
+                areInputsValid = hasValidName && hasValidThroughputHistory && hasValidFeatureWIP && hasAllNecessaryStates && hasValidWorkItemTypes &&
+                    (modifyDefaultSettings || teamSettings?.workItemQuery != '') && teamSettings?.workItemTypes.length > 0 && (modifyDefaultSettings || selectedWorkTrackingSystem !== null);               
+            }
+            
             setInputsValid(areInputsValid);
         };
 
@@ -191,7 +200,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({ title, getWorkT
 
 
                     <Grid size={{ xs: 12 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                        <ValidationActions 
+                        <ValidationActions
                             onValidate={modifyDefaultSettings ? undefined : handleValidate}
                             onSave={handleSave}
                             inputsValid={inputsValid}

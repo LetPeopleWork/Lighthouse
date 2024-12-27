@@ -47,7 +47,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
     const handleTeamSelectionChange = (teamIds: number[]) => {
         setSelectedTeams(teamIds);
-        
+
         // Clear owning team if it's no longer in the selected teams
         if (projectSettings?.owningTeam && !teamIds.includes(projectSettings.owningTeam.id)) {
             setProjectSettings(prev => prev ? { ...prev, owningTeam: undefined } : prev);
@@ -156,8 +156,18 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
     useEffect(() => {
         const handleStateChange = () => {
-            const isFormValid = projectSettings?.name != '' && projectSettings?.defaultAmountOfWorkItemsPerFeature !== undefined && projectSettings?.workItemTypes.length > 0 &&
-            (modifyDefaultSettings || (selectedTeams.length > 0 && projectSettings?.workItemQuery != '' && selectedWorkTrackingSystem !== null));
+            let isFormValid = false;
+
+            if (projectSettings) {
+                const hasValidName = projectSettings.name != '';
+                const hasValidDefaultAmountOfFeatures = projectSettings.defaultAmountOfWorkItemsPerFeature !== undefined;
+                const hasValidAmountOfWorkItemTypes = projectSettings.workItemTypes.length > 0;
+                const hasAllNecessaryStates = projectSettings.toDoStates.length > 0 && projectSettings.doingStates.length > 0 && projectSettings.doneStates.length > 0;
+                const hasValidInvolvedTeams = selectedTeams.length > 0;
+
+                isFormValid = hasValidName && hasValidDefaultAmountOfFeatures && hasValidAmountOfWorkItemTypes && hasAllNecessaryStates &&
+                    (modifyDefaultSettings || (hasValidInvolvedTeams && projectSettings?.workItemQuery != '' && selectedWorkTrackingSystem !== null));
+            }
 
             setFormValid(isFormValid);
         };
@@ -262,14 +272,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
                         onProjectSettingsChange={handleProjectSettingsChange}
                     />
 
-                    <OwnershipComponent 
+                    <OwnershipComponent
                         projectSettings={projectSettings}
                         onProjectSettingsChange={handleProjectSettingsChange}
                         currentInvolvedTeams={teams.filter(team => selectedTeams.includes(team.id))}
                     />
 
                     <Grid size={{ xs: 12 }} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                        <ValidationActions 
+                        <ValidationActions
                             onValidate={modifyDefaultSettings ? undefined : handleValidate}
                             onSave={handleSave}
                             inputsValid={formValid}

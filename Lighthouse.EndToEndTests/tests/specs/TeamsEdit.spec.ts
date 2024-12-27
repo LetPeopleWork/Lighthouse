@@ -1,8 +1,7 @@
-import exp from 'constants';
 import { TestConfig } from '../../playwright.config';
 import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
 import { deleteTeam } from '../helpers/api/teams';
-import { deleteWorkTrackingSystemConnection, deleteWorkTrackingSystemConnectionByName } from '../helpers/api/workTrackingSystemConnections';
+import { deleteWorkTrackingSystemConnectionByName } from '../helpers/api/workTrackingSystemConnections';
 
 [
     { name: "Azure DevOps", index: 0 },
@@ -75,20 +74,20 @@ testWithData("should disable validate button if not all mandatory fields are set
 
     await test.step("Each state category should have at least one state", async () => {
         await teamEditPage.removeState('New');
-        //await expect(teamEditPage.validateButton).toBeDisabled();
+        await expect(teamEditPage.validateButton).toBeDisabled();
 
         await teamEditPage.addState('Backlog', 'To Do');
         await expect(teamEditPage.validateButton).toBeEnabled();
 
         await teamEditPage.removeState('Active');
         await teamEditPage.removeState('Resolved');
-        //await expect(teamEditPage.validateButton).toBeDisabled();
+        await expect(teamEditPage.validateButton).toBeDisabled();
 
         await teamEditPage.addState('In Progress', 'Doing');
         await expect(teamEditPage.validateButton).toBeEnabled();
 
         await teamEditPage.removeState('Closed');
-        //await expect(teamEditPage.validateButton).toBeDisabled();
+        await expect(teamEditPage.validateButton).toBeDisabled();
 
 
         await teamEditPage.addState('Done', 'Done');
@@ -249,7 +248,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
 newTeamConfigurations.forEach(({ name: workTrackingSystemName, teamConfiguration, workTrackingSystemOptions }) => {
     test(`should allow to create a new team with a new Work Tracking System ${workTrackingSystemName}`, async ({ overviewPage, request }) => {
         test.slow();
-        let teamsPage = await overviewPage.lightHousePage.goToTeams();
+        const teamsPage = await overviewPage.lightHousePage.goToTeams();
         let newTeamPage = await teamsPage.addNewTeam();
 
         await test.step("Add Valid Configuration for new team", async () => {
