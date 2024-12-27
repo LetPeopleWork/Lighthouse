@@ -7,6 +7,7 @@ export async function createProject(api: APIRequestContext, projectName: string,
         name: team.name,
         featureWip: 1,
         lastUpdated: new Date(),
+        throughput: [],
     }));
 
     const response = await api.post('/api/projects', {
@@ -16,7 +17,7 @@ export async function createProject(api: APIRequestContext, projectName: string,
             workItemTypes: ['Epic'],
             milestones: [],
             toDoStates: ['New'],
-            inProgressStates: ['Active', 'Resolved'],
+            doingStates: ['Active', 'Resolved'],
             doneStates: ['Closed'],
             overrideRealChildCountStates: [],
             workItemQuery: `[System.Tags] CONTAINS ${projectName}`,
