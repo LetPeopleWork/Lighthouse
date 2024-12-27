@@ -375,7 +375,7 @@ jobs:
         working-directory: ./Lighthouse.EndToEndTests
           
       - name: Run Lighthouse
-        run: docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:latest
+        run: docker run -p 8080:8080 -d --restart always ghcr.io/letpeoplework/lighthouse:dev-latest
         working-directory: ./Lighthouse.Backend
 
       - name: Wait for Lighthouse to start
