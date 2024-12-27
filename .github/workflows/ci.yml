@@ -342,7 +342,7 @@ jobs:
       - packageapp
       - changes
 
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true')
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     permissions: write-all
 
@@ -361,7 +361,8 @@ jobs:
           image_name: ${{ github.repository }} 
           github_token: ${{ secrets.GITHUB_TOKEN }}
           build_arg: VERSION=${{ needs.tag.outputs.fileversion }}
-          dockerfile: Lighthouse.Backend/Dockerfile     
+          dockerfile: Lighthouse.Backend/Dockerfile
+          image_tag: dev-latest
 
       - name: Install E2E dependencies
         run: npm ci
