@@ -28,6 +28,12 @@ export class TeamDetailPage {
         return parsedLikelihood;
     }
 
+    async getFeaturesInProgress() : Promise<number> {
+        const featureWIPText = await this.page.getByRole('heading', { name: /^Currently working on/ }).textContent() ?? '0';
+        const match = /Currently working on (\d+)/.exec(featureWIPText);
+        return Number(match?.[1] ?? 0);
+    }
+
     async getLastUpdatedDate(): Promise<Date> {
         const lastUpdatedText = await this.page.getByRole('heading', { name: /^Last Updated/ }).textContent() ?? '';
         const dateMatch = /Last Updated on (.*)/.exec(lastUpdatedText);

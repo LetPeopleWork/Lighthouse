@@ -7,6 +7,7 @@ import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
     .forEach(({ index, name }) => {
         testWithData(`should update Team Data for ${name} team on click`, async ({ testData, overviewPage }) => {
             test.slow();
+
             const team = testData.teams[index];
 
             const teamsPage = await overviewPage.lightHousePage.goToTeams();
@@ -20,8 +21,9 @@ import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
             // Wait for update to be done
             await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-            // TODO: Fix this in Frontend to update page automatically!
-            await teamDetailPage.page.reload();
+            // Make sure the features in progress is correct
+            const featuresInProgress = await teamDetailPage.getFeaturesInProgress();
+            expect(featuresInProgress).toBe(1);
 
             const lastUpdatedDate = await teamDetailPage.getLastUpdatedDate();
             const now = new Date();

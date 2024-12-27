@@ -23,7 +23,7 @@ function generateRandomString(): string {
     for (let i = 0; i < 10; i++) {
         result += characters.charAt(Math.floor(Math.random() * characters.length));
     }
-    return result;
+    return `E2ETests_${result}`;
 }
 
 export const test = base.extend<LighthouseFixtures>({
