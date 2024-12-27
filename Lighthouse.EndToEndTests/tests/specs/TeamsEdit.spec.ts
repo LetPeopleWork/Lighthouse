@@ -9,7 +9,6 @@ import { deleteWorkTrackingSystemConnectionByName } from '../helpers/api/workTra
 ]
     .forEach(({ index, name }) => {
         testWithData(`should allow save after validate when editing existing ${name} team`, async ({ testData, overviewPage }) => {
-            test.slow();
             const team = testData.teams[index];
 
             const teamsPage = await overviewPage.lightHousePage.goToTeams();
@@ -20,8 +19,8 @@ import { deleteWorkTrackingSystemConnectionByName } from '../helpers/api/workTra
 
             await teamEditPage.validate();
 
-            await expect(teamEditPage.validateButton).toBeEnabled({ timeout: 10_000 });
-            await expect(teamEditPage.saveButton).toBeEnabled({ timeout: 10_000 });
+            await expect(teamEditPage.validateButton).toBeEnabled();
+            await expect(teamEditPage.saveButton).toBeEnabled();
         });
     });
 
@@ -154,7 +153,6 @@ const newTeamConfigurations = [
 
 newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguration }) => {
     testWithData(`should allow to create a new team for ${name}`, async ({ testData, overviewPage, request }) => {
-        test.slow();
         let teamsPage = await overviewPage.lightHousePage.goToTeams();
         const newTeamPage = await teamsPage.addNewTeam();
 
@@ -203,7 +201,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
         await test.step("Invalidate Work Item Query", async () => {
             await newTeamPage.setWorkItemQuery(teamConfiguration.invalidQuery);
             await newTeamPage.validate();
-            await expect(newTeamPage.validateButton).toBeEnabled({ timeout: 10_000 });
+            await expect(newTeamPage.validateButton).toBeEnabled();
             await expect(newTeamPage.saveButton).toBeDisabled();
 
             await newTeamPage.setWorkItemQuery(teamConfiguration.validQuery);
@@ -212,7 +210,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
         await test.step("Invalidate Work Item Types", async () => {
             await newTeamPage.resetWorkItemTypes(teamConfiguration.validWorkItemTypes, teamConfiguration.invalidWorkItemTypes);
             await newTeamPage.validate();
-            await expect(newTeamPage.validateButton).toBeEnabled({ timeout: 10_000 });
+            await expect(newTeamPage.validateButton).toBeEnabled();
             await expect(newTeamPage.saveButton).toBeDisabled();
 
             await newTeamPage.resetWorkItemTypes(teamConfiguration.invalidWorkItemTypes, teamConfiguration.validWorkItemTypes);
@@ -221,7 +219,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
         await test.step("Invalidate States", async () => {
             await newTeamPage.resetStates(teamConfiguration.validStates, teamConfiguration.invalidStates);
             await newTeamPage.validate();
-            await expect(newTeamPage.validateButton).toBeEnabled({ timeout: 10_000 });
+            await expect(newTeamPage.validateButton).toBeEnabled();
             await expect(newTeamPage.saveButton).toBeDisabled();
 
             await newTeamPage.resetStates(teamConfiguration.invalidStates, teamConfiguration.validStates);
@@ -229,7 +227,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
 
         await test.step("Create New Team", async () => {
             await newTeamPage.validate();
-            await expect(newTeamPage.saveButton).toBeEnabled({ timeout: 10_000 });
+            await expect(newTeamPage.saveButton).toBeEnabled();
             const teamInfoPage = await newTeamPage.save();
 
             await expect(teamInfoPage.updateTeamDataButton).toBeDisabled();
@@ -247,8 +245,6 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
 
 newTeamConfigurations.forEach(({ name: workTrackingSystemName, teamConfiguration, workTrackingSystemOptions }) => {
     testWithData(`should allow to create a new team with a new Work Tracking System ${workTrackingSystemName}`, async ({ testData, overviewPage, request }) => {
-        test.slow();
-
         test.fail(testData.teams.length < 1, "Expected to have teams initiatilized to prevent tutorial page from being displayed");
 
         const teamsPage = await overviewPage.lightHousePage.goToTeams();
@@ -283,7 +279,7 @@ newTeamConfigurations.forEach(({ name: workTrackingSystemName, teamConfiguration
             await newWorkTrackingSystemDialog.setConnectionName(newWorkTrackingSystemConnectionName);
 
             await newWorkTrackingSystemDialog.validate();
-            await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled({ timeout: 10_000 });
+            await expect(newWorkTrackingSystemDialog.createButton).toBeEnabled();
 
             newTeamPage = await newWorkTrackingSystemDialog.create();
 
@@ -291,7 +287,7 @@ newTeamConfigurations.forEach(({ name: workTrackingSystemName, teamConfiguration
             await expect(newTeamPage.saveButton).toBeDisabled();
 
             await newTeamPage.validate();
-            await expect(newTeamPage.validateButton).toBeEnabled({ timeout: 10_000 });
+            await expect(newTeamPage.validateButton).toBeEnabled();
             await expect(newTeamPage.saveButton).toBeEnabled();
         });
 

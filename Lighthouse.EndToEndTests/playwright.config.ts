@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, expect } from '@playwright/test';
 
 export class TestConfig {
   static readonly ADOTOKENNAME: string = 'AzureDevOpsLighthouseE2ETestToken';
@@ -53,6 +53,10 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     video: 'retain-on-failure',
+  },
+
+  expect: {
+    timeout: 15000
   },
 
   /* Configure projects for major browsers */

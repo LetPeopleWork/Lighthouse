@@ -6,8 +6,6 @@ import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
 ]
     .forEach(({ index, name }) => {
         testWithData(`should update Team Data for ${name} team on click`, async ({ testData, overviewPage }) => {
-            test.slow();
-
             const team = testData.teams[index];
 
             const teamsPage = await overviewPage.lightHousePage.goToTeams();
@@ -44,7 +42,6 @@ testWithData('should open Team Edit Page when clicking on Edit Button', async ({
 });
 
 testWithData(`should show Manual When and How Many Forecast for team`, async ({ testData, overviewPage }) => {
-    test.slow();
     const team = testData.teams[0];
 
     const teamsPage = await overviewPage.lightHousePage.goToTeams();
