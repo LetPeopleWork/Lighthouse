@@ -246,8 +246,12 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
 });
 
 newTeamConfigurations.forEach(({ name: workTrackingSystemName, teamConfiguration, workTrackingSystemOptions }) => {
-    test(`should allow to create a new team with a new Work Tracking System ${workTrackingSystemName}`, async ({ overviewPage, request }) => {
+    testWithData(`should allow to create a new team with a new Work Tracking System ${workTrackingSystemName}`, async ({ testData, overviewPage, request }) => {
         test.slow();
+
+        const teams = testData.teams;
+        console.log(`Initiating test with ${teams.length} teams so that we do not show tutorial...`);
+
         const teamsPage = await overviewPage.lightHousePage.goToTeams();
         let newTeamPage = await teamsPage.addNewTeam();
 
