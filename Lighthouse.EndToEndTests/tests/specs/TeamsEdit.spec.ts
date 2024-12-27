@@ -249,8 +249,7 @@ newTeamConfigurations.forEach(({ name: workTrackingSystemName, teamConfiguration
     testWithData(`should allow to create a new team with a new Work Tracking System ${workTrackingSystemName}`, async ({ testData, overviewPage, request }) => {
         test.slow();
 
-        const teams = testData.teams;
-        console.log(`Initiating test with ${teams.length} teams so that we do not show tutorial...`);
+        test.fail(testData.teams.length < 1, "Expected to have teams initiatilized to prevent tutorial page from being displayed");
 
         const teamsPage = await overviewPage.lightHousePage.goToTeams();
         let newTeamPage = await teamsPage.addNewTeam();
