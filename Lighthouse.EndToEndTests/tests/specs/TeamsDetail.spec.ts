@@ -1,4 +1,4 @@
-import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
+import { expect, testWithData } from '../fixutres/LighthouseFixture';
 
 [
     { name: "Azure DevOps", index: 0 },

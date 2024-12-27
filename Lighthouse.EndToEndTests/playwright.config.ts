@@ -1,4 +1,4 @@
-import { defineConfig, devices, expect } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export class TestConfig {
   static readonly ADOTOKENNAME: string = 'AzureDevOpsLighthouseE2ETestToken';
