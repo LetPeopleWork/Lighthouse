@@ -38,28 +38,28 @@ export class LighthousePage {
 
     async goToContributors(): Promise<Page> {
         return this.OpenInNewTab(async () => {
-            const contributorsButton = await this.GetContributorsButton();
+            const contributorsButton = this.GetContributorsButton();
             await contributorsButton.click();
         });
     }
 
     async goToReportIssue(): Promise<Page> {
         return this.OpenInNewTab(async () => {
-            const reportIssueButton = await this.GetReportIssueButton();
+            const reportIssueButton = this.GetReportIssueButton();
             await reportIssueButton.click();
         });
     }
 
     async goToLetPeopleWork(): Promise<Page> {
         return this.OpenInNewTab(async () => {
-            const lpwLogo = await this.GetLpwLogoButton();
+            const lpwLogo = this.GetLpwLogoButton();
             await lpwLogo.click();
         });
     }
 
     async goToRelease(): Promise<Page> {
         return this.OpenInNewTab(async () => {
-            const versionNumberButton = await this.GetVersionNumberButton();
+            const versionNumberButton = this.GetVersionNumberButton();
             await versionNumberButton.click();
         });
     }
@@ -93,7 +93,7 @@ export class LighthousePage {
 
     async goToYoutube(): Promise<Page> {
         const youtubePage = await this.OpenInNewTab(async () => {
-            const youtubeButton = await this.GetYoutubeButton();
+            const youtubeButton = this.GetYoutubeButton();
             await youtubeButton.click();
         });
 
@@ -110,43 +110,43 @@ export class LighthousePage {
 
     async goToBlogPosts(): Promise<Page> {
         return this.OpenInNewTab(async () => {
-            const blogPostsButton = await this.GetBlogPostsButton();
+            const blogPostsButton = this.GetBlogPostsButton();
             await blogPostsButton.click();
         });
     }
 
     async goToGitHub(): Promise<Page> {
         return this.OpenInNewTab(async () => {
-            const gitHubButton = await this.GetGitHubButton();
+            const gitHubButton = this.GetGitHubButton();
             await gitHubButton.click();
         });
     }
 
-    private async GetContributorsButton(): Promise<Locator> {
+    private GetContributorsButton(): Locator {
         return this.page.getByTestId('https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md');
     }
 
-    private async GetReportIssueButton(): Promise<Locator> {
+    private GetReportIssueButton(): Locator {
         return this.page.getByLabel('Report an Issue');
     }
 
-    private async GetYoutubeButton(): Promise<Locator> {
+    private GetYoutubeButton(): Locator {
         return this.page.getByTestId('https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ');
     }
 
-    private async GetBlogPostsButton(): Promise<Locator> {
+    private GetBlogPostsButton(): Locator {
         return this.page.getByTestId('https://www.letpeople.work/blog/');
     }
 
-    private async GetGitHubButton(): Promise<Locator> {
+    private GetGitHubButton(): Locator {
         return this.page.getByTestId('https://github.com/LetPeopleWork/');
     }
 
-    private async GetLpwLogoButton(): Promise<Locator> {
+    private GetLpwLogoButton(): Locator {
         return this.page.getByRole('link', { name: 'Let People Work Logo' });
     }
 
-    private async GetVersionNumberButton(): Promise<Locator> {
+    private GetVersionNumberButton(): Locator {
         // Match version number scheme like 'v1.33.7' or 'v24.12.20.1852'
         return this.page.getByRole('link', { name: /^v\d{2,4}(\.\d{1,4}){2,3}$/ })
     }
