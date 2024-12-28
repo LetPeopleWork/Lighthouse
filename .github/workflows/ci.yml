@@ -368,6 +368,11 @@ jobs:
           # Automatically sets up the default builder
           use: true
 
+      - name: Set up QEMU for cross-platform builds
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: linux/amd64,linux/arm64        
+
       - name: Build and push multi-platform Docker image
         run: |
           REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
@@ -377,7 +382,7 @@ jobs:
           PLATFORMS="linux/amd64,linux/arm64"
 
           # Build and push the multi-platform image
-          docker buildx build --platform $PLATFORMS \
+          docker buildx build --platform $PLATFORMS --no-cache \
             --file Lighthouse.Backend/Dockerfile \
             --tag ghcr.io/$REPO_NAME:$VERSION \
             --tag ghcr.io/$REPO_NAME:dev-latest \
