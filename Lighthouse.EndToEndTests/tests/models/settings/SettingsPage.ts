@@ -1,6 +1,7 @@
 import { Page } from '@playwright/test';
 import { WorkTrackingSystemsSettingsPage } from './WorkTrackingSystems/WorkTrackingSystemsSettingsPage';
 import { TeamEditPage } from '../teams/TeamEditPage';
+import { ProjectEditPage } from '../projects/ProjectEditPage';
 
 export class SettingsPage {
     page: Page;
@@ -19,5 +20,11 @@ export class SettingsPage {
         await this.page.getByTestId('default-team-settings-tab').click();
 
         return new TeamEditPage(this.page);
+    }
+
+    async gotToDefaultProjectSettings() : Promise<ProjectEditPage>{
+        await this.page.getByTestId('default-project-settings-tab').click();
+
+        return new ProjectEditPage(this.page);
     }
 }

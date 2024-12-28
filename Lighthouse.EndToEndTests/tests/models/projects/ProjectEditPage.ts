@@ -23,32 +23,81 @@ export class ProjectEditPage {
         await this.page.getByLabel('Name', { exact: true }).fill(newName);
     }
 
+    async getName(): Promise<string> {
+        return await this.page.getByLabel('Name', { exact: true }).inputValue() ?? '';
+    }
+
     async setWorkItemQuery(workItemQuery: string): Promise<void> {
         await this.page.getByLabel('Work Item Query').fill(workItemQuery);
     }
 
+    async getWorkItemQuery(): Promise<string> {
+        return await this.page.getByLabel('Work Item Query', { exact: true }).inputValue() ?? '';
+    }
+
     async toggleUnparentedWorkItemConfiguration(): Promise<void> {
-        await this.page.locator('div').filter({ hasText: /^Unparented Work ItemsUnparented Work Items QueryUnparented Work Items Query$/ }).getByLabel('toggle').click();
+        await this.page.locator('div').filter({ hasText: /^Unparented Work Items*/ }).getByLabel('toggle').click();
     }
 
     async setUnparentedWorkItemQuery(workItemQuery: string): Promise<void> {
         await this.page.getByLabel('Unparented Work Items Query').fill(workItemQuery);
     }
 
+    async getUnparentedWorkItemQuery(): Promise<string> {
+        return await this.page.getByLabel('Unparented Work Items Query').inputValue() ?? '';
+    }
+
     async toggleDefaultFeatureSizeConfiguration(): Promise<void> {
-        await this.page.locator('div:nth-child(9) > .MuiCardHeader-root > .MuiCardHeader-action > .MuiButtonBase-root').click();
+        await this.page.locator('div').filter({ hasText: /^Default Feature Size*/ }).getByLabel('toggle').click();
+    }
+
+    async useHistoricalFeatureSize(): Promise<void> {
+        await this.useHistoricalFeatureSizeToggle.check();
+    }
+
+    async useDefaultNumberOFItemsForFeatureSize(): Promise<void> {
+        await this.useHistoricalFeatureSizeToggle.uncheck();
+    }
+
+    get useHistoricalFeatureSizeToggle(): Locator {
+        return this.page.getByLabel('Use Historical Feature Size');
+    }
+
+    async setHistoricalFeatureSizePercentile(percentile: number): Promise<void> {
+        await this.page.getByLabel('Feature Size Percentile').fill(`${percentile}`);
+    }
+
+    async getHistoricalFeatureSizePercentile(): Promise<number> {
+        const featureSizePercentile = await this.page.getByLabel('Feature Size Percentile').inputValue() ?? '0';
+        return Number(featureSizePercentile);
+    }
+
+    async setHistoricalFeatureSizeQuery(query: string): Promise<void> {
+        await this.page.getByLabel('Historical Features Work Item').fill(query);
+    }
+
+    async getHistoricalFeatureSizeQuery(): Promise<string> {
+        return await this.page.getByLabel('Historical Features Work Item').inputValue() ?? '0';
     }
 
     async setSizeEstimateField(sizeEstimateField: string): Promise<void> {
         await this.page.getByLabel('Size Estimate Field').fill(sizeEstimateField);
     }
 
+    async getSizeEstimateField(): Promise<string> {
+        return await this.page.getByLabel('Size Estimate Field').inputValue() ?? '';
+    }
+
     async toggleOwnershipSettings(): Promise<void> {
-        await this.page.locator('div:nth-child(10) > .MuiCardHeader-root > .MuiCardHeader-action > .MuiButtonBase-root').click();
+        await this.page.locator('div').filter({ hasText: /^Ownership Settings*/ }).getByLabel('toggle').click();
     }
 
     async setFeatureOwnerField(sizeEstimateField: string): Promise<void> {
         await this.page.getByLabel('Feature Owner Field').fill(sizeEstimateField);
+    }
+
+    async getFeatureOwnerField(): Promise<string> {
+        return await this.page.getByLabel('Feature Owner Field').inputValue() ?? '';
     }
 
     async removeSizeOverrideState(overrideState: string): Promise<void> {
@@ -60,11 +109,20 @@ export class ProjectEditPage {
         await this.page.getByRole('button', { name: 'Add Size Override State' }).click();
     }
 
-    async removeWorkItemType(workItemType: string): Promise<void> {
-        await this.page.locator('li').filter({ hasText: workItemType }).getByLabel('delete').click();
+    async addWorkItemType(workItemType: string): Promise<void> {
+        await this.page.getByLabel('New Work Item Type').fill(workItemType);
+        await this.page.getByRole('button', { name: 'Add Work Item Type' }).click();
     }
 
-    async selectOwningTeam(teamName: string) : Promise<void> {
+    async removeWorkItemType(workItemType: string): Promise<void> {
+        await this.getWorkItemType(workItemType).getByLabel('delete').click();
+    }
+
+    getWorkItemType(workItemType: string): Locator {
+        return this.page.locator('li').filter({ hasText: workItemType });
+    }
+
+    async selectOwningTeam(teamName: string): Promise<void> {
         await this.page.locator('div').filter({ hasText: /.*Owning Team$/ }).getByRole('combobox').click();
         await this.page.getByRole('option', { name: teamName }).click();
     }
@@ -75,15 +133,10 @@ export class ProjectEditPage {
         await this.page.keyboard.press('Escape');
         return options;
     }
-    
+
     async getSelectedOwningTeam(): Promise<string> {
         const combobox = this.page.locator('div').filter({ hasText: /.*Owning Team$/ }).getByRole('combobox');
         return await combobox.textContent() ?? '';
-    }
-
-    async addWorkItemType(workItemType: string): Promise<void> {
-        await this.page.getByLabel('New Work Item Type').fill(workItemType);
-        await this.page.getByRole('button', { name: 'Add Work Item Type' }).click();
     }
 
     async deselectTeam(teamName: string): Promise<void> {
@@ -100,7 +153,11 @@ export class ProjectEditPage {
     }
 
     async removeState(state: string): Promise<void> {
-        await this.page.locator('li').filter({ hasText: state }).getByLabel('delete').click();
+        await this.getState(state).getByLabel('delete').click();
+    }
+
+    getState(state: string): Locator {
+        return this.page.locator('li').filter({ hasText: state });
     }
 
     async resetWorkItemTypes(existingTypes: string[], newTypes: string[]) {
@@ -131,7 +188,7 @@ export class ProjectEditPage {
         }
     }
 
-    async addNewWorkTrackingSystem() : Promise<EditWorkTrackingSystemDialog<ProjectEditPage>> {
+    async addNewWorkTrackingSystem(): Promise<EditWorkTrackingSystemDialog<ProjectEditPage>> {
         await this.page.getByRole('button', { name: 'Add New Work Tracking System' }).click();
 
         return new EditWorkTrackingSystemDialog(this.page, (page) => new ProjectEditPage(page));
