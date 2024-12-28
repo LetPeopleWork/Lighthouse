@@ -1,4 +1,4 @@
-import { expect, test, testWithData } from '../fixutres/LighthouseFixture';
+import { expect, test, testWithData } from '../../fixutres/LighthouseFixture';
 
 testWithData('should show all projects on dashboard', async ({ testData, overviewPage }) => {
     const [project1, project2] = testData.projects;
