@@ -41,8 +41,8 @@ workTrackingSystemConfiguration.forEach(({ workTrackingSystemName, workTrackingS
                 await workTrackingSystemDialog.setWorkTrackingSystemOption(option.field, option.value);
             }
 
-            expect(workTrackingSystemDialog.validateButton).toBeDisabled();
-            expect(workTrackingSystemDialog.createButton).toBeDisabled();
+            await expect(workTrackingSystemDialog.validateButton).toBeDisabled();
+            await expect(workTrackingSystemDialog.createButton).toBeDisabled();
         });
 
         const wtsName = generateRandomName();
@@ -50,8 +50,8 @@ workTrackingSystemConfiguration.forEach(({ workTrackingSystemName, workTrackingS
         await test.step('Set Name should enable Validation', async () => {
             workTrackingSystemDialog.setConnectionName(wtsName);
 
-            expect(workTrackingSystemDialog.validateButton).toBeEnabled();
-            expect(workTrackingSystemDialog.createButton).toBeDisabled();
+            await expect(workTrackingSystemDialog.validateButton).toBeEnabled();
+            await expect(workTrackingSystemDialog.createButton).toBeDisabled();
         });
 
         await test.step('Validation allows Save', async () => {
