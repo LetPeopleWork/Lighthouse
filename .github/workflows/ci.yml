@@ -407,9 +407,10 @@ jobs:
     
       - name: Tag docker image with version
         run: |
-          docker pull ghcr.io/${{ github.repository }}:dev-latest
-          docker tag ghcr.io/${{ github.repository }}:dev-latest ghcr.io/${{ github.repository }}:${{ needs.tag.outputs.version }}
-          docker push ghcr.io/${{ github.repository }}:${{ needs.tag.outputs.version }}
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker pull ghcr.io/$REPO_NAME:dev-latest
+          docker tag ghcr.io/$REPO_NAME:dev-latest ghcr.io/$REPO_NAME:${{ needs.tag.outputs.version }}
+          docker push ghcr.io/$REPO_NAME:${{ needs.tag.outputs.version }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -516,9 +517,10 @@ jobs:
     
       - name: Tag docker image with latest
         run: |
-          docker pull ghcr.io/${{ github.repository }}:${{ needs.tag.outputs.version }}
-          docker tag ghcr.io/${{ github.repository }}:${{ needs.tag.outputs.version }} ghcr.io/${{ github.repository }}:latest
-          docker push ghcr.io/${{ github.repository }}:latest
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker pull ghcr.io/$REPO_NAME:${{ needs.tag.outputs.version }}
+          docker tag ghcr.io/$REPO_NAME:${{ needs.tag.outputs.version }} ghcr.io/$REPO_NAME:latest
+          docker push ghcr.io/$REPO_NAME:latest
 
       - uses: actions/download-artifact@v4
         with:
