@@ -2,7 +2,6 @@ import { expect, test, testWithRestoredDefaultSettings } from '../../fixutres/Li
 import { generateRandomName } from '../../helpers/names';
 import { TeamEditPage } from '../../models/teams/TeamEditPage';
 
-// Make sure mandatory values are needed for save
 test("Modify Default Team Settings should not allow Save if Mandatory Options are missing", async ({ overviewPage }) => {
     const settingsPage = await overviewPage.lighthousePage.goToSettings();
     const teamSettingsPage = await settingsPage.gotToDefaultTeamSettings();

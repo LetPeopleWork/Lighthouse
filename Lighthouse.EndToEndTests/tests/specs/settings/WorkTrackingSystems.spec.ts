@@ -30,7 +30,7 @@ workTrackingSystemConfiguration.forEach(({ workTrackingSystemName, workTrackingS
         const workTrackingSystemDialog = await workTrackingSystemsPage.addNewWorkTrackingSystem();
 
         await test.step('Select Work Tracking System', async () => {
-            workTrackingSystemDialog.selectWorkTrackingSystem(workTrackingSystemName);
+            await workTrackingSystemDialog.selectWorkTrackingSystem(workTrackingSystemName);
 
             await expect(workTrackingSystemDialog.validateButton).toBeDisabled();
             await expect(workTrackingSystemDialog.createButton).toBeDisabled();
@@ -48,7 +48,7 @@ workTrackingSystemConfiguration.forEach(({ workTrackingSystemName, workTrackingS
         const wtsName = generateRandomName();
 
         await test.step('Set Name should enable Validation', async () => {
-            workTrackingSystemDialog.setConnectionName(wtsName);
+            await workTrackingSystemDialog.setConnectionName(wtsName);
 
             await expect(workTrackingSystemDialog.validateButton).toBeEnabled();
             await expect(workTrackingSystemDialog.createButton).toBeDisabled();
