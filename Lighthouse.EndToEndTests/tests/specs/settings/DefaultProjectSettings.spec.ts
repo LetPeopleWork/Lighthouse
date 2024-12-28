@@ -5,7 +5,7 @@ import { ProjectEditPage } from '../../models/projects/ProjectEditPage';
 
 test("Modify Default Projects Settings should not allow Save if Mandatory Options are missing", async ({ overviewPage }) => {
     const settingsPage = await overviewPage.lighthousePage.goToSettings();
-    const projectSettingsPage = await settingsPage.gotToDefaultProjectSettings();
+    const projectSettingsPage = await settingsPage.goToDefaultProjectSettings();
 
     await test.step("Save Enabled and No Validation Possible", async () => {
         await expect(projectSettingsPage.validateButton).not.toBeVisible();
@@ -79,7 +79,7 @@ testWithRestoredDefaultSettings("Change default team settings should affect new 
     test.fail(defaultSettings == null, "Expected to have default settings initiatilized");
 
     let settingsPage = await overviewPage.lighthousePage.goToSettings();
-    let projectSettingsPage = await settingsPage.gotToDefaultProjectSettings();
+    let projectSettingsPage = await settingsPage.goToDefaultProjectSettings();
 
     const newName = generateRandomName();
     const newWorkItemQuery = 'Query!';
@@ -172,7 +172,7 @@ testWithRestoredDefaultSettings("Change default team settings should affect new 
     await test.step("Make sure settings are updated", async () => {
         await overviewPage.lightHousePage.goToOverview();
         settingsPage = await overviewPage.lighthousePage.goToSettings();
-        projectSettingsPage = await settingsPage.gotToDefaultProjectSettings();
+        projectSettingsPage = await settingsPage.goToDefaultProjectSettings();
 
         await verifyTeamSettings(projectSettingsPage);
     });

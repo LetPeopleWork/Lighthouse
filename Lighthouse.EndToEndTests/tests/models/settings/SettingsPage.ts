@@ -2,6 +2,7 @@ import { Page } from '@playwright/test';
 import { WorkTrackingSystemsSettingsPage } from './WorkTrackingSystems/WorkTrackingSystemsSettingsPage';
 import { TeamEditPage } from '../teams/TeamEditPage';
 import { ProjectEditPage } from '../projects/ProjectEditPage';
+import { PeriodicRefreshSettingsPage } from './PeriodicRefreshSettings/PeriodicRefreshSettingsPage';
 
 export class SettingsPage {
     page: Page;
@@ -16,15 +17,21 @@ export class SettingsPage {
         return new WorkTrackingSystemsSettingsPage(this.page);
     }
 
-    async gotToDefaultTeamSettings() : Promise<TeamEditPage>{
+    async goToDefaultTeamSettings() : Promise<TeamEditPage>{
         await this.page.getByTestId('default-team-settings-tab').click();
 
         return new TeamEditPage(this.page);
     }
 
-    async gotToDefaultProjectSettings() : Promise<ProjectEditPage>{
+    async goToDefaultProjectSettings() : Promise<ProjectEditPage>{
         await this.page.getByTestId('default-project-settings-tab').click();
 
         return new ProjectEditPage(this.page);
+    }
+
+    async goToPeriodicRefreshSettings() : Promise<PeriodicRefreshSettingsPage>{
+        await this.page.getByTestId('periodic-refresh-settings-tab').click();
+
+        return new PeriodicRefreshSettingsPage(this.page);
     }
 }

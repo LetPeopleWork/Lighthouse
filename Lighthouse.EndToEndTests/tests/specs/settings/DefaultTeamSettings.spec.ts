@@ -4,7 +4,7 @@ import { TeamEditPage } from '../../models/teams/TeamEditPage';
 
 test("Modify Default Team Settings should not allow Save if Mandatory Options are missing", async ({ overviewPage }) => {
     const settingsPage = await overviewPage.lighthousePage.goToSettings();
-    const teamSettingsPage = await settingsPage.gotToDefaultTeamSettings();
+    const teamSettingsPage = await settingsPage.goToDefaultTeamSettings();
 
     await test.step("Save Enabled and No Validation Possible", async () => {
         await expect(teamSettingsPage.validateButton).not.toBeVisible();
@@ -84,7 +84,7 @@ testWithRestoredDefaultSettings("Change default team settings should affect new 
     test.fail(defaultSettings == null, "Expected to have default settings initiatilized");
 
     let settingsPage = await overviewPage.lighthousePage.goToSettings();
-    let teamSettingsPage = await settingsPage.gotToDefaultTeamSettings();
+    let teamSettingsPage = await settingsPage.goToDefaultTeamSettings();
 
     const newName = generateRandomName();
     const newThroughputHistory = 90;
@@ -156,7 +156,7 @@ testWithRestoredDefaultSettings("Change default team settings should affect new 
     await test.step("Make sure settings are updated", async () => {
         await overviewPage.lightHousePage.goToOverview();
         settingsPage = await overviewPage.lighthousePage.goToSettings();
-        teamSettingsPage = await settingsPage.gotToDefaultTeamSettings();
+        teamSettingsPage = await settingsPage.goToDefaultTeamSettings();
 
         await verifyTeamSettings(teamSettingsPage);
     });
