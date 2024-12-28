@@ -3,6 +3,8 @@ import { OverviewPage } from '../overview/OverviewPage';
 import { TeamsPage } from '../teams/TeamsPage';
 import { ProjectsPage } from '../projects/ProjectsPage';
 import { SettingsPage } from '../settings/SettingsPage';
+import { TeamEditPage } from '../teams/TeamEditPage';
+import { ProjectEditPage } from '../projects/ProjectEditPage';
 
 export class LighthousePage {
     readonly page: Page;
@@ -19,6 +21,16 @@ export class LighthousePage {
     async goToOverview(): Promise<OverviewPage> {
         await this.page.getByRole('link', { name: 'Overview' }).click();
         return new OverviewPage(this.page, this);
+    }
+
+    async createNewTeam(): Promise<TeamEditPage> {
+        await this.page.goto('/teams/new');
+        return new TeamEditPage(this.page);
+    }
+
+    async createNewProject(): Promise<ProjectEditPage> {
+        await this.page.goto('/projects/new');
+        return new ProjectEditPage(this.page);
     }
 
     async goToTeams(): Promise<TeamsPage> {
@@ -81,14 +93,14 @@ export class LighthousePage {
         return this.OpenInNewTab(async () => {
             const linkedInButton = this.page.getByTestId('https://www.linkedin.com/company/let-people-work/?viewAsMember=true');
             await linkedInButton.click();
-        });        
+        });
     }
 
     async contactViaGitHubIssue(): Promise<Page> {
         return this.OpenInNewTab(async () => {
             const raiseGitHubIssueButton = this.page.getByLabel('Raise an Issue on GitHub');
             await raiseGitHubIssueButton.click();
-        });        
+        });
     }
 
     async goToYoutube(): Promise<Page> {

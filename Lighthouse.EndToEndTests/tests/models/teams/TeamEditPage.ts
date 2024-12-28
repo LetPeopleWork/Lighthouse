@@ -23,16 +23,33 @@ export class TeamEditPage {
         await this.page.getByLabel('Name').fill(newName);
     }
 
+    async getName(): Promise<string> {
+        return await this.page.getByLabel('Name').inputValue();
+    }
+
     async setThroughputHistory(throughputHistory: number): Promise<void> {
         await this.page.getByLabel('Throughput History').fill(`${throughputHistory}`);
+    }
+
+    async getThroughputHistory(): Promise<number> {
+        const throughput = await this.page.getByLabel('Throughput History').inputValue() ?? `0`;
+        return Number(throughput);
     }
 
     async setWorkItemQuery(workItemQuery: string): Promise<void> {
         await this.page.getByLabel('Work Item Query').fill(workItemQuery);
     }
 
+    async getWorkItemQuery(): Promise<string> {
+        return await this.page.getByLabel('Work Item Query').inputValue() ?? '';
+    }
+
     async removeWorkItemType(workItemType: string): Promise<void> {
-        await this.page.locator('li').filter({ hasText: workItemType }).getByLabel('delete').click();
+        await this.getWorkItemType(workItemType).getByLabel('delete').click();
+    }
+
+    getWorkItemType(workItemType: string): Locator {
+        return this.page.locator('li').filter({ hasText: workItemType });
     }
 
     async addWorkItemType(workItemType: string): Promise<void> {
@@ -46,27 +63,44 @@ export class TeamEditPage {
     }
 
     async removeState(state: string): Promise<void> {
-        await this.page.locator('li').filter({ hasText: state }).getByLabel('delete').click();
+        await this.getState(state).getByLabel('delete').click();
+    }
+
+    getState(state: string): Locator {
+        return this.page.locator('li').filter({ hasText: state });
     }
 
     async toggleAdvancedConfiguration(): Promise<void> {
-        await this.page.getByLabel('toggle').nth(4).click();
+        await this.page.getByLabel('toggle').last().click();
     }
 
     async setFeatureWip(featureWIP: number): Promise<void> {
         await this.page.getByLabel('Feature WIP', { exact: true }).fill(`${featureWIP}`);
     }
 
+    async getFeatureWip() : Promise<number>{
+        const featureWIP = await this.page.getByLabel('Feature WIP', { exact: true }).inputValue() ?? '0';
+        return Number(featureWIP);
+    }
+
+    get automaticallyAdjustFeatureWIPCheckBox() : Locator{
+        return this.page.getByLabel('Automatically Adjust Feature');
+    }
+
     async enableAutomaticallyAdjustFeatureWIP(): Promise<void> {
-        await this.page.getByLabel('Automatically Adjust Feature').check();
+        await this.automaticallyAdjustFeatureWIPCheckBox.check();
     }
 
     async disableAutomaticallyAdjustFeatureWIP(): Promise<void> {
-        await this.page.getByLabel('Automatically Adjust Feature').uncheck();
+        await this.automaticallyAdjustFeatureWIPCheckBox.uncheck();
     }
 
     async setRelationCustomField(customField: string): Promise<void> {
         await this.page.getByLabel('Relation Custom Field').fill(customField);
+    }
+
+    async getRelationCustomField(): Promise<string> {
+        return await this.page.getByLabel('Relation Custom Field').inputValue() ?? '';
     }
 
     async selectWorkTrackingSystem(workTrackingSystemName: string): Promise<void> {
@@ -101,8 +135,8 @@ export class TeamEditPage {
             await this.addState(state, 'Done');
         }
     }
-    
-    async addNewWorkTrackingSystem() : Promise<EditWorkTrackingSystemDialog<TeamEditPage>> {
+
+    async addNewWorkTrackingSystem(): Promise<EditWorkTrackingSystemDialog<TeamEditPage>> {
         await this.page.getByRole('button', { name: 'Add New Work Tracking System' }).click();
 
         return new EditWorkTrackingSystemDialog(this.page, (page) => new TeamEditPage(page));
