@@ -3,6 +3,7 @@ import { WorkTrackingSystemsSettingsPage } from './WorkTrackingSystems/WorkTrack
 import { TeamEditPage } from '../teams/TeamEditPage';
 import { ProjectEditPage } from '../projects/ProjectEditPage';
 import { PeriodicRefreshSettingsPage } from './PeriodicRefreshSettings/PeriodicRefreshSettingsPage';
+import { DataRetentionSettingsPage } from './DataRetentionSettings/DataRetentionSettingsPage';
 
 export class SettingsPage {
     page: Page;
@@ -33,5 +34,11 @@ export class SettingsPage {
         await this.page.getByTestId('periodic-refresh-settings-tab').click();
 
         return new PeriodicRefreshSettingsPage(this.page);
+    }
+
+    async goToDataRetentionSettings() : Promise<DataRetentionSettingsPage>{
+        await this.page.getByTestId('data-retention-settings-tab').click();
+
+        return new DataRetentionSettingsPage(this.page);
     }
 }

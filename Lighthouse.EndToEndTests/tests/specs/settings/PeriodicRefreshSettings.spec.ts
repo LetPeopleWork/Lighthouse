@@ -8,7 +8,7 @@ const settings: PeriodicRefreshSettingType[] = [
 ];
 
 settings.forEach((settingName) => {
-    test(`Should persist ${settingName} Refresh Setting on Save?`, async ({ overviewPage }) => {
+    test(`Should persist ${settingName} Refresh Settings on Save`, async ({ overviewPage }) => {
         const settingsPage = await overviewPage.lighthousePage.goToSettings();
         let periodicRefreshSettingsPage = await settingsPage.goToPeriodicRefreshSettings();
 
