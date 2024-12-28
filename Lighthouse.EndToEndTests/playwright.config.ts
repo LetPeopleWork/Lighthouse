@@ -5,7 +5,7 @@ export class TestConfig {
   static readonly JIRATOKENNAME: string = 'JiraLighthouseIntegrationTestToken'
   static readonly LIGHTHOUSEURLNAME: string = 'LIGHTHOUSEURL';
 
-  private static getEnvVariable(name: string, defaultValue: string): string  {
+  private static getEnvVariable(name: string, defaultValue: string): string {
     const value = process.env[name];
 
     if (!value) {
@@ -17,7 +17,7 @@ export class TestConfig {
   };
 
   public static get LighthouseUrl(): string {
-    return TestConfig.getEnvVariable(TestConfig.LIGHTHOUSEURLNAME, "http://localhost:8080");
+    return TestConfig.getEnvVariable(TestConfig.LIGHTHOUSEURLNAME, "http://localhost:8888");
   }
 
   public static get AzureDevOpsToken(): string {
@@ -41,7 +41,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  
+
   workers: undefined,
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -60,9 +60,8 @@ export default defineConfig({
   /* Set longer timeouts as we depend for some tests on 3rd party software we don't have control over (ADO/Jira) */
   timeout: 90000,
   expect: {
-    timeout: 15000
+    timeout: 30000
   },
-
 
   /* Configure projects for major browsers */
   projects: [

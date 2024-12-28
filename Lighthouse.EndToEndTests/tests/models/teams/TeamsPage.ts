@@ -14,22 +14,22 @@ export class TeamsPage {
         await this.page.getByPlaceholder('Search').fill(searchTerm);
     }
 
-    async getTeamLink(team: { name: string, id: number }): Promise<Locator> {
-        const teamLink = this.page.getByRole('link', { name: team.name });
+    async getTeamLink(teamName: string): Promise<Locator> {
+        const teamLink = this.page.getByRole('link', { name: teamName });
         return teamLink;
     }
 
-    async goToTeam(team: { name: string, id: number }): Promise<TeamDetailPage> {
-        await this.search(team.name);
+    async goToTeam(teamName: string): Promise<TeamDetailPage> {
+        await this.search(teamName);
 
-        const teamLink = await this.getTeamLink(team);
+        const teamLink = await this.getTeamLink(teamName);
         await teamLink.click();
 
         return new TeamDetailPage(this.page);
     }
 
-    async editTeam(team: { name: string, id: number }): Promise<TeamEditPage> {
-        await this.search(team.name);
+    async editTeam(teamName: string): Promise<TeamEditPage> {
+        await this.search(teamName);
 
         const teamEditIcon = this.page.getByLabel('Edit');
         await teamEditIcon.click();
@@ -43,8 +43,8 @@ export class TeamsPage {
         return new TeamEditPage(this.page);
     }
 
-    async deleteTeam(team : { name: string, id: number }): Promise<TeamDeletionDialog> {
-        await this.search(team.name);
+    async deleteTeam(teamName: string): Promise<TeamDeletionDialog> {
+        await this.search(teamName);
         const teamDeleteIcon = this.page.getByLabel('Delete');
         await teamDeleteIcon.click();
 

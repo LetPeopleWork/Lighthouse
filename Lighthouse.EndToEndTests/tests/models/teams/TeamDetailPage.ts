@@ -1,5 +1,6 @@
 import { Locator, Page } from '@playwright/test';
 import { TeamEditPage } from './TeamEditPage';
+import { getLastUpdatedDateFromText } from '../../helpers/dates';
 
 export class TeamDetailPage {
     page: Page;
@@ -22,13 +23,13 @@ export class TeamDetailPage {
         await this.page.getByLabel('Number of Items to Forecast').fill(`${howMany}`);
         await this.page.getByRole('button', { name: 'Forecast' }).click();
 
-        const likelihood = await this.page.getByRole('heading', { name: '%' }).textContent() ?? '0';        
+        const likelihood = await this.page.getByRole('heading', { name: '%' }).textContent() ?? '0';
         const parsedLikelihood = parseFloat(likelihood.replace('%', ''));
 
         return parsedLikelihood;
     }
 
-    async getFeaturesInProgress() : Promise<number> {
+    async getFeaturesInProgress(): Promise<number> {
         const featureWIPText = await this.page.getByRole('heading', { name: /^Currently working on/ }).textContent() ?? '0';
         const match = /Currently working on (\d+)/.exec(featureWIPText);
         return Number(match?.[1] ?? 0);
@@ -36,12 +37,11 @@ export class TeamDetailPage {
 
     async getLastUpdatedDate(): Promise<Date> {
         const lastUpdatedText = await this.page.getByRole('heading', { name: /^Last Updated/ }).textContent() ?? '';
-        const dateMatch = /Last Updated on (.*)/.exec(lastUpdatedText);
-        if (!dateMatch) {
-            return new Date();
-        }
+        return getLastUpdatedDateFromText(lastUpdatedText);
+    }
 
-        return new Date(dateMatch[1]);
+    getFeatureLink(featureName: string) : Locator {
+        return this.page.getByRole('link', { name: featureName });
     }
 
     get updateTeamDataButton(): Locator {

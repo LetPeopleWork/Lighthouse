@@ -1,4 +1,5 @@
 import { expect, testWithData } from '../../fixutres/LighthouseFixture';
+import { expectDateToBeRecent } from '../../helpers/dates';
 
 [
     { name: "Azure DevOps", index: 0 },
@@ -9,7 +10,7 @@ import { expect, testWithData } from '../../fixutres/LighthouseFixture';
             const team = testData.teams[index];
 
             const teamsPage = await overviewPage.lightHousePage.goToTeams();
-            const teamDetailPage = await teamsPage.goToTeam(team);
+            const teamDetailPage = await teamsPage.goToTeam(team.name);
 
             await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
@@ -24,10 +25,7 @@ import { expect, testWithData } from '../../fixutres/LighthouseFixture';
             expect(featuresInProgress).toBe(1);
 
             const lastUpdatedDate = await teamDetailPage.getLastUpdatedDate();
-            const now = new Date();
-
-            // Make sure lastUpdated is within the last 10 seconds
-            expect(Math.abs(lastUpdatedDate.getUTCMilliseconds() - now.getUTCMilliseconds())).toBeLessThanOrEqual(10000);
+            expectDateToBeRecent(lastUpdatedDate);
         });
     });
 
@@ -35,7 +33,7 @@ testWithData('should open Team Edit Page when clicking on Edit Button', async ({
     const [team] = testData.teams;
 
     const teamsPage = await overviewPage.lightHousePage.goToTeams();
-    const teamDetailPage = await teamsPage.goToTeam(team);
+    const teamDetailPage = await teamsPage.goToTeam(team.name);
 
     const teamEditPage = await teamDetailPage.editTeam();
     expect(teamEditPage.page.url()).toContain(`/teams/edit/${team.id}`);
@@ -45,7 +43,7 @@ testWithData(`should show Manual When and How Many Forecast for team`, async ({ 
     const team = testData.teams[0];
 
     const teamsPage = await overviewPage.lightHousePage.goToTeams();
-    const teamDetailPage = await teamsPage.goToTeam(team);
+    const teamDetailPage = await teamsPage.goToTeam(team.name);
 
     await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 

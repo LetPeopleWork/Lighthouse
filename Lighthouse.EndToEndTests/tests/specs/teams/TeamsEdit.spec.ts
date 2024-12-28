@@ -12,7 +12,7 @@ import { deleteWorkTrackingSystemConnectionByName } from '../../helpers/api/work
             const team = testData.teams[index];
 
             const teamsPage = await overviewPage.lightHousePage.goToTeams();
-            const teamEditPage = await teamsPage.editTeam(team);
+            const teamEditPage = await teamsPage.editTeam(team.name);
 
             await expect(teamEditPage.validateButton).toBeEnabled();
             await expect(teamEditPage.saveButton).toBeDisabled();
@@ -28,7 +28,7 @@ testWithData("should disable validate button if not all mandatory fields are set
     const team = testData.teams[0];
 
     const teamsPage = await overviewPage.lightHousePage.goToTeams();
-    const teamEditPage = await teamsPage.editTeam(team);
+    const teamEditPage = await teamsPage.editTeam(team.name);
 
     await expect(teamEditPage.validateButton).toBeEnabled();
 
@@ -235,7 +235,7 @@ newTeamConfigurations.forEach(({ name, workTrackingSystemIndex, teamConfiguratio
 
             teamsPage = await overviewPage.lightHousePage.goToTeams();
             await teamsPage.search(newTeam.name);
-            const teamLink = await teamsPage.getTeamLink(newTeam);
+            const teamLink = await teamsPage.getTeamLink(newTeam.name);
             await expect(teamLink).toBeVisible();
         });
 
