@@ -58,9 +58,11 @@ export default defineConfig({
   },
 
   /* Set longer timeouts as we depend for some tests on 3rd party software we don't have control over (ADO/Jira) */
+  timeout: 90000,
   expect: {
     timeout: 15000
   },
+
 
   /* Configure projects for major browsers */
   projects: [
