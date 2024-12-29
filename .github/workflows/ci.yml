@@ -339,10 +339,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - tag
-      #- packageapp
       - changes
 
-    #if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     permissions: write-all
 
