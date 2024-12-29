@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;

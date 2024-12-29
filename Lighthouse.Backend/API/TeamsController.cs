@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -69,7 +70,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("{id}")]
-        public async Task<ActionResult<TeamDto>> UpdateTeamData(int id)
+        public ActionResult UpdateTeamData(int id)
         {
             var team = teamRepository.GetById(id);
 
@@ -78,11 +79,9 @@ namespace Lighthouse.Backend.API
                 return NotFound(null);
             }
 
-            await teamUpdateService.UpdateTeam(team);
+            teamUpdateService.TriggerUpdate(team.Id);
 
-            await teamRepository.Save();
-
-            return GetTeam(id);
+            return Ok();
         }
 
         [HttpDelete("{id}")]

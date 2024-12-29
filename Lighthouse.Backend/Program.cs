@@ -14,6 +14,10 @@ using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
 using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Models.Preview;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
+using Lighthouse.Backend.Services.Implementation.Update;
+using Lighthouse.Backend.Services.Interfaces.Update;
+using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend
 {
@@ -73,7 +77,7 @@ namespace Lighthouse.Backend
                 // Services
                 builder.Services.AddScoped<IRandomNumberService, RandomNumberService>();
                 builder.Services.AddScoped<IMonteCarloService, MonteCarloService>();
-                builder.Services.AddScoped<ITeamUpdateService, Services.Implementation.TeamUpdateService>();
+                builder.Services.AddScoped<ITeamUpdateService, TeamUpdateService>();
                 builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
                 builder.Services.AddScoped<ILexoRankService, LexoRankService>();
                 builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
@@ -94,6 +98,10 @@ namespace Lighthouse.Backend
 
                 builder.Services.AddSingleton<ICryptoService, CryptoService>();
                 builder.Services.AddSingleton<IGitHubService, GitHubService>();
+
+                var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
+                builder.Services.AddSingleton(updateStatuses);
+                builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
 
                 // Add CORS services
                 builder.Services
@@ -116,6 +124,9 @@ namespace Lighthouse.Backend
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen();
 
+                // Add SignalR
+                builder.Services.AddSignalR();
+
                 var app = builder.Build();
 
                 // Configure the HTTP request pipeline.
@@ -130,6 +141,7 @@ namespace Lighthouse.Backend
                     app.UseHsts();
                 }
 
+                app.MapHub<UpdateNotificationHub>("/updateNotificationHub");
 
                 app.UseSwagger(c =>
                 {
