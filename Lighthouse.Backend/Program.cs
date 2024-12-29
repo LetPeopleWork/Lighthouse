@@ -110,9 +110,11 @@ namespace Lighthouse.Backend
                         options.AddPolicy("AllowAll",
                             builder =>
                             {
-                                builder.AllowAnyOrigin()
+                                builder.WithOrigins("localhost:5173")
+                                       .SetIsOriginAllowedToAllowWildcardSubdomains()
                                        .AllowAnyMethod()
-                                       .AllowAnyHeader();
+                                       .AllowAnyHeader()
+                                       .AllowCredentials();
                             });
                     })
                     .AddControllers().AddJsonOptions(options =>
@@ -132,7 +134,7 @@ namespace Lighthouse.Backend
                 // Configure the HTTP request pipeline.
                 if (app.Environment.IsDevelopment())
                 {
-                    app.UseCors("AllowAll");
+                    app.UseCors("AllowAllInDev");
                     app.UseDeveloperExceptionPage();
                 }
                 else
@@ -141,7 +143,7 @@ namespace Lighthouse.Backend
                     app.UseHsts();
                 }
 
-                app.MapHub<UpdateNotificationHub>("/updateNotificationHub");
+                app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
 
                 app.UseSwagger(c =>
                 {

@@ -148,26 +148,16 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         }
     }
 
-    async updateTeamData(teamId: number): Promise<Team | null> {
+    async updateTeamData(teamId: number): Promise<void> {
         console.log(`Updating Throughput for Team ${teamId}`);
 
         await this.delay();
 
         const team = await this.getTeam(teamId);
-        if (team) {
-            return new Team(
-                team.name,
-                team.id,
-                [...team.projects],
-                [...team.features],
-                team.featureWip,
-                [...team.featuresInProgress],
-                new Date(),
-                team.throughput
-            );
-        }
 
-        return null;
+        if (team) {
+            team.lastUpdated = new Date();
+        }
     }
 
     async updateForecast(teamId: number): Promise<void> {

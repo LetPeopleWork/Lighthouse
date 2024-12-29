@@ -14,8 +14,8 @@
         private readonly IServiceScopeFactory serviceScopeFactory;
 
         public UpdateQueueService(
-            ILogger<UpdateQueueService> logger, 
-            IHubContext<UpdateNotificationHub> hubContext, 
+            ILogger<UpdateQueueService> logger,
+            IHubContext<UpdateNotificationHub> hubContext,
             ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses,
             IServiceScopeFactory serviceScopeFactory)
         {
@@ -60,12 +60,11 @@
                     logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
                 }
 
-                await hubContext.Clients.Group(updateKey.ToString()).SendAsync("UpdateStatusChanged", updateStatus);
-
                 updateStatuses.TryRemove(updateKey, out _);
+                await hubContext.Clients.Group(updateKey.ToString()).SendAsync("UpdateStatusChanged", updateStatus);
             });
 
-            hubContext.Clients.Group(id.ToString()).SendAsync("UpdateStatusChanged", updateStatus);
+            hubContext.Clients.Group(updateKey.ToString()).SendAsync("UpdateStatusChanged", updateStatus);
         }
 
         private void StartProcessingQueue()

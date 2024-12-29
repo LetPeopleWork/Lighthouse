@@ -16,7 +16,7 @@ export class BaseApiService {
         }
 
         this.apiService = axios.create({
-            baseURL: baseUrl
+            baseURL: baseUrl,
         });
     }
 

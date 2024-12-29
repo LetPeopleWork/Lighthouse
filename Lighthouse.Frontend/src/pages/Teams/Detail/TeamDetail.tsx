@@ -15,6 +15,7 @@ import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/Tutor
 import TeamDetailTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamDetailTutorial';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 import LocalDateTimeDisplay from '../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay';
+import SignalRService from '../../../services/SignalRService';
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -61,10 +62,7 @@ const TeamDetail: React.FC = () => {
         setTriggerUpdate(false);
 
         try {
-            const updatedTeam = await teamService.updateTeamData(team.id);
-            if (updatedTeam) {
-                setTeam(updatedTeam);
-            }
+            await teamService.updateTeamData(team.id);
         } catch (error) {
             console.error('Error updating throughput:', error);
             setHasError(true);
@@ -93,6 +91,17 @@ const TeamDetail: React.FC = () => {
             if (searchParams.get('triggerUpdate') === 'true') {
                 setTriggerUpdate(true);
             }
+
+            const handleTeamUpdate = (status: string) => {
+                console.log('Team update received:', status);
+                fetchTeam();
+            };
+
+            SignalRService.subscribeToTeamUpdates(teamId, handleTeamUpdate);
+
+            return () => {
+                SignalRService.unsubscribeFromTeamUpdates(teamId);
+            };
         }
         else{
             fetchTeam();
