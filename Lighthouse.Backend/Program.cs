@@ -14,7 +14,6 @@ using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
 using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Models.Preview;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Lighthouse.Backend.Services.Implementation.Update;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Collections.Concurrent;
@@ -103,20 +102,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddSingleton(updateStatuses);
                 builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
 
-                // Add CORS services
                 builder.Services
-                    .AddCors(options =>
-                    {
-                        options.AddPolicy("AllowAll",
-                            builder =>
-                            {
-                                builder.WithOrigins("localhost:5173")
-                                       .SetIsOriginAllowedToAllowWildcardSubdomains()
-                                       .AllowAnyMethod()
-                                       .AllowAnyHeader()
-                                       .AllowCredentials();
-                            });
-                    })
                     .AddControllers().AddJsonOptions(options =>
                     {
                         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -127,20 +113,33 @@ namespace Lighthouse.Backend
                 builder.Services.AddSwaggerGen();
 
                 // Add SignalR
-                builder.Services.AddSignalR();
+                builder.Services.AddSignalR()
+                     .AddJsonProtocol(options =>
+                     {
+                         options.PayloadSerializerOptions.Converters
+                            .Add(new JsonStringEnumConverter());
+                     });
 
                 var app = builder.Build();
 
                 // Configure the HTTP request pipeline.
                 if (app.Environment.IsDevelopment())
                 {
-                    app.UseCors("AllowAllInDev");
                     app.UseDeveloperExceptionPage();
                 }
                 else
                 {
                     app.UseExceptionHandler("/Error");
                     app.UseHsts();
+
+                    app.UseDefaultFiles();
+                    app.UseStaticFiles();
+
+                    app.UseSpa(spa =>
+                    {
+                        spa.Options.SourcePath = "wwwroot";
+                        spa.Options.DefaultPage = "/index.html";
+                    });
                 }
 
                 app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
@@ -157,20 +156,9 @@ namespace Lighthouse.Backend
 
                 app.UseHttpsRedirection();
 
-                app.UseDefaultFiles();
-                app.UseStaticFiles();
-
                 app.UseRouting();
-
                 app.UseAuthorization();
-
                 app.MapControllers();
-
-                app.UseSpa(spa =>
-                {
-                    spa.Options.SourcePath = "wwwroot";
-                    spa.Options.DefaultPage = "/index.html";
-                });
 
                 app.Run();
             }

@@ -396,38 +396,34 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateTeamData_GivenTeamId_UpdatesThroughputForTeamAsync()
+        public void UpdateTeamData_GivenTeamId_TriggersTeamUpdate()
         {
             var expectedTeam = new Team();
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
 
             var subject = CreateSubject();
 
-            var response = await subject.UpdateTeamData(12);
+            var response = subject.UpdateTeamData(12);
 
-            teamUpdateServiceMock.Verify(x => x.UpdateTeam(expectedTeam));
-            teamRepositoryMock.Verify(x => x.Save());
+            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(expectedTeam.Id));
 
             Assert.Multiple(() =>
             {
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var okObjectResult = response.Result as OkObjectResult;
-                Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
-
-                var value = okObjectResult.Value;
-                Assert.That(value, Is.InstanceOf<TeamDto>());
+                Assert.That(response, Is.InstanceOf<OkResult>());
+                var okResult = response as OkResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
             });
         }
 
         [Test]
-        public async Task UpdateTeamData_TeamDoesNotExist_ReturnsNotFound()
+        public void UpdateTeamData_TeamDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
 
-            var response = await subject.UpdateTeamData(12);
+            var response = subject.UpdateTeamData(12);
 
-            Assert.That(response.Result, Is.InstanceOf<NotFoundObjectResult>());
-            var notFoundObjectResult = response.Result as NotFoundObjectResult;
+            Assert.That(response, Is.InstanceOf<NotFoundObjectResult>());
+            var notFoundObjectResult = response as NotFoundObjectResult;
             Assert.Multiple(() =>
             {
                 Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));

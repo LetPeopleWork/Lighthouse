@@ -3,6 +3,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
     public class UpdateKey
     {
         public UpdateType UpdateType { get; }
+
         public int Id { get; }
 
         public UpdateKey(UpdateType updateType, int id)

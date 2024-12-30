@@ -29,5 +29,6 @@ describe('ApiServiceContext', () => {
         expect(apiServices.teamService).toBeInstanceOf(DemoApiService);
         expect(apiServices.versionService).toBeInstanceOf(DemoApiService);
         expect(apiServices.workTrackingSystemService).toBeInstanceOf(DemoApiService);
+        expect(apiServices.updateSubscriptionService).toBeInstanceOf(DemoApiService);
     });
 });

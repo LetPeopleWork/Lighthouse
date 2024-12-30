@@ -5,37 +5,32 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.Update
 {
-    public class TeamUpdateService : ITeamUpdateService
+    public class TeamUpdateService : UpdateServiceBase, ITeamUpdateService
     {
         private readonly ILogger<TeamUpdateService> logger;
-        private readonly IUpdateQueueService updateQueueService;
 
-        public TeamUpdateService(ILogger<TeamUpdateService> logger, IUpdateQueueService updateQueueService)
+        public TeamUpdateService(ILogger<TeamUpdateService> logger, IUpdateQueueService updateQueueService) : base(updateQueueService, UpdateType.Team)
         {
             this.logger = logger;
-            this.updateQueueService = updateQueueService;
         }
 
-        public void TriggerUpdate(int teamId)
+        protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
-            updateQueueService.EnqueueUpdate(UpdateType.Team, teamId, async serviceProvider =>
+            var teamRepository = serviceProvider.GetRequiredService<IRepository<Team>>();
+            var team = teamRepository.GetById(id);
+
+            if (team == null)
             {
-                var teamRepository = serviceProvider.GetRequiredService<IRepository<Team>>();
-                var team = teamRepository.GetById(teamId);
-                
-                if (team == null)
-                {
-                    return;
-                }
+                return;
+            }
 
-                var workItemServiceFactory = serviceProvider.GetRequiredService<IWorkItemServiceFactory>();
-                var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var workItemServiceFactory = serviceProvider.GetRequiredService<IWorkItemServiceFactory>();
+            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-                await UpdateThroughputForTeam(team, workItemService);
-                await UpdateFeatureWipForTeam(team, workItemService);
+            await UpdateThroughputForTeam(team, workItemService);
+            await UpdateFeatureWipForTeam(team, workItemService);
 
-                await teamRepository.Save();
-            });
+            await teamRepository.Save();
         }
 
         private async Task UpdateFeatureWipForTeam(Team team, IWorkItemService workItemService)

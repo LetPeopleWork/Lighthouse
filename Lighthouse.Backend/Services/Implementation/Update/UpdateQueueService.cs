@@ -41,30 +41,39 @@
             var updateStatus = new UpdateStatus { UpdateType = updateType, Id = id, Status = UpdateProgress.Queued };
             updateStatuses[updateKey] = updateStatus;
 
-            queue.Writer.TryWrite(async () =>
+            _ = NotifyListeners(updateKey, updateStatus);
+
+            queue.Writer.TryWrite(ExecuteUpdateAsync(updateType, id, updateTask, updateKey, updateStatus));
+        }
+
+        private Func<Task> ExecuteUpdateAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, UpdateKey updateKey, UpdateStatus updateStatus)
+        {
+            return async () =>
             {
                 updateStatus.Status = UpdateProgress.InProgress;
 
                 try
                 {
-                    using (var scope = serviceScopeFactory.CreateScope())
-                    {
-                        await updateTask(scope.ServiceProvider);
-                    }
-
+                    await ExecuteUpdateTask(updateTask);
                     updateStatus.Status = UpdateProgress.Completed;
                 }
                 catch (Exception ex)
                 {
-                    updateStatus.Status = UpdateProgress.Completed;
+                    updateStatus.Status = UpdateProgress.Failed;
                     logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
                 }
 
                 updateStatuses.TryRemove(updateKey, out _);
-                await hubContext.Clients.Group(updateKey.ToString()).SendAsync("UpdateStatusChanged", updateStatus);
-            });
+                await NotifyListeners(updateKey, updateStatus);
+            };
+        }
 
-            hubContext.Clients.Group(updateKey.ToString()).SendAsync("UpdateStatusChanged", updateStatus);
+        private async Task ExecuteUpdateTask(Func<IServiceProvider, Task> updateTask)
+        {
+            using (var scope = serviceScopeFactory.CreateScope())
+            {
+                await updateTask(scope.ServiceProvider);
+            }
         }
 
         private void StartProcessingQueue()
@@ -84,6 +93,10 @@
                 }
             });
         }
-    }
 
+        private async Task NotifyListeners(UpdateKey updateKey, UpdateStatus status)
+        {
+            await hubContext.Clients.Group(updateKey.ToString()).SendAsync(updateKey.ToString(), status);
+        }
+    }
 }

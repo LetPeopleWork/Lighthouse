@@ -7,7 +7,7 @@ interface LoadingAnimationProps {
     children: React.ReactNode;
 }
 
-const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ isLoading, hasError, children }) => {
+const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ isLoading, hasError = false, children }) => {
 
     if (hasError) {
         return <div data-testid="loading-animation-error-message">Error loading data. Please try again later.</div>;

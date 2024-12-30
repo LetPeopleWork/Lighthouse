@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
 
 namespace Lighthouse.Backend.Services.Implementation.Update
 {
