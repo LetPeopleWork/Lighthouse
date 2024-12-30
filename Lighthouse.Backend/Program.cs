@@ -103,6 +103,16 @@ namespace Lighthouse.Backend
                 builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
 
                 builder.Services
+                     .AddCors(options =>
+                     {
+                         options.AddPolicy("AllowAll",
+                             builder =>
+                             {
+                                 builder.AllowAnyOrigin()
+                                        .AllowAnyMethod()
+                                        .AllowAnyHeader();
+                             });
+                     })
                     .AddControllers().AddJsonOptions(options =>
                     {
                         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -131,18 +141,9 @@ namespace Lighthouse.Backend
                 {
                     app.UseExceptionHandler("/Error");
                     app.UseHsts();
-
-                    app.UseDefaultFiles();
-                    app.UseStaticFiles();
-
-                    app.UseSpa(spa =>
-                    {
-                        spa.Options.SourcePath = "wwwroot";
-                        spa.Options.DefaultPage = "/index.html";
-                    });
                 }
-
-                app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
+                
+                app.UseCors("AllowAll");
 
                 app.UseSwagger(c =>
                 {
@@ -156,9 +157,20 @@ namespace Lighthouse.Backend
 
                 app.UseHttpsRedirection();
 
+                app.UseDefaultFiles();
+                app.UseStaticFiles();
+
                 app.UseRouting();
                 app.UseAuthorization();
+
                 app.MapControllers();
+                app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
+
+                app.UseSpa(spa =>
+                {
+                    spa.Options.SourcePath = "wwwroot";
+                    spa.Options.DefaultPage = "/index.html";
+                });
 
                 app.Run();
             }
