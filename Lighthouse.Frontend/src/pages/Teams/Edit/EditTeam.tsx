@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ITeamSettings } from '../../../models/Team/TeamSettings';
 import ModifyTeamSettings from '../../../components/Common/Team/ModifyTeamSettings';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
@@ -7,7 +7,8 @@ import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 const EditTeamPage: React.FC = () => {
     const { id } = useParams<{ id?: string }>();
     const isNewTeam = id === undefined;
-
+    const navigate = useNavigate();
+    
     const pageTitle = isNewTeam ? "Create Team" : "Update Team";
     const { settingsService, teamService, workTrackingSystemService } = useContext(ApiServiceContext);
 
@@ -23,6 +24,7 @@ const EditTeamPage: React.FC = () => {
         }
 
         await teamService.updateTeamData(updatedSettings.id);
+        navigate(`/teams/${updatedSettings.id}`);
     };
 
     const getTeamSettings = async () => {
