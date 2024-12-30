@@ -73,9 +73,7 @@ async function generateTestData(request: APIRequestContext, updateTeams: boolean
     const team3 = await createTeam(request, generateRandomName(), jiraConnection.id, 'project = "LGHTHSDMO" AND labels = "Lagunitas"', ['Story', 'Bug'], jiraStates);
 
     if (updateTeams) {
-        await updateTeam(request, team1.id);
-        await updateTeam(request, team2.id);
-        await updateTeam(request, team3.id);
+        await updateTeamData(request, [team1, team2, team3]);
     }
 
     const project1 = await createProject(request, generateRandomName(), [team1], adoConnection.id, '[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"', ["Epic"], adoStates);
@@ -129,3 +127,26 @@ export const testWithData = test.extend<LighthouseWithDataFixtures>({
 });
 
 export { expect } from '@playwright/test';
+
+async function updateTeamData(request: APIRequestContext, teams: ModelIdentifier[]): Promise<void> {
+    const updateTime = new Date(new Date().toUTCString());
+
+    for (const team of teams) {
+        await updateTeam(request, team.id);
+    }
+
+    const updatedTeams: ModelIdentifier[] = [];
+
+    while (updatedTeams.length < teams.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        for (const team of teams) {
+            const response = await request.get(`/api/Teams/${team.id}`);
+            const updatedTeam = await response.json();
+
+            if (new Date(updatedTeam.lastUpdated).getUTCMilliseconds() > updateTime.getUTCMilliseconds()) {
+                updatedTeams.push(updatedTeam);
+            }
+        }
+    }
+}

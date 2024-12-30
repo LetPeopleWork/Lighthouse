@@ -43,7 +43,6 @@ import { expectDateToBeRecent } from '../../helpers/dates';
             });
 
             await test.step("Expected Features were loaded", async () => {
-
                 for (const feature of expectedFeatures) {
                     const featureLink = projectDetailPage.getFeatureLink(feature.name);
                     await expect(featureLink).toBeVisible();
