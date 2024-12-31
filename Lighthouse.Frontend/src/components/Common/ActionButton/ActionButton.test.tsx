@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import ActionButton from './ActionButton';
 
@@ -46,5 +46,20 @@ describe('ActionButton', () => {
     it('displays the correct button text', () => {
         render(<ActionButton buttonText="Submit" onClickHandler={vi.fn()} />);
         expect(screen.getByText('Submit')).toBeInTheDocument();
+    });
+
+    it('sets internalIsWaiting state correctly', async () => {
+        const mockOnClickHandler = vi.fn((): Promise<void> => new Promise(resolve => setTimeout(resolve, 500)));
+
+        render(<ActionButton buttonText="Click Me" onClickHandler={mockOnClickHandler} />);
+
+        const button = screen.getByText('Click Me');
+        fireEvent.click(button);
+
+        // Check if CircularProgress is rendered (indicating internalIsWaiting is true)
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+
+        // Wait for the internalIsWaiting state to be set to false
+        await waitFor(() => expect(screen.queryByRole('progressbar')).not.toBeInTheDocument());
     });
 });

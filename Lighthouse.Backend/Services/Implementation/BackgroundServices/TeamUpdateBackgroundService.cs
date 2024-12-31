@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 {
@@ -21,7 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             }
         }
 
-        protected override async Task UpdateAllItems(CancellationToken stoppingToken)
+        protected override Task UpdateAllItems(CancellationToken stoppingToken)
         {
             logger.LogInformation($"Starting Update for all Teams");
 
@@ -32,14 +33,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 foreach (var team in teamRepository.GetAll().ToList())
                 {
                     logger.LogInformation("Checking last update for team {TeamName}", team.Name);
-                    await UpdateTeam(scope, teamRepository, team);
+                    UpdateTeam(scope, team);
                 }
             }
 
             logger.LogInformation("Done Updating all Teams");
+            return Task.CompletedTask;
         }
 
-        private async Task UpdateTeam(IServiceScope scope, IRepository<Team> teamRepository, Team team)
+        private void UpdateTeam(IServiceScope scope, Team team)
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - team.TeamUpdateTime).TotalMinutes;
 
@@ -50,8 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             if (minutesSinceLastUpdate >= refreshSettings.RefreshAfter)
             {
                 var teamUpdateService = GetServiceFromServiceScope<ITeamUpdateService>(scope);
-                await teamUpdateService.UpdateTeam(team).ConfigureAwait(true);
-                await teamRepository.Save();
+                teamUpdateService.TriggerUpdate(team.Id);
             }
         }
     }

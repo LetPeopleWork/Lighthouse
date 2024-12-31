@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,17 +12,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
     public class TeamUpdateBackgroundServiceTest
     {
         private Mock<IRepository<Team>> teamRepoMock;
-        private Mock<ITeamUpdateService> throughputServiceMock;
+        private Mock<ITeamUpdateService> teamUpdateServiceMock;
         private Mock<IAppSettingService> appSettingServiceMock;
 
         private Mock<IServiceScopeFactory> serviceScopeFactoryMock;
         private Mock<ILogger<TeamUpdateBackgroundService>> loggerMock;
 
+        private int idCounter = 0;
+
         [SetUp]
         public void Setup()
         {
             teamRepoMock = new Mock<IRepository<Team>>();
-            throughputServiceMock = new Mock<ITeamUpdateService>();
+            teamUpdateServiceMock = new Mock<ITeamUpdateService>();
             appSettingServiceMock = new Mock<IAppSettingService>();
 
             serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
@@ -31,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
             scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IRepository<Team>))).Returns(teamRepoMock.Object);
-            scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(ITeamUpdateService))).Returns(throughputServiceMock.Object);
+            scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(ITeamUpdateService))).Returns(teamUpdateServiceMock.Object);
             scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IAppSettingService))).Returns(appSettingServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
@@ -47,8 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateTeam(team));
-            teamRepoMock.Verify(x => x.Save());
+            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(team.Id));
         }
 
         [Test]
@@ -62,9 +64,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateTeam(team1));
-            throughputServiceMock.Verify(x => x.UpdateTeam(team2));
-            teamRepoMock.Verify(x => x.Save(), Times.Exactly(2));
+            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(team1.Id));
+            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(team2.Id));
         }
 
         [Test]
@@ -81,9 +82,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             await subject.StartAsync(CancellationToken.None);
 
-            throughputServiceMock.Verify(x => x.UpdateTeam(team1));
-            throughputServiceMock.Verify(x => x.UpdateTeam(team2), Times.Never);
-            teamRepoMock.Verify(x => x.Save(), Times.Exactly(1));
+            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(team1.Id));
+            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(team2.Id), Times.Never);
         }
 
         private void SetupTeams(IEnumerable<Team> teams)
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
         private Team CreateTeam(DateTime lastThroughputUpdateTime)
         {
-            return new Team { TeamUpdateTime = lastThroughputUpdateTime };
+            return new Team { TeamUpdateTime = lastThroughputUpdateTime, Id = idCounter++ };
         }
 
         private void SetupRefreshSettings(int interval, int refreshAfter)

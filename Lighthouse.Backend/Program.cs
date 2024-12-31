@@ -14,6 +14,9 @@ using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
 using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Models.Preview;
+using Lighthouse.Backend.Services.Implementation.Update;
+using Lighthouse.Backend.Services.Interfaces.Update;
+using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend
 {
@@ -73,7 +76,7 @@ namespace Lighthouse.Backend
                 // Services
                 builder.Services.AddScoped<IRandomNumberService, RandomNumberService>();
                 builder.Services.AddScoped<IMonteCarloService, MonteCarloService>();
-                builder.Services.AddScoped<ITeamUpdateService, Services.Implementation.TeamUpdateService>();
+                builder.Services.AddScoped<ITeamUpdateService, TeamUpdateService>();
                 builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
                 builder.Services.AddScoped<ILexoRankService, LexoRankService>();
                 builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
@@ -95,18 +98,21 @@ namespace Lighthouse.Backend
                 builder.Services.AddSingleton<ICryptoService, CryptoService>();
                 builder.Services.AddSingleton<IGitHubService, GitHubService>();
 
-                // Add CORS services
+                var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
+                builder.Services.AddSingleton(updateStatuses);
+                builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
+
                 builder.Services
-                    .AddCors(options =>
-                    {
-                        options.AddPolicy("AllowAll",
-                            builder =>
-                            {
-                                builder.AllowAnyOrigin()
-                                       .AllowAnyMethod()
-                                       .AllowAnyHeader();
-                            });
-                    })
+                     .AddCors(options =>
+                     {
+                         options.AddPolicy("AllowAll",
+                             builder =>
+                             {
+                                 builder.AllowAnyOrigin()
+                                        .AllowAnyMethod()
+                                        .AllowAnyHeader();
+                             });
+                     })
                     .AddControllers().AddJsonOptions(options =>
                     {
                         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -116,12 +122,19 @@ namespace Lighthouse.Backend
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen();
 
+                // Add SignalR
+                builder.Services.AddSignalR()
+                     .AddJsonProtocol(options =>
+                     {
+                         options.PayloadSerializerOptions.Converters
+                            .Add(new JsonStringEnumConverter());
+                     });
+
                 var app = builder.Build();
 
                 // Configure the HTTP request pipeline.
                 if (app.Environment.IsDevelopment())
                 {
-                    app.UseCors("AllowAll");
                     app.UseDeveloperExceptionPage();
                 }
                 else
@@ -129,7 +142,8 @@ namespace Lighthouse.Backend
                     app.UseExceptionHandler("/Error");
                     app.UseHsts();
                 }
-
+                
+                app.UseCors("AllowAll");
 
                 app.UseSwagger(c =>
                 {
@@ -147,10 +161,10 @@ namespace Lighthouse.Backend
                 app.UseStaticFiles();
 
                 app.UseRouting();
-
                 app.UseAuthorization();
 
                 app.MapControllers();
+                app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
 
                 app.UseSpa(spa =>
                 {

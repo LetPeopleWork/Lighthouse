@@ -1,26 +1,36 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Services.Implementation.Update
 {
-    public class TeamUpdateService : ITeamUpdateService
+    public class TeamUpdateService : UpdateServiceBase, ITeamUpdateService
     {
-        private readonly IWorkItemServiceFactory workItemServiceFactory;
         private readonly ILogger<TeamUpdateService> logger;
 
-        public TeamUpdateService(IWorkItemServiceFactory workItemServiceFactory, ILogger<TeamUpdateService> logger)
+        public TeamUpdateService(ILogger<TeamUpdateService> logger, IUpdateQueueService updateQueueService) : base(updateQueueService, UpdateType.Team)
         {
-            this.workItemServiceFactory = workItemServiceFactory;
             this.logger = logger;
         }
 
-        public async Task UpdateTeam(Team team)
+        protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
+            var teamRepository = serviceProvider.GetRequiredService<IRepository<Team>>();
+            var team = teamRepository.GetById(id);
+
+            if (team == null)
+            {
+                return;
+            }
+
+            var workItemServiceFactory = serviceProvider.GetRequiredService<IWorkItemServiceFactory>();
             var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             await UpdateThroughputForTeam(team, workItemService);
             await UpdateFeatureWipForTeam(team, workItemService);
+
+            await teamRepository.Save();
         }
 
         private async Task UpdateFeatureWipForTeam(Team team, IWorkItemService workItemService)

@@ -9,6 +9,7 @@ import { IWorkTrackingSystemService, WorkTrackingSystemService } from "./WorkTra
 import { DemoApiService } from "./DemoApiService";
 import { ChartService, IChartService } from "./ChartService";
 import { IPreviewFeatureService, PreviewFeatureService } from "./PreviewFeatureService";
+import { IUpdateSubscriptionService, UpdateSubscriptionService } from "../UpdateSubscriptionService";
 
 export interface IApiServiceContext {
     forecastService: IForecastService;
@@ -20,7 +21,13 @@ export interface IApiServiceContext {
     workTrackingSystemService: IWorkTrackingSystemService;
     chartService: IChartService;
     previewFeatureService: IPreviewFeatureService;
+    updateSubscriptionService: IUpdateSubscriptionService;
 }
+
+const initializeUpdateSubscriptionService = async () => {
+    await defaultServices.updateSubscriptionService.initialize();
+}
+
 
 const defaultServices: IApiServiceContext = {
     forecastService: new ForecastService(),
@@ -32,6 +39,7 @@ const defaultServices: IApiServiceContext = {
     workTrackingSystemService: new WorkTrackingSystemService(),
     chartService: new ChartService(),
     previewFeatureService: new PreviewFeatureService(),
+    updateSubscriptionService: new UpdateSubscriptionService()
 };
 
 const useDelay : boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
@@ -47,6 +55,7 @@ const demoServices: IApiServiceContext = {
     workTrackingSystemService: demoApiService,
     chartService: demoApiService,
     previewFeatureService: demoApiService,
+    updateSubscriptionService: demoApiService,
 }
 
 export function getApiServices(): IApiServiceContext {
@@ -54,6 +63,8 @@ export function getApiServices(): IApiServiceContext {
     if (isDemoMode) {
         return demoServices;
     }
+
+    initializeUpdateSubscriptionService();
 
     return defaultServices;
 }

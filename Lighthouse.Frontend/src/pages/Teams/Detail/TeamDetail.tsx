@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Team } from '../../../models/Team/Team';
 import LoadingAnimation from '../../../components/Common/LoadingAnimation/LoadingAnimation';
 import dayjs from 'dayjs';
@@ -15,17 +15,17 @@ import TutorialButton from '../../../components/App/LetPeopleWork/Tutorial/Tutor
 import TeamDetailTutorial from '../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamDetailTutorial';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 import LocalDateTimeDisplay from '../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay';
+import { IUpdateStatus } from '../../../services/UpdateSubscriptionService';
 
 const TeamDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const [searchParams] = useSearchParams();
     const teamId = Number(id);
 
     const [team, setTeam] = useState<Team>();
 
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [hasError, setHasError] = useState<boolean>(false);
-    const [triggerUpdate, setTriggerUpdate] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
 
     const [remainingItems, setRemainingItems] = useState<number>(10);
     const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(dayjs().add(2, 'week'));
@@ -33,24 +33,16 @@ const TeamDetail: React.FC = () => {
 
     const navigate = useNavigate();
 
-    const { teamService, forecastService } = useContext(ApiServiceContext);
+    const { teamService, forecastService, updateSubscriptionService } = useContext(ApiServiceContext);
 
     const fetchTeam = async () => {
-        try {
-            setIsLoading(true);
-            const teamData = await teamService.getTeam(teamId);
+        const teamData = await teamService.getTeam(teamId);
 
-            if (teamData) {
-                setTeam(teamData);
-            } else {
-                setHasError(true);
-            }
-
-            setIsLoading(false);
-        } catch (error) {
-            console.error('Error fetching team data:', error);
-            setHasError(true);
+        if (teamData) {
+            setTeam(teamData);
         }
+
+        setIsLoading(false);
     };
 
     const onUpdateTeamData = async () => {
@@ -58,17 +50,8 @@ const TeamDetail: React.FC = () => {
             return;
         }
 
-        setTriggerUpdate(false);
-
-        try {
-            const updatedTeam = await teamService.updateTeamData(team.id);
-            if (updatedTeam) {
-                setTeam(updatedTeam);
-            }
-        } catch (error) {
-            console.error('Error updating throughput:', error);
-            setHasError(true);
-        }
+        setIsTeamUpdating(true);
+        await teamService.updateTeamData(team.id);
     };
 
     const onRunManualForecast = async () => {
@@ -88,19 +71,47 @@ const TeamDetail: React.FC = () => {
         navigate(`/teams/edit/${id}`);
     }
 
-    useEffect(() => {
-        if (team) {
-            if (searchParams.get('triggerUpdate') === 'true') {
-                setTriggerUpdate(true);
+    const setUpTeamUpdateSubscription = async () => {
+        const handleTeamUpdate = (update: IUpdateStatus) => {
+            if (update.status == 'Completed') {
+                // Team was updated - reload data!
+                setIsTeamUpdating(false);
+                fetchTeam();
+            }
+            else {
+                // Team Update is in progress - update Button
+                updateTeamRefreshButton(update);
+            }
+        };
+
+        const updateTeamRefreshButton = (update: IUpdateStatus | null) => {
+            if (update) {
+                const isUpdating = update.status == 'Queued' || update.status == 'InProgress';
+                setIsTeamUpdating(isUpdating);
             }
         }
-        else{
+
+        await updateSubscriptionService.subscribeToTeamUpdates(teamId, handleTeamUpdate);
+
+        const updateStatus = await updateSubscriptionService.getUpdateStatus('Team', teamId);
+        updateTeamRefreshButton(updateStatus);
+    }
+
+    useEffect(() => {
+        if (team) {
+            setUpTeamUpdateSubscription();
+        }
+        else {
             fetchTeam();
         }
+
+        return () => {
+            updateSubscriptionService.unsubscribeFromTeamUpdates(teamId);
+        };
     }, [team]);
 
     return (
-        <LoadingAnimation hasError={hasError} isLoading={isLoading}>
+        <LoadingAnimation hasError={false} isLoading={isLoading}>
             <Container maxWidth={false}>
                 {team == null ? (<></>) : (
                     <Grid container spacing={3}>
@@ -120,7 +131,7 @@ const TeamDetail: React.FC = () => {
                                 onClickHandler={onUpdateTeamData}
                                 buttonText="Update Team Data"
                                 maxHeight='40px'
-                                triggerUpdate={triggerUpdate}
+                                externalIsWaiting={isTeamUpdating}
                             />
                             <Button variant="contained" onClick={onEditTeam} sx={{ maxHeight: '40px' }}>
                                 Edit Team

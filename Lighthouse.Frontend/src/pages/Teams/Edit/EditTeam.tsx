@@ -7,10 +7,9 @@ import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 const EditTeamPage: React.FC = () => {
     const { id } = useParams<{ id?: string }>();
     const isNewTeam = id === undefined;
-
-    const pageTitle = isNewTeam ? "Create Team" : "Update Team";
-
     const navigate = useNavigate();
+    
+    const pageTitle = isNewTeam ? "Create Team" : "Update Team";
     const { settingsService, teamService, workTrackingSystemService } = useContext(ApiServiceContext);
 
     const validateTeamSettings = async (updatedTeamSettings: ITeamSettings) => {
@@ -24,7 +23,8 @@ const EditTeamPage: React.FC = () => {
             updatedSettings = await teamService.updateTeam(updatedSettings);
         }
 
-        navigate(`/teams/${updatedSettings.id}?triggerUpdate=true`);
+        await teamService.updateTeamData(updatedSettings.id);
+        navigate(`/teams/${updatedSettings.id}`);
     };
 
     const getTeamSettings = async () => {

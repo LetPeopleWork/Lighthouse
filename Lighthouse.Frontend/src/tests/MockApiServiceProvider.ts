@@ -1,5 +1,6 @@
 import { IApiServiceContext } from '../services/Api/ApiServiceContext';
 import { IChartService } from '../services/Api/ChartService';
+import { DemoApiService } from '../services/Api/DemoApiService';
 import { IPreviewFeatureService } from '../services/Api/PreviewFeatureService';
 import { IProjectService } from '../services/Api/ProjectService';
 import { ISettingsService } from '../services/Api/SettingsService';
@@ -17,6 +18,7 @@ export const createMockApiServiceContext = (overrides: Partial<IApiServiceContex
         workTrackingSystemService: null as unknown as IApiServiceContext['workTrackingSystemService'],
         chartService: null as unknown as IApiServiceContext['chartService'],
         previewFeatureService: null as unknown as IApiServiceContext['previewFeatureService'],
+        updateSubscriptionService: new DemoApiService(false, false),
         ...overrides,
     };
 };
@@ -63,7 +65,7 @@ export const createMockTeamService = (): ITeamService => {
 
 export const createMockWorkTrackingSystemService = (): IWorkTrackingSystemService => {
     return {
-        getConfiguredWorkTrackingSystems: vi.fn(),
+        getConfiguredWorkTrackingSystems: vi.fn().mockResolvedValue([{ id: 1 }]),
         getWorkTrackingSystems: vi.fn(),
         addNewWorkTrackingSystemConnection: vi.fn(),
         updateWorkTrackingSystemConnection: vi.fn(),

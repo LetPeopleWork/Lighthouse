@@ -10,7 +10,7 @@ export interface ITeamService {
     validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean>;
     updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
     createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
-    updateTeamData(teamId: number): Promise<Team | null>;
+    updateTeamData(teamId: number): Promise<void>;
 }
 
 export class TeamService extends BaseApiService implements ITeamService {
@@ -63,10 +63,9 @@ export class TeamService extends BaseApiService implements ITeamService {
         });
     }
 
-    async updateTeamData(teamId: number): Promise<Team | null> {
-        return this.withErrorHandling(async () => {
-            const response = await this.apiService.post<ITeam>(`/teams/${teamId}`);
-            return BaseApiService.deserializeTeam(response.data);
+    async updateTeamData(teamId: number): Promise<void> {
+        this.withErrorHandling(async () => {
+            await this.apiService.post<ITeam>(`/teams/${teamId}`);
         });
     }
 

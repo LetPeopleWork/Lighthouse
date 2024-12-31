@@ -26,13 +26,16 @@ import { BurndownEntry, ILighthouseChartData, ILighthouseChartFeatureData, Light
 import { IPreviewFeatureService } from './PreviewFeatureService';
 import { PreviewFeature } from '../../models/Preview/PreviewFeature';
 import { IDataRetentionSettings } from '../../models/AppSettings/DataRetentionSettings';
+import { IUpdateStatus, IUpdateSubscriptionService, UpdateProgress, UpdateType } from '../UpdateSubscriptionService';
 
-export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService, IChartService, IPreviewFeatureService {
+export class DemoApiService implements IForecastService, ILogService, IProjectService, ISettingsService, ITeamService, IVersionService, IWorkTrackingSystemService, IChartService, IPreviewFeatureService, IUpdateSubscriptionService {
     private readonly useDelay: boolean;
     private readonly throwError: boolean;
     private readonly lastUpdated = new Date("06/23/2024 12:41");
     private readonly dayMultiplier: number = 24 * 60 * 60 * 1000;
     private readonly today: number = Date.now();
+
+    private subscribers: Map<string, (status: IUpdateStatus) => void> = new Map();
 
     private milestones = [
         new Milestone(0, "Milestone 1", new Date(this.today + 14 * this.dayMultiplier)),
@@ -124,6 +127,69 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         }
     }
 
+    async initialize(): Promise<void> {
+        await this.delay();
+        console.log("Initialized Update Subscription Service");
+    }
+
+    private getKey(id: number, type: UpdateType): string {
+        return `${id}-${type}`;
+    }
+
+    async notifyAboutUpdate(updateType: UpdateType, id: number, progress: UpdateProgress): Promise<void> {
+        const key = this.getKey(id, updateType);
+        const callback = this.subscribers.get(key);
+
+        const status = {
+            type: updateType,
+            id: id,
+            status: progress
+        };
+
+        if (callback) {
+            callback(status);
+        }
+    }
+
+    async getUpdateStatus(updateType: UpdateType, id: number): Promise<IUpdateStatus | null> {
+        console.log(`Getting update Status for ${updateType} and ID ${id}`);
+        return null;
+    }
+
+    async subscribeToUpdates(id: number, type: UpdateType, callback: (status: IUpdateStatus) => void): Promise<void> {
+        const key = this.getKey(id, type);
+        this.subscribers.set(key, callback);
+    }
+
+    async unSubscribeFromUpdates(id: number, type: UpdateType): Promise<void> {
+        const key = this.getKey(id, type);
+        this.subscribers.delete(key);
+    }
+
+    async subscribeToTeamUpdates(teamId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
+        await this.subscribeToUpdates(teamId, 'Team', callback);
+    }
+
+    async unsubscribeFromTeamUpdates(teamId: number): Promise<void> {
+        await this.unSubscribeFromUpdates(teamId, 'Team');
+    }
+
+    async subscribeToProjectUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
+        await this.subscribeToUpdates(projectId, 'Project', callback);
+    }
+
+    async unsubscribeFromProjectUpdates(projectId: number): Promise<void> {
+        await this.unSubscribeFromUpdates(projectId, 'Project');
+    }
+
+    async subscribeToForecastUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
+        await this.subscribeToUpdates(projectId, 'Forecast', callback);
+    }
+
+    async unsubscribeFromForecastUpdates(projectId: number): Promise<void> {
+        await this.unSubscribeFromUpdates(projectId, 'Forecast');
+    }
+
     async getAllFeatures(): Promise<PreviewFeature[]> {
         await this.delay();
 
@@ -148,26 +214,21 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         }
     }
 
-    async updateTeamData(teamId: number): Promise<Team | null> {
+    async updateTeamData(teamId: number): Promise<void> {
         console.log(`Updating Throughput for Team ${teamId}`);
 
+        this.notifyAboutUpdate('Team', teamId, 'Queued');
         await this.delay();
 
         const team = await this.getTeam(teamId);
+
+        await this.delay();
         if (team) {
-            return new Team(
-                team.name,
-                team.id,
-                [...team.projects],
-                [...team.features],
-                team.featureWip,
-                [...team.featuresInProgress],
-                new Date(),
-                team.throughput
-            );
+            team.lastUpdated = new Date();
+            await this.delay();
         }
 
-        return null;
+        this.notifyAboutUpdate('Team', teamId, 'Completed');
     }
 
     async updateForecast(teamId: number): Promise<void> {
