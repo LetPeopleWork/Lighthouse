@@ -9,6 +9,7 @@ import { expectDateToBeRecent } from '../../helpers/dates';
             { name: 'Speedy note-taking', inProgress: true, defaultSize: false, involvedTeams: [0], },
             { name: 'Instant status monitoring for real-time insights', inProgress: false, defaultSize: false, involvedTeams: [1], },
             { name: 'Lightweight chat interface', inProgress: false, defaultSize: false, involvedTeams: [0], },
+            { name: 'Intuitive content filtering', inProgress: false, defaultSize: true, involvedTeams: [0, 1], },
         ]
     },
     {

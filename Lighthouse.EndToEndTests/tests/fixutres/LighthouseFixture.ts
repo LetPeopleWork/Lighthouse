@@ -138,8 +138,6 @@ async function updateTeamData(request: APIRequestContext, teams: ModelIdentifier
     const updatedTeams: ModelIdentifier[] = [];
 
     while (updatedTeams.length < teams.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
         for (const team of teams) {
             const response = await request.get(`/api/Teams/${team.id}`);
             const updatedTeam = await response.json();
@@ -148,5 +146,10 @@ async function updateTeamData(request: APIRequestContext, teams: ModelIdentifier
                 updatedTeams.push(updatedTeam);
             }
         }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
+
+    // Wait for the team data to be updated
+    await new Promise(resolve => setTimeout(resolve, 1000));
 }
