@@ -19,7 +19,7 @@
     "@playwright/test": "*",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.10.2",
-    "@typescript-eslint/eslint-plugin": "^8.18.2",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.17.0",
     "cross-env": "^7.0.3",
     "eslint": "^9.17.0",
