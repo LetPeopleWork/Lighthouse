@@ -65,9 +65,9 @@ describe("RefreshSettingUpdater", () => {
         await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
 
         // Act
-        fireEvent.change(screen.getByLabelText("Interval (Minutes)"), { target: { value: '10' } });
-        fireEvent.change(screen.getByLabelText("Refresh After (Minutes)"), { target: { value: '20' } });
-        fireEvent.change(screen.getByLabelText("Start Delay (Minutes)"), { target: { value: '5' } });
+        fireEvent.change(await screen.findByLabelText("Interval (Minutes)"), { target: { value: '10' } });
+        fireEvent.change(await screen.findByLabelText("Refresh After (Minutes)"), { target: { value: '20' } });
+        fireEvent.change(await screen.findByLabelText("Start Delay (Minutes)"), { target: { value: '5' } });
 
         // Assert
         expect(screen.getByDisplayValue("10")).toBeInTheDocument();
