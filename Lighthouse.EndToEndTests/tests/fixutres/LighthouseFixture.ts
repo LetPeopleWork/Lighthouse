@@ -139,17 +139,16 @@ async function updateTeamData(request: APIRequestContext, teams: ModelIdentifier
 
     while (updatedTeams.length < teams.length) {
         for (const team of teams) {
-            const response = await request.get(`/api/Teams/${team.id}`);
-            const updatedTeam = await response.json();
+            if (!updatedTeams.some(t => t.id === team.id)) {
+                const response = await request.get(`/api/Teams/${team.id}`);
+                const updatedTeam = await response.json();
 
-            if (new Date(updatedTeam.lastUpdated).getUTCMilliseconds() > updateTime.getUTCMilliseconds()) {
-                updatedTeams.push(updatedTeam);
+                if (new Date(updatedTeam.lastUpdated).getUTCMilliseconds() > updateTime.getUTCMilliseconds() && updatedTeam.featuresInProgress.length > 0) {
+                    updatedTeams.push(updatedTeam);
+                }
             }
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
     }
-
-    // Wait for the team data to be updated
-    await new Promise(resolve => setTimeout(resolve, 1000));
 }
