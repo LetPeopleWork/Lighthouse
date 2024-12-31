@@ -91,9 +91,9 @@ describe("RefreshSettingUpdater", () => {
         await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
 
         // Act: Set new values in the input fields
-        fireEvent.change(screen.getByLabelText("Interval (Minutes)"), { target: { value: updatedData.interval } });
-        fireEvent.change(screen.getByLabelText("Refresh After (Minutes)"), { target: { value: updatedData.refreshAfter } });
-        fireEvent.change(screen.getByLabelText("Start Delay (Minutes)"), { target: { value: updatedData.startDelay } });
+        fireEvent.change(await screen.findByLabelText("Interval (Minutes)"), { target: { value: updatedData.interval } });
+        fireEvent.change(await screen.findByLabelText("Refresh After (Minutes)"), { target: { value: updatedData.refreshAfter } });
+        fireEvent.change(await screen.findByLabelText("Start Delay (Minutes)"), { target: { value: updatedData.startDelay } });
 
         // Click the update button
         fireEvent.click(screen.getByText(/Update test Settings/));
