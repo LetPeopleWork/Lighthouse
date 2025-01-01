@@ -458,7 +458,7 @@ jobs:
 
       - name: Remove Kestrel HTTPS endpoint
         run: |
-          jq 'del(.Kestrel.Endpoints.Https)' Lighthouse.Backend/appsettings.json > tmp.$$.json && mv tmp.$$.json Lighthouse.Backend/appsettings.json
+          jq 'del(.Kestrel.Endpoints.Https)' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
         working-directory: ./Lighthouse.Backend
 
       - name: publish app-service
