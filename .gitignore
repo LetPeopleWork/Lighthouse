@@ -406,3 +406,5 @@ Lighthouse.Frontend/sonar-report.xml
 Lighthouse.Frontend/coverage/*
 /Lighthouse.Backend/wwwroot/index.html
 .idea/*
+
+!/Lighthouse.Backend/certs/LighthouseCert.pfx

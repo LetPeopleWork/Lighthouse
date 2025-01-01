@@ -17,6 +17,7 @@ using Lighthouse.Backend.Models.Preview;
 using Lighthouse.Backend.Services.Implementation.Update;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Collections.Concurrent;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Lighthouse.Backend
 {
@@ -36,6 +37,24 @@ namespace Lighthouse.Backend
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture;
 
                 var builder = WebApplication.CreateBuilder(args);
+
+                // Load the default certificate
+                var defaultCertPath = Path.Combine(AppContext.BaseDirectory, "certs", "LighthouseCert.pfx");
+
+                // Configure Kestrel to use the certificate
+                builder.WebHost.ConfigureKestrel(options =>
+                {
+                    options.ConfigureHttpsDefaults(httpsOptions =>
+                    {
+                        var certPath = Environment.GetEnvironmentVariable("ASPNETCORE_Certificates__Path") ?? defaultCertPath;
+                        var certPassword = Environment.GetEnvironmentVariable("ASPNETCORE_Certificates__Password") ?? string.Empty;
+
+                        if (File.Exists(certPath))
+                        {
+                            httpsOptions.ServerCertificate = new X509Certificate2(certPath, certPassword);
+                        }
+                    });
+                });
 
                 var fileSystemService = new FileSystemService();
                 var configFileUpdater = new ConfigFileUpdater(fileSystemService);
@@ -143,7 +162,7 @@ namespace Lighthouse.Backend
                     app.UseExceptionHandler("/Error");
                     app.UseHsts();
                 }
-                
+
                 app.UseCors("AllowAll");
 
                 app.UseSwagger(c =>
