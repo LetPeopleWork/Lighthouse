@@ -21,19 +21,12 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
         protected override RefreshSettings GetRefreshSettings()
         {
-            using (var scope = CreateServiceScope())
-            {
-                return GetServiceFromServiceScope<IAppSettingService>(scope).GetForecastRefreshSettings();
-            }
+            throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
         }
 
         protected override bool ShouldUpdateEntity(Project entity, RefreshSettings refreshSettings)
         {
-            var minutesSinceLastUpdate = (DateTime.UtcNow - entity.ProjectUpdateTime).TotalMinutes;
-
-            Logger.LogInformation("Last Refresh of Work Items for Project {ProjectName} was {minutesSinceLastUpdate} Minutes ago - Forecast will be rerun", entity.Name, minutesSinceLastUpdate);
-
-            return true;
+            throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
         }
 
         public HowManyForecast HowMany(Throughput throughput, int days)

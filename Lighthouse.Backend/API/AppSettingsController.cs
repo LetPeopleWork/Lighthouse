@@ -44,20 +44,6 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
-        [HttpGet("ForecastRefresh")]
-        public ActionResult<RefreshSettings> GetForecastRefreshSettings()
-        {
-            var settings = appSettingService.GetForecastRefreshSettings();
-            return Ok(settings);
-        }
-
-        [HttpPut("ForecastRefresh")]
-        public async Task<ActionResult> UpdateForecastRefreshSettings(RefreshSettings refreshSettings)
-        {
-            await appSettingService.UpdateForecastRefreshSettings(refreshSettings);
-            return Ok();
-        }
-
         [HttpGet("DefaultTeamSettings")]
         public ActionResult<TeamSettingDto> GetDefaultTeamSettings()
         {

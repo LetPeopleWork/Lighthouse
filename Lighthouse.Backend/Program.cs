@@ -92,11 +92,9 @@ namespace Lighthouse.Backend
                 builder.Services.AddHostedService<WorkItemUpdateService>();
                 builder.Services.AddSingleton<IWorkItemUpdateService, WorkItemUpdateService>();
 
-                builder.Services.AddHostedService<ForecastUpdateService>();
-                builder.Services.AddSingleton<IForecastUpdateService, ForecastUpdateService>();
-                
                 builder.Services.AddHostedService<DataRetentionService>();
 
+                builder.Services.AddSingleton<IForecastUpdateService, ForecastUpdateService>();
                 builder.Services.AddSingleton<ICryptoService, CryptoService>();
                 builder.Services.AddSingleton<IGitHubService, GitHubService>();
                 builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();

@@ -11,9 +11,6 @@ const RefreshSettingsTab: React.FC = () => {
             <InputGroup title="Feature Refresh">
                 <RefreshSettingUpdater settingName="Feature" />
             </InputGroup>
-            <InputGroup title="Forecast Refresh" >
-                <RefreshSettingUpdater settingName="Forecast" />
-            </InputGroup>
         </>
     )
 }

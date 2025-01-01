@@ -4,7 +4,6 @@ import { PeriodicRefreshSettingType } from '../../models/settings/PeriodicRefres
 const settings: PeriodicRefreshSettingType[] = [
     'Throughput',
     'Feature',
-    'Forecast'
 ];
 
 settings.forEach((settingName) => {

@@ -13,10 +13,6 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Task UpdateFeatureRefreshSettings(RefreshSettings refreshSettings);
 
-        RefreshSettings GetForecastRefreshSettings();
-
-        Task UpdateForecastRefreshSettings(RefreshSettings refreshSettings);
-
         TeamSettingDto GetDefaultTeamSettings();
 
         Task UpdateDefaultTeamSettings(TeamSettingDto defaultTeamSetting);

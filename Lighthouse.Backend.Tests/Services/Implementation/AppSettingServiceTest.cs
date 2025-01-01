@@ -35,23 +35,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetForecastRefreshSettings_ReturnsCorrectSettings()
-        {
-            SetupRepositoryForKeys(AppSettingKeys.ForecastRefreshInterval, "20", AppSettingKeys.ForecastRefreshAfter, "120", AppSettingKeys.ForecastRefreshStartDelay, "3");
-
-            var service = CreateService();
-
-            var settings = service.GetForecastRefreshSettings();
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(settings.Interval, Is.EqualTo(20));
-                Assert.That(settings.RefreshAfter, Is.EqualTo(120));
-                Assert.That(settings.StartDelay, Is.EqualTo(3));
-            });
-        }
-
-        [Test]
         public void GetThroughputRefreshSettings_ReturnsCorrectSettings()
         {
             SetupRepositoryForKeys(AppSettingKeys.ThroughputRefreshInterval, "30", AppSettingKeys.ThroughputRefreshAfter, "180", AppSettingKeys.ThroughputRefreshStartDelay, "2");
@@ -81,21 +64,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.FeaturesRefreshInterval, "70");
             VerifyUpdateCalled(AppSettingKeys.FeaturesRefreshAfter, "370");
             VerifyUpdateCalled(AppSettingKeys.FeaturesRefreshStartDelay, "10");
-        }
-
-        [Test]
-        public async Task UpdateForecastRefreshSettings_UpdatesCorrectlyAsync()
-        {
-            SetupRepositoryForKeys(AppSettingKeys.ForecastRefreshInterval, "20", AppSettingKeys.ForecastRefreshAfter, "120", AppSettingKeys.ForecastRefreshStartDelay, "3");
-
-            var service = CreateService();
-
-            var newSettings = new RefreshSettings { Interval = 25, RefreshAfter = 130, StartDelay = 5 };
-            await service.UpdateForecastRefreshSettings(newSettings);
-
-            VerifyUpdateCalled(AppSettingKeys.ForecastRefreshInterval, "25");
-            VerifyUpdateCalled(AppSettingKeys.ForecastRefreshAfter, "130");
-            VerifyUpdateCalled(AppSettingKeys.ForecastRefreshStartDelay, "5");
         }
 
         [Test]

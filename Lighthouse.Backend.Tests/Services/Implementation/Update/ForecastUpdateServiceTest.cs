@@ -32,8 +32,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             SetupServiceProviderMock(projectRepositoryMock.Object);
             SetupServiceProviderMock(featureRepositoryMock.Object);
             SetupServiceProviderMock(featureHistoryServiceMock.Object);
-
-            SetupRefreshSettings(10);
         }
 
         [Test]
@@ -536,55 +534,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
         }
 
-        [Test]
-        public async Task ExecuteAsync_ReadyToRefresh_RefreshesAllProjectsAsync()
-        {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
-            SetupProjects([project]);
-
-            var subject = CreateSubjectWithPersistentThroughput();
-
-            await subject.StartAsync(CancellationToken.None);
-
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            featureRepositoryMock.Verify(x => x.Save());
-        }
-
-        [Test]
-        public async Task ExecuteAsync_MultipleProjects_RefreshesAllProjectsAsync()
-        {
-            var project1 = CreateProject(DateTime.Now.AddDays(-1));
-            var project2 = CreateProject(DateTime.Now.AddDays(-1));
-            SetupProjects([project1, project2]);
-
-            var subject = CreateSubjectWithPersistentThroughput();
-
-            await subject.StartAsync(CancellationToken.None);
-
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            featureRepositoryMock.Verify(x => x.Save(), Times.Exactly(2));
-        }
-
-        [Test]
-        public async Task ExecuteAsync_MultipleProjects_RefreshesIndependentOfLastUpdateTime()
-        {
-            var project1 = CreateProject(DateTime.Now.AddDays(-1));
-            var project2 = CreateProject(DateTime.Now);
-
-            SetupRefreshSettings(10, 360);
-
-            SetupProjects([project1, project2]);
-
-            var subject = CreateSubjectWithPersistentThroughput();
-
-            await subject.StartAsync(CancellationToken.None);
-
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            featureRepositoryMock.Verify(x => x.Save(), Times.Exactly(2));
-        }
-
         private void SetupFeatures(params Feature[] features)
         {
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
@@ -597,12 +546,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             {
                 projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
             }
-        }
-
-        private void SetupRefreshSettings(int interval, int refreshAfter = 0)
-        {
-            var refreshSettings = new RefreshSettings { Interval = interval, RefreshAfter = refreshAfter, StartDelay = 0 };
-            appSettingServiceMock.Setup(x => x.GetForecastRefreshSettings()).Returns(refreshSettings);
         }
 
         private ForecastUpdateService CreateSubjectWithPersistentThroughput()

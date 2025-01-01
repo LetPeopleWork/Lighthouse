@@ -22,14 +22,6 @@ namespace Lighthouse.Backend.Services.Implementation
                 AppSettingKeys.FeaturesRefreshStartDelay);
         }
 
-        public RefreshSettings GetForecastRefreshSettings()
-        {
-            return CreateRefreshSettings(
-               AppSettingKeys.ForecastRefreshInterval,
-               AppSettingKeys.ForecastRefreshAfter,
-               AppSettingKeys.ForecastRefreshStartDelay);
-        }
-
         public RefreshSettings GetThroughputRefreshSettings()
         {
             return CreateRefreshSettings(
@@ -41,11 +33,6 @@ namespace Lighthouse.Backend.Services.Implementation
         public async Task UpdateFeatureRefreshSettings(RefreshSettings refreshSettings)
         {
             await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.FeaturesRefreshInterval, AppSettingKeys.FeaturesRefreshAfter, AppSettingKeys.FeaturesRefreshStartDelay);
-        }
-
-        public async Task UpdateForecastRefreshSettings(RefreshSettings refreshSettings)
-        {
-            await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.ForecastRefreshInterval, AppSettingKeys.ForecastRefreshAfter, AppSettingKeys.ForecastRefreshStartDelay);
         }
 
         public async Task UpdateThroughputRefreshSettings(RefreshSettings refreshSettings)

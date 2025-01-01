@@ -90,42 +90,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetForecastRefreshSettings_ReturnsSettings()
-        {
-            var settings = new RefreshSettings();
-            appSettingServiceMock.Setup(x => x.GetForecastRefreshSettings()).Returns(settings);
-
-            var subject = CreateSubject();
-
-            var result = subject.GetForecastRefreshSettings();
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.EqualTo(settings));
-            });
-        }
-
-        [Test]
-        public async Task UpdateForecastRefreshSettings_UpdatesSettings()
-        {
-            var refreshSettings = new RefreshSettings();
-
-            var subject = CreateSubject();
-
-            var result = await subject.UpdateForecastRefreshSettings(refreshSettings);
-
-            Assert.Multiple(() =>
-            {
-                appSettingServiceMock.Verify(x => x.UpdateForecastRefreshSettings(refreshSettings), Times.Once);
-                Assert.That(result, Is.InstanceOf<OkResult>());
-            });
-        }
-
-        [Test]
         public void GetDefaultTeamSettings_ReturnsSettings()
         {
             var settings = new TeamSettingDto();

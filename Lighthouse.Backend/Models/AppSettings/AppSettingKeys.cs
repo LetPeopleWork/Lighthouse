@@ -14,12 +14,6 @@
 
         public const string FeaturesRefreshStartDelay = "PeriodicRefresh:Features:StartDelay";
 
-        public const string ForecastRefreshInterval = "PeriodicRefresh:Forecasts:Interval";
-        
-        public const string ForecastRefreshAfter = "PeriodicRefresh:Forecasts:RefreshAfter";
-
-        public const string ForecastRefreshStartDelay = "PeriodicRefresh:Forecasts:StartDelay";
-
         public const string TeamSettingName = "DefaultTeamSetting:Name";
 
         public const string TeamSettingHistory = "DefaultTeamSetting:History";

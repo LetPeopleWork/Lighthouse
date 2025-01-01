@@ -28,11 +28,9 @@ describe("RefreshSettingsTab", () => {
         // Check titles
         expect(screen.getByText("Throughput Refresh")).toBeInTheDocument();
         expect(screen.getByText("Feature Refresh")).toBeInTheDocument();
-        expect(screen.getByText("Forecast Refresh")).toBeInTheDocument();
 
         // Check RefreshSettingUpdater components
         expect(screen.getByTestId("refresh-setting-updater-Throughput")).toBeInTheDocument();
         expect(screen.getByTestId("refresh-setting-updater-Feature")).toBeInTheDocument();
-        expect(screen.getByTestId("refresh-setting-updater-Forecast")).toBeInTheDocument();
     });
 });
