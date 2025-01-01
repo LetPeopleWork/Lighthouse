@@ -174,20 +174,20 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         await this.unSubscribeFromUpdates(teamId, 'Team');
     }
 
-    async subscribeToProjectUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
-        await this.subscribeToUpdates(projectId, 'Project', callback);
+    async subscribeToFeatureUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
+        await this.subscribeToUpdates(projectId, 'Features', callback);
     }
 
-    async unsubscribeFromProjectUpdates(projectId: number): Promise<void> {
-        await this.unSubscribeFromUpdates(projectId, 'Project');
+    async unsubscribeFromFeatureUpdates(projectId: number): Promise<void> {
+        await this.unSubscribeFromUpdates(projectId, 'Features');
     }
 
     async subscribeToForecastUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
-        await this.subscribeToUpdates(projectId, 'Forecast', callback);
+        await this.subscribeToUpdates(projectId, 'Forecasts', callback);
     }
 
     async unsubscribeFromForecastUpdates(projectId: number): Promise<void> {
-        await this.unSubscribeFromUpdates(projectId, 'Forecast');
+        await this.unSubscribeFromUpdates(projectId, 'Forecasts');
     }
 
     async getAllFeatures(): Promise<PreviewFeature[]> {
@@ -349,23 +349,33 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         return project || null;
     }
 
-    async refreshFeaturesForProject(id: number): Promise<Project | null> {
+    async refreshFeaturesForProject(id: number): Promise<void> {
         console.log(`Refreshing Features for Project with id ${id}`)
+        this.notifyAboutUpdate('Features', id, 'Queued');
         await this.delay();
-        const projects = await this.getProjects();
-        const project = projects.find(project => project.id === id);
-        await this.delay();
-        return project || null;
+        const project = await this.getProject(id);
+        
+        if (project) {
+            project.lastUpdated = new Date();
+            await this.delay();
+        }
+
+        this.notifyAboutUpdate('Features', id, 'Completed');
     }
 
-    async refreshForecastsForProject(id: number): Promise<Project | null> {
+    async refreshForecastsForProject(id: number): Promise<void> {
         console.log(`Refreshing Forecasts for Project with id ${id}`)
+        this.notifyAboutUpdate('Forecasts', id, 'Queued');
         await this.delay();
-        const projects = await this.getProjects();
-        const project = projects.find(project => project.id === id);
+        
+        const project = await this.getProject(id);
+        
+        if (project) {
+            project.lastUpdated = new Date();
+            await this.delay();
+        }
 
-        await this.delay();
-        return project || null;
+        this.notifyAboutUpdate('Forecasts', id, 'Completed');
     }
 
     async deleteProject(id: number): Promise<void> {

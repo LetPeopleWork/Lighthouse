@@ -1,26 +1,39 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 {
-    public class MonteCarloServiceTest
+    public class ForecastUpdateServiceTest : UpdateServiceTestBase
     {
-        private NotSoRandomNumberService randomNumberService;
-
         private Mock<IRepository<Feature>> featureRepositoryMock;
-
+        private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IFeatureHistoryService> featureHistoryServiceMock;
+        private Mock<IAppSettingService> appSettingServiceMock;
+
+        private int idCounter = 0;
 
         [SetUp]
         public void Setup()
         {
             featureRepositoryMock = new Mock<IRepository<Feature>>();
+            projectRepositoryMock = new Mock<IRepository<Project>>();
             featureHistoryServiceMock = new Mock<IFeatureHistoryService>();
+            appSettingServiceMock = new Mock<IAppSettingService>();
+
+            SetupServiceProviderMock(appSettingServiceMock.Object);
+            SetupServiceProviderMock(projectRepositoryMock.Object);
+            SetupServiceProviderMock(featureRepositoryMock.Object);
+            SetupServiceProviderMock(featureHistoryServiceMock.Object);
+
+            SetupRefreshSettings(10);
         }
 
         [Test]
@@ -104,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task When_FixedThroughputAndRemainingDays_ReturnsCorrectForecastAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
-            int[] throughput =  [ 2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
+            int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
             var team = CreateTeam(1, throughput);
 
             var forecast = await subject.When(team, 35);
@@ -155,7 +168,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_OneFeature_FeatureWIPOne()
+        public void FeatureForecast_SingleTeam_OneFeature_FeatureWIPOne()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -164,7 +177,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature = new Feature(team, 35);
             SetupFeatures([feature]);
 
-            await subject.ForecastAllFeatures();
+            var project = CreateProject(feature);
+            SetupProjects([project]);
+
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -176,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPOneAsync()
+        public void FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPOneAsync()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -186,8 +202,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature(team, 20);
 
             SetupFeatures(feature1, feature2);
+            var project = CreateProject(feature1, feature2);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -203,7 +221,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPTwoAsync()
+        public void FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPTwoAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -214,8 +232,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature(team, 15);
 
             SetupFeatures(feature1, feature2);
+            var project = CreateProject(feature1, feature2);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -227,7 +247,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPTwoAsync()
+        public void FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPTwoAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -238,8 +258,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature3 = new Feature(team, 20);
 
             SetupFeatures(feature1, feature2, feature3);
+            var project = CreateProject([feature1, feature2, feature3]);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -261,7 +283,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPThreeAsync()
+        public void FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPThreeAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -272,8 +294,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature3 = new Feature(team, 5);
 
             SetupFeatures(feature1, feature2, feature3);
+            var project = CreateProject([feature1, feature2, feature3]);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -295,7 +319,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_TwoFeatures_FeatureWIPOneAsync()
+        public void FeatureForecast_MultiTeam_TwoFeatures_FeatureWIPOneAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -306,8 +330,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature2 = new Feature(team2, 20);
 
             SetupFeatures(feature1, feature2);
+            var project = CreateProject([feature1, feature2]);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -319,7 +345,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPOneAsync()
+        public void FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPOneAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -331,8 +357,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature3 = new Feature(team2, 7);
 
             SetupFeatures(feature1, feature2, feature3);
+            var project = CreateProject([feature1, feature2, feature3]);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -349,7 +377,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPTwoAsync()
+        public void FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPTwoAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -361,8 +389,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature3 = new Feature(team2, 20);
 
             SetupFeatures(feature1, feature2, feature3);
+            var project = CreateProject([feature1, feature2, feature3]);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -379,7 +409,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_SingleFeatures_FeatureWIPOneAsync()
+        public void FeatureForecast_MultiTeam_SingleFeatures_FeatureWIPOneAsync()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -389,8 +419,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature1 = new Feature([(team1, 20, 37), (team2, 15, 17)]);
 
             SetupFeatures(feature1);
+            var project = CreateProject(feature1);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -402,22 +434,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_TeamHasNoThroughput_WillIgnoreThisTeamAsync()
+        public void FeatureForecast_TeamHasNoThroughput_WillIgnoreThisTeamAsync()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var team = CreateTeam(1, [0, 0, 0 , 0]);
+            var team = CreateTeam(1, [0, 0, 0, 0]);
 
             var feature = new Feature([(team, 20, 37)]);
-
             SetupFeatures(feature);
+            var project = CreateProject(feature);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.That(feature.Forecast.NumberOfItems, Is.EqualTo(20));
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_OneTeamHasNoThroughput_UsesTeamWithThroughputsForecastAsync()
+        public void FeatureForecast_MultiTeam_OneTeamHasNoThroughput_UsesTeamWithThroughputsForecastAsync()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -425,10 +458,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var team2 = CreateTeam(1, [1]);
 
             var feature1 = new Feature([(team1, 20, 42), (team2, 15, 17)]);
-
             SetupFeatures(feature1);
+            var project = CreateProject(feature1);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -440,7 +474,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task FeatureForecast_NoWorkRemaining_SetsDefaultForecast()
+        public void FeatureForecast_NoWorkRemaining_SetsDefaultForecast()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -448,8 +482,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var feature = new Feature();
             SetupFeatures([feature]);
+            var project = CreateProject(feature);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
@@ -461,7 +497,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task ForecastAllFeatures_ArchivesFeatures()
+        public void ForecastAllFeatures_ArchivesFeatures()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -469,17 +505,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var feature1 = new Feature(team, 35);
             var feature2 = new Feature(team, 20);
-
             SetupFeatures(feature1, feature2);
+            var project = CreateProject([feature1, feature2]);
+            SetupProjects([project]);
 
-            await subject.ForecastAllFeatures();
+            subject.TriggerUpdate(project.Id);
 
             featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature1));
             featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
         }
 
         [Test]
-        public async Task UpdateForecastsForProject_ArchivesFeatures()
+        public void UpdateForecastsForProject_ArchivesFeatures()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -487,33 +524,95 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var feature1 = new Feature(team, 35);
             var feature2 = new Feature(team, 20);
-            var project = new Project();
-
-            project.UpdateFeatures([feature1, feature2]);
 
             SetupFeatures(feature1, feature2);
 
-            await subject.UpdateForecastsForProject(project);
+            var project = CreateProject(feature1, feature2);
+            SetupProjects([project]);
+
+            subject.TriggerUpdate(project.Id);
 
             featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature1));
             featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
+        }
+
+        [Test]
+        public async Task ExecuteAsync_ReadyToRefresh_RefreshesAllProjectsAsync()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects([project]);
+
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project.Id, It.IsAny<Func<IServiceProvider, Task>>()));
+            featureRepositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task ExecuteAsync_MultipleProjects_RefreshesAllProjectsAsync()
+        {
+            var project1 = CreateProject(DateTime.Now.AddDays(-1));
+            var project2 = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects([project1, project2]);
+
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
+            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()));
+            featureRepositoryMock.Verify(x => x.Save(), Times.Exactly(2));
+        }
+
+        [Test]
+        public async Task ExecuteAsync_MultipleProjects_RefreshesIndependentOfLastUpdateTime()
+        {
+            var project1 = CreateProject(DateTime.Now.AddDays(-1));
+            var project2 = CreateProject(DateTime.Now);
+
+            SetupRefreshSettings(10, 360);
+
+            SetupProjects([project1, project2]);
+
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
+            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Forecasts, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()));
+            featureRepositoryMock.Verify(x => x.Save(), Times.Exactly(2));
         }
 
         private void SetupFeatures(params Feature[] features)
         {
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
         }
-
-        private MonteCarloService CreateSubjectWithPersistentThroughput()
+        private void SetupProjects(IEnumerable<Project> projects)
         {
-            randomNumberService = new NotSoRandomNumberService();
+            projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
 
-            return new MonteCarloService(new NotSoRandomNumberService(), featureRepositoryMock.Object, featureHistoryServiceMock.Object, Mock.Of<ILogger<MonteCarloService>>());
+            foreach (var project in projects)
+            {
+                projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
+            }
         }
 
-        private MonteCarloService CreateSubjectWithRealThroughput()
+        private void SetupRefreshSettings(int interval, int refreshAfter = 0)
         {
-            return new MonteCarloService(new RandomNumberService(), featureRepositoryMock.Object, featureHistoryServiceMock.Object, Mock.Of<ILogger<MonteCarloService>>(), 10000);
+            var refreshSettings = new RefreshSettings { Interval = interval, RefreshAfter = refreshAfter, StartDelay = 0 };
+            appSettingServiceMock.Setup(x => x.GetForecastRefreshSettings()).Returns(refreshSettings);
+        }
+
+        private ForecastUpdateService CreateSubjectWithPersistentThroughput()
+        {
+            return new ForecastUpdateService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastUpdateService>>(), ServiceScopeFactory, UpdateQueueService);
+        }
+
+        private ForecastUpdateService CreateSubjectWithRealThroughput()
+        {
+            return new ForecastUpdateService(new RandomNumberService(), Mock.Of<ILogger<ForecastUpdateService>>(), ServiceScopeFactory, UpdateQueueService, 10000);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)
@@ -527,6 +626,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.UpdateThroughput(throughput);
 
             return team;
+        }
+
+        private Project CreateProject(params Feature[] features)
+        {
+            return CreateProject(DateTime.UtcNow, features);
+        }
+
+        private Project CreateProject(DateTime lastUpdatedTime, params Feature[] features)
+        {
+            var project = new Project
+            {
+                Name = "Project",
+                Id = idCounter++,
+                ProjectUpdateTime = lastUpdatedTime,
+            };
+            project.UpdateFeatures(features);
+            return project;
         }
     }
 }

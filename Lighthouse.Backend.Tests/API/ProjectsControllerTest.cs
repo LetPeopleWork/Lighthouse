@@ -2,8 +2,8 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -15,9 +15,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Project>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
 
-        private Mock<IWorkItemCollectorService> workItemCollectorServiceMock;
-
-        private Mock<IMonteCarloService> monteCarloServiceMock;
+        private Mock<IWorkItemUpdateService> workItemCollectorServiceMock;
         
         private Mock<IWorkItemServiceFactory> workItemServiceFactoryMock;
 
@@ -28,8 +26,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             projectRepoMock = new Mock<IRepository<Project>>();
             teamRepoMock = new Mock<IRepository<Team>>();
-            workItemCollectorServiceMock = new Mock<IWorkItemCollectorService>();
-            monteCarloServiceMock = new Mock<IMonteCarloService>();
+            workItemCollectorServiceMock = new Mock<IWorkItemUpdateService>();
             workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
             workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
         }
@@ -87,39 +84,23 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateFeaturesForProject_ProjectExists_UpdatesAndRefreshesForecasts()
+        public void UpdateFeaturesForProject_ProjectExists_UpdatesAndRefreshesForecasts()
         {
             var testProject = GetTestProjects().Last();
             projectRepoMock.Setup(x => x.GetById(42)).Returns(testProject);
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateFeaturesForProject(42);
+            var result = subject.UpdateFeaturesForProject(42);
 
             Assert.Multiple(() =>
             {
-                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(result, Is.InstanceOf<OkResult>());
 
-                var okResult = result as OkObjectResult;
+                var okResult = result as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
-                workItemCollectorServiceMock.Verify(x => x.UpdateFeaturesForProject(testProject));
-                monteCarloServiceMock.Verify(x => x.UpdateForecastsForProject(testProject));
-            });
-        }
-
-        [Test]
-        public async Task UpdateFeaturesForProject_ProjectNotFound_ReturnsNotFoundAsync()
-        {
-            var subject = CreateSubject();
-
-            var result = await subject.UpdateFeaturesForProject(1337);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(result, Is.InstanceOf<NotFoundResult>());
-                var notFoundResult = result as NotFoundResult;
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+                workItemCollectorServiceMock.Verify(x => x.TriggerUpdate(testProject.Id));
             });
         }
 
@@ -404,7 +385,6 @@ namespace Lighthouse.Backend.Tests.API
                 projectRepoMock.Object,
                 teamRepoMock.Object,
                 workItemCollectorServiceMock.Object,
-                monteCarloServiceMock.Object,
                 workItemServiceFactoryMock.Object,
                 workTrackingSystemConnectionRepoMock.Object
             );

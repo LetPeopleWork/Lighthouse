@@ -50,7 +50,7 @@ describe('UpdateSubscriptionService', () => {
 
     it('should get update status', async () => {
         await service.initialize();
-        const mockStatus: IUpdateStatus = { type: 'Team', id: 1, status: 'Completed' };
+        const mockStatus: IUpdateStatus = { updateType: 'Team', id: 1, status: 'Completed' };
         (mockConnection.invoke as import('@vitest/spy').Mock).mockResolvedValue(mockStatus);
 
         const status = await service.getUpdateStatus('Team', 1);

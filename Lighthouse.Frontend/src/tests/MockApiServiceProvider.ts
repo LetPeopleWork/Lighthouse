@@ -6,6 +6,7 @@ import { IProjectService } from '../services/Api/ProjectService';
 import { ISettingsService } from '../services/Api/SettingsService';
 import { ITeamService } from '../services/Api/TeamService';
 import { IWorkTrackingSystemService } from '../services/Api/WorkTrackingSystemService';
+import { IUpdateSubscriptionService } from '../services/UpdateSubscriptionService';
 
 export const createMockApiServiceContext = (overrides: Partial<IApiServiceContext>): IApiServiceContext => {
     return {
@@ -72,6 +73,19 @@ export const createMockWorkTrackingSystemService = (): IWorkTrackingSystemServic
         deleteWorkTrackingSystemConnection: vi.fn(),
         validateWorkTrackingSystemConnection: vi.fn(),
     };
+}
+
+export const createMockUpdateSubscriptionService = () : IUpdateSubscriptionService => {
+    return {
+        initialize: vi.fn(),
+        subscribeToFeatureUpdates: vi.fn(),
+        subscribeToForecastUpdates: vi.fn(),
+        subscribeToTeamUpdates: vi.fn(),
+        getUpdateStatus: vi.fn(),
+        unsubscribeFromFeatureUpdates: vi.fn(),
+        unsubscribeFromForecastUpdates: vi.fn(),
+        unsubscribeFromTeamUpdates: vi.fn(),
+    }
 }
 
 export const createMockPreviewFeatureService = () : IPreviewFeatureService => {

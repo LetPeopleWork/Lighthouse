@@ -1,13 +1,11 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Services.Interfaces.Update
 {
-    public interface IMonteCarloService
+    public interface IForecastUpdateService : IUpdateService
     {
-        Task ForecastAllFeatures();
-
-        Task UpdateForecastsForProject(Project project);
+        Task UpdateForecastsForProject(int projectId);
 
         HowManyForecast HowMany(Throughput throughput, int days);
 

@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.DependencyInjection;
@@ -118,8 +118,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             featureRepository.Add(feature);
             await featureRepository.Save();
 
-            var monteCarloService = ServiceProvider.GetService<IMonteCarloService>();
-            await monteCarloService.ForecastAllFeatures();
+            var forecastUpdateService = ServiceProvider.GetService<IForecastUpdateService>();
+            forecastUpdateService.TriggerUpdate(project.Id);
 
             // Act
             projectRepository.Remove(project.Id);

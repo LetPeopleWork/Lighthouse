@@ -1,17 +1,23 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.Update
 {
-    public class TeamUpdateService : UpdateServiceBase, ITeamUpdateService
+    public class TeamUpdateService : UpdateServiceBase<Team>, ITeamUpdateService
     {
-        private readonly ILogger<TeamUpdateService> logger;
-
-        public TeamUpdateService(ILogger<TeamUpdateService> logger, IUpdateQueueService updateQueueService) : base(updateQueueService, UpdateType.Team)
+        public TeamUpdateService(ILogger<TeamUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService) : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Team)
         {
-            this.logger = logger;
+        }
+
+        protected override RefreshSettings GetRefreshSettings()
+        {
+            using (var scope = CreateServiceScope())
+            {
+                return GetServiceFromServiceScope<IAppSettingService>(scope).GetThroughputRefreshSettings();
+            }
         }
 
         protected override async Task Update(int id, IServiceProvider serviceProvider)
@@ -33,27 +39,36 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             await teamRepository.Save();
         }
 
+        protected override bool ShouldUpdateEntity(Team entity, RefreshSettings refreshSettings)
+        {
+            var minutesSinceLastUpdate = (DateTime.UtcNow - entity.TeamUpdateTime).TotalMinutes;
+
+            Logger.LogInformation("Last Refresh of team {TeamName} was {minutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
+
+            return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;
+        }
+
         private async Task UpdateFeatureWipForTeam(Team team, IWorkItemService workItemService)
         {
-            logger.LogInformation("Updating Feature Wip for Team {TeamName}", team.Name);
+            Logger.LogInformation("Updating Feature Wip for Team {TeamName}", team.Name);
 
             var featuresInProgress = await workItemService.GetFeaturesInProgressForTeam(team);
 
             var featureReferences = featuresInProgress.Distinct();
             team.SetFeaturesInProgress(featureReferences);
 
-            logger.LogDebug("Following Features are In Progress: {Features}", string.Join(",", featureReferences));
-            logger.LogInformation("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count());
+            Logger.LogDebug("Following Features are In Progress: {Features}", string.Join(",", featureReferences));
+            Logger.LogInformation("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count());
         }
 
         private async Task UpdateThroughputForTeam(Team team, IWorkItemService workItemService)
         {
-            logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
+            Logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
 
             var throughput = await workItemService.GetClosedWorkItems(team.ThroughputHistory, team);
 
             team.UpdateThroughput(throughput);
-            logger.LogInformation("Finished updating Throughput for Team {TeamName}", team.Name);
+            Logger.LogInformation("Finished updating Throughput for Team {TeamName}", team.Name);
         }
     }
 }

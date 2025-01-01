@@ -167,11 +167,8 @@ describe('ProjectService', () => {
 
         mockedAxios.post.mockResolvedValueOnce({ data: mockProject });
 
-        const refreshedProject = await projectService.refreshFeaturesForProject(1);
+        await projectService.refreshFeaturesForProject(1);
 
-        expect(refreshedProject).toEqual(
-            new Project('Project 1', 1, [], [], [], new Date('2023-09-01T12:00:00Z'))
-        );
         expect(mockedAxios.post).toHaveBeenCalledWith('/projects/refresh/1');
     });
 
@@ -180,11 +177,8 @@ describe('ProjectService', () => {
 
         mockedAxios.post.mockResolvedValueOnce({ data: mockProject });
 
-        const refreshedProject = await projectService.refreshForecastsForProject(1);
-
-        expect(refreshedProject).toEqual(
-            new Project('Project 1', 1, [], [], [], new Date('2023-09-01T12:00:00Z'))
-        );
+        await projectService.refreshForecastsForProject(1);
+        
         expect(mockedAxios.post).toHaveBeenCalledWith('/forecast/update/1');
     });
 

@@ -58,7 +58,7 @@ describe("DataRetentionSettingsTab", () => {
 
         await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
 
-        fireEvent.change(screen.getByLabelText("Maximum Data Retention Time (Days)"), { target: { value: "60" } });
+        fireEvent.change(await screen.findByLabelText("Maximum Data Retention Time (Days)"), { target: { value: "60" } });
 
         expect(screen.getByDisplayValue("60")).toBeInTheDocument();
     });
@@ -77,7 +77,7 @@ describe("DataRetentionSettingsTab", () => {
 
         await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
 
-        fireEvent.change(screen.getByLabelText("Maximum Data Retention Time (Days)"), { target: { value: updatedData.maxStorageTimeInDays.toString() } });
+        fireEvent.change(await screen.findByLabelText("Maximum Data Retention Time (Days)"), { target: { value: updatedData.maxStorageTimeInDays.toString() } });
 
         fireEvent.click(screen.getByText(/Update Data Retention Settings/));
 

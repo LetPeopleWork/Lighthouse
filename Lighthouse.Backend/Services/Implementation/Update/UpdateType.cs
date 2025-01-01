@@ -4,7 +4,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
     {
         Team,
 
-        Project,
+        Features,
 
         Forecasts,
     }

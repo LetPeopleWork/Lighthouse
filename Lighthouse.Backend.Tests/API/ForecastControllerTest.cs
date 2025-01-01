@@ -2,8 +2,8 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -11,51 +11,29 @@ namespace Lighthouse.Backend.Tests.API
 {
     public class ForecastControllerTest
     {
-        private Mock<IMonteCarloService> monteCarloServiceMock;
+        private Mock<IForecastUpdateService> monteCarloServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
-        private Mock<IRepository<Project>> projectRepositoryMock;
 
         [SetUp]
         public void Setup()
         {
-            monteCarloServiceMock = new Mock<IMonteCarloService>();
+            monteCarloServiceMock = new Mock<IForecastUpdateService>();
             teamRepositoryMock = new Mock<IRepository<Team>>();
-            projectRepositoryMock = new Mock<IRepository<Project>>();
         }
 
         [Test]
-        public async Task UpdateForecast_ProjectDoesNotExist_ReturnsNotFound()
+        public void UpdateForecast_ProjectExists_UpdatesForecastAndSaves()
         {
             var subject = CreateSubject();
 
-            var response = await subject.UpdateForecastForProject(12);
-
-            var notFoundResult = response.Result as NotFoundResult;
-            Assert.Multiple(() =>
-            {
-                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
-                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
-        }
-
-        [Test]
-        public async Task UpdateForecast_ProjectExists_UpdatesForecastAndSaves()
-        {
-            var project = new Project();
-            projectRepositoryMock.Setup(x => x.GetById(12)).Returns(project);
-
-            var subject = CreateSubject();
-
-            var response = await subject.UpdateForecastForProject(12);
+            var response = subject.UpdateForecastForProject(12);
 
             Assert.Multiple(() =>
             {
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(response, Is.InstanceOf<OkResult>());
 
-                var okResult = response.Result as OkObjectResult;
+                var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-
-                Assert.That(okResult.Value, Is.InstanceOf<ProjectDto>());
             });
         }
 
@@ -164,7 +142,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private ForecastController CreateSubject()
         {
-            return new ForecastController(monteCarloServiceMock.Object, teamRepositoryMock.Object, projectRepositoryMock.Object);
+            return new ForecastController(monteCarloServiceMock.Object, teamRepositoryMock.Object);
         }
     }
 }

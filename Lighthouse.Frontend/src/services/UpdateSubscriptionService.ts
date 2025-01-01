@@ -1,11 +1,11 @@
 import * as signalR from '@microsoft/signalr';
 
-export type UpdateType = 'Team' | 'Project' | 'Forecast';
+export type UpdateType = 'Team' | 'Features' | 'Forecasts';
 
 export type UpdateProgress = 'Queued' | 'InProgress' | 'Completed' | 'Failed';
 
 export interface IUpdateStatus {
-    type: UpdateType;
+    updateType: UpdateType;
     id: number;
     status: UpdateProgress;
 }
@@ -15,8 +15,8 @@ export interface IUpdateSubscriptionService {
     getUpdateStatus(updateType: UpdateType, id: number): Promise<IUpdateStatus | null>
     subscribeToTeamUpdates(teamId: number, callback: (status: IUpdateStatus) => void): Promise<void>;
     unsubscribeFromTeamUpdates(teamId: number): Promise<void>;
-    subscribeToProjectUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void>;
-    unsubscribeFromProjectUpdates(projectId: number): Promise<void>;
+    subscribeToFeatureUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void>;
+    unsubscribeFromFeatureUpdates(projectId: number): Promise<void>;
     subscribeToForecastUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void>;
     unsubscribeFromForecastUpdates(projectId: number): Promise<void>;
 }
@@ -77,20 +77,20 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
         await this.unsubscribeFromUpdate('Team', teamId);
     }
 
-    public async subscribeToProjectUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
-        await this.subscribeToUpdate('Project', projectId, callback);
+    public async subscribeToFeatureUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
+        await this.subscribeToUpdate('Features', projectId, callback);
     }
 
-    public async unsubscribeFromProjectUpdates(projectId: number): Promise<void> {
-        await this.unsubscribeFromUpdate('Project', projectId);
+    public async unsubscribeFromFeatureUpdates(projectId: number): Promise<void> {
+        await this.unsubscribeFromUpdate('Features', projectId);
     }
 
     public async subscribeToForecastUpdates(projectId: number, callback: (status: IUpdateStatus) => void): Promise<void> {
-        await this.subscribeToUpdate('Forecast', projectId, callback);
+        await this.subscribeToUpdate('Forecasts', projectId, callback);
     }
 
     public async unsubscribeFromForecastUpdates(projectId: number): Promise<void> {
-        await this.unsubscribeFromUpdate('Forecast', projectId);
+        await this.unsubscribeFromUpdate('Forecasts', projectId);
     }
 
     public async getUpdateStatus(updateType: UpdateType, id: number): Promise<IUpdateStatus | null> {

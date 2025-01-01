@@ -1,8 +1,8 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -13,8 +13,7 @@ namespace Lighthouse.Backend.API
     {
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Team> teamRepository;
-        private readonly IWorkItemCollectorService workItemCollectorService;
-        private readonly IMonteCarloService monteCarloService;
+        private readonly IWorkItemUpdateService workItemUpdateService;
         private readonly IWorkItemServiceFactory workItemServiceFactory;
 
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
@@ -22,15 +21,13 @@ namespace Lighthouse.Backend.API
         public ProjectsController(
             IRepository<Project> projectRepository, 
             IRepository<Team> teamRepository, 
-            IWorkItemCollectorService workItemCollectorService, 
-            IMonteCarloService monteCarloService,
+            IWorkItemUpdateService workItemUpdateService, 
             IWorkItemServiceFactory workItemServiceFactory,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository)
         {
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
-            this.workItemCollectorService = workItemCollectorService;
-            this.monteCarloService = monteCarloService;
+            this.workItemUpdateService = workItemUpdateService;
             this.workItemServiceFactory = workItemServiceFactory;
             this.workTrackingSystemConnectionRepository = workTrackingSystemConnectionRepository;
         }
@@ -64,19 +61,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("refresh/{id}")]
-        public async Task<ActionResult> UpdateFeaturesForProject(int id)
+        public ActionResult UpdateFeaturesForProject(int id)
         {
-            var project = projectRepository.GetById(id);
-            if (project == null)
-            {
-                return NotFound();
-            }
+            workItemUpdateService.TriggerUpdate(id);
 
-            await workItemCollectorService.UpdateFeaturesForProject(project);
-            await projectRepository.Save();
-            await monteCarloService.UpdateForecastsForProject(project);
-
-            return Ok(new ProjectDto(project));
+            return Ok();
         }
 
         [HttpDelete("{id}")]

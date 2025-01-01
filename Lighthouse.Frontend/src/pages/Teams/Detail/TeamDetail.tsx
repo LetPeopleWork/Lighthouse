@@ -18,20 +18,21 @@ import LocalDateTimeDisplay from '../../../components/Common/LocalDateTimeDispla
 import { IUpdateStatus } from '../../../services/UpdateSubscriptionService';
 
 const TeamDetail: React.FC = () => {
+    const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const teamId = Number(id);
+
+    let subscribedToUpdates = false;
 
     const [team, setTeam] = useState<Team>();
 
     const [isLoading, setIsLoading] = useState<boolean>(true);
-
     const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
 
     const [remainingItems, setRemainingItems] = useState<number>(10);
     const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(dayjs().add(2, 'week'));
     const [manualForecastResult, setManualForecastResult] = useState<ManualForecast | null>(null);
 
-    const navigate = useNavigate();
 
     const { teamService, forecastService, updateSubscriptionService } = useContext(ApiServiceContext);
 
@@ -72,11 +73,11 @@ const TeamDetail: React.FC = () => {
     }
 
     const setUpTeamUpdateSubscription = async () => {
-        const handleTeamUpdate = (update: IUpdateStatus) => {
+        const handleTeamUpdate = async (update: IUpdateStatus) => {
             if (update.status == 'Completed') {
                 // Team was updated - reload data!
                 setIsTeamUpdating(false);
-                fetchTeam();
+                await fetchTeam();
             }
             else {
                 // Team Update is in progress - update Button
@@ -98,7 +99,8 @@ const TeamDetail: React.FC = () => {
     }
 
     useEffect(() => {
-        if (team) {
+        if (team && !subscribedToUpdates) {
+            subscribedToUpdates = true;
             setUpTeamUpdateSubscription();
         }
         else {

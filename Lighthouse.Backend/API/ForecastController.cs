@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 
@@ -11,30 +11,21 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class ForecastController : ControllerBase
     {
-        private readonly IMonteCarloService monteCarloService;
+        private readonly IForecastUpdateService forecastUpdateService;
         private readonly IRepository<Team> teamRepository;
-        private readonly IRepository<Project> projectRepository;
 
-        public ForecastController(IMonteCarloService monteCarloService, IRepository<Team> teamRepository, IRepository<Project> projectRepository)
+        public ForecastController(IForecastUpdateService forecastUpdateService, IRepository<Team> teamRepository)
         {
-            this.monteCarloService = monteCarloService;
+            this.forecastUpdateService = forecastUpdateService;
             this.teamRepository = teamRepository;
-            this.projectRepository = projectRepository;
         }
 
         [HttpPost("update/{id}")]
-        public async Task<ActionResult<ProjectDto>> UpdateForecastForProject(int id)
+        public ActionResult UpdateForecastForProject(int id)
         {
-            var project = projectRepository.GetById(id);
+            forecastUpdateService.TriggerUpdate(id);
 
-            if (project == null)
-            {
-                return NotFound();
-            }
-
-            await monteCarloService.UpdateForecastsForProject(project);
-
-            return Ok(new ProjectDto(project));
+            return Ok();
         }
 
         [HttpPost("manual/{id}")]
@@ -53,7 +44,7 @@ namespace Lighthouse.Backend.API
 
             if (input.RemainingItems > 0)
             {
-                var whenForecast = await monteCarloService.When(team, input.RemainingItems);
+                var whenForecast = await forecastUpdateService.When(team, input.RemainingItems);
 
                 manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
 
@@ -65,7 +56,7 @@ namespace Lighthouse.Backend.API
 
             if (timeToTargetDate > 0)
             {
-                var howManyForecast = monteCarloService.HowMany(team.Throughput, timeToTargetDate);
+                var howManyForecast = forecastUpdateService.HowMany(team.Throughput, timeToTargetDate);
 
                 manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
             }

@@ -74,10 +74,6 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<IWorkTrackingSystemFactory, WorkTrackingSystemFactory>();
 
                 // Services
-                builder.Services.AddScoped<IRandomNumberService, RandomNumberService>();
-                builder.Services.AddScoped<IMonteCarloService, MonteCarloService>();
-                builder.Services.AddScoped<ITeamUpdateService, TeamUpdateService>();
-                builder.Services.AddScoped<IWorkItemCollectorService, WorkItemCollectorService>();
                 builder.Services.AddScoped<ILexoRankService, LexoRankService>();
                 builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
                 builder.Services.AddScoped<IFileSystemService, FileSystemService>();
@@ -90,13 +86,20 @@ namespace Lighthouse.Backend
                 builder.Services.AddScoped<JiraWorkItemService>();
 
                 // Background Services
-                builder.Services.AddHostedService<TeamUpdateBackgroundService>();
-                builder.Services.AddHostedService<FeatureUpdateService>();
+                builder.Services.AddHostedService<TeamUpdateService>();
+                builder.Services.AddSingleton<ITeamUpdateService, TeamUpdateService>();
+
+                builder.Services.AddHostedService<WorkItemUpdateService>();
+                builder.Services.AddSingleton<IWorkItemUpdateService, WorkItemUpdateService>();
+
                 builder.Services.AddHostedService<ForecastUpdateService>();
+                builder.Services.AddSingleton<IForecastUpdateService, ForecastUpdateService>();
+                
                 builder.Services.AddHostedService<DataRetentionService>();
 
                 builder.Services.AddSingleton<ICryptoService, CryptoService>();
                 builder.Services.AddSingleton<IGitHubService, GitHubService>();
+                builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
 
                 var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
                 builder.Services.AddSingleton(updateStatuses);

@@ -9,8 +9,8 @@ export interface IProjectService {
     getProjectSettings(id: number): Promise<IProjectSettings>;
     updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
     createProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
-    refreshFeaturesForProject(id: number): Promise<Project | null>;
-    refreshForecastsForProject(id: number): Promise<Project | null>;
+    refreshFeaturesForProject(id: number): Promise<void>;
+    refreshForecastsForProject(id: number): Promise<void>;
     validateProjectSettings(projectSettings: IProjectSettings): Promise<boolean>;
 }
 
@@ -57,19 +57,15 @@ export class ProjectService extends BaseApiService implements IProjectService {
     }
 
 
-    async refreshFeaturesForProject(id: number): Promise<Project | null> {
-        return await this.withErrorHandling(async () => {
-            const response = await this.apiService.post<IProject>(`/projects/refresh/${id}`);
-
-            return BaseApiService.deserializeProject(response.data);
+    async refreshFeaturesForProject(id: number): Promise<void> {
+        await this.withErrorHandling(async () => {
+            await this.apiService.post<IProject>(`/projects/refresh/${id}`);
         });
     }
 
-    async refreshForecastsForProject(id: number): Promise<Project | null> {
-        return await this.withErrorHandling(async () => {
-            const response = await this.apiService.post<IProject>(`/forecast/update/${id}`);
-
-            return BaseApiService.deserializeProject(response.data);
+    async refreshForecastsForProject(id: number): Promise<void> {
+        await this.withErrorHandling(async () => {
+            await this.apiService.post<IProject>(`/forecast/update/${id}`);
         });
     }
 
