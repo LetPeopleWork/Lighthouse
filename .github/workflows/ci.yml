@@ -424,7 +424,7 @@ jobs:
       - packageapp
       - changes
 
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true')
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     environment:
       name: 'Production'
