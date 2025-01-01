@@ -3,19 +3,18 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
 import LogSettings from './LogSettings';
 import { ILogService } from '../../../services/Api/LogService';
-import { createMockApiServiceContext } from '../../../tests/MockApiServiceProvider';
+import { createMockApiServiceContext, createMockLogService } from '../../../tests/MockApiServiceProvider';
 
 const mockGetLogs = vi.fn();
 const mockGetLogLevel = vi.fn();
 const mockGetSupportedLogLevels = vi.fn();
 const mockSetLogLevel = vi.fn();
 
-const mockLogService: ILogService = {
-    getLogs: mockGetLogs,
-    getLogLevel: mockGetLogLevel,
-    getSupportedLogLevels: mockGetSupportedLogLevels,
-    setLogLevel: mockSetLogLevel,
-};
+const mockLogService: ILogService = createMockLogService();
+mockLogService.getLogs = mockGetLogs;
+mockLogService.getLogLevel = mockGetLogLevel;
+mockLogService.getSupportedLogLevels = mockGetSupportedLogLevels;
+mockLogService.setLogLevel = mockSetLogLevel;
 
 const MockApiServiceProvider = ({ children }: { children: React.ReactNode }) => {
     const mockContext = createMockApiServiceContext({ logService: mockLogService });
@@ -106,7 +105,7 @@ describe('LogSettings', () => {
         expect(mockGetLogs).toHaveBeenCalled();
     });
 
-    it('downloads logs when download button is clicked', () => {
+    it('downloads logs when download button is clicked', async () => {
         render(
             <MockApiServiceProvider>
                 <LogSettings />
@@ -115,18 +114,10 @@ describe('LogSettings', () => {
 
         const downloadButton = screen.getByRole('button', { name: /Download/i });
 
-        const createObjectURL = vi.fn().mockReturnValue('blobUrl');
-        const appendChild = vi.fn();
-        const removeChild = vi.fn();
-
-        URL.createObjectURL = createObjectURL;
-        document.body.appendChild = appendChild;
-        document.body.removeChild = removeChild;
-
         fireEvent.click(downloadButton);
 
-        expect(createObjectURL).toHaveBeenCalled();
-        expect(appendChild).toHaveBeenCalled();
-        expect(removeChild).toHaveBeenCalled();
+        await waitFor(() => {
+            expect(mockGetLogs).toHaveBeenCalled();
+        });
     });
 });

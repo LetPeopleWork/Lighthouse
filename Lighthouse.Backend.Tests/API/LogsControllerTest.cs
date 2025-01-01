@@ -106,6 +106,35 @@ And a hundred percent reason to remember the name (Mike!)
             });
         }
 
+        [Test]
+        public void DownloadAllLogs_ReturnsFileContentResult()
+        {
+            var expectedLogs = @"
+            This is ten percent luck, twenty percent skill
+            Fifteen percent concentrated power of will
+            Five percent pleasure, fifty percent pain
+            And a hundred percent reason to remember the name (Mike!)
+            ";
+            var expectedFileName = $"Lighthouse_Log_{DateTime.Now:yyyy.MM.dd}.txt";
+
+            logConfigurationMock.Setup(x => x.GetLogs()).Returns(expectedLogs);
+
+            var subject = CreateSubject();
+
+            var response = subject.DownloadLogs();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response, Is.InstanceOf<FileContentResult>());
+
+                var fileResult = response as FileContentResult;
+                Assert.That(fileResult.ContentType, Is.EqualTo("text/plain"));
+                Assert.That(fileResult.FileDownloadName, Is.EqualTo(expectedFileName));
+
+                var logs = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
+                Assert.That(logs, Is.EqualTo(expectedLogs));
+            });
+        }
 
         private LogsController CreateSubject()
         {

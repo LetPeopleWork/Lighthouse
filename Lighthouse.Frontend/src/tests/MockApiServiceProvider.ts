@@ -1,6 +1,7 @@
 import { IApiServiceContext } from '../services/Api/ApiServiceContext';
 import { IChartService } from '../services/Api/ChartService';
 import { DemoApiService } from '../services/Api/DemoApiService';
+import { ILogService } from '../services/Api/LogService';
 import { IPreviewFeatureService } from '../services/Api/PreviewFeatureService';
 import { IProjectService } from '../services/Api/ProjectService';
 import { ISettingsService } from '../services/Api/SettingsService';
@@ -101,3 +102,13 @@ export const createMockChartService = () : IChartService => {
         getLighthouseChartData : vi.fn(),
     }
 }
+
+export const createMockLogService = () : ILogService => {
+    return {
+        getLogs: vi.fn(),
+        getLogLevel: vi.fn(),
+        getSupportedLogLevels: vi.fn(),
+        setLogLevel: vi.fn(),
+        downloadLogs: vi.fn(),
+    }
+};

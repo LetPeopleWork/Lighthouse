@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace Lighthouse.Backend.API
 {
@@ -40,10 +41,18 @@ namespace Lighthouse.Backend.API
             return Ok(logs);
         }
 
+        [HttpGet("download")]
+        public IActionResult DownloadLogs()
+        {
+            var logsContent = logConfiguration.GetLogs();
+            var fileBytes = Encoding.UTF8.GetBytes(logsContent);
+            var fileName = $"Lighthouse_Log_{DateTime.Now:yyyy.MM.dd}.txt";
+            return File(fileBytes, "text/plain", fileName);
+        }
+
         public class LogLevelDto
         {
             public string Level { get; set; }
         }
-
     }
 }

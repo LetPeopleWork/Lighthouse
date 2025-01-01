@@ -5,6 +5,7 @@ export interface ILogService {
     getLogLevel(): Promise<string>;
     setLogLevel(logLevel: string): Promise<void>;
     getLogs(): Promise<string>;
+    downloadLogs(): Promise<void>;
 }
 
 export class LogService extends BaseApiService implements ILogService {
@@ -30,12 +31,23 @@ export class LogService extends BaseApiService implements ILogService {
         });
     }
 
-
     async getLogs(): Promise<string> {
         return this.withErrorHandling(async () => {
             const response = await this.apiService.get<string>(`/logs`);
 
             return response.data;
         });
+    }
+
+    async downloadLogs(): Promise<void> {
+        const response = await this.apiService.get<Blob>('/logs/download', { responseType: 'blob' });
+        const fileUrl = URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = `Lighthouse_Log_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(fileUrl);
     }
 }

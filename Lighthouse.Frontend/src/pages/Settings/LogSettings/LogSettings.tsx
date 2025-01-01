@@ -29,27 +29,9 @@ const LogSettings: React.FC = () => {
         setSupportedLogLevels(currentSupportedLogLevels);
     }
 
-    const onDownload = () => {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-
-        const formattedDate = `${year}${month}${day}`;
-
-        const blob = new Blob([logs], { type: 'text/plain;charset=utf-8' });
-
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `log-${formattedDate}.txt`;
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        document.body.removeChild(link);
+    const onDownload = async () => {
+        await logService.downloadLogs();
     }
-
 
     const onLogLevelChanged = async (event: SelectChangeEvent) => {
         const newLogLevel = event.target.value;

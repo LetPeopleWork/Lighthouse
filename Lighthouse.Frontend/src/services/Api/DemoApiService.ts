@@ -498,6 +498,10 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         return lorem.generateParagraphs(7);
     }
 
+    async downloadLogs(): Promise<void> {
+        console.log("Downloading Logs");
+    }
+
 
     async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
         console.log(`Getting ${settingName} refresh settings`);

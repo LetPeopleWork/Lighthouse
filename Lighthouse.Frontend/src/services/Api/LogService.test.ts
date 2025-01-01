@@ -6,7 +6,7 @@ vi.mock('axios');
 const mockedAxios = vi.mocked(axios, true);
 
 describe('LogService', () => {
-    let logService: LogService;    
+    let logService: LogService;
 
     beforeEach(() => {
         mockedAxios.create.mockReturnThis();
@@ -53,5 +53,29 @@ describe('LogService', () => {
 
         expect(logs).toEqual(mockResponse);
         expect(mockedAxios.get).toHaveBeenCalledWith('/logs');
+    });
+
+    it('should download logs', async () => {
+        const blob = new Blob(['test logs'], { type: 'text/plain' });
+        mockedAxios.get.mockResolvedValueOnce({ data: blob });
+
+
+        const createObjectURL = vi.fn().mockReturnValue('blobUrl');
+        const revokeObjectURL = vi.fn();
+        const appendChild = vi.fn();
+        const removeChild = vi.fn();
+
+        URL.createObjectURL = createObjectURL;
+        URL.revokeObjectURL = revokeObjectURL;
+        document.body.appendChild = appendChild;        
+        document.body.removeChild = removeChild;
+
+        await logService.downloadLogs();
+
+        expect(mockedAxios.get).toHaveBeenCalledWith('/logs/download', { responseType: 'blob' });
+        expect(createObjectURL).toHaveBeenCalled();
+        expect(appendChild).toHaveBeenCalled();
+        expect(removeChild).toHaveBeenCalled();
+        expect(revokeObjectURL).toHaveBeenCalled();
     });
 });
