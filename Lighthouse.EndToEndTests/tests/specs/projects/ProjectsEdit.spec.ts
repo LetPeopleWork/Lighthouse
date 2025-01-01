@@ -2,6 +2,7 @@ import { TestConfig } from '../../../playwright.config';
 import { expect, test, testWithData, testWithUpdatedTeams } from '../../fixutres/LighthouseFixture';
 import { deleteProject } from '../../helpers/api/projects';
 import { deleteWorkTrackingSystemConnectionByName } from '../../helpers/api/workTrackingSystemConnections';
+import { generateRandomName } from '../../helpers/names';
 
 [
     { name: "Azure DevOps", index: 0 },
@@ -350,7 +351,7 @@ newTeamConfigurations.forEach(({ name: workTrackingSystemName, projectConfigurat
             );
         });
 
-        const newWorkTrackingSystemConnectionName = `New ${workTrackingSystemName} Work Tracking System Connection`;
+        const newWorkTrackingSystemConnectionName = generateRandomName();
         await test.step("Add new Work Tracking System", async () => {
             let newWorkTrackingSystemDialog = await newProjectPage.addNewWorkTrackingSystem();
 
