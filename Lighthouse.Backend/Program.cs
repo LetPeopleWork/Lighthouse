@@ -38,18 +38,17 @@ namespace Lighthouse.Backend
 
                 var builder = WebApplication.CreateBuilder(args);
 
-                // Load the default certificate
-                var defaultCertPath = Path.Combine(AppContext.BaseDirectory, "certs", "LighthouseCert.pfx");
-
                 // Configure Kestrel to use the certificate
                 builder.WebHost.ConfigureKestrel(options =>
                 {
                     options.ConfigureHttpsDefaults(httpsOptions =>
                     {
-                        var certPath = Environment.GetEnvironmentVariable("ASPNETCORE_Certificates__Path") ?? defaultCertPath;
-                        var certPassword = Environment.GetEnvironmentVariable("ASPNETCORE_Certificates__Password") ?? string.Empty;
+                        var certPath = Environment.GetEnvironmentVariable("ASPNETCORE_Certificates__Path") ?? builder.Configuration["Certificate:Path"];
+                        var certPassword = Environment.GetEnvironmentVariable("ASPNETCORE_Certificates__Password") ?? builder.Configuration["Certificate:Password"];
 
-                        if (File.Exists(certPath))
+                        Log.Information("Using Certificate stored at {CertificatePath}", certPath);
+
+                        if (!string.IsNullOrEmpty(certPath) && File.Exists(certPath))
                         {
                             httpsOptions.ServerCertificate = new X509Certificate2(certPath, certPassword);
                         }
