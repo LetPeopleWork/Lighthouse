@@ -456,6 +456,11 @@ jobs:
         run: npm run build
         working-directory: ./Lighthouse.Frontend
 
+      - name: Remove Kestrel HTTPS endpoint
+        run: |
+          jq 'del(.Kestrel.Endpoints.Https)' Lighthouse.Backend/appsettings.json > tmp.$$.json && mv tmp.$$.json Lighthouse.Backend/appsettings.json
+        working-directory: ./Lighthouse.Backend
+
       - name: publish app-service
         run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/app-service
         working-directory: ./Lighthouse.Backend
