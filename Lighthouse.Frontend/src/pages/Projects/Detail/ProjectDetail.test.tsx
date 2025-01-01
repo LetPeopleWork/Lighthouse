@@ -172,42 +172,54 @@ describe('ProjectDetail component', () => {
         mockGetUpdateStatus.mockResolvedValueOnce({ status: 'Completed', updateType: 'Features', id: 2 });
         renderWithMockApiProvider();
 
-        expect(await screen.findByText('Refresh Features')).toBeEnabled();
+        await waitFor(async () => {
+            expect(await screen.findByText('Refresh Features')).toBeEnabled();
+        });
     });
 
     it('should set Refresh Button to Enabled if no Update In Progress', async () => {
         mockGetUpdateStatus.mockResolvedValueOnce(null);
         renderWithMockApiProvider();
 
-        expect(await screen.findByText('Refresh Features')).toBeEnabled();
+        await waitFor(async () => {
+            expect(await screen.findByText('Refresh Features')).toBeEnabled();
+        });
     });
 
     it('should set Refresh Button to Disabled if Feature Update Queued', async () => {
         mockGetUpdateStatus.mockResolvedValueOnce({ status: 'Queued', updateType: 'Features', id: 2 });
         renderWithMockApiProvider();
 
-        expect(await screen.findByText('Refresh Features')).toBeDisabled();
+        await waitFor(async () => {
+            expect(await screen.findByText('Refresh Features')).toBeDisabled();
+        });
     });
 
     it('should set Refresh Button to Disabled if Feature Update In Progress', async () => {
         mockGetUpdateStatus.mockResolvedValueOnce({ status: 'InProgress', updateType: 'Features', id: 2 });
         renderWithMockApiProvider();
 
-        expect(await screen.findByText('Refresh Features')).toBeDisabled();
+        await waitFor(async () => {
+            expect(await screen.findByText('Refresh Features')).toBeDisabled();
+        });
     });
 
     it('should not set Refresh Button to Disabled if Forecast Update Queued', async () => {
         mockGetUpdateStatus.mockResolvedValueOnce({ status: 'Queued', updateType: 'Forecasts', id: 2 });
         renderWithMockApiProvider();
 
-        expect(await screen.findByText('Refresh Features')).toBeEnabled();
+        await waitFor(async () => {
+            expect(await screen.findByText('Refresh Features')).toBeEnabled();
+        });
     });
 
     it('should not set Refresh Button to Disabled if Forecast Update In Progress', async () => {
         mockGetUpdateStatus.mockResolvedValueOnce({ status: 'InProgress', updateType: 'Forecasts', id: 2 });
         renderWithMockApiProvider();
 
-        expect(await screen.findByText('Refresh Features')).toBeEnabled();
+        await waitFor(async () => {
+            expect(await screen.findByText('Refresh Features')).toBeEnabled();
+        });
     });
 
     afterEach(() => {
