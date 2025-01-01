@@ -523,8 +523,8 @@ jobs:
       - name: Tag docker image with latest
         run: |
           REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          docker pull ghcr.io/$REPO_NAME:${{ needs.tag.outputs.version }}
-          docker tag ghcr.io/$REPO_NAME:${{ needs.tag.outputs.version }} ghcr.io/$REPO_NAME:latest
+          docker pull ghcr.io/$REPO_NAME:${{ needs.tag.outputs.fileversion }}
+          docker tag ghcr.io/$REPO_NAME:${{ needs.tag.outputs.fileversion }} ghcr.io/$REPO_NAME:latest
           docker push ghcr.io/$REPO_NAME:latest
 
       - uses: actions/download-artifact@v4
