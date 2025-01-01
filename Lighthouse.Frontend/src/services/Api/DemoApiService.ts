@@ -141,7 +141,7 @@ export class DemoApiService implements IForecastService, ILogService, IProjectSe
         const callback = this.subscribers.get(key);
 
         const status = {
-            type: updateType,
+            updateType: updateType,
             id: id,
             status: progress
         };
