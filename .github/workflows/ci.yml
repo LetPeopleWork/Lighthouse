@@ -423,10 +423,10 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    name: Deploy Demo App
     needs:
       - tag
       - packageapp
-      - changes
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
@@ -452,34 +452,11 @@ jobs:
         run: npm install
         working-directory: ./Lighthouse.Frontend
 
-      - name: Build Frontend
-        run: npm run build
-        working-directory: ./Lighthouse.Frontend
-
       - name: Adjust AppSettings for Azure Deployment
         run: |
           jq 'del(.Kestrel.Endpoints.Https)' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
           jq '.Kestrel.Endpoints.Http.Url = "http://*:8080"' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
         working-directory: ./Lighthouse.Backend
-
-      - name: publish app-service
-        run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/app-service
-        working-directory: ./Lighthouse.Backend
-
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_8A96BB1E9EB043EE9CB0B648544834B0 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_6D622DE733434D3A987E82D0DBCEE2B3 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6A0B9B55694C47F4A1D8CEA847E84D78 }}
-
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp  
-        uses: azure/webapps-deploy@v2  
-        with:  
-          app-name: 'LighthouseCloudDemo'  
-          slot-name: 'production'  
-          package: ./Lighthouse.Backend/publish/app-service
 
       - name: Build Demo Frontend
         run: npm run build-demo
