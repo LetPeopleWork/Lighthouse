@@ -43,8 +43,8 @@ namespace Lighthouse.Backend
                 {
                     options.ConfigureHttpsDefaults(httpsOptions =>
                     {
-                        var certPath = Environment.GetEnvironmentVariable("ASPNETCORE_Certificates__Path") ?? builder.Configuration["Certificate:Path"];
-                        var certPassword = Environment.GetEnvironmentVariable("ASPNETCORE_Certificates__Password") ?? builder.Configuration["Certificate:Password"];
+                        var certPath = builder.Configuration["Certificate:Path"];
+                        var certPassword = builder.Configuration["Certificate:Password"];
 
                         Log.Information("Using Certificate stored at {CertificatePath}", certPath);
 
