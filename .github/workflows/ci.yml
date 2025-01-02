@@ -456,10 +456,10 @@ jobs:
         run: npm run build
         working-directory: ./Lighthouse.Frontend
 
-      - name: Remove Kestrel HTTPS endpoint
+      - name: Adjust AppSettings for Azure Deployment
         run: |
           jq 'del(.Kestrel.Endpoints.Https)' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
-          jq '.Kestrel.Endpoints.Http.Url = "http://*:8000"' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
+          jq '.Kestrel.Endpoints.Http.Url = "http://*:8080"' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
         working-directory: ./Lighthouse.Backend
 
       - name: publish app-service
