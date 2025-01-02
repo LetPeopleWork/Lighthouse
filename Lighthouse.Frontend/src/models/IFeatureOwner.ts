@@ -1,9 +1,9 @@
-import { IFeature } from "./Feature";
-import { IProgressable } from "./IProgressable";
+import type { IFeature } from "./Feature";
+import type { IProgressable } from "./IProgressable";
 
 export interface IFeatureOwner extends IProgressable {
-    name: string;
-    id : number;    
-    features: IFeature[];
-    remainingFeatures: number;
+	name: string;
+	id: number;
+	features: IFeature[];
+	remainingFeatures: number;
 }

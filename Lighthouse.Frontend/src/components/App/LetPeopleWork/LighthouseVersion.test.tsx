@@ -1,167 +1,182 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import LighthouseVersion from './LighthouseVersion';
-import { IVersionService } from '../../../services/Api/VersionService';
-import { createMockApiServiceContext } from '../../../tests/MockApiServiceProvider';
-import { ApiServiceContext } from '../../../services/Api/ApiServiceContext';
-import { ILighthouseRelease, LighthouseRelease } from '../../../models/LighthouseRelease/LighthouseRelease';
+import { fireEvent, render, screen } from "@testing-library/react";
+import { BrowserRouter as Router } from "react-router-dom";
+import {
+	type ILighthouseRelease,
+	LighthouseRelease,
+} from "../../../models/LighthouseRelease/LighthouseRelease";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IVersionService } from "../../../services/Api/VersionService";
+import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import LighthouseVersion from "./LighthouseVersion";
 
 const mockGetCurrentVersion = vi.fn();
 const mockIsUpdateAvailable = vi.fn();
 const mockGetNewReleases = vi.fn();
 
 const mockVersionService: IVersionService = {
-  getCurrentVersion: mockGetCurrentVersion,
-  isUpdateAvailable: mockIsUpdateAvailable,
-  getNewReleases: mockGetNewReleases,
+	getCurrentVersion: mockGetCurrentVersion,
+	isUpdateAvailable: mockIsUpdateAvailable,
+	getNewReleases: mockGetNewReleases,
 };
 
-vi.mock('./LatestReleaseInformationDialog', () => ({
-  default: ({ open, newReleases }: { open: boolean, onClose: () => void, newReleases: ILighthouseRelease[] }) => {
-    if (!open) {
-      return null;
-    }
+vi.mock("./LatestReleaseInformationDialog", () => ({
+	default: ({
+		open,
+		newReleases,
+	}: {
+		open: boolean;
+		onClose: () => void;
+		newReleases: ILighthouseRelease[];
+	}) => {
+		if (!open) {
+			return null;
+		}
 
-    return (
-      <div data-testid="ReleaseInfoDialog">
-        {newReleases.map((release) => (
-          <span key={release.name}>
-            {release.name}
-          </span>
-        ))}
-      </div>
-    );
-  },
+		return (
+			<div data-testid="ReleaseInfoDialog">
+				{newReleases.map((release) => (
+					<span key={release.name}>{release.name}</span>
+				))}
+			</div>
+		);
+	},
 }));
 
+const MockApiServiceProvider = ({
+	children,
+}: { children: React.ReactNode }) => {
+	const mockContext = createMockApiServiceContext({
+		versionService: mockVersionService,
+	});
 
-const MockApiServiceProvider = ({ children }: { children: React.ReactNode }) => {
-  const mockContext = createMockApiServiceContext({ versionService: mockVersionService });
-
-  return (
-    <ApiServiceContext.Provider value={mockContext} >
-      {children}
-    </ApiServiceContext.Provider>
-  );
+	return (
+		<ApiServiceContext.Provider value={mockContext}>
+			{children}
+		</ApiServiceContext.Provider>
+	);
 };
 
-describe('LighthouseVersion component', () => {
-  beforeEach(() => {
-    mockGetCurrentVersion.mockResolvedValue('1.33.7');
-    mockIsUpdateAvailable.mockResolvedValue(false);
-    mockGetNewReleases.mockResolvedValue([]);
-  });
+describe("LighthouseVersion component", () => {
+	beforeEach(() => {
+		mockGetCurrentVersion.mockResolvedValue("1.33.7");
+		mockIsUpdateAvailable.mockResolvedValue(false);
+		mockGetNewReleases.mockResolvedValue([]);
+	});
 
-  afterEach(() => {
-    vi.resetAllMocks();
-    vi.restoreAllMocks();
-  });
+	afterEach(() => {
+		vi.resetAllMocks();
+		vi.restoreAllMocks();
+	});
 
+	it("renders version button with fetched version number", async () => {
+		render(
+			<MockApiServiceProvider>
+				<Router>
+					<LighthouseVersion />
+				</Router>
+			</MockApiServiceProvider>,
+		);
 
+		await screen.findByText("1.33.7");
 
-  it('renders version button with fetched version number', async () => {
-    render(
-      <MockApiServiceProvider>
-        <Router>
-          <LighthouseVersion />
-        </Router>
-      </MockApiServiceProvider>
-    );
+		const button = screen.getByRole("link", { name: "1.33.7" });
+		expect(button).toBeInTheDocument();
+		expect(button).toHaveAttribute(
+			"href",
+			"https://github.com/LetPeopleWork/Lighthouse/releases/tag/1.33.7",
+		);
+		expect(button).toHaveAttribute("target", "_blank");
+		expect(button).toHaveAttribute("rel", "noopener noreferrer");
+	});
 
-    await screen.findByText('1.33.7');
+	it("renders update button if newer version available", async () => {
+		mockIsUpdateAvailable.mockResolvedValue(true);
 
-    const button = screen.getByRole('link', { name: '1.33.7' });
-    expect(button).toBeInTheDocument();
-    expect(button).toHaveAttribute('href', 'https://github.com/LetPeopleWork/Lighthouse/releases/tag/1.33.7');
-    expect(button).toHaveAttribute('target', '_blank');
-    expect(button).toHaveAttribute('rel', 'noopener noreferrer');
-  });
+		render(
+			<MockApiServiceProvider>
+				<Router>
+					<LighthouseVersion />
+				</Router>
+			</MockApiServiceProvider>,
+		);
 
-  it('renders update button if newer version available', async () => {
-    mockIsUpdateAvailable.mockResolvedValue(true);
+		await screen.findByText("1.33.7");
 
-    render(
-      <MockApiServiceProvider>
-        <Router>
-          <LighthouseVersion />
-        </Router>
-      </MockApiServiceProvider>
-    );
+		const button = screen.queryByTestId("UpdateIcon");
+		expect(button).toBeInTheDocument();
+	});
 
-    await screen.findByText('1.33.7');
+	it("does not render update button if no newer version available", async () => {
+		mockIsUpdateAvailable.mockResolvedValue(false);
 
-    const button = screen.queryByTestId("UpdateIcon");
-    expect(button).toBeInTheDocument();
-  })
+		render(
+			<MockApiServiceProvider>
+				<Router>
+					<LighthouseVersion />
+				</Router>
+			</MockApiServiceProvider>,
+		);
 
-  it('does not render update button if no newer version available', async () => {
-    mockIsUpdateAvailable.mockResolvedValue(false);
+		await screen.findByText("1.33.7");
 
-    render(
-      <MockApiServiceProvider>
-        <Router>
-          <LighthouseVersion />
-        </Router>
-      </MockApiServiceProvider>
-    );
+		const button = screen.queryByTestId("UpdateIcon");
+		expect(button).not.toBeInTheDocument();
+	});
 
-    await screen.findByText('1.33.7');
+	it("renders dialog after button was clicked", async () => {
+		mockIsUpdateAvailable.mockResolvedValue(true);
 
-    const button = screen.queryByTestId("UpdateIcon");
-    expect(button).not.toBeInTheDocument();
-  })
+		render(
+			<MockApiServiceProvider>
+				<Router>
+					<LighthouseVersion />
+				</Router>
+			</MockApiServiceProvider>,
+		);
 
+		await screen.findByText("1.33.7");
 
-  it('renders dialog after button was clicked', async () => {
-    mockIsUpdateAvailable.mockResolvedValue(true);
+		let dialog = screen.queryByTestId("ReleaseInfoDialog");
+		expect(dialog).not.toBeInTheDocument();
 
-    render(
-      <MockApiServiceProvider>
-        <Router>
-          <LighthouseVersion />
-        </Router>
-      </MockApiServiceProvider>
-    );
+		const button = screen.getByTestId("UpdateIcon");
+		fireEvent.click(button);
 
-    await screen.findByText('1.33.7');
+		dialog = screen.queryByTestId("ReleaseInfoDialog");
+		expect(dialog).toBeInTheDocument();
+	});
 
-    let dialog = screen.queryByTestId("ReleaseInfoDialog");
-    expect(dialog).not.toBeInTheDocument();
+	it("renders all releases", async () => {
+		const releases: ILighthouseRelease[] = [
+			new LighthouseRelease(
+				"Release 1",
+				"https://letpeople.work/releases/1",
+				"HIGHLIGHT",
+				"1.33.8",
+				[],
+			),
+		];
 
-    const button = screen.getByTestId("UpdateIcon");
-    fireEvent.click(button);
+		mockIsUpdateAvailable.mockResolvedValue(true);
+		mockGetNewReleases.mockResolvedValue(releases);
 
-    dialog = screen.queryByTestId("ReleaseInfoDialog");
-    expect(dialog).toBeInTheDocument();
-  })
+		render(
+			<MockApiServiceProvider>
+				<Router>
+					<LighthouseVersion />
+				</Router>
+			</MockApiServiceProvider>,
+		);
 
+		await screen.findByText("1.33.7");
 
+		const button = screen.getByTestId("UpdateIcon");
+		fireEvent.click(button);
 
-  it('renders all releases', async () => {
-    const releases : ILighthouseRelease[] = [
-      new LighthouseRelease("Release 1", "https://letpeople.work/releases/1", "HIGHLIGHT", "1.33.8", [])
-    ];
+		const dialog = screen.queryByTestId("ReleaseInfoDialog");
+		expect(dialog).toBeInTheDocument();
 
-    mockIsUpdateAvailable.mockResolvedValue(true);
-    mockGetNewReleases.mockResolvedValue(releases)
-
-    render(
-      <MockApiServiceProvider>
-        <Router>
-          <LighthouseVersion />
-        </Router>
-      </MockApiServiceProvider>
-    );
-
-    await screen.findByText('1.33.7');
-    
-    const button = screen.getByTestId("UpdateIcon");
-    fireEvent.click(button);
-
-    const dialog = screen.queryByTestId("ReleaseInfoDialog");
-    expect(dialog).toBeInTheDocument();
-
-    const release = screen.getByText("Release 1");
-    expect(release).toBeInTheDocument();
-  })
+		const release = screen.getByText("Release 1");
+		expect(release).toBeInTheDocument();
+	});
 });

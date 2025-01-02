@@ -1,65 +1,101 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import ItemListManager from './ItemListManager';
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import ItemListManager from "./ItemListManager";
 
-describe('ItemListManager', () => {
-    const mockOnAddItem = vi.fn();
-    const mockOnRemoveItem = vi.fn();
-    const title = 'Item';
-    const items = ['Item 1', 'Item 2'];
+describe("ItemListManager", () => {
+	const mockOnAddItem = vi.fn();
+	const mockOnRemoveItem = vi.fn();
+	const title = "Item";
+	const items = ["Item 1", "Item 2"];
 
-    beforeEach(() => {
-        mockOnAddItem.mockClear();
-        mockOnRemoveItem.mockClear();
-    });
+	beforeEach(() => {
+		mockOnAddItem.mockClear();
+		mockOnRemoveItem.mockClear();
+	});
 
-    it('renders the initial items correctly', () => {
-        render(<ItemListManager title={title} items={items} onAddItem={mockOnAddItem} onRemoveItem={mockOnRemoveItem} />);
-        items.forEach(item => {
-            expect(screen.getByText(item)).toBeInTheDocument();
-        });
-    });
+	it("renders the initial items correctly", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
 
-    it('calls onAddItem when a new item is added', () => {
-        render(<ItemListManager title={title} items={items} onAddItem={mockOnAddItem} onRemoveItem={mockOnRemoveItem} />);
-        
-        const input = screen.getByLabelText(`New ${title}`);
-        const addButton = screen.getByRole('button', { name: `Add ${title}` });
+		for (const item of items) {
+			expect(screen.getByText(item)).toBeInTheDocument();
+		}
+	});
 
-        fireEvent.change(input, { target: { value: 'Item 3' } });
-        fireEvent.click(addButton);
+	it("calls onAddItem when a new item is added", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
 
-        expect(mockOnAddItem).toHaveBeenCalledWith('Item 3');
-        expect(input).toHaveValue('');
-    });
+		const input = screen.getByLabelText(`New ${title}`);
+		const addButton = screen.getByRole("button", { name: `Add ${title}` });
 
-    it('does not call onAddItem when the input is only whitespace', () => {
-        render(<ItemListManager title={title} items={items} onAddItem={mockOnAddItem} onRemoveItem={mockOnRemoveItem} />);
-        
-        const input = screen.getByLabelText(`New ${title}`);
-        const addButton = screen.getByRole('button', { name: `Add ${title}` });
+		fireEvent.change(input, { target: { value: "Item 3" } });
+		fireEvent.click(addButton);
 
-        fireEvent.change(input, { target: { value: '   ' } });
-        fireEvent.click(addButton);
+		expect(mockOnAddItem).toHaveBeenCalledWith("Item 3");
+		expect(input).toHaveValue("");
+	});
 
-        expect(mockOnAddItem).not.toHaveBeenCalled();
-    });
+	it("does not call onAddItem when the input is only whitespace", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
 
-    it('does not call onAddItem when the input is empty', () => {
-        render(<ItemListManager title={title} items={items} onAddItem={mockOnAddItem} onRemoveItem={mockOnRemoveItem} />);
-        
-        const addButton = screen.getByRole('button', { name: `Add ${title}` });
-        fireEvent.click(addButton);
+		const input = screen.getByLabelText(`New ${title}`);
+		const addButton = screen.getByRole("button", { name: `Add ${title}` });
 
-        expect(mockOnAddItem).not.toHaveBeenCalled();
-    });
+		fireEvent.change(input, { target: { value: "   " } });
+		fireEvent.click(addButton);
 
-    it('calls onRemoveItem when an item is removed', () => {
-        render(<ItemListManager title={title} items={items} onAddItem={mockOnAddItem} onRemoveItem={mockOnRemoveItem} />);
-        
-        const deleteButtons = screen.getAllByLabelText('delete');
-        fireEvent.click(deleteButtons[0]);
+		expect(mockOnAddItem).not.toHaveBeenCalled();
+	});
 
-        expect(mockOnRemoveItem).toHaveBeenCalledWith('Item 1');
-    });
+	it("does not call onAddItem when the input is empty", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
+
+		const addButton = screen.getByRole("button", { name: `Add ${title}` });
+		fireEvent.click(addButton);
+
+		expect(mockOnAddItem).not.toHaveBeenCalled();
+	});
+
+	it("calls onRemoveItem when an item is removed", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
+
+		const deleteButtons = screen.getAllByLabelText("delete");
+		fireEvent.click(deleteButtons[0]);
+
+		expect(mockOnRemoveItem).toHaveBeenCalledWith("Item 1");
+	});
 });

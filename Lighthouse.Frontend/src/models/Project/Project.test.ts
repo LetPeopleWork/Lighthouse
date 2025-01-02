@@ -1,50 +1,84 @@
-import { Feature } from '../Feature';
-import { WhenForecast } from '../Forecasts/WhenForecast';
-import { Team } from '../Team/Team';
-import { Milestone } from './Milestone';
-import { Project } from './Project';
+import { Feature } from "../Feature";
+import { WhenForecast } from "../Forecasts/WhenForecast";
+import { Team } from "../Team/Team";
+import { Milestone } from "./Milestone";
+import { Project } from "./Project";
 
-describe('Project Class', () => {
-    let project: Project;
-    let name: string;
-    let id: number;
-    let involvedTeams: Team[];
-    let features: Feature[];
-    let lastUpdated: Date;
+describe("Project Class", () => {
+	let project: Project;
+	let name: string;
+	let id: number;
+	let involvedTeams: Team[];
+	let features: Feature[];
+	let lastUpdated: Date;
 
-    beforeEach(() => {
-        name = 'New Project';
-        id = 1;
-        involvedTeams = [new Team('Team A', 1, [], [], 2, ["FTR-1", "FTR-2"], new Date(), [1]), new Team('Team B', 2, [], [], 1, ["FTR-2"], new Date(), [1])];
-        lastUpdated = new Date('2023-07-11');
+	beforeEach(() => {
+		name = "New Project";
+		id = 1;
+		involvedTeams = [
+			new Team("Team A", 1, [], [], 2, ["FTR-1", "FTR-2"], new Date(), [1]),
+			new Team("Team B", 2, [], [], 1, ["FTR-2"], new Date(), [1]),
+		];
+		lastUpdated = new Date("2023-07-11");
 
-        const milestone = new Milestone(0, "Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60));
+		const milestone = new Milestone(
+			0,
+			"Milestone 1",
+			new Date(Date.now() + 14 * 24 * 60 * 60),
+		);
 
-        const feature1 = new Feature('Feature 1', 1, "FTR-1", "", new Date('2023-07-10'), false, { 1: name }, { 1: 10, 2: 20 }, {1: 10, 2: 20}, { 0: 88.7 }, [
-            new WhenForecast(0.8, new Date('2023-08-01')),
-        ]);
-        const feature2 = new Feature('Feature 2', 2, "FTR-2", "", new Date('2023-07-09'), true, { 1: name }, { 1: 5, 2: 15 }, {1: 5, 2: 15}, { 0: 54.3 }, [
-            new WhenForecast(0.6, new Date('2023-09-01')),
-        ]);
+		const feature1 = new Feature(
+			"Feature 1",
+			1,
+			"FTR-1",
+			"",
+			new Date("2023-07-10"),
+			false,
+			{ 1: name },
+			{ 1: 10, 2: 20 },
+			{ 1: 10, 2: 20 },
+			{ 0: 88.7 },
+			[new WhenForecast(0.8, new Date("2023-08-01"))],
+		);
+		const feature2 = new Feature(
+			"Feature 2",
+			2,
+			"FTR-2",
+			"",
+			new Date("2023-07-09"),
+			true,
+			{ 1: name },
+			{ 1: 5, 2: 15 },
+			{ 1: 5, 2: 15 },
+			{ 0: 54.3 },
+			[new WhenForecast(0.6, new Date("2023-09-01"))],
+		);
 
-        features = [feature1, feature2];
-        project = new Project(name, id, involvedTeams, features, [milestone], lastUpdated);
-    });
+		features = [feature1, feature2];
+		project = new Project(
+			name,
+			id,
+			involvedTeams,
+			features,
+			[milestone],
+			lastUpdated,
+		);
+	});
 
-    it('should create an instance of Project correctly', () => {
-        expect(project.name).toBe(name);
-        expect(project.id).toBe(id);
-        expect(project.involvedTeams).toEqual(involvedTeams);
-        expect(project.lastUpdated).toBe(lastUpdated);
-        expect(project.features).toEqual(features);
-    });
+	it("should create an instance of Project correctly", () => {
+		expect(project.name).toBe(name);
+		expect(project.id).toBe(id);
+		expect(project.involvedTeams).toEqual(involvedTeams);
+		expect(project.lastUpdated).toBe(lastUpdated);
+		expect(project.features).toEqual(features);
+	});
 
-    it('should return correct total remaining work', () => {
-        const expectedRemainingWork = 10 + 20 + 5 + 15;
-        expect(project.remainingWork).toBe(expectedRemainingWork);
-    });
+	it("should return correct total remaining work", () => {
+		const expectedRemainingWork = 10 + 20 + 5 + 15;
+		expect(project.remainingWork).toBe(expectedRemainingWork);
+	});
 
-    it('should return correct number of remaining features', () => {
-        expect(project.remainingFeatures).toBe(2);
-    });
+	it("should return correct number of remaining features", () => {
+		expect(project.remainingFeatures).toBe(2);
+	});
 });

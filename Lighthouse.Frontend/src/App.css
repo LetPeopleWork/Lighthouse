@@ -1,73 +1,74 @@
 @import "@syncfusion/ej2/material3.css";
 
 /* Reset default margins and paddings */
-body, html {
-  margin: 0;
-  padding: 0;
-  font-family: 'Roboto', sans-serif; /* Apply a suitable font family */
+body,
+html {
+	margin: 0;
+	padding: 0;
+	font-family: "Roboto", sans-serif; /* Apply a suitable font family */
 }
 
 .toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 0 20px; /* Ensure the toolbar stretches the full width */
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	padding: 0 20px; /* Ensure the toolbar stretches the full width */
 }
 
 /* Logo styles */
 .logo {
-  display: flex;
-  align-items: center;
+	display: flex;
+	align-items: center;
 }
 
 .nav-links {
-  display: flex;
-  justify-content: center;
-  flex-grow: 1;
-  gap: 20px;
+	display: flex;
+	justify-content: center;
+	flex-grow: 1;
+	gap: 20px;
 }
 
-.nav-link {  
-  color: rgba(48, 87, 78, 1);
-  text-decoration: none;
+.nav-link {
+	color: rgba(48, 87, 78, 1);
+	text-decoration: none;
 }
 
-.active{
-  font-weight: bold;
+.active {
+	font-weight: bold;
 }
 
 /* Content area styles */
 .content {
-  display: flex;
-  height: calc(100vh - 64px); /* Adjust for header height */
-  margin-top: 64px; /* Ensure content starts below header */
+	display: flex;
+	height: calc(100vh - 64px); /* Adjust for header height */
+	margin-top: 64px; /* Ensure content starts below header */
 }
 
 .container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
 }
 
 .main-content {
-  flex-grow: 1; /* Fill remaining space */
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Adjust alignment as needed */
-  padding: 20px; /* Adjust padding as needed */
-  box-sizing: border-box;
+	flex-grow: 1; /* Fill remaining space */
+	display: flex;
+	justify-content: center;
+	align-items: flex-start; /* Adjust alignment as needed */
+	padding: 20px; /* Adjust padding as needed */
+	box-sizing: border-box;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .content {
-    flex-direction: column;
-    height: auto;
-  }
-  
-  .main-content {
-    margin-left: 0;
-    padding: 20px;
-  }
+	.content {
+		flex-direction: column;
+		height: auto;
+	}
+
+	.main-content {
+		margin-left: 0;
+		padding: 20px;
+	}
 }

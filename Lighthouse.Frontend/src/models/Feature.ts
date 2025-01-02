@@ -1,91 +1,112 @@
-import { IWhenForecast } from "./Forecasts/WhenForecast";
+import type { IWhenForecast } from "./Forecasts/WhenForecast";
 
 export interface IFeature {
-    name: string;
-    id: number;
-    featureReference: string;
-    url: string | null;
-    lastUpdated: Date;
-    isUsingDefaultFeatureSize: boolean;
-    remainingWork: { [key: number]: number };
-    totalWork: { [key: number]: number };
-    milestoneLikelihood: { [key: number]: number };
-    projects: { [key: number]: string };
-    forecasts: IWhenForecast[];
+	name: string;
+	id: number;
+	featureReference: string;
+	url: string | null;
+	lastUpdated: Date;
+	isUsingDefaultFeatureSize: boolean;
+	remainingWork: { [key: number]: number };
+	totalWork: { [key: number]: number };
+	milestoneLikelihood: { [key: number]: number };
+	projects: { [key: number]: string };
+	forecasts: IWhenForecast[];
 }
 
-
 export interface DictionaryObject<TValue> {
-    readonly [key: number]: TValue
+	readonly [key: number]: TValue;
 }
 
 export class Feature implements IFeature {
-    name!: string;
-    id!: number;
-    featureReference!: string;
-    url: string | null;
-    lastUpdated!: Date;
-    isUsingDefaultFeatureSize!: boolean;
-    projects: DictionaryObject<string>;
-    remainingWork: DictionaryObject<number>;
-    totalWork: { [key: number]: number };
-    milestoneLikelihood: DictionaryObject<number>;
-    forecasts!: IWhenForecast[];
+	name!: string;
+	id!: number;
+	featureReference!: string;
+	url: string | null;
+	lastUpdated!: Date;
+	isUsingDefaultFeatureSize!: boolean;
+	projects: DictionaryObject<string>;
+	remainingWork: DictionaryObject<number>;
+	totalWork: { [key: number]: number };
+	milestoneLikelihood: DictionaryObject<number>;
+	forecasts!: IWhenForecast[];
 
-    constructor(name: string, id: number, featureReference: string, url: string | null, lastUpdated: Date, isUsingDefaultFeatureSize: boolean, projects: DictionaryObject<string>, remainingWork: DictionaryObject<number>, totalWork: { [key: number]: number }, milestoneLikelihood: DictionaryObject<number>, forecasts: IWhenForecast[]) {
-        this.name = name;
-        this.id = id;
-        this.featureReference = featureReference;
-        this.url = url;
-        this.lastUpdated = lastUpdated;
-        this.isUsingDefaultFeatureSize = isUsingDefaultFeatureSize;
-        this.projects = projects;
-        this.remainingWork = remainingWork;
-        this.totalWork = totalWork;
-        this.milestoneLikelihood = milestoneLikelihood;
-        this.forecasts = forecasts;
-    }
+	constructor(
+		name: string,
+		id: number,
+		featureReference: string,
+		url: string | null,
+		lastUpdated: Date,
+		isUsingDefaultFeatureSize: boolean,
+		projects: DictionaryObject<string>,
+		remainingWork: DictionaryObject<number>,
+		totalWork: { [key: number]: number },
+		milestoneLikelihood: DictionaryObject<number>,
+		forecasts: IWhenForecast[],
+	) {
+		this.name = name;
+		this.id = id;
+		this.featureReference = featureReference;
+		this.url = url;
+		this.lastUpdated = lastUpdated;
+		this.isUsingDefaultFeatureSize = isUsingDefaultFeatureSize;
+		this.projects = projects;
+		this.remainingWork = remainingWork;
+		this.totalWork = totalWork;
+		this.milestoneLikelihood = milestoneLikelihood;
+		this.forecasts = forecasts;
+	}
 
-    getRemainingWorkForTeam(id: number): number {
-        return this.getWorkForTeam(id, this.remainingWork);
-    }
+	getRemainingWorkForTeam(id: number): number {
+		return this.getWorkForTeam(id, this.remainingWork);
+	}
 
-    getTotalWorkForTeam(id: number): number {
-        return this.getWorkForTeam(id, this.totalWork);
-    }
+	getTotalWorkForTeam(id: number): number {
+		return this.getWorkForTeam(id, this.totalWork);
+	}
 
-    getCompletionPercentageForTeam(id: number) : number {
-        return parseFloat(((100 / this.getTotalWorkForTeam(id)) * this.getRemainingWorkForTeam(id)).toFixed(2))
-    }
+	getCompletionPercentageForTeam(id: number): number {
+		return Number.parseFloat(
+			(
+				(100 / this.getTotalWorkForTeam(id)) *
+				this.getRemainingWorkForTeam(id)
+			).toFixed(2),
+		);
+	}
 
-    getRemainingWorkForFeature(): number {
-        return this.getAllWork(this.remainingWork);
-    }
-    
-    getTotalWorkForFeature(): number {
-        return this.getAllWork(this.totalWork);
-    }
+	getRemainingWorkForFeature(): number {
+		return this.getAllWork(this.remainingWork);
+	}
 
-    getCompletionPercentageForFeature() : number {
-        return parseFloat(((100 / this.getTotalWorkForFeature()) * this.getRemainingWorkForFeature()).toFixed(2))
-    }
+	getTotalWorkForFeature(): number {
+		return this.getAllWork(this.totalWork);
+	}
 
-    getMilestoneLikelihood(milestoneId: number) {
-        return this.milestoneLikelihood[milestoneId] ?? 0;
-    }
+	getCompletionPercentageForFeature(): number {
+		return Number.parseFloat(
+			(
+				(100 / this.getTotalWorkForFeature()) *
+				this.getRemainingWorkForFeature()
+			).toFixed(2),
+		);
+	}
 
-    getAllWork(work: { [key: number]: number }): number {
-        let totalWork = 0;
-        const values = Object.values(work);
+	getMilestoneLikelihood(milestoneId: number) {
+		return this.milestoneLikelihood[milestoneId] ?? 0;
+	}
 
-        for (const work of values) {
-            totalWork += work;
-        }
+	getAllWork(work: { [key: number]: number }): number {
+		let totalWork = 0;
+		const values = Object.values(work);
 
-        return totalWork;
-    }
+		for (const work of values) {
+			totalWork += work;
+		}
 
-    getWorkForTeam(id: number, work: { [key: number]: number }): number {
-        return work[id] ?? 0;
-    }
+		return totalWork;
+	}
+
+	getWorkForTeam(id: number, work: { [key: number]: number }): number {
+		return work[id] ?? 0;
+	}
 }

@@ -1,60 +1,72 @@
-import React from "react";
 import { Tooltip, Typography } from "@mui/material";
+import type React from "react";
+import type { IHowManyForecast } from "../../../models/Forecasts/HowManyForecast";
+import type { IForecast } from "../../../models/Forecasts/IForecast";
+import type { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
-import { IForecast } from "../../../models/Forecasts/IForecast";
-import { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { ForecastLevel } from "./ForecastLevel";
-import { IHowManyForecast } from "../../../models/Forecasts/HowManyForecast";
 
 interface ForecastInfoProps {
-    forecast: IForecast;
+	forecast: IForecast;
 }
 
-const TooltipText: React.FC<{ level: string; percentage: number }> = ({ level, percentage }) => (
-    <Typography variant="body1">
-        {level} ({percentage}% Chance)
-    </Typography>
+const TooltipText: React.FC<{ level: string; percentage: number }> = ({
+	level,
+	percentage,
+}) => (
+	<Typography variant="body1">
+		{level} ({percentage}% Chance)
+	</Typography>
 );
 
 const ForecastInfo: React.FC<ForecastInfoProps> = ({ forecast }) => {
-    const forecastLevel = new ForecastLevel(forecast.probability);
+	const forecastLevel = new ForecastLevel(forecast.probability);
 
-    const isWhenForecast = (forecast: IForecast): forecast is IWhenForecast => {
-        return (forecast as IWhenForecast).expectedDate !== undefined;
-    };
+	const isWhenForecast = (forecast: IForecast): forecast is IWhenForecast => {
+		return (forecast as IWhenForecast).expectedDate !== undefined;
+	};
 
-    const isHowManyForecast = (forecast: IForecast): forecast is IHowManyForecast => {
-        return (forecast as IHowManyForecast).expectedItems !== undefined;
-    };
+	const isHowManyForecast = (
+		forecast: IForecast,
+	): forecast is IHowManyForecast => {
+		return (forecast as IHowManyForecast).expectedItems !== undefined;
+	};
 
-    const renderForecast = (): React.ReactNode => {
-        if (isWhenForecast(forecast)) {
-            return (
-                <LocalDateTimeDisplay utcDate={forecast.expectedDate} />
-            );
-        }
-    
-        if (isHowManyForecast(forecast)) {
-            return (
-                <Typography variant="body2" >
-                    {forecast.expectedItems} Items
-                </Typography>
-            );
-        }
-    
-        return (
-            <div>Forecast Type not Supported</div>
-        );
-    }
+	const renderForecast = (): React.ReactNode => {
+		if (isWhenForecast(forecast)) {
+			return <LocalDateTimeDisplay utcDate={forecast.expectedDate} />;
+		}
 
-    return (
-        <Tooltip title={<TooltipText level={forecastLevel.level} percentage={forecast.probability} />} arrow>
-            <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
-                <forecastLevel.IconComponent style={{ color: forecastLevel.color, marginRight: 8 }} />
-                {renderForecast()}
-            </Typography>
-        </Tooltip>
-    );
+		if (isHowManyForecast(forecast)) {
+			return (
+				<Typography variant="body2">{forecast.expectedItems} Items</Typography>
+			);
+		}
+
+		return <div>Forecast Type not Supported</div>;
+	};
+
+	return (
+		<Tooltip
+			title={
+				<TooltipText
+					level={forecastLevel.level}
+					percentage={forecast.probability}
+				/>
+			}
+			arrow
+		>
+			<Typography
+				variant="body1"
+				sx={{ display: "flex", alignItems: "center" }}
+			>
+				<forecastLevel.IconComponent
+					style={{ color: forecastLevel.color, marginRight: 8 }}
+				/>
+				{renderForecast()}
+			</Typography>
+		</Tooltip>
+	);
 };
 
 export default ForecastInfo;

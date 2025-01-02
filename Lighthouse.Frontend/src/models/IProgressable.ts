@@ -1,4 +1,4 @@
 export interface IProgressable {
-    remainingWork: number;
-    totalWork: number;
+	remainingWork: number;
+	totalWork: number;
 }

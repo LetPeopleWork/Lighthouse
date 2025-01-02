@@ -1,28 +1,40 @@
-import { render, screen } from '@testing-library/react';
-import { vi } from 'vitest';
-import DatePickerComponent from './DatePickerComponent'; // Adjust the import according to your file structure
-import dayjs from 'dayjs';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import dayjs from "dayjs";
+import { vi } from "vitest";
+import DatePickerComponent from "./DatePickerComponent"; // Adjust the import according to your file structure
 
-describe('DatePickerComponent', () => {
-    const mockOnChange = vi.fn();
+describe("DatePickerComponent", () => {
+	const mockOnChange = vi.fn();
 
-    afterEach(() => {
-        vi.clearAllMocks();
-    });
+	afterEach(() => {
+		vi.clearAllMocks();
+	});
 
-    test('renders the date picker with the correct label', () => {
-        render(<DatePickerComponent label="Burndown Start Date" value={dayjs()} onChange={mockOnChange} />);
+	test("renders the date picker with the correct label", () => {
+		render(
+			<DatePickerComponent
+				label="Burndown Start Date"
+				value={dayjs()}
+				onChange={mockOnChange}
+			/>,
+		);
 
-        expect(screen.getByLabelText(/burndown start date/i)).toBeInTheDocument();
-    });
+		expect(screen.getByLabelText(/burndown start date/i)).toBeInTheDocument();
+	});
 
-    test('calls onChange when a new date is selected', async () => {
-        render(<DatePickerComponent label="Burndown Start Date" value={dayjs()} onChange={mockOnChange} />);
+	test("calls onChange when a new date is selected", async () => {
+		render(
+			<DatePickerComponent
+				label="Burndown Start Date"
+				value={dayjs()}
+				onChange={mockOnChange}
+			/>,
+		);
 
-        const pastDate = dayjs(new Date(2024, 4, 8));
-        await userEvent.type(screen.getByRole('textbox'), pastDate.toString())
+		const pastDate = dayjs(new Date(2024, 4, 8));
+		await userEvent.type(screen.getByRole("textbox"), pastDate.toString());
 
-        expect(mockOnChange).toHaveBeenCalled();
-    });
+		expect(mockOnChange).toHaveBeenCalled();
+	});
 });

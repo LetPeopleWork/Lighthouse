@@ -1,218 +1,238 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import StatesList from './StatesList';
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import StatesList from "./StatesList";
 
-describe('StatesList', () => {
-    const mockOnAddToDoState = vi.fn();
-    const mockOnRemoveToDoState = vi.fn();
-    const mockOnAddDoingState = vi.fn();
-    const mockOnRemoveDoingState = vi.fn();
-    const mockOnAddDoneState = vi.fn();
-    const mockOnRemoveDoneState = vi.fn();
+describe("StatesList", () => {
+	const mockOnAddToDoState = vi.fn();
+	const mockOnRemoveToDoState = vi.fn();
+	const mockOnAddDoingState = vi.fn();
+	const mockOnRemoveDoingState = vi.fn();
+	const mockOnAddDoneState = vi.fn();
+	const mockOnRemoveDoneState = vi.fn();
 
-    const toDoStates = ['Task 1', 'Task 2'];
-    const doingStates = ['In Progress'];
-    const doneStates = ['Completed'];
+	const toDoStates = ["Task 1", "Task 2"];
+	const doingStates = ["In Progress"];
+	const doneStates = ["Completed"];
 
-    beforeEach(() => {
-        mockOnAddToDoState.mockClear();
-        mockOnRemoveToDoState.mockClear();
-        mockOnAddDoingState.mockClear();
-        mockOnRemoveDoingState.mockClear();
-        mockOnAddDoneState.mockClear();
-        mockOnRemoveDoneState.mockClear();
-    });
+	beforeEach(() => {
+		mockOnAddToDoState.mockClear();
+		mockOnRemoveToDoState.mockClear();
+		mockOnAddDoingState.mockClear();
+		mockOnRemoveDoingState.mockClear();
+		mockOnAddDoneState.mockClear();
+		mockOnRemoveDoneState.mockClear();
+	});
 
-    it('renders the title correctly', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
-        
-        expect(screen.getByText('States')).toBeInTheDocument();
-    });
+	it("renders the title correctly", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-    it('renders to do states correctly', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		expect(screen.getByText("States")).toBeInTheDocument();
+	});
 
-        toDoStates.forEach(state => {
-            expect(screen.getByText(state)).toBeInTheDocument();
-        });
-    });
+	it("renders to do states correctly", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-    it('calls onAddToDoState when a new to do state is added', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		for (const state of toDoStates) {
+			expect(screen.getByText(state)).toBeInTheDocument();
+		}
+	});
 
-        const input = screen.getByLabelText('New To Do States');
-        const addButton = screen.getByRole('button', { name: 'Add To Do States' });
+	it("calls onAddToDoState when a new to do state is added", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-        fireEvent.change(input, { target: { value: 'Task 3' } });
-        fireEvent.click(addButton);
+		const input = screen.getByLabelText("New To Do States");
+		const addButton = screen.getByRole("button", { name: "Add To Do States" });
 
-        expect(mockOnAddToDoState).toHaveBeenCalledWith('Task 3');
-    });
+		fireEvent.change(input, { target: { value: "Task 3" } });
+		fireEvent.click(addButton);
 
-    it('calls onRemoveToDoState when an item is removed', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		expect(mockOnAddToDoState).toHaveBeenCalledWith("Task 3");
+	});
 
-        const deleteButtons = screen.getAllByLabelText('delete');
-        fireEvent.click(deleteButtons[0]);
+	it("calls onRemoveToDoState when an item is removed", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-        expect(mockOnRemoveToDoState).toHaveBeenCalledWith('Task 1');
-    });
+		const deleteButtons = screen.getAllByLabelText("delete");
+		fireEvent.click(deleteButtons[0]);
 
-    it('renders doing states correctly', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		expect(mockOnRemoveToDoState).toHaveBeenCalledWith("Task 1");
+	});
 
-        doingStates.forEach(state => {
-            expect(screen.getByText(state)).toBeInTheDocument();
-        });
-    });
+	it("renders doing states correctly", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-    it('calls onAddDoingState when a new doing state is added', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		for (const state of doingStates) {
+			expect(screen.getByText(state)).toBeInTheDocument();
+		}
+	});
 
-        const input = screen.getByLabelText('New Doing States');
-        const addButton = screen.getByRole('button', { name: 'Add Doing States' });
+	it("calls onAddDoingState when a new doing state is added", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-        fireEvent.change(input, { target: { value: 'Task 4' } });
-        fireEvent.click(addButton);
+		const input = screen.getByLabelText("New Doing States");
+		const addButton = screen.getByRole("button", { name: "Add Doing States" });
 
-        expect(mockOnAddDoingState).toHaveBeenCalledWith('Task 4');
-    });
+		fireEvent.change(input, { target: { value: "Task 4" } });
+		fireEvent.click(addButton);
 
-    it('calls onRemoveDoingState when an item is removed', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		expect(mockOnAddDoingState).toHaveBeenCalledWith("Task 4");
+	});
 
-        const deleteButtons = screen.getAllByLabelText('delete');
-        fireEvent.click(deleteButtons[2]);
+	it("calls onRemoveDoingState when an item is removed", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-        expect(mockOnRemoveDoingState).toHaveBeenCalledWith('In Progress');
-    });
+		const deleteButtons = screen.getAllByLabelText("delete");
+		fireEvent.click(deleteButtons[2]);
 
-    it('renders done states correctly', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		expect(mockOnRemoveDoingState).toHaveBeenCalledWith("In Progress");
+	});
 
-        doneStates.forEach(state => {
-            expect(screen.getByText(state)).toBeInTheDocument();
-        });
-    });
+	it("renders done states correctly", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-    it('calls onAddDoneState when a new done state is added', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		for (const state of doneStates) {
+			expect(screen.getByText(state)).toBeInTheDocument();
+		}
+	});
 
-        const input = screen.getByLabelText('New Done States');
-        const addButton = screen.getByRole('button', { name: 'Add Done States' });
+	it("calls onAddDoneState when a new done state is added", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-        fireEvent.change(input, { target: { value: 'Task 5' } });
-        fireEvent.click(addButton);
+		const input = screen.getByLabelText("New Done States");
+		const addButton = screen.getByRole("button", { name: "Add Done States" });
 
-        expect(mockOnAddDoneState).toHaveBeenCalledWith('Task 5');
-    });
+		fireEvent.change(input, { target: { value: "Task 5" } });
+		fireEvent.click(addButton);
 
-    it('calls onRemoveDoneState when an item is removed', () => {
-        render(<StatesList
-            toDoStates={toDoStates}
-            onAddToDoState={mockOnAddToDoState}
-            onRemoveToDoState={mockOnRemoveToDoState}
-            doingStates={doingStates}
-            onAddDoingState={mockOnAddDoingState}
-            onRemoveDoingState={mockOnRemoveDoingState}
-            doneStates={doneStates}
-            onAddDoneState={mockOnAddDoneState}
-            onRemoveDoneState={mockOnRemoveDoneState}
-        />);
+		expect(mockOnAddDoneState).toHaveBeenCalledWith("Task 5");
+	});
 
-        const deleteButtons = screen.getAllByLabelText('delete');
-        fireEvent.click(deleteButtons[3]);
+	it("calls onRemoveDoneState when an item is removed", () => {
+		render(
+			<StatesList
+				toDoStates={toDoStates}
+				onAddToDoState={mockOnAddToDoState}
+				onRemoveToDoState={mockOnRemoveToDoState}
+				doingStates={doingStates}
+				onAddDoingState={mockOnAddDoingState}
+				onRemoveDoingState={mockOnRemoveDoingState}
+				doneStates={doneStates}
+				onAddDoneState={mockOnAddDoneState}
+				onRemoveDoneState={mockOnRemoveDoneState}
+			/>,
+		);
 
-        expect(mockOnRemoveDoneState).toHaveBeenCalledWith('Completed');
-    });
+		const deleteButtons = screen.getAllByLabelText("delete");
+		fireEvent.click(deleteButtons[3]);
+
+		expect(mockOnRemoveDoneState).toHaveBeenCalledWith("Completed");
+	});
 });

@@ -1,3 +1,3 @@
 export interface IDataRetentionSettings {
-    maxStorageTimeInDays: number;
+	maxStorageTimeInDays: number;
 }
