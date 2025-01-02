@@ -157,11 +157,6 @@ jobs:
       run: npm install
       working-directory: ./Lighthouse.EndToEndTests
 
-    - name: Lint Frontend
-      if: needs.changes.outputs.e2e == 'true'
-      run: npm run lint
-      working-directory: ./Lighthouse.EndToEndTests
-
     - name: Build Frontend
       if: needs.changes.outputs.e2e == 'true'
       run: npm run build

@@ -1,102 +1,113 @@
-import { Locator, Page } from '@playwright/test';
-import { ProjectEditPage } from './ProjectEditPage';
-import { getLastUpdatedDateFromText } from '../../helpers/dates';
+import type { Locator, Page } from "@playwright/test";
+import { getLastUpdatedDateFromText } from "../../helpers/dates";
+import { ProjectEditPage } from "./ProjectEditPage";
 
 export class ProjectDetailPage {
-    page: Page;
+	page: Page;
 
-    constructor(page: Page) {
-        this.page = page;
-    }
+	constructor(page: Page) {
+		this.page = page;
+	}
 
-    getFeatureLink(feature: string): Locator {
-        const featureLink = this.page.getByRole('link', { name: feature });
-        return featureLink;
-    }
+	getFeatureLink(feature: string): Locator {
+		const featureLink = this.page.getByRole("link", { name: feature });
+		return featureLink;
+	}
 
-    getFeatureInProgressIcon(feature: string): Locator {
-        const inProgressIcon = this.page.getByRole('cell', { name: feature }).getByRole('button');
-        return inProgressIcon
-    }
+	getFeatureInProgressIcon(feature: string): Locator {
+		const inProgressIcon = this.page
+			.getByRole("cell", { name: feature })
+			.getByRole("button");
+		return inProgressIcon;
+	}
 
-    getFeatureIsDefaultSize(): Locator {
-        const defaultSizeIcon = this.page.getByLabel(`No child items were found for`);
-        return defaultSizeIcon
-    }
+	getFeatureIsDefaultSize(): Locator {
+		const defaultSizeIcon = this.page.getByLabel(
+			"No child items were found for",
+		);
+		return defaultSizeIcon;
+	}
 
-    getTeamLinkForFeature(teamName: string, index: number): Locator {
-        const teamLink = this.page.getByRole('link', { name: teamName }).nth(index);
-        return teamLink;
-    }
+	getTeamLinkForFeature(teamName: string, index: number): Locator {
+		const teamLink = this.page.getByRole("link", { name: teamName }).nth(index);
+		return teamLink;
+	}
 
-    async getLastUpdatedDateForFeature(featureName: string): Promise<Date> {
-        const featureRow = this.page.locator(`tr:has-text("${featureName}")`);
-        const featureRowText = await featureRow.textContent();
-        // Text: 'Speedy note-taking Overall Progress0% (0/12)E2ETests_owgjprqbuv0% (0/3)1/4/20251/2/20251/1/202512/31/202499.99%12/28/2024, 12:22:25 PM'
+	async getLastUpdatedDateForFeature(featureName: string): Promise<Date> {
+		const featureRow = this.page.locator(`tr:has-text("${featureName}")`);
+		const featureRowText = await featureRow.textContent();
 
-        const datePattern = /(\d{1,2}\/\d{1,2}\/\d{4},\s\d{1,2}:\d{2}:\d{2}\s[AP]M)$/;
-        const match = featureRowText?.match(datePattern);
-        if (!match) {
-            return new Date();
-        }
+		const datePattern =
+			/(\d{1,2}\/\d{1,2}\/\d{4},\s\d{1,2}:\d{2}:\d{2}\s[AP]M)$/;
+		const match = featureRowText?.match(datePattern);
+		if (!match) {
+			return new Date();
+		}
 
-        return new Date(match[1]);
-    }
+		return new Date(match[1]);
+	}
 
-    async getLastUpdatedDate(): Promise<Date> {
-        const lastUpdatedText = await this.page.getByRole('heading', { name: /^Last Updated/ }).textContent() ?? '';
-        return getLastUpdatedDateFromText(lastUpdatedText);
-    }
+	async getLastUpdatedDate(): Promise<Date> {
+		const lastUpdatedText =
+			(await this.page
+				.getByRole("heading", { name: /^Last Updated/ })
+				.textContent()) ?? "";
+		return getLastUpdatedDateFromText(lastUpdatedText);
+	}
 
-    async toggleMilestoneConfiguration(): Promise<void> {
-        await this.page.getByLabel('toggle').first().click();
-    }
+	async toggleMilestoneConfiguration(): Promise<void> {
+		await this.page.getByLabel("toggle").first().click();
+	}
 
-    async addMilestone(name: string, date: Date): Promise<void> {
-        await this.page.getByLabel('New Milestone Name').fill(name);
-        await this.page.getByLabel('New Milestone Date').fill(date.toISOString().split('T')[0]);
-        await this.page.getByRole('button', { name: 'Add Milestone' }).click();
-    }
+	async addMilestone(name: string, date: Date): Promise<void> {
+		await this.page.getByLabel("New Milestone Name").fill(name);
+		await this.page
+			.getByLabel("New Milestone Date")
+			.fill(date.toISOString().split("T")[0]);
+		await this.page.getByRole("button", { name: "Add Milestone" }).click();
+	}
 
-    async removeMilestone(): Promise<void> {
-        await this.page.getByLabel('delete').click();
-    }
+	async removeMilestone(): Promise<void> {
+		await this.page.getByLabel("delete").click();
+	}
 
-    getMilestoneColumn(milestoneName: string, milestoneDate: Date): Locator {
-        const dateString = milestoneDate.toLocaleDateString('en-US');
-        return this.page.getByRole('columnheader', { name: `${milestoneName} (${dateString})` })
-    }
+	getMilestoneColumn(milestoneName: string, milestoneDate: Date): Locator {
+		const dateString = milestoneDate.toLocaleDateString("en-US");
+		return this.page.getByRole("columnheader", {
+			name: `${milestoneName} (${dateString})`,
+		});
+	}
 
-    async toggleFeatureWIPConfiguration(): Promise<void> {
-        await this.page.getByLabel('toggle').nth(1).click();
-    }
+	async toggleFeatureWIPConfiguration(): Promise<void> {
+		await this.page.getByLabel("toggle").nth(1).click();
+	}
 
-    async changeFeatureWIPForTeam(teamName: string, featureWIP: number) {
-        await this.page.getByLabel(teamName).fill(`${featureWIP}`);
-        await this.page.getByLabel(teamName).press('Enter');
-    }
+	async changeFeatureWIPForTeam(teamName: string, featureWIP: number) {
+		await this.page.getByLabel(teamName).fill(`${featureWIP}`);
+		await this.page.getByLabel(teamName).press("Enter");
+	}
 
-    async editProject(): Promise<ProjectEditPage> {
-        await this.editProjectButton.click();
+	async editProject(): Promise<ProjectEditPage> {
+		await this.editProjectButton.click();
 
-        return new ProjectEditPage(this.page);
-    }
+		return new ProjectEditPage(this.page);
+	}
 
-    async refreshFeatures(): Promise<void> {
-        await this.refreshFeatureButton.click();
-    }
+	async refreshFeatures(): Promise<void> {
+		await this.refreshFeatureButton.click();
+	}
 
-    get refreshFeatureButton(): Locator {
-        return this.page.getByRole('button', { name: 'Refresh Features' });
-    }
+	get refreshFeatureButton(): Locator {
+		return this.page.getByRole("button", { name: "Refresh Features" });
+	}
 
-    get editProjectButton(): Locator {
-        return this.page.getByRole('button', { name: 'Edit Project' });
-    }
+	get editProjectButton(): Locator {
+		return this.page.getByRole("button", { name: "Edit Project" });
+	}
 
-    get projectId(): number {
-        const url = new URL(this.page.url());
-        const projectId = url.pathname.split('/').pop() ?? '0';
-        return Number.parseInt(projectId, 10);
-    }
+	get projectId(): number {
+		const url = new URL(this.page.url());
+		const projectId = url.pathname.split("/").pop() ?? "0";
+		return Number.parseInt(projectId, 10);
+	}
 }

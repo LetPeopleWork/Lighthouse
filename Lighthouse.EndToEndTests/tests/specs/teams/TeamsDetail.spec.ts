@@ -1,60 +1,70 @@
-import { expect, testWithData } from '../../fixutres/LighthouseFixture';
-import { expectDateToBeRecent } from '../../helpers/dates';
+import { expect, testWithData } from "../../fixutres/LighthouseFixture";
+import { expectDateToBeRecent } from "../../helpers/dates";
 
-[
-    { name: "Azure DevOps", index: 0 },
-    { name: "Jira", index: 2 }
-]
-    .forEach(({ index, name }) => {
-        testWithData(`should update Team Data for ${name} team on click`, async ({ testData, overviewPage }) => {
-            const team = testData.teams[index];
+const testData = [
+	{ name: "Azure DevOps", index: 0 },
+	{ name: "Jira", index: 2 },
+];
 
-            const teamsPage = await overviewPage.lightHousePage.goToTeams();
-            const teamDetailPage = await teamsPage.goToTeam(team.name);
+for (const { index, name } of testData) {
+	testWithData(
+		`should update Team Data for ${name} team on click`,
+		async ({ testData, overviewPage }) => {
+			const team = testData.teams[index];
 
-            await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+			const teamsPage = await overviewPage.lightHousePage.goToTeams();
+			const teamDetailPage = await teamsPage.goToTeam(team.name);
 
-            await teamDetailPage.updateTeamData();
-            await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
+			await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-            // Wait for update to be done
-            await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+			await teamDetailPage.updateTeamData();
+			await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
 
-            // Make sure the features in progress is correct
-            const featuresInProgress = await teamDetailPage.getFeaturesInProgress();
-            expect(featuresInProgress).toBe(1);
+			// Wait for update to be done
+			await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-            const lastUpdatedDate = await teamDetailPage.getLastUpdatedDate();
-            expectDateToBeRecent(lastUpdatedDate);
-        });
-    });
+			// Make sure the features in progress is correct
+			const featuresInProgress = await teamDetailPage.getFeaturesInProgress();
+			expect(featuresInProgress).toBe(1);
 
-testWithData('should open Team Edit Page when clicking on Edit Button', async ({ testData, overviewPage }) => {
-    const [team] = testData.teams;
+			const lastUpdatedDate = await teamDetailPage.getLastUpdatedDate();
+			expectDateToBeRecent(lastUpdatedDate);
+		},
+	);
+}
 
-    const teamsPage = await overviewPage.lightHousePage.goToTeams();
-    const teamDetailPage = await teamsPage.goToTeam(team.name);
+testWithData(
+	"should open Team Edit Page when clicking on Edit Button",
+	async ({ testData, overviewPage }) => {
+		const [team] = testData.teams;
 
-    const teamEditPage = await teamDetailPage.editTeam();
-    expect(teamEditPage.page.url()).toContain(`/teams/edit/${team.id}`);
-});
+		const teamsPage = await overviewPage.lightHousePage.goToTeams();
+		const teamDetailPage = await teamsPage.goToTeam(team.name);
 
-testWithData(`should show Manual When and How Many Forecast for team`, async ({ testData, overviewPage }) => {
-    const team = testData.teams[0];
+		const teamEditPage = await teamDetailPage.editTeam();
+		expect(teamEditPage.page.url()).toContain(`/teams/edit/${team.id}`);
+	},
+);
 
-    const teamsPage = await overviewPage.lightHousePage.goToTeams();
-    const teamDetailPage = await teamsPage.goToTeam(team.name);
+testWithData(
+	"should show Manual When and How Many Forecast for team",
+	async ({ testData, overviewPage }) => {
+		const team = testData.teams[0];
 
-    await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+		const teamsPage = await overviewPage.lightHousePage.goToTeams();
+		const teamDetailPage = await teamsPage.goToTeam(team.name);
 
-    await teamDetailPage.updateTeamData();
-    await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
+		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-    // Wait for update to be done
-    await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+		await teamDetailPage.updateTeamData();
+		await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
 
-    const howMany = 20;
-    const likelihood = await teamDetailPage.forecast(howMany);
+		// Wait for update to be done
+		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-    expect(likelihood).toBeGreaterThan(0);
-});
+		const howMany = 20;
+		const likelihood = await teamDetailPage.forecast(howMany);
+
+		expect(likelihood).toBeGreaterThan(0);
+	},
+);
