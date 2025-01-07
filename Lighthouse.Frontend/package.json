@@ -24,7 +24,7 @@
     "@mui/material": "^6.3.1",
     "@mui/x-charts": "^7.23.2",
     "@mui/x-date-pickers": "^7.23.3",
-    "@syncfusion/ej2": "^28.1.37",
+    "@syncfusion/ej2": "^28.1.38",
     "@syncfusion/ej2-base": "^28.1.33",
     "@syncfusion/ej2-react-charts": "^28.1.37",
     "axios": "^1.7.9",
