@@ -10,6 +10,8 @@ color_scheme: dark
 search_enabled: true
 nav_enabled: true
 heading_anchors: true
+aux_links_new_tab: true
 
 aux_links:
-  Template Repository: https://letpeoplework.github.io/lighthouse
+  Let People Work: https://letpeople.work
+  GitHub: https://github.com/letpeoplework/lighthouse
