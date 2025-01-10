@@ -4,5 +4,12 @@ theme: just-the-docs
 
 url: https://letpeoplework.github.io/lighthouse
 
+logo: "/assets/Logo.png"
+color_scheme: dark
+
+search_enabled: true
+nav_enabled: true
+heading_anchors: true
+
 aux_links:
   Template Repository: https://letpeoplework.github.io/lighthouse
