@@ -10,10 +10,21 @@ env:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]    
+    paths:
+      - "Lighthouse.Backend/**"
+      - "Lighthouse.Backend.Tests/**"
+      - "Lighthouse.EndToEndTests/**"
+      - "Lighthouse.Frontend/**"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:  
+
+# Allow one concurrent deployment when on main
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
 
