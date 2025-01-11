@@ -15,7 +15,7 @@ The documentation is structure into various chapters. In [Installation](./instal
 
 Under [Configuration](./configuration/configuration.html) you'll find all options that are supported. This includes various ways of how to configure Lighthouse itself, as well as how you can connect to Work Tracking Systems like Jira and Azure DevOps.
 
-[Usage](./usage/usage.html) guides you through the different features of Lighthouse and how you can use them.
+[How To](./howto/howto.html) guides you with your first steps in Lighthouse, while [Features](./features/features.html) details the different features and how you can use them.
 
 In [FAQ](./faq/faq.html) you find frequently asked questions.
 

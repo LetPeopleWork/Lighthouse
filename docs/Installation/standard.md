@@ -108,18 +108,6 @@ This will run `Lighthouse.exe` as a Windows service, ensuring it starts automati
 {: .note }
 Make sure to stop the Lighthouse service before updating to avoid any conflicts.
 
-```powershell
-Stop-Service -Name "LighthouseService"
-```
-
-#### Uninstall
-To remove the Lighthouse service, execute these commands:
-
-```powershell
-Stop-Service -Name "LighthouseService"
-Remove-Service -Name "LighthouseService"
-```
-
 ### Linux
 To run `Lighthouse` as a service on Linux using `systemd`, follow these steps:
 
@@ -175,6 +163,7 @@ sudo systemctl status lighthouse.service
 ```
 
 This will run `Lighthouse` as a service on Linux, ensuring it starts automatically and runs in the background.
+
 
 {: .note }
 Make sure to stop the Lighthouse service before updating to avoid any conflicts.
