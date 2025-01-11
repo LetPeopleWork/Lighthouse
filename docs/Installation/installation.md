@@ -6,19 +6,8 @@ has_children: true
 ---
 
 # Installing Lighthouse
+Lighthouse is a web application, that is foreseen to run on a server where multiple people have access to it. You can however run it also on your local machine. This might be the preferred option for now, as there is no User Management, nor any authentication/authorization at this point.
 
-Lighthouse offers two main installation methods to suit different needs:
+Lighthouse can run on Windows, macOS, Linux, as well as within a docker environment.
 
-## [Docker Installation](docker.md)
-Recommended for most users - offers the simplest setup and management.
-
-## [Standard Installation](standard.md)
-Traditional installation directly on your system, suitable for environments where Docker isn't available.
-
-## Prerequisites for All Installations
-
-Both installation methods require:
-- At least 1GB RAM
-- 500MB disk space
-- Network access for work item tracking integration
-- Modern web browser (Chrome, Firefox, Edge, Safari)
+In the following pages you find instructions how to run the installation and start Lighthouse for your preferred environment.

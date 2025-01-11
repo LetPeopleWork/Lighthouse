@@ -15,6 +15,11 @@ aux_links_new_tab: true
 livereload: true
 force_polling: true
 
+callouts:
+  note:
+    title: Note
+    color: yellow
+
 aux_links:
   Let People Work: https://letpeople.work
   GitHub: https://github.com/letpeoplework/lighthouse

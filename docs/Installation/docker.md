@@ -1,43 +1,34 @@
 ---
-title: Docker Installation
+title: Docker
 layout: home
 parent: Installation
-nav_order: 1
+nav_order: 2
 ---
 
-# Docker Installation
+The easiest way to run Lighthouse is to use docker.
+
+## Available Tags
+- `latest`: Latest released version (if you want to keep using the "latest and greatest")
+- `dev-latest`: Newest features including the ones that are currently being developed (potentially less stable)
+- Specific version tags (e.g., `25.1.10.1012`): Fix a specific version (recommended for production setups)
+- Check [packages](https://github.com/LetPeopleWork/Lighthouse/pkgs/container/lighthouse) for all available versions
+
 
 ## Prerequisites
-- Docker Engine 19.03 or newer
-- 1GB RAM available for container
-- Access to ghcr.io container registry
+If you don't have docker installed on your system yet, please do so. You can find more details on how to get and install it in the [docker docs](https://docs.docker.com/get-started/get-docker/).
 
-## Installation Steps
-
-The simplest way to run Lighthouse is using Docker:
+## Updating Lighthouse
+You can just fetch the latest version of the container (if you use `latest` or `dev-latest`) by running a docker pull:
 
 ```bash
-docker run -d -P \
-  -v ".:/app/Data" \
-  -v "./logs:/app/logs" \
-  -e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db" \
-  ghcr.io/letpeoplework/lighthouse:latest
+docker pull ghcr.io/letpeoplework/lighthouse:latest
 ```
 
-### Available Tags
-- `latest`: Newest features (potentially less stable)
-- Specific version tags (e.g., `v1.0.0`): For stability
-- Check [packages](https://github.com/orgs/LetPeopleWork/packages?repo_name=Lighthouse) for all available versions
+## Running Lighthouse
+You can run Lighthouse in docker using the following command:
 
-### Docker Volume Configuration
-
-Map local storage for persistence:
 ```bash
-docker run -d \
-  -p 80:5000 -p 443:5001 \
-  -v "./data:/app/Data" \
-  -v "./logs:/app/logs" \
-  ghcr.io/letpeoplework/lighthouse:latest
+docker run -d -P -v ".:/app/Data" -v "./logs:/app/logs" -e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
 ```
 
-See [Configuration](../configuration.md) for detailed configuration options.
+This will use the directory you run the command from as storage for your database and logs. You can find more information on the configuration options under [Configuration](../configuration/configuration.html).
