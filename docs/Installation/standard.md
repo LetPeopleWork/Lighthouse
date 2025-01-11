@@ -1,7 +1,7 @@
 ---
 title: Standard Installation
 layout: home
-parent: Installation Overview
+parent: Installation
 nav_order: 2
 ---
 

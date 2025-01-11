@@ -12,6 +12,9 @@ nav_enabled: true
 heading_anchors: true
 aux_links_new_tab: true
 
+livereload: true
+force_polling: true
+
 aux_links:
   Let People Work: https://letpeople.work
   GitHub: https://github.com/letpeoplework/lighthouse

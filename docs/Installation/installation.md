@@ -1,5 +1,5 @@
 ---
-title: Installation Overview
+title: Installation
 layout: home
 nav_order: 2
 has_children: true
