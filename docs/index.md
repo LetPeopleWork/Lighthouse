@@ -20,6 +20,4 @@ Under [Configuration](./configuration/configuration.html) you'll find all option
 In [FAQ](./faq/faq.html) you find frequently asked questions.
 
 ## Contributions
-If you find something that can be improved in the documentation, please open a new [issue](https://github.com/LetPeopleWork/Lighthouse/issues/new?template=documentation-improvement.yml){:target="_blank"} in our GitHub repository. An issue can be as small as a typo, but also wrong or outdated sections, as well as something that we've might have missed so far.
-
-If you want to do more than just reporting, we're happy to onboard people that help us improve our docs. Please reach out to use if you are interested in this.
+If you want to help us improve the documentation, please check out the options unde [Contributions](./contributions/contributions.html).
