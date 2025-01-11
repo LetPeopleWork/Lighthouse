@@ -6,7 +6,7 @@ nav_order: 3
 
 There are various options to configure Lighthouse, from the Database to the used ports. This section will show you **what** is configurable and how you configure it.
 
-After you're done with the configuration, check out the [How To](../features/features.html).
+After you're done with the configuration, check out the [How To](../howto/howto.html).
 
 - TOC
 {:toc}
