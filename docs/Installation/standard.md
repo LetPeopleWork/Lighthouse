@@ -20,7 +20,10 @@ Download the latest version of Lighthouse for your operating system from the [Re
 Download the zip file, and extract it to the location you want to run the application from.
 
 ## Updating Lighthouse
-If you want to update Lighthouse, you can simply replace the files in the directory. As the published packages do not include the database, you will keep your data. Lighthouse will in normal circumstances always support migrations to newer versions, so you will not lose any data.
+If you want to update Lighthouse, you can simply replace the files in the directory.
+
+{: .note }
+As the published packages do not include the database, you will keep your data. Lighthouse will in normal circumstances always support migrations to newer versions, so you will not lose any data.
 
 {: .note }
 You must make sure to stop Lighthouse from running before updating.
@@ -28,201 +31,225 @@ You must make sure to stop Lighthouse from running before updating.
 ## Installation and Update Scripts
 If you don't want to manually download it, you can also use the following scripts, which will look for the latest released version and will download and extract it from the directory you run the script from.
 
+The scripts are part of the packages, so you can execute them from the installation directory.
+
 ### Windows
+You can run the Powershell script [update_windows.ps1](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_windows.ps1). In order to do so, you need to have PowerShell 5.1 or later which is normally installed at your system.
+
+You can also directly download the latest version into your current directory by executing the following command in your terminal:
+
 ```powershell
-# Expectation to run this script
-# Lighthouse binaries are in the same folder as this script
-# Lighthouse is not running at the moment
-# PowerShell 5.1 or later is required (Windows comes with it by default)
-
-# Define the GitHub repository and asset keyword
-$GITHUB_USER = "letpeoplework"
-$REPO_NAME = "lighthouse"
-$ASSET_KEYWORD = "win"
-
-# Fetch the latest release information
-Write-Host "Fetching the latest release information..."
-$response = Invoke-RestMethod -Uri "https://api.github.com/repos/$GITHUB_USER/$REPO_NAME/releases/latest"
-
-# Find the asset URL containing the keyword
-$asset = $response.assets | Where-Object { $_.name -like "*$ASSET_KEYWORD*" } | Select-Object -First 1
-
-if (-not $asset) {
-    Write-Host "No asset found with the keyword '$ASSET_KEYWORD'"
-    exit 1
-}
-
-$assetUrl = $asset.browser_download_url
-$assetName = [System.IO.Path]::GetFileName($assetUrl)
-
-# Download the asset
-Write-Host "Downloading $assetName..."
-Invoke-WebRequest -Uri $assetUrl -OutFile $assetName
-
-# Extract the zip file
-Write-Host "Extracting $assetName..."
-Expand-Archive -Path $assetName -DestinationPath .
-
-# Make the Lighthouse executable (if applicable)
-$executable = ".\Lighthouse"
-if (Test-Path $executable) {
-    Write-Host "Setting executable permissions for $executable"
-    icacls $executable /grant Everyone:(RX)
-} else {
-    Write-Host "Lighthouse executable not found."
-}
-
-# Cleanup
-Write-Host "Cleaning up..."
-Remove-Item -Path $assetName
-
-Write-Host "Done!"
+iwr 'https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_windows.ps1' | iex
 ```
-
+  
 ### Linux
-```shell
-#!/bin/bash
+For Linux, there is a bash script called [update_linux.sh](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_linux.sh). It requires unzip to be installed, which you can do by running the following command:
 
-# Expectation to run this script
-# Lighthouse binaries are in the same folder as this script
-# Lighthouse is not running at the moment
-# unzip must be installed (sudo apt-get install unzip)
-echo "Fetching the latest release information..."
-RELEASE_INFO=$(wget -qO- "https://api.github.com/repos/letpeoplework/lighthouse/releases/latest")
+`sudo apt-get install unzip`
 
-# Parse the download URL of the asset that contains the keyword
-ASSET_URL=$(echo "$RELEASE_INFO" | grep "browser_download_url" | grep "linux" | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+You can also directly download the latest version into your current directory by executing the following command in your terminal:
 
-if [ -z "$ASSET_URL" ]; then
-  echo "No asset found with the keyword \"linux\""
-  exit 1
-fi
-
-# Download the asset
-ASSET_NAME=$(basename $ASSET_URL)
-echo "Downloading $ASSET_NAME..."
-wget -O $ASSET_NAME $ASSET_URL
-
-# Extract the zip file
-echo "Extracting $ASSET_NAME..."
-unzip -o $ASSET_NAME -d .
-
-chmod +x Lighthouse
-
-# Cleanup
-echo "Cleaning up..."
-rm $ASSET_NAME
-
-echo "Done!"
+```bash
+curl -sSL https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_linux.sh | bash
 ```
 
 ### MacOS
-```shell
-#!/bin/bash
+For MacOS, there is a bash script called [update_mac.sh](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_mac.sh). It requires unzip to be installed, which is usually pre-installed on MacOS.
 
-# Expectation to run this script
-# Lighthouse binaries are in the same folder as this script
-# Lighthouse is not running at the moment
-# unzip must be installed (usually pre-installed on macOS)
-echo "Fetching the latest release information..."
-RELEASE_INFO=$(curl -s "https://api.github.com/repos/letpeoplework/lighthouse/releases/latest")
+You can also directly download the latest version into your current directory by executing the following command in your terminal:
 
-# Parse the download URL of the asset that contains the keyword
-ASSET_URL=$(echo "$RELEASE_INFO" | grep "browser_download_url" | grep "osx" | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
-
-if [ -z "$ASSET_URL" ]; then
-  echo "No asset found with the keyword \"osx\""
-  exit 1
-fi
-
-# Download the asset
-ASSET_NAME=$(basename $ASSET_URL)
-echo "Downloading $ASSET_NAME..."
-curl -L -o $ASSET_NAME $ASSET_URL
-
-# Extract the zip file
-echo "Extracting $ASSET_NAME..."
-unzip -o $ASSET_NAME -d .
-
-chmod +x Lighthouse
-
-# Cleanup
-echo "Cleaning up..."
-rm $ASSET_NAME
-
-echo "Done!"
+```bash
+curl -sSL https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_mac.sh | bash
 ```
 
-### Prerequisites
-- **Windows**: PowerShell 5.1 or later
-- **Linux**: `unzip` installed (`sudo apt-get install unzip`)
-- **MacOS**: `unzip` installed (usually pre-installed)
+## Run Lighthouse
+Once downloaded, you can run the the `Lighthouse` application:
+- `Lighthouse.exe` on Windows
+- `Lighthouse` on MacOS and Linux
 
-### How to Execute the Script
-1. Download the appropriate script for your operating system.
-2. Place the script in the same directory as the Lighthouse binaries.
-3. Ensure Lighthouse is not running.
-4. Run the script:
-   - **Windows**: Open PowerShell and execute `.\update_windows.ps1`
-   - **Linux**: Open a terminal and execute `./update_linux.sh`
-   - **MacOS**: Open a terminal and execute `./update_mac.sh`
+A terminal will open and you should see a window similar to this:
 
-### Installation/Update Scripts
-In [Scripts](https://github.com/LetPeopleWork/Lighthouse/tree/main/Scripts) you can find 3 scripts to download the latest version of Lighthouse for [Linux](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_linux.sh), [Mac](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_mac.sh) and [Windows](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_windows.ps1).
-
-The scripts will download the latest version in the folder they are executed from and will replace all existing files in the folder.
-**Important:** The database will not be replaced and the new version will work against the same database.
-
-## Run as Service Scripts
-
-### Start Lighthouse
-Once extracted, you can run the the `Lighthouse` application (for example: `Lighthouse.exe` on Windows). A terminal will open and you should see a window similar to this:
-
-![Starting Lighthouse](https://github.com/user-attachments/assets/9bd034a9-0b5d-48fe-897f-3cc749402b24)
+![Starting Lighthouse](../assets/installation/startup.png)
 
 By default, Lighthouse will start running on the system on port 5001. If everything worked as expected, you can open the app now in your browser via [https://localhost:5001](https://localhost:5001).
+
 You should see the (empty) landing page:
-![Landing Page](https://github.com/user-attachments/assets/06cf29cd-d9a8-4a93-84aa-2335747d8699)
+![Landing Page](../assets/installation/landingpage.png)
 
+## Run as Service
+Using this approach, you'll have to restart Lighthouse after every restart. What you can do instead is to register it as a service, that way it will run automatically in the background.
 
+### Windows
+To run `Lighthouse.exe` as a Windows service, you can use the `New-Service` cmdlet in PowerShell. Follow these steps:
 
-## Prerequisites
-- Windows, MacOS, or Linux operating system
-- Administrative access for initial setup
-- 500MB free disk space
+1. Open PowerShell as an Administrator.
+2. Execute the following command to create a new service:
 
-## Installation Steps
+```powershell
+New-Service -Name "LighthouseService" -BinaryPathName "C:\path\to\Lighthouse.exe" -DisplayName "Lighthouse Service" -Description "Service to run Lighthouse application" -StartupType Automatic
+```
 
-1. **Download Package**
-   - Get latest version from [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest)
-   - Choose package matching your operating system
-   - Extract to desired location
+Replace `C:\path\to\Lighthouse.exe` with the actual path to your `Lighthouse.exe` file.
 
-2. **Using Installation Scripts**
+3. Start the service with the following command:
 
-   Choose the appropriate script from [Scripts](https://github.com/LetPeopleWork/Lighthouse/tree/main/Scripts):
-   
-   Windows:
-   ```powershell
-   .\update_windows.ps1
-   ```
-   
-   Linux:
-   ```bash
-   ./update_linux.sh
-   ```
-   
-   MacOS:
-   ```bash
-   ./update_mac.sh
-   ```
+```powershell
+Start-Service -Name "LighthouseService"
+```
 
-3. **Launch Application**
-   - Run `Lighthouse` executable
-   - Access web interface at [https://localhost:5001](https://localhost:5001)
+4. To ensure the service starts automatically after a reboot, you can check its status with:
 
-## Updating
+```powershell
+Get-Service -Name "LighthouseService"
+```
 
-Use the same scripts mentioned above to update to the latest version. Your database and settings will be preserved.
+This will run `Lighthouse.exe` as a Windows service, ensuring it starts automatically and runs in the background.
 
-See [Configuration](../configuration.md) for detailed configuration options.
+{: .note }
+Make sure to stop the Lighthouse service before updating to avoid any conflicts.
+
+```powershell
+Stop-Service -Name "LighthouseService"
+```
+
+#### Uninstall
+To remove the Lighthouse service, execute these commands:
+
+```powershell
+Stop-Service -Name "LighthouseService"
+Remove-Service -Name "LighthouseService"
+```
+
+### Linux
+To run `Lighthouse` as a service on Linux using `systemd`, follow these steps:
+
+1. Create a new service file for Lighthouse. Open a terminal and run:
+
+```bash
+sudo nano /etc/systemd/system/lighthouse.service
+```
+
+2. Add the following content to the file:
+
+```ini
+[Unit]
+Description=Lighthouse Service
+After=network.target
+
+[Service]
+ExecStart=/path/to/Lighthouse
+Restart=always
+User=nobody
+Group=nogroup
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Replace `/path/to/Lighthouse` with the actual path to your `Lighthouse` executable.
+
+3. Save and close the file.
+
+4. Reload the systemd manager configuration to apply the changes:
+
+```bash
+sudo systemctl daemon-reload
+```
+
+5. Enable the Lighthouse service to start on boot:
+
+```bash
+sudo systemctl enable lighthouse.service
+```
+
+6. Start the Lighthouse service:
+
+```bash
+sudo systemctl start lighthouse.service
+```
+
+7. Check the status of the service to ensure it is running correctly:
+
+```bash
+sudo systemctl status lighthouse.service
+```
+
+This will run `Lighthouse` as a service on Linux, ensuring it starts automatically and runs in the background.
+
+{: .note }
+Make sure to stop the Lighthouse service before updating to avoid any conflicts.
+
+```bash
+sudo systemctl stop lighthouse.service
+```
+
+#### Uninstall
+To remove the Lighthouse service, execute these commands:
+
+```bash
+sudo systemctl stop lighthouse.service
+sudo systemctl disable lighthouse.service
+sudo rm /etc/systemd/system/lighthouse.service
+sudo systemctl daemon-reload
+```
+
+### MacOS
+To run `Lighthouse` as a service on MacOS using `launchd`, follow these steps:
+
+1. Create a new plist file for Lighthouse. Open a terminal and run:
+
+```bash
+sudo nano /Library/LaunchDaemons/com.lighthouse.plist
+```
+
+2. Add the following content to the file:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+   <key>Label</key>
+   <string>com.lighthouse</string>
+   <key>ProgramArguments</key>
+   <array>
+      <string>/path/to/Lighthouse</string>
+   </array>
+   <key>RunAtLoad</key>
+   <true/>
+   <key>KeepAlive</key>
+   <true/>
+   <key>StandardOutPath</key>
+   <string>/var/log/lighthouse.log</string>
+   <key>StandardErrorPath</key>
+   <string>/var/log/lighthouse.err</string>
+</dict>
+</plist>
+```
+
+Replace `/path/to/Lighthouse` with the actual path to your `Lighthouse` executable.
+
+3. Save and close the file.
+
+4. Load the new service:
+
+```bash
+sudo launchctl load /Library/LaunchDaemons/com.lighthouse.plist
+```
+
+5. Start the Lighthouse service:
+
+```bash
+sudo launchctl start com.lighthouse
+```
+
+6. Check the status of the service to ensure it is running correctly:
+
+```bash
+sudo launchctl list | grep com.lighthouse
+```
+
+This will run `Lighthouse` as a service on MacOS, ensuring it starts automatically and runs in the background.
+
+{: .note }
+Make sure to stop the Lighthouse service before updating to avoid any conflicts.

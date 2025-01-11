@@ -37,7 +37,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 
 Our project wouldn’t be where it is today without the support of the following companies. Thank you for your sponsorship, resources, and collaboration!
 
-[![Lambent](../assets/Lambent.svg)](https://lambentspaces.com/)
+[![Lambent](../assets/contributions//Lambent.svg)](https://lambentspaces.com/)
 
 [![Focusrite](https://cdn11.bigcommerce.com/s-7exlzlf13h/images/stencil/250x100/focusrite-logo_1670497975__72107.original.png)](https://focusrite.com/)
 
