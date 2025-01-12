@@ -1,8 +1,8 @@
 ---
-title: Azure DevOps
+title: Jira
 layout: home
 nav_order: 2
-parent: How To
+parent: Concepts
 ---
 
 Bla bla bla
