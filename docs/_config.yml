@@ -24,6 +24,9 @@ callouts:
   note:
     title: Note
     color: yellow
+  definition:
+    title: Definition
+    color: blue
 
 aux_links:
   Let People Work: https://letpeople.work

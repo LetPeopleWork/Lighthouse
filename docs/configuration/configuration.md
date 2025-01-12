@@ -58,6 +58,7 @@ You have to specify a base64 encoded key that is 32 bytes long. You can generate
 ## Certificate
 In order to run Lighthouse via secure https connection, we need to specify a certificate. There is a default certificate delivered with the app, however, this is not tailored for your environment and you must trust it first.
 
+### Creating a new Certificate
 If you want to create a new certificate, you can do so via [OpenSSL](https://www.openssl.org/).
 You can provide your own certificate and the respective password (if any), so that the Lighthouse can be trusted when exposed to your users. Assuming you have openssl installed, you can run the following commands which will guide you through the creation of a new "MyCustomCertificate.pfx" (during this process, openssl will ask you to provide certain information about - just follow along).
 
@@ -68,6 +69,8 @@ openssl pkcs12 -export -out MyCustomCertificate.pfx -inkey MyCustomCertificate.k
 ```
 
 *Note:* In step 3, you will be asked to provide a password. If you do, you have to specify it as well to Lighthouse.
+
+### Using a custom Certificate
 
 You know have a new file `MyCustomCertificate.pfx` that you could use instead of the default:
 ```bash
