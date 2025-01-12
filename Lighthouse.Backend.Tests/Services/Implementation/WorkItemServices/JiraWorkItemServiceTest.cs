@@ -246,6 +246,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        public async Task GetOpenWorkItemsByQuery_IncludesToDoAndDoneItems()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
+
+            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND fixVersion = \"Elixir Project\"");
+
+            Assert.That(remainingItems, Has.Count.EqualTo(1));
+            Assert.That(totalItems, Has.Count.EqualTo(1));
+        }
+
+        [Test]
         public async Task GetOpenWorkItemsByQuery_IgnoresItemsThatMatchCustomBotNotTeamTeamQuery()
         {
             var subject = CreateSubject();

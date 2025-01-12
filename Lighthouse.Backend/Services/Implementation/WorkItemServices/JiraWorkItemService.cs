@@ -139,6 +139,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
+            
             var notDoneStateQuery = PrepareStateQuery(team.OpenStates);
             var doneStateQuery = PrepareStateQuery(team.DoneStates);
 
@@ -158,7 +159,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             logger.LogDebug("Found following Done Work Items {DoneWorkItems}", string.Join(", ", doneWorkItemsIds));
             logger.LogDebug("Found following Undone Work Items {RemainingWorkItems}", string.Join(", ", remainingWorkItemIds));
 
-            return (remainingWorkItemIds, doneWorkItemsIds);
+            return (remainingWorkItemIds, remainingWorkItemIds.Union(doneWorkItemsIds).ToList());
         }
 
         public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)

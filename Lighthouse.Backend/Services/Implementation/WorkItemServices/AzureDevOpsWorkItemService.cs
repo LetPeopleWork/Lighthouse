@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
             var doneStateQuery = PrepareStateQuery(team.DoneStates);
-            var pendingStateQuery = PrepareStateQuery(team.ToDoStates.Union(team.DoingStates));
+            var pendingStateQuery = PrepareStateQuery(team.OpenStates);
 
             var queryBase = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
