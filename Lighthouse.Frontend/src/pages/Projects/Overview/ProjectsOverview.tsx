@@ -1,7 +1,5 @@
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
-import TutorialButton from "../../../components/App/LetPeopleWork/Tutorial/TutorialButton";
-import ProjectOverviewTutorial from "../../../components/App/LetPeopleWork/Tutorial/Tutorials/ProjectOverviewTutorial";
 import DataOverviewTable from "../../../components/Common/DataOverviewTable/DataOverviewTable";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -58,15 +56,11 @@ const ProjectsOverview: React.FC = () => {
 
 	return (
 		<LoadingAnimation hasError={hasError} isLoading={isLoading}>
-			{projects.length === 0 ? (
-				<ProjectOverviewTutorial />
-			) : (
-				<DataOverviewTable
-					data={projects}
-					api="projects"
-					onDelete={handleDelete}
-				/>
-			)}
+			<DataOverviewTable
+				data={projects}
+				api="projects"
+				onDelete={handleDelete}
+			/>
 			{selectedProject && (
 				<DeleteConfirmationDialog
 					open={deleteDialogOpen}
@@ -74,7 +68,6 @@ const ProjectsOverview: React.FC = () => {
 					onClose={handleDeleteConfirmation}
 				/>
 			)}
-			<TutorialButton tutorialComponent={<ProjectOverviewTutorial />} />
 		</LoadingAnimation>
 	);
 };

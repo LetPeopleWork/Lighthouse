@@ -1,7 +1,5 @@
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
-import TutorialButton from "../../../components/App/LetPeopleWork/Tutorial/TutorialButton";
-import TeamOverviewTutorial from "../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamOverviewTutorial";
 import DataOverviewTable from "../../../components/Common/DataOverviewTable/DataOverviewTable";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -58,11 +56,7 @@ const TeamsOverview: React.FC = () => {
 
 	return (
 		<LoadingAnimation hasError={hasError} isLoading={isLoading}>
-			{teams.length === 0 ? (
-				<TeamOverviewTutorial />
-			) : (
-				<DataOverviewTable data={teams} api="teams" onDelete={handleDelete} />
-			)}
+			<DataOverviewTable data={teams} api="teams" onDelete={handleDelete} />
 
 			{selectedTeam && (
 				<DeleteConfirmationDialog
@@ -71,8 +65,6 @@ const TeamsOverview: React.FC = () => {
 					onClose={handleDeleteConfirmation}
 				/>
 			)}
-
-			<TutorialButton tutorialComponent={<TeamOverviewTutorial />} />
 		</LoadingAnimation>
 	);
 };

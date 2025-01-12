@@ -9,8 +9,6 @@ import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking
 import AdvancedInputsComponent from "../../../pages/Projects/Edit/AdvancedInputs";
 import GeneralInputsComponent from "../../../pages/Projects/Edit/GeneralInputs";
 import OwnershipComponent from "../../../pages/Projects/Edit/Ownership";
-import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
-import ProjectConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/ProjectConfigurationTutorial";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import MilestonesComponent from "../Milestones/MilestonesComponent";
 import StatesList from "../StatesList/StatesList";
@@ -331,13 +329,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
 			<Container maxWidth={false}>
-				<Grid container justifyContent="flex-end" spacing={2}>
-					<Grid>
-						<TutorialButton
-							tutorialComponent={<ProjectConfigurationTutorial />}
-						/>
-					</Grid>
-				</Grid>
 				<Grid container spacing={3}>
 					<Grid size={{ xs: 12 }}>
 						<Typography variant="h4">{title}</Typography>

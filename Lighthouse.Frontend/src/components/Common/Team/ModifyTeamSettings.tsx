@@ -6,8 +6,6 @@ import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
 import GeneralInputsComponent from "../../../pages/Teams/Edit/GeneralInputs";
-import TutorialButton from "../../App/LetPeopleWork/Tutorial/TutorialButton";
-import TeamConfigurationTutorial from "../../App/LetPeopleWork/Tutorial/Tutorials/TeamConfigurationTutorial";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import ValidationActions from "../ValidationActions/ValidationActions";
@@ -254,11 +252,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
 			<Container maxWidth={false}>
-				<Grid container justifyContent="flex-end" spacing={2}>
-					<Grid>
-						<TutorialButton tutorialComponent={<TeamConfigurationTutorial />} />
-					</Grid>
-				</Grid>
 				<Grid container spacing={3}>
 					<Grid size={{ xs: 12 }}>
 						<Typography variant="h4">{title}</Typography>

@@ -1,8 +1,6 @@
 import { BugReport } from "@mui/icons-material";
-import GitHubIcon from "@mui/icons-material/GitHub";
 import HandshakeIcon from "@mui/icons-material/Handshake";
-import BlogIcon from "@mui/icons-material/RssFeed";
-import YouTubeIcon from "@mui/icons-material/YouTube";
+import HelpIcon from "@mui/icons-material/Help";
 import { AppBar, Box, Toolbar } from "@mui/material";
 import type React from "react";
 import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
@@ -38,19 +36,9 @@ const Header: React.FC = () => {
 						tooltip="Report an Issue"
 					/>
 					<ExternalLinkButton
-						link="https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ"
-						icon={YouTubeIcon}
-						tooltip="Check out our YouTube Channel"
-					/>
-					<ExternalLinkButton
-						link="https://www.letpeople.work/blog/"
-						icon={BlogIcon}
-						tooltip="Read our Blog"
-					/>
-					<ExternalLinkButton
-						link="https://github.com/LetPeopleWork/"
-						icon={GitHubIcon}
-						tooltip="View our OpenSource Projects on GitHub"
+						link="https://docs.lighthouse.letpeople.work"
+						icon={HelpIcon}
+						tooltip="Documentation"
 					/>
 				</Box>
 			</Toolbar>

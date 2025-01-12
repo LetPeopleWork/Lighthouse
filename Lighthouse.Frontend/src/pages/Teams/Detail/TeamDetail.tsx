@@ -4,8 +4,6 @@ import dayjs from "dayjs";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import TutorialButton from "../../../components/App/LetPeopleWork/Tutorial/TutorialButton";
-import TeamDetailTutorial from "../../../components/App/LetPeopleWork/Tutorial/Tutorials/TeamDetailTutorial";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -185,7 +183,6 @@ const TeamDetail: React.FC = () => {
 					</Grid>
 				)}
 			</Container>
-			<TutorialButton tutorialComponent={<TeamDetailTutorial />} />
 		</LoadingAnimation>
 	);
 };

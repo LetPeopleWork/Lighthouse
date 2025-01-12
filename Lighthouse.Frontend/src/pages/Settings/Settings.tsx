@@ -4,8 +4,6 @@ import TabPanel from "@mui/lab/TabPanel";
 import { Box, Container } from "@mui/material";
 import Tab from "@mui/material/Tab";
 import React from "react";
-import TutorialButton from "../../components/App/LetPeopleWork/Tutorial/TutorialButton";
-import SettingsTutorial from "../../components/App/LetPeopleWork/Tutorial/Tutorials/SettingsTutorial";
 import WorkTrackingSystemConnectionSettings from "./Connections/WorkTrackingSystemConnectionSettings";
 import DataRetentionSettingsTab from "./DataRetention/DataRetentionSettingsTab";
 import DefaultProjectSettings from "./DefaultProjectSettings/DefaultProjectSettings";
@@ -68,7 +66,6 @@ const Settings: React.FC = () => {
 						</TabList>
 					</Box>
 				</TabContext>
-				<TutorialButton tutorialComponent={<SettingsTutorial />} />
 			</Box>
 			<TabContext value={value}>
 				<TabPanel value="1" data-testid="work-tracking-panel">

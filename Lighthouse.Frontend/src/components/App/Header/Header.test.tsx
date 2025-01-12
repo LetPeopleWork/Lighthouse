@@ -34,30 +34,27 @@ describe("Header component", () => {
 			</MemoryRouter>,
 		);
 
+		const contributorsLink = screen.getByTestId(
+			"https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md",
+		);
 		const bugReportLink = screen.getByTestId(
 			"https://github.com/LetPeopleWork/Lighthouse/issues",
 		);
-		const youtubeLink = screen.getByTestId(
-			"https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ",
+		const documentationLink = screen.getByTestId(
+			"https://docs.lighthouse.letpeople.work",
 		);
-		const blogLink = screen.getByTestId("https://www.letpeople.work/blog/");
-		const githubLink = screen.getByTestId("https://github.com/LetPeopleWork/");
 
+		expect(contributorsLink).toHaveAttribute(
+			"href",
+			"https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md",
+		);
 		expect(bugReportLink).toHaveAttribute(
 			"href",
 			"https://github.com/LetPeopleWork/Lighthouse/issues",
 		);
-		expect(youtubeLink).toHaveAttribute(
+		expect(documentationLink).toHaveAttribute(
 			"href",
-			"https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ",
-		);
-		expect(blogLink).toHaveAttribute(
-			"href",
-			"https://www.letpeople.work/blog/",
-		);
-		expect(githubLink).toHaveAttribute(
-			"href",
-			"https://github.com/LetPeopleWork/",
+			"https://docs.lighthouse.letpeople.work",
 		);
 	});
 });

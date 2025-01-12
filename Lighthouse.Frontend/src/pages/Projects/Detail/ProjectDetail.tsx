@@ -3,8 +3,6 @@ import Grid from "@mui/material/Grid2";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import TutorialButton from "../../../components/App/LetPeopleWork/Tutorial/TutorialButton";
-import ProjectDetailTutorial from "../../../components/App/LetPeopleWork/Tutorial/Tutorials/ProjectDetailTutorial";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
@@ -272,7 +270,6 @@ const ProjectDetail: React.FC = () => {
 					</Grid>
 				)}
 			</Container>
-			<TutorialButton tutorialComponent={<ProjectDetailTutorial />} />
 		</LoadingAnimation>
 	);
 };

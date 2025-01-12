@@ -24,32 +24,13 @@ test("clicking defects icon should open the issues page", async ({
 	expect(pageTitle).toContain("Issues");
 });
 
-test("clicking youtube icon should open the youtube page", async ({
+test("clicking documentation icon should open the documentation", async ({
 	overviewPage,
 }) => {
-	const youtubePage = await overviewPage.lightHousePage.goToYoutube();
+	const documentationPage = await overviewPage.lightHousePage.goToDocumentation();
 
-	const pageTitle = await youtubePage.title();
-	expect(pageTitle).toContain("LetPeopleWork");
-});
-
-test("clicking rss icon should open the blog posts page", async ({
-	overviewPage,
-}) => {
-	const blogPostPage = await overviewPage.lightHousePage.goToBlogPosts();
-
-	const pageTitle = await blogPostPage.title();
-	expect(pageTitle).toContain("Let People Work");
-	expect(blogPostPage.url()).toBe("https://blog.letpeople.work/");
-});
-
-test("clicking github icon should open the github page", async ({
-	overviewPage,
-}) => {
-	const gitHubPage = await overviewPage.lightHousePage.goToGitHub();
-
-	const pageTitle = await gitHubPage.title();
-	expect(pageTitle).toBe("LetPeopleWork · GitHub");
+	const pageTitle = await documentationPage.title();
+	expect(pageTitle).toContain("Overview | Lighthouse Documentation");
 });
 
 test("clicking let people work logo should open let people work page", async ({

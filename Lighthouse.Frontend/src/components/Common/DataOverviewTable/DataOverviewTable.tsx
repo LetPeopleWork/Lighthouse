@@ -69,9 +69,26 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				onFilterTextChange={setFilterText}
 				data-testid="filter-bar"
 			/>
+			{data.length === 0 ? (
+				<Typography
+					variant="h6"
+					align="center"
+					data-testid="empty-items-message"
+				>
+					No Projects Defined.{" "}
+					<a
+						href="https://docs.lighthouse.letpeople.work"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						Check the documentation
+					</a>{" "}
+					for more information.
+				</Typography>
+			) : null}
 			{filteredData.length === 0 ? (
 				<Typography variant="h6" align="center" data-testid="no-items-message">
-					No items found matching the filter.
+					No Projects found matching the filter.
 				</Typography>
 			) : (
 				<TableContainer component={Paper} data-testid="table-container">

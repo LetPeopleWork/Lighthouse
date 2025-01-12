@@ -1,8 +1,6 @@
 import { Container } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import TutorialButton from "../../components/App/LetPeopleWork/Tutorial/TutorialButton";
-import LighthouseAppOverviewTutorial from "../../components/App/LetPeopleWork/Tutorial/Tutorials/LighthouseAppOverviewTutorial";
 import FilterBar from "../../components/Common/FilterBar/FilterBar";
 import LoadingAnimation from "../../components/Common/LoadingAnimation/LoadingAnimation";
 import type { Project } from "../../models/Project/Project";
@@ -36,15 +34,8 @@ const OverviewDashboard: React.FC = () => {
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
 			<Container maxWidth={false}>
 				<FilterBar filterText={filterText} onFilterTextChange={setFilterText} />
-
-				{projects.length === 0 ? (
-					<LighthouseAppOverviewTutorial />
-				) : (
-					<ProjectOverview projects={projects} filterText={filterText} />
-				)}
+				<ProjectOverview projects={projects} filterText={filterText} />
 			</Container>
-
-			<TutorialButton tutorialComponent={<LighthouseAppOverviewTutorial />} />
 		</LoadingAnimation>
 	);
 };

@@ -29,6 +29,21 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 
 	return (
 		<Grid container spacing={2}>
+			{projects.length === 0 ? (
+				<Grid size={{ xs: 12 }} data-testid="empty-projects-message">
+					<Typography variant="h6" align="center">
+						No Projects Defined.{" "}
+						<a
+							href="https://docs.lighthouse.letpeople.work"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							Check the documentation
+						</a>{" "}
+						for more information.
+					</Typography>
+				</Grid>
+			) : null}
 			{filteredProjects.length === 0 ? (
 				<Grid size={{ xs: 12 }} data-testid="no-projects-message">
 					<Typography variant="h6" align="center">

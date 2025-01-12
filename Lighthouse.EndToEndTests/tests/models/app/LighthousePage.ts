@@ -64,6 +64,13 @@ export class LighthousePage {
 		});
 	}
 
+	async goToDocumentation(): Promise<Page> {
+		return this.OpenInNewTab(async () => {
+			const documentationButton = this.GetDocumentationButton();
+			await documentationButton.click();
+		});
+	}
+
 	async goToLetPeopleWork(): Promise<Page> {
 		return this.OpenInNewTab(async () => {
 			const lpwLogo = this.GetLpwLogoButton();
@@ -111,39 +118,6 @@ export class LighthousePage {
 		});
 	}
 
-	async goToYoutube(): Promise<Page> {
-		const youtubePage = await this.OpenInNewTab(async () => {
-			const youtubeButton = this.GetYoutubeButton();
-			await youtubeButton.click();
-		});
-
-		try {
-			const rejectButton = youtubePage.getByRole("button", {
-				name: "Reject all",
-			});
-			await rejectButton.click({ timeout: 5000 });
-		} catch {
-			// No reject button found - skipping
-		}
-
-		await youtubePage.waitForLoadState("networkidle");
-		return youtubePage;
-	}
-
-	async goToBlogPosts(): Promise<Page> {
-		return this.OpenInNewTab(async () => {
-			const blogPostsButton = this.GetBlogPostsButton();
-			await blogPostsButton.click();
-		});
-	}
-
-	async goToGitHub(): Promise<Page> {
-		return this.OpenInNewTab(async () => {
-			const gitHubButton = this.GetGitHubButton();
-			await gitHubButton.click();
-		});
-	}
-
 	private GetContributorsButton(): Locator {
 		return this.page.getByTestId(
 			"https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md",
@@ -154,18 +128,8 @@ export class LighthousePage {
 		return this.page.getByLabel("Report an Issue");
 	}
 
-	private GetYoutubeButton(): Locator {
-		return this.page.getByTestId(
-			"https://www.youtube.com/channel/UCipDDn2dpVE3rpoKNW2asZQ",
-		);
-	}
-
-	private GetBlogPostsButton(): Locator {
-		return this.page.getByTestId("https://www.letpeople.work/blog/");
-	}
-
-	private GetGitHubButton(): Locator {
-		return this.page.getByTestId("https://github.com/LetPeopleWork/");
+	private GetDocumentationButton(): Locator {
+		return this.page.getByTestId("https://docs.lighthouse.letpeople.work/");
 	}
 
 	private GetLpwLogoButton(): Locator {
