@@ -12,6 +12,11 @@ nav_enabled: true
 heading_anchors: true
 aux_links_new_tab: true
 
+enable_copy_code_button: true
+
+mermaid:
+  version: "11.4.1"
+
 livereload: true
 force_polling: true
 
