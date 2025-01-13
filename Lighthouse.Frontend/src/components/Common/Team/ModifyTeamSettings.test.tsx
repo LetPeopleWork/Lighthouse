@@ -188,6 +188,31 @@ describe("ModifyTeamSettings", () => {
 		{ id: 2, name: "System 2", options: [], workTrackingSystem: "" },
 	];
 
+	const renderModifyTeamSettings = async () => {
+		render(
+			<ModifyTeamSettings
+				title="Modify Team Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getTeamSettings={mockGetTeamSettings}
+				saveTeamSettings={mockSaveTeamSettings}
+				validateTeamSettings={mockValidateTeamSettings}
+			/>,
+		);
+
+		// Wait for all async operations to complete
+		await waitFor(
+			() => {
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+				expect(mockGetTeamSettings).toHaveBeenCalled();
+				expect(mockGetWorkTrackingSystems).toHaveBeenCalled();
+			},
+			{ timeout: 3000 },
+		);
+
+		// Add a small delay to ensure state updates are processed
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	};
+
 	beforeEach(() => {
 		mockGetWorkTrackingSystems.mockClear();
 		mockGetTeamSettings.mockClear();
@@ -213,19 +238,7 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("renders components correctly after loading", async () => {
-		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
+		await renderModifyTeamSettings();
 
 		expect(screen.getByText("Modify Team Settings")).toBeInTheDocument();
 		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
@@ -236,19 +249,7 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("handles team settings change", async () => {
-		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
+		await renderModifyTeamSettings();
 
 		fireEvent.click(screen.getByText("Change General"));
 		fireEvent.click(screen.getByText("Change Advanced"));
@@ -258,19 +259,7 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("handles adding and removing work item types", async () => {
-		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
+		await renderModifyTeamSettings();
 
 		fireEvent.click(screen.getByText("Add Work Item"));
 		fireEvent.click(screen.getByText("Remove Work Item"));
@@ -279,19 +268,7 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("handles adding and removing states", async () => {
-		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
+		await renderModifyTeamSettings();
 
 		fireEvent.click(screen.getByText("Add ToDo"));
 		fireEvent.click(screen.getByText("Remove ToDo"));
@@ -304,19 +281,7 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("handles work tracking system change", async () => {
-		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
+		await renderModifyTeamSettings();
 
 		fireEvent.click(screen.getByText("Change Work Tracking System"));
 		fireEvent.click(screen.getByText("Add New Work Tracking System"));
@@ -325,20 +290,9 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("handles save action", async () => {
-		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
-		);
+		await renderModifyTeamSettings();
 		mockValidateTeamSettings.mockResolvedValue(true);
 
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
 		fireEvent.click(screen.getByText("Validate"));
 		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
 
@@ -348,19 +302,7 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("handles validate action", async () => {
-		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
+		await renderModifyTeamSettings();
 
 		fireEvent.click(screen.getByText("Validate"));
 
@@ -368,21 +310,30 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("sets inputsValid to true when all inputs are valid", async () => {
-		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
-		);
+		const validTeamSettings: ITeamSettings = {
+			id: 1,
+			name: "Valid Team",
+			throughputHistory: 10,
+			featureWIP: 5,
+			workItemTypes: ["Bug"],
+			toDoStates: ["ToDo"],
+			doingStates: ["Doing"],
+			doneStates: ["Done"],
+			workItemQuery: "Query",
+			workTrackingSystemConnectionId: 1,
+			automaticallyAdjustFeatureWIP: false,
+			relationCustomField: "custom",
+		};
 
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
+		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);
+		mockValidateTeamSettings.mockResolvedValueOnce(true);
 
-		expect(screen.getByText("Validate")).not.toBeDisabled();
+		await renderModifyTeamSettings();
+
+		await waitFor(() => {
+			const validateButton = screen.getByText("Validate");
+			expect(validateButton).not.toBeDisabled();
+		});
 	});
 
 	const scenarios = [
@@ -404,19 +355,7 @@ describe("ModifyTeamSettings", () => {
 
 			mockGetTeamSettings.mockResolvedValueOnce(invalidTeamSettings);
 
-			render(
-				<ModifyTeamSettings
-					title="Modify Team Settings"
-					getWorkTrackingSystems={mockGetWorkTrackingSystems}
-					getTeamSettings={mockGetTeamSettings}
-					saveTeamSettings={mockSaveTeamSettings}
-					validateTeamSettings={mockValidateTeamSettings}
-				/>,
-			);
-
-			await waitFor(() =>
-				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-			);
+			await renderModifyTeamSettings();
 
 			expect(screen.getByText("Validate")).toBeDisabled();
 		});
