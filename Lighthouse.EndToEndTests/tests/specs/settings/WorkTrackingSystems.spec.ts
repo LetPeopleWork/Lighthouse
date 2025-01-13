@@ -207,12 +207,14 @@ testWithData(
 			await workTrackingSystemsPage.addNewWorkTrackingSystem();
 
 		// Wait for the dialog to be visible
-		await workTrackingSystemDialog.selectWorkTrackingSystem("AzureDevOps");
 		await workTrackingSystemDialog.setConnectionName(
 			"My Work Tracking System Connection",
 		);
 
 		const screenshotLocation = `${getPathToDocsAssetsFolder()}/concepts/general/worktrackingsystem.png`;
+
+		await workTrackingSystemDialog.page.waitForTimeout(300);
+
 		await workTrackingSystemDialog.page
 			.getByRole("dialog")
 			.screenshot({ path: screenshotLocation });
