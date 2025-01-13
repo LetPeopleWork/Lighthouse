@@ -17,7 +17,7 @@ export class TestConfig {
   };
 
   public static get LighthouseUrl(): string {
-    return TestConfig.getEnvVariable(TestConfig.LIGHTHOUSEURLNAME, "https://localhost:5001/");
+    return TestConfig.getEnvVariable(TestConfig.LIGHTHOUSEURLNAME, "https://localhost:8081/");
   }
 
   public static get AzureDevOpsToken(): string {

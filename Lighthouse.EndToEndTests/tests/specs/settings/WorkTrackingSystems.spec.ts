@@ -1,5 +1,6 @@
 import { TestConfig } from "../../../playwright.config";
 import { expect, test, testWithData } from "../../fixutres/LighthouseFixture";
+import { getPathToDocsAssetsFolder } from "../../helpers/folderPaths";
 import { generateRandomName } from "../../helpers/names";
 
 const workTrackingSystemConfiguration = [
@@ -193,5 +194,27 @@ testWithData(
 			).addNewProject();
 			await newProjectPage.selectWorkTrackingSystem(newName);
 		});
+	},
+);
+
+testWithData(
+	"Take @screenshot create new work tracking system connection dialg",
+	async ({ overviewPage }) => {
+		const settingsPage = await overviewPage.lighthousePage.goToSettings();
+		const workTrackingSystemsPage =
+			await settingsPage.goToWorkTrackingSystems();
+		const workTrackingSystemDialog =
+			await workTrackingSystemsPage.addNewWorkTrackingSystem();
+
+		// Wait for the dialog to be visible
+		await workTrackingSystemDialog.selectWorkTrackingSystem("AzureDevOps");
+		await workTrackingSystemDialog.setConnectionName(
+			"My Work Tracking System Connection",
+		);
+
+		const screenshotLocation = `${getPathToDocsAssetsFolder()}/concepts/general/worktrackingsystem.png`;
+		await workTrackingSystemDialog.page
+			.getByRole("dialog")
+			.screenshot({ path: screenshotLocation });
 	},
 );
