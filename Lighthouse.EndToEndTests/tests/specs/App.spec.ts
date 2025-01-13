@@ -29,8 +29,7 @@ test("clicking documentation icon should open the documentation", async ({
 }) => {
 	const documentationPage = await overviewPage.lightHousePage.goToDocumentation();
 
-	const pageTitle = await documentationPage.title();
-	expect(pageTitle).toContain("Overview | Lighthouse Documentation");
+	expect(documentationPage.url()).toBe("https://docs.lighthouse.letpeople.work/");
 });
 
 test("clicking let people work logo should open let people work page", async ({
