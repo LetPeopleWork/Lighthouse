@@ -14,7 +14,7 @@ Latest
 - Run Lighthouse with default certificate in HTTPS mode.
 - Provide option to override default certificate via configuration options.
 
-For configuration options, see the [Configuration](../configuration/configuration.html#certificate).
+For configuration options, see the [Configuration](../installation/configuration.html#certificate).
 
 ## Improvements
 - Improved download speed for log files, especially noticeable with large files.

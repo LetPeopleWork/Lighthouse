@@ -17,7 +17,7 @@ Lighthouse is provided free of charge as open-source software by [Let People Wor
 ## Documentation Structure
 The documentation is structure into various chapters. In [Installation](./installation/installation.html) you can find information about how to get started with setting up Lighthouse.
 
-Under [Configuration](./configuration/configuration.html) you'll find all options that are supported. This includes various ways of how to configure Lighthouse itself, as well as how you can connect to Work Tracking Systems like Jira and Azure DevOps.
+Under [Configuration](./installation/configuration.html) you'll find all options that are supported. This includes various ways of how to configure Lighthouse itself, as well as how you can connect to Work Tracking Systems like Jira and Azure DevOps.
 
 [Concepts](./concepts/concepts.html) guides you with your first steps in Lighthouse, while [Features](./features/features.html) details the different features and how you can use them.
 

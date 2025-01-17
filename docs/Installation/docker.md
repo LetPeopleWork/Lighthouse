@@ -1,7 +1,7 @@
 ---
 title: Docker
 layout: home
-parent: Installation
+parent: Installation and Configuration
 nav_order: 2
 ---
 
@@ -31,4 +31,4 @@ You can run Lighthouse in docker using the following command:
 docker run -d -P -v ".:/app/Data" -v "./logs:/app/logs" -e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
 ```
 
-This will use the directory you run the command from as storage for your database and logs. You can find more information on the configuration options under [Configuration](../configuration/configuration.html).
+This will use the directory you run the command from as storage for your database and logs. You can find more information on the configuration options under [Configuration](./configuration.html).
