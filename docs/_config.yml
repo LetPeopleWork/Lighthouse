@@ -27,6 +27,9 @@ callouts:
   definition:
     title: Definition
     color: blue
+  important:
+    title: Important
+    color: red
 
 aux_links:
   Let People Work: https://letpeople.work
