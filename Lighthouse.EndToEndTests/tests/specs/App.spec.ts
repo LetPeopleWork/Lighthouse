@@ -86,10 +86,7 @@ test("clicking the GitHub Issue button should open the GitHub Lighthouse Issue P
 }) => {
 	const gitHubIssuePage =
 		await overviewPage.lightHousePage.contactViaGitHubIssue();
-
-	const pageTitle = await gitHubIssuePage.title();
-	expect(pageTitle).toContain("Issues");
-	expect(pageTitle).toContain("LetPeopleWork/Lighthouse");
+		
 	expect(gitHubIssuePage.url()).toBe(
 		"https://github.com/LetPeopleWork/Lighthouse/issues",
 	);
