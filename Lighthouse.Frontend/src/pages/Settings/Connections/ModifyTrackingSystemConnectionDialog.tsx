@@ -71,7 +71,9 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 	};
 
 	const onInputsChanged = () => {
-		const optionsValid = selectedOptions.every((option) => option.isOptional || option.value !== "");
+		const optionsValid = selectedOptions.every(
+			(option) => option.isOptional || option.value !== "",
+		);
 		const nameValid = name !== "";
 
 		setInputsValid(optionsValid && nameValid);

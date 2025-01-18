@@ -311,7 +311,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             {
                 logger.LogDebug("Not Found in Cache - Getting from Jira");
 
-                var url = $"rest/api/3/issue/{issueId}";
+                var url = $"rest/api/latest/issue/{issueId}";
 
                 var response = await jiraClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
@@ -406,7 +406,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             while (!isLast)
             {
-                var url = $"rest/api/3/search?jql={jqlQuery}&startAt={startAt}&maxResults={maxResults}";
+                var url = $"rest/api/latest/search?jql={jqlQuery}&startAt={startAt}&maxResults={maxResults}";
 
                 var response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
@@ -510,11 +510,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var username = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Username);
             var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var apiToken = cryptoService.Decrypt(encryptedApiToken);
-            var byteArray = Encoding.ASCII.GetBytes($"{username}:{apiToken}");
 
             var client = new HttpClient();
             client.BaseAddress = new Uri(url.TrimEnd('/'));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+
+            if (!string.IsNullOrEmpty(username))
+            {
+                var byteArray = Encoding.ASCII.GetBytes($"{username}:{apiToken}");
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+            }
+            else
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
+            }
 
             return client;
         }
