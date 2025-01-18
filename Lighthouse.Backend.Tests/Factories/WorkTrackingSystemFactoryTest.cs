@@ -54,14 +54,14 @@ namespace Lighthouse.Backend.Tests.Factories
             {
                 Assert.That(connection.Options, Has.Count.EqualTo(3));
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Url), Is.True);
-                Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Username), Is.True);
+                Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Username, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.ApiToken, true), Is.True);
             });
         }
 
-        private bool ContainsOption(IEnumerable<WorkTrackingSystemConnectionOption> options, string key, bool isSecret = false)
+        private bool ContainsOption(IEnumerable<WorkTrackingSystemConnectionOption> options, string key, bool isSecret = false, bool isOptional = false)
         {
-            return options.Any(option => option.Key == key && option.IsSecret == isSecret);
+            return options.Any(option => option.Key == key && option.IsSecret == isSecret && option.IsOptional == isOptional);
         }
 
         private WorkTrackingSystemFactory CreateSubject()

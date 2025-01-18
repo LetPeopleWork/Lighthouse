@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.API.DTO
             Key = option.Key;
             IsSecret = option.IsSecret;
             Value = IsSecret ? string.Empty : option.Value;
+            IsOptional = option.IsOptional;
         }
 
         public string Key { get; set; }
@@ -20,5 +21,7 @@ namespace Lighthouse.Backend.API.DTO
         public string Value { get; set; }
 
         public bool IsSecret { get; set; }
+
+        public bool IsOptional { get; set; }
     }
 }

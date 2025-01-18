@@ -136,11 +136,12 @@ namespace Lighthouse.Backend.API
             {
                 connection.Options.Add(
                     new WorkTrackingSystemConnectionOption
-                    {
-                        Key = option.Key,
-                        Value = option.Value,
-                        IsSecret = option.IsSecret
-                    }
+                        {
+                            Key = option.Key,
+                            Value = option.Value,
+                            IsSecret = option.IsSecret,
+                            IsOptional = option.IsOptional,
+                        }
                     );
             }
 

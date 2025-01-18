@@ -14,6 +14,8 @@
 
         public bool IsSecret { get; set; }
 
+        public bool IsOptional { get; set; }
+
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }

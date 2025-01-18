@@ -51,19 +51,23 @@ namespace Lighthouse.Backend.Factories
                 {
                     Key = JiraWorkTrackingOptionNames.Url,
                     Value = string.Empty,
-                    IsSecret =false
+                    IsSecret =false,
+                    IsOptional = false,
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = JiraWorkTrackingOptionNames.Username,
                     Value = string.Empty,
-                    IsSecret = false },
+                    IsSecret = false,
+                    IsOptional = true,
+                },
 
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = JiraWorkTrackingOptionNames.ApiToken,
                     Value = string.Empty,
-                    IsSecret = true
+                    IsSecret = true,
+                    IsOptional = false,
                 },
             };
         }
@@ -76,13 +80,15 @@ namespace Lighthouse.Backend.Factories
                 {
                     Key = AzureDevOpsWorkTrackingOptionNames.Url,
                     Value = string.Empty,
-                    IsSecret = false
+                    IsSecret = false,
+                    IsOptional = false,
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken,
                     Value = string.Empty,
-                    IsSecret =true
+                    IsSecret = true,
+                    IsOptional = false,
                 }
             };
         }
