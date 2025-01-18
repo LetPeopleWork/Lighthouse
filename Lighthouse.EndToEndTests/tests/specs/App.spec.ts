@@ -19,9 +19,10 @@ test("clicking defects icon should open the issues page", async ({
 	overviewPage,
 }) => {
 	const reportIssuePage = await overviewPage.lightHousePage.goToReportIssue();
-
-	const pageTitle = await reportIssuePage.title();
-	expect(pageTitle).toContain("Issues");
+	
+	expect(reportIssuePage.url()).toBe(
+		"https://github.com/LetPeopleWork/Lighthouse/issues",
+	);
 });
 
 test("clicking documentation icon should open the documentation", async ({
