@@ -34,7 +34,6 @@ import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
 } from "../../models/WorkTracking/WorkTrackingSystemConnection";
-import { WorkTrackingSystemOption } from "../../models/WorkTracking/WorkTrackingSystemOption";
 import type {
 	IUpdateStatus,
 	IUpdateSubscriptionService,
@@ -563,8 +562,18 @@ export class DemoApiService
 				"New Azure DevOps Connection",
 				"AzureDevOps",
 				[
-					new WorkTrackingSystemOption("Azure DevOps Url", "", false),
-					new WorkTrackingSystemOption("Personal Access Token", "", true),
+					{
+						key: "Azure DevOps Url",
+						value: "",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "Personal Access Token",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
 				],
 				null,
 			),
@@ -572,9 +581,9 @@ export class DemoApiService
 				"New Jira Connection",
 				"Jira",
 				[
-					new WorkTrackingSystemOption("Jira Url", "", false),
-					new WorkTrackingSystemOption("Username", "", false),
-					new WorkTrackingSystemOption("Api Token", "", true),
+					{ key: "Jira Url", value: "", isSecret: false, isOptional: false },
+					{ key: "Username", value: "", isSecret: false, isOptional: true },
+					{ key: "Api Token", value: "", isSecret: true, isOptional: false },
 				],
 				null,
 			),
@@ -591,12 +600,18 @@ export class DemoApiService
 				"My ADO Connection",
 				"AzureDevOps",
 				[
-					new WorkTrackingSystemOption(
-						"Azure DevOps Url",
-						"https://dev.azure.com/letpeoplework",
-						false,
-					),
-					new WorkTrackingSystemOption("Personal Access Token", "", true),
+					{
+						key: "Azure DevOps Url",
+						value: "https://dev.azure.com/letpeoplework",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "Personal Access Token",
+						value: "",
+						isSecret: true,
+						isOptional: false,
+					},
 				],
 				12,
 			),
@@ -604,17 +619,19 @@ export class DemoApiService
 				"My Jira Connection",
 				"Jira",
 				[
-					new WorkTrackingSystemOption(
-						"Jira Url",
-						"https://letpeoplework.atlassian.com",
-						false,
-					),
-					new WorkTrackingSystemOption(
-						"Username",
-						"superuser@letpeople.work",
-						false,
-					),
-					new WorkTrackingSystemOption("Api Token", "", true),
+					{
+						key: "Jira Url",
+						value: "https://letpeoplework.atlassian.com",
+						isSecret: false,
+						isOptional: false,
+					},
+					{
+						key: "Username",
+						value: "superuser@letpeople.work",
+						isSecret: false,
+						isOptional: true,
+					},
+					{ key: "Api Token", value: "", isSecret: true, isOptional: false },
 				],
 				42,
 			),

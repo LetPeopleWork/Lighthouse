@@ -2,10 +2,6 @@ import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
 } from "../../models/WorkTracking/WorkTrackingSystemConnection";
-import {
-	type IWorkTrackingSystemOption,
-	WorkTrackingSystemOption,
-} from "../../models/WorkTracking/WorkTrackingSystemOption";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IWorkTrackingSystemService {
@@ -105,27 +101,11 @@ export class WorkTrackingSystemService
 	private deserializeWorkTrackingSystemConnection(
 		workTrackingSystemConnection: IWorkTrackingSystemConnection,
 	) {
-		const workTrackingSystemOptions = workTrackingSystemConnection.options.map(
-			(option: IWorkTrackingSystemOption) => {
-				return this.deserializeWorkTrackingSystemConnectionOption(option);
-			},
-		);
-
 		return new WorkTrackingSystemConnection(
 			workTrackingSystemConnection.name,
 			workTrackingSystemConnection.workTrackingSystem,
-			workTrackingSystemOptions,
+			workTrackingSystemConnection.options,
 			workTrackingSystemConnection.id,
-		);
-	}
-
-	private deserializeWorkTrackingSystemConnectionOption(
-		workTrackingSystemConnectionOption: IWorkTrackingSystemOption,
-	): WorkTrackingSystemOption {
-		return new WorkTrackingSystemOption(
-			workTrackingSystemConnectionOption.key,
-			workTrackingSystemConnectionOption.value,
-			workTrackingSystemConnectionOption.isSecret,
 		);
 	}
 }

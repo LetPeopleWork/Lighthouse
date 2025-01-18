@@ -46,6 +46,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					key: option.key,
 					value: option.value,
 					isSecret: option.isSecret,
+					isOptional: option.isOptional,
 				})),
 			);
 		}
@@ -63,13 +64,14 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					key: option.key,
 					value: option.value,
 					isSecret: option.isSecret,
+					isOptional: option.isOptional,
 				})),
 			);
 		}
 	};
 
 	const onInputsChanged = () => {
-		const optionsValid = selectedOptions.every((option) => option.value !== "");
+		const optionsValid = selectedOptions.every((option) => option.isOptional || option.value !== "");
 		const nameValid = name !== "";
 
 		setInputsValid(optionsValid && nameValid);

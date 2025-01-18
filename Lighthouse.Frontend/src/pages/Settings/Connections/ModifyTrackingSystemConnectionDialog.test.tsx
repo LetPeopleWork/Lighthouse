@@ -11,8 +11,13 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			"Jira",
 			"Jira",
 			[
-				{ key: "url", value: "http://jira.example.com", isSecret: false },
-				{ key: "apiToken", value: "12345", isSecret: true },
+				{
+					key: "url",
+					value: "http://jira.example.com",
+					isSecret: false,
+					isOptional: false,
+				},
+				{ key: "apiToken", value: "12345", isSecret: true, isOptional: false },
 			],
 			1,
 		),
@@ -20,8 +25,13 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 			"ADO",
 			"AzureDevOps",
 			[
-				{ key: "url", value: "http://ado.example.com", isSecret: false },
-				{ key: "apiToken", value: "67890", isSecret: true },
+				{
+					key: "url",
+					value: "http://ado.example.com",
+					isSecret: false,
+					isOptional: false,
+				},
+				{ key: "apiToken", value: "67890", isSecret: true, isOptional: false },
 			],
 			2,
 		),

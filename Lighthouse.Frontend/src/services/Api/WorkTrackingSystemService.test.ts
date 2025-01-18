@@ -4,7 +4,6 @@ import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
 } from "../../models/WorkTracking/WorkTrackingSystemConnection";
-import { WorkTrackingSystemOption } from "../../models/WorkTracking/WorkTrackingSystemOption";
 import { WorkTrackingSystemService } from "./WorkTrackingSystemService";
 
 vi.mock("axios");
@@ -28,7 +27,14 @@ describe("WorkTrackingSystemService", () => {
 				id: 2,
 				name: "Jira",
 				workTrackingSystem: "JIRA",
-				options: [{ key: "apiToken", value: "token123", isSecret: true }],
+				options: [
+					{
+						key: "apiToken",
+						value: "token123",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
 			},
 		];
 
@@ -41,7 +47,14 @@ describe("WorkTrackingSystemService", () => {
 			new WorkTrackingSystemConnection(
 				"Jira",
 				"JIRA",
-				[new WorkTrackingSystemOption("apiToken", "token123", true)],
+				[
+					{
+						key: "apiToken",
+						value: "token123",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
 				2,
 			),
 		]);
@@ -55,7 +68,14 @@ describe("WorkTrackingSystemService", () => {
 			id: 1,
 			name: "Jira",
 			workTrackingSystem: "JIRA",
-			options: [{ key: "apiToken", value: "token123", isSecret: true }],
+			options: [
+				{
+					key: "apiToken",
+					value: "token123",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
 		};
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
 
@@ -77,7 +97,14 @@ describe("WorkTrackingSystemService", () => {
 				id: 2,
 				name: "Azure DevOps",
 				workTrackingSystem: "ADO",
-				options: [{ key: "apiToken", value: "adoToken", isSecret: true }],
+				options: [
+					{
+						key: "apiToken",
+						value: "adoToken",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
 			},
 		];
 
@@ -90,7 +117,14 @@ describe("WorkTrackingSystemService", () => {
 			new WorkTrackingSystemConnection(
 				"Azure DevOps",
 				"ADO",
-				[new WorkTrackingSystemOption("apiToken", "adoToken", true)],
+				[
+					{
+						key: "apiToken",
+						value: "adoToken",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
 				2,
 			),
 		]);
@@ -104,7 +138,14 @@ describe("WorkTrackingSystemService", () => {
 			id: 0,
 			name: "Jira",
 			workTrackingSystem: "JIRA",
-			options: [{ key: "apiToken", value: "token123", isSecret: true }],
+			options: [
+				{
+					key: "apiToken",
+					value: "token123",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
 		};
 
 		const mockResponse: IWorkTrackingSystemConnection = {
@@ -123,7 +164,14 @@ describe("WorkTrackingSystemService", () => {
 			new WorkTrackingSystemConnection(
 				"Jira",
 				"JIRA",
-				[new WorkTrackingSystemOption("apiToken", "token123", true)],
+				[
+					{
+						key: "apiToken",
+						value: "token123",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
 				3,
 			),
 		);
@@ -138,7 +186,14 @@ describe("WorkTrackingSystemService", () => {
 			id: 1,
 			name: "Jira",
 			workTrackingSystem: "JIRA",
-			options: [{ key: "apiToken", value: "updatedToken123", isSecret: true }],
+			options: [
+				{
+					key: "apiToken",
+					value: "updatedToken123",
+					isSecret: true,
+					isOptional: false,
+				},
+			],
 		};
 
 		mockedAxios.put.mockResolvedValueOnce({ data: updatedConnection });
@@ -152,7 +207,14 @@ describe("WorkTrackingSystemService", () => {
 			new WorkTrackingSystemConnection(
 				"Jira",
 				"JIRA",
-				[new WorkTrackingSystemOption("apiToken", "updatedToken123", true)],
+				[
+					{
+						key: "apiToken",
+						value: "updatedToken123",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
 				1,
 			),
 		);
