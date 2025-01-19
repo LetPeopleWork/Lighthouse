@@ -1,4 +1,5 @@
 import { expect, test } from "../fixutres/LighthouseFixture";
+import { getPathToDocsAssetsFolder } from "../helpers/folderPaths";
 
 test("clicking page links should new pages", async ({ overviewPage }) => {
 	await overviewPage.lightHousePage.goToTeams();
@@ -19,7 +20,7 @@ test("clicking defects icon should open the issues page", async ({
 	overviewPage,
 }) => {
 	const reportIssuePage = await overviewPage.lightHousePage.goToReportIssue();
-	
+
 	expect(reportIssuePage.url()).toBe(
 		"https://github.com/LetPeopleWork/Lighthouse/issues",
 	);
@@ -28,9 +29,12 @@ test("clicking defects icon should open the issues page", async ({
 test("clicking documentation icon should open the documentation", async ({
 	overviewPage,
 }) => {
-	const documentationPage = await overviewPage.lightHousePage.goToDocumentation();
+	const documentationPage =
+		await overviewPage.lightHousePage.goToDocumentation();
 
-	expect(documentationPage.url()).toBe("https://docs.lighthouse.letpeople.work/");
+	expect(documentationPage.url()).toBe(
+		"https://docs.lighthouse.letpeople.work/",
+	);
 });
 
 test("clicking let people work logo should open let people work page", async ({
@@ -87,8 +91,17 @@ test("clicking the GitHub Issue button should open the GitHub Lighthouse Issue P
 }) => {
 	const gitHubIssuePage =
 		await overviewPage.lightHousePage.contactViaGitHubIssue();
-		
+
 	expect(gitHubIssuePage.url()).toBe(
 		"https://github.com/LetPeopleWork/Lighthouse/issues",
 	);
+});
+
+test("Taks @screenshot of landing page", async ({ overviewPage }) => {
+	const screenshotLocation = `${getPathToDocsAssetsFolder()}/installation/landingpage.png`;
+
+	await overviewPage.page.waitForTimeout(300);
+
+	await overviewPage.page
+		.screenshot({ path: screenshotLocation });
 });
