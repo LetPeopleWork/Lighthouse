@@ -129,7 +129,7 @@ export class LighthousePage {
 	}
 
 	private GetDocumentationButton(): Locator {
-		return this.page.getByTestId('https://docs.lighthouse.letpeople.work');
+		return this.page.getByTestId("https://docs.lighthouse.letpeople.work");
 	}
 
 	private GetLpwLogoButton(): Locator {

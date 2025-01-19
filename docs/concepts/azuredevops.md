@@ -14,6 +14,9 @@ This page will give you an overview of the specifics to Azure DevOps when using 
 To create a connection to an Azure DevOps system, you need two things:
 - The URL of your Jira Instance
 - A Personal Access Token (PAT)
+  
+  
+![Create Azure DevOps Connection](../assets/concepts/worktrackingsystem_AzureDevOps.png)
 
 The URL will look something like this: `https://dev.azure.com/letpeoplework` where *letpeoplework* would be your organization name. You don't need to specify any Team Project, this should be part of the [Query](#query).
 

@@ -16,6 +16,8 @@ To create a connection to a Jira system, you need three things:
 - The username for the user that will be used to connect to the Jira Instance
 - The API token for this user
 
+![Create Jira Connection](../assets/concepts/worktrackingsystem_Jira.png)
+
 The URL will look something like this: `https://letpeoplework.atlassian.net` where *letpeoplework* is your instance name.  
 
 You can find more information on how to create an Access Token in the [Atlassian Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)

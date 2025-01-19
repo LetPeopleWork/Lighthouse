@@ -4,21 +4,12 @@ layout: home
 nav_order: 5
 ---
 
-TO DO
+This section will provide details on the various features of Lighthouse. In the [Overview](./overview/overview.html), you will see all your projects, and can see their progress and which teams are involved.
 
-- TOC
-{:toc}
+In the [Teams](./teams/teams.html) section, you can inspect, create, and modify teams. As part of the [Team Details](./teams/teamdetail.html) you can also run manual *How Many* and *When* [forecasts](../concepts/montecarlosimulations.html).
 
-# Overview
+For all your defined [Projects] the forecasts will continuously be re-run, so you have an up to date information *When* each [Feature](../concepts/concepts.html) of a Project will be done.
 
-# Teams
+In the [Settings](./settings/settings.html) you can fine-tune Lighthouse.
 
-## Team Detail
-
-## Team Edit
-
-# Projects
-
-## Project Detail
-
-## Project Edit
+![Lighthouse Overview](../assets/features/overview.png)

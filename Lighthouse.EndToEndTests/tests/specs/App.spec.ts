@@ -96,12 +96,3 @@ test("clicking the GitHub Issue button should open the GitHub Lighthouse Issue P
 		"https://github.com/LetPeopleWork/Lighthouse/issues",
 	);
 });
-
-test("Taks @screenshot of landing page", async ({ overviewPage }) => {
-	const screenshotLocation = `${getPathToDocsAssetsFolder()}/installation/landingpage.png`;
-
-	await overviewPage.page.waitForTimeout(300);
-
-	await overviewPage.page
-		.screenshot({ path: screenshotLocation });
-});

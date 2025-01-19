@@ -46,7 +46,7 @@ You can create a new connection to your work tracking system either during the c
 
 Once defined, you can reference them via name when you set up your teams and project. What information is needed for the connection depends on the specific Work Tracking System, please check in the subpages for your system to get more detailed information.
 
-![Work Tracking Systems](../assets/concepts/general/worktrackingsystem.png)
+![Work Tracking Systems](../assets/concepts/worktrackingsystem_AzureDevOps.png)
 
 # Query
 Lighthouse is using the built-in query languages from the work tracking systems to fetch the data needed for the forecasts. This makes the tool flexible and allows you to define teams and projects in whatever way makes sense to you.
@@ -76,3 +76,6 @@ Most often also the team level items are something like *User Stories* and *Bugs
 Projects allow to scale your forecasts beyond the team level. When you need to answer when your collection of *Features* will be done, defining a project is the way to go.
 
 Refer to [Features](../features/features.html) to get more details on how to fine-tune and configure Projects.
+
+# Forecast
+All of the above is done so that in the end we can run forecasts. Lighthouse is using *Monte Carlo Simulations* to run *How Many* (can be done for a specific team) as well as *When* forecasts. See [Monte Carlo Simulations](./montecarlosimulations.html) for more details.
