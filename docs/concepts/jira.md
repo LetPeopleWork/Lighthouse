@@ -23,6 +23,19 @@ You can find more information on how to create an Access Token in the [Atlassian
 {: .important}
 The API Token shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 
+## Connecting to Jira Server/Data Center
+The above description is true if you are working against a Jira Cloud instance. In case you are connecting to an on-premise Jira version (*Server* or *Data Center*), there are small differences.
+
+Instead of an *API Token*, you have to provide a *Personal Access Token*. See the [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) for more details.
+
+A *Personal Access Token* will not require you to specify a username, as it's part of the token itself. Thus please leave the username empty when you want to connect to a Jira Server/Data Center instance and provide a *Personal Access Token*.
+
+{: .note}
+If you do not leave the username field empty, Lighthouse will assume you try to connect to a Jira Cloud instance with an *API Token*, therefore the validation will fail!
+
+{: .important}
+As with the *API Token*, the *Personal Access Token* is treated like a password from Lighthouse.
+
 # Query
 Queries for Jira are written in [Jira Query Language (JQL)](https://www.atlassian.com/blog/jira/jql-the-most-flexible-way-to-search-jira-14). An example Query for a Team called "Lagunitas", where all issues for this Team are labeled with their team name, could look like this:
 
