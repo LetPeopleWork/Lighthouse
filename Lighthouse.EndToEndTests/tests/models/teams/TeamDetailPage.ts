@@ -18,6 +18,18 @@ export class TeamDetailPage {
 
 		return new TeamEditPage(this.page);
 	}
+	
+	async toggleFeatures(): Promise<void> {
+		await this.page.getByLabel("toggle").first().click();
+	}
+	
+	async toggleThroughput(): Promise<void> {
+		await this.page.getByLabel('toggle').nth(2).click();
+	}
+	
+	async toggleForecast(): Promise<void> {
+		await this.page.getByLabel('toggle').nth(1).click();
+	}
 
 	async forecast(howMany: number): Promise<number> {
 		await this.page

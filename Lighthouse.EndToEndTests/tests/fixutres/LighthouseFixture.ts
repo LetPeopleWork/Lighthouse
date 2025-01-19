@@ -41,7 +41,7 @@ type JsonValue =
 	| { [key: string]: JsonValue }
 	| JsonValue[];
 
-type ModelIdentifier = {
+export type ModelIdentifier = {
 	id: number;
 	name: string;
 };

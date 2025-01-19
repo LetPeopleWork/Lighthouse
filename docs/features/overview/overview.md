@@ -21,7 +21,7 @@ On top of every card, you can see the name of your Project. This is also a link,
 Below the Project Name, you can see how many work items are left (summed up over all the features in your project). Then you can also see what's the progress (work done divided by total work).
 
 # Involved Teams
-A project may involve one to many teams. The project overview card will show you all the teams that are involved in this project. You can click on a specific team and get to the [Team Detail Page](../teams/teamdetail.html).
+A project may involve one to many teams. The project overview card will show you all the teams that are involved in this project. You can click on a specific team and get to the [Team Detail Page](../teams/detail.html).
 
 # Projected Completion
 The projected completion is showing when all the Features of a project are expected to be completed. It contains four different dates with different probabilities/risk levels:

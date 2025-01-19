@@ -1,0 +1,103 @@
+---
+title: Create/Edit Teams
+parent: Teams
+grand_parent: Features
+layout: home
+nav_order: 2
+---
+
+Whether you want to create a new team or edit an existing one, you can use this page to specify all the details that make up your team.
+
+- TOC
+{:toc}
+
+# Validation and Save
+Before you can save a new or modified team, you'll have to *Validate* the changes. Lighthouse will run a query against your specified work tracking system and make sure that the query is successfully executing. Only after this you will be able to save.
+
+The validation checks the following things:
+- The connection to the work tracking system is valid (the connection settings are ok)
+- The query can be executed (the query is having a correct syntax)
+- The query returns at least one closed item (we must have a *Throughput* in order to forecast, so we need at least one closed item)
+
+If the validation is ok, you are good to save the changes.
+
+# General Configuration
+The general information contains the name of your team. This can be anything that helps you identify it.
+
+{: .recommendation}
+We suggest to use the same name as you use in your work tracking system to identify your team.
+
+## Throughput History
+This is the number of days of the past you want to include when running forecasts for this team.
+In general this should be more than 10 days, and represent a period where this team was somewhat working in a stable fashion.
+
+{: .recommendation}
+We recommend using a value between 30 and 90 days. Fewer and it might be too sensitive to outliers. And more than three months is often too far away for being useful.
+
+## Work Item Query
+The Work Item Query is the query that is executed against your [Work Tracking System](../../concepts/concepts.html#work-tracking-system) to get the teams backlog.
+The query should fetch all items that "belong" to this team and the specific syntax depends on the Work Tracking System you are using.
+
+See the [Jira](../../concepts/jira.html#team-backlog) and [Azure DevOps](../../concepts/azuredevops.html#team-backlog) specific pages for details on the query.
+
+# Work Item Types
+In order to properly forecast, Lighthouse needs to know which items your team works on that are relevant for the forecast. Thus you can define the item types that should be taken into account for this specific team.
+
+{: .recommendation}
+Common examples for item types on team level are "User Story", "Bug", and "Product Backlog Item" for Azure DevOps, and "Story" as well as "Bug" for Jira.  
+Check [Default Team Settings](../settings/defaultteamsettings.html) to see how to adjust default values for every newly created team.
+
+You can remove types by hitting the remove icon, and add new ones by typing them in and hit *Add Work Item Type*.
+
+{: .note}
+You have to type the exact type name as it's used in your Work Tracking System. Make sure to use the exact spelling and casing. Spaces (for example in 'User Story') are supported.
+
+# States
+In order for Lighthouse to judge whether an item is *done*, *in progress*, or not even started, you must specify which *states* map to which *category*.
+
+| State Category | Description |
+|-------|-------------|
+| To Do | Items that are in this state are discovered as *pending* for this team. It is important to have all those states mapped as so Lighthouse can discover pending work for features in a project. |
+| Doing | Items that are in this state are actively being worked on. Lighthouse will mark features as *In Progress* based on these states. |
+| Done | Items that are done contribute to the Throughput. Based on this value forecasts are made. |
+
+You don't have to add every state to one of the categories. For example you might have a *Removed* or *Canceled* state, which is not mapping to any of the categories. You don't have to specify it, then the item will not be existing for Lighthouse (only items that are in any of the mentioned states are discovered by Lighthouse).
+
+{: .recommendation}
+For Azure DevOps, the common states are: *New* or *Backlog* (To Do), *Active*, *Resolved*, *Comitted* (Doing), and *Closed* or *Done* (Done).  
+For Jira, the common states are: *To Do* (To Do), *In Progress* (Doing), *Done* (Done).
+
+{: .important}
+While Azure DevOps can handle if you specify states that don't exist, Jira will not execute a query with a state that is not in its system. That means for Jira you have make sure everything you mention does exist exactly as specified, as otherwise the [Validation](#validation-and-save) will fail.
+
+# Work Tracking System
+In order for Lighthouse to get the data it needs for forecasting, it needs to connect to your Work Tracking System. Work Tracking Systems are stored in the Lighthouse Settings and can be reused across Teams and Projects.
+
+When creating or modifying both Teams or Projects, you can either choose an existing connection or create a new one.
+
+Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/jira.html#work-tracking-system-connection) and [Azure DevOps](../../concepts/azuredevops.html#work-tracking-system-connection) for details.
+
+# Advanced Configuration
+There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
+
+## Feature WIP
+If your team is working on multiple Features at the same time, you want to adjust the Feature WIP to this number. This will impact your forecasts for projects, and will lead to different predicted delivery times.
+
+{: .note}
+Working on one Feature at a time does not mean only having one item in progress. It means that all items that are in progress belong to the same feature.
+
+As an example, if you work on a single feature at a time, this feature will be done as fast as possible. If you work on two features, the first feature will finish later (as at least some of the teams effort goes to the second feature). In an ideal world, you have a Feature WIP of one. Your reality might look different, and that's ok. Just know that ideally you should strive to be as close as possible to a Feature WIP of one.
+
+### Automatically Adjust Feature WIP
+You can set your Feature WIP to anything you like, there does not need to be a correlation to what is actually happening (although obviously it would be good if the number reflects reality...). If you tick this box, Lighthouse will automatically adjust the Feature WIP with every [Team Data Update](./detail.html#update-team-data) to the number of Features that are right now being worked on by this team.
+
+{: .recommendation}
+Tick this box if you want to increase transparency. A higher Feature WIP will lead to *late delivery* of many features. Not everyone will like this. It may be a good way to show why we should use focus (and Lighthouse might give you the underlying data for that). Keep fighting the good fight!
+
+## Relation Custom Field
+In order to establish a relation between a Feature and a team, Lighthouse assumes that the Feature is set as a parent for the work item.
+If this is not the case, you can specify an additional field that is containing the ID of the Feature in the Teams Work Items. That way, you can let Lighthouse know how the relation between Feature and Work Items are established.
+
+{: .note}
+You may wonder "Why would use another way of specifying a parent-child relationship than the built in ones?". Well, corporations sometimes do things for reasons beyond our understanding. We're not here to judge 🤷‍♂️  
+In theory this would allow you to also *cross-link* Jira and Azure DevOps items (but please don't, we have not tested it, which is why we wrote *in theory*...).
