@@ -63,7 +63,7 @@ test("Taks @screenshot of empty overview page", async ({ overviewPage }) => {
 });
 
 testWithData(
-	"Take @screenshots of populated overview, teams overview, team detail, projects overview, and project detail pages",
+	"Take @screenshot of populated overview, teams overview, team detail, projects overview, and project detail pages",
 	async ({ testData, overviewPage }) => {
 		await updateTeams(overviewPage, testData.teams);
 		await updateProjects(overviewPage, testData.projects);
