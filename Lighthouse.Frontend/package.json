@@ -53,7 +53,7 @@
     "jsdom": "^26.0.0",
     "typescript": "^5.7.3",
     "vite": "^6.0.10",
-    "vitest": "^2.1.8",
+    "vitest": "^3.0.2",
     "vitest-sonar-reporter": "^2.0.0"
   }
 }
