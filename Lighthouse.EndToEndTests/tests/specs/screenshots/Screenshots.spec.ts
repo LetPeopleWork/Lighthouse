@@ -5,7 +5,10 @@ import {
 	testWithData,
 } from "../../fixutres/LighthouseFixture";
 
-import { getPathToDocsAssetsFolder } from "../../helpers/folderPaths";
+import {
+	takeDialogScreenshot,
+	takePageScreenshot,
+} from "../../helpers/screenshots";
 import type { OverviewPage } from "../../models/overview/OverviewPage";
 
 const updateTeams = async (
@@ -54,12 +57,8 @@ const updateProjects = async (
 	}
 };
 
-test("Taks @screenshot of empty overview page", async ({ overviewPage }) => {
-	const screenshotLocation = `${getPathToDocsAssetsFolder()}/installation/landingpage.png`;
-
-	await overviewPage.page.waitForTimeout(300);
-
-	await overviewPage.page.screenshot({ path: screenshotLocation });
+test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
+	await takePageScreenshot(overviewPage.page, "installation/landingpage.png");
 });
 
 testWithData(
@@ -70,74 +69,65 @@ testWithData(
 
 		// Overview Page
 		const landingPage = await overviewPage.lightHousePage.goToOverview();
-		let screenshotLocation = `${getPathToDocsAssetsFolder()}/features/overview.png`;
-
-		await landingPage.page.waitForTimeout(300);
-		await landingPage.page.screenshot({ path: screenshotLocation });
+		await takePageScreenshot(landingPage.page, "features/overview.png");
 
 		// Teams Overview Page
 		const teamsPage = await overviewPage.lightHousePage.goToTeams();
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/teams.png`;
-
-		await teamsPage.page.waitForTimeout(300);
-		await teamsPage.page.screenshot({ path: screenshotLocation });
+		await takePageScreenshot(teamsPage.page, "features/teams.png");
 
 		// Team Deletion Dialog
 		const deleteTeamDialog = await teamsPage.deleteTeam(testData.teams[0].name);
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/teams_delete.png`;
-
-		await deleteTeamDialog.page.waitForTimeout(300);
-
-		await deleteTeamDialog.page
-			.getByRole("dialog")
-			.screenshot({ path: screenshotLocation });
+		await takeDialogScreenshot(
+			deleteTeamDialog.page.getByRole("dialog"),
+			"features/teams_delete.png",
+			0.5,
+			1000,
+		);
 
 		await deleteTeamDialog.cancel();
 
 		// Team Detail Page
 		const teamDetailPage = await teamsPage.goToTeam(testData.teams[2].name);
 		await teamDetailPage.forecast(10);
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/teamdetail.png`;
-
-		await teamDetailPage.page.waitForTimeout(300);
-		await teamDetailPage.page.screenshot({ path: screenshotLocation });
+		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
 		// Collapse Features and Forecast, and show Throughput
 		await teamDetailPage.toggleFeatures();
 		await teamDetailPage.toggleForecast();
 		await teamDetailPage.toggleThroughput();
 
-		await teamDetailPage.page.waitForTimeout(300);
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/teamdetail_throughput.png`;
-		await teamDetailPage.page.screenshot({ path: screenshotLocation });
+		await takePageScreenshot(
+			teamDetailPage.page,
+			"features/teamdetail_throughput.png",
+			15,
+		);
 
 		// Project Overview Page
 		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/projects.png`;
-
-		await projectsPage.page.waitForTimeout(300);
-		await projectsPage.page.screenshot({ path: screenshotLocation });
+		await takePageScreenshot(projectsPage.page, "features/projects.png");
 
 		// Team Deletion Dialog
 		const deleteProjectDialog = await projectsPage.deleteProject(
 			testData.projects[0],
 		);
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/projects_delete.png`;
 
-		await deleteProjectDialog.page.waitForTimeout(300);
-
-		await deleteProjectDialog.page
-			.getByRole("dialog")
-			.screenshot({ path: screenshotLocation });
+		await takeDialogScreenshot(
+			deleteProjectDialog.page.getByRole("dialog"),
+			"features/projects_delete.png",
+			0.5,
+			1000,
+		);
+		await deleteProjectDialog.cancel();
 
 		// Project Detail Page
 		const projectDetailPage = await projectsPage.goToProject(
 			testData.projects[1],
 		);
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/projectdetail.png`;
-
-		await projectDetailPage.page.waitForTimeout(300);
-		await projectDetailPage.page.screenshot({ path: screenshotLocation });
+		await takePageScreenshot(
+			projectDetailPage.page,
+			"features/projectdetail.png",
+			3,
+		);
 
 		// Expand Milestones
 		await projectDetailPage.toggleMilestoneConfiguration();
@@ -145,9 +135,12 @@ testWithData(
 		await projectDetailPage.addMilestone("SB26 Milestone", inTwoWeeks);
 		await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();
 
-		await projectDetailPage.page.waitForTimeout(1000);
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/projectdetail_milestones.png`;
-		await projectDetailPage.page.screenshot({ path: screenshotLocation });
+		await takePageScreenshot(
+			projectDetailPage.page,
+			"features/projectdetail_milestones.png",
+			5,
+			1000,
+		);
 
 		// Involved Teams
 		await projectDetailPage.toggleMilestoneConfiguration();
@@ -155,9 +148,12 @@ testWithData(
 
 		await projectDetailPage.changeFeatureWIPForTeam(testData.teams[0].name, 3);
 
-		await projectDetailPage.page.waitForTimeout(1000);
-		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/projectdetail_team_feature_wip.png`;
-		await projectDetailPage.page.screenshot({ path: screenshotLocation });
+		await takePageScreenshot(
+			projectDetailPage.page,
+			"features/projectdetail_team_feature_wip.png",
+			5,
+			1000,
+		);
 	},
 );
 
@@ -215,13 +211,12 @@ for (const {
 				);
 			}
 
-			const screenshotLocation = `${getPathToDocsAssetsFolder()}/concepts/worktrackingsystem_${workTrackingSystemName}.png`;
-
-			await workTrackingSystemDialog.page.waitForTimeout(300);
-
-			await workTrackingSystemDialog.page
-				.getByRole("dialog")
-				.screenshot({ path: screenshotLocation });
+			await takeDialogScreenshot(
+				workTrackingSystemDialog.page.getByRole("dialog"),
+				`concepts/worktrackingsystem_${workTrackingSystemName}.png`,
+				5,
+				1000,
+			);
 		},
 	);
 }
