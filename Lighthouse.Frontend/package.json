@@ -24,9 +24,9 @@
     "@mui/material": "^6.3.1",
     "@mui/x-charts": "^7.24.0",
     "@mui/x-date-pickers": "^7.24.0",
-    "@syncfusion/ej2": "^28.1.39",
+    "@syncfusion/ej2": "^28.1.41",
     "@syncfusion/ej2-base": "^28.1.33",
-    "@syncfusion/ej2-react-charts": "^28.1.39",
+    "@syncfusion/ej2-react-charts": "^28.1.41",
     "axios": "^1.7.9",
     "dayjs": "^1.11.13",
     "lodash.debounce": "^4.0.8",
@@ -52,7 +52,7 @@
     "cross-env": "^7.0.3",
     "jsdom": "^26.0.0",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7",
+    "vite": "^6.0.10",
     "vitest": "^2.1.8",
     "vitest-sonar-reporter": "^2.0.0"
   }
