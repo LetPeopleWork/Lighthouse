@@ -118,6 +118,18 @@ testWithData(
 		await projectsPage.page.waitForTimeout(300);
 		await projectsPage.page.screenshot({ path: screenshotLocation });
 
+		// Team Deletion Dialog
+		const deleteProjectDialog = await projectsPage.deleteProject(
+			testData.projects[0],
+		);
+		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/projects_delete.png`;
+
+		await deleteProjectDialog.page.waitForTimeout(300);
+
+		await deleteProjectDialog.page
+			.getByRole("dialog")
+			.screenshot({ path: screenshotLocation });
+
 		// Project Detail Page
 		const projectDetailPage = await projectsPage.goToProject(
 			testData.projects[1],
@@ -142,7 +154,7 @@ testWithData(
 		await projectDetailPage.toggleFeatureWIPConfiguration();
 
 		await projectDetailPage.changeFeatureWIPForTeam(testData.teams[0].name, 3);
-		
+
 		await projectDetailPage.page.waitForTimeout(1000);
 		screenshotLocation = `${getPathToDocsAssetsFolder()}/features/projectdetail_team_feature_wip.png`;
 		await projectDetailPage.page.screenshot({ path: screenshotLocation });

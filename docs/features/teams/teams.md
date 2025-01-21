@@ -5,7 +5,7 @@ layout: home
 nav_order: 2
 ---
 
-The *Team Overview* page shows you all teams that are defined. , as the name suggests, to give you an overview over everything that is going on. You can do the following things from this page:
+The *Team Overview* page shows you all teams that are defined. As the name suggests, to give you an overview over everything that is going on. You can do the following things from this page:
 
 - TOC
 {:toc}
@@ -30,7 +30,7 @@ If you want to delete a team, you can click on the 🗑️ icon on the right sid
 ![Team Deletion](../../assets/features/teams_delete.png)
 
 {: .important}
-Deleting a team will remove from Lighthouse with no functionality to undo this change. This will also remove the team from all the involved projects. Ideally you make sure that this team is not involved in any projects before you delete it.
+Deleting a team will remove it from Lighthouse with no functionality to undo this change. This will also remove the team from all the involved projects. Ideally you make sure that this team is not involved in any projects before you delete it.
 
 {: .note}
 You can always add a team again using the same queries. Deleting a team has no effect at all on the data in your Work Tracking System.
