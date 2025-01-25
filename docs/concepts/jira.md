@@ -88,3 +88,10 @@ Example JQL Queries for Projects could look like these:
 project = "LGHTHSDMO" AND fixVersion = "Release GCZ 1886"
 project = "LGHTHSDMO" AND labels = "Version 1.33.7"
 ```
+
+# Feature Order
+The Order of Features (usually *Epics*, but it may be any other type) is based on the *Rank* property.
+
+Jira is using the [LexoRank Algorithm](https://confluence.atlassian.com/adminjiraserver/managing-lexorank-938847803.html) to adjust the ranks. While it's quite interesting (you can read more about it [here](https://tmcalm.nl/blog/lexorank-jira-ranking-system-explained/)), it's not relevant that you understand it.  
+
+What you must understand is that you simply need to re-order your items in Jira and that this order will be taken into account by Lighthouse. Higher up means higher priority, further down will mean less priority.

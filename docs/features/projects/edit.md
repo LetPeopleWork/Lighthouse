@@ -80,7 +80,7 @@ A milestone has a name and a date, and when you define it, the likelihood of get
 This is beneficial for tracking your progress and helps with transparently communicating whether we can make certain dates or not.
 
 {: .note}
-Milestones are optional. You don't need to set any, and you can always add them later on in the [Project Detail View](./detail.html).
+Milestones are optional. You don't need to set any, and you can always add them later on in the [Project Detail View](./detail.html#milestones).
 
 # Unparented Work Items
 Sometimes (or shall we say "in the real world") there is work that is not belonging to a specific feature. Still it neeeds to get done.

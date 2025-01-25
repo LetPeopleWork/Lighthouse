@@ -78,4 +78,14 @@ Projects allow to scale your forecasts beyond the team level. When you need to a
 Refer to [Features](../features/features.html) to get more details on how to fine-tune and configure Projects.
 
 # Forecast
-All of the above is done so that in the end we can run forecasts. Lighthouse is using *Monte Carlo Simulations* to run *How Many* (can be done for a specific team) as well as *When* forecasts. See [Monte Carlo Simulations](./montecarlosimulations.html) for more details.
+All of the above is done so that in the end we can run forecasts. Lighthouse is using *Monte Carlo Simulations* to run *How Many* (can be done for a specific team) as well as *When* forecasts. See [How Lighthouse Forecasts](./howlighthouseforecasts.html) for more details.
+
+# Feature Order
+The order or features is crucial when forecasting completion dates. Lighthouse will forecast the features in order, *top* to *bottom*, based on the **all Features** that are defined in this Lighthouse instance.  
+
+It is therefore important that you maintain your Feature Backlog and adjust the order based on the needs of your business.
+
+{: .recommendation}
+Predictability is not something you are, it's something you do. Lighthouse will not be valuable if the input data is not good. You may also use Lighthouse to make suboptimal backlogs or subpar backlogmanagement more transparent.
+
+Check [Jira](jira.html#feature-order) or [Azure DevOps](azuredevops.html#feature-order) for more details on how the order is defined.

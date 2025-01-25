@@ -48,10 +48,16 @@ Furthermore, there can be two indicators for each feature:
 - A ⚙️ emoji symbolizes that there are child items of this specific feature that are currently being **actively** worked on (meaning they are in a [Doing State](./edit.html#states)) by this team.
 
 ## Feature Progress
-In the progress column, you can see how many items are done and how many are pending for this feature. This is split by the total amount (containing all items that including the ones from other teams working on the same feature) and items that are specifically relevant for the current team.
+In the progress column, you can see how many items are done and how many are pending for this feature. This is split by the total amount (containing all  items that including the ones from other teams working on the same feature) and items that are specifically relevant for the current team.
 
 {: .note}
-If a team is working solo on a feature, both bars will show the same numbers. If note, this means at least one other team is involved in this feature.
+If a team is working solo on a feature, both bars will show the same numbers. If not, this means at least one other team is involved in this feature.
+
+## Feature Forecasts
+For each Feature you will see the forecasted completion date. You'll get [four different probabilities](../overview/overview.html#projected-completion), from *Certain* to *Risky*.
+
+{: .note}
+The completion dates of each feature will take into account **all teams** that are involved, not just the one you are currently looking at.
 
 # Manual Forecasts
 Based on the team's [throughput](#throughput), you can run [Monte Carlo Simulations](../../concepts/montecarlosimulations.html) to answer two important questions for many teams and organizations.

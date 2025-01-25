@@ -5,4 +5,7 @@ nav_order: 90
 ---
 
 # FAQ
-Test test test
+- How to create queries?
+- Other systems than Jira/ADO
+- Custom Order for Items?
+- 

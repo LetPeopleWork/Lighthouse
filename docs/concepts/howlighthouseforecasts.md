@@ -1,5 +1,5 @@
 ---
-title: Monte Carlo Simulations
+title: How Lighthouse Forecasts
 layout: home
 nav_order: 3
 parent: Concepts

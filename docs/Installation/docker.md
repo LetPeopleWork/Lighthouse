@@ -5,7 +5,10 @@ parent: Installation and Configuration
 nav_order: 2
 ---
 
-The easiest way to run Lighthouse is to use docker.
+The easiest way to run Lighthouse is to use docker. Lighthouse is available as container which is hosted in the [GitHub Container Registry](https://github.com/LetPeopleWork/Lighthouse/pkgs/container/lighthouse):
+```bash
+docker pull ghcr.io/letpeoplework/lighthouse:latest
+``` 
 
 ## Available Tags
 - `latest`: Latest released version (if you want to keep using the "latest and greatest")

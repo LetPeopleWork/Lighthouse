@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
         {
-            logger.LogInformation("Getting Related Work Items for Feature {featureId} and Team {TeamName}", featureId, team.Name);
+            logger.LogInformation("Getting Related Work Items for Feature {FeatureId} and Team {TeamName}", featureId, team.Name);
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
             var relatedWorkItems = await GetRelatedWorkItems(witClient, team, featureId);
@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         public async Task<(string name, string order, string url, string state)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
-            logger.LogInformation("Getting Work Item Details for {itemId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
+            logger.LogInformation("Getting Work Item Details for {ItemId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
 
