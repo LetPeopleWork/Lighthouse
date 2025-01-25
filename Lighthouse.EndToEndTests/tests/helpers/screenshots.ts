@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as path from "node:path";
 import type { Locator, Page } from "playwright";
 import { PNG } from "pngjs";
 import { getPathToDocsAssetsFolder } from "./folderPaths";
@@ -57,8 +58,8 @@ async function takeScreenshot(
 	await new Promise((resolve) => setTimeout(resolve, waitTimeInMilliSeconds));
 
 	await target.screenshot({ path: tempPath });
-
 	if (!fs.existsSync(finalPath)) {
+		await fs.promises.mkdir(path.dirname(finalPath), { recursive: true });
 		await fs.promises.rename(tempPath, finalPath);
 		return;
 	}

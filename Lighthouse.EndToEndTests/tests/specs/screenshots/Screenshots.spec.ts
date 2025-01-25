@@ -1,3 +1,4 @@
+import { TestConfig } from "../../../playwright.config";
 import {
 	type ModelIdentifier,
 	expect,
@@ -59,6 +60,67 @@ const updateProjects = async (
 
 test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
 	await takePageScreenshot(overviewPage.page, "installation/landingpage.png");
+});
+
+test("Take @screenshot of setting pages", async ({ overviewPage }) => {
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
+	const workTrackingSystemsPage = await settingsPage.goToWorkTrackingSystems();
+
+	// Add new Work Tracking System
+	const workTrackingSystemDialog =
+		await workTrackingSystemsPage.addNewWorkTrackingSystem();
+
+	const jiraUrl = "https://letpeoplework.atlassian.net";
+	const username = "benjhuser@gmail.com";
+	const wtsName = "My Jira Connection";
+
+	await workTrackingSystemDialog.selectWorkTrackingSystem("Jira");
+	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+		"Jira Url",
+		jiraUrl,
+	);
+	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+		"Username",
+		username,
+	);
+	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+		"Api Token",
+		TestConfig.JiraToken,
+	);
+
+	await workTrackingSystemDialog.setConnectionName(wtsName);
+
+	await workTrackingSystemDialog.validate();
+	await expect(workTrackingSystemDialog.validateButton).toBeEnabled();
+	await expect(workTrackingSystemDialog.createButton).toBeEnabled();
+	await workTrackingSystemDialog.create();
+
+	const savedWorkTrackingSystem =
+		workTrackingSystemsPage.getWorkTrackingSystem(wtsName);
+	await expect(savedWorkTrackingSystem).toBeVisible();
+
+	await takePageScreenshot(
+		workTrackingSystemsPage.page,
+		"settings/worktrackingsystems.png",
+	);
+
+	const defaultTeamSettingsPage = await settingsPage.goToDefaultTeamSettings();
+	await takePageScreenshot(defaultTeamSettingsPage.page, "settings/defaultteamsettings.png");
+
+	const defaultprojectSettingsPage = await settingsPage.goToDefaultProjectSettings();
+	await takePageScreenshot(defaultprojectSettingsPage.page, "settings/defaultprojectsettings.png");
+
+	const periodicRefreshSettings = await settingsPage.goToPeriodicRefreshSettings();
+	await takePageScreenshot(periodicRefreshSettings.page, "settings/periodicrefreshsettings.png");
+
+	const dataRetentionSettings = await settingsPage.goToDataRetentionSettings();
+	await takePageScreenshot(dataRetentionSettings.page, "settings/dataretention.png");
+
+	const previewFeatureSettings = await settingsPage.goToPreviewFeatures();
+	await takePageScreenshot(previewFeatureSettings.page, "settings/previewfeatures.png");
+
+	const logs = await settingsPage.goToLogs();
+	await takePageScreenshot(logs.page, "settings/logs.png");
 });
 
 testWithData(

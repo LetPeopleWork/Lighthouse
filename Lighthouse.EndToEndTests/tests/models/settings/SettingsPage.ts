@@ -4,6 +4,8 @@ import { TeamEditPage } from "../teams/TeamEditPage";
 import { DataRetentionSettingsPage } from "./DataRetentionSettings/DataRetentionSettingsPage";
 import { PeriodicRefreshSettingsPage } from "./PeriodicRefreshSettings/PeriodicRefreshSettingsPage";
 import { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystems/WorkTrackingSystemsSettingsPage";
+import { LogsPage } from "./Logs/LogsPage";
+import { PreviewFeaturesPage } from "./PreviewFeatures/PreviewFeaturesPage";
 
 export class SettingsPage {
 	page: Page;
@@ -40,5 +42,17 @@ export class SettingsPage {
 		await this.page.getByTestId("data-retention-settings-tab").click();
 
 		return new DataRetentionSettingsPage(this.page);
+	}
+
+	async goToPreviewFeatures(): Promise<PreviewFeaturesPage> {
+		await this.page.getByTestId('preview-features-tab').click();
+
+		return new PreviewFeaturesPage(this.page);
+	}
+
+	async goToLogs(): Promise<LogsPage> {
+		await this.page.getByTestId('logs-tab').click();
+
+		return new LogsPage(this.page);
 	}
 }
