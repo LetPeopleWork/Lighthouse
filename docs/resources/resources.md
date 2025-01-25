@@ -10,9 +10,15 @@ Following are good resources for diving deeper into different concepts and ideas
 {:toc}
 
 # Blog Posts
-
+- Our Own Posts
+- Nick Browns
+- Prateek
 
 # Books
+- AAMFP Vol 1 & 2 (Vacanti)
+- Scaling flow (Prateek)
 
 # Other
+- [Drunk Agile]()
 - [The Kanban Guide](https://kanbanguides.org/english)
+- Pro Kanban
