@@ -2,10 +2,10 @@ import type { Page } from "@playwright/test";
 import { ProjectEditPage } from "../projects/ProjectEditPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
 import { DataRetentionSettingsPage } from "./DataRetentionSettings/DataRetentionSettingsPage";
-import { PeriodicRefreshSettingsPage } from "./PeriodicRefreshSettings/PeriodicRefreshSettingsPage";
-import { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystems/WorkTrackingSystemsSettingsPage";
 import { LogsPage } from "./Logs/LogsPage";
+import { PeriodicRefreshSettingsPage } from "./PeriodicRefreshSettings/PeriodicRefreshSettingsPage";
 import { PreviewFeaturesPage } from "./PreviewFeatures/PreviewFeaturesPage";
+import { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystems/WorkTrackingSystemsSettingsPage";
 
 export class SettingsPage {
 	page: Page;
@@ -45,13 +45,13 @@ export class SettingsPage {
 	}
 
 	async goToPreviewFeatures(): Promise<PreviewFeaturesPage> {
-		await this.page.getByTestId('preview-features-tab').click();
+		await this.page.getByTestId("preview-features-tab").click();
 
 		return new PreviewFeaturesPage(this.page);
 	}
 
 	async goToLogs(): Promise<LogsPage> {
-		await this.page.getByTestId('logs-tab').click();
+		await this.page.getByTestId("logs-tab").click();
 
 		return new LogsPage(this.page);
 	}

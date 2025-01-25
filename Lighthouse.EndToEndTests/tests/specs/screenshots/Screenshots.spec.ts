@@ -105,19 +105,36 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	);
 
 	const defaultTeamSettingsPage = await settingsPage.goToDefaultTeamSettings();
-	await takePageScreenshot(defaultTeamSettingsPage.page, "settings/defaultteamsettings.png");
+	await takePageScreenshot(
+		defaultTeamSettingsPage.page,
+		"settings/defaultteamsettings.png",
+	);
 
-	const defaultprojectSettingsPage = await settingsPage.goToDefaultProjectSettings();
-	await takePageScreenshot(defaultprojectSettingsPage.page, "settings/defaultprojectsettings.png");
+	const defaultprojectSettingsPage =
+		await settingsPage.goToDefaultProjectSettings();
+	await takePageScreenshot(
+		defaultprojectSettingsPage.page,
+		"settings/defaultprojectsettings.png",
+	);
 
-	const periodicRefreshSettings = await settingsPage.goToPeriodicRefreshSettings();
-	await takePageScreenshot(periodicRefreshSettings.page, "settings/periodicrefreshsettings.png");
+	const periodicRefreshSettings =
+		await settingsPage.goToPeriodicRefreshSettings();
+	await takePageScreenshot(
+		periodicRefreshSettings.page,
+		"settings/periodicrefreshsettings.png",
+	);
 
 	const dataRetentionSettings = await settingsPage.goToDataRetentionSettings();
-	await takePageScreenshot(dataRetentionSettings.page, "settings/dataretention.png");
+	await takePageScreenshot(
+		dataRetentionSettings.page,
+		"settings/dataretention.png",
+	);
 
 	const previewFeatureSettings = await settingsPage.goToPreviewFeatures();
-	await takePageScreenshot(previewFeatureSettings.page, "settings/previewfeatures.png");
+	await takePageScreenshot(
+		previewFeatureSettings.page,
+		"settings/previewfeatures.png",
+	);
 
 	const logs = await settingsPage.goToLogs();
 	await takePageScreenshot(logs.page, "settings/logs.png");
