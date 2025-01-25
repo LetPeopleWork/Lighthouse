@@ -1,13 +1,12 @@
-import { Box, Container, Typography } from "@mui/material";
-import type React from "react";
-import LetPeopleWorkLogo from "../LetPeopleWork/LetPeopleWorkLogo";
-import LighthouseVersion from "../LetPeopleWork/LighthouseVersion";
-
 import CallIcon from "@mui/icons-material/Call";
 import EmailIcon from "@mui/icons-material/Email";
-import GitHubIcon from "@mui/icons-material/GitHub";
+import ForumIcon from "@mui/icons-material/Forum";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import { Box, Container, Typography } from "@mui/material";
+import type React from "react";
 import ExternalLinkButton from "../Header/ExternalLinkButton";
+import LetPeopleWorkLogo from "../LetPeopleWork/LetPeopleWorkLogo";
+import LighthouseVersion from "../LetPeopleWork/LighthouseVersion";
 
 const Footer: React.FC = () => {
 	return (
@@ -41,9 +40,9 @@ const Footer: React.FC = () => {
 								tooltip="View our LinkedIn Page"
 							/>
 							<ExternalLinkButton
-								link="https://github.com/LetPeopleWork/Lighthouse/issues"
-								icon={GitHubIcon}
-								tooltip="Raise an Issue on GitHub"
+								link="https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg"
+								icon={ForumIcon}
+								tooltip="Join our Slack Community"
 							/>
 						</Box>
 					</Box>

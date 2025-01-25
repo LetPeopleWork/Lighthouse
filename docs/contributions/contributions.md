@@ -5,7 +5,14 @@ nav_order: 99
 ---
 
 # Contributions
-If you find something that can be improved in the documentation, please open a new [issue](https://github.com/LetPeopleWork/Lighthouse/issues/new?template=documentation-improvement.yml){:target="_blank"} in our GitHub repository. An issue can be as small as a typo, but also wrong or outdated sections, as well as something that we've might have missed so far.
+If you find something that can be improved in the documentation, you can contribute by letting us know about it!
+There are two preferred ways to do so.
+
+## Slack
+We do have a [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg){:target="_blank"} where you can ask questions about the tools and get support from us as well as other people that use the tool. As the usage of Lighthouse grows, this is our preferred way to support, as others may be able to support you.
+
+## Raise an Issue
+If you don't want to join yet another Slack community (*we get it - don't worry*), please open a new [issue](https://github.com/LetPeopleWork/Lighthouse/issues/new?template=documentation-improvement.yml){:target="_blank"} in our GitHub repository. An issue can be as small as a typo, but also wrong or outdated sections, as well as something that we've might have missed so far.
 
 If you want to do more than just reporting, we're happy to onboard people that help us improve our docs. Please reach out to use if you are interested in this.
 
@@ -25,6 +32,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Anoop A Parapurath**](https://www.linkedin.com/in/anoop-a-parapurath-137a3b4/)
 - [**Ann K Brea**](https://www.linkedin.com/in/annkbrea/)
 - [**Chris Graves**](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [**Agnieszka Reginek**](https://www.linkedin.com/in/agnieszka-reginek/)
 
 ---
 
