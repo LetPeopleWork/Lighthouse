@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             var team = CreateTeam(1, [1]);
 
-            var feature = new Feature(team, 35);
+            var feature = SetupFeature(team, 35);
             SetupFeatures([feature]);
 
             var project = CreateProject(feature);
@@ -196,8 +196,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             var team = CreateTeam(1, [1]);
 
-            var feature1 = new Feature(team, 35);
-            var feature2 = new Feature(team, 20);
+            var feature1 = SetupFeature(team, 35);
+            var feature2 = SetupFeature(team, 20);
 
             SetupFeatures(feature1, feature2);
             var project = CreateProject(feature1, feature2);
@@ -226,8 +226,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             var team = CreateTeam(2, throughput);
 
-            var feature1 = new Feature(team, 35);
-            var feature2 = new Feature(team, 15);
+            var feature1 = SetupFeature(team, 35);
+            var feature2 = SetupFeature(team, 15);
 
             SetupFeatures(feature1, feature2);
             var project = CreateProject(feature1, feature2);
@@ -251,9 +251,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
             var team = CreateTeam(2, throughput);
 
-            var feature1 = new Feature(team, 35);
-            var feature2 = new Feature(team, 20);
-            var feature3 = new Feature(team, 20);
+            var feature1 = SetupFeature(team, 35);
+            var feature2 = SetupFeature(team, 20);
+            var feature3 = SetupFeature(team, 20);
 
             SetupFeatures(feature1, feature2, feature3);
             var project = CreateProject([feature1, feature2, feature3]);
@@ -287,9 +287,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
             var team = CreateTeam(3, throughput);
 
-            var feature1 = new Feature(team, 35);
-            var feature2 = new Feature(team, 20);
-            var feature3 = new Feature(team, 5);
+            var feature1 = SetupFeature(team, 35);
+            var feature2 = SetupFeature(team, 20);
+            var feature3 = SetupFeature(team, 5);
 
             SetupFeatures(feature1, feature2, feature3);
             var project = CreateProject([feature1, feature2, feature3]);
@@ -324,8 +324,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var team1 = CreateTeam(1, [1]);
             var team2 = CreateTeam(1, [1]);
 
-            var feature1 = new Feature(team1, 35);
-            var feature2 = new Feature(team2, 20);
+            var feature1 = SetupFeature(team1, 35);
+            var feature2 = SetupFeature(team2, 20);
 
             SetupFeatures(feature1, feature2);
             var project = CreateProject([feature1, feature2]);
@@ -350,9 +350,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var team1 = CreateTeam(1, [1]);
             var team2 = CreateTeam(1, [1]);
 
-            var feature1 = new Feature(team1, 50);
-            var feature2 = new Feature(team2, 20);
-            var feature3 = new Feature(team2, 7);
+            var feature1 = SetupFeature(team1, 50);
+            var feature2 = SetupFeature(team2, 20);
+            var feature3 = SetupFeature(team2, 7);
 
             SetupFeatures(feature1, feature2, feature3);
             var project = CreateProject([feature1, feature2, feature3]);
@@ -382,9 +382,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var team1 = CreateTeam(2, [1]);
             var team2 = CreateTeam(2, [1]);
 
-            var feature1 = new Feature(team1, 30);
-            var feature2 = new Feature(team2, 20);
-            var feature3 = new Feature(team2, 20);
+            var feature1 = SetupFeature(team1, 30);
+            var feature2 = SetupFeature(team2, 20);
+            var feature3 = SetupFeature(team2, 20);
 
             SetupFeatures(feature1, feature2, feature3);
             var project = CreateProject([feature1, feature2, feature3]);
@@ -414,7 +414,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var team1 = CreateTeam(1, [1]);
             var team2 = CreateTeam(1, [1]);
 
-            var feature1 = new Feature([(team1, 20, 37), (team2, 15, 17)]);
+            var feature1 = SetupFeature([(team1, 20, 37), (team2, 15, 17)]);
 
             SetupFeatures(feature1);
             var project = CreateProject(feature1);
@@ -437,7 +437,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var subject = CreateSubjectWithRealThroughput();
             var team = CreateTeam(1, [0, 0, 0, 0]);
 
-            var feature = new Feature([(team, 20, 37)]);
+            var feature = SetupFeature([(team, 20, 37)]);
             SetupFeatures(feature);
             var project = CreateProject(feature);
             SetupProjects([project]);
@@ -455,7 +455,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var team1 = CreateTeam(1, [0]);
             var team2 = CreateTeam(1, [1]);
 
-            var feature1 = new Feature([(team1, 20, 42), (team2, 15, 17)]);
+            var feature1 = SetupFeature([(team1, 20, 42), (team2, 15, 17)]);
             SetupFeatures(feature1);
             var project = CreateProject(feature1);
             SetupProjects([project]);
@@ -478,7 +478,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             var team = CreateTeam(1, [1]);
 
-            var feature = new Feature();
+            var feature = SetupFeature(team, 0);
             SetupFeatures([feature]);
             var project = CreateProject(feature);
             SetupProjects([project]);
@@ -501,8 +501,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             var team = CreateTeam(1, [1]);
 
-            var feature1 = new Feature(team, 35);
-            var feature2 = new Feature(team, 20);
+            var feature1 = SetupFeature(team, 35);
+            var feature2 = SetupFeature(team, 20);
             SetupFeatures(feature1, feature2);
             var project = CreateProject([feature1, feature2]);
             SetupProjects([project]);
@@ -520,8 +520,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             var team = CreateTeam(1, [1]);
 
-            var feature1 = new Feature(team, 35);
-            var feature2 = new Feature(team, 20);
+            var feature1 = SetupFeature(team, 35);
+            var feature2 = SetupFeature(team, 20);
 
             SetupFeatures(feature1, feature2);
 
@@ -534,10 +534,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
         }
 
+        private Feature SetupFeature()
+        {
+            return SetupFeature(Enumerable.Empty<(Team team, int remainingItems, int totalItems)>());
+        }
+
+        private Feature SetupFeature(Team team, int remainingItems)
+        {
+            return SetupFeature([(team, remainingItems, remainingItems)]);
+        }
+
+        private Feature SetupFeature(IEnumerable<(Team team, int remainingItems, int totalItems)> remainingWork)
+        {
+            var feature = new Feature(remainingWork)
+            {
+                Id = idCounter,
+                ReferenceId = $"{idCounter++}"
+            };
+            
+            return feature;
+        }
+
         private void SetupFeatures(params Feature[] features)
         {
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
         }
+
         private void SetupProjects(IEnumerable<Project> projects)
         {
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
@@ -573,7 +595,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
         private Project CreateProject(params Feature[] features)
         {
-            return CreateProject(DateTime.UtcNow, features);
+            var project = CreateProject(DateTime.UtcNow, features);
+            project.Teams.AddRange(features.SelectMany(f => f.Teams).Distinct());
+
+            return project;
         }
 
         private Project CreateProject(DateTime lastUpdatedTime, params Feature[] features)

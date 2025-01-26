@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
         private readonly IRandomNumberService randomNumberService;
 
-        public ForecastUpdateService(IRandomNumberService randomNumberService, ILogger<ForecastUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService, int trials = 10000)
+        public ForecastUpdateService(IRandomNumberService randomNumberService, ILogger<ForecastUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService, int trials = 10_000)
             : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts)
         {
             this.trials = trials;
@@ -83,18 +83,22 @@ namespace Lighthouse.Backend.Services.Implementation.Update
                 return;
             }
 
-            await UpdateForecastsForProject(featureRepository, featureHistoryService, project);
+            await UpdateForecastsForTeams(featureRepository, featureHistoryService, project.Teams);
         }
 
-        private async Task UpdateForecastsForProject(IRepository<Feature> featureRepository, IFeatureHistoryService featureHistoryService, Project project)
+        private async Task UpdateForecastsForTeams(IRepository<Feature> featureRepository, IFeatureHistoryService featureHistoryService, IEnumerable<Team> teams)
         {
-            Logger.LogInformation("Running Monte Carlo Forecast For Project {Project}", project.Name);
+            Logger.LogInformation("Running Monte Carlo Forecast for all Features with involved of teams {Teams}", string.Join(',', teams.Select(t => t.Name)));
 
-            await ForecastFeatures(project.Features);
+            var features = featureRepository.GetAll().Where(f => f.Teams.Any(t => teams.Contains(t))).ToList();
+
+            Logger.LogInformation("Features with involved of those team are: {Features}", string.Join(",", features.Select(f => f.Name)));
+
+            await ForecastFeatures(features);
 
             await featureRepository.Save();
 
-            await ArchiveFeatures(featureHistoryService, project.Features);
+            await ArchiveFeatures(featureHistoryService, features);
         }
 
         private async Task ForecastFeatures(IEnumerable<Feature> features)
@@ -158,7 +162,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
             foreach (var feature in features)
             {
-                foreach (var featureWork in feature.FeatureWork)
+                foreach (var featureWork in feature.FeatureWork.Where(fw => fw.RemainingWorkItems > 0))
                 {
                     simulationResults.Add(new SimulationResult(featureWork.Team, feature, featureWork.RemainingWorkItems));
                 }
@@ -173,8 +177,8 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
             for (var closedItems = 0; closedItems < simulatedThroughput && simulationResults.GetRemainingItems() > 0; closedItems++)
             {
-                var featureToUpdate = GetFeatureToUpdate(team, simulationResults);
-                ReduceRemainingWorkFromFeatureToUpdate(currentlySimulatedDay, featureToUpdate);
+                var simulationResultOfFeatureToUpdate = GetSimulationResultsOfFeatureToUpdate(team, simulationResults);
+                ReduceRemainingWorkFromFeatureToUpdate(currentlySimulatedDay, simulationResultOfFeatureToUpdate);
             }
         }
 
@@ -188,7 +192,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             }
         }
 
-        private SimulationResult GetFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults)
+        private SimulationResult GetSimulationResultsOfFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults)
         {
             var featuresRemaining = simulationResults.Where(x => x.HasWorkRemaining);
             var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP, featuresRemaining.Count());

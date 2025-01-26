@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models
 {
@@ -50,6 +51,9 @@ namespace Lighthouse.Backend.Models
         public bool IsUnparentedFeature { get; set; }
 
         public bool IsUsingDefaultFeatureSize { get; set; } = false;
+
+        [NotMapped]
+        public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);
 
         public double GetLikelhoodForDate(DateTime date)
         {
