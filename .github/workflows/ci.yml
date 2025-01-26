@@ -544,10 +544,15 @@ jobs:
 
   screenshot:
     runs-on: ubuntu-latest
+    name: Recreate and upload new Screenshots
     needs:
       - tag
+      - docker
       #- release
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    permissions:
+      contents: write 
     
     steps:
       - uses: actions/checkout@v4
@@ -564,8 +569,8 @@ jobs:
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         
-      - name: Run Lighthouse
-        run: docker run -p 5001:5001 -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:dev-latest
+      - name: Run Lighthouse ${{ needs.tag.outputs.version }}
+        run: docker run -p 5001:5001 -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:${{ needs.tag.outputs.fileversion }}
         working-directory: ./Lighthouse.Backend
 
       - name: Wait for Lighthouse to start
@@ -574,7 +579,7 @@ jobs:
           timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5001; do sleep 1; done'
           echo "Server is ready!"
       
-      - name: Run Playwright tests
+      - name: Recreating Screenshot using Playwright
         run: npm run screenshots
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
@@ -586,11 +591,11 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Commit new screenshots
+      - name: Commit and Push new Screenshots
         run: |
           git add .
           git commit -m "Updating screenshot for version ${{ needs.tag.outputs.version }}" || echo "No changes to commit"
-          git status
+          git push origin HEAD:main || echo "No changes to push"
 
       - name: Print Docker logs
         if: always()
