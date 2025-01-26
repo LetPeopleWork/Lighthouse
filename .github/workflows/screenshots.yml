@@ -66,8 +66,8 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
             token: ${{ secrets.GITHUB_TOKEN }}
-            commit-message: "docs: update screenshots for version ${{ steps.version.outputs.VERSION }}"
-            title: "docs: update screenshots for version ${{ steps.version.outputs.VERSION }}"
+            commit-message: "Update screenshots for version ${{ steps.version.outputs.VERSION }}"
+            title: "Update screenshots for Documentation"
             body: |
                 ## Description
                 Automated PR to update documentation screenshots.
