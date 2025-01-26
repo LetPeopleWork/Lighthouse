@@ -62,13 +62,22 @@ jobs:
         env:
           LIGHTHOUSEURL: https://localhost:5001
 
-      - name: Commit and push changes
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git status
-          git add .
-          git commit -m "Update screenshots for version ${{ steps.version.outputs.VERSION }}" || echo "No changes to commit"
-          git status
-          git push --force origin HEAD:main || echo "No changes to push"
-          git status
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            commit-message: "docs: update screenshots for version ${{ steps.version.outputs.VERSION }}"
+            title: "docs: update screenshots for version ${{ steps.version.outputs.VERSION }}"
+            body: |
+                ## Description
+                Automated PR to update documentation screenshots.
+                
+                * Version: ${{ steps.version.outputs.VERSION }}
+                * Triggered by: ${{ github.event_name }}
+            branch: docs/update-screenshots-${{ steps.version.outputs.VERSION }}
+            base: main
+            delete-branch: true
+            labels: |
+                documentation
+                automated pr
+            draft: false
