@@ -156,9 +156,10 @@ For simplicity, we just assume each Feature contains 4 child items. If two teams
 
 ## The Impact of Feature WIP
 
+
 # Conclusion
 
-{: .note}
+{: .recommendation}
 You may wonder why this is so complicated. It would be a lot easier if there were no dependencies between teams, teams would only focus on one feature at a time, and could deliver projects without other teams. We just try to help you cope with reality...don't hate the player, hate the game. Or better yet, change how your organization plays the game.
 
 # Further Resources
