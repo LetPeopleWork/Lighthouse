@@ -1,5 +1,10 @@
 name: Update Screenshots For Documentation
 
+env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEINTEGRATIONTESTTOKEN }}
+    JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
+    AzureDevOpsLighthouseE2ETestToken: ${{secrets.AZUREDEVOPSLIGHTHOUSEE2ETESTTOKEN}}
 on:
   release:
     types: [published]
