@@ -9,6 +9,7 @@ on:
   workflow_run:
     workflows: ["Build And Deploy Lighthouse"]
     types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
