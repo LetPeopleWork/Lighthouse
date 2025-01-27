@@ -541,3 +541,4 @@ jobs:
           tag: ${{ needs.tag.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.tag.outputs.version }}"
+          token: ${{ secrets.RELEASE_CREATION_TOKEN}}
