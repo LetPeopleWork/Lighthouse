@@ -21,7 +21,7 @@
     "@microsoft/signalr": "^8.0.7",
     "@mui/icons-material": "^6.4.1",
     "@mui/lab": "^6.0.0-beta.24",
-    "@mui/material": "^6.4.1",
+    "@mui/material": "^6.4.2",
     "@mui/x-charts": "^7.24.1",
     "@mui/x-date-pickers": "^7.24.1",
     "@syncfusion/ej2": "^28.1.41",
