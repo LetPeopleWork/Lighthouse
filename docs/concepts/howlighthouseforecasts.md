@@ -8,7 +8,7 @@ parent: Concepts
 This page will give you an overview of Monte Carlo Simulations (MCS) and how they are applied in Lighthouse.
 
 {: .recommendation}
-While you don't have to understand the details of what's going on to use Lighthouse, we recommend to eventually go through it. There are things that help predictability in general that become more clear when you understand how MCS works, while Lighthouse is based on certain assumptions itself that will impact the results.
+While you don't have to understand the details of what's going on to use Lighthouse, we recommend eventually going through it. There are things that help predictability in general that become more clear when you understand how MCS works, while Lighthouse is based on certain assumptions that will impact the results.
 
 - TOC
 {:toc}
