@@ -4,11 +4,23 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse v25.1.2.1555
+# Lighthouse v25.1.26.1015
 {: .d-inline-block }
 
 Latest
 {: .label .label-green }
+
+## New Features
+- Support for Jira DataCenter/Server editions added (previously only Jira Cloud was supported)
+- Added online documentation available under https://docs.lighthouse.letpeople.work
+- Removed built-in tutorials as superseded by the new documentation
+
+## Improvements
+- Updated third-party dependencies
+
+**Full Changelog**: https://github.com/LetPeopleWork/Lighthouse/compare/v25.1.2.1555...v25.1.26.1015
+
+# Lighthouse v25.1.2.1555
 
 ## New Features
 - Run Lighthouse with default certificate in HTTPS mode.
