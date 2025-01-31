@@ -18,7 +18,7 @@ Latest
 ## Improvements
 - Updated third-party dependencies
 
-**Full Changelog**: https://github.com/LetPeopleWork/Lighthouse/compare/v25.1.2.1555...v25.1.26.1015
+Full Changelog: [v25.1.2.1555...v25.1.26.1015](https://github.com/LetPeopleWork/Lighthouse/compare/v25.1.2.1555...v25.1.26.1015)
 
 # Lighthouse v25.1.2.1555
 
