@@ -4,11 +4,21 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse v25.1.26.1015
+# Lighthouse v25.2.1
 {: .d-inline-block }
 
 Latest
 {: .label .label-green }
+
+## Improvements
+- Take all Features of a team into account when re-forecasting a project
+- Make sure Features are returned in correct order
+- Updated Third-Party Dependencies
+
+
+**Full Changelog**: [v25.1.26.1015...v25.2.1](https://github.com/LetPeopleWork/Lighthouse/compare/v25.1.26.1015...v25.2.1)
+
+# Lighthouse v25.1.26.1015
 
 ## New Features
 - Support for Jira DataCenter/Server editions added (previously only Jira Cloud was supported)
