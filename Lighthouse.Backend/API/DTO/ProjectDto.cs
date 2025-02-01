@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.API.DTO
 
             InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
 
-            foreach (var feature in project.Features)
+            foreach (var feature in project.Features.OrderBy(f => f, new FeatureComparer()))
             {
                 Features.Add(new FeatureDto(feature));
             }

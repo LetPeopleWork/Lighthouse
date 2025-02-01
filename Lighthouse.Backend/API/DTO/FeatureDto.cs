@@ -10,6 +10,7 @@ namespace Lighthouse.Backend.API.DTO
             Id = feature.Id;
             FeatureReference = feature.ReferenceId;
             Url = feature.Url;
+            Order = feature.Order;
             LastUpdated = feature.Forecast?.CreationTime ?? DateTime.MinValue;
 
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
@@ -40,15 +41,17 @@ namespace Lighthouse.Backend.API.DTO
             }
         }
 
-        public string Name { get; set; }
+        public string Name { get; }
 
-        public int Id { get; set; }
+        public int Id { get; }
 
-        public string FeatureReference { get; set; }
+        public string FeatureReference { get; }
 
-        public string Url { get; set; }
+        public string Url { get; }
 
-        public bool IsUsingDefaultFeatureSize { get; set; }
+        public string Order { get; }
+        
+        public bool IsUsingDefaultFeatureSize { get; }
 
         public Dictionary<int, string> Projects { get; } = new Dictionary<int, string>();
 
