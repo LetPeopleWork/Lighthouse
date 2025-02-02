@@ -6,13 +6,15 @@ nav_order: 1
 
 Lighthouse is a tool that helps you run probabilistic forecasts using Monte Carlo Simulations in a continuous and simple way. It connects to your Work Tracking Tool (currently Jira and Azure DevOps are supported) and will automatically update your team's Throughput and your project's forecasted delivery dates.
 
+<div style="text-align: center;">
+    <img src="./assets/features/teamdetail.png" alt="Team Forecasts" style="max-width: 500px;">
+</div>
+
 You can use it with a single team for doing manual "When" and "How Many" forecasts, as well as for tracking projects with one or multiple teams.
 
-Lighthouse is provided free of charge as open-source software by [Let People Work](https://letpeople.work). If you want to learn more about the tool, what we can offer you and your company, or just want to chat, please reach out.
+Lighthouse is provided free of charge as open-source software by [Let People Work](https://letpeople.work). If you want to learn more about the tool, what we can offer you and your company, or just want to chat, [please reach out](https://letpeople.work#contact).
 
-<div style="text-align: center;">
-    <img src="./assets/Logo.png" alt="Logo" style="max-width: 250px;">
-</div>
+You can check out the latest version in our [Public Live Demo](https://demo.lighthouse.letpeople.work).
 
 ## Documentation Structure
 The documentation is structure into various chapters. In [Installation](./installation/installation.html) you can find information about how to get started with setting up Lighthouse.
