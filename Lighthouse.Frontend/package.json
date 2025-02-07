@@ -25,7 +25,7 @@
     "@mui/x-charts": "^7.25.0",
     "@mui/x-date-pickers": "^7.25.0",
     "@syncfusion/ej2": "^28.2.4",
-    "@syncfusion/ej2-base": "^28.2.3",
+    "@syncfusion/ej2-base": "^28.2.4",
     "@syncfusion/ej2-react-charts": "^28.2.4",
     "axios": "^1.7.9",
     "dayjs": "^1.11.13",
