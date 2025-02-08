@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [TestCase(PreviewFeatureKeys.LighthouseChartKey)]
-        public void AddsPreviewSettingsOnStartIfMissing(string key)
+        public void RemoveOldPreviewSettingOnStartIfExisting(string key)
         {
             var subject = CreateSubject();
 
@@ -21,8 +21,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             Assert.Multiple(() =>
             {
-                Assert.That(previewFeature, Is.Not.Null);
-                Assert.That(previewFeature.Enabled, Is.EqualTo(false));
+                Assert.That(previewFeature, Is.Null);
             });
         }
 

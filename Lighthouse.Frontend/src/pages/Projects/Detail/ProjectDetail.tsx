@@ -13,7 +13,6 @@ import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
-import LighthouseChartComponent from "./Charts/LighthouseChart/LighthouseChartComponent";
 import InvolvedTeamsList from "./InvolvedTeamsList";
 import ProjectFeatureList from "./ProjectFeatureList";
 
@@ -32,15 +31,9 @@ const ProjectDetail: React.FC = () => {
 	const [projectSettings, setProjectSettings] =
 		useState<IProjectSettings | null>(null);
 	const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
-	const [showLighthouseChart, setShowLighthouseChart] =
-		useState<boolean>(false);
 
-	const {
-		projectService,
-		teamService,
-		previewFeatureService,
-		updateSubscriptionService,
-	} = useContext(ApiServiceContext);
+	const { projectService, teamService, updateSubscriptionService } =
+		useContext(ApiServiceContext);
 
 	const fetchProject = useCallback(async () => {
 		const fetchInvolvedTeams = async (projectData: IProject | null) => {
@@ -59,18 +52,15 @@ const ProjectDetail: React.FC = () => {
 		const projectData = await projectService.getProject(projectId);
 		const settings = await projectService.getProjectSettings(projectId);
 		const involvedTeamData = await fetchInvolvedTeams(projectData);
-		const isLighthouseChartFeatureEnabled =
-			await previewFeatureService.getFeatureByKey("LighthouseChart");
 
 		if (projectData && settings) {
 			setProject(projectData);
 			setProjectSettings(settings);
 			setInvolvedTeams(involvedTeamData);
-			setShowLighthouseChart(isLighthouseChartFeatureEnabled?.enabled ?? false);
 		}
 
 		setIsLoading(false);
-	}, [previewFeatureService, projectService, teamService, projectId]);
+	}, [projectService, teamService, projectId]);
 
 	const onRefreshFeatures = async () => {
 		if (project == null) {
@@ -259,14 +249,6 @@ const ProjectDetail: React.FC = () => {
 						<Grid size={{ xs: 12 }}>
 							<ProjectFeatureList project={project} />
 						</Grid>
-
-						{showLighthouseChart ? (
-							<Grid size={{ xs: 12 }}>
-								<LighthouseChartComponent projectId={projectId} />
-							</Grid>
-						) : (
-							<></>
-						)}
 					</Grid>
 				)}
 			</Container>

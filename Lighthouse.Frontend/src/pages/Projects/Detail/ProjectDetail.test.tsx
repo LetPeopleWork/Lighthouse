@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
-import { PreviewFeature } from "../../../models/Preview/PreviewFeature";
 import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -88,7 +87,6 @@ const mockUpdateSubscriptionService: IUpdateSubscriptionService =
 
 const mockGetProject = vi.fn();
 const mockGetProjectSettings = vi.fn();
-const mockGetPreviewFeatures = vi.fn();
 
 const mockSubscribeToFeatureUpdates = vi.fn();
 const mockSubscribeToForecastUpdates = vi.fn();
@@ -96,7 +94,6 @@ const mockGetUpdateStatus = vi.fn();
 
 mockProjectService.getProject = mockGetProject;
 mockProjectService.getProjectSettings = mockGetProjectSettings;
-mockPreviewFeatureService.getFeatureByKey = mockGetPreviewFeatures;
 
 mockUpdateSubscriptionService.subscribeToFeatureUpdates =
 	mockSubscribeToFeatureUpdates;
@@ -189,10 +186,6 @@ describe("ProjectDetail component", () => {
 			doingStates: ["Active"],
 			doneStates: ["Done"],
 		});
-
-		mockGetPreviewFeatures.mockResolvedValue(
-			new PreviewFeature(0, "Feature", "Feature", "", false),
-		);
 	});
 
 	it("should render project details after loading", async () => {

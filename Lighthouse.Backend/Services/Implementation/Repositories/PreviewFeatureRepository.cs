@@ -12,18 +12,23 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         private void SeedAppSettings()
         {
-            AddIfNotExists(new PreviewFeature { Id = 0, Key = PreviewFeatureKeys.LighthouseChartKey, Name = "Lighthouse Chart", Description = "Shows Burndown Chart with Forecasts for each Feature in a Project", Enabled = false });
+            RemoveIfExists(new PreviewFeature { Id = 0, Key = PreviewFeatureKeys.LighthouseChartKey, Name = "Lighthouse Chart", Description = "Shows Burndown Chart with Forecasts for each Feature in a Project", Enabled = false });
 
             SaveSync();
         }
 
-        private void AddIfNotExists(PreviewFeature previewFeature)
+        private void RemoveIfExists(PreviewFeature previewFeature)
         {
-            var existingDefault = GetByPredicate((feature) => feature.Name == previewFeature.Name);
-            if (existingDefault == null)
+            PreviewFeature? existingDefault = GetFeatureByName(previewFeature);
+            if (existingDefault != null)
             {
-                Add(previewFeature);
+                Remove(existingDefault);
             }
+        }
+
+        private PreviewFeature? GetFeatureByName(PreviewFeature previewFeature)
+        {
+            return GetByPredicate((feature) => feature.Name == previewFeature.Name);
         }
     }
 }
