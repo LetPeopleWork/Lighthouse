@@ -17,7 +17,7 @@ You can find the documentation including how to download and get started in the 
 If the [Documentation](#documentation) is not answering your question, you can get support in our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg).
 
 # Contribution
-See [Contribution](./CONTRIBUTING.md) for more details on how you can contribute.
+See our [Contributions Page](https://docs.lighthouse.letpeople.work/contributions/contributions.html) for more details on how you can contribute.
 
 # Build and Run from Sources
 To build and run the sources locally, follow these instructions.

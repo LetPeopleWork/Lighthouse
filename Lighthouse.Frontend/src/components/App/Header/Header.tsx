@@ -26,7 +26,7 @@ const Header: React.FC = () => {
 				</Box>
 				<Box sx={{ display: { xs: "none", md: "flex" } }}>
 					<ExternalLinkButton
-						link="https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md"
+						link="https://docs.lighthouse.letpeople.work/contributions/contributions.html"
 						icon={HandshakeIcon}
 						tooltip="Contributors"
 					/>

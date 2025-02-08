@@ -35,7 +35,7 @@ describe("Header component", () => {
 		);
 
 		const contributorsLink = screen.getByTestId(
-			"https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md",
+			"https://docs.lighthouse.letpeople.work/contributions/contributions.html",
 		);
 		const bugReportLink = screen.getByTestId(
 			"https://github.com/LetPeopleWork/Lighthouse/issues",
@@ -46,7 +46,7 @@ describe("Header component", () => {
 
 		expect(contributorsLink).toHaveAttribute(
 			"href",
-			"https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md",
+			"https://docs.lighthouse.letpeople.work/contributions/contributions.html",
 		);
 		expect(bugReportLink).toHaveAttribute(
 			"href",
