@@ -1,5 +1,4 @@
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
-import type { IChartService } from "../services/Api/ChartService";
 import { DemoApiService } from "../services/Api/DemoApiService";
 import type { ILogService } from "../services/Api/LogService";
 import type { IPreviewFeatureService } from "../services/Api/PreviewFeatureService";
@@ -21,7 +20,6 @@ export const createMockApiServiceContext = (
 		versionService: null as unknown as IApiServiceContext["versionService"],
 		workTrackingSystemService:
 			null as unknown as IApiServiceContext["workTrackingSystemService"],
-		chartService: null as unknown as IApiServiceContext["chartService"],
 		previewFeatureService:
 			null as unknown as IApiServiceContext["previewFeatureService"],
 		updateSubscriptionService: new DemoApiService(false, false),
@@ -100,12 +98,6 @@ export const createMockPreviewFeatureService = (): IPreviewFeatureService => {
 		getAllFeatures: vi.fn(),
 		getFeatureByKey: vi.fn(),
 		updateFeature: vi.fn(),
-	};
-};
-
-export const createMockChartService = (): IChartService => {
-	return {
-		getLighthouseChartData: vi.fn(),
 	};
 };
 

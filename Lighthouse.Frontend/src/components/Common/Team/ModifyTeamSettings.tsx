@@ -40,7 +40,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 	const handleTeamSettingsChange = (
 		key: keyof ITeamSettings,
-		value: string | number | boolean,
+		value: string | number | boolean | Date,
 	) => {
 		setTeamSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
 	};
@@ -260,6 +260,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 					<GeneralInputsComponent
 						teamSettings={teamSettings}
 						onTeamSettingsChange={handleTeamSettingsChange}
+						isDefaultSettings={modifyDefaultSettings}
 					/>
 
 					<WorkItemTypesComponent

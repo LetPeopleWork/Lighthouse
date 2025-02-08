@@ -69,6 +69,7 @@ describe("Team Class", () => {
 			["FTR-1"],
 			new Date(),
 			[1],
+			false,
 			new Date(new Date().setDate(new Date().getDate() - [1].length)),
 			new Date(),
 		);

@@ -5,13 +5,6 @@ import {
 	type IRefreshSettings,
 	RefreshSettings,
 } from "../../models/AppSettings/RefreshSettings";
-import {
-	BurndownEntry,
-	type ILighthouseChartData,
-	type ILighthouseChartFeatureData,
-	LighthouseChartData,
-	LighthouseChartFeatureData,
-} from "../../models/Charts/LighthouseChartData";
 import { Feature } from "../../models/Feature";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
@@ -25,7 +18,7 @@ import {
 	LighthouseReleaseAsset,
 } from "../../models/LighthouseRelease/LighthouseReleaseAsset";
 import { PreviewFeature } from "../../models/Preview/PreviewFeature";
-import { type IMilestone, Milestone } from "../../models/Project/Milestone";
+import { Milestone } from "../../models/Project/Milestone";
 import { Project } from "../../models/Project/Project";
 import type { IProjectSettings } from "../../models/Project/ProjectSettings";
 import { Team } from "../../models/Team/Team";
@@ -40,7 +33,6 @@ import type {
 	UpdateProgress,
 	UpdateType,
 } from "../UpdateSubscriptionService";
-import type { IChartService } from "./ChartService";
 import type { IForecastService } from "./ForecastService";
 import type { ILogService } from "./LogService";
 import type { IPreviewFeatureService } from "./PreviewFeatureService";
@@ -59,7 +51,6 @@ export class DemoApiService
 		ITeamService,
 		IVersionService,
 		IWorkTrackingSystemService,
-		IChartService,
 		IPreviewFeatureService,
 		IUpdateSubscriptionService
 {
@@ -386,6 +377,11 @@ export class DemoApiService
 			id: 1,
 			name: "My Team",
 			throughputHistory: 30,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(
+				Date.now() - 30 * 24 * 60 * 60 * 1000,
+			),
+			throughputHistoryEndDate: new Date(),
 			featureWIP: 1,
 			workItemQuery: '[System.TeamProject] = "My Team"',
 			workItemTypes: ["User Story", "Bug"],
@@ -738,6 +734,9 @@ export class DemoApiService
 			id: 1,
 			name: "My Team",
 			throughputHistory: 30,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(),
+			throughputHistoryEndDate: new Date(),
 			featureWIP: 1,
 			workItemQuery: '[System.TeamProject] = "My Team"',
 			workItemTypes: ["User Story", "Bug"],
@@ -790,60 +789,6 @@ export class DemoApiService
 	): Promise<void> {
 		console.log(`Updating ${projecSettings.name} Team Settings`);
 		await this.delay();
-	}
-
-	async getLighthouseChartData(
-		projectId: number,
-		startDate: Date,
-		sampleRate: number,
-	): Promise<ILighthouseChartData> {
-		console.log(
-			`Getting Lighthouse Chart for project ${projectId} starting from ${startDate} with sample rate ${sampleRate}`,
-		);
-
-		await this.delay();
-
-		const featureData: ILighthouseChartFeatureData[] = [
-			new LighthouseChartFeatureData(
-				"Feature 1",
-				[new Date("2024-05-17"), new Date("2024-05-28")],
-				[
-					new BurndownEntry(new Date("2024-04-08"), 38),
-					new BurndownEntry(new Date("2024-04-15"), 32),
-					new BurndownEntry(new Date("2024-04-22"), 35),
-					new BurndownEntry(new Date("2024-04-29"), 23),
-					new BurndownEntry(new Date("2024-05-06"), 15),
-				],
-			),
-			new LighthouseChartFeatureData(
-				"Feature 2",
-				[],
-				[
-					new BurndownEntry(new Date("2024-04-08"), 15),
-					new BurndownEntry(new Date("2024-04-15"), 9),
-					new BurndownEntry(new Date("2024-04-22"), 5),
-					new BurndownEntry(new Date("2024-04-29"), 0),
-				],
-			),
-			new LighthouseChartFeatureData(
-				"Feature 3",
-				[new Date("2024-05-23"), new Date("2024-06-03")],
-				[
-					new BurndownEntry(new Date("2024-04-08"), 41),
-					new BurndownEntry(new Date("2024-04-15"), 36),
-					new BurndownEntry(new Date("2024-04-22"), 31),
-					new BurndownEntry(new Date("2024-04-29"), 19),
-					new BurndownEntry(new Date("2024-05-06"), 17),
-				],
-			),
-		];
-
-		const milestones: IMilestone[] = [
-			new Milestone(0, "Important Date", new Date("2024-05-04")),
-			new Milestone(0, "Customer Visit", new Date("2024-06-01")),
-		];
-
-		return new LighthouseChartData(featureData, milestones);
 	}
 
 	async getDataRetentionSettings(): Promise<IDataRetentionSettings> {
@@ -899,6 +844,7 @@ export class DemoApiService
 				["FTR-1", "FTR-3"],
 				new Date(),
 				throughput1,
+				false,
 				new Date(new Date().setDate(new Date().getDate() - throughput1.length)),
 				new Date(),
 			),
@@ -911,6 +857,7 @@ export class DemoApiService
 				["FTR-2", "FTR-3"],
 				new Date(),
 				throughput2,
+				false,
 				new Date(new Date().setDate(new Date().getDate() - throughput2.length)),
 				new Date(),
 			),
@@ -923,6 +870,7 @@ export class DemoApiService
 				["FTR-3"],
 				new Date(),
 				throughput3,
+				true,
 				new Date(new Date().setDate(new Date().getDate() - throughput3.length)),
 				new Date(),
 			),
@@ -935,6 +883,7 @@ export class DemoApiService
 				["FTR-4"],
 				new Date(),
 				throughput4,
+				false,
 				new Date(new Date().setDate(new Date().getDate() - throughput4.length)),
 				new Date(),
 			),

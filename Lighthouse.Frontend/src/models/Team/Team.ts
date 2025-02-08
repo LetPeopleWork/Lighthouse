@@ -10,6 +10,7 @@ export interface ITeam extends IFeatureOwner {
 	featuresInProgress: string[];
 	lastUpdated: Date;
 	throughput: number[];
+	useFixedDatesForThroughput: boolean;
 	throughputStartDate: Date;
 	throughputEndDate: Date;
 }
@@ -23,6 +24,7 @@ export class Team implements ITeam {
 	featuresInProgress: string[];
 	lastUpdated: Date;
 	throughput: number[];
+	useFixedDatesForThroughput: boolean;
 	throughputStartDate: Date;
 	throughputEndDate: Date;
 
@@ -35,6 +37,7 @@ export class Team implements ITeam {
 		featuresInProgress: string[],
 		lastUpdated: Date,
 		throughput: number[],
+		useFixedDatesForThroughput: boolean,
 		throughputStartDate: Date,
 		throughputEndDate: Date,
 	) {
@@ -46,6 +49,7 @@ export class Team implements ITeam {
 		this.featuresInProgress = featuresInProgress;
 		this.lastUpdated = lastUpdated;
 		this.throughput = throughput;
+		this.useFixedDatesForThroughput = useFixedDatesForThroughput;
 		this.throughputStartDate = throughputStartDate;
 		this.throughputEndDate = throughputEndDate;
 	}

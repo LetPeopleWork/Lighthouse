@@ -55,8 +55,9 @@ export class BaseApiService {
 			item.featuresInProgress,
 			new Date(item.lastUpdated),
 			item.throughput,
-			item.throughputStartDate,
-			item.throughputEndDate,
+			item.useFixedDatesForThroughput,
+			new Date(item.throughputStartDate),
+			new Date(item.throughputEndDate),
 		);
 	}
 
@@ -73,8 +74,9 @@ export class BaseApiService {
 					team.featuresInProgress,
 					new Date(team.lastUpdated),
 					team.throughput,
-					team.throughputStartDate,
-					team.throughputEndDate,
+					team.useFixedDatesForThroughput,
+					new Date(team.throughputStartDate),
+					new Date(team.throughputEndDate),
 				),
 		);
 		const milestones = item.milestones.map(

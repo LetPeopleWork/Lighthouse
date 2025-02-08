@@ -21,7 +21,9 @@ describe("TeamService", () => {
 
 	it("should get teams", async () => {
 		const date = new Date();
-		const throughputStartDate = new Date(new Date().setDate(new Date().getDate() - 1));
+		const throughputStartDate = new Date(
+			new Date().setDate(new Date().getDate() - 1),
+		);
 		const throughputEndDate = new Date();
 
 		const mockResponse: ITeam[] = [
@@ -34,6 +36,7 @@ describe("TeamService", () => {
 				["1"],
 				date,
 				[1],
+				false,
 				throughputStartDate,
 				throughputEndDate,
 			),
@@ -46,6 +49,7 @@ describe("TeamService", () => {
 				["2"],
 				date,
 				[1],
+				false,
 				throughputStartDate,
 				throughputEndDate,
 			),
@@ -65,6 +69,7 @@ describe("TeamService", () => {
 				["1"],
 				date,
 				[1],
+				false,
 				throughputStartDate,
 				throughputEndDate,
 			),
@@ -77,6 +82,7 @@ describe("TeamService", () => {
 				["2"],
 				date,
 				[1],
+				false,
 				throughputStartDate,
 				throughputEndDate,
 			),
@@ -86,9 +92,11 @@ describe("TeamService", () => {
 
 	it("should get a single team by id", async () => {
 		const date = new Date();
-		const throughputStartDate = new Date(new Date().setDate(new Date().getDate() - 1));
+		const throughputStartDate = new Date(
+			new Date().setDate(new Date().getDate() - 1),
+		);
 		const throughputEndDate = new Date();
-		
+
 		const mockResponse: ITeam = new Team(
 			"Team A",
 			1,
@@ -98,6 +106,7 @@ describe("TeamService", () => {
 			["2"],
 			date,
 			[1],
+			false,
 			throughputStartDate,
 			throughputEndDate,
 		);
@@ -116,6 +125,7 @@ describe("TeamService", () => {
 				["2"],
 				date,
 				[1],
+				false,
 				throughputStartDate,
 				throughputEndDate,
 			),
@@ -145,6 +155,9 @@ describe("TeamService", () => {
 			id: 1,
 			name: "Team A",
 			throughputHistory: 30,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(),
+			throughputHistoryEndDate: new Date(),
 			featureWIP: 1,
 			workItemQuery: "Query",
 			workItemTypes: ["Epic"],
@@ -169,6 +182,9 @@ describe("TeamService", () => {
 			id: 0,
 			name: "New Team",
 			throughputHistory: 30,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(),
+			throughputHistoryEndDate: new Date(),
 			featureWIP: 1,
 			workItemQuery: "Query",
 			workItemTypes: ["Epic"],
@@ -194,6 +210,9 @@ describe("TeamService", () => {
 			id: 1,
 			name: "Updated Team",
 			throughputHistory: 30,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(),
+			throughputHistoryEndDate: new Date(),
 			featureWIP: 1,
 			workItemQuery: "Query",
 			workItemTypes: ["Epic"],
@@ -237,6 +256,9 @@ describe("TeamService", () => {
 			id: 1,
 			name: "Team A",
 			throughputHistory: 30,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(),
+			throughputHistoryEndDate: new Date(),
 			featureWIP: 1,
 			workItemQuery: "Query",
 			workItemTypes: ["Epic"],
@@ -264,6 +286,9 @@ describe("TeamService", () => {
 			id: 1,
 			name: "Team A",
 			throughputHistory: 30,
+			useFixedDatesForThroughput: false,
+			throughputHistoryStartDate: new Date(),
+			throughputHistoryEndDate: new Date(),
 			featureWIP: 1,
 			workItemQuery: "Query",
 			workItemTypes: ["Epic"],

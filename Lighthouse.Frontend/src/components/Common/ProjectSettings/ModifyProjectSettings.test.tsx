@@ -194,6 +194,7 @@ describe("ModifyProjectSettings", () => {
 			remainingWork: 1,
 			totalWork: 12,
 			throughput: [1],
+			useFixedDatesForThroughput: false,
 			throughputStartDate: new Date(
 				new Date().setDate(new Date().getDate() - [1].length),
 			),
@@ -211,6 +212,7 @@ describe("ModifyProjectSettings", () => {
 			remainingWork: 1,
 			totalWork: 12,
 			throughput: [1],
+			useFixedDatesForThroughput: false,
 			throughputStartDate: new Date(
 				new Date().setDate(new Date().getDate() - [1].length),
 			),

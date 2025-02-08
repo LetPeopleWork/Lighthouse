@@ -3,7 +3,6 @@ import {
 	type IUpdateSubscriptionService,
 	UpdateSubscriptionService,
 } from "../UpdateSubscriptionService";
-import { ChartService, type IChartService } from "./ChartService";
 import { DemoApiService } from "./DemoApiService";
 import { ForecastService, type IForecastService } from "./ForecastService";
 import { type ILogService, LogService } from "./LogService";
@@ -28,7 +27,6 @@ export interface IApiServiceContext {
 	teamService: ITeamService;
 	versionService: IVersionService;
 	workTrackingSystemService: IWorkTrackingSystemService;
-	chartService: IChartService;
 	previewFeatureService: IPreviewFeatureService;
 	updateSubscriptionService: IUpdateSubscriptionService;
 }
@@ -45,7 +43,6 @@ const defaultServices: IApiServiceContext = {
 	teamService: new TeamService(),
 	versionService: new VersionService(),
 	workTrackingSystemService: new WorkTrackingSystemService(),
-	chartService: new ChartService(),
 	previewFeatureService: new PreviewFeatureService(),
 	updateSubscriptionService: new UpdateSubscriptionService(),
 };
@@ -61,7 +58,6 @@ const demoServices: IApiServiceContext = {
 	teamService: demoApiService,
 	versionService: demoApiService,
 	workTrackingSystemService: demoApiService,
-	chartService: demoApiService,
 	previewFeatureService: demoApiService,
 	updateSubscriptionService: demoApiService,
 };

@@ -2,21 +2,19 @@ import { CircularProgress } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import type React from "react";
 import { Throughput } from "../../../models/Forecasts/Throughput";
+import type { ITeam } from "../../../models/Team/Team";
 
 interface ThroughputBarChartProps {
-	throughputData: number[];
+	team: ITeam;
 }
 
-const ThroughputBarChart: React.FC<ThroughputBarChartProps> = ({
-	throughputData,
-}) => {
-	const throughput = new Throughput(throughputData);
+const ThroughputBarChart: React.FC<ThroughputBarChartProps> = ({ team }) => {
+	const throughput = new Throughput(team.throughput);
 
 	const data = Array.from({ length: throughput.history }, (_, index) => {
-		const targetDate = new Date();
+		const targetDate = new Date(team.throughputStartDate);
 
-		const dayIndex = throughput.history - 1 - index;
-		targetDate.setDate(targetDate.getDate() - dayIndex);
+		targetDate.setDate(targetDate.getDate() + index);
 
 		return {
 			day: targetDate.toLocaleDateString(),

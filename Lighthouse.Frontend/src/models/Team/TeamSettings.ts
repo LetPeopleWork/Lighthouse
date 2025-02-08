@@ -2,6 +2,9 @@ export interface ITeamSettings {
 	id: number;
 	name: string;
 	throughputHistory: number;
+	useFixedDatesForThroughput: boolean;
+	throughputHistoryStartDate: Date;
+	throughputHistoryEndDate: Date;
 	featureWIP: number;
 	workItemQuery: string;
 	workItemTypes: string[];

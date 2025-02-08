@@ -41,7 +41,17 @@ export class TeamService extends BaseApiService implements ITeamService {
 			const response = await this.apiService.get<ITeamSettings>(
 				`/teams/${id}/settings`,
 			);
-			return response.data;
+			const teamSettings = response.data;
+
+			teamSettings.throughputHistoryStartDate = new Date(
+				response.data.throughputHistoryStartDate,
+			);
+
+			teamSettings.throughputHistoryEndDate = new Date(
+				response.data.throughputHistoryEndDate,
+			);
+
+			return teamSettings;
 		});
 	}
 

@@ -164,7 +164,10 @@ namespace Lighthouse.Backend.API
             team.WorkItemQuery = teamSetting.WorkItemQuery;
             team.AdditionalRelatedField = teamSetting.RelationCustomField;
             team.FeatureWIP = teamSetting.FeatureWIP;
+            team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;
             team.ThroughputHistory = teamSetting.ThroughputHistory;
+            team.ThroughputHistoryStartDate = teamSetting.ThroughputHistoryStartDate;
+            team.ThroughputHistoryEndDate = teamSetting.ThroughputHistoryEndDate;
             team.WorkItemTypes = teamSetting.WorkItemTypes;
             team.ToDoStates = teamSetting.ToDoStates;
             team.DoingStates = teamSetting.DoingStates;

@@ -1,4 +1,11 @@
-import { Button, Container, Typography } from "@mui/material";
+import GppMaybeOutlinedIcon from "@mui/icons-material/GppMaybeOutlined";
+import {
+	Button,
+	Container,
+	IconButton,
+	Tooltip,
+	Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import dayjs from "dayjs";
 import type React from "react";
@@ -178,7 +185,14 @@ const TeamDetail: React.FC = () => {
 							/>
 						</InputGroup>
 						<InputGroup title="Throughput" initiallyExpanded={false}>
-							<ThroughputBarChart throughputData={team.throughput} />
+							{team.useFixedDatesForThroughput && (
+								<Tooltip title="This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts">
+									<IconButton size="small" sx={{ ml: 1 }}>
+										<GppMaybeOutlinedIcon sx={{ color: "warning.main" }} />
+									</IconButton>
+								</Tooltip>
+							)}
+							<ThroughputBarChart team={team} />
 						</InputGroup>
 					</Grid>
 				)}

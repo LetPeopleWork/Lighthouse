@@ -13,7 +13,14 @@ namespace Lighthouse.Backend.API.DTO
         {
             Id = team.Id;    
             Name = team.Name;
+
             ThroughputHistory = team.ThroughputHistory;
+            UseFixedDatesForThroughput = team.UseFixedDatesForThroughput;
+
+            var throughputSettings = team.GetThroughputSettings();
+            ThroughputHistoryStartDate = throughputSettings.StartDate;
+            ThroughputHistoryEndDate = throughputSettings.EndDate;
+
             FeatureWIP = team.FeatureWIP;
             WorkItemQuery = team.WorkItemQuery;
             WorkItemTypes = team.WorkItemTypes;
@@ -32,6 +39,12 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public int ThroughputHistory { get; set; }
+
+        public bool UseFixedDatesForThroughput { get; set; }
+
+        public DateTime? ThroughputHistoryStartDate { get; set; }
+
+        public DateTime? ThroughputHistoryEndDate { get; set; }
 
         [JsonRequired]
         public int FeatureWIP { get; set; }
