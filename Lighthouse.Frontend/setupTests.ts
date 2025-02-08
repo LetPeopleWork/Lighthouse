@@ -1,7 +1,4 @@
 import '@testing-library/jest-dom';
-import { registerLicense } from '@syncfusion/ej2-base';
-
-registerLicense('Ngo9BigBOggjHTQxAR8/V1NMaF5cXmBCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH1fdHRTQmFcVENwXUo=');
 
 class MockResizeObserver {
     observe() { /* Just declared to fulfill the interface */ }
