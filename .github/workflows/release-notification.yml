@@ -2,14 +2,13 @@ name: Slackbot on release
 
 on:
   release:
-    types: [published]
+    types: [released]
 
 jobs:
   notify_slack:
     runs-on: ubuntu-latest
     name: Notify Slack on Release
-    if: github.event.release.prerelease == false
-    
+
     steps:
       - uses: actions/checkout@v4
 
