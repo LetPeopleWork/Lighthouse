@@ -1,5 +1,5 @@
 # Contributing to Lighthouse
-We develop Ligththouse as an OpenSource project, so that people can actively contribute. There are many different ways that you can contribute, not only via writing code.
+We develop Ligththouse as an Open Source project, so that people can actively contribute. There are many different ways that you can contribute, not only via writing code.
 
 Below is a list of ways how you could support Ligthhouse.
 
