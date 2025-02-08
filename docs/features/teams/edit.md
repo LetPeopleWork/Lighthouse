@@ -27,12 +27,24 @@ The general information contains the name of your team. This can be anything tha
 {: .recommendation}
 We suggest to use the same name as you use in your work tracking system to identify your team.
 
-## Throughput History
+## Throughput
+Throughput is the base of any forecast Lighthouse is making. For every team, you can decide whether you want to use *dynamic* throughput that looks at the last number of days and is every day updating, or one that is using a fixed period of time.
+
+{: .recommendation}
+We highly recommending using a dynamic Throughput over a fixed one. The fixed dates might help to overcome special situations *temporarily*. In general, you will get less accurate results with fixed dates, as your teams throughput will change over time, and Lighthouse will not take this into account if the Throughput will be always looking at the exact same period of time.
+
+### Throughput History
 This is the number of days of the past you want to include when running forecasts for this team.
 In general this should be more than 10 days, and represent a period where this team was somewhat working in a stable fashion.
 
 {: .recommendation}
 We recommend using a value between 30 and 90 days. Fewer and it might be too sensitive to outliers. And more than three months is often too far away for being useful.
+
+### Throughput Start and End Date
+If you use a *fixed* Throughput, you must specify a start and end date. The end date cannot be in the future, and the start date must be at least 10 days before the selected end date. This is because we must have at least 10 data points to create a decent forecast.
+
+{: .note}
+As mentioned above, use a *fixed* Throughput with caution, and ideally only temporarily. Examples where it may be useful is if most of the team is off for some time (for example if the offices are closed for a week or more, like it happens for some companies in the Christmas period). As soon as you have enough data after this period again, we encourage you to switch back to the *dynamic* Throughput.
 
 ## Work Item Query
 The Work Item Query is the query that is executed against your [Work Tracking System](../../concepts/concepts.html#work-tracking-system) to get the teams backlog.
