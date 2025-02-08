@@ -8,7 +8,7 @@ jobs:
   notify_slack:
     runs-on: ubuntu-latest
     name: Notify Slack on Release
-    if: github.event.release.prerelease == false  # Only trigger if it's a full release
+    
     steps:
       - name: Notify Slack on Releases
         uses: rtCamp/action-slack-notify@v2
