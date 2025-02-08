@@ -18,6 +18,10 @@ describe("TeamsList", () => {
 			remainingWork: 1,
 			totalWork: 12,
 			throughput: [1],
+			throughputStartDate: new Date(
+				new Date().setDate(new Date().getDate() - [1].length),
+			),
+			throughputEndDate: new Date(),
 		},
 		{
 			id: 2,
@@ -31,6 +35,10 @@ describe("TeamsList", () => {
 			remainingWork: 1,
 			totalWork: 12,
 			throughput: [1],
+			throughputStartDate: new Date(
+				new Date().setDate(new Date().getDate() - [1].length),
+			),
+			throughputEndDate: new Date(),
 		},
 		{
 			id: 3,
@@ -44,6 +52,10 @@ describe("TeamsList", () => {
 			remainingWork: 1,
 			totalWork: 12,
 			throughput: [1],
+			throughputStartDate: new Date(
+				new Date().setDate(new Date().getDate() - [1].length),
+			),
+			throughputEndDate: new Date(),
 		},
 	];
 	const selectedTeams = [1, 3];

@@ -16,8 +16,30 @@ describe("Project Class", () => {
 		name = "New Project";
 		id = 1;
 		involvedTeams = [
-			new Team("Team A", 1, [], [], 2, ["FTR-1", "FTR-2"], new Date(), [1]),
-			new Team("Team B", 2, [], [], 1, ["FTR-2"], new Date(), [1]),
+			new Team(
+				"Team A",
+				1,
+				[],
+				[],
+				2,
+				["FTR-1", "FTR-2"],
+				new Date(),
+				[1],
+				new Date(new Date().setDate(new Date().getDate() - [1].length)),
+				new Date(),
+			),
+			new Team(
+				"Team B",
+				2,
+				[],
+				[],
+				1,
+				["FTR-2"],
+				new Date(),
+				[1],
+				new Date(new Date().setDate(new Date().getDate() - [1].length)),
+				new Date(),
+			),
 		];
 		lastUpdated = new Date("2023-07-11");
 

@@ -17,6 +17,10 @@ namespace Lighthouse.Backend.API.DTO
             LastUpdated = team.TeamUpdateTime;
             FeaturesInProgress = team.FeaturesInProgress;
             Throughput = team.RawThroughput;
+
+            var throughputSettings = team.GetThroughputSettings();
+            ThroughputStartDate = throughputSettings.StartDate;
+            ThroughputEndDate = throughputSettings.EndDate;
         }
 
         public string Name { get; set; }
@@ -37,5 +41,9 @@ namespace Lighthouse.Backend.API.DTO
         public List<FeatureDto> Features { get; } = new List<FeatureDto>();
 
         public List<ProjectDto> Projects { get; } = new List<ProjectDto>();
+
+        public DateTime ThroughputStartDate { get; }
+
+        public DateTime ThroughputEndDate { get; }
     }
 }

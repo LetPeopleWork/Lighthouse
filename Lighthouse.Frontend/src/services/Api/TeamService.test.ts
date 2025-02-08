@@ -21,10 +21,34 @@ describe("TeamService", () => {
 
 	it("should get teams", async () => {
 		const date = new Date();
+		const throughputStartDate = new Date(new Date().setDate(new Date().getDate() - 1));
+		const throughputEndDate = new Date();
 
 		const mockResponse: ITeam[] = [
-			new Team("Team A", 1, [], [], 1, ["1"], date, [1]),
-			new Team("Team B", 2, [], [], 1, ["2"], date, [1]),
+			new Team(
+				"Team A",
+				1,
+				[],
+				[],
+				1,
+				["1"],
+				date,
+				[1],
+				throughputStartDate,
+				throughputEndDate,
+			),
+			new Team(
+				"Team B",
+				2,
+				[],
+				[],
+				1,
+				["2"],
+				date,
+				[1],
+				throughputStartDate,
+				throughputEndDate,
+			),
 		];
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -32,14 +56,39 @@ describe("TeamService", () => {
 		const teams = await teamService.getTeams();
 
 		expect(teams).toEqual([
-			new Team("Team A", 1, [], [], 1, ["1"], date, [1]),
-			new Team("Team B", 2, [], [], 1, ["2"], date, [1]),
+			new Team(
+				"Team A",
+				1,
+				[],
+				[],
+				1,
+				["1"],
+				date,
+				[1],
+				throughputStartDate,
+				throughputEndDate,
+			),
+			new Team(
+				"Team B",
+				2,
+				[],
+				[],
+				1,
+				["2"],
+				date,
+				[1],
+				throughputStartDate,
+				throughputEndDate,
+			),
 		]);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/teams");
 	});
 
 	it("should get a single team by id", async () => {
 		const date = new Date();
+		const throughputStartDate = new Date(new Date().setDate(new Date().getDate() - 1));
+		const throughputEndDate = new Date();
+		
 		const mockResponse: ITeam = new Team(
 			"Team A",
 			1,
@@ -49,13 +98,28 @@ describe("TeamService", () => {
 			["2"],
 			date,
 			[1],
+			throughputStartDate,
+			throughputEndDate,
 		);
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
 		const team = await teamService.getTeam(1);
 
-		expect(team).toEqual(new Team("Team A", 1, [], [], 1, ["2"], date, [1]));
+		expect(team).toEqual(
+			new Team(
+				"Team A",
+				1,
+				[],
+				[],
+				1,
+				["2"],
+				date,
+				[1],
+				throughputStartDate,
+				throughputEndDate,
+			),
+		);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1");
 	});
 

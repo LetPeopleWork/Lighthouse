@@ -34,8 +34,30 @@ describe("ProjectCard component", () => {
 		"Project Alpha",
 		1,
 		[
-			new Team("Team A", 1, [], [], 1, ["FTR-0"], new Date(), [1]),
-			new Team("Team B", 2, [], [], 1, ["FTR-0"], new Date(), [1]),
+			new Team(
+				"Team A",
+				1,
+				[],
+				[],
+				1,
+				["FTR-0"],
+				new Date(),
+				[1],
+				new Date(new Date().setDate(new Date().getDate() - [1].length)),
+				new Date(),
+			),
+			new Team(
+				"Team B",
+				2,
+				[],
+				[],
+				1,
+				["FTR-0"],
+				new Date(),
+				[1],
+				new Date(new Date().setDate(new Date().getDate() - [1].length)),
+				new Date(),
+			),
 		],
 		[
 			new Feature(

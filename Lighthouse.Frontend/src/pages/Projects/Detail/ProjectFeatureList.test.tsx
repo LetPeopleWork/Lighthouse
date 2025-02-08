@@ -47,6 +47,8 @@ describe("ProjectFeatureList component", () => {
 		["FTR-1"],
 		new Date(),
 		[1],
+		new Date(new Date().setDate(new Date().getDate() - [1].length)),
+		new Date(),
 	);
 	const team2: Team = new Team(
 		"Team B",
@@ -57,6 +59,8 @@ describe("ProjectFeatureList component", () => {
 		["FTR-1"],
 		new Date(),
 		[1],
+		new Date(new Date().setDate(new Date().getDate() - [1].length)),
+		new Date(),
 	);
 
 	const pastDate = new Date();

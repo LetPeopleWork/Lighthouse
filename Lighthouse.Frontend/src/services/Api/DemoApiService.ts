@@ -884,6 +884,11 @@ export class DemoApiService
 	}
 
 	recreateTeams(): void {
+		const throughput1 = this.generateThroughput();
+		const throughput2 = this.generateThroughput();
+		const throughput3 = this.generateThroughput();
+		const throughput4 = this.generateThroughput();
+
 		this.teams = [
 			new Team(
 				"Binary Blazers",
@@ -893,7 +898,9 @@ export class DemoApiService
 				1,
 				["FTR-1", "FTR-3"],
 				new Date(),
-				this.generateThroughput(),
+				throughput1,
+				new Date(new Date().setDate(new Date().getDate() - throughput1.length)),
+				new Date(),
 			),
 			new Team(
 				"Mavericks",
@@ -903,7 +910,9 @@ export class DemoApiService
 				2,
 				["FTR-2", "FTR-3"],
 				new Date(),
-				this.generateThroughput(),
+				throughput2,
+				new Date(new Date().setDate(new Date().getDate() - throughput2.length)),
+				new Date(),
 			),
 			new Team(
 				"Cyber Sultans",
@@ -913,7 +922,9 @@ export class DemoApiService
 				1,
 				["FTR-3"],
 				new Date(),
-				this.generateThroughput(),
+				throughput3,
+				new Date(new Date().setDate(new Date().getDate() - throughput3.length)),
+				new Date(),
 			),
 			new Team(
 				"Tech Eagles",
@@ -923,7 +934,9 @@ export class DemoApiService
 				2,
 				["FTR-4"],
 				new Date(),
-				this.generateThroughput(),
+				throughput4,
+				new Date(new Date().setDate(new Date().getDate() - throughput4.length)),
+				new Date(),
 			),
 		];
 	}
