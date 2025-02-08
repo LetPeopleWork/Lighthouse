@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
         {
             Logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
 
-            var throughput = await workItemService.GetClosedWorkItems(team.ThroughputHistory, team);
+            var throughput = await workItemService.GetThroughputForTeam(team);
 
             team.UpdateThroughput(throughput);
             Logger.LogInformation("Finished updating Throughput for Team {TeamName}", team.Name);

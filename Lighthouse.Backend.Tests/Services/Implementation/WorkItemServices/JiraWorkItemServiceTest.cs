@@ -23,15 +23,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetClosedWorkItemsForTeam_FullHistory_TestProject_ReturnsCorrectAmountOfItems()
+        public async Task GetClosedWorkItemsForTeam_FullHistory_DynamicThroughput_TestProject_ReturnsCorrectAmountOfItems()
         {
-            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
-            var closedItems = await subject.GetClosedWorkItems(history, team);
+            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
+            team.UseFixedDatesForThroughput = false;
+            team.ThroughputHistory = history;
 
-            Assert.That(closedItems.Count, Is.EqualTo(history));
+            var closedItems = await subject.GetThroughputForTeam(team);
+
+            Assert.That(closedItems.Count, Is.EqualTo(team.GetThroughputSettings().NumberOfDays));
+            Assert.That(closedItems.Sum(), Is.EqualTo(6));
+        }
+
+        [Test]
+        public async Task GetClosedWorkItemsForTeam_FullHistory_FixedThroughput_TestProject_ReturnsCorrectAmountOfItems()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ");
+
+            team.UseFixedDatesForThroughput = true;
+            team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            team.ThroughputHistoryEndDate = DateTime.Now;
+
+            var closedItems = await subject.GetThroughputForTeam(team);
+
+            Assert.That(closedItems.Count, Is.EqualTo(team.GetThroughputSettings().NumberOfDays));
             Assert.That(closedItems.Sum(), Is.EqualTo(6));
         }
 

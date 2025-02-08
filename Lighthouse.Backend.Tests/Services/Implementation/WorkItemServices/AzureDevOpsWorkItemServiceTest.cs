@@ -16,20 +16,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [TestCase(new[] { "Closed" }, 5)]
         [TestCase(new[] { "Closed", "Resolved" }, 6)]
         [TestCase(new[] { "Closed", "Resolved", "Active" }, 9)]
-        public async Task GetClosedWorkItemsForTeam_FullHistory_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
+        public async Task GetClosedWorkItemsForTeam_FullHistory_DynamicThroughout_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
         {
-            // Use history since beginning of 2024
-            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
-
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Tags] NOT CONTAINS 'ThroughputIgnore'");
+            team.DoneStates.Clear();
+            team.DoneStates.AddRange(doneStates);
+
+            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
+            team.UseFixedDatesForThroughput = false;
+            team.ThroughputHistory = history;
+
+            var closedItems = await subject.GetThroughputForTeam(team);
+
+            Assert.That(closedItems.Count, Is.EqualTo(team.GetThroughputSettings().NumberOfDays));
+            Assert.That(closedItems.Sum(), Is.EqualTo(expectedItems));
+        }
+        [Test]
+        [TestCase(new[] { "Closed" }, 5)]
+        [TestCase(new[] { "Closed", "Resolved" }, 6)]
+        [TestCase(new[] { "Closed", "Resolved", "Active" }, 9)]
+        public async Task GetClosedWorkItemsForTeam_FullHistory_FixedThroughout_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Tags] NOT CONTAINS 'ThroughputIgnore'");
+
+            team.UseFixedDatesForThroughput = true;
+            team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            team.ThroughputHistoryEndDate = DateTime.UtcNow;
 
             team.DoneStates.Clear();
             team.DoneStates.AddRange(doneStates);
 
-            var closedItems = await subject.GetClosedWorkItems(history, team);
+            var closedItems = await subject.GetThroughputForTeam(team);
 
-            Assert.That(closedItems.Count, Is.EqualTo(history));
+            Assert.That(closedItems.Count, Is.EqualTo(team.GetThroughputSettings().NumberOfDays));
             Assert.That(closedItems.Sum(), Is.EqualTo(expectedItems));
         }
 

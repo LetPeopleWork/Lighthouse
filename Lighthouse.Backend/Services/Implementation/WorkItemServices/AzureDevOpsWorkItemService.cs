@@ -22,12 +22,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             this.cryptoService = cryptoService;
         }
 
-        public async Task<int[]> GetClosedWorkItems(int history, Team team)
+        public async Task<int[]> GetThroughputForTeam(Team team)
         {
             logger.LogInformation("Getting Closed Work Items for Team {TeamName}", team.Name);
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
-            return await GetClosedItemsPerDay(witClient, history, team);
+            return await GetClosedItemsPerDay(witClient, team);
         }
 
         public async Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner)
@@ -243,7 +243,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
                 var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
-                var throughput = await GetClosedItemsPerDay(witClient, team.ThroughputHistory, team);
+                var throughput = await GetClosedItemsPerDay(witClient, team);
                 var totalThroughput = throughput.Sum();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Closed Work Items with specified Query in the last {Days} days", totalThroughput, team.ThroughputHistory);
@@ -438,13 +438,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
-        private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, int numberOfDays, Team team)
+        private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, Team team)
         {
+            var throughputSettings = team.GetThroughputSettings();
+            var numberOfDays = throughputSettings.NumberOfDays;
             var closedItemsPerDay = new int[numberOfDays];
-            var startDate = DateTime.UtcNow.Date.AddDays(-(numberOfDays - 1));
 
             var query = PrepareQuery(team.WorkItemTypes, team.DoneStates, team.WorkItemQuery);
-            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] >= '{startDate:yyyy-MM-dd}T00:00:00.0000000Z')";
+            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z')";
+            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z')";
 
             logger.LogDebug("Getting closed items per day for thre last {numberOfDays} for team {TeamName} using query '{query}'", numberOfDays, team.Name, query);
 
@@ -459,7 +461,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 {
                     var changedDate = DateTime.Parse(closedDate);
 
-                    int index = (changedDate.Date - startDate).Days;
+                    int index = (changedDate.Date - throughputSettings.StartDate).Days;
 
                     if (index >= 0 && index < numberOfDays)
                     {

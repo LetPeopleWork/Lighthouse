@@ -26,12 +26,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             this.cryptoService = cryptoService;
         }
 
-        public async Task<int[]> GetClosedWorkItems(int history, Team team)
+        public async Task<int[]> GetThroughputForTeam(Team team)
         {
             logger.LogInformation("Getting Closed Work Items for Team {TeamName}", team.Name);
             var client = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
-            return await GetClosedItemsPerDay(client, history, team);
+            return await GetClosedItemsPerDay(client, team);
         }
 
         public async Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner)
@@ -226,7 +226,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
                 var restClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
-                var throughput = await GetClosedItemsPerDay(restClient, team.ThroughputHistory, team);
+                var throughput = await GetClosedItemsPerDay(restClient, team);
                 var totalThroughput = throughput.Sum();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Closed Work Items with specified Query in the last {Days} days", totalThroughput, team.ThroughputHistory);
@@ -373,20 +373,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return false;
         }
 
-        private async Task<int[]> GetClosedItemsPerDay(HttpClient jiraRestClient, int history, Team team)
+        private async Task<int[]> GetClosedItemsPerDay(HttpClient jiraRestClient, Team team)
         {
-            var closedItemsPerDay = new int[history];
-            var startDate = DateTime.UtcNow.Date.AddDays(-(history - 1));
+            var throughputSettings = team.GetThroughputSettings();
+            var numberOfDays = throughputSettings.NumberOfDays;
+            var closedItemsPerDay = new int[numberOfDays];
 
-            var query = PrepareClosedItemsQuery(team.WorkItemTypes, team, history);
+            var query = PrepareClosedItemsQuery(team.WorkItemTypes, team, throughputSettings);
 
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
             foreach (var issue in issues)
             {
-                int index = (issue.ResolutionDate.Date - startDate).Days;
+                int index = (issue.ResolutionDate.Date - throughputSettings.StartDate).Days;
 
-                if (index >= 0 && index < history)
+                if (index >= 0 && index < numberOfDays)
                 {
                     closedItemsPerDay[index]++;
                 }
@@ -445,15 +446,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         private static string PrepareClosedItemsQuery(
             IEnumerable<string> issueTypes,
             IWorkItemQueryOwner workitemQueryOwner,
-            int? history = null)
+            ThroughputSettings? throughputSettings = null)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
             var stateQuery = PrepareGenericQuery(workitemQueryOwner.DoneStates, JiraFieldNames.StatusFieldName, "OR", "=");
 
             var historyFilter = string.Empty;
-            if (history != null)
+            if (throughputSettings != null)
             {
-                historyFilter = $"AND {JiraFieldNames.ResolvedFieldName} >= -{history}d";
+                historyFilter = $"AND {JiraFieldNames.ResolvedFieldName} >= {throughputSettings.StartDate:yyyy-MM-dd} AND {JiraFieldNames.ResolvedFieldName} <= {throughputSettings.EndDate:yyyy-MM-dd}";
             }
 
             var jql = $"{workitemQueryOwner.WorkItemQuery} " +

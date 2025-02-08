@@ -39,10 +39,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         public void UpdateTeam_GetsClosedItemsFromWorkItemService_UpdatesThroughput()
         {
             var team = CreateTeam(DateTime.Now.AddDays(-1));
+            team.ThroughputHistory = 7;
             SetupTeams([team]);
 
             int[] closedItemsPerDay = [0, 0, 1, 3, 12, 3, 0];
-            workItemServiceMock.Setup(x => x.GetClosedWorkItems(7, team)).Returns(Task.FromResult(closedItemsPerDay));
+            workItemServiceMock.Setup(x => x.GetThroughputForTeam(team)).Returns(Task.FromResult(closedItemsPerDay));
 
             var subject = CreateSubject();
 

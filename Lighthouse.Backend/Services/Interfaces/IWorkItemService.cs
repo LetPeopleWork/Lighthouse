@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
     public interface IWorkItemService
     {
-        Task<int[]> GetClosedWorkItems(int history, Team team);
+        Task<int[]> GetThroughputForTeam(Team team);
         
         Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner);
 

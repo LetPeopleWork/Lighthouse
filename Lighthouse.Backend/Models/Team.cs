@@ -18,6 +18,12 @@
 
         public int[] RawThroughput { get; set; } = [1];
 
+        public bool UseFixedDatesForThroughput { get; set; } = false;
+
+        public DateTime? ThroughputHistoryStartDate { get; set; }
+
+        public DateTime? ThroughputHistoryEndDate { get; set; }
+
         public int ThroughputHistory { get; set; } = 30;
 
         public Throughput Throughput => new Throughput(RawThroughput);
@@ -41,6 +47,22 @@
             {
                 FeatureWIP = FeaturesInProgress.Count;
             }
+        }
+
+        public ThroughputSettings GetThroughputSettings()
+        {
+            var startDate = DateTime.UtcNow.Date.AddDays(-(ThroughputHistory - 1));
+            var endDate = DateTime.UtcNow.Date;
+            var numberOfDays = ThroughputHistory;
+
+            if (UseFixedDatesForThroughput)
+            {
+                startDate = ThroughputHistoryStartDate ?? startDate;
+                endDate = ThroughputHistoryEndDate ?? endDate;
+                numberOfDays = (endDate - startDate).Days + 1;
+            }
+
+            return new ThroughputSettings(startDate, endDate, numberOfDays);
         }
     }
 }
