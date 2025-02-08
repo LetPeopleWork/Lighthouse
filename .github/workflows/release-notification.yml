@@ -2,14 +2,17 @@ name: Slackbot on release
 
 on:
   release:
-    types: [published]  # Triggers when a pre-release is changed to a full release
+    types: [published]
 
 jobs:
   notify_slack:
     runs-on: ubuntu-latest
     name: Notify Slack on Release
+    if: github.event.release.prerelease == false
     
     steps:
+      - uses: actions/checkout@v4
+
       - name: Notify Slack on Releases
         uses: rtCamp/action-slack-notify@v2
         env:
