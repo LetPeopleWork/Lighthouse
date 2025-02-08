@@ -2,7 +2,7 @@ name: Slackbot on release
 
 on:
   release:
-    types: [published]
+    types: [released]
 
 jobs:
   notify_slack:
@@ -10,6 +10,7 @@ jobs:
     name: Notify Slack on Release
     steps:
       - name: Notify Slack on Releases
-        uses: amendx/slackbot-release@1.0.0
-        with:
-          slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: "🚀 New Lighhouse published: *${{ github.event.release.tag_name }}*\n\n${{ github.event.release.body }}"
