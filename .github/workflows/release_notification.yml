@@ -2,7 +2,7 @@ name: Slackbot on release
 
 on:
   release:
-    types: [released]
+    types: [published]
 
 jobs:
   notify_slack:
