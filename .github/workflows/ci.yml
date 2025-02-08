@@ -261,12 +261,18 @@ jobs:
       - name: Copy update_windows.ps1
         run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
 
+      - name: Remove development settings from win-x64
+        run: rm -f ./Lighthouse.Backend/publish/win-x64/appsettings.Development.json
+
       - name: publish osx-x64
         run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
         working-directory: ./Lighthouse.Backend
 
       - name: Copy update_mac.sh
         run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/publish/osx-x64/update_mac.sh
+
+      - name: Remove development settings from osx-x64
+        run: rm -f ./Lighthouse.Backend/publish/osx-x64/appsettings.Development.json
 
       - name: Set osx executable permission
         run: sudo chmod +x ./publish/osx-x64/Lighthouse
@@ -277,7 +283,10 @@ jobs:
         working-directory: ./Lighthouse.Backend
 
       - name: Copy update_linux.sh
-        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh
+        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh      
+
+      - name: Remove development settings from linux-x64
+        run: rm -f ./Lighthouse.Backend/publish/linux-x64/appsettings.Development.json
 
       - name: Set linux executable permission
         run: sudo chmod -R +x ./publish/linux-x64
