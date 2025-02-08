@@ -8,6 +8,9 @@ jobs:
   notify_slack:
     runs-on: ubuntu-latest
     name: Notify Slack on Release
+    permissions:
+      contents: write
+
 
     steps:
       - uses: actions/checkout@v4
