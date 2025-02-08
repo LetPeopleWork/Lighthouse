@@ -2,15 +2,16 @@ name: Slackbot on release
 
 on:
   release:
-    types: [released]
+    types: [published]  # Triggers when a pre-release is changed to a full release
 
 jobs:
   notify_slack:
     runs-on: ubuntu-latest
     name: Notify Slack on Release
+    if: github.event.release.prerelease == false  # Only trigger if it's a full release
     steps:
       - name: Notify Slack on Releases
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_MESSAGE: "🚀 New Lighhouse published: *${{ github.event.release.tag_name }}*\n\n${{ github.event.release.body }}"
+          SLACK_MESSAGE: "🚀 New Lighthouse published: *${{ github.event.release.tag_name }}*\n\n${{ github.event.release.body }}"
