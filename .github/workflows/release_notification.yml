@@ -2,8 +2,7 @@ name: Slackbot on release
 
 on:
   release:
-    types: [released]
-  workflow_dispatch:
+    types: [created, published, released]
 
 jobs:
   notify_slack:
