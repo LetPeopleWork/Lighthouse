@@ -67,7 +67,27 @@ Once downloaded, you can run the the `Lighthouse` application:
 - `Lighthouse.exe` on Windows
 - `Lighthouse` on MacOS and Linux
 
-A terminal will open and you should see a window similar to this:
+{: .note}
+On Linux and MacOS it may be that the file *Lighthouse* is not appearing as executable (so it would show as a document). In such a case, you have to make it executable by running:  
+`sudo chmod +x Lighthouse`
+
+In order to run it, open a terminal, navigate to the folder where the Lighthouse executable is located, and run it through the terminal:
+```bash
+# Navigate to Lighthouse directory
+cd /c/Users/benja/Downloads/Lighthouse-linux-x64
+
+# Make executable
+sudo chmod +x Lighthouse
+
+# You will have to type in your password here, either on the consolre or via the UI
+# After this you will be able to run Lighthouse:
+./Lighthouse
+```
+
+{: .recommendation}
+On Windows it should work by simply double-clicking the *Lighthouse.exe*.
+
+Your terminal will start showing the logmessages and you should something similar to this:
 
 ![Starting Lighthouse](../assets/installation/startup.png)
 
