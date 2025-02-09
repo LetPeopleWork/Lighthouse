@@ -369,6 +369,10 @@ jobs:
           -p 5432:5432 \
           -d postgres:17.2-alpine
 
+      - name: Set linux executable permission
+        run: sudo chmod -R +x ./linux-x64
+        working-directory: ./Lighthouse  
+
       - name: Run Lighthouse
         run: |
           ./Lighthouse > lighthouse.log 2>&1 &
