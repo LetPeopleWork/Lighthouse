@@ -95,7 +95,8 @@ jobs:
         sonarOrganization: letpeoplework
         dotnetTestArguments: --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
-  
+        dotnetBuildArguments: ./Lighthouse.Backend
+
   frontend:
     name: Verify Frontend
     needs: changes
@@ -354,7 +355,8 @@ jobs:
       - tag
       - changes
 
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    ##### ADD THIS AGAIN BEFORE MERGING
+    #if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     permissions: write-all
 
