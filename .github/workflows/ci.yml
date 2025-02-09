@@ -93,7 +93,7 @@ jobs:
         sonarProjectKey: LetPeopleWork_Lighthouse
         sonarProjectName:  Lighthouse.Backend
         sonarOrganization: letpeoplework
-        dotnetTestArguments: --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        dotnetTestArguments: ./Lighthouse.Backend --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
         dotnetBuildArguments: ./Lighthouse.Backend
 
