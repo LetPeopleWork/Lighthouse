@@ -86,16 +86,39 @@ jobs:
       run: |
         rm ./Lighthouse.Frontend/sonar-project.properties
 
-    - name: Backend Build Test SonarCloud
+    - name: Setup .NET
       if: needs.changes.outputs.backend == 'true'
-      uses: highbyte/sonarscan-dotnet@v2.3.1
+      uses: actions/setup-dotnet@v3
       with:
-        sonarProjectKey: LetPeopleWork_Lighthouse
-        sonarProjectName:  Lighthouse.Backend
-        sonarOrganization: letpeoplework
-        dotnetTestArguments: ./Lighthouse.Backend --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-        sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
-        dotnetBuildArguments: ./Lighthouse.Backend
+        dotnet-version: ${{env.DOTNET_VERSION}}
+
+    - name: Set up JDK 17
+      if: needs.changes.outputs.backend == 'true'
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: 'zulu'
+
+    - name: Install SonarCloud scanner
+      if: needs.changes.outputs.backend == 'true'
+      run: |
+        dotnet tool install --global dotnet-sonarscanner
+
+    - name: Begin SonarCloud analysis
+      if: needs.changes.outputs.backend == 'true'
+      run: |
+        dotnet sonarscanner begin /k:"LetPeopleWork_Lighthouse" /o:"letpeoplework" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
+
+    - name: Build and test
+      if: needs.changes.outputs.backend == 'true'
+      run: |
+        dotnet build ./Lighthouse.Backend
+        dotnet test ./Lighthouse.Backend --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: End SonarCloud analysis
+      if: needs.changes.outputs.backend == 'true'
+      run: |
+        dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
   frontend:
     name: Verify Frontend
