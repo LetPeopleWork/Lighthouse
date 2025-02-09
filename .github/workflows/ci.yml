@@ -369,9 +369,21 @@ jobs:
           -p 5432:5432 \
           -d postgres:17.2-alpine
 
+          # Wait for PostgreSQL to be ready
+          until docker exec lighthouse-postgres pg_isready; do
+          echo "Waiting for PostgreSQL to be ready..."
+          sleep 1
+          done
+          echo "PostgreSQL is ready!"
+
       - name: Set linux executable permission
         run: sudo chmod -R +x ./linux-x64
         working-directory: ./Lighthouse  
+
+      - name: Setup dev certificate
+        run: |
+          dotnet dev-certs https --clean
+          dotnet dev-certs https --trust
 
       - name: Run Lighthouse
         run: |
