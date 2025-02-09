@@ -254,9 +254,13 @@ jobs:
         run: npm run build
         working-directory: ./Lighthouse.Frontend
 
+      - name: Build Backend Solution
+        run: dotnet build -c Release -p:Version=${{ needs.tag.outputs.fileversion }}
+        working-directory: ./Lighthouse.Backend
+
       - name: publish win-x64
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Copy update_windows.ps1
         run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
@@ -266,7 +270,7 @@ jobs:
 
       - name: publish osx-x64
         run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Copy update_mac.sh
         run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/publish/osx-x64/update_mac.sh
@@ -280,7 +284,7 @@ jobs:
 
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Copy update_linux.sh
         run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh      
@@ -401,9 +405,18 @@ jobs:
         run: npx playwright install chromium --with-deps
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Start PostgreSQL Container
+        run: |
+          docker run --name lighthouse-postgres \
+          -e POSTGRES_DB=lighthouse \
+          -e POSTGRES_USER=postgres \
+          -e POSTGRES_PASSWORD=postgres \
+          -p 5432:5432 \
+          -d postgres:17.2-alpine
           
       - name: Run Lighthouse
-        run: docker run -p 5001:5001 -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:dev-latest
+        run: docker run -p 5001:5001 -e Database__Provider=postgres -e Database__ConnectionString="Host=host.docker.internal;Database=lighthouse;Username=postgres;Password=postgres" -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:dev-latest
         working-directory: ./Lighthouse.Backend
 
       - name: Wait for Lighthouse to start

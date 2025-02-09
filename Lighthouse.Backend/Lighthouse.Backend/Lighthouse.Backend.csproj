@@ -57,10 +57,10 @@
 
 	<ItemGroup>
 	  <Reference Include="Lighthouse.Migrations.Postgres">
-	    <HintPath>..\Migrations\net8.0\Lighthouse.Migrations.Postgres.dll</HintPath>
+	    <HintPath>..\Migrations\Lighthouse.Migrations.Postgres.dll</HintPath>
 	  </Reference>
 	  <Reference Include="Lighthouse.Migrations.Sqlite">
-	    <HintPath>..\Migrations\net8.0\Lighthouse.Migrations.Sqlite.dll</HintPath>
+	    <HintPath>..\Migrations\Lighthouse.Migrations.Sqlite.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
 

@@ -19,7 +19,7 @@
 		<ProjectReference Include="..\Lighthouse.Backend\Lighthouse.Backend.csproj" />
 	</ItemGroup>
 
-	<PropertyGroup>
-		<OutputPath>..\Migrations</OutputPath>
-	</PropertyGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="$(OutputPath)Lighthouse.Migrations.Postgres.dll" DestinationFolder="..\Migrations" />
+	</Target>
 </Project>
