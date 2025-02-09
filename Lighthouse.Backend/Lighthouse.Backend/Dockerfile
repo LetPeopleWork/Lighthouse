@@ -4,11 +4,11 @@ WORKDIR /app
 EXPOSE 5001
 
 # Copy the default certificate
-COPY Lighthouse.Backend/Lighthouse.Backend/certs/LighthouseCert.pfx /app/certs/LighthouseCert.pfx
+COPY ["Lighthouse.Backend/Lighthouse.Backend/certs/LighthouseCert.pfx", "/app/certs/LighthouseCert.pfx"]
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
-ARG VERSION=DEV
+ARG VERSION=0.0.1
 WORKDIR /src
 COPY ["Lighthouse.Backend/", "."]
 WORKDIR "/src"

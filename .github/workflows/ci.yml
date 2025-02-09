@@ -340,7 +340,7 @@ jobs:
       - name: Run Lighthouse
         run: |
           ./Lighthouse > lighthouse.log 2>&1 &
-        working-directory: ./Lighthouse.Backend/publish/linux-x64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64
 
       - name: Wait for Lighthouse to start
         run: |
@@ -349,7 +349,7 @@ jobs:
           echo "Server is ready!"
 
           cat lighthouse.log
-        working-directory: ./Lighthouse.Backend/publish/linux-x64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64
   
       - name: Run Playwright tests
         run: npm run test
@@ -371,7 +371,7 @@ jobs:
           pkill Lighthouse || true
           cat ./publish/linux-x64/lighthouse.log
           rm -rf ./publish/linux-x64/logs
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
   docker:
     runs-on: ubuntu-latest
