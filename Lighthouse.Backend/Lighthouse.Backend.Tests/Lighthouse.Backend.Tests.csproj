@@ -34,6 +34,8 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Lighthouse.Backend\Lighthouse.Backend.csproj" />
+	  <ProjectReference Include="..\Lighthouse.Migrations.Postgres\Lighthouse.Migrations.Postgres.csproj" />
+	  <ProjectReference Include="..\Lighthouse.Migrations.Sqlite\Lighthouse.Migrations.Sqlite.csproj" />
 	</ItemGroup>
 
 
