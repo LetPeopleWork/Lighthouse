@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Backend.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
@@ -35,8 +34,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             DatabaseContext = ServiceProvider.GetService<LighthouseAppContext>()
                 ?? throw new InvalidOperationException("Could not Find DB Context");
 
-            // Only use Migrate() as it handles both creation and migration
-            DatabaseContext.Database.Migrate();
+            // Ensure the database is created and migrations are applied
+            DatabaseContext.Database.EnsureDeleted();
+            DatabaseContext.Database.EnsureCreated();
         }
 
         [TearDown]

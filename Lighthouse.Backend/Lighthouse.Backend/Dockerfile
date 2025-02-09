@@ -4,15 +4,15 @@ WORKDIR /app
 EXPOSE 5001
 
 # Copy the default certificate
-COPY Lighthouse.Backend/certs/LighthouseCert.pfx /app/certs/LighthouseCert.pfx
+COPY Lighthouse.Backend/Lighthouse.Backend/certs/LighthouseCert.pfx /app/certs/LighthouseCert.pfx
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 ARG VERSION=DEV
 WORKDIR /src
-COPY ["Lighthouse.Backend/Lighthouse.Backend.csproj", "Lighthouse.Backend/"]
+COPY ["Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj", "Lighthouse.Backend/"]
 RUN dotnet restore "./Lighthouse.Backend/Lighthouse.Backend.csproj" -a "$TARGETARCH"
-COPY . .
+COPY ["Lighthouse.Backend/", "."]
 WORKDIR "/src/Lighthouse.Backend"
 RUN dotnet build "Lighthouse.Backend.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 
@@ -25,8 +25,14 @@ RUN npm install --ignore-scripts \
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 COPY --from=node-builder /node/dist ./wwwroot
-RUN dotnet publish "./Lighthouse.Backend.csproj" -a "$TARGETARCH" -c "$BUILD_CONFIGURATION" -o /app/publish \
-/p:UseAppHost=false -p:PublishSingleFile=false -p:Version="$VERSION" --no-self-contained
+RUN dotnet publish "./Lighthouse.Backend.csproj" \
+	-c "$BUILD_CONFIGURATION" \
+	-o /app/publish \
+	/p:UseAppHost=false \
+	/p:PublishSingleFile=false \
+	/p:Version="$VERSION" \
+	--no-self-contained \
+	/p:EnablePublishBeforeCleanup=true
 
 FROM base AS final
 WORKDIR /app

@@ -215,10 +215,7 @@ namespace Lighthouse.Backend
             using var scope = builder.Services.BuildServiceProvider().CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            
-            logger.LogInformation("Ensuring database exists");
-            context.Database.EnsureCreated();
-
+     
             logger.LogInformation("Migrating Database");
             context.Database.Migrate();
         }

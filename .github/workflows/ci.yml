@@ -386,7 +386,7 @@ jobs:
 
           # Build and push the multi-platform image
           docker buildx build --platform $PLATFORMS --no-cache \
-            --file Lighthouse.Backend/Dockerfile \
+            --file Lighthouse.Backend/Lighthouse.Backend/Dockerfile \
             --tag ghcr.io/$REPO_NAME:$VERSION \
             --tag ghcr.io/$REPO_NAME:dev-latest \
             --build-arg VERSION=$VERSION \
