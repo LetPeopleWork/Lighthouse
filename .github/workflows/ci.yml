@@ -379,8 +379,7 @@ jobs:
       - tag
       - changes
 
-    ##### ADD THIS AGAIN BEFORE MERGING
-    #if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     permissions: write-all
 
