@@ -288,44 +288,44 @@ jobs:
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Copy update_windows.ps1
-        run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
+        run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/update_windows.ps1
 
       - name: Remove development settings from win-x64
-        run: rm -f ./Lighthouse.Backend/publish/win-x64/appsettings.Development.json
+        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json
 
       - name: publish osx-x64
         run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Copy update_mac.sh
-        run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/publish/osx-x64/update_mac.sh
+        run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/update_mac.sh
 
       - name: Remove development settings from osx-x64
-        run: rm -f ./Lighthouse.Backend/publish/osx-x64/appsettings.Development.json
+        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.Development.json
 
       - name: Set osx executable permission
         run: sudo chmod +x ./publish/osx-x64/Lighthouse
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Copy update_linux.sh
-        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh      
+        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/update_linux.sh      
 
       - name: Remove development settings from linux-x64
-        run: rm -f ./Lighthouse.Backend/publish/linux-x64/appsettings.Development.json
+        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/appsettings.Development.json
 
       - name: Set linux executable permission
         run: sudo chmod -R +x ./publish/linux-x64
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: ./Lighthouse.Backend/publish      
+          path: ./Lighthouse.Backend/Lighthouse.Backend/publish      
 
       - name: Install E2E dependencies
         run: npm ci
