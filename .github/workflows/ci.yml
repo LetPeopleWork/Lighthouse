@@ -113,6 +113,9 @@ jobs:
       if: needs.changes.outputs.backend == 'true'
       run: |
         dotnet build ./Lighthouse.Backend
+
+        dotnet build ./Lighthouse.Backend
+
         dotnet test ./Lighthouse.Backend --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
     - name: End SonarCloud analysis
