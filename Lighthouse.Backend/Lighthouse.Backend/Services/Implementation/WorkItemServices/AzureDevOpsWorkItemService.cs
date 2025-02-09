@@ -60,8 +60,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 var childItems = 0;
                 foreach (var team in project.Teams)
                 {
-                    var childItemForTeam = await GetRelatedWorkItems($"{feature.Id}", team);
-                    childItems += childItemForTeam.totalItems;
+                    var (_, totalItems) = await GetRelatedWorkItems($"{feature.Id}", team);
+                    childItems += totalItems;
                 }
 
                 childItemList.Add(childItems);
@@ -184,17 +184,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var isRelated = featureIds.Any(f => IsWorkItemRelated(workItem, f, team.AdditionalRelatedField ?? string.Empty));
 
-            logger.LogInformation("Is Item {ItemID} related: {isRelated}", itemId, isRelated);
+            logger.LogInformation("Is Item {ItemID} related: {IsRelated}", itemId, isRelated);
 
             return isRelated;
         }
 
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
-            logger.LogInformation("Getting Adjacent Order Index for items {ExistingItemsOrder} in order {relativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
+            logger.LogInformation("Getting Adjacent Order Index for items {ExistingItemsOrder} in order {RelativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
 
-            var result = string.Empty;
-
+            string? result;
             if (!existingItemsOrder.Any())
             {
                 result = "0";
@@ -215,7 +214,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 }
             }
 
-            logger.LogInformation("Adjacent Order Index for items {existingItemsOrder} in order {relativeOrder}: {result}", string.Join(", ", existingItemsOrder), relativeOrder, result);
+            logger.LogInformation("Adjacent Order Index for items {ExistingItemsOrder} in order {RelativeOrder}: {Result}", string.Join(", ", existingItemsOrder), relativeOrder, result);
 
             return result;
         }
@@ -349,7 +348,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var query = PrepareQuery([], workItemQueryOwner.AllStates, workItemQueryOwner.WorkItemQuery, additionalFields);
             query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
 
-            logger.LogDebug("Getting Work Item by Id. ID: {workItemId}. Query: '{query}'", workItemId, query);
+            logger.LogDebug("Getting Work Item by Id. ID: {WorkItemId}. Query: '{Query}'", workItemId, query);
 
             var workItems = await GetWorkItemsByQuery(witClient, query);
 
@@ -384,7 +383,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<WorkItem> GetWorkItemFromCache(string itemId, WorkItemTrackingHttpClient witClient)
         {
-            logger.LogDebug("Trying to get Work Item {itemId} from cache...", itemId);
+            logger.LogDebug("Trying to get Work Item {ItemId} from cache...", itemId);
             var workItem = workItemCache.Get(itemId);
 
             if (workItem == null)
@@ -399,7 +398,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private bool IsWorkItemRelated(WorkItem workItem, string relatedWorkItemId, string additionalField)
         {
-            logger.LogDebug("Checking if Work Item: {WorkItemID} is related to {relatedWorkItemId}", workItem.Id, relatedWorkItemId);
+            logger.LogDebug("Checking if Work Item: {WorkItemID} is related to {RelatedWorkItemId}", workItem.Id, relatedWorkItemId);
 
             // Check if the work item is a child of the specified relatedWorkItemId
             if (workItem.Relations != null)
@@ -434,7 +433,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
             catch (VssServiceException)
             {
-                return Enumerable.Empty<WorkItemReference>();
+                return [];
             }
         }
 
@@ -448,7 +447,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z')";
             query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z')";
 
-            logger.LogDebug("Getting closed items per day for thre last {numberOfDays} for team {TeamName} using query '{query}'", numberOfDays, team.Name, query);
+            logger.LogDebug("Getting closed items per day for thre last {NumberOfDays} for team {TeamName} using query '{Query}'", numberOfDays, team.Name, query);
 
             var workItems = await GetWorkItemsByQuery(witClient, query);
 
@@ -493,7 +492,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return null;
         }
 
-        private string PrepareQuery(
+        private static string PrepareQuery(
             IEnumerable<string> includedWorkItemTypes,
             IEnumerable<string> includedStates,
             string query,

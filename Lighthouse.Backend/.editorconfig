@@ -51,6 +51,10 @@ dotnet_diagnostic.CS8601.severity = none
 
 # S6561: Avoid using "DateTime.Now" for benchmarking or timing operations
 dotnet_diagnostic.S6561.severity = suggestion
+csharp_prefer_system_threading_lock = true:suggestion
+
+# IDE0056: Use index operator
+dotnet_diagnostic.IDE0056.severity = none
 
 [*.{cs,vb}]
 #### Naming styles ####
