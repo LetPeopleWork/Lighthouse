@@ -67,4 +67,8 @@ catch {
 finally {
     Write-Host "Cleaning up PostgreSQL container..."
     Stop-DockerContainer -ContainerName "lighthouse-postgres"
+
+    Write-Host "Setting environment variables back to default..."
+    $env:Database__Provider = ""
+    $env:Database__ConnectionString = ""
 }

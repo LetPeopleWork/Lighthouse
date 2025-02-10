@@ -10,11 +10,13 @@ namespace Lighthouse.Backend.Data
     public class LighthouseAppContext : DbContext
     {
         private readonly ICryptoService cryptoService;
+        private readonly ILogger<LighthouseAppContext> logger;
 
-        public LighthouseAppContext(DbContextOptions<LighthouseAppContext> options, ICryptoService cryptoService)
+        public LighthouseAppContext(DbContextOptions<LighthouseAppContext> options, ICryptoService cryptoService, ILogger<LighthouseAppContext> logger)
             : base(options)
         {
             this.cryptoService = cryptoService;
+            this.logger = logger;
         }
 
         public DbSet<Team> Teams { get; set; } = default!;
@@ -34,7 +36,6 @@ namespace Lighthouse.Backend.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
-
             modelBuilder.Entity<PreviewFeature>().HasKey(a => a.Key);
 
             modelBuilder.Entity<Milestone>()
@@ -57,6 +58,7 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<Feature>()
                 .HasMany(f => f.Forecasts)
                 .WithOne(wf => wf.Feature)
+                .HasForeignKey(wf => wf.FeatureId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<IndividualSimulationResult>()
@@ -101,24 +103,53 @@ namespace Lighthouse.Backend.Data
 
         public override int SaveChanges()
         {
+            logger.LogDebug("Saving Changes");
             PreprocessDataBeforeSave();
             return base.SaveChanges();
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            logger.LogInformation("Saving Changes Async");
             PreprocessDataBeforeSave();
-            return await base.SaveChangesAsync(cancellationToken);
+            return await SaveWithRetry(cancellationToken);
+        }
+
+        private async Task<int> SaveWithRetry(CancellationToken cancellationToken = default)
+        {
+            const int maxRetryCount = 3;
+            int retryCount = 0;
+
+            while (true)
+            {
+                try
+                {
+                    logger.LogDebug("Attempting to save changes, attempt {RetryCount}", retryCount + 1);
+                    return await base.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateConcurrencyException ex) when (retryCount < maxRetryCount)
+                {
+                    retryCount++;
+                    logger.LogWarning("Concurrency exception occurred, retrying {RetryCount}/{MaxRetryCount}", retryCount, maxRetryCount);
+                    foreach (var entry in ex.Entries)
+                    {
+                        // Refresh the original values to reflect the current values in the database
+                        await entry.ReloadAsync(cancellationToken);
+                    }
+                }
+            }
         }
 
         private void PreprocessDataBeforeSave()
         {
+            logger.LogDebug("Preprocessing data before save");
             RemoveOrphanedFeatures();
             EncryptSecrets();
         }
 
         private void EncryptSecrets()
         {
+            logger.LogDebug("Encrypting secrets");
             foreach (var option in ChangeTracker.Entries<WorkTrackingSystemConnectionOption>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
                 .Select(e => e.Entity))
@@ -126,12 +157,14 @@ namespace Lighthouse.Backend.Data
                 if (option.IsSecret)
                 {
                     option.Value = cryptoService.Encrypt(option.Value);
+                    logger.LogDebug("Encrypted secret for option {OptionId}", option.Id);
                 }
             }
         }
 
         private void RemoveOrphanedFeatures()
         {
+            logger.LogDebug("Removing orphaned features");
             var orphanedFeatures = Features
                 .Include(f => f.Projects)
                 .Where(f => f.Projects.Count == 0)
@@ -140,6 +173,7 @@ namespace Lighthouse.Backend.Data
             if (orphanedFeatures.Count > 0)
             {
                 Features.RemoveRange(orphanedFeatures);
+                logger.LogInformation("Removed {OrphanedFeatureCount} orphaned features", orphanedFeatures.Count);
             }
         }
     }

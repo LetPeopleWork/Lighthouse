@@ -349,16 +349,6 @@ jobs:
           name: Lighthouse ${{ needs.tag.outputs.version }}
           path: ./Lighthouse
 
-      - name: Install E2E dependencies
-        run: npm ci
-        shell: bash
-        working-directory: ./Lighthouse.EndToEndTests
-  
-      - name: Install Chromium
-        run: npx playwright install chromium --with-deps
-        shell: bash
-        working-directory: ./Lighthouse.EndToEndTests
-
       - name: Start PostgreSQL Container
         if: matrix.db-provider == 'postgres'
         run: |
@@ -375,6 +365,16 @@ jobs:
           sleep 1
           done
           echo "PostgreSQL is ready!"
+
+      - name: Install E2E dependencies
+        run: npm ci
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+  
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
 
       - name: Set linux executable permission
         run: sudo chmod -R +x ./linux-x64
