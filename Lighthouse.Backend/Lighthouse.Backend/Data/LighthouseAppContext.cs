@@ -45,14 +45,15 @@ namespace Lighthouse.Backend.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FeatureWork>()
-                .HasOne(rw => rw.Team)
+                .HasOne(fw => fw.Team)
                 .WithMany()
-                .HasForeignKey(rw => rw.TeamId);
+                .HasForeignKey(fw => fw.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FeatureWork>()
-                .HasOne(rw => rw.Feature)
+                .HasOne(fw => fw.Feature)
                 .WithMany(f => f.FeatureWork)
-                .HasForeignKey(rw => rw.FeatureId)
+                .HasForeignKey(fw => fw.FeatureId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Feature>()
