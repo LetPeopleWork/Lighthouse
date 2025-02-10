@@ -85,10 +85,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete("{id}")]
-        public void DeleteTeam(int id)
+        public async Task<IActionResult> DeleteTeam(int id)
         {
             teamRepository.Remove(id);
-            teamRepository.Save();
+            await teamRepository.Save();
+            return NoContent();
         }
 
         [HttpPost]

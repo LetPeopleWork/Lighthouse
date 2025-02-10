@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public bool Exists(int id)
         {
-            logger.LogDebug("Check if item exists with id {id}", id);
+            logger.LogDebug("Check if item exists with id {Id}", id);
             return dbSetGetter(Context).Find(id) != null;
         }
 
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public virtual void Remove(int id)
         {
-            logger.LogInformation("Removing item with Id {id}", id);
+            logger.LogInformation("Removing item with Id {Id}", id);
             var itemToRemove = dbSetGetter(Context).Find(id);
 
             Remove(itemToRemove);

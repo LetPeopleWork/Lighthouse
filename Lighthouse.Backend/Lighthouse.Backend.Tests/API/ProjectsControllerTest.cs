@@ -47,7 +47,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetProject_ReturnsSpecificProject()
         {
-            var testProject = GetTestProjects().Last();
+            var testProjects = GetTestProjects();
+            var testProject = testProjects[testProjects.Count - 1];
             projectRepoMock.Setup(x => x.GetById(42)).Returns(testProject);
 
             var subject = CreateSubject();
@@ -86,7 +87,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void UpdateFeaturesForProject_ProjectExists_UpdatesAndRefreshesForecasts()
         {
-            var testProject = GetTestProjects().Last();
+            var testProjects = GetTestProjects();
+            var testProject = testProjects[testProjects.Count - 1];
             projectRepoMock.Setup(x => x.GetById(42)).Returns(testProject);
 
             var subject = CreateSubject();
@@ -105,13 +107,13 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void Delete_RemovesTeamAndSaves()
+        public async Task Delete_RemovesTeamAndSaves()
         {
             var projectId = 12;
 
             var subject = CreateSubject();
 
-            subject.DeleteProject(projectId);
+            await subject.DeleteProject(projectId);
 
             projectRepoMock.Verify(x => x.Remove(projectId));
             projectRepoMock.Verify(x => x.Save());

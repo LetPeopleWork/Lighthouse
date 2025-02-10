@@ -69,10 +69,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete("{id}")]
-        public void DeleteProject(int id)
+        public async Task<IActionResult> DeleteProject(int id)
         {
             projectRepository.Remove(id);
-            projectRepository.Save();
+            await projectRepository.Save();
+            return NoContent();
         }
 
         [HttpGet("{id}/settings")]

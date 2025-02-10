@@ -148,8 +148,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var results = subject.GetTeams().ToList();
 
-            var team1Results = results.First();
-            var team2Results = results.Last();
+            var team1Results = results[0];
+            var team2Results = results[results.Count - 1];
             Assert.Multiple(() =>
             {
                 Assert.That(team1Results.Id, Is.EqualTo(1));
@@ -167,13 +167,13 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void Delete_RemovesTeamAndSaves()
+        public async Task Delete_RemovesTeamAndSaves()
         {
             var teamId = 12;
 
             var subject = CreateSubject();
 
-            subject.DeleteTeam(teamId);
+            await subject.DeleteTeam(teamId);
 
             teamRepositoryMock.Verify(x => x.Remove(teamId));
             teamRepositoryMock.Verify(x => x.Save());
@@ -494,7 +494,7 @@ namespace Lighthouse.Backend.Tests.API
             return new Project { Id = id, Name = name };
         }
 
-        private Feature CreateFeature(Project project, Team team, int remainingWork)
+        private static Feature CreateFeature(Project project, Team team, int remainingWork)
         {
             var feature = new Feature(team, remainingWork);
             project.Features.Add(feature);
@@ -504,9 +504,9 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamsController CreateSubject(Team[]? teams = null, Project[]? projects = null, Feature[]? features = null)
         {
-            teams ??= Array.Empty<Team>();
-            projects ??= Array.Empty<Project>();
-            features ??= Array.Empty<Feature>();
+            teams ??= [];
+            projects ??= [];
+            features ??= [];
 
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
