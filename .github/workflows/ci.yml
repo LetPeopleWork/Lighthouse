@@ -328,7 +328,7 @@ jobs:
           path: ./Lighthouse.Backend/Lighthouse.Backend/publish      
 
   verifyapp:
-    name: Verify App against (${{ matrix.db-provider }})
+    name: Verify App against ${{ matrix.db-provider }}
     runs-on: ubuntu-latest
     needs:
       - packageapp
