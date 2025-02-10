@@ -42,7 +42,7 @@ jobs:
 
       - name: Run Lighthouse ${{ steps.version.outputs.VERSION }}
         run: docker run -p 5001:5001 -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:${{ steps.version.outputs.VERSION }}
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Wait for Lighthouse to start
         run: |
