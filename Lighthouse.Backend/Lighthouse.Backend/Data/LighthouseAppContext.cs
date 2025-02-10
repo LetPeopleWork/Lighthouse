@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Data
                 catch (DbUpdateConcurrencyException ex) when (retryCount < maxRetryCount)
                 {
                     retryCount++;
-                    logger.LogWarning("Concurrency exception occurred, retrying {RetryCount}/{MaxRetryCount}", retryCount, maxRetryCount);
+                    logger.LogWarning(ex, "Concurrency exception occurred, retrying {RetryCount}/{MaxRetryCount}", retryCount, maxRetryCount);
                     foreach (var entry in ex.Entries)
                     {
                         // Refresh the original values to reflect the current values in the database

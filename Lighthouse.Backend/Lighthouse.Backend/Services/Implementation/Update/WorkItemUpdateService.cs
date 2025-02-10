@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - entity.ProjectUpdateTime).TotalMinutes;
 
-            Logger.LogInformation("Last Refresh of Work Items for Project {ProjectName} was {minutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
+            Logger.LogInformation("Last Refresh of Work Items for Project {ProjectName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
 
             return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;
         }
@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
                 await AssignExtrapolatedWorkToTeams(project, feature, remainingWork, workItemService);
 
-                Logger.LogInformation("Added {remainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
+                Logger.LogInformation("Added {RemainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
             }
         }
 
@@ -264,7 +264,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return unparentedFeature;
         }
 
-        private async Task<List<string>> GetItemsUnrelatedToFeatures(IWorkItemServiceFactory workItemServiceFactory, IEnumerable<string> featureIds, Team team, List<string> itemIds)
+        private static async Task<List<string>> GetItemsUnrelatedToFeatures(IWorkItemServiceFactory workItemServiceFactory, IEnumerable<string> featureIds, Team team, List<string> itemIds)
         {
             var unrelatedItems = new List<string>();
 
@@ -288,7 +288,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
                 var workItemService = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, team.WorkTrackingSystemConnection.WorkTrackingSystem);
                 var (remainingWork, totalWork) = await workItemService.GetRelatedWorkItems(featureForProject.ReferenceId, team);
 
-                Logger.LogInformation("Found {remainingWork} Work Item Remaining for Team {TeamName} for Feature {FeatureName}", remainingWork, team.Name, featureForProject.Name);
+                Logger.LogInformation("Found {RemainingWork} Work Item Remaining for Team {TeamName} for Feature {FeatureName}", remainingWork, team.Name, featureForProject.Name);
 
                 return (team, remainingWork, totalWork);
             }).ToList();
@@ -335,10 +335,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
         {
             var feature = featureRepository.GetByPredicate(f => f.ReferenceId == featureId);
 
-            if (feature == null)
-            {
-                feature = new Feature() { ReferenceId = featureId };
-            }
+            feature ??= new Feature() { ReferenceId = featureId };
 
             var featureIsAddedToProject = feature.Projects.Exists(p => p.Id == project.Id);
             if (!featureIsAddedToProject)
@@ -349,7 +346,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return feature;
         }
 
-        private IWorkItemService GetWorkItemServiceForWorkTrackingSystem(IWorkItemServiceFactory workItemServiceFactory, WorkTrackingSystems workTrackingSystem)
+        private static IWorkItemService GetWorkItemServiceForWorkTrackingSystem(IWorkItemServiceFactory workItemServiceFactory, WorkTrackingSystems workTrackingSystem)
         {
             return workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystem);
         }
