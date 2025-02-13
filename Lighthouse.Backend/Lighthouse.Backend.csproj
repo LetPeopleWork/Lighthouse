@@ -31,7 +31,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="8.0.13" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.2">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
