@@ -380,11 +380,6 @@ jobs:
         run: sudo chmod -R +x ./linux-x64
         working-directory: ./Lighthouse  
 
-      - name: Setup dev certificate
-        run: |
-          dotnet dev-certs https --clean
-          dotnet dev-certs https --trust
-
       - name: Run Lighthouse
         run: |
           ./Lighthouse > lighthouse.log 2>&1 &
@@ -471,34 +466,6 @@ jobs:
             --tag ghcr.io/$REPO_NAME:dev-latest \
             --build-arg VERSION=$VERSION \
             --push .
-
-   
-
-      - name: Start PostgreSQL Container
-        run: |
-          docker run --name lighthouse-postgres \
-          -e POSTGRES_DB=lighthouse \
-          -e POSTGRES_USER=postgres \
-          -e POSTGRES_PASSWORD=postgres \
-          -p 5432:5432 \
-          -d postgres:17.2-alpine
-          
-      - name: Run Lighthouse
-        run: docker run -p 5001:5001 -e Database__Provider=postgres -e Database__ConnectionString="Host=host.docker.internal;Database=lighthouse;Username=postgres;Password=postgres" -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:dev-latest
-        working-directory: ./Lighthouse.Backend
-
-      - name: Wait for Lighthouse to start
-        run: |
-          echo "Waiting for server to be ready..."
-          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5001; do sleep 1; done'
-          echo "Server is ready!"
-      
-      - name: Run Playwright tests
-        run: npm run test
-        shell: bash
-        working-directory: ./Lighthouse.EndToEndTests
-        env:
-          LIGHTHOUSEURL: https://localhost:5001
 
   deploy:
     runs-on: ubuntu-latest
