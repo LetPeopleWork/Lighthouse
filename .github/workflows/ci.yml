@@ -380,11 +380,6 @@ jobs:
         run: sudo chmod -R +x ./linux-x64
         working-directory: ./Lighthouse  
 
-      - name: Setup dev certificate
-        run: |
-          dotnet dev-certs https --clean
-          dotnet dev-certs https --trust
-
       - name: Run Lighthouse
         run: |
           ./Lighthouse > lighthouse.log 2>&1 &
