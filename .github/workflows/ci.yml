@@ -539,7 +539,7 @@ jobs:
         run: |
           jq 'del(.Kestrel.Endpoints.Https)' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
           jq '.Kestrel.Endpoints.Http.Url = "http://*:8080"' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Build Demo Frontend
         run: npm run build-demo
@@ -547,7 +547,7 @@ jobs:
 
       - name: publish demo-app-service
         run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/app-service-demo
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Login to Azure Demo
         uses: azure/login@v1
@@ -562,7 +562,7 @@ jobs:
         with:  
           app-name: 'lighthousepublicdemo'  
           slot-name: 'production'  
-          package: ./Lighthouse.Backend/publish/app-service-demo
+          package: ./Lighthouse.Backend/Lighthouse.Backend/publish/app-service-demo
       
   release:
     runs-on: ubuntu-latest
