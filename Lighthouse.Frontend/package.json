@@ -19,9 +19,9 @@
     "@emotion/styled": "^11.14.0",
     "@melloware/react-logviewer": "^6.1.2",
     "@microsoft/signalr": "^8.0.7",
-    "@mui/icons-material": "^6.4.3",
-    "@mui/lab": "^6.0.0-beta.26",
-    "@mui/material": "^6.4.3",
+    "@mui/icons-material": "^6.4.4",
+    "@mui/lab": "^6.0.0-beta.27",
+    "@mui/material": "^6.4.4",
     "@mui/x-charts": "^7.26.0",
     "@mui/x-date-pickers": "^7.26.0",
     "axios": "^1.7.9",
@@ -32,7 +32,7 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^9.0.3",
     "react-router-dom": "^7.1.5",
-    "remark-gfm": "^4.0.0"
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -41,7 +41,7 @@
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/lodash.debounce": "^4.0.9",
-    "@types/node": "^22.13.1",
+    "@types/node": "^22.13.4",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
