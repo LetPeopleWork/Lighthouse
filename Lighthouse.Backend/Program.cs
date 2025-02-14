@@ -218,7 +218,7 @@ namespace Lighthouse.Backend
 
                     if (!string.IsNullOrEmpty(certPath) && File.Exists(certPath))
                     {
-                        httpsOptions.ServerCertificate = new X509Certificate2(certPath, certPassword);
+                        httpsOptions.ServerCertificate = X509CertificateLoader.LoadPkcs12FromFile(certPath, certPassword);
                     }
                 });
             });
