@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E0CD8BCE-F1A9-4C12-ADF5-7FDA93B33A1E}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lighthouse.Backend", "Lighthouse.Backend\Lighthouse.Backend.csproj", "{ECD9A0A0-E593-4543-BA4F-5ADA2B324296}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lighthouse.Backend.Tests", "Lighthouse.Backend.Tests\Lighthouse.Backend.Tests.csproj", "{E12ACFF3-3373-4A72-9CD2-43DE25AB8DBF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lighthouse.Migrations.Postgres", "Lighthouse.Migrations.Postgres\Lighthouse.Migrations.Postgres.csproj", "{02F11926-9D63-4CC7-A8F6-E8335A62D3CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lighthouse.Migrations.Sqlite", "Lighthouse.Migrations.Sqlite\Lighthouse.Migrations.Sqlite.csproj", "{9C7BB612-2404-4094-8326-80341985916C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ECD9A0A0-E593-4543-BA4F-5ADA2B324296}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECD9A0A0-E593-4543-BA4F-5ADA2B324296}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECD9A0A0-E593-4543-BA4F-5ADA2B324296}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECD9A0A0-E593-4543-BA4F-5ADA2B324296}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E12ACFF3-3373-4A72-9CD2-43DE25AB8DBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E12ACFF3-3373-4A72-9CD2-43DE25AB8DBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E12ACFF3-3373-4A72-9CD2-43DE25AB8DBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E12ACFF3-3373-4A72-9CD2-43DE25AB8DBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02F11926-9D63-4CC7-A8F6-E8335A62D3CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02F11926-9D63-4CC7-A8F6-E8335A62D3CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02F11926-9D63-4CC7-A8F6-E8335A62D3CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02F11926-9D63-4CC7-A8F6-E8335A62D3CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C7BB612-2404-4094-8326-80341985916C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C7BB612-2404-4094-8326-80341985916C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C7BB612-2404-4094-8326-80341985916C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C7BB612-2404-4094-8326-80341985916C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9F3A5A4C-1180-4B60-8832-C83427B19777}
+	EndGlobalSection
+EndGlobal

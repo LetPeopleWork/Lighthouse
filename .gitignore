@@ -408,3 +408,5 @@ Lighthouse.Frontend/coverage/*
 .idea/*
 
 !/Lighthouse.Backend/certs/LighthouseCert.pfx
+/Lighthouse.Backend/Migrations/net8.0
+/Lighthouse.Backend/Migrations/*.dll

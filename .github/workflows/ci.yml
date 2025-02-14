@@ -86,16 +86,41 @@ jobs:
       run: |
         rm ./Lighthouse.Frontend/sonar-project.properties
 
-    - name: Backend Build Test SonarCloud
+    - name: Setup .NET
       if: needs.changes.outputs.backend == 'true'
-      uses: highbyte/sonarscan-dotnet@v2.3.1
+      uses: actions/setup-dotnet@v3
       with:
-        sonarProjectKey: LetPeopleWork_Lighthouse
-        sonarProjectName:  Lighthouse.Backend
-        sonarOrganization: letpeoplework
-        dotnetTestArguments: --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-        sonarBeginArguments: /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" -d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
-  
+        dotnet-version: ${{env.DOTNET_VERSION}}
+
+    - name: Set up JDK 17
+      if: needs.changes.outputs.backend == 'true'
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: 'zulu'
+
+    - name: Install SonarCloud scanner
+      if: needs.changes.outputs.backend == 'true'
+      run: |
+        dotnet tool install --global dotnet-sonarscanner
+
+    - name: Begin SonarCloud analysis
+      if: needs.changes.outputs.backend == 'true'
+      run: |
+        dotnet sonarscanner begin /k:"LetPeopleWork_Lighthouse" /o:"letpeoplework" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**/*,**/Lighthouse.Migrations.Postgres/**/*"
+
+    - name: Build and test
+      if: needs.changes.outputs.backend == 'true'
+      run: |
+        dotnet build ./Lighthouse.Backend
+
+        dotnet test ./Lighthouse.Backend --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: End SonarCloud analysis
+      if: needs.changes.outputs.backend == 'true'
+      run: |
+        dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
   frontend:
     name: Verify Frontend
     needs: changes
@@ -226,7 +251,7 @@ jobs:
       fileversion: ${{ steps.process_version.outputs.fileversion }}
 
   packageapp:
-    name: Package and Test App
+    name: Package App
     runs-on: ubuntu-latest
     needs: tag
 
@@ -254,49 +279,92 @@ jobs:
         run: npm run build
         working-directory: ./Lighthouse.Frontend
 
-      - name: publish win-x64
-        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
+      - name: Build Backend Solution
+        run: dotnet build -c Release -p:Version=${{ needs.tag.outputs.fileversion }}
         working-directory: ./Lighthouse.Backend
 
+      - name: publish win-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
       - name: Copy update_windows.ps1
-        run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/publish/win-x64/update_windows.ps1
+        run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/update_windows.ps1
 
       - name: Remove development settings from win-x64
-        run: rm -f ./Lighthouse.Backend/publish/win-x64/appsettings.Development.json
+        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json
 
       - name: publish osx-x64
         run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Copy update_mac.sh
-        run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/publish/osx-x64/update_mac.sh
+        run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/update_mac.sh
 
       - name: Remove development settings from osx-x64
-        run: rm -f ./Lighthouse.Backend/publish/osx-x64/appsettings.Development.json
+        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.Development.json
 
       - name: Set osx executable permission
         run: sudo chmod +x ./publish/osx-x64/Lighthouse
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Copy update_linux.sh
-        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/publish/linux-x64/update_linux.sh      
+        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/update_linux.sh      
 
       - name: Remove development settings from linux-x64
-        run: rm -f ./Lighthouse.Backend/publish/linux-x64/appsettings.Development.json
+        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/appsettings.Development.json
 
       - name: Set linux executable permission
         run: sudo chmod -R +x ./publish/linux-x64
-        working-directory: ./Lighthouse.Backend
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: ./Lighthouse.Backend/publish      
+          path: ./Lighthouse.Backend/Lighthouse.Backend/publish      
+
+  verifyapp:
+    name: Verify App against ${{ matrix.db-provider }}
+    runs-on: ubuntu-latest
+    needs:
+      - packageapp
+      - tag
+    
+    strategy:
+      matrix:
+        db-provider: [sqlite, postgres]
+      fail-fast: false
+      
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse ${{ needs.tag.outputs.version }}
+          path: ./Lighthouse
+
+      - name: Start PostgreSQL Container
+        if: matrix.db-provider == 'postgres'
+        run: |
+          docker run --name lighthouse-postgres \
+          -e POSTGRES_DB=lighthouse \
+          -e POSTGRES_USER=postgres \
+          -e POSTGRES_PASSWORD=postgres \
+          -p 5432:5432 \
+          -d postgres:17.2-alpine
+
+          # Wait for PostgreSQL to be ready
+          until docker exec lighthouse-postgres pg_isready; do
+          echo "Waiting for PostgreSQL to be ready..."
+          sleep 1
+          done
+          echo "PostgreSQL is ready!"
 
       - name: Install E2E dependencies
         run: npm ci
@@ -308,10 +376,22 @@ jobs:
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
 
+      - name: Set linux executable permission
+        run: sudo chmod -R +x ./linux-x64
+        working-directory: ./Lighthouse  
+
+      - name: Setup dev certificate
+        run: |
+          dotnet dev-certs https --clean
+          dotnet dev-certs https --trust
+
       - name: Run Lighthouse
         run: |
           ./Lighthouse > lighthouse.log 2>&1 &
-        working-directory: ./Lighthouse.Backend/publish/linux-x64
+        working-directory: ./Lighthouse/linux-x64
+        env:
+          Database__Provider: ${{ matrix.db-provider }}
+          Database__ConnectionString: ${{ matrix.db-provider == 'postgres' && 'Host=localhost;Database=lighthouse;Username=postgres;Password=postgres' || 'Data Source=lighthouse.db' }}
 
       - name: Wait for Lighthouse to start
         run: |
@@ -320,7 +400,7 @@ jobs:
           echo "Server is ready!"
 
           cat lighthouse.log
-        working-directory: ./Lighthouse.Backend/publish/linux-x64
+        working-directory: ./Lighthouse/linux-x64
   
       - name: Run Playwright tests
         run: npm run test
@@ -332,7 +412,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report-linux
+          name: playwright-report-${{ matrix.db-provider }}
           path: ./Lighthouse.EndToEndTests/playwright-report/
           retention-days: 30
 
@@ -340,15 +420,15 @@ jobs:
         if: always()
         run: |
           pkill Lighthouse || true
-          cat ./publish/linux-x64/lighthouse.log
-          rm -rf ./publish/linux-x64/logs
-        working-directory: ./Lighthouse.Backend
+          cat ./linux-x64/lighthouse.log
+          rm -rf ./linux-x64/logs
+        working-directory: ./Lighthouse
 
   docker:
     runs-on: ubuntu-latest
     needs:
       - tag
-      - changes
+      - verifyapp
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
@@ -386,24 +466,25 @@ jobs:
 
           # Build and push the multi-platform image
           docker buildx build --platform $PLATFORMS --no-cache \
-            --file Lighthouse.Backend/Dockerfile \
+            --file Dockerfile \
             --tag ghcr.io/$REPO_NAME:$VERSION \
             --tag ghcr.io/$REPO_NAME:dev-latest \
             --build-arg VERSION=$VERSION \
             --push .
 
-      - name: Install E2E dependencies
-        run: npm ci
-        shell: bash
-        working-directory: ./Lighthouse.EndToEndTests
-  
-      - name: Install Chromium
-        run: npx playwright install chromium --with-deps
-        shell: bash
-        working-directory: ./Lighthouse.EndToEndTests
+   
+
+      - name: Start PostgreSQL Container
+        run: |
+          docker run --name lighthouse-postgres \
+          -e POSTGRES_DB=lighthouse \
+          -e POSTGRES_USER=postgres \
+          -e POSTGRES_PASSWORD=postgres \
+          -p 5432:5432 \
+          -d postgres:17.2-alpine
           
       - name: Run Lighthouse
-        run: docker run -p 5001:5001 -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:dev-latest
+        run: docker run -p 5001:5001 -e Database__Provider=postgres -e Database__ConnectionString="Host=host.docker.internal;Database=lighthouse;Username=postgres;Password=postgres" -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:dev-latest
         working-directory: ./Lighthouse.Backend
 
       - name: Wait for Lighthouse to start
@@ -418,17 +499,6 @@ jobs:
         working-directory: ./Lighthouse.EndToEndTests
         env:
           LIGHTHOUSEURL: https://localhost:5001
-
-      - name: Print Docker logs
-        if: always()
-        run: docker logs lighthouse
-  
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report-docker
-          path: ./Lighthouse.EndToEndTests/playwright-report/
-          retention-days: 30
 
   deploy:
     runs-on: ubuntu-latest
