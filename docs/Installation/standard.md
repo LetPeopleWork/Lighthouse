@@ -96,6 +96,24 @@ By default, Lighthouse will start running on the system on port 5001. If everyth
 You should see the (empty) landing page:
 ![Landing Page](../assets/installation/landingpage.png)
 
+### Troubleshoot Startup Issues
+If you follow the instructions, but Lighthouse is not available on the above port, something didn't go as expected.
+
+In such a case, please inspect the logs in the terminal and try to spot an `Error`. They often tell already what the issue may be.
+
+{: .note}
+Now we don't expect you to understand that gibberish, but if you can provide us those logs (for example through our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg)), the chances are we can support you quite well and try to resolve the issue.
+
+Following is a list of observed problems together with some potential solutions.
+
+#### Address already in use
+```bash
+10:26:11 - ERROR - Host: Hosting failed to start
+System.IO.IOException: Failed to bind to address http://[::]:5000: address already in use
+```
+This means that the specified port is already used by another application. This may be another instance of Lighthouse (did you stop all other instances?), or by chance another tool is using the same port (we've seen for example *AirPlay Receiver* using Port 5000 which is Lighthouse default port). If the port is blocked and you can't change/stop the other application that is using it, you can also adjust the port that Lighthouse is using. Check the [Configuration Options](configuration.html#http--https-url) for more details.
+
+### Register Lighthouse as a Service
 Using this approach, you'll have to restart Lighthouse after every restart. What you can do instead is to register it as a service, that way it will run automatically in the background.
 
 See [Run as Service](./service.html) for more details.
