@@ -401,10 +401,10 @@ FodyWeavers.xsd
 *.db
 *.db-shm
 *.db-wal
-/Lighthouse.Backend/wwwroot/assets/*
+/Lighthouse.Backend/Lighthouse.Backend/wwwroot/assets/*
 Lighthouse.Frontend/sonar-report.xml
 Lighthouse.Frontend/coverage/*
-/Lighthouse.Backend/wwwroot/index.html
+/Lighthouse.Backend/Lighthouse.Backend/wwwroot/index.html
 .idea/*
 
 !/Lighthouse.Backend/Lighthouse.Backend/certs/LighthouseCert.pfx

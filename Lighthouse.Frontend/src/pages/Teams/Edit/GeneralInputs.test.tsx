@@ -121,7 +121,9 @@ describe("GeneralInputsComponent", () => {
 
 		expect(screen.getByLabelText("Start Date")).toBeInTheDocument();
 		expect(screen.getByLabelText("End Date")).toBeInTheDocument();
-		expect(screen.queryByLabelText("Throughput History")).not.toBeInTheDocument();
+		expect(
+			screen.queryByLabelText("Throughput History"),
+		).not.toBeInTheDocument();
 	});
 
 	it("renders throughput history input when useFixedDatesForThroughput is false", () => {
@@ -148,13 +150,13 @@ describe("GeneralInputsComponent", () => {
 		);
 
 		const switchElement = screen.getByRole("checkbox", {
-			name: "Use Fixed Dates for Throughput"
+			name: "Use Fixed Dates for Throughput",
 		});
 		fireEvent.click(switchElement);
 
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
 			"useFixedDatesForThroughput",
-			true
+			true,
 		);
 	});
 
@@ -178,7 +180,7 @@ describe("GeneralInputsComponent", () => {
 
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
 			"throughputHistoryStartDate",
-			expect.any(Date)
+			expect.any(Date),
 		);
 
 		fireEvent.change(screen.getByLabelText("End Date"), {
@@ -187,7 +189,7 @@ describe("GeneralInputsComponent", () => {
 
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
 			"throughputHistoryEndDate",
-			expect.any(Date)
+			expect.any(Date),
 		);
 	});
 
@@ -200,8 +202,10 @@ describe("GeneralInputsComponent", () => {
 			/>,
 		);
 
-		expect(screen.queryByRole("checkbox", {
-			name: "Use Fixed Dates for Throughput"
-		})).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("checkbox", {
+				name: "Use Fixed Dates for Throughput",
+			}),
+		).not.toBeInTheDocument();
 	});
 });
