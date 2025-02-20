@@ -7,6 +7,6 @@
     <ShouldRunBuildScript>false</ShouldRunBuildScript>
     <!-- Folder where production build objects will be placed -->
     <BuildCommand>tsc -b &amp;&amp; vite build</BuildCommand>
-    <BuildOutputFolder>../Lighthouse.Backend/wwwroot</BuildOutputFolder>
+    <BuildOutputFolder>../Lighthouse.Backend/Lighthouse.Backend/wwwroot</BuildOutputFolder>
   </PropertyGroup>
 </Project>

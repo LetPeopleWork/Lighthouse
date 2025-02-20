@@ -507,14 +507,14 @@ jobs:
           jq 'del(.Kestrel.Endpoints.Https)' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
           jq '.Kestrel.Endpoints.Http.Url = "http://*:8080"' appsettings.json > tmp.$$.json && mv tmp.$$.json appsettings.json
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
-      
-      - name: Build Backend Solution
-        run: dotnet build -c Release -p:Version=${{ needs.tag.outputs.fileversion }}
-        working-directory: ./Lighthouse.Backend
 
       - name: Build Demo Frontend
         run: npm run build-demo
         working-directory: ./Lighthouse.Frontend
+      
+      - name: Build Backend Solution
+        run: dotnet build -c Release -p:Version=${{ needs.tag.outputs.fileversion }}
+        working-directory: ./Lighthouse.Backend
 
       - name: publish demo-app-service
         run: dotnet publish -c Release /p:UseAppHost=false -p:PublishSingleFile=false --no-self-contained -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/app-service-demo

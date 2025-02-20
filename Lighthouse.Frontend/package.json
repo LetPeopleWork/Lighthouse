@@ -8,7 +8,7 @@
     "dev-demo": "cross-env VITE_API_SERVICE_TYPE=DEMO VITE_API_SERVICE_DELAY=TRUE npm run dev",
     "build": "tsc -b && vite build --outDir ../Lighthouse.Backend/Lighthouse.Backend/wwwroot",
     "build-docker": "tsc -b && vite build --outDir ./dist",
-    "build-demo": "cross-env VITE_API_SERVICE_TYPE=DEMO VITE_API_SERVICE_DELAY=TRUE vite build",
+    "build-demo": "cross-env VITE_API_SERVICE_TYPE=DEMO VITE_API_SERVICE_DELAY=TRUE vite build --outDir ../Lighthouse.Backend/Lighthouse.Backend/wwwroot",
     "prebuild": "npx @biomejs/biome check --write ./src",
     "preview": "vite preview",
     "test": "vitest --reporter=default",
