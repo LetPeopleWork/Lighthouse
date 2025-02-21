@@ -1,0 +1,34 @@
+name: lighthouse
+
+services:
+  postgres:
+    image: postgres:17.2-alpine
+    container_name: lighthouse-postgres
+    environment:
+      POSTGRES_DB: lighthouse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+
+  lighthouse:
+    image: ghcr.io/letpeoplework/lighthouse:dev-latest
+    container_name: lighthouse-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      Database__Provider: postgres
+      Database__ConnectionString: Host=postgres;Database=lighthouse;Username=postgres;Password=postgres
+    ports:
+      - "8080:5000"
+      - "8081:5001"
+    volumes:
+      - ./logs:/app/logs
+    restart: always

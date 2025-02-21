@@ -29,7 +29,8 @@ RUN npm install --ignore-scripts \
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-COPY --from=node-builder /node/dist ./wwwroot
+RUN mkdir -p ./Lighthouse.Backend/wwwroot
+COPY --from=node-builder /node/dist/. ./Lighthouse.Backend/wwwroot/
 RUN dotnet publish "./Lighthouse.Backend/Lighthouse.Backend.csproj" \
 	-c "$BUILD_CONFIGURATION" \
 	-o /app/publish \

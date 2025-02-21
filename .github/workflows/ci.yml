@@ -328,16 +328,11 @@ jobs:
           path: ./Lighthouse.Backend/Lighthouse.Backend/publish      
 
   verifyapp:
-    name: Verify App against ${{ matrix.db-provider }}
+    name: Verify Standalone App against sqlite
     runs-on: ubuntu-latest
     needs:
       - packageapp
       - tag
-    
-    strategy:
-      matrix:
-        db-provider: [sqlite, postgres]
-      fail-fast: false
       
     steps:
       - uses: actions/checkout@v4
@@ -348,23 +343,6 @@ jobs:
         with:
           name: Lighthouse ${{ needs.tag.outputs.version }}
           path: ./Lighthouse
-
-      - name: Start PostgreSQL Container
-        if: matrix.db-provider == 'postgres'
-        run: |
-          docker run --name lighthouse-postgres \
-          -e POSTGRES_DB=lighthouse \
-          -e POSTGRES_USER=postgres \
-          -e POSTGRES_PASSWORD=postgres \
-          -p 5432:5432 \
-          -d postgres:17.2-alpine
-
-          # Wait for PostgreSQL to be ready
-          until docker exec lighthouse-postgres pg_isready; do
-          echo "Waiting for PostgreSQL to be ready..."
-          sleep 1
-          done
-          echo "PostgreSQL is ready!"
 
       - name: Install E2E dependencies
         run: npm ci
@@ -385,8 +363,8 @@ jobs:
           ./Lighthouse > lighthouse.log 2>&1 &
         working-directory: ./Lighthouse/linux-x64
         env:
-          Database__Provider: ${{ matrix.db-provider }}
-          Database__ConnectionString: ${{ matrix.db-provider == 'postgres' && 'Host=localhost;Database=lighthouse;Username=postgres;Password=postgres' || 'Data Source=lighthouse.db' }}
+          Database__Provider: sqlite
+          Database__ConnectionString: 'Data Source=lighthouse.db'
 
       - name: Wait for Lighthouse to start
         run: |
@@ -407,7 +385,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report-${{ matrix.db-provider }}
+          name: playwright-report-sqlite
           path: ./Lighthouse.EndToEndTests/playwright-report/
           retention-days: 30
 
@@ -466,6 +444,61 @@ jobs:
             --tag ghcr.io/$REPO_NAME:dev-latest \
             --build-arg VERSION=$VERSION \
             --push .
+
+  verifyappdocker:
+    name: Verify Docker Image against Postgres
+    runs-on: ubuntu-latest
+    needs:
+      - docker
+      - tag
+      
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Install E2E dependencies
+        run: npm ci
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Run Lighthouse
+        run: |
+          docker compose up -d lighthouse
+        working-directory: Examples
+
+      - name: Wait for Lighthouse to start
+        run: |
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:8081; do sleep 1; done'
+          echo "Server is ready!"
+
+      - name: Run Playwright tests
+        run: npm run test
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+        env:
+          LIGHTHOUSEURL: https://localhost:8081
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-postgres
+          path: ./Lighthouse.EndToEndTests/playwright-report/
+          retention-days: 30
+
+      - name: Show Lighthouse Docker Logs
+        if: always()
+        run: |
+          docker compose logs lighthouse
+          docker compose down
+        working-directory: Examples
+
 
   deploy:
     runs-on: ubuntu-latest
