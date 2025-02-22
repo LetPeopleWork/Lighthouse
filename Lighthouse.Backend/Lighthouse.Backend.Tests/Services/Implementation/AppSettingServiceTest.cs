@@ -103,8 +103,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.Multiple(() =>
             {
-                Assert.That(settings.Name, Is.EqualTo("MyTeam"));
+                Assert.That(settings.Name, Is.EqualTo("MyTeam"));                
+
                 Assert.That(settings.ThroughputHistory, Is.EqualTo(90));
+                Assert.That(settings.UseFixedDatesForThroughput, Is.False);
+
+                var today = DateTime.Today;
+                Assert.That(settings.ThroughputHistoryStartDate, Is.EqualTo(today.AddDays(-90)));
+                Assert.That(settings.ThroughputHistoryEndDate, Is.EqualTo(today));
+                
                 Assert.That(settings.FeatureWIP, Is.EqualTo(2));
                 Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.RelationCustomField, Is.EqualTo("Custom.RemoteParentID"));

@@ -52,7 +52,15 @@ export class SettingsService
 				"/appsettings/defaultteamsettings",
 			);
 
-			return response.data;
+			const teamSettings = response.data;
+			teamSettings.throughputHistoryStartDate = new Date(
+				teamSettings.throughputHistoryStartDate,
+			);
+			teamSettings.throughputHistoryEndDate = new Date(
+				teamSettings.throughputHistoryEndDate,
+			);
+
+			return teamSettings;
 		});
 	}
 

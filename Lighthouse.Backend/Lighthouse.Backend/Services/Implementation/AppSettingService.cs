@@ -52,6 +52,8 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 Name = GetSettingByKey(AppSettingKeys.TeamSettingName).Value,
                 ThroughputHistory = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingHistory).Value),
+                ThroughputHistoryStartDate = DateTime.UtcNow.Date.AddDays(-90),
+                ThroughputHistoryEndDate = DateTime.UtcNow.Date,
                 FeatureWIP = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingFeatureWIP).Value),
                 WorkItemQuery = GetSettingByKey(AppSettingKeys.TeamSettingWorkItemQuery).Value,
                 WorkItemTypes = workItemTypes,
