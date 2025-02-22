@@ -571,6 +571,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
     - tag
+    - deploy
     - verifyapp
     - verifyappdocker
 
