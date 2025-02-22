@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
                 if (workItemTypes.Contains(parentItem.IssueType))
                 {
-                    logger.LogInformation("Found Issue with Key {key}", parentItem.Key);
+                    logger.LogInformation("Found Issue with Key {Key}", parentItem.Key);
                     workItems.Add(parentItem);
                 }
             }
@@ -79,8 +79,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
                 var tasks = project.Teams.Select(async team =>
                 {
-                    var childItemForTeam = await GetRelatedWorkItems($"{issue.Key}", team);
-                    return childItemForTeam.totalItems;
+                    var (_, totalItems) = await GetRelatedWorkItems($"{issue.Key}", team);
+                    return totalItems;
                 }).ToList();
 
                 var results = await Task.WhenAll(tasks);
@@ -170,14 +170,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var issue = await GetIssueById(jiraClient, itemId);
 
             var isRelated = featureIds.Any(f => IsIssueRelated(issue, f, team.AdditionalRelatedField));
-            logger.LogInformation("Is Issue {ID} related: {isRelated}", itemId, isRelated);
+            logger.LogInformation("Is Issue {ID} related: {IsRelated}", itemId, isRelated);
 
             return isRelated;
         }
 
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
-            logger.LogInformation("Getting Adjacent Order Index for Issues {Items} in order {relativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
+            logger.LogInformation("Getting Adjacent Order Index for Issues {Items} in order {RelativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
 
             var result = string.Empty;
 
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 }
             }
 
-            logger.LogInformation("Adjacent Order Index for issues {ExistingOrder} in order {relativeOrder}: {result}", string.Join(", ", existingItemsOrder), relativeOrder, result);
+            logger.LogInformation("Adjacent Order Index for issues {ExistingOrder} in order {RelativeOrder}: {Result}", string.Join(", ", existingItemsOrder), relativeOrder, result);
 
             return result;
         }
@@ -334,7 +334,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var parentClause = $"AND (parent = {relatedWorkItemId}";
             if (!string.IsNullOrEmpty(team.AdditionalRelatedField))
             {
-                parentClause += $" OR {team.AdditionalRelatedField} = {relatedWorkItemId})";
+                parentClause += $" OR {team.AdditionalRelatedField}~{relatedWorkItemId})";
             }
             else
             {
@@ -357,7 +357,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private bool IsIssueRelated(Issue issue, string relatedWorkItemId, string? additionalRelatedField)
         {
-            logger.LogDebug("Checking if Issue {Key} is related to {relatedWorkItemId}", issue.Key, relatedWorkItemId);
+            logger.LogDebug("Checking if Issue {Key} is related to {RelatedWorkItemId}", issue.Key, relatedWorkItemId);
             if (issue.ParentKey == relatedWorkItemId)
             {
                 return true;
@@ -398,7 +398,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(HttpClient client, string jqlQuery)
         {
-            logger.LogDebug("Getting Issues by JQL Query: '{query}'", jqlQuery);
+            logger.LogDebug("Getting Issues by JQL Query: '{Query}'", jqlQuery);
             var issues = new List<Issue>();
 
             var startAt = 0;
@@ -427,7 +427,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 {
                     var issue = issueFactory.CreateIssueFromJson(jsonIssue);
 
-                    logger.LogDebug("Found Issue {key}", issue.Key);
+                    logger.LogDebug("Found Issue {Key}", issue.Key);
 
                     issues.Add(issue);
 
@@ -445,11 +445,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private static string PrepareClosedItemsQuery(
             IEnumerable<string> issueTypes,
-            IWorkItemQueryOwner workitemQueryOwner,
+            Team team,
             ThroughputSettings? throughputSettings = null)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
-            var stateQuery = PrepareGenericQuery(workitemQueryOwner.DoneStates, JiraFieldNames.StatusFieldName, "OR", "=");
+            var stateQuery = PrepareGenericQuery(team.DoneStates, JiraFieldNames.StatusFieldName, "OR", "=");
 
             var historyFilter = string.Empty;
             if (throughputSettings != null)
@@ -457,7 +457,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 historyFilter = $"AND {JiraFieldNames.ResolvedFieldName} >= {throughputSettings.StartDate:yyyy-MM-dd} AND {JiraFieldNames.ResolvedFieldName} <= {throughputSettings.EndDate:yyyy-MM-dd}";
             }
 
-            var jql = $"{workitemQueryOwner.WorkItemQuery} " +
+            var jql = $"{team.WorkItemQuery} " +
                 $"{workItemsQuery} " +
                 $"{stateQuery} " +
                 $"{historyFilter}";
@@ -465,7 +465,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return jql;
         }
 
-        private string PrepareNotClosedItemsQuery(
+        private static string PrepareNotClosedItemsQuery(
             IEnumerable<string> issueTypes,
             IWorkItemQueryOwner workitemQueryOwner)
         {
@@ -512,8 +512,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var apiToken = cryptoService.Decrypt(encryptedApiToken);
 
-            var client = new HttpClient();
-            client.BaseAddress = new Uri(url.TrimEnd('/'));
+            var client = new HttpClient
+            {
+                BaseAddress = new Uri(url.TrimEnd('/'))
+            };
 
             if (!string.IsNullOrEmpty(username))
             {

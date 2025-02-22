@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
 
-            Assert.That(featuresInProgress.Count, Is.EqualTo(expectedFeaturesInProgress));
+            Assert.That(featuresInProgress, Has.Count.EqualTo(expectedFeaturesInProgress));
         }
 
         [Test]
@@ -200,6 +200,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        public async Task GetRelatedItems_ItemIdIsRemoteRelated_FindsRelation()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = LGHTHSDMO");
+            team.AdditionalRelatedField = "cf[10038]";
+
+            var (relatedItems, _) = await subject.GetRelatedWorkItems("LGHTHSDMO-1337", team);
+
+            Assert.That(relatedItems, Is.EqualTo(1));
+        }
+
+        [Test]
         public async Task GetOpenWorkItemsByTag_ItemIsClosed_ReturnsEmpty()
         {
             var subject = CreateSubject();
@@ -247,8 +259,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
-
-            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Bug"], team, "labels = \"ExistingLabel\"");
+            var (remainingItems, _) = await subject.GetWorkItemsByQuery(["Bug"], team, "labels = \"ExistingLabel\"");
 
             Assert.That(remainingItems, Has.Count.EqualTo(0));
         }
@@ -259,7 +270,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
 
-            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
+            var (remainingItems, _) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
 
             Assert.That(remainingItems, Has.Count.EqualTo(2));
         }
@@ -272,8 +283,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND fixVersion = \"Elixir Project\"");
 
-            Assert.That(remainingItems, Has.Count.EqualTo(1));
-            Assert.That(totalItems, Has.Count.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(remainingItems, Has.Count.EqualTo(1));
+                Assert.That(totalItems, Has.Count.EqualTo(1));
+            }
         }
 
         [Test]
@@ -282,7 +296,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"RebelRevolt\"");
 
-            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
+            var (remainingItems, _) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
 
             Assert.That(remainingItems, Has.Count.EqualTo(0));
         }
@@ -330,7 +344,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             lexoRankServiceMock.Setup(x => x.Default).Returns(expectedOrder);
 
-            var order = subject.GetAdjacentOrderIndex(Enumerable.Empty<string>(), relativeOrder);
+            var order = subject.GetAdjacentOrderIndex([], relativeOrder);
 
             Assert.That(order, Is.EqualTo(expectedOrder));
         }
@@ -461,7 +475,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task ValidateProjectSettings_InvalidConnectionSettings_ReturnsFalse()
         {
-            var team = CreateTeam("project = LGHTHSDMO");
             var project = CreateProject("project = LGHTHSDMO");
             var subject = CreateSubject();
 
