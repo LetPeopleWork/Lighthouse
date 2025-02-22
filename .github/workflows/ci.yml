@@ -555,9 +555,9 @@ jobs:
       - name: Login to Azure Demo
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D7E0D36B15D941ADA2E6DC045BD2657C }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_64D9025B99C440B99E3CA60650996BC9 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F83A94E3D5A4415D80A648231AD879CE }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2E14D809446A4E619C99901727D88020 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_8DAEF51EC9E84C52953020A0F2FDA854 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_9BDFF780D02345E698B2C2B27E0F31B2 }}
 
       - name: Deploy to Azure Demo Web App
         id: deploy-to-demo-webapp  
