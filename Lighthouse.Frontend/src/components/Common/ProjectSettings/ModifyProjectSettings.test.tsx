@@ -452,7 +452,7 @@ describe("ModifyProjectSettings", () => {
 	const scenarios = [
 		{ invalidValue: "Name", name: "" },
 		{
-			invalidValue: "default Amount of Work Items",
+			invalidValue: "Default Amount of Work Items",
 			defaultAmountOfWorkItemsPerFeature: undefined,
 		},
 		{ invalidValue: "Work Item Types", workItemTypes: [] },
@@ -461,6 +461,18 @@ describe("ModifyProjectSettings", () => {
 		{ invalidValue: "Done States", doneStates: [] },
 		{ invalidValue: "Work Item Query", workItemQuery: "" },
 		{ invalidValue: "Involved Teams", involvedTeams: [] },
+		{
+			invalidValue: "Missing Historical Features Work Item Query",
+			usePercentileToCalculateDefaultAmountOfWorkItems: true,
+			defaultWorkItemPercentile: 80,
+			historicalFeaturesWorkItemQuery: "",
+		},
+		{
+			invalidValue: "Missing Default Work Item Percentile",
+			usePercentileToCalculateDefaultAmountOfWorkItems: true,
+			defaultWorkItemPercentile: 0,
+			historicalFeaturesWorkItemQuery: "My Query",
+		},
 	];
 
 	for (const scenario of scenarios) {
