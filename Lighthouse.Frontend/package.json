@@ -12,7 +12,7 @@
     "prebuild": "npx @biomejs/biome check --write ./src",
     "preview": "vite preview",
     "test": "vitest --reporter=default",
-    "sonarreport": "vitest run --coverage --reporter=vitest-sonar-reporter --outputFile=./sonar-report.xml"
+    "sonarreport": "vitest run --coverage --reporter=default --reporter=vitest-sonar-reporter --outputFile=./sonar-report.xml"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

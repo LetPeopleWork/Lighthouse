@@ -150,11 +150,6 @@ jobs:
 
     - name: Test Frontend
       if: needs.changes.outputs.frontend == 'true'
-      run: npm test
-      working-directory: ./Lighthouse.Frontend
-
-    - name: Generate Sonar Files
-      if: needs.changes.outputs.frontend == 'true'
       run: npm run sonarreport
       working-directory: ./Lighthouse.Frontend
 
