@@ -12,6 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    restart: always
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
@@ -27,8 +28,8 @@ services:
       Database__Provider: postgres
       Database__ConnectionString: Host=postgres;Database=lighthouse;Username=postgres;Password=postgres
     ports:
-      - "8080:5000"
-      - "8081:5001"
+      - "80:5000"
+      - "443:5001"
     volumes:
       - ./logs:/app/logs
     restart: always
