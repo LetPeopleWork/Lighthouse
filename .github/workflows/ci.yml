@@ -597,6 +597,25 @@ jobs:
           docker tag ghcr.io/$REPO_NAME:${{ needs.tag.outputs.fileversion }} ghcr.io/$REPO_NAME:latest
           docker push ghcr.io/$REPO_NAME:latest
 
+
+      # Install Cosign
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      # Sign the image using keyless signing (GitHub OIDC)
+      - name: Sign Docker image with Cosign
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          cosign sign --yes ghcr.io/$REPO_NAME:${{ needs.tag.outputs.fileversion }}
+          cosign sign --yes ghcr.io/$REPO_NAME:latest
+
+      # Verify the signature (optional, for debugging)
+      - name: Verify the signature
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          cosign verify ghcr.io/$REPO_NAME:${{ needs.tag.outputs.fileversion }}
+          cosign verify ghcr.io/$REPO_NAME:latest
+
       - uses: actions/download-artifact@v4
         with:
           name: Lighthouse ${{ needs.tag.outputs.version }}
