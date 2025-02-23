@@ -469,7 +469,7 @@ jobs:
       - name: Run Lighthouse
         run: |
           docker compose up -d lighthouse
-        working-directory: Examples
+        working-directory: examples/postgres
 
       - name: Wait for Lighthouse to start
         run: |
@@ -496,7 +496,7 @@ jobs:
         run: |
           docker compose logs lighthouse
           docker compose down
-        working-directory: Examples
+        working-directory: examples/postgres
 
 
   deploy:
