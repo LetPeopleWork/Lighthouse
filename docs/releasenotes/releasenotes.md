@@ -4,6 +4,37 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v25.2.23.1248
+{: .d-inline-block }
+
+Pre-Release
+{: .label .label-yellow  }
+*Get all details and downloads on [GitHub](https://github.com/LetPeopleWork/Lighthouse/releases/tag/v25.2.23.1248)*
+
+## Experimental Postgres Support 🧪
+This release adds **experimental** support for Postgres as a Database provider next to the (default) SQLite database. Please check the [documentation](https://docs.lighthouse.letpeople.work/Installation/configuration.html#database) for details.
+
+## ⚠️ Breaking Changes ⚠️
+By adding an option to choose which database provider to select, the configuration options have changed. If you were overriding the default connection string, please make sure to adjust to the new variables as specified in the [documentation](https://docs.lighthouse.letpeople.work/Installation/configuration.html#database)
+
+## Rework Relation Custom Field for Jira
+When using a [Relation Custom Field](https://docs.lighthouse.letpeople.work/features/teams/edit.html#relation-custom-field) on Jira, it was not clear how to specify the fields and Lighthouse was not finding the relations. This has been refined now, please refer to the documentation to learn how to specify the custom fields for Jira.
+
+## Other Improvements and Bug Fixes
+- Fixed issue that caused Lighthouse to go blank when you tried to use a fixed Throughput when creating a new team
+- Don't allow to save projects if Historical Feature Work Item Query is missing and Percentile is used for Default Size
+- Updated various 3rd Party Libraries
+
+## Contributors
+❤️ Thanks to everyone who contributed to this release ❤️
+- [**Hendra Gunawan**](https://www.linkedin.com/in/hendragunawan823/)
+- [**Valentin Gabriel Badea**](https://www.linkedin.com/in/gabriel-valentin-badea-50565143/)
+
+If you want to contribute too, please join our [Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg)
+
+## Full Changelog
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.2.8.1238...v25.2.23.1248)
+
 # Lighthouse v25.2.8.1238
 {: .d-inline-block }
 
