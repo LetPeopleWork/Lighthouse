@@ -56,27 +56,58 @@ docker run -p 80:5000 -p 443:5001 ghcr.io/letpeoplework/lighthouse:latest
 ```
 
 ## Database
-Lighthouse uses an [SQLite](https://www.sqlite.org/) database to store the data. The database is stored in a single file.
+Lighthouse can work with different databases. Currently it supports [SQLite](https://www.sqlite.org/) and [postgresql](https://www.postgresql.org/) databases to store the data.
 
-**Default Value:** `Data Source=LighthouseAppContext.db`
+{: .recommendation}
+More providers could be added upon request. Please reach out to us in such a case and we can discuss options.
+
+As part of the configuration, you can specify the provider and the connection string.
+
+**Default Values:** *sqlite* and *Data Source=LighthouseAppContext.db*
 
 **Override Options:**
-- Command Line: `--ConnectionStrings:LighthouseAppContext`
-- Environment Variable: `ConnectionStrings__LighthouseAppContext`
+- Command Line: `--Database:Provider` and `--Database:ConnectionString`
+- Environment Variable: `Database__Provider` and `Database__ConnectionString`
 
-By default, that file is next to the executable and called *LighthouseAppContext.db*. If you want to store it in a subfolder called *data* and name it *MyDatabase.db*, you can provide the following value: `Data Source=data/MyDatabase.db`. You can also specify an absolute pat: `Data Source=C:/data/MyDatabase.db`
+{: .recommendation}
+If you just get started, and run Lighthouse on your local machine, we recommend to use **sqlite**. You don't need to install anything else or worry too much about setting up Database connections.  
+We recommend using **Postgres** if you host Lighthouse for many users and the data stored for Lighthouse is increasing. Many cloud providers like AWS and Azure support hosting Postgres in their environments, so you can reuse their services and let Lighthouse store the data in a database hosted by those providers.
+
+### SQLite
+SQLite is the default provider. If used, the database is stored in a single file.
+
+By default, that file is next to the executable and called *LighthouseAppContext.db*. If you want to store it in a subfolder called *data* and name it *MyDatabase.db*, you can provide the following value for the *Connection String*: `Data Source=data/MyDatabase.db`. You can also specify an absolute path: `Data Source=C:/data/MyDatabase.db`
 
 {: .note}
 The folder you specify must exist - if it's not existing, the startup will fail.
 
+### Postgres [Experimental]
+Postgres is an open-source, relational database. It's widely used and very powerful.  
+
+{: .important}
+Please be aware that Postgres support right now is still experimental. While it should work, we have not a ton of experience with it. Please reach out to us if you experience any issues with Postgres.
+
+To configure Lighthouse to use postgres, set the *Database Provider* to *postgres*, an adjust the *Database ConnectionString* to a valid connection string for a postgres connection.
+
+{: .note}
+If you want to run Lighthouse with a connection to a Postgres database, you'll have to set up the database yourself. Please refer to the Postgres documentation on how to do this.
+
+
 ### Docker
-On docker, you probably want to map the database to a file on your system, as otherwise you'll lose the data if your container gets removed. You can do so by specifying a volume and adjust the connection string to point to this volume:
+Independent of which *provider* you are using, there are a few things to be aware of when running Lighthouse in Docker.
+
+When using *sqlite*, you probably want to map the database to a file on your system, as otherwise you'll lose the data if your container gets removed. You can do so by specifying a volume and adjust the connection string to point to this volume:
 
 ```bash
-docker run -v ".:/app/Data" -e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
+docker run -v ".:/app/Data" -e "Database__ConnectionString=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
 ```
 
-This will create a volume in the local folder (`-v ".:/app/Data`) and then overwrites the configuration via environment variable to point to this volume (`-e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db"`). This will result in the file *LighthouseAppContext.db* to be created in the local folder where you run the container from.
+{: .note}
+The environment variable `-e "Database__Provider=sqlite"` is omitted because it's the default value.
+
+This will create a volume in the local folder (`-v ".:/app/Data`) and then overwrites the configuration via environment variable to point to this volume (`-e "Database__ConnectionString=Data Source=/app/Data/LighthouseAppContext.db"`). This will result in the file *LighthouseAppContext.db* to be created in the local folder where you run the container from. Check out the [docker sqlite example on GitHub](https://github.com/LetPeopleWork/Lighthouse/blob/main/examples/sqlite).
+
+In a similar way, you can adjust the provider and connection string postgres. If you want to host your postgres database as well in a docker container, we provide a [docker-compose.yml](https://github.com/LetPeopleWork/Lighthouse/blob/main/examples/postgres/docker-compose.yml) that you can use as inspiration. It sets up two containers, one for postgres (which a mapping to your local filesystem to store the data) and one for the Lighthouse itself, configured to store the data in postgres.
 
 ## Encryption Key
 In order to connect to Jira, Azure DevOps, etc., sensitive information (tokens) are needed. While we need to store them (as otherwise the continuous updating will not work), we don't want to keep those values in clear text.

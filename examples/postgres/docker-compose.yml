@@ -28,8 +28,8 @@ services:
       Database__Provider: postgres
       Database__ConnectionString: Host=postgres;Database=lighthouse;Username=postgres;Password=postgres
     ports:
-      - "80:5000"
-      - "443:5001"
+      - "8082:5000"
+      - "8083:5001"
     volumes:
       - ./logs:/app/logs
     restart: always
