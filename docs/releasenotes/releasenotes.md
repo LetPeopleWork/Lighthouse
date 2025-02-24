@@ -28,7 +28,7 @@ When using a [Relation Custom Field](https://docs.lighthouse.letpeople.work/feat
 ## Contributors
 ❤️ Thanks to everyone who contributed to this release ❤️
 - [**Hendra Gunawan**](https://www.linkedin.com/in/hendragunawan823/)
-- [**Valentin Gabriel Badea**](https://www.linkedin.com/in/gabriel-valentin-badea-50565143/)
+- [**Valentin Badea**](https://www.linkedin.com/in/valentin-g-badea/)
 
 If you want to contribute too, please join our [Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg)
 
