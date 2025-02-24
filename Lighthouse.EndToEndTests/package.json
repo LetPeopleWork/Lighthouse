@@ -27,7 +27,7 @@
   "dependencies": {
     "@types/pixelmatch": "^5.2.6",
     "@types/pngjs": "^6.0.5",
-    "pixelmatch": "^6.0.0",
+    "pixelmatch": "^7.1.0",
     "pngjs": "^7.0.0"
   }
 }
