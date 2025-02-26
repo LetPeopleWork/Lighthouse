@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse v25.2.23.1248
+# Lighthouse v25.2.26.1848
 {: .d-inline-block }
 
 Pre-Release
@@ -18,7 +18,9 @@ This release adds **experimental** support for Postgres as a Database provider n
 By adding an option to choose which database provider to select, the configuration options have changed. If you were overriding the default connection string, please make sure to adjust to the new variables as specified in the [documentation](https://docs.lighthouse.letpeople.work/Installation/configuration.html#database)
 
 ## Rework Relation Custom Field for Jira
-When using a [Relation Custom Field](https://docs.lighthouse.letpeople.work/features/teams/edit.html#relation-custom-field) on Jira, it was not clear how to specify the fields and Lighthouse was not finding the relations. This has been refined now, please refer to the documentation to learn how to specify the custom fields for Jira.
+When using a [Relation Custom Field](https://docs.lighthouse.letpeople.work/features/teams/edit.html#relation-custom-field) on Jira, it was not clear how to specify the fields and Lighthouse was not finding the relations. This has been refined now, please refer to the documentation to learn how to specify the custom fields for Jira.  
+
+Furthermore, Lighthouse now properly calcualtes both the Unparented Items and Features in Progress when using the Relation Custom Field.
 
 ## Other Improvements and Bug Fixes
 - Fixed issue that caused Lighthouse to go blank when you tried to use a fixed Throughput when creating a new team
