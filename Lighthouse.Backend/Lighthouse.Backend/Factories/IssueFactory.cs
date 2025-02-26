@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Factories
             this.logger = logger;
         }
 
-        public Issue CreateIssueFromJson(JsonElement json)
+        public Issue CreateIssueFromJson(JsonElement json, string? additionalRelatedField = null)
         {
             var fields = json.GetProperty(JiraFieldNames.FieldsFieldName);
             var key = GetKeyFromJson(json);
@@ -29,6 +29,11 @@ namespace Lighthouse.Backend.Factories
             var issueType = GetIssueTypeFromFields(fields);
             var state = GetStateFromFields(fields);
             var statusCategory = GetStatusCategoryFromFields(fields);
+
+            if (string.IsNullOrEmpty(parentKey) && !string.IsNullOrEmpty(additionalRelatedField))
+            {
+                parentKey = fields.GetFieldValue(additionalRelatedField);
+            }
 
             logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Resoultion Date {ResolutionDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {issueType}, Status {Status}, Status Category {StatusCategory}", key, title, resolutionDate, parentKey, rank, issueType, state, statusCategory);
 

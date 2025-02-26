@@ -144,6 +144,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        public async Task GetFeaturesInProgressForTeam_FeatureLinkedViaCustomField_ReturnsCorrectAmount()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink");
+            team.AdditionalRelatedField = "cf[10038]";
+
+            var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
+
+            Assert.That(featuresInProgress, Has.Count.EqualTo(1));
+        }
+
+        [Test]
         [TestCase(new string[] { "Story" }, 2, 3)]
         [TestCase(new string[] { "Task" }, 2, 3)]
         [TestCase(new string[] { "Bug" }, 1, 2)]
@@ -206,9 +218,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var team = CreateTeam($"project = LGHTHSDMO");
             team.AdditionalRelatedField = "cf[10038]";
 
-            var (relatedItems, _) = await subject.GetRelatedWorkItems("LGHTHSDMO-1337", team);
+            var (relatedItems, totalItems) = await subject.GetRelatedWorkItems("LGHTHSDMO-1724", team);
 
-            Assert.That(relatedItems, Is.EqualTo(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(relatedItems, Is.EqualTo(2));
+                Assert.That(totalItems, Is.EqualTo(3));
+            });
         }
 
         [Test]

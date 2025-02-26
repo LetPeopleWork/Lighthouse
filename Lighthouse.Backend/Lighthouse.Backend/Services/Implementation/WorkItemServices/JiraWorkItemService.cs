@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var stateQuery = PrepareGenericQuery(team.DoingStates, JiraFieldNames.StatusFieldName, "OR", "=");
 
             var query = $"{team.WorkItemQuery} {workItemQuery} {stateQuery} ";
-            var issues = await GetIssuesByQuery(jiraRestClient, query);
+            var issues = await GetIssuesByQuery(jiraRestClient, query, team.AdditionalRelatedField);
 
             return issues.Select(i => i.ParentKey).Distinct();
         }
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
 
             var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
-            
+
             var notDoneStateQuery = PrepareStateQuery(team.OpenStates);
             var doneStateQuery = PrepareStateQuery(team.DoneStates);
 
@@ -150,8 +150,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var doneWorkItemsQuery = $"{baseQuery} {doneStateQuery}";
             var remainingWorkItemsQuery = $"{baseQuery} {notDoneStateQuery}";
 
-            var doneIssues = await GetIssuesByQuery(jiraClient, doneWorkItemsQuery);
-            var remainingIssues = await GetIssuesByQuery(jiraClient, remainingWorkItemsQuery);
+            var doneIssues = await GetIssuesByQuery(jiraClient, doneWorkItemsQuery, team.AdditionalRelatedField);
+            var remainingIssues = await GetIssuesByQuery(jiraClient, remainingWorkItemsQuery, team.AdditionalRelatedField);
 
             var doneWorkItemsIds = doneIssues.Select(x => x.Key).ToList();
             var remainingWorkItemIds = remainingIssues.Select(x => x.Key).ToList();
@@ -167,9 +167,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             logger.LogInformation("Checking if Issue {Key} of Team {TeamName} is related to {FeatureIDs}", itemId, team.Name, string.Join(", ", featureIds));
 
             var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
-            var issue = await GetIssueById(jiraClient, itemId);
+            var issue = await GetIssueById(jiraClient, itemId, team.AdditionalRelatedField);
 
-            var isRelated = featureIds.Any(f => IsIssueRelated(issue, f, team.AdditionalRelatedField));
+            var isRelated = featureIds.Any(f => IsIssueRelated(issue, f));
             logger.LogInformation("Is Issue {ID} related: {IsRelated}", itemId, isRelated);
 
             return isRelated;
@@ -302,7 +302,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
-        private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId)
+        private async Task<Issue> GetIssueById(HttpClient jiraClient, string issueId, string? additionalRelatedField = null)
         {
             logger.LogDebug("Getting Issue by Key '{Key}'", issueId);
             var issue = cache.Get(issueId);
@@ -319,7 +319,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JsonDocument.Parse(responseBody);
 
-                issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement);
+                issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement, additionalRelatedField);
 
                 UpdateCache(issue);
             }
@@ -331,43 +331,50 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(HttpClient jiraRestClient, Team team, string relatedWorkItemId)
         {
-            var parentClause = $"AND (parent = {relatedWorkItemId}";
+            // Jira does not support all operators for custom fields (depending on the type), so we try to use a "match", followed by a "fuzzy match" if the first one fails
+            var parentFieldName = "parent";
+            var operators = new[] { "=" };
+
             if (!string.IsNullOrEmpty(team.AdditionalRelatedField))
             {
-                parentClause += $" OR {team.AdditionalRelatedField}~{relatedWorkItemId})";
+                parentFieldName = team.AdditionalRelatedField;
+                operators = ["=", "~"];
             }
-            else
+
+            foreach (var customFieldOperator in operators)
             {
-                parentClause += ")";
+                var parentClause = $"AND {parentFieldName}{customFieldOperator}{relatedWorkItemId}";
+
+                var remainingItemsQuery = $"{PrepareNotClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
+                var closedItemsQuery = $"{PrepareClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
+
+                try
+                {
+                    logger.LogDebug("Getting Remaining Items by Query...");
+                    var remainingIssues = (await GetIssuesByQuery(jiraRestClient, remainingItemsQuery, parentFieldName)).Select(i => i.Key).ToList();
+
+                    logger.LogDebug("Getting Closed Items by Query...");
+                    var closedIssues = (await GetIssuesByQuery(jiraRestClient, closedItemsQuery, parentFieldName)).Select(i => i.Key).ToList();
+
+                    logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", remainingIssues.Union(closedIssues)));
+
+                    return (remainingIssues.Count, remainingIssues.Count + closedIssues.Count);
+                }
+                catch (HttpRequestException exception)
+                {
+                    logger.LogInformation(exception, "Failed to get related work items with operator {Operator}", customFieldOperator);
+                }
             }
 
-            var remainingItemsQuery = $"{PrepareNotClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
-            var closedItemsQuery = $"{PrepareClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
-
-            logger.LogDebug("Getting Remaining Items by Query...");
-            var remainingIssues = (await GetIssuesByQuery(jiraRestClient, remainingItemsQuery)).Select(i => i.Key).ToList();
-
-            logger.LogDebug("Getting Closed Items by Query...");
-            var closedIssues = (await GetIssuesByQuery(jiraRestClient, closedItemsQuery)).Select(i => i.Key).ToList();
-
-            logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", remainingIssues.Union(closedIssues)));
-
-            return (remainingIssues.Count, remainingIssues.Count + closedIssues.Count);
+            return (0, 0);
         }
 
-        private bool IsIssueRelated(Issue issue, string relatedWorkItemId, string? additionalRelatedField)
+        private bool IsIssueRelated(Issue issue, string relatedWorkItemId)
         {
             logger.LogDebug("Checking if Issue {Key} is related to {RelatedWorkItemId}", issue.Key, relatedWorkItemId);
             if (issue.ParentKey == relatedWorkItemId)
             {
                 return true;
-            }
-
-            if (!string.IsNullOrEmpty(additionalRelatedField))
-            {
-                var relatedFieldValue = issue.Fields.GetFieldValue(additionalRelatedField);
-
-                return relatedFieldValue == relatedWorkItemId;
             }
 
             return false;
@@ -396,7 +403,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return closedItemsPerDay;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQuery(HttpClient client, string jqlQuery)
+        private async Task<IEnumerable<Issue>> GetIssuesByQuery(HttpClient client, string jqlQuery, string? additionalRelatedField = null)
         {
             logger.LogDebug("Getting Issues by JQL Query: '{Query}'", jqlQuery);
             var issues = new List<Issue>();
@@ -425,7 +432,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, additionalRelatedField);
 
                     logger.LogDebug("Found Issue {Key}", issue.Key);
 
@@ -454,7 +461,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var historyFilter = string.Empty;
             if (throughputSettings != null)
             {
-                historyFilter = $"AND {JiraFieldNames.ResolvedFieldName} >= {throughputSettings.StartDate:yyyy-MM-dd} AND {JiraFieldNames.ResolvedFieldName} <= {throughputSettings.EndDate:yyyy-MM-dd}";
+                historyFilter = $"AND {JiraFieldNames.ResolvedFieldName} >= {throughputSettings.StartDate:yyyy-MM-dd} AND {JiraFieldNames.ResolvedFieldName} <= {throughputSettings.EndDate.AddDays(1):yyyy-MM-dd}";
             }
 
             var jql = $"{team.WorkItemQuery} " +

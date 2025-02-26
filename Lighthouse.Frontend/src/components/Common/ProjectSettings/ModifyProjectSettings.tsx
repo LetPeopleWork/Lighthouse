@@ -267,7 +267,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 				const hasValidName = projectSettings.name !== "";
 				const hasValidDefaultAmountOfFeatures =
 					projectSettings.defaultAmountOfWorkItemsPerFeature !== undefined;
-				const hasValidHistoricalWorkItemQuery = !projectSettings.usePercentileToCalculateDefaultAmountOfWorkItems || (projectSettings.defaultWorkItemPercentile > 0 && projectSettings.historicalFeaturesWorkItemQuery !== "");
+				const hasValidHistoricalWorkItemQuery =
+					!projectSettings.usePercentileToCalculateDefaultAmountOfWorkItems ||
+					(projectSettings.defaultWorkItemPercentile > 0 &&
+						projectSettings.historicalFeaturesWorkItemQuery !== "");
 				const hasValidAmountOfWorkItemTypes =
 					projectSettings.workItemTypes.length > 0;
 				const hasAllNecessaryStates =
