@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [Test]
         [TestCase(new[] { "Closed" }, 5)]
         [TestCase(new[] { "Closed", "Resolved" }, 6)]
-        [TestCase(new[] { "Closed", "Resolved", "Active" }, 9)]
+        [TestCase(new[] { "Closed", "Resolved", "Active" }, 10)]
         public async Task GetClosedWorkItemsForTeam_FullHistory_DynamicThroughout_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
         {
             var subject = CreateSubject();
@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [Test]
         [TestCase(new[] { "Closed" }, 5)]
         [TestCase(new[] { "Closed", "Resolved" }, 6)]
-        [TestCase(new[] { "Closed", "Resolved", "Active" }, 9)]
+        [TestCase(new[] { "Closed", "Resolved", "Active" }, 10)]
         public async Task GetClosedWorkItemsForTeam_FullHistory_FixedThroughout_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
         {
             var subject = CreateSubject();
@@ -271,7 +271,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
-            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Bug"], team, "[System.Tags] CONTAINS 'Release1'");
+            var (remainingItems, _) = await subject.GetWorkItemsByQuery(["Bug"], team, "[System.Tags] CONTAINS 'Release1'");
 
             Assert.That(remainingItems, Has.Count.EqualTo(0));
         }
@@ -328,7 +328,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         {
             var subject = CreateSubject();
 
-            var order = subject.GetAdjacentOrderIndex(Enumerable.Empty<string>(), relativeOrder);
+            var order = subject.GetAdjacentOrderIndex([], relativeOrder);
 
             Assert.That(order, Is.EqualTo("0"));
         }
@@ -451,7 +451,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [Test]
         public async Task ValidateProjectSettings_InvalidConnectionSettings_ReturnsFalse()
         {
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            _ = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
             var project = CreateProject("[System.TeamProject] = 'CMFTTestTeamProject'");
             var subject = CreateSubject();
 
@@ -558,7 +558,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
 
-            Assert.That(featuresInProgress.Count, Is.EqualTo(expectedFeaturesInProgress));
+            Assert.That(featuresInProgress, Has.Count.EqualTo(expectedFeaturesInProgress));
+        }
+
+        [Test]
+        public async Task GetFeaturesInProgressForTeam_FeatureLinkedViaCustomField_ReturnsCorrectAmount()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            team.AdditionalRelatedField = "Custom.RemoteFeatureID";
+
+            var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
+
+            Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
 
         private Team CreateTeam(string query)
@@ -608,7 +620,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             return connectionSetting;
         }
 
-        private AzureDevOpsWorkItemService CreateSubject()
+        private static AzureDevOpsWorkItemService CreateSubject()
         {
             return new AzureDevOpsWorkItemService(Mock.Of<ILogger<AzureDevOpsWorkItemService>>(), new FakeCryptoService());
         }
