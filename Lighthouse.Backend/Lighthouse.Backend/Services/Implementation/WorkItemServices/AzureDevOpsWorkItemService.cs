@@ -30,12 +30,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return await GetClosedItemsPerDay(witClient, team);
         }
 
-        public async Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<List<string>> GetFeaturesForProject(Project project)
         {
-            logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", workItemTypes), workItemQueryOwner.WorkItemQuery);
-            var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
+            logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
+            var witClient = GetClientService(project.WorkTrackingSystemConnection);
 
-            var query = PrepareQuery(workItemTypes, workItemQueryOwner.OpenStates, workItemQueryOwner.WorkItemQuery);
+            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
             var workItems = await GetWorkItemsByQuery(witClient, query);
 
             var workItemReferences = workItems.Select(wi => wi.Id.ToString()).ToList();
@@ -261,7 +261,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             try
             {
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
-                var features = await GetOpenWorkItems(project.WorkItemTypes, project);
+                var features = await GetFeaturesForProject(project);
                 var totalFeatures = features.Count;
 
                 logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);

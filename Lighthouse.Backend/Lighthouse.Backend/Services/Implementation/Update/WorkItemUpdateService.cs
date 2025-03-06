@@ -306,7 +306,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var features = new List<Feature>();
-            var featureIds = await workItemService.GetOpenWorkItems(project.WorkItemTypes, project);
+            var featureIds = await workItemService.GetFeaturesForProject(project);
 
             var tasks = featureIds.Select(async featureId =>
             {

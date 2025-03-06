@@ -34,22 +34,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return await GetClosedItemsPerDay(client, team);
         }
 
-        public async Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<List<string>> GetFeaturesForProject(Project project)
         {
-            logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", workItemTypes), workItemQueryOwner.WorkItemQuery);
+            logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
-            var jiraRestClient = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
+            var jiraRestClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
 
-            var query = PrepareNotClosedItemsQuery(workItemTypes, workItemQueryOwner);
+            var query = PrepareAllItemsQuery(project);
             var issues = await GetIssuesByQuery(jiraRestClient, query);
 
-            var workItems = issues.Where(i => workItemTypes.Contains(i.IssueType)).ToList();
+            var workItems = issues.Where(i => project.WorkItemTypes.Contains(i.IssueType)).ToList();
 
             foreach (var parentKey in issues.Where(i => !string.IsNullOrEmpty(i.ParentKey)).Select(i => i.ParentKey))
             {
                 var parentItem = await GetIssueById(jiraRestClient, parentKey);
 
-                if (workItemTypes.Contains(parentItem.IssueType))
+                if (project.WorkItemTypes.Contains(parentItem.IssueType))
                 {
                     logger.LogInformation("Found Issue with Key {Key}", parentItem.Key);
                     workItems.Add(parentItem);
@@ -246,7 +246,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             {
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
 
-                var features = await GetOpenWorkItems(project.WorkItemTypes, project);
+                var features = await GetFeaturesForProject(project);
                 var totalFeatures = features.Count;
 
                 logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);
@@ -345,7 +345,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             {
                 var parentClause = $"AND {parentFieldName}{customFieldOperator}{relatedWorkItemId}";
 
-                var remainingItemsQuery = $"{PrepareNotClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
+                var remainingItemsQuery = $"{PrepareNotClosedItemsQuery(team)} {parentClause}";
                 var closedItemsQuery = $"{PrepareClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
 
                 try
@@ -473,15 +473,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         }
 
         private static string PrepareNotClosedItemsQuery(
-            IEnumerable<string> issueTypes,
-            IWorkItemQueryOwner workitemQueryOwner)
+            Team team)
         {
-            var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
-            var stateQuery = PrepareStateQuery(workitemQueryOwner.OpenStates);
+            var workItemsQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
+            var stateQuery = PrepareStateQuery(team.OpenStates);
 
-            var jql = $"{workitemQueryOwner.WorkItemQuery} " +
+            var jql = $"{team.WorkItemQuery} " +
                 $"{workItemsQuery} " +
                 $"{stateQuery} ";
+
+            return jql;
+        }
+
+        private static string PrepareAllItemsQuery(
+            Project project)
+        {
+            var workItemsQuery = PrepareWorkItemTypeQuery(project.WorkItemTypes);
+
+            var jql = $"{project.WorkItemQuery} " +
+                $"{workItemsQuery} ";
 
             return jql;
         }

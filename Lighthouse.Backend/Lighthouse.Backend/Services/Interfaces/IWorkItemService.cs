@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Services.Interfaces
     {
         Task<int[]> GetThroughputForTeam(Team team);
         
-        Task<List<string>> GetOpenWorkItems(IEnumerable<string> workItemTypes, IWorkItemQueryOwner workItemQueryOwner);
+        Task<List<string>> GetFeaturesForProject(Project project);
 
         Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery);
 

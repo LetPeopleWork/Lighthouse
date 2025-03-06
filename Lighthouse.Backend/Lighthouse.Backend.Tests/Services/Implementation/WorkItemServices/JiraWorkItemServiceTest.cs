@@ -55,46 +55,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetWorkItemsByLabel_LabelDoesNotExist_ReturnsNoItems()
+        public async Task GetFeaturesForProject_LabelDoesNotExist_ReturnsNoItems()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ AND labels = \"NotExistingLabel\"");
+            var project = CreateProject($"project = PROJ AND labels = \"NotExistingLabel\"");
 
-            var itemsByTag = await subject.GetOpenWorkItems(["Story"], team);
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Story");
+
+            var itemsByTag = await subject.GetFeaturesForProject(project);
 
             Assert.That(itemsByTag, Is.Empty);
         }
 
         [Test]
-        public async Task GetWorkItemsByLabel_ReturnsCorrectAmountOfItems()
+        public async Task GetFeaturesForProject_ReturnsCorrectAmountOfItems()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Phoenix\"");
+            var project = CreateProject($"project = \"LGHTHSDMO\" AND labels = \"Phoenix\"");
 
-            var itemsByTag = await subject.GetOpenWorkItems(["Epic"], team);
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Epic");
 
-            Assert.That(itemsByTag, Has.Count.EqualTo(3));
+            var itemsByTag = await subject.GetFeaturesForProject(project);
+
+            Assert.That(itemsByTag, Has.Count.EqualTo(4));
         }
 
 
         [Test]
-        public async Task GetWorkItemsByTag_TagExists_ReturnsCorrectNumberOfItems()
+        public async Task GetFeaturesForProject_TagExists_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ AND labels = \"ExistingLabel\"");
+            var project = CreateProject($"project = PROJ AND labels = \"ExistingLabel\"");
 
-            var itemsByTag = await subject.GetOpenWorkItems(["Story"], team);
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Story");
+
+            var itemsByTag = await subject.GetFeaturesForProject(project);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(1));
         }
 
         [Test]
-        public async Task GetWorkItemsByTag_TagExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
+        public async Task GetFeaturesForProject_TagExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ AND labels = \"ExistingLabel\"");
+            var project = CreateProject($"project = PROJ AND labels = \"ExistingLabel\"");
 
-            var itemsByTag = await subject.GetOpenWorkItems(["Bug"], team);
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Bug");
+
+            var itemsByTag = await subject.GetFeaturesForProject(project);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -228,14 +240,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByTag_ItemIsClosed_ReturnsEmpty()
+        public async Task GetFeaturesForProject_ItemIsClosed_ReturnsItem()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
+            var project = CreateProject($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
 
-            var actualItems = await subject.GetOpenWorkItems(["Story"], team);
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Story");
 
-            Assert.That(actualItems, Has.Count.EqualTo(0));
+            var actualItems = await subject.GetFeaturesForProject(project);
+
+            Assert.That(actualItems, Has.Count.EqualTo(1));
         }
 
         [Test]
