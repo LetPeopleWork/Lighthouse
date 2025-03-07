@@ -1,10 +1,13 @@
 import type { IWhenForecast } from "./Forecasts/WhenForecast";
 
+export type StateCategory = "Unknown" | "ToDo" | "Doing" | "Done";
+
 export interface IFeature {
 	name: string;
 	id: number;
 	featureReference: string;
 	url: string | null;
+	stateCategory: StateCategory;
 	lastUpdated: Date;
 	isUsingDefaultFeatureSize: boolean;
 	remainingWork: { [key: number]: number };
@@ -23,6 +26,7 @@ export class Feature implements IFeature {
 	id!: number;
 	featureReference!: string;
 	url: string | null;
+	stateCategory: StateCategory;
 	lastUpdated!: Date;
 	isUsingDefaultFeatureSize!: boolean;
 	projects: DictionaryObject<string>;
@@ -36,6 +40,7 @@ export class Feature implements IFeature {
 		id: number,
 		featureReference: string,
 		url: string | null,
+		stateCategory: StateCategory,
 		lastUpdated: Date,
 		isUsingDefaultFeatureSize: boolean,
 		projects: DictionaryObject<string>,
@@ -48,6 +53,7 @@ export class Feature implements IFeature {
 		this.id = id;
 		this.featureReference = featureReference;
 		this.url = url;
+		this.stateCategory = stateCategory;
 		this.lastUpdated = lastUpdated;
 		this.isUsingDefaultFeatureSize = isUsingDefaultFeatureSize;
 		this.projects = projects;

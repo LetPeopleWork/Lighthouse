@@ -29,6 +29,7 @@ describe("Feature Class", () => {
 			id,
 			referenceId,
 			"",
+			"Unknown",
 			lastUpdated,
 			false,
 			{ 0: "Project" },

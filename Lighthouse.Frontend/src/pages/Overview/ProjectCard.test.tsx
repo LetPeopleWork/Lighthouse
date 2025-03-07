@@ -67,6 +67,7 @@ describe("ProjectCard component", () => {
 				0,
 				"FTR-0",
 				"",
+				"Unknown",
 				new Date(),
 				false,
 				{ 1: "Project Alpha" },

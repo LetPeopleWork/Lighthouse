@@ -108,6 +108,7 @@ export class BaseApiService {
 				feature.id,
 				feature.featureReference,
 				feature.url,
+				feature.stateCategory,
 				new Date(feature.lastUpdated),
 				feature.isUsingDefaultFeatureSize,
 				feature.projects,

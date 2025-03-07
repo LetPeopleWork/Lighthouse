@@ -10,6 +10,7 @@ namespace Lighthouse.Backend.API.DTO
             Id = feature.Id;
             FeatureReference = feature.ReferenceId;
             Url = feature.Url;
+            StateCategory = feature.StateCategory;
             Order = feature.Order;
             LastUpdated = feature.Forecast?.CreationTime ?? DateTime.MinValue;
 
@@ -48,6 +49,8 @@ namespace Lighthouse.Backend.API.DTO
         public string FeatureReference { get; }
 
         public string Url { get; }
+
+        public StateCategories StateCategory { get; }
 
         public string Order { get; }
         
