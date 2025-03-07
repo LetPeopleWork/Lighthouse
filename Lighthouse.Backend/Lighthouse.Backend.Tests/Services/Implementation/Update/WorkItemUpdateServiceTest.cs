@@ -132,11 +132,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
 
-                var feature = project.Features.First();
+                var feature = project.Features[0];
 
                 var isDefault = defaultWork == expectedWork;
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.EqualTo(isDefault));
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedWork));
+            });
+        }
+
+        [Test]
+        [TestCase("Prioritized", StateCategories.ToDo)]
+        [TestCase("Analysis In Progress", StateCategories.Doing)]
+        [TestCase("Delivered", StateCategories.Done)]
+        [TestCase("Jellybean", StateCategories.Unknown)]
+        public void UpdateFeaturesForProject_GetFeatureState_MapsToCorrectStateCategory(string featureState, StateCategories expectedStateCategory)
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            project.ToDoStates.Clear();
+            project.ToDoStates.AddRange(["New", "Prioritized"]);
+            project.DoingStates.Clear();
+            project.DoingStates.AddRange(["Analysis In Progress", "Implementation"]);
+            project.DoneStates.Clear();
+            project.DoneStates.AddRange(["Delivered"]);
+
+            SetupProjects(project);
+
+            var feature = new Feature(team, 2) { ReferenceId = "12", State = featureState };
+
+            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature.Name, feature.Order, feature.Url ?? string.Empty, feature.State));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 20)));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(project.Features, Has.Count.EqualTo(1));
+
+                var feature = project.Features[0];
+
+                Assert.That(feature.State, Is.EqualTo(featureState));
+                Assert.That(feature.StateCategory, Is.EqualTo(expectedStateCategory));
             });
         }
 
@@ -198,7 +236,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
 
-                var feature = project.Features.First();
+                var feature = project.Features[0];
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
             });
@@ -236,7 +274,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             Assert.Multiple(() =>
             {
-                var feature = project.Features.First();
+                var feature = project.Features[0];
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedValue));
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
             });
@@ -267,7 +305,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             Assert.Multiple(() =>
             {
-                var feature = project.Features.First();
+                var feature = project.Features[0];
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
             });
@@ -295,7 +333,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             subject.TriggerUpdate(project.Id);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+            Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
         }
 
         [Test]
@@ -320,7 +358,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             subject.TriggerUpdate(project.Id);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(7));
+            Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(7));
         }
 
         [Test]
@@ -342,7 +380,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             subject.TriggerUpdate(project.Id);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(0));
+            Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(0));
         }
 
         [Test]
@@ -368,9 +406,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             Assert.Multiple(() =>
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
-                Assert.That(project.Features.First().FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
-                Assert.That(project.Features.First().FeatureWork.First().RemainingWorkItems, Is.EqualTo(6));
-                Assert.That(project.Features.First().FeatureWork.Last().RemainingWorkItems, Is.EqualTo(6));
+
+                var featureWork = project.Features[0].FeatureWork;
+                Assert.That(featureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
+                Assert.That(featureWork[featureWork.Count - 1].RemainingWorkItems, Is.EqualTo(6));
+                Assert.That(featureWork[featureWork.Count - 1].RemainingWorkItems, Is.EqualTo(6));
             });
         }
 
@@ -433,9 +473,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            var actualFeature1 = project.Features.First();
+            var actualFeature1 = project.Features[0];
             Assert.That(actualFeature1.GetRemainingWorkForTeam(team1), Is.EqualTo(remainingWorkItemsFeature1));
-            var actualFeature2 = project.Features.Last();
+            var actualFeature2 = project.Features[project.Features.Count - 1];
             Assert.That(actualFeature2.GetRemainingWorkForTeam(team2), Is.EqualTo(remainingWorkItemsFeature2));
         }
 
@@ -524,8 +564,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 var feature = project.Features.Single();
 
                 Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
-                Assert.That(feature.FeatureWork.First().TotalWorkItems, Is.EqualTo(6));
-                Assert.That(feature.FeatureWork.Last().TotalWorkItems, Is.EqualTo(6));
+                Assert.That(feature.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(6));
             });
         }
 
@@ -554,8 +594,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 var feature = project.Features.Single();
 
                 Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
-                Assert.That(feature.FeatureWork.Last().TotalWorkItems, Is.EqualTo(12));
-                Assert.That(feature.FeatureWork.Last().Team, Is.EqualTo(team2));
+                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
             });
         }
 
@@ -589,8 +629,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 var feature = project.Features.Single();
 
                 Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
-                Assert.That(feature.FeatureWork.Last().TotalWorkItems, Is.EqualTo(12));
-                Assert.That(feature.FeatureWork.Last().Team, Is.EqualTo(team2));
+                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
             });
         }
 
@@ -622,8 +662,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 var feature = project.Features.Single();
 
                 Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
-                Assert.That(feature.FeatureWork.Last().TotalWorkItems, Is.EqualTo(12));
-                Assert.That(feature.FeatureWork.Last().Team, Is.EqualTo(team2));
+                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
             });
         }
 
@@ -733,8 +773,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 var feature = project.Features.Single();
 
                 Assert.That(feature.FeatureWork, Has.Count.EqualTo(3));
-                Assert.That(feature.FeatureWork.First().TotalWorkItems, Is.EqualTo(12));
-                Assert.That(feature.FeatureWork.First().Team, Is.EqualTo(team1));
+                Assert.That(feature.FeatureWork[0].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(feature.FeatureWork[0].Team, Is.EqualTo(team1));
             });
         }
 
@@ -780,7 +820,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         public async Task ExecuteAsync_ReadyToRefresh_RefreshesAllProjectsAsync()
         {
             var project = CreateProject(DateTime.Now.AddDays(-1));
-            SetupProjects([project]);
+            SetupProjects(project);
 
             workItemServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<string>()));
 
@@ -797,7 +837,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         {
             var project1 = CreateProject(DateTime.Now.AddDays(-1));
             var project2 = CreateProject(DateTime.Now.AddDays(-1));
-            SetupProjects([project1, project2]);
+            SetupProjects(project1, project2);
 
             workItemServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<string>()));
 
@@ -820,7 +860,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             SetupRefreshSettings(10, 360);
 
-            SetupProjects([project1, project2]);
+            SetupProjects(project1, project2);
 
             var subject = CreateSubject();
 

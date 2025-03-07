@@ -319,7 +319,9 @@ namespace Lighthouse.Backend.Services.Implementation.Update
                 feature.State = state;
                 feature.IsUsingDefaultFeatureSize = false;
 
-                Logger.LogInformation("Found Feature {Name}, Id {Id}, Order {Order}, State {State}", feature.Name, featureId, feature.Order, feature.State);
+                feature.StateCategory = MapStateToStateCategory(project, state);
+
+                Logger.LogInformation("Found Feature {Name}, Id {Id}, Order {Order}, State {State} (Category: {Category})", feature.Name, featureId, feature.Order, feature.State, feature.StateCategory);
 
                 return feature;
             }).ToList();
@@ -329,6 +331,26 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             features.AddRange(featuresArray);
 
             return features;
+        }
+
+        private StateCategories MapStateToStateCategory(Project project, string state)
+        {
+            if (project.ToDoStates.Contains(state))
+            {
+                return StateCategories.ToDo;
+            }
+
+            if (project.DoingStates.Contains(state))
+            {
+                return StateCategories.Doing;
+            }
+
+            if (project.DoneStates.Contains(state))
+            {
+                return StateCategories.Done;
+            }
+
+            return StateCategories.Unknown;
         }
 
         private Feature GetOrCreateFeature(IRepository<Feature> featureRepository, string featureId, Project project)

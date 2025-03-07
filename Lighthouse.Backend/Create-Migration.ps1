@@ -30,8 +30,12 @@ try {
     # Create SQLite Migration
     Write-Host "Creating SQLite Migration..."
     $env:Database__Provider = "sqlite"
-    $env:Database__ConnectionString = "Data Source=LighthouseAppContext.db"
+    $tempDbName = "Migration_$(Get-Random).db"
+    $env:Database__ConnectionString = "Data Source=$tempDbName"
     
+    # Ensure we'll delete the temporary database after migration
+    $Script:TempSqliteDb = $tempDbName
+
     dotnet ef migrations add $MigrationName `
         --project Lighthouse.Migrations.Sqlite `
         --startup-project Lighthouse.Backend `
@@ -67,6 +71,12 @@ catch {
 finally {
     Write-Host "Cleaning up PostgreSQL container..."
     Stop-DockerContainer -ContainerName "lighthouse-postgres"
+
+    # Remove temporary SQLite database if it exists
+    if ($Script:TempSqliteDb -and (Test-Path $Script:TempSqliteDb)) {
+        Write-Host "Removing temporary SQLite database..."
+        Remove-Item $Script:TempSqliteDb -Force
+    }
 
     Write-Host "Setting environment variables back to default..."
     $env:Database__Provider = ""

@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Models
 {
     public class Feature : IEntity
     {
-        public Feature() : this(Enumerable.Empty<(Team team, int remainingItems, int totalItems)>())
+        public Feature() : this([])
         {
         }
 
@@ -31,6 +31,8 @@ namespace Lighthouse.Backend.Models
         public string Order { get; set; }
 
         public string State { get; set; } = string.Empty;
+
+        public StateCategories StateCategory { get; set; } = StateCategories.Unknown;
 
         public string? Url { get; set; }
 
