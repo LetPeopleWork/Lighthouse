@@ -80,7 +80,10 @@ namespace Lighthouse.Backend
                 c.RoutePrefix = "api/swagger";
             });
 
-            app.UseHttpsRedirection();
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
