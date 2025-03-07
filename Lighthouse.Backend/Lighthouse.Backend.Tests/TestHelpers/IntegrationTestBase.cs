@@ -45,6 +45,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             // Ensure we clean up before disposing
             if (DatabaseContext != null)
             {
+                Thread.Sleep(100);
                 DatabaseContext.Database.EnsureDeleted();
             }
 
