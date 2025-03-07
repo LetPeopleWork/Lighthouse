@@ -60,6 +60,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 								<FeatureName
 									name={feature.name}
 									url={feature.url ?? ""}
+									stateCategory={feature.stateCategory}
 									isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
 									teamsWorkIngOnFeature={
 										team.featuresInProgress.includes(feature.featureReference)

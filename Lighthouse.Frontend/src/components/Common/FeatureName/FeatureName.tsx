@@ -1,13 +1,19 @@
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import GppMaybeOutlinedIcon from "@mui/icons-material/GppMaybeOutlined";
+import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
+import PauseCircleOutlineOutlinedIcon from "@mui/icons-material/PauseCircleOutlineOutlined";
+import PlayCircleFilledWhiteOutlinedIcon from "@mui/icons-material/PlayCircleFilledWhiteOutlined";
+import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import { IconButton, Tooltip } from "@mui/material";
 import React from "react";
 import { Link } from "react-router-dom";
+import type { StateCategory } from "../../../models/Feature";
 import type { ITeam } from "../../../models/Team/Team";
 
 interface FeatureNameProps {
 	name: string;
 	url: string;
+	stateCategory: StateCategory;
 	isUsingDefaultFeatureSize: boolean;
 	teamsWorkIngOnFeature: ITeam[];
 }
@@ -15,6 +21,7 @@ interface FeatureNameProps {
 const FeatureName: React.FC<FeatureNameProps> = ({
 	name,
 	url,
+	stateCategory,
 	isUsingDefaultFeatureSize,
 	teamsWorkIngOnFeature,
 }) => {
@@ -33,6 +40,7 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 			) : (
 				name
 			)}
+
 			{isUsingDefaultFeatureSize && (
 				<Tooltip title="No child items were found for this Feature. The remaining items displayed are based on the default feature size specified in the advanced project settings.">
 					<IconButton size="small" sx={{ ml: 1 }}>
@@ -61,6 +69,15 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 					</IconButton>
 				</Tooltip>
 			)}
+
+			<Tooltip title={`Feature State: ${stateCategory}`}>
+				<IconButton size="small" sx={{ ml: 1 }}>
+					{stateCategory === "ToDo" && <PauseCircleOutlineOutlinedIcon />}
+					{stateCategory === "Doing" && <PlayCircleFilledWhiteOutlinedIcon />}
+					{stateCategory === "Done" && <StopCircleOutlinedIcon />}
+					{stateCategory === "Unknown" && <HelpOutlineOutlinedIcon />}
+				</IconButton>
+			</Tooltip>
 		</span>
 	);
 };

@@ -74,6 +74,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 								<FeatureName
 									name={feature.name}
 									url={feature.url ?? ""}
+									stateCategory={feature.stateCategory}
 									isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
 									teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
 										team.featuresInProgress.includes(feature.featureReference),

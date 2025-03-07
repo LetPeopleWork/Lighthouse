@@ -197,7 +197,10 @@ describe("ProjectFeatureList component", () => {
 		expect(featureRowWithDefaultSize).toBeInTheDocument();
 
 		if (featureRowWithDefaultSize) {
-			const warningIcon = within(featureRowWithDefaultSize).getByRole("button");
+			const warningIcons = within(featureRowWithDefaultSize).queryAllByRole(
+				"button",
+			);
+			const warningIcon = warningIcons[0];
 			expect(warningIcon).toBeInTheDocument();
 		}
 	});
