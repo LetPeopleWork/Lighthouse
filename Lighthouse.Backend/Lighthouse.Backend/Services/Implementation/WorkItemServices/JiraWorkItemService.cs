@@ -489,9 +489,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             Project project)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(project.WorkItemTypes);
+            var stateQuery = PrepareStateQuery(project.AllStates);
 
             var jql = $"{project.WorkItemQuery} " +
-                $"{workItemsQuery} ";
+                $"{workItemsQuery} " +
+                $"{stateQuery} ";
 
             return jql;
         }
