@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation
             this.configFileUpdater = configFileUpdater;
             this.fileSystem = fileSystem;
 
-            SupportedLogLevels = Enum.GetNames(typeof(LogEventLevel));
+            SupportedLogLevels = Enum.GetNames<LogEventLevel>();
 
             var minimumLogLevel = configuration[ConfigurationKeyPath] ?? "";
             var currentLogLevel = ParseLogLevelFromString(minimumLogLevel);
@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return LogEventLevel.Information;
             }
 
-            return (LogEventLevel)Enum.Parse(typeof(LogEventLevel), logLevel);
+            return Enum.Parse<LogEventLevel>(logLevel);
         }
 
         private string GetLogsFolderPath()

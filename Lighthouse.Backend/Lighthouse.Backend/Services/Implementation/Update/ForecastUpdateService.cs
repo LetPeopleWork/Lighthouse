@@ -237,7 +237,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return throughput.GetThroughputOnDay(randomDay);
         }
 
-        private async Task ArchiveFeatures(IFeatureHistoryService featureHistoryService, IEnumerable<Feature> features)
+        private static async Task ArchiveFeatures(IFeatureHistoryService featureHistoryService, IEnumerable<Feature> features)
         {
             foreach (var feature in features)
             {

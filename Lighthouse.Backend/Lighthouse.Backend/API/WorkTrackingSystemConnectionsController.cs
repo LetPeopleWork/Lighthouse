@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.API
         {
             var supportedSystems = new List<WorkTrackingSystemConnectionDto>();
 
-            foreach (WorkTrackingSystems system in Enum.GetValues(typeof(WorkTrackingSystems)))
+            foreach (WorkTrackingSystems system in Enum.GetValues<WorkTrackingSystems>())
             {
                 AddConnectionForWorkTrackingSystem(supportedSystems, system);
             }

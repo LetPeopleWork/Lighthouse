@@ -62,8 +62,10 @@ namespace Lighthouse.Backend.API.DTO
 
         public string UnparentedItemsQuery { get; set; }
 
+        [JsonRequired]
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; }
 
+        [JsonRequired]
         public int DefaultWorkItemPercentile { get; set; }
 
         public string HistoricalFeaturesWorkItemQuery { get; set; }

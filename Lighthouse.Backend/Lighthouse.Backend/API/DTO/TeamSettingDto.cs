@@ -40,6 +40,7 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public int ThroughputHistory { get; set; }
 
+        [JsonRequired]
         public bool UseFixedDatesForThroughput { get; set; }
 
         public DateTime? ThroughputHistoryStartDate { get; set; }
@@ -64,6 +65,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public string RelationCustomField { get; set; }
 
+        [JsonRequired]
         public bool AutomaticallyAdjustFeatureWIP { get; set; }
     }
 }

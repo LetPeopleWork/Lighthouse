@@ -16,6 +16,8 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("current")]
+        [ProducesResponseType<string>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetCurrentVersion()
         {
             var version = lighthouseReleaseService.GetCurrentVersion();
@@ -44,7 +46,7 @@ namespace Lighthouse.Backend.API
             {
                 return NotFound();
             }
-            
+
             return Ok(lighthouseReleases);
         }
     }

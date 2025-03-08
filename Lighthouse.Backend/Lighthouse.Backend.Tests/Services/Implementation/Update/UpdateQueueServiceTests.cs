@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var id = 1;
 
             var subject = CreateSubject();
-            subject.EnqueueUpdate(updateType, id, _ => Task.CompletedTask);
+            subject.EnqueueUpdate(updateType, id, _ => Task.Delay(300));
 
             Assert.That(updateStatuses.ContainsKey(new UpdateKey(updateType, id)), Is.True);
         }
@@ -53,11 +53,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var id = 1;
 
             var subject = CreateSubject();
-            subject.EnqueueUpdate(updateType, id, _ => Task.CompletedTask);
+            subject.EnqueueUpdate(updateType, id, _ => Task.Delay(300));
             subject.EnqueueUpdate(updateType, id, _ => Task.CompletedTask);
 
-            Assert.That(updateStatuses.ContainsKey(new UpdateKey(updateType, id)), Is.True);
-            Assert.That(updateStatuses.Count, Is.EqualTo(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(updateStatuses.ContainsKey(new UpdateKey(updateType, id)), Is.True);
+                Assert.That(updateStatuses, Has.Count.EqualTo(1));
+            });
         }
 
         [Test]
@@ -82,8 +85,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 await Task.Delay(100);
             }
 
-            Assert.That(wasExecuted, Is.True);
-            Assert.That(updateStatuses.ContainsKey(updateKey), Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(wasExecuted, Is.True);
+                Assert.That(updateStatuses.ContainsKey(updateKey), Is.False);
+            });
         }
 
         [Test]

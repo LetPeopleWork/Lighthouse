@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Update;
@@ -41,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             var forecast = subject.HowMany(new Throughput([]), TimeSpan.FromHours(0).Days);
 
-            Assert.That(forecast, Is.InstanceOf(typeof(HowManyForecast)));
+            Assert.That(forecast, Is.InstanceOf<HowManyForecast>());
         }
 
         [Test]
@@ -71,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             var forecast = await subject.When(CreateTeam(1, [1]), 12);
 
-            Assert.That(forecast, Is.InstanceOf(typeof(WhenForecast)));
+            Assert.That(forecast, Is.InstanceOf<WhenForecast>());
         }
 
         [Test]
@@ -173,10 +172,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var team = CreateTeam(1, [1]);
 
             var feature = SetupFeature(team, 35);
-            SetupFeatures([feature]);
+            SetupFeatures(feature);
 
             var project = CreateProject(feature);
-            SetupProjects([project]);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -201,7 +200,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             SetupFeatures(feature1, feature2);
             var project = CreateProject(feature1, feature2);
-            SetupProjects([project]);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -231,7 +230,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             SetupFeatures(feature1, feature2);
             var project = CreateProject(feature1, feature2);
-            SetupProjects([project]);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -256,8 +255,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature3 = SetupFeature(team, 20);
 
             SetupFeatures(feature1, feature2, feature3);
-            var project = CreateProject([feature1, feature2, feature3]);
-            SetupProjects([project]);
+            var project = CreateProject(feature1, feature2, feature3);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -292,8 +291,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature3 = SetupFeature(team, 5);
 
             SetupFeatures(feature1, feature2, feature3);
-            var project = CreateProject([feature1, feature2, feature3]);
-            SetupProjects([project]);
+            var project = CreateProject(feature1, feature2, feature3);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -328,8 +327,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature2 = SetupFeature(team2, 20);
 
             SetupFeatures(feature1, feature2);
-            var project = CreateProject([feature1, feature2]);
-            SetupProjects([project]);
+            var project = CreateProject(feature1, feature2);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -355,8 +354,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature3 = SetupFeature(team2, 7);
 
             SetupFeatures(feature1, feature2, feature3);
-            var project = CreateProject([feature1, feature2, feature3]);
-            SetupProjects([project]);
+            var project = CreateProject(feature1, feature2, feature3);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -387,8 +386,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature3 = SetupFeature(team2, 20);
 
             SetupFeatures(feature1, feature2, feature3);
-            var project = CreateProject([feature1, feature2, feature3]);
-            SetupProjects([project]);
+            var project = CreateProject(feature1, feature2, feature3);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -418,7 +417,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             SetupFeatures(feature1);
             var project = CreateProject(feature1);
-            SetupProjects([project]);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -440,7 +439,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature = SetupFeature([(team, 20, 37)]);
             SetupFeatures(feature);
             var project = CreateProject(feature);
-            SetupProjects([project]);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -458,7 +457,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature1 = SetupFeature([(team1, 20, 42), (team2, 15, 17)]);
             SetupFeatures(feature1);
             var project = CreateProject(feature1);
-            SetupProjects([project]);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -479,9 +478,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var team = CreateTeam(1, [1]);
 
             var feature = SetupFeature(team, 0);
-            SetupFeatures([feature]);
+            SetupFeatures(feature);
             var project = CreateProject(feature);
-            SetupProjects([project]);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
@@ -492,25 +491,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(0));
                 Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(0));
             });
-        }
-
-        [Test]
-        public void ForecastAllFeatures_ArchivesFeatures()
-        {
-            var subject = CreateSubjectWithPersistentThroughput();
-
-            var team = CreateTeam(1, [1]);
-
-            var feature1 = SetupFeature(team, 35);
-            var feature2 = SetupFeature(team, 20);
-            SetupFeatures(feature1, feature2);
-            var project = CreateProject([feature1, feature2]);
-            SetupProjects([project]);
-
-            subject.TriggerUpdate(project.Id);
-
-            featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature1));
-            featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
         }
 
         [Test]
@@ -526,17 +506,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             SetupFeatures(feature1, feature2);
 
             var project = CreateProject(feature1, feature2);
-            SetupProjects([project]);
+            SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
             featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature1));
             featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
-        }
-
-        private Feature SetupFeature()
-        {
-            return SetupFeature(Enumerable.Empty<(Team team, int remainingItems, int totalItems)>());
         }
 
         private Feature SetupFeature(Team team, int remainingItems)
@@ -560,7 +535,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
         }
 
-        private void SetupProjects(IEnumerable<Project> projects)
+        private void SetupProjects(params Project[] projects)
         {
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
 
