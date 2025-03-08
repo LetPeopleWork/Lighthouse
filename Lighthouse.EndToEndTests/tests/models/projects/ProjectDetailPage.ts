@@ -17,7 +17,8 @@ export class ProjectDetailPage {
 	getFeatureInProgressIcon(feature: string): Locator {
 		const inProgressIcon = this.page
 			.getByRole("cell", { name: feature })
-			.getByRole("button").first();
+			.getByRole("button")
+			.first();
 		return inProgressIcon;
 	}
 
