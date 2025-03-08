@@ -49,5 +49,15 @@
 
             ProjectUpdateTime = DateTime.UtcNow;
         }
+
+        public IEnumerable<Feature> GetFeaturesToExtrapolate()
+        {
+            return Features.Where(feature => !feature.IsUnparentedFeature && feature.StateCategory != StateCategories.Done && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0);
+        }
+
+        public IEnumerable<Feature> GetFeaturesToOverrideWithDefaultSize()
+        {
+            return Features.Where(f => !f.IsUnparentedFeature && OverrideRealChildCountStates.Contains(f.State));
+        }
     }
 }

@@ -141,6 +141,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         }
 
         [Test]
+        [TestCase(10, 20, 10)]
+        [TestCase(0, 10, 0)]
+        [TestCase(10, 10, 10)]
+        [TestCase(0, 0, 0)]
+        public void UpdateFeaturesForProject_IsInDoneState_DoesNotUsesDefaultItems(int remainingWork, int totalWork, int expectedWork)
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            project.DoneStates.Clear();
+            project.DoneStates.Add("Done");
+
+            project.DefaultAmountOfWorkItemsPerFeature = 42;
+
+            var feature = new Feature(team, remainingWork) { ReferenceId = "12", State = "Done" };
+
+            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
+            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature.Name, feature.Order, feature.Url ?? string.Empty, feature.State));
+            workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((remainingWork, totalWork)));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(project.Features, Has.Count.EqualTo(1));
+
+                var feature = project.Features[0];
+
+                Assert.That(feature.IsUsingDefaultFeatureSize, Is.False);
+                Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedWork));
+            });
+        }
+
+        [Test]
         [TestCase("Prioritized", StateCategories.ToDo)]
         [TestCase("Analysis In Progress", StateCategories.Doing)]
         [TestCase("Delivered", StateCategories.Done)]

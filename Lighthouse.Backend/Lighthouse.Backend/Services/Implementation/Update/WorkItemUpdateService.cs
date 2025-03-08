@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
         private async Task ExtrapolateNotBrokenDownFeatures(IWorkItemServiceFactory workItemServiceFactory, Project project)
         {
-            foreach (var feature in project.Features.Where(f => !f.IsUnparentedFeature && project.OverrideRealChildCountStates.Contains(f.State)))
+            foreach (var feature in project.GetFeaturesToOverrideWithDefaultSize())
             {
                 feature.ClearFeatureWork();
             }
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            foreach (Feature feature in project.Features.Where(feature => !feature.IsUnparentedFeature && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0))
+            foreach (var feature in project.GetFeaturesToExtrapolate())
             {
                 Logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
                 feature.IsUsingDefaultFeatureSize = true;
@@ -333,7 +333,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return features;
         }
 
-        private StateCategories MapStateToStateCategory(Project project, string state)
+        private static StateCategories MapStateToStateCategory(Project project, string state)
         {
             if (project.ToDoStates.Contains(state))
             {

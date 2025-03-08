@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Data
 
             var optionsBuilder = new DbContextOptionsBuilder<LighthouseAppContext>();
 
-            if (provider.ToLower() == "postgres")
+            if (provider.Equals("postgres", StringComparison.CurrentCultureIgnoreCase))
             {
                 optionsBuilder.UseNpgsql(connectionString, npgsql =>
                 {
