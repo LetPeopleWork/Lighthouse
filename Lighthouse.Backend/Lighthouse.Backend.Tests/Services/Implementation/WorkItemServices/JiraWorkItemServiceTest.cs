@@ -414,7 +414,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
 
             var organizationUrl = "https://letpeoplework.atlassian.net";
-            var username = "benjhuser@gmail.com";
+            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "benjhuser@gmail.com";
             var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
 
             var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
