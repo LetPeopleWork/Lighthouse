@@ -412,3 +412,4 @@ Lighthouse.Frontend/coverage/*
 /Lighthouse.Backend/Migrations/*.dll
 examples/postgres/data/*
 !/examples/postgres/certs/LighthouseCert.pfx
+.DS_Store
