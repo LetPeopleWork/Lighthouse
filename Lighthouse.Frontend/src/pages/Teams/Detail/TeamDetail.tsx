@@ -22,6 +22,7 @@ import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService"
 import ManualForecaster from "./ManualForecaster";
 import TeamFeatureList from "./TeamFeatureList";
 import ThroughputBarChart from "./ThroughputChart";
+import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -184,7 +185,7 @@ const TeamDetail: React.FC = () => {
 								onRunManualForecast={onRunManualForecast}
 							/>
 						</InputGroup>
-						<InputGroup title="Throughput" initiallyExpanded={false}>
+						<InputGroup title="Metrics" initiallyExpanded={false}>
 							{team.useFixedDatesForThroughput && (
 								<Tooltip title="This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts">
 									<IconButton size="small" sx={{ ml: 1 }}>
@@ -193,6 +194,7 @@ const TeamDetail: React.FC = () => {
 								</Tooltip>
 							)}
 							<ThroughputBarChart team={team} />
+							<CycleTimeScatterPlotChart team={team} />
 						</InputGroup>
 					</Grid>
 				)}
