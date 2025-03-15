@@ -19,10 +19,10 @@ import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
+import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 import ManualForecaster from "./ManualForecaster";
 import TeamFeatureList from "./TeamFeatureList";
 import ThroughputBarChart from "./ThroughputChart";
-import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -43,8 +43,15 @@ const TeamDetail: React.FC = () => {
 	const [manualForecastResult, setManualForecastResult] =
 		useState<ManualForecast | null>(null);
 
-	const { teamService, forecastService, updateSubscriptionService } =
-		useContext(ApiServiceContext);
+	const [showCycleTimeScatterPlot, setShowCycleTimeScatterPlot] =
+		useState<boolean>(false);
+
+	const {
+		teamService,
+		forecastService,
+		updateSubscriptionService,
+		previewFeatureService,
+	} = useContext(ApiServiceContext);
 
 	const fetchTeam = useCallback(async () => {
 		const teamData = await teamService.getTeam(teamId);
@@ -126,10 +133,25 @@ const TeamDetail: React.FC = () => {
 			fetchTeam();
 		}
 
+		const loadPreviewFeature = async () => {
+			const cycleTimePreviewFeature =
+				await previewFeatureService.getFeatureByKey("CycleTimeScatterPlot");
+			setShowCycleTimeScatterPlot(cycleTimePreviewFeature?.enabled ?? false);
+		};
+
+		loadPreviewFeature();
+
 		return () => {
 			updateSubscriptionService.unsubscribeFromTeamUpdates(teamId);
 		};
-	}, [team, subscribedToUpdates, updateSubscriptionService, teamId, fetchTeam]);
+	}, [
+		team,
+		subscribedToUpdates,
+		updateSubscriptionService,
+		teamId,
+		fetchTeam,
+		previewFeatureService,
+	]);
 
 	return (
 		<LoadingAnimation hasError={false} isLoading={isLoading}>
@@ -194,7 +216,10 @@ const TeamDetail: React.FC = () => {
 								</Tooltip>
 							)}
 							<ThroughputBarChart team={team} />
-							<CycleTimeScatterPlotChart team={team} />
+
+							{showCycleTimeScatterPlot && (
+								<CycleTimeScatterPlotChart team={team} />
+							)}
 						</InputGroup>
 					</Grid>
 				)}

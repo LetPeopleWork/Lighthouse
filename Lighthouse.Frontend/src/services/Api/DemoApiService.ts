@@ -151,9 +151,9 @@ export class DemoApiService
 	private readonly previewFeatures = [
 		new PreviewFeature(
 			0,
-			"LighthouseChart",
-			"Lighthouse Chart",
-			"Shows Burndown Chart with Forecasts for each Feature in a Project",
+			"CycleTimeScatterplot",
+			"Cycle Time Scatterplot",
+			"Shows Cycle Time Scatterplot for a team",
 			true,
 		),
 		new PreviewFeature(
