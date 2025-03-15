@@ -159,6 +159,37 @@ namespace Lighthouse.Backend.API
             return Ok(result);
         }
 
+        [HttpGet("{teamId}/workitems")]
+        public ActionResult<IEnumerable<WorkItemDto>> GetWorkItems(int teamId)
+        {
+            var team = teamRepository.GetById(teamId);
+            if (team == null)
+            {
+                return NotFound();
+            }
+
+            var random = new Random();
+            var workItems = new List<WorkItemDto>();
+
+            for (int i = 0; i < 20; i++)
+            {
+                var startDate = DateTime.Now.AddDays(-random.Next(0, 30));
+                var completedDate = startDate.AddDays(random.Next(0, 10));
+
+                workItems.Add(new WorkItemDto
+                {
+                    Id = i + 1,
+                    Name = $"WorkItem {i + 1}",
+                    WorkItemReference = $"WI-{random.Next(1000, 9999)}",
+                    Url = $"http://example.com/workitem/{i + 1}",
+                    StartedDate = startDate,
+                    ClosedDate = completedDate
+                });
+            }
+
+            return Ok(workItems);
+        }
+
         private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)
         {
             team.Name = teamSetting.Name;

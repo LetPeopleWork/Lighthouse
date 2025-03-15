@@ -6,85 +6,104 @@ import {
 	ChartsYAxis,
 	ResponsiveChartContainer,
 	ScatterPlot,
+	type ScatterValueType,
 } from "@mui/x-charts";
 import type React from "react";
+import { useContext, useEffect, useState } from "react";
 import type { ITeam } from "../../../models/Team/Team";
+import type { IWorkItem } from "../../../models/WorkItem";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface CycleTimeScatterPlotChartProps {
 	team: ITeam;
 }
 
+interface CycleTimePoint extends IWorkItem {
+	cycleTime: number;
+}
+
+interface PercentileLine {
+	percentile: number;
+	value: number;
+	color: string;
+}
+
 const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	team,
 }) => {
-	console.log("Team:", team);
+	const [cycleTimeData, setCycleTimeData] = useState<CycleTimePoint[]>([]);
+	const [percentiles, setPercentiles] = useState<PercentileLine[]>([]);
 
-	// Hardcoded data for now
-	const generateMockData = () => {
-		const today = new Date();
-		const data = [];
+	const { teamService } = useContext(ApiServiceContext);
 
-		// Generate 20 random data points within the last 90 days
-		for (let i = 0; i < 20; i++) {
-			const daysAgo = Math.floor(Math.random() * 90);
-			const cycleTime = Math.floor(Math.random() * 20) + 1; // 1 to 20 days
+	useEffect(() => {
+		const fetchCycleTimeData = async () => {
+			const workItems = await teamService.getWorkItems(team.id);
 
-			const date = new Date(today);
-			date.setDate(date.getDate() - daysAgo);
+			// Transform data for scatter plot - add cycle time calculation
+			const scatterplotData: CycleTimePoint[] = workItems.map((workItem) => {
+				const cycleTimeDays =
+					Math.floor(
+						(workItem.closedDate.getTime() - workItem.startedDate.getTime()) /
+							(1000 * 60 * 60 * 24),
+					) + 1;
 
-			data.push({
-				x: date.getTime(), // timestamp
-				y: cycleTime, // days
-				id: `item-${i}`,
-				url: `https://example.com/work-item/${i}`,
+				// Update the work item with cycle time data
+				return {
+					...workItem,
+					cycleTime: cycleTimeDays,
+				};
 			});
-		}
 
-		return data;
-	};
-
-	const data = generateMockData();
-
-	// Calculate percentiles (50th, 70th, 85th, 95th)
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-	const calculatePercentiles = (data: any[]) => {
-		const values = [...data.map((item) => item.y)].sort((a, b) => a - b);
-		const getPercentile = (p: number) => {
-			const pos = (values.length * p) / 100 - 1;
-			const index = Math.ceil(pos);
-
-			if (index < 0) return values[0];
-			if (index >= values.length) return values[values.length - 1];
-
-			return values[index];
+			setCycleTimeData(scatterplotData);
 		};
 
-		return {
-			p50: getPercentile(50),
-			p70: getPercentile(70),
-			p85: getPercentile(85),
-			p95: getPercentile(95),
-		};
-	};
+		fetchCycleTimeData();
+	}, [teamService, team]);
 
-	const percentiles = calculatePercentiles(data);
+	useEffect(() => {
+		const calculatePercentiles = (data: CycleTimePoint[]) => {
+			const values = [...data.map((item) => item.cycleTime)].sort(
+				(a, b) => a - b,
+			);
+			const getPercentile = (p: number) => {
+				const pos = (values.length * p) / 100 - 1;
+				const index = Math.ceil(pos);
+
+				if (index < 0) return values[0];
+				if (index >= values.length) return values[values.length - 1];
+
+				return values[index];
+			};
+
+			setPercentiles([
+				{ percentile: 50, value: getPercentile(50), color: "green" },
+				{ percentile: 70, value: getPercentile(70), color: "blue" },
+				{ percentile: 85, value: getPercentile(85), color: "orange" },
+				{ percentile: 95, value: getPercentile(95), color: "red" },
+			]);
+		};
+
+		calculatePercentiles(cycleTimeData);
+	}, [cycleTimeData]);
 
 	const handleItemClick = (itemId: number) => {
-		const item = data.find((d) => d.id === `item-${itemId}`);
-		if (item) {
+		const item = cycleTimeData.find((d) => d.id === itemId);
+		if (item?.url) {
 			window.open(item.url, "_blank");
 		}
 	};
 
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-	const formatValue = (value: any) => {
-		if (value && typeof value.x === "number") {
-			return `Date: ${new Date(value.x).toLocaleDateString()}, Cycle Time: ${value.y} days`;
+	const formatValue = (value: ScatterValueType) => {
+		const point = cycleTimeData.find((d) => d.id === value.id);
+		if (point) {
+			return `${point.name} - Cycle Time: ${point.cycleTime} days`;
 		}
+
 		return "";
 	};
 
-	return data.length > 0 ? (
+	return cycleTimeData.length > 0 ? (
 		<ResponsiveChartContainer
 			height={500}
 			xAxis={[
@@ -92,6 +111,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					id: "timeAxis",
 					scaleType: "time",
 					label: "Date",
+					valueFormatter: (value) => {
+						return new Date(value).toLocaleDateString();
+					},
 				},
 			]}
 			yAxis={[
@@ -105,48 +127,40 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 			series={[
 				{
 					type: "scatter",
-					data: data,
+					data: cycleTimeData.map((point) => ({
+						x: point.closedDate.getTime(),
+						y: point.cycleTime,
+						id: point.id,
+						data: point,
+					})),
 					xAxisId: "timeAxis",
 					yAxisId: "cycleTimeAxis",
 					color: "rgba(48, 87, 78, 1)",
 					valueFormatter: formatValue,
 					markerSize: 6,
-					// Customize marker appearance
 					highlightScope: { highlighted: "item", faded: "global" },
 				},
 			]}
 		>
 			{/* Add reference lines for each percentile */}
-			<ChartsReferenceLine
-				y={percentiles.p50}
-				label={`50th percentile: ${percentiles.p50} days`}
-				labelAlign="start"
-				lineStyle={{ stroke: "green", strokeWidth: 1, strokeDasharray: "5 5" }}
-			/>
-			<ChartsReferenceLine
-				y={percentiles.p70}
-				label={`70th percentile: ${percentiles.p70} days`}
-				labelAlign="start"
-				lineStyle={{ stroke: "blue", strokeWidth: 1, strokeDasharray: "5 5" }}
-			/>
-			<ChartsReferenceLine
-				y={percentiles.p85}
-				label={`85th percentile: ${percentiles.p85} days`}
-				labelAlign="start"
-				lineStyle={{ stroke: "orange", strokeWidth: 1, strokeDasharray: "5 5" }}
-			/>
-			<ChartsReferenceLine
-				y={percentiles.p95}
-				label={`95th percentile: ${percentiles.p95} days`}
-				labelAlign="start"
-				lineStyle={{ stroke: "red", strokeWidth: 1, strokeDasharray: "5 5" }}
-			/>
+			{percentiles.map((p) => (
+				<ChartsReferenceLine
+					key={`percentile-${p.percentile}`}
+					y={p.value}
+					label={`${p.percentile}th percentile: ${p.value} days`}
+					labelAlign="start"
+					lineStyle={{
+						stroke: p.color,
+						strokeWidth: 1,
+						strokeDasharray: "5 5",
+					}}
+				/>
+			))}
 
 			<ChartsXAxis />
 			<ChartsYAxis />
 			<ScatterPlot
 				onItemClick={(_event, itemData) => {
-					console.log("Item clicked:", itemData);
 					if (itemData?.dataIndex) {
 						handleItemClick(itemData.dataIndex);
 					}
