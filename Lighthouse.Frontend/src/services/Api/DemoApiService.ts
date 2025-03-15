@@ -23,6 +23,7 @@ import { Project } from "../../models/Project/Project";
 import type { IProjectSettings } from "../../models/Project/ProjectSettings";
 import { Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
+import type { IWorkItem } from "../../models/WorkItem";
 import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
@@ -151,9 +152,9 @@ export class DemoApiService
 	private readonly previewFeatures = [
 		new PreviewFeature(
 			0,
-			"LighthouseChart",
-			"Lighthouse Chart",
-			"Shows Burndown Chart with Forecasts for each Feature in a Project",
+			"CycleTimeScatterPlot",
+			"Cycle Time Scatterplot",
+			"Shows Cycle Time Scatterplot for a team",
 			true,
 		),
 		new PreviewFeature(
@@ -888,6 +889,52 @@ export class DemoApiService
 				new Date(),
 			),
 		];
+	}
+
+	async getWorkItems(teamId: number): Promise<IWorkItem[]> {
+		console.log(`Getting Work Items for Team ${teamId}`);
+
+		await this.delay();
+
+		const workItems: IWorkItem[] = [];
+
+		// Generate random dates within the last 30 days
+		const generateWorkItem = (id: number) => {
+			// Random date between now and 30 days ago
+			const getRandomDate = (maxDaysAgo: number) => {
+				const today = new Date();
+				const daysAgo = Math.floor(Math.random() * (maxDaysAgo + 1));
+				const date = new Date(today);
+				date.setDate(today.getDate() - daysAgo);
+				return date;
+			};
+
+			// Generate random work item
+			const startedDate = getRandomDate(30);
+			// Closed date must be after start date (or same day)
+			const daysAfterStart = Math.floor(
+				Math.random() * (30 - (30 - startedDate.getDate()) + 1),
+			);
+			const closedDate = new Date(startedDate);
+			closedDate.setDate(startedDate.getDate() + daysAfterStart);
+
+			return {
+				name: `Work Item ${id}`,
+				id: id,
+				workItemReference: `WI-${id}`,
+				url: `https://example.com/work-items/${id}`,
+				startedDate,
+				closedDate,
+			};
+		};
+
+		// Generate 20 work items
+		for (let i = 1; i <= 20; i++) {
+			const workItem = generateWorkItem(i);
+			workItems.push(workItem);
+		}
+
+		return workItems;
 	}
 
 	recreateFeatures(): void {

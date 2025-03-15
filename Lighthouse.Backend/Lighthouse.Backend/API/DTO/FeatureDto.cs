@@ -16,13 +16,12 @@ namespace Lighthouse.Backend.API.DTO
 
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
 
-            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(50, 70, 85, 95) ?? Enumerable.Empty<WhenForecastDto>());
+            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(50, 70, 85, 95) ?? []);
 
             foreach (var work in feature.FeatureWork)
             {
-                if (!RemainingWork.ContainsKey(work.TeamId))
+                if (RemainingWork.TryAdd(work.TeamId, 0))
                 {
-                    RemainingWork.Add(work.TeamId, 0);
                     TotalWork.Add(work.TeamId, 0);
                 }
 

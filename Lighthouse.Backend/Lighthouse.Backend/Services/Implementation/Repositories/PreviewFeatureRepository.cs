@@ -14,7 +14,18 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         {
             RemoveIfExists(new PreviewFeature { Id = 0, Key = PreviewFeatureKeys.LighthouseChartKey, Name = "Lighthouse Chart", Description = "Shows Burndown Chart with Forecasts for each Feature in a Project", Enabled = false });
 
+            AddIfNotExists(new PreviewFeature { Id = 1, Key = PreviewFeatureKeys.CycleTimeScatterPlotKey, Name = "Cycle Time Scatter Plot", Description = "Shows Cycle Time Scatterplot for a team", Enabled = false });
+
             SaveSync();
+        }
+
+        private void AddIfNotExists(PreviewFeature previewFeature)
+        {
+            PreviewFeature? existingDefault = GetFeatureByName(previewFeature);
+            if (existingDefault == null)
+            {
+                Add(previewFeature);
+            }
         }
 
         private void RemoveIfExists(PreviewFeature previewFeature)
@@ -28,7 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         private PreviewFeature? GetFeatureByName(PreviewFeature previewFeature)
         {
-            return GetByPredicate((feature) => feature.Name == previewFeature.Name);
+            return GetByPredicate((feature) => feature.Key == previewFeature.Key);
         }
     }
 }
