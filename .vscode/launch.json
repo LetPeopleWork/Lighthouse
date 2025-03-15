@@ -7,13 +7,19 @@
             "name": "Launch Chrome against localhost",
             "url": "http://localhost:4000",
             "webRoot": "${workspaceFolder}/Lighthouse.Frontend"
-        },
+        },    
         {
-            "type": "vscode-js-webkit-debug",
+            "name": "Debug Backend",
+            "type": "coreclr",
             "request": "launch",
-            "name": "Launch Safari against localhost",
-            "url": "http://localhost:4000",
-            "webRoot": "${workspaceFolder}/Lighthouse.Frontend"
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Lighthouse.Backend/Lighthouse.Backend/bin/Debug/net9.0/osx-arm64/Lighthouse",
+            "cwd": "${workspaceFolder}/Lighthouse.Backend/Lighthouse.Backend",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
         }
     ]
 }

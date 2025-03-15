@@ -1,0 +1,16 @@
+// filepath: .vscode/tasks.json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj"
+            ],
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
