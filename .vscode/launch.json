@@ -9,7 +9,20 @@
             "webRoot": "${workspaceFolder}/Lighthouse.Frontend"
         },    
         {
-            "name": "Debug Backend",
+            "name": "Debug Backend (Windows)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Lighthouse.Backend/Lighthouse.Backend/bin/Debug/net9.0/win-x64/Lighthouse.dll",
+            "cwd": "${workspaceFolder}/Lighthouse.Backend/Lighthouse.Backend",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+        {
+            "name": "Debug Backend on MacOS",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
