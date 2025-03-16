@@ -514,7 +514,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                     var state = stateValue.ToString() ?? string.Empty;
                     var changedDate = (DateTime?)changedDateValue;
 
-                    var isRelevantCategory = states.Contains(state) && previousState != null && !states.Contains(previousState);
+                    var isRelevantCategory = states.Contains(state) && (previousState == null || !states.Contains(previousState));
                     var isRelevantStateChange = changedDate.HasValue && (!latestStateChangeDate.HasValue || changedDate > latestStateChangeDate.Value);
 
                     if (isRelevantStateChange && isRelevantCategory)
