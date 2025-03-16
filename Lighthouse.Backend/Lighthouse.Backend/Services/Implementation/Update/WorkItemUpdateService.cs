@@ -312,11 +312,13 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             {
                 var feature = GetOrCreateFeature(featureRepository, featureId, project);
 
-                var (name, order, url, state) = await workItemService.GetWorkItemDetails(featureId, project);
+                var (name, order, url, state, startedDate, closedDate) = await workItemService.GetWorkItemDetails(featureId, project);
                 feature.Name = name;
                 feature.Order = order;
                 feature.Url = url;
                 feature.State = state;
+                feature.StartedDate = startedDate;
+                feature.ClosedDate = closedDate;
                 feature.IsUsingDefaultFeatureSize = false;
 
                 feature.StateCategory = MapStateToStateCategory(project, state);

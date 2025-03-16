@@ -160,7 +160,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("{teamId}/workitems")]
-        public ActionResult<IEnumerable<WorkItemDto>> GetWorkItems(int teamId)
+        public async Task<ActionResult<IEnumerable<WorkItemDto>>> GetWorkItems(int teamId)
         {
             var team = teamRepository.GetById(teamId);
             if (team == null)
@@ -168,6 +168,42 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
+            var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(team.WorkTrackingSystemConnectionId);
+
+            if (workTrackingSystem.WorkTrackingSystem == WorkTracking.WorkTrackingSystems.Jira)
+            {
+                // No support for Jira in PoC
+                var randomWorkItems = CreateRandomWorkItems();
+                return Ok(randomWorkItems);
+            }
+
+            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystem.WorkTrackingSystem);
+            var workItemIds = await workItemService.GetClosedWorkItemsForTeam(team);
+
+            var workItems = new List<WorkItemDto>();
+            var idCounter = 0;
+
+            foreach (var workItemId in workItemIds)
+            {
+                var (name, _, url, _, startedDate, closedDate) = await workItemService.GetWorkItemDetails(workItemId, team);
+                var workItem = new WorkItem
+                {
+                    Id = idCounter++,
+                    Name = name,
+                    ReferenceId = workItemId,
+                    Url = url,
+                    StartedDate = startedDate,
+                    ClosedDate = closedDate
+                };
+
+                workItems.Add(new WorkItemDto(workItem));
+            }
+
+            return Ok(workItems);
+        }
+
+        private static List<WorkItemDto> CreateRandomWorkItems()
+        {
             var random = new Random();
             var workItems = new List<WorkItemDto>();
 
@@ -176,18 +212,20 @@ namespace Lighthouse.Backend.API
                 var startDate = DateTime.Now.AddDays(-random.Next(0, 30));
                 var completedDate = startDate.AddDays(random.Next(0, 10));
 
-                workItems.Add(new WorkItemDto
+                var workItem = new WorkItem
                 {
                     Id = i + 1,
                     Name = $"WorkItem {i + 1}",
-                    WorkItemReference = $"WI-{random.Next(1000, 9999)}",
+                    ReferenceId = $"WI-{random.Next(1000, 9999)}",
                     Url = $"http://example.com/workitem/{i + 1}",
                     StartedDate = startDate,
                     ClosedDate = completedDate
-                });
+                };
+
+                workItems.Add(new WorkItemDto(workItem));
             }
 
-            return Ok(workItems);
+            return workItems;
         }
 
         private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)

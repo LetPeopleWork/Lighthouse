@@ -11,7 +11,9 @@ namespace Lighthouse.Backend.Services.Interfaces
     public interface IWorkItemService
     {
         Task<int[]> GetThroughputForTeam(Team team);
-        
+
+        Task<string[]> GetClosedWorkItemsForTeam(Team team);
+
         Task<List<string>> GetFeaturesForProject(Project project);
 
         Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery);
@@ -20,7 +22,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team);
 
-        Task<(string name, string order, string url, string state)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner);
+        Task<(string name, string order, string url, string state, DateTime? startedDate, DateTime? closedDate)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner);
 
         string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder);
 

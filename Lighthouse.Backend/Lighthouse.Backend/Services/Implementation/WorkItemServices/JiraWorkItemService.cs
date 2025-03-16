@@ -34,6 +34,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return await GetClosedItemsPerDay(client, team);
         }
 
+        public Task<string[]> GetClosedWorkItemsForTeam(Team team)
+        {
+            return Task.FromResult(Array.Empty<string>());
+        }
+
         public async Task<List<string>> GetFeaturesForProject(Project project)
         {
             logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
@@ -119,7 +124,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return (remainingItems, totalItems);
         }
 
-        public async Task<(string name, string order, string url, string state)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<(string name, string order, string url, string state, DateTime? startedDate, DateTime? closedDate)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             logger.LogInformation("Getting Issue Details for {IssueId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
@@ -129,7 +134,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var url = $"{jiraRestClient.BaseAddress}browse/{issue.Key}";
 
-            return (issue.Title, issue.Rank, url, issue.State);
+            return (issue.Title, issue.Rank, url, issue.State, null, null);
         }
 
         public async Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)

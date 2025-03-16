@@ -260,7 +260,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
-            var (name, rank, url, state) = await subject.GetWorkItemDetails("366", team);
+            var (name, rank, url, state, startedDate, closedDate) = await subject.GetWorkItemDetails("366", team);
 
             Assert.Multiple(() =>
             {

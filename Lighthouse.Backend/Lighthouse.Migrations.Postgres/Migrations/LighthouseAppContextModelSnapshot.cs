@@ -63,6 +63,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ClosedDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsUnparentedFeature")
                         .HasColumnType("boolean");
 
@@ -80,6 +83,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("ReferenceId")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("StartedDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("State")
                         .IsRequired()

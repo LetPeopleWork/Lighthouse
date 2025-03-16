@@ -1,10 +1,9 @@
 ﻿using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Interfaces;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models
 {
-    public class Feature : IEntity
+    public class Feature : WorkItem
     {
         public Feature() : this([])
         {
@@ -20,21 +19,7 @@ namespace Lighthouse.Backend.Models
             {
                 FeatureWork.Add(new FeatureWork(team, remainingItems, totalItems, this));
             }
-        }
-
-        public int Id { get; set; }
-
-        public string ReferenceId { get; set; } = string.Empty;
-
-        public string Name { get; set; }
-
-        public string Order { get; set; }
-
-        public string State { get; set; } = string.Empty;
-
-        public StateCategories StateCategory { get; set; } = StateCategories.Unknown;
-
-        public string? Url { get; set; }
+        }     
 
         public WhenForecast Forecast
         {

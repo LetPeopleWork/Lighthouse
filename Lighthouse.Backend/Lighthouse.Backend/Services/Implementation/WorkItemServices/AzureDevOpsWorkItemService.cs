@@ -7,11 +7,13 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 
+using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
+
 namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 {
     public class AzureDevOpsWorkItemService : IWorkItemService
     {
-        private readonly Cache<string, WorkItem> workItemCache = new Cache<string, WorkItem>();
+        private readonly Cache<string, AdoWorkItem> workItemCache = new Cache<string, AdoWorkItem>();
 
         private readonly ILogger<AzureDevOpsWorkItemService> logger;
         private readonly ICryptoService cryptoService;
@@ -28,6 +30,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
             return await GetClosedItemsPerDay(witClient, team);
+        }
+
+        public async Task<string[]> GetClosedWorkItemsForTeam(Team team)
+        {
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
+            return await GetClosedWorkItems(witClient, team);
         }
 
         public async Task<List<string>> GetFeaturesForProject(Project project)
@@ -114,7 +122,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return relatedWorkItems;
         }
 
-        public async Task<(string name, string order, string url, string state)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<(string name, string order, string url, string state, DateTime? startedDate, DateTime? closedDate)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
         {
             logger.LogInformation("Getting Work Item Details for {ItemId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
 
@@ -137,7 +145,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 workItemOrder = backlogPriority?.ToString() ?? string.Empty;
             }
 
-            return (workItemTitle, workItemOrder, url, state);
+            var startedDate = GeStartedDateFromWorkItem(workItem);
+            var closedDate = GetClosedDateFromWorkItem(workItem, workItemQueryOwner.DoneStates);
+
+            if (startedDate == null && closedDate != null)
+            {
+                startedDate = closedDate;
+            }
+
+            return (workItemTitle, workItemOrder, url, state, startedDate, closedDate);
         }
 
         public async Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
@@ -293,7 +309,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return 0;
         }
 
-        
+
 
         public async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
         {
@@ -343,7 +359,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return orderAsInt;
         }
 
-        private async Task<WorkItem?> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
+        private async Task<AdoWorkItem?> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
         {
             var query = PrepareQuery([], workItemQueryOwner.AllStates, workItemQueryOwner.WorkItemQuery, additionalFields);
             query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
@@ -381,7 +397,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return (remainingWorkItems.Count(), totalWorkItems.Count());
         }
 
-        private async Task<WorkItem> GetWorkItemFromCache(string itemId, WorkItemTrackingHttpClient witClient)
+        private async Task<AdoWorkItem> GetWorkItemFromCache(string itemId, WorkItemTrackingHttpClient witClient)
         {
             logger.LogDebug("Trying to get Work Item {ItemId} from cache...", itemId);
             var workItem = workItemCache.Get(itemId);
@@ -396,7 +412,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return workItem;
         }
 
-        private bool IsWorkItemRelated(WorkItem workItem, string relatedWorkItemId, string additionalField)
+        private bool IsWorkItemRelated(AdoWorkItem workItem, string relatedWorkItemId, string additionalField)
         {
             logger.LogDebug("Checking if Work Item: {WorkItemID} is related to {RelatedWorkItemId}", workItem.Id, relatedWorkItemId);
 
@@ -437,30 +453,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
+        private async Task<string[]> GetClosedWorkItems(WorkItemTrackingHttpClient witClient, Team team)
+        {
+            var throughputSettings = team.GetThroughputSettings();
+
+            var query = PrepareQuery(team.WorkItemTypes, team.DoneStates, team.WorkItemQuery);
+            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z')";
+            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z')";
+
+            logger.LogDebug("Getting closed items per day for for team {TeamName} using query '{Query}'", team.Name, query);
+
+            var workItems = await GetWorkItemsByQuery(witClient, query);
+
+            return workItems.Select(wi => wi.Id.ToString()).ToArray();
+        }
+
         private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, Team team)
         {
             var throughputSettings = team.GetThroughputSettings();
             var numberOfDays = throughputSettings.NumberOfDays;
             var closedItemsPerDay = new int[numberOfDays];
 
-            var query = PrepareQuery(team.WorkItemTypes, team.DoneStates, team.WorkItemQuery);
-            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z')";
-            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z')";
+            var workItems = await GetClosedWorkItems(witClient, team);
 
-            logger.LogDebug("Getting closed items per day for thre last {NumberOfDays} for team {TeamName} using query '{Query}'", numberOfDays, team.Name, query);
-
-            var workItems = await GetWorkItemsByQuery(witClient, query);
-
-            foreach (WorkItemReference workItemRef in workItems)
+            foreach (var workItemId in workItems)
             {
-                var workItem = await GetWorkItemFromCache(workItemRef.Id.ToString(), witClient);
-                string? closedDate = GetClosedDateFromWorkItem(workItem);
+                var workItem = await GetWorkItemFromCache(workItemId, witClient);
+                var closedDate = GetClosedDateFromWorkItem(workItem, team.DoneStates);
 
-                if (!string.IsNullOrEmpty(closedDate))
+                if (closedDate.HasValue)
                 {
-                    var changedDate = DateTime.Parse(closedDate);
-
-                    int index = (changedDate.Date - throughputSettings.StartDate).Days;
+                    int index = (closedDate.Value.Date - throughputSettings.StartDate).Days;
 
                     if (index >= 0 && index < numberOfDays)
                     {
@@ -472,21 +495,49 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return closedItemsPerDay;
         }
 
-        private static string? GetClosedDateFromWorkItem(WorkItem workItem)
+        private static DateTime? GetClosedDateFromWorkItem(AdoWorkItem workItem, List<string> doneStates)
         {
+            // TODO/Workaround: Get history and check when the state was changed to a done state
+            var state = workItem.Fields[AzureDevOpsFieldNames.State].ToString();
+            if (string.IsNullOrEmpty(state) || !doneStates.Contains(state))
+            {
+                return null;
+            }
+
+            string? date = null;
+
             if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ClosedDate, out var closedDate))
             {
-                return closedDate.ToString();
+                date = closedDate.ToString();
             }
-
-            if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ResolvedDate, out var resolvedDate))
+            else if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ResolvedDate, out var resolvedDate))
             {
-                return resolvedDate.ToString();
+                date = resolvedDate.ToString();
+            }
+            else if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ActivatedDate, out var activatedDate))
+            {
+                date = activatedDate.ToString();
             }
 
+            if (!string.IsNullOrEmpty(date))
+            {
+                return DateTime.Parse(date);
+            }
+
+            return null;
+        }
+
+        private static DateTime? GeStartedDateFromWorkItem(AdoWorkItem workItem)
+        {
+            // TODO/Workaround: Get history and check when the state was changed to a doing state
             if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ActivatedDate, out var activatedDate))
             {
-                return activatedDate.ToString();
+                var date = activatedDate.ToString();
+
+                if (!string.IsNullOrEmpty(date))
+                {
+                    return DateTime.Parse(date);
+                }
             }
 
             return null;

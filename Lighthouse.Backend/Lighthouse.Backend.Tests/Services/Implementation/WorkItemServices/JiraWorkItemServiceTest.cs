@@ -259,7 +259,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
 
-            var (name, rank, url, state) = await subject.GetWorkItemDetails("PROJ-18", team);
+            var (name, rank, url, state, startedDate, closedDate) = await subject.GetWorkItemDetails("PROJ-18", team);
 
             Assert.Multiple(() =>
             {

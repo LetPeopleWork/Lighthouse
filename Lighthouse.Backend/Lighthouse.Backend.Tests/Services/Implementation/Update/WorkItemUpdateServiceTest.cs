@@ -121,7 +121,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature2 = new Feature(team, 2) { ReferenceId = "1337" };
 
             workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature1.Name, feature1.Order, feature1.Url ?? string.Empty, feature1.State));
+            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature1.Name, feature1.Order, feature1.Url ?? string.Empty, feature1.State, null, null));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature1.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((remainingWork, 20)));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature2.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 12)));
 
@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature = new Feature(team, remainingWork) { ReferenceId = "12", State = "Done" };
 
             workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature.Name, feature.Order, feature.Url ?? string.Empty, feature.State));
+            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature.Name, feature.Order, feature.Url ?? string.Empty, feature.State, null, null));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((remainingWork, totalWork)));
 
             var subject = CreateSubject();
@@ -197,7 +197,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var feature = new Feature(team, 2) { ReferenceId = "12", State = featureState };
 
             workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<string> { feature.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature.Name, feature.Order, feature.Url ?? string.Empty, feature.State));
+            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature.Name, feature.Order, feature.Url ?? string.Empty, feature.State, null, null));
             workItemServiceMock.Setup(x => x.GetRelatedWorkItems(feature.ReferenceId, It.IsAny<Team>())).Returns(Task.FromResult((2, 20)));
 
             var subject = CreateSubject();
@@ -230,7 +230,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var features = new List<Feature>() { feature1, feature2 };
 
             workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<string> { feature1.ReferenceId, feature2.ReferenceId }));
-            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature1.Name, feature1.Order, feature1.Url ?? string.Empty, feature1.State));
+            workItemServiceMock.Setup(x => x.GetWorkItemDetails("12", project)).ReturnsAsync((feature1.Name, feature1.Order, feature1.Url ?? string.Empty, feature1.State, null, null));
 
             featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => features.SingleOrDefault(predicate));
 
