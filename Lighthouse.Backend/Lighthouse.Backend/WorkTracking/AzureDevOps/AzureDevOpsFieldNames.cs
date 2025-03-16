@@ -27,5 +27,7 @@
         public static string StackRank => "Microsoft.VSTS.Common.StackRank";
 
         public static string BacklogPriority => "Microsoft.VSTS.Common.BacklogPriority";
+
+        public static string ChangedDate => "System.ChangedDate";
     }
 }

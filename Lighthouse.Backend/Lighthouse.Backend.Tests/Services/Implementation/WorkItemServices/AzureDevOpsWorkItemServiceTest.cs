@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [TestCase(new[] { "Closed" }, 5)]
         [TestCase(new[] { "Closed", "Resolved" }, 6)]
         [TestCase(new[] { "Closed", "Resolved", "Active" }, 10)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S6561:Avoid using \"DateTime.Now\" for benchmarking or timing operations", Justification = "Not used for benchmarking here")]
         public async Task GetClosedWorkItemsForTeam_FullHistory_DynamicThroughout_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
         {
             var subject = CreateSubject();
@@ -81,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         {
             var subject = CreateSubject();
             var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
-            
+
             project.WorkItemTypes.Clear();
             project.WorkItemTypes.Add("Bug");
 
@@ -260,7 +261,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
 
-            var (name, rank, url, state, startedDate, closedDate) = await subject.GetWorkItemDetails("366", team);
+            var (name, rank, url, state, _, _) = await subject.GetWorkItemDetails("366", team);
 
             Assert.Multiple(() =>
             {
@@ -268,6 +269,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
                 Assert.That(rank, Is.EqualTo("1999821120"));
                 Assert.That(state, Is.EqualTo("Resolved"));
                 Assert.That(url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/366"));
+            });
+        }
+
+        [Test]
+        public async Task GetWorkItemDetails_ReturnsCorrectStartedDateBasedOnStateMapping()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+
+            var (_, _, _, _, startedDate, closedDate) = await subject.GetWorkItemDetails("375", team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(startedDate.HasValue, Is.True);
+                Assert.That(startedDate?.Date, Is.EqualTo(new DateTime(2025, 2, 26, 0, 0, 0, DateTimeKind.Utc)));
+
+                Assert.That(closedDate.HasValue, Is.False);
+            });
+        }
+
+        [Test]
+        public async Task GetWorkItemDetails_ReturnsCorrectClosedDateBasedOnStateMapping()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            team.DoneStates.Add("Active");
+
+            var (_, _, _, _, _, closedDate) = await subject.GetWorkItemDetails("375", team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(closedDate.HasValue, Is.True);
+                Assert.That(closedDate?.Date, Is.EqualTo(new DateTime(2025, 2, 26, 0, 0, 0, DateTimeKind.Utc)));
+            });
+        }
+
+        [Test]
+        public async Task GetWorkItemDetails_ClosedDateButNoStartedDate_SetsStartedDateToClosedDate()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            team.DoingStates.Remove("Active");
+            team.DoneStates.Add("Active");
+
+            var (_, _, _, _, startedDate, closedDate) = await subject.GetWorkItemDetails("375", team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(startedDate, Is.EqualTo(closedDate));
             });
         }
 
@@ -420,6 +470,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         [TestCase("[System.TeamProject] = 'CMFTTestTeamProject'", true)]
         [TestCase("[System.TeamProject] = 'CMFTTestTeamProject' AND [System.Tags] CONTAINS 'NotExistingTag'", false)]
         [TestCase("[System.TeamProject] = 'SomethingThatDoesNotExist'", false)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S6561:Avoid using \"DateTime.Now\" for benchmarking or timing operations", Justification = "Not used for benchmarking here")]
         public async Task ValidateTeamSettings_ValidConnectionSettings_ReturnsTrueIfTeamHasThroughput(string query, bool expectedValue)
         {
             var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;

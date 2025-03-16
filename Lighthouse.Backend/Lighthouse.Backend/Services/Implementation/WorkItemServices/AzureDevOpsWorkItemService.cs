@@ -6,7 +6,6 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
@@ -145,8 +144,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 workItemOrder = backlogPriority?.ToString() ?? string.Empty;
             }
 
-            var startedDate = GeStartedDateFromWorkItem(workItem);
-            var closedDate = GetClosedDateFromWorkItem(workItem, workItemQueryOwner.DoneStates);
+            var startedDate = await GetStateTransitionDate(witClient, workItem?.Id, workItemQueryOwner.DoingStates);
+            var closedDate = await GetStateTransitionDate(witClient, workItem?.Id, workItemQueryOwner.DoneStates);
 
             if (startedDate == null && closedDate != null)
             {
@@ -479,7 +478,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             foreach (var workItemId in workItems)
             {
                 var workItem = await GetWorkItemFromCache(workItemId, witClient);
-                var closedDate = GetClosedDateFromWorkItem(workItem, team.DoneStates);
+                var closedDate = await GetStateTransitionDate(witClient, workItem.Id, team.DoneStates);
 
                 if (closedDate.HasValue)
                 {
@@ -495,52 +494,39 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return closedItemsPerDay;
         }
 
-        private static DateTime? GetClosedDateFromWorkItem(AdoWorkItem workItem, List<string> doneStates)
+        private static async Task<DateTime?> GetStateTransitionDate(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> states)
         {
-            // TODO/Workaround: Get history and check when the state was changed to a done state
-            var state = workItem.Fields[AzureDevOpsFieldNames.State].ToString();
-            if (string.IsNullOrEmpty(state) || !doneStates.Contains(state))
+            DateTime? latestStateChangeDate = null;
+            string? previousState = null;
+
+            if (!workItemId.HasValue)
             {
-                return null;
+                return latestStateChangeDate;
             }
 
-            string? date = null;
+            var revisions = await witClient.GetRevisionsAsync(workItemId.Value);
 
-            if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ClosedDate, out var closedDate))
+            foreach (var revisionFields in revisions.Select(revision => revision.Fields))
             {
-                date = closedDate.ToString();
-            }
-            else if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ResolvedDate, out var resolvedDate))
-            {
-                date = resolvedDate.ToString();
-            }
-            else if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ActivatedDate, out var activatedDate))
-            {
-                date = activatedDate.ToString();
-            }
-
-            if (!string.IsNullOrEmpty(date))
-            {
-                return DateTime.Parse(date);
-            }
-
-            return null;
-        }
-
-        private static DateTime? GeStartedDateFromWorkItem(AdoWorkItem workItem)
-        {
-            // TODO/Workaround: Get history and check when the state was changed to a doing state
-            if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ActivatedDate, out var activatedDate))
-            {
-                var date = activatedDate.ToString();
-
-                if (!string.IsNullOrEmpty(date))
+                if (revisionFields.TryGetValue(AzureDevOpsFieldNames.State, out var stateValue) &&
+                    revisionFields.TryGetValue(AzureDevOpsFieldNames.ChangedDate, out var changedDateValue))
                 {
-                    return DateTime.Parse(date);
+                    var state = stateValue.ToString() ?? string.Empty;
+                    var changedDate = (DateTime?)changedDateValue;
+
+                    var isRelevantCategory = states.Contains(state) && previousState != null && !states.Contains(previousState);
+                    var isRelevantStateChange = changedDate.HasValue && (!latestStateChangeDate.HasValue || changedDate > latestStateChangeDate.Value);
+
+                    if (isRelevantStateChange && isRelevantCategory)
+                    {
+                        latestStateChangeDate = changedDate;
+                    }
+
+                    previousState = state;
                 }
             }
 
-            return null;
+            return latestStateChangeDate;
         }
 
         private static string PrepareQuery(
