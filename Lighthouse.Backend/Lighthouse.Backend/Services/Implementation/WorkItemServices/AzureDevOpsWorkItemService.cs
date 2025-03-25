@@ -446,8 +446,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
                 return queryResult.WorkItems;
             }
-            catch (VssServiceException)
+            catch (VssServiceException ex)
             {
+                logger.LogError(ex, "Error while querying Work Items with Query '{Query}'", query);
                 return [];
             }
         }
@@ -544,7 +545,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 additionalFieldsQuery = ", " + string.Join(", ", additionalFields.Where(f => !string.IsNullOrEmpty(f)).Select(field => $"[{field}]"));
             }
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{additionalFieldsQuery} FROM WorkItems WHERE {query} " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{additionalFieldsQuery} FROM WorkItems WHERE ({query}) " +
                 $"{workItemsQuery} " +
                 $"{stateQuery}";
 

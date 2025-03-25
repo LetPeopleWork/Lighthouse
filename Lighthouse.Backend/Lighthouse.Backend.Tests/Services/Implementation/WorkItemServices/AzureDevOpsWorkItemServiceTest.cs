@@ -67,6 +67,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        public async Task GetThroughputForTeam_QueryTwoTeamProjectInOr_NeverReturns()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' OR [{AzureDevOpsFieldNames.TeamProject}] = 'DummyProject'");
+            team.DoneStates.Clear();
+            team.DoneStates.Add("Closed");
+            team.UseFixedDatesForThroughput = true;
+            team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            team.ThroughputHistoryEndDate = DateTime.UtcNow;
+
+            var result = await subject.GetThroughputForTeam(team);
+            Assert.That(result.Sum(), Is.GreaterThan(0));
+        }
+
+        [Test]
         public async Task GetFeaturesForProject_TagExists_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();
