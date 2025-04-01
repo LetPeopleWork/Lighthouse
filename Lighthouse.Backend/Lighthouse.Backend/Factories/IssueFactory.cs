@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Factories
                 {
                     rank = parsedRank.ToString();
 
-                    if (!string.IsNullOrEmpty(rank))
+                    if (!string.IsNullOrEmpty(rank) && rank.Contains('|'))
                     {
                         return true;
                     }
