@@ -75,10 +75,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             team.DoneStates.Add("Closed");
             team.UseFixedDatesForThroughput = true;
             team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            team.ThroughputHistoryEndDate = DateTime.UtcNow;
+            team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
 
             var result = await subject.GetThroughputForTeam(team);
-            Assert.That(result.Sum(), Is.GreaterThan(0));
+
+            var totalThroughput = result.Sum();
+            Assert.That(totalThroughput, Is.EqualTo(7));
         }
 
         [Test]
