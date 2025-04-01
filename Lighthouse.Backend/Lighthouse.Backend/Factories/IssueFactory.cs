@@ -1,5 +1,7 @@
-﻿using Lighthouse.Backend.Services.Implementation.WorkItemServices;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Lighthouse.Backend.WorkTracking.Jira;
+using System.Globalization;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Factories
@@ -18,12 +20,13 @@ namespace Lighthouse.Backend.Factories
             this.logger = logger;
         }
 
-        public Issue CreateIssueFromJson(JsonElement json, string? additionalRelatedField = null)
+        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null)
         {
             var fields = json.GetProperty(JiraFieldNames.FieldsFieldName);
             var key = GetKeyFromJson(json);
             var title = GetTitleFromFields(fields);
-            var resolutionDate = GetResolutionDateFromFields(fields);
+            var closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates, JiraFieldNames.ResolutionDateFieldName);
+            var startedDate = GetTransitionDate(json, workitemQueryOwner.ToDoStates, JiraFieldNames.CreatedDateFieldName);
             var parentKey = GetParentFromFields(fields);
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
@@ -35,24 +38,24 @@ namespace Lighthouse.Backend.Factories
                 parentKey = fields.GetFieldValue(additionalRelatedField);
             }
 
-            logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Resoultion Date {ResolutionDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {issueType}, Status {Status}, Status Category {StatusCategory}", key, title, resolutionDate, parentKey, rank, issueType, state, statusCategory);
+            logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Closed Date {ClosedDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {IssueType}, Status {Status}, Status Category {StatusCategory}", key, title, closedDate, parentKey, rank, issueType, state, statusCategory);
 
-            return new Issue(key, title, resolutionDate, parentKey, rank, issueType, state, statusCategory, fields);
+            return new Issue(key, title, closedDate, startedDate, parentKey, rank, issueType, state, statusCategory, fields);
         }
 
         private static string GetIssueTypeFromFields(JsonElement fields)
         {
-            return fields.GetProperty("issuetype").GetProperty("name").ToString();
+            return fields.GetProperty(JiraFieldNames.IssueTypeFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
         }
 
         private static string GetStateFromFields(JsonElement fields)
         {
-            return fields.GetProperty("status").GetProperty("name").ToString();
+            return fields.GetProperty(JiraFieldNames.StatusFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
         }
 
         private static string GetStatusCategoryFromFields(JsonElement fields)
         {
-            return fields.GetProperty("status").GetProperty("statusCategory").GetProperty("name").ToString();
+            return fields.GetProperty(JiraFieldNames.StatusFieldName).GetProperty(JiraFieldNames.StatusCategoryFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
         }
 
         private string GetRankFromFields(JsonElement fields)
@@ -106,34 +109,81 @@ namespace Lighthouse.Backend.Factories
         private static string GetParentFromFields(JsonElement fields)
         {
             var parentKey = string.Empty;
-            if (fields.TryGetProperty("parent", out var parent))
+            if (fields.TryGetProperty(JiraFieldNames.ParentFieldName, out var parent))
             {
-                parentKey = parent.GetProperty("key").ToString();
+                parentKey = parent.GetProperty(JiraFieldNames.KeyPropertyName).ToString();
             }
 
             return parentKey;
         }
 
-        private static DateTime GetResolutionDateFromFields(JsonElement fields)
+        private static DateTime GetTransitionDate(JsonElement json, IEnumerable<string> targetStates, string defaultField)
         {
-            var resolutionDate = DateTime.MinValue;
-            var resolutionDateString = fields.GetProperty(JiraFieldNames.ResolutionDateFieldName).GetString();
-            if (!string.IsNullOrEmpty(resolutionDateString))
+            var transitionDate = DateTime.MinValue;
+
+            if (json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out JsonElement changelog))
             {
-                resolutionDate = DateTime.Parse(resolutionDateString);
+                var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
+                foreach (var history in histories.EnumerateArray())
+                {
+                    var extractedDate = ExtractDateFromHistory(targetStates, history);
+
+                    if (extractedDate.HasValue)
+                    {
+                        transitionDate = extractedDate.Value;
+                    }
+                }
             }
 
-            return resolutionDate;
+            if (transitionDate == DateTime.MinValue)
+            {
+                transitionDate = GetDateByFieldName(defaultField, json);
+            }
+
+            return transitionDate;
+        }
+
+        private static DateTime? ExtractDateFromHistory(IEnumerable<string> targetStates, JsonElement history)
+        {
+            var historyEntryCreationDateAsString = history.GetProperty(JiraFieldNames.CreatedDateFieldName).GetString() ?? string.Empty;
+            var historyEntryCreationDate = DateTime.Parse(historyEntryCreationDateAsString, CultureInfo.InvariantCulture);
+
+            DateTime? transitionDate = null;
+
+            foreach (var item in history.GetProperty(JiraFieldNames.ItemsFieldName).EnumerateArray())
+            {
+                var changedField = item.GetProperty(JiraFieldNames.FieldFieldName).GetString();
+                var newStatus = item.GetProperty(JiraFieldNames.ToStringPropertyName).GetString();
+
+                if (changedField == JiraFieldNames.StatusFieldName && targetStates.Contains(newStatus))
+                {
+                    transitionDate = historyEntryCreationDate;
+                }
+            }
+
+            return transitionDate;
+        }
+
+        private static DateTime GetDateByFieldName(string fieldName, JsonElement json)
+        {
+            var fields = json.GetProperty(JiraFieldNames.FieldsFieldName);
+            var defaultFieldDateString = fields.GetProperty(fieldName).GetString();
+            if (!string.IsNullOrEmpty(defaultFieldDateString))
+            {
+                return DateTime.Parse(defaultFieldDateString, CultureInfo.InvariantCulture);
+            }
+
+            return DateTime.MinValue;
         }
 
         private static string GetTitleFromFields(JsonElement fields)
         {
-            return fields.GetFieldValue("summary");
+            return fields.GetFieldValue(JiraFieldNames.SummaryFieldName);
         }
 
         private static string GetKeyFromJson(JsonElement json)
         {
-            return json.GetProperty("key").ToString();
+            return json.GetProperty(JiraFieldNames.KeyPropertyName).ToString();
         }
     }
 }
