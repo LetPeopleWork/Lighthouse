@@ -1,5 +1,5 @@
 import { Checkbox, FormControlLabel, TextField } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useState } from "react";
 import type { ITeam } from "../../../models/Team/Team";

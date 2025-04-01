@@ -1,5 +1,5 @@
 import { Button, Container } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import React, { useCallback, useContext, useEffect } from "react";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";

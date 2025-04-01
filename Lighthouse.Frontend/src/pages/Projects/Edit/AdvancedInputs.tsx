@@ -1,5 +1,5 @@
 import { FormControlLabel, Switch, TextField, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import type React from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import ItemListManager from "../../../components/Common/ItemListManager/ItemListManager";

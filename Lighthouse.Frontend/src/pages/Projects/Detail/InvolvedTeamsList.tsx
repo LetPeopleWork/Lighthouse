@@ -1,5 +1,5 @@
 import { TextField } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import type React from "react";
 import { Link } from "react-router-dom";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";

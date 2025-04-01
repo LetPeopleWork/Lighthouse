@@ -7,7 +7,7 @@ import {
 	Collapse,
 	IconButton,
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import React, { useState } from "react";
 
 interface InputGroupProps {
