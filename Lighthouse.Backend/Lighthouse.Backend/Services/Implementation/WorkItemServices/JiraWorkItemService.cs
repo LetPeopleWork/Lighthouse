@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var workItemQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
             var stateQuery = PrepareGenericQuery(team.DoingStates, JiraFieldNames.StatusFieldName, "OR", "=");
 
-            var query = $"{team.WorkItemQuery} {workItemQuery} {stateQuery} ";
+            var query = $"({team.WorkItemQuery}) {workItemQuery} {stateQuery} ";
             var issues = await GetIssuesByQuery(jiraRestClient, query, team.AdditionalRelatedField);
 
             return issues.Select(i => i.ParentKey).Distinct();
@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             var baseQuery = $"{unparentedItemsQuery} " +
                 $"{workItemsQuery} " +
-                $"AND {team.WorkItemQuery}";
+                $"AND ({team.WorkItemQuery})";
 
             var doneWorkItemsQuery = $"{baseQuery} {doneStateQuery}";
             var remainingWorkItemsQuery = $"{baseQuery} {notDoneStateQuery}";
@@ -469,7 +469,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 historyFilter = $"AND {JiraFieldNames.ResolvedFieldName} >= {throughputSettings.StartDate:yyyy-MM-dd} AND {JiraFieldNames.ResolvedFieldName} <= {throughputSettings.EndDate.AddDays(1):yyyy-MM-dd}";
             }
 
-            var jql = $"{team.WorkItemQuery} " +
+            var jql = $"({team.WorkItemQuery}) " +
                 $"{workItemsQuery} " +
                 $"{stateQuery} " +
                 $"{historyFilter}";
@@ -483,7 +483,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var workItemsQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
             var stateQuery = PrepareStateQuery(team.OpenStates);
 
-            var jql = $"{team.WorkItemQuery} " +
+            var jql = $"({team.WorkItemQuery}) " +
                 $"{workItemsQuery} " +
                 $"{stateQuery} ";
 
@@ -496,7 +496,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var workItemsQuery = PrepareWorkItemTypeQuery(project.WorkItemTypes);
             var stateQuery = PrepareStateQuery(project.AllStates);
 
-            var jql = $"{project.WorkItemQuery} " +
+            var jql = $"({project.WorkItemQuery}) " +
                 $"{workItemsQuery} " +
                 $"{stateQuery} ";
 

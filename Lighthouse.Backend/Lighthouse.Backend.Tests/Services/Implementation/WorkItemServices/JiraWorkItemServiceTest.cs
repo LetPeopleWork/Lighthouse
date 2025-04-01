@@ -55,6 +55,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
+        public async Task GetThroughputForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ OR project = DUMMY");
+
+            team.UseFixedDatesForThroughput = true;
+            team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var closedItems = await subject.GetThroughputForTeam(team);
+
+            var totalThroughput = closedItems.Sum();
+            Assert.That(totalThroughput, Is.EqualTo(7));
+        }
+
+        [Test]
         public async Task GetFeaturesForProject_LabelDoesNotExist_ReturnsNoItems()
         {
             var subject = CreateSubject();

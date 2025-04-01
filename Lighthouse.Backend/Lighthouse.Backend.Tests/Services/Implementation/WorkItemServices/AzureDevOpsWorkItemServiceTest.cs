@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetThroughputForTeam_QueryTwoTeamProjectInOr_NeverReturns()
+        public async Task GetThroughputForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' OR [{AzureDevOpsFieldNames.TeamProject}] = 'DummyProject'");
