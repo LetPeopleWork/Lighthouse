@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models
 {
-    public class Feature : WorkItem
+    public class Feature : WorkItemBase
     {
         public Feature() : this([])
         {

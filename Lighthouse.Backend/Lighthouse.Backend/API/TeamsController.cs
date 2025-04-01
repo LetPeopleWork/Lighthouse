@@ -186,7 +186,7 @@ namespace Lighthouse.Backend.API
             foreach (var workItemId in workItemIds)
             {
                 var (name, _, url, _, startedDate, closedDate) = await workItemService.GetWorkItemDetails(workItemId, team);
-                var workItem = new WorkItem
+                var workItem = new WorkItemBase
                 {
                     Id = idCounter++,
                     Name = name,
@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.API
                 var startDate = DateTime.Now.AddDays(-random.Next(0, 30));
                 var completedDate = startDate.AddDays(random.Next(0, 10));
 
-                var workItem = new WorkItem
+                var workItem = new WorkItemBase
                 {
                     Id = i + 1,
                     Name = $"WorkItem {i + 1}",

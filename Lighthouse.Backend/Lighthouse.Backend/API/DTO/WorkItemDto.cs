@@ -4,7 +4,7 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class WorkItemDto
     {
-        public WorkItemDto(WorkItem workItem)
+        public WorkItemDto(WorkItemBase workItem)
         {
             Name = workItem.Name;
             Id = workItem.Id;

@@ -94,6 +94,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("StateCategory")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Url")
                         .HasColumnType("text");
 
@@ -438,6 +442,60 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("Teams");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.WorkItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ClosedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Order")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ParentReferenceId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReferenceId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("StartedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("StateCategory")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Url")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("WorkItems");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkTrackingSystemConnection", b =>
                 {
                     b.Property<int>("Id")
@@ -648,6 +706,17 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Navigation("WorkTrackingSystemConnection");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.WorkItem", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Team", "Team")
+                        .WithMany("WorkItems")
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Team");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkTrackingSystemConnectionOption", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.WorkTrackingSystemConnection", "WorkTrackingSystemConnection")
@@ -724,6 +793,11 @@ namespace Lighthouse.Migrations.Postgres.Migrations
             modelBuilder.Entity("Lighthouse.Backend.Models.Project", b =>
                 {
                     b.Navigation("Milestones");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>
+                {
+                    b.Navigation("WorkItems");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkTrackingSystemConnection", b =>

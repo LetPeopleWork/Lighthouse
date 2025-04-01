@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<PreviewFeature> PreviewFeatures { get; set; } = default!;
 
+        public DbSet<WorkItem> WorkItems { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
@@ -75,6 +77,10 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<Team>()
                 .HasMany(t => t.Projects)
                 .WithMany(p => p.Teams);
+
+            modelBuilder.Entity<Team>()
+                .HasMany(t => t.WorkItems)
+                .WithOne(wi => wi.Team);
 
             modelBuilder.Entity<Project>()
                 .HasOne(p => p.OwningTeam)

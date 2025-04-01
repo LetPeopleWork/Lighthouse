@@ -30,6 +30,8 @@
 
         public List<Project> Projects { get; } = [];
 
+        public List<WorkItem> WorkItems { get; } = [];
+
         public int TotalThroughput => RawThroughput.Sum();
 
         public void UpdateThroughput(int[] throughput)
