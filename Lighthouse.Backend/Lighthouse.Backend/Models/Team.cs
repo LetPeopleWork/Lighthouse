@@ -14,7 +14,7 @@
 
         public string? AdditionalRelatedField { get; set; } = string.Empty;
 
-        public DateTime TeamUpdateTime { get; set; }
+        public DateTime TeamUpdateTime { get; set; } = DateTime.MinValue;
 
         public int[] RawThroughput { get; set; } = [1];
 

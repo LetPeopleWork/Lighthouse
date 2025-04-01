@@ -66,6 +66,13 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             Logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
 
             var throughput = await workItemService.GetThroughputForTeam(team);
+            var items = await workItemService.UpdateWorkItemsForTeam(team);
+
+            // Add Items to DB via Repo and Save
+            // Move Throughput and Feature WIP out of Team into Metrics Service
+            // Use MetricsService to dynamically calculate Throughput and Feature WIP based on stored Work Items
+            // Create MetricsController that uses MetricsService to provide this data to the Frontend
+            // Clean up Work Item Service (will be a lot simpler)
 
             team.UpdateThroughput(throughput);
             Logger.LogInformation("Finished updating Throughput for Team {TeamName}", team.Name);

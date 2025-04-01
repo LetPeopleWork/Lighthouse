@@ -19,5 +19,25 @@
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }
+
+        public StateCategories MapStateToStateCategory(string state)
+        {
+            if (ToDoStates.Contains(state))
+            {
+                return StateCategories.ToDo;
+            }
+
+            if (DoingStates.Contains(state))
+            {
+                return StateCategories.Doing;
+            }
+
+            if (DoneStates.Contains(state))
+            {
+                return StateCategories.Done;
+            }
+
+            return StateCategories.Unknown;
+        }
     }
 }

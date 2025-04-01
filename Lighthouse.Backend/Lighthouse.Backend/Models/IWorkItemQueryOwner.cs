@@ -15,5 +15,7 @@ namespace Lighthouse.Backend.Models
         IEnumerable<string> AllStates { get; }
 
         IEnumerable<string> OpenStates { get; }
+
+        StateCategories MapStateToStateCategory(string state);
     }
 }

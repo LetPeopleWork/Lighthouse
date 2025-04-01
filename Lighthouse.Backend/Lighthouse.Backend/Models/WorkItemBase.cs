@@ -4,6 +4,25 @@ namespace Lighthouse.Backend.Models
 {
     public class WorkItemBase : IEntity
     {
+        public WorkItemBase()
+        {
+            
+        }
+
+        public WorkItemBase(WorkItemBase workItemBase)
+        {
+            Id = workItemBase.Id;
+            ReferenceId = workItemBase.ReferenceId;
+            Name = workItemBase.Name;
+            Type = workItemBase.Type;
+            State = workItemBase.State;
+            StateCategory = workItemBase.StateCategory;
+            Url = workItemBase.Url;
+            Order = workItemBase.Order;
+            StartedDate = workItemBase.StartedDate;
+            ClosedDate = workItemBase.ClosedDate;
+        }
+
         public int Id { get; set; }
 
         public string ReferenceId { get; set; } = string.Empty;

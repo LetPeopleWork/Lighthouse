@@ -26,6 +26,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             this.cryptoService = cryptoService;
         }
 
+        public async Task<IEnumerable<WorkItem>> UpdateWorkItemsForTeam(Team team)
+        {
+            return await Task.FromResult(Enumerable.Empty<WorkItem>());
+        }
+
         public async Task<int[]> GetThroughputForTeam(Team team)
         {
             logger.LogInformation("Getting Closed Work Items for Team {TeamName}", team.Name);
