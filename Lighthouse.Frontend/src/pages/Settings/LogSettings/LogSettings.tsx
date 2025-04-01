@@ -8,7 +8,7 @@ import {
 	Select,
 	type SelectChangeEvent,
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";

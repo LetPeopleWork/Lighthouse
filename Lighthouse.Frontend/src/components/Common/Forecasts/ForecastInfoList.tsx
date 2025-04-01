@@ -1,5 +1,5 @@
 import { Typography } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import { styled } from "@mui/system";
 import type React from "react";
 import type { IForecast } from "../../../models/Forecasts/IForecast";

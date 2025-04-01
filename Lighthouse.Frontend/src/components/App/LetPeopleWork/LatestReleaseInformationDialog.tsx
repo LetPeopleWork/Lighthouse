@@ -13,7 +13,7 @@ import {
 	Link as MuiLink,
 	Typography,
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import type React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
