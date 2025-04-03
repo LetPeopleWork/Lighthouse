@@ -33,5 +33,7 @@
         public static string KeyPropertyName => "key";
         
         public static string ToStringPropertyName => "toString";
+
+        public static string UpdatedFieldName => "updated";
     }
 }

@@ -73,6 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             // Use MetricsService to dynamically calculate Throughput and Feature WIP based on stored Work Items
             // Create MetricsController that uses MetricsService to provide this data to the Frontend
             // Clean up Work Item Service (will be a lot simpler)
+            // Handle Unparented Items (update ParentReference of existing item to Unparented Feature of Project)
 
             team.UpdateThroughput(throughput);
             Logger.LogInformation("Finished updating Throughput for Team {TeamName}", team.Name);

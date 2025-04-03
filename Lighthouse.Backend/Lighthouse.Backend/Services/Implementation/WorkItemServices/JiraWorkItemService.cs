@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Lighthouse.Backend.WorkTracking.Jira;
 using System.Net.Http.Headers;
 using System.Text;
@@ -28,7 +29,58 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         public async Task<IEnumerable<WorkItem>> UpdateWorkItemsForTeam(Team team)
         {
-            return await Task.FromResult(Enumerable.Empty<WorkItem>());
+            var workItems = new List<WorkItem>();
+
+            logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
+            var jiraRestClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
+
+            var workItemsQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
+            var stateQuery = PrepareStateQuery(team.AllStates);
+
+            var query = $"({team.WorkItemQuery}) {workItemsQuery} {stateQuery} ";
+
+            var updateHorizon = team.TeamUpdateTime;
+            if (team.TeamUpdateTime != DateTime.MinValue)
+            {
+                logger.LogInformation("Team was last updated on {LastUpdateTime} - Getting all items that were changed since then", team.TeamUpdateTime);
+                query += $" AND ({JiraFieldNames.UpdatedFieldName} >= '{updateHorizon:yyyy-MM-dd}')";
+            }
+            else
+            {
+                logger.LogInformation("No Update Time found - Getting all Work Items that macht the query (this might take a while...)");
+            }
+
+
+            var issues = await GetIssuesByQuery(jiraRestClient, team, query, team.AdditionalRelatedField);
+
+            foreach (var issue in issues)
+            {
+                var workItem = CreateWorkItemFromJiraIssue(issue, jiraRestClient.BaseAddress, team);
+                workItems.Add(workItem);
+            }
+
+            return workItems;
+        }
+
+        private WorkItem CreateWorkItemFromJiraIssue(Issue issue, Uri? baseAddress, IWorkItemQueryOwner workItemQueryOwner)
+        {
+            var url = $"{baseAddress}browse/{issue.Key}";
+
+            var workItem = new WorkItem()
+            {
+                ReferenceId = issue.Key,
+                Name = issue.Title,
+                ClosedDate = issue.ClosedDate,
+                StartedDate = issue.StartedDate,
+                ParentReferenceId = issue.ParentKey,
+                Order = issue.Rank,
+                Type = issue.IssueType,
+                State = issue.State,
+                Url = url,
+                StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
+            };
+
+            return workItem;
         }
 
         public async Task<int[]> GetThroughputForTeam(Team team)
