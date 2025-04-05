@@ -38,6 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             var featureRepository = serviceProvider.GetRequiredService<IRepository<Feature>>();
             var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
             var forecastUpdateService = serviceProvider.GetRequiredService<IForecastUpdateService>();
+            var workItemRepository = serviceProvider.GetRequiredService<IRepository<WorkItem>>();
 
             var project = projectRepository.GetById(id);
             if (project == null)
@@ -45,26 +46,26 @@ namespace Lighthouse.Backend.Services.Implementation.Update
                 return;
             }
 
-            await UpdateFeaturesForProject(projectRepository, featureRepository, workItemServiceFactory, project);
+            await UpdateFeaturesForProject(projectRepository, featureRepository, workItemRepository, workItemServiceFactory, project);
 
-            // Update Forecasts after Features have been updated
             await forecastUpdateService.UpdateForecastsForProject(project.Id);
         }
 
-        private async Task UpdateFeaturesForProject(IRepository<Project> projectRepository, IRepository<Feature> featureRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
+        private async Task UpdateFeaturesForProject(
+            IRepository<Project> projectRepository, IRepository<Feature> featureRepository, IRepository<WorkItem> workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
         {
             Logger.LogInformation("Updating Features for Project {ProjectName}", project.Name);
             defaultWorkItemsBasedOnPercentile.Remove(project.Id);
 
-            var featuresForProject = await GetFeaturesForProject(featureRepository, workItemServiceFactory, project);
+            await RefreshFeaturesForProject(featureRepository, workItemServiceFactory, project);
+            await UpdateUnparentedItemsForProject(featureRepository, workItemRepository, workItemServiceFactory, project);
 
-            project.UpdateFeatures(featuresForProject.OrderBy(f => f, new FeatureComparer()));
-
-            await GetWorkForFeatures(featureRepository, workItemServiceFactory, project);
+            UpdateRemainingWorkForFeatures(workItemRepository, project);
 
             await ExtrapolateNotBrokenDownFeatures(workItemServiceFactory, project);
 
             await projectRepository.Save();
+
             Logger.LogInformation("Done Updating Features for Project {ProjectName}", project.Name);
         }
 
@@ -86,13 +87,13 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
                 var remainingWork = await GetExtrapolatedRemainingWork(project, workItemService, feature);
 
-                await AssignExtrapolatedWorkToTeams(project, feature, remainingWork, workItemService);
+                AssignExtrapolatedWorkToTeams(project, feature, remainingWork);
 
                 Logger.LogInformation("Added {RemainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
             }
         }
 
-        private async Task AssignExtrapolatedWorkToTeams(Project project, Feature feature, int remainingWork, IWorkItemService workItemService)
+        private void AssignExtrapolatedWorkToTeams(Project project, Feature feature, int remainingWork)
         {
             var owningTeams = project.Teams.ToList();
 
@@ -106,8 +107,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             {
                 Logger.LogInformation("Feature Owner Field for Project is {FeatureOwnerField} - Getting value for Feature {FeatureName}", project.FeatureOwnerField, feature.Name);
 
-                var featureOwnerFieldValue = await workItemService.GetFeatureOwnerByField(feature.ReferenceId, project);
-                var featureOwners = project.Teams.Where(t => featureOwnerFieldValue.Contains(t.Name)).ToList();
+                var featureOwners = project.Teams.Where(t => feature.OwningTeam.Contains(t.Name)).ToList();
 
                 Logger.LogInformation("Found following teams defined in {FeatureOwnerField}: {Owners}", project.FeatureOwnerField, string.Join(",", featureOwners));
                 if (featureOwners.Count > 0)
@@ -128,16 +128,11 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             }
         }
 
-        private async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkItemService workItemService, Feature? feature)
+        private async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkItemService workItemService, Feature feature)
         {
-            if (!string.IsNullOrEmpty(project.SizeEstimateField))
+            if (feature.EstimatedSize > 0)
             {
-                var estimatedSize = await workItemService.GetEstimatedSizeForItem(feature.ReferenceId, project);
-
-                if (estimatedSize > 0)
-                {
-                    return estimatedSize;
-                }
+                return feature.EstimatedSize;
             }
 
             return await GetDefaultRemainingWork(project, workItemService);
@@ -155,13 +150,13 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             if (project.UsePercentileToCalculateDefaultAmountOfWorkItems)
             {
                 Logger.LogInformation("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
-                var childItems = await workItemService.GetChildItemsForFeaturesInProject(project);
+                var historicalFeatureSize = await workItemService.GetHistoricalFeatureSize(project);
 
-                Logger.LogInformation("Features had following number of child items: {ChildItems}", string.Join(",", childItems));
+                Logger.LogInformation("Features had following number of child items: {ChildItems}", string.Join(",", historicalFeatureSize.Values));
 
-                if (childItems.Any())
+                if (historicalFeatureSize.Count != 0)
                 {
-                    defaultItems = CalculatePercentile(childItems.ToList(), project.DefaultWorkItemPercentile);
+                    defaultItems = CalculatePercentile(historicalFeatureSize.Values.ToList(), project.DefaultWorkItemPercentile);
 
                     Logger.LogInformation("{Percentile} Percentile Based on Query {Query} is {DefaultItems}", project.DefaultWorkItemPercentile, project.HistoricalFeaturesWorkItemQuery, defaultItems);
                 }
@@ -200,54 +195,99 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return buckets;
         }
 
-        private async Task GetWorkForFeatures(IRepository<Feature> featureRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
+        private static void UpdateRemainingWorkForFeatures(IRepository<WorkItem> workItemRepository, Project project)
         {
-            var tasks = project.Features
-                .Select(featureForProject => GetRemainingWorkForFeature(workItemServiceFactory, featureForProject, project.Teams))
-                .ToList();
+            foreach (var feature in project.Features)
+            {
+                var allWorkForFeature = workItemRepository.GetAllByPredicate(wi => wi.ParentReferenceId == feature.ReferenceId).ToList();
 
-            await Task.WhenAll(tasks);
+                foreach (var team in project.Teams)
+                {
+                    var totalWorkForFeatureForTeam = allWorkForFeature.Where(f => f.TeamId == team.Id).ToList();
+                    var remainingWorkForFeatureForTeam = totalWorkForFeatureForTeam.Where(x => x.StateCategory != StateCategories.Done).ToList();
 
-            await GetUnparentedItems(featureRepository, workItemServiceFactory, project);
+                    feature.AddOrUpdateWorkForTeam(team, remainingWorkForFeatureForTeam.Count, totalWorkForFeatureForTeam.Count);
+                }
+            }
+
+            foreach (var feature in project.Features)
+            {
+                feature.FeatureWork.RemoveAll(f => f.TotalWorkItems == 0);
+            }
         }
 
-        private async Task GetUnparentedItems(IRepository<Feature> featureRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
+        private async Task UpdateUnparentedItemsForProject(IRepository<Feature> featureRepository, IRepository<WorkItem> workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
+        {
+            if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
+            {
+                Logger.LogDebug("Skipping Unparented Items for Project {ProjectName} - No Query defined", project.Name);
+                return;
+            }
+
+            Logger.LogInformation("Getting Unparented Items for Project {ProjectName}", project.Name);
+
+            var unparentedFeature = GetOrAddUnparentedFeature(featureRepository, project);
+
+            foreach (var team in project.Teams)
+            {
+                await UpdateUnparentedItemsForTeam(featureRepository, workItemRepository, workItemServiceFactory, project, unparentedFeature, team);
+            }
+
+            unparentedFeature.Order = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, project.WorkTrackingSystemConnection.WorkTrackingSystem).GetAdjacentOrderIndex(project.Features.Select(x => x.Order), RelativeOrder.Above);
+            Logger.LogInformation("Setting order for {UnparentedFeatureName} to {UnparentedFeatureOrder}", unparentedFeature.Name, unparentedFeature.Order);
+
+            await workItemRepository.Save();
+        }
+
+        private async Task UpdateUnparentedItemsForTeam(IRepository<Feature> featureRepository, IRepository<WorkItem> workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project, Feature unparentedFeature, Team team)
         {
             if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
             {
                 return;
             }
 
-            Logger.LogInformation("Getting Unparented Items for Project {ProjectName}", project.Name);
+            var workItemService = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, team.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var potentiallyUnparentedWorkItems = await workItemService.GetWorkItemsIdsForTeamWithAdditionalQuery(team, project.UnparentedItemsQuery);
 
-            var featureIds = project.Features.Select(x => x.ReferenceId);
-
-            var unparentedFeature = GetOrAddUnparentedFeature(featureRepository, project);
-
-            foreach (var team in project.Teams)
+            foreach (var potentiallyUnparentedWorkItem in potentiallyUnparentedWorkItems)
             {
-                var workItemService = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, team.WorkTrackingSystemConnection.WorkTrackingSystem);
-                var (remainingWorkItems, totalWorkItems) = await workItemService.GetWorkItemsByQuery(team.WorkItemTypes, team, project.UnparentedItemsQuery);
+                var workItem = workItemRepository.GetByPredicate(wi => wi.ReferenceId == potentiallyUnparentedWorkItem);
+                AssignParentToWorkItem(featureRepository, workItemRepository, project, unparentedFeature, team, workItem);
+            }
+        }
 
-                var itemsMatchingUnparentedItemsQuery = remainingWorkItems.Union(totalWorkItems).ToList();
-                var unparentedItems = await GetItemsUnrelatedToFeatures(workItemServiceFactory, featureIds, team, itemsMatchingUnparentedItemsQuery);
+        private void AssignParentToWorkItem(IRepository<Feature> featureRepository, IRepository<WorkItem> workItemRepository, Project project, Feature unparentedFeature, Team team, WorkItem? workItem)
+        {
+            if (workItem != null)
+            {
+                if (FeatureExists(featureRepository, workItem.ParentReferenceId))
+                {
+                    Logger.LogInformation("Work Item {ItemReference} of Team {TeamName} is already set to {FeatureReference} - skipping", workItem.ReferenceId, team.Name, workItem.ParentReferenceId);
+                    return;
+                }
 
-                Logger.LogInformation("Found {UnparentedItems} Unparented Items for Project {ProjectName}", unparentedItems.Count, project.Name);
+                Logger.LogInformation("Work Item {ItemReference} of Team {TeamName} is unparented and matches the query - mark it to belong to Project {ProjectName}", workItem.ReferenceId, team.Name, project.Name);
 
-                var remainingCount = unparentedItems.Intersect(remainingWorkItems).Count();
-                var totalCount = unparentedItems.Intersect(totalWorkItems).Count();
+                workItem.ParentReferenceId = unparentedFeature.ReferenceId;
+                workItemRepository.Update(workItem);
+            }
+        }
 
-                unparentedFeature.AddOrUpdateWorkForTeam(team, remainingCount, totalCount);
+        private static bool FeatureExists(IRepository<Feature> featureRepository, string featureReferenceId)
+        {
+            if (!string.IsNullOrEmpty(featureReferenceId))
+            {
+                var feature = featureRepository.GetByPredicate(f => f.ReferenceId == featureReferenceId);
+                return feature != null;
             }
 
-            unparentedFeature.Order = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, project.WorkTrackingSystemConnection.WorkTrackingSystem).GetAdjacentOrderIndex(project.Features.Select(x => x.Order), RelativeOrder.Above);
-
-            Logger.LogInformation("Setting order for {UnparentedFeatureName} to {UnparentedFeatureOrder}", unparentedFeature.Name, unparentedFeature.Order);
+            return false;
         }
 
         private Feature GetOrAddUnparentedFeature(IRepository<Feature> featureRepository, Project project)
         {
-            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = $"{int.MaxValue - 1}", IsUnparentedFeature = true, State = "In Progress" };
+            var referenceId = Guid.NewGuid().ToString();
+            var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = referenceId, IsUnparentedFeature = true, State = "In Progress" };
             unparentedFeature.Projects.Add(project);
 
             var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;
@@ -255,6 +295,12 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             if (unparentedFeatureId != null)
             {
                 unparentedFeature = featureRepository.GetById(unparentedFeatureId.Value) ?? unparentedFeature;
+
+                // We need a unique referenceId for the unparented feature - previously all unparented features had the same referenceId.
+                if (unparentedFeature.ReferenceId == $"{int.MaxValue - 1}")
+                {
+                    unparentedFeature.ReferenceId = referenceId;
+                }
             }
             else
             {
@@ -264,90 +310,43 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return unparentedFeature;
         }
 
-        private static async Task<List<string>> GetItemsUnrelatedToFeatures(IWorkItemServiceFactory workItemServiceFactory, IEnumerable<string> featureIds, Team team, List<string> itemIds)
-        {
-            var unrelatedItems = new List<string>();
-
-            foreach (var itemId in itemIds)
-            {
-                var workItemService = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, team.WorkTrackingSystemConnection.WorkTrackingSystem);
-                var isRelatedToFeature = await workItemService.IsRelatedToFeature(itemId, featureIds, team);
-                if (!isRelatedToFeature)
-                {
-                    unrelatedItems.Add(itemId);
-                }
-            }
-
-            return unrelatedItems;
-        }
-
-        private async Task GetRemainingWorkForFeature(IWorkItemServiceFactory workItemServiceFactory, Feature featureForProject, IEnumerable<Team> involvedTeams)
-        {
-            var tasks = involvedTeams.Select(async team =>
-            {
-                var workItemService = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, team.WorkTrackingSystemConnection.WorkTrackingSystem);
-                var (remainingWork, totalWork) = await workItemService.GetRelatedWorkItems(featureForProject.ReferenceId, team);
-
-                Logger.LogInformation("Found {RemainingWork} Work Item Remaining for Team {TeamName} for Feature {FeatureName}", remainingWork, team.Name, featureForProject.Name);
-
-                return (team, remainingWork, totalWork);
-            }).ToList();
-
-            await Task.WhenAll(tasks);
-
-            foreach (var (team, remainingWork, totalWork) in tasks.Select(t => t.Result))
-            {
-                featureForProject.AddOrUpdateWorkForTeam(team, remainingWork, totalWork);
-            }
-        }
-
-        private async Task<List<Feature>> GetFeaturesForProject(IRepository<Feature> featureRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
+        private async Task RefreshFeaturesForProject(IRepository<Feature> featureRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
         {
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(workItemServiceFactory, project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var features = new List<Feature>();
-            var featureIds = await workItemService.GetFeaturesForProject(project);
 
-            var tasks = featureIds.Select(async featureId =>
+            foreach (var feature in await workItemService.GetFeaturesForProject(project))
             {
-                var feature = GetOrCreateFeature(featureRepository, featureId, project);
+                var featureFromDatabase = featureRepository.GetByPredicate(f => f.ReferenceId == feature.ReferenceId);
 
-                var (name, order, url, state, startedDate, closedDate) = await workItemService.GetWorkItemDetails(featureId, project);
-                feature.Name = name;
-                feature.Order = order;
-                feature.Url = url;
-                feature.State = state;
-                feature.StartedDate = startedDate;
-                feature.ClosedDate = closedDate;
-                feature.IsUsingDefaultFeatureSize = false;
+                if (featureFromDatabase == null)
+                {
+                    featureRepository.Add(feature);
+                    Logger.LogDebug("Found New Feature {FeatureName}", feature.Name);
+                    featureFromDatabase = feature;
+                }
+                else
+                {
+                    featureFromDatabase.Update(feature);
+                    featureRepository.Update(featureFromDatabase);
+                    Logger.LogDebug("Updated Existing Feature {FeatureName}", feature.Name);
+                }
 
-                feature.StateCategory = project.MapStateToStateCategory(state);
+                AddProjectToFeature(featureFromDatabase, project);
+                features.Add(featureFromDatabase);
+            }
 
-                Logger.LogInformation("Found Feature {Name}, Id {Id}, Order {Order}, State {State} (Category: {Category})", feature.Name, featureId, feature.Order, feature.State, feature.StateCategory);
-
-                return feature;
-            }).ToList();
-
-            var featuresArray = await Task.WhenAll(tasks);
-
-            features.AddRange(featuresArray);
-
-            return features;
+            project.UpdateFeatures(features.OrderBy(f => f, new FeatureComparer()));
         }
 
-        private Feature GetOrCreateFeature(IRepository<Feature> featureRepository, string featureId, Project project)
+        private static void AddProjectToFeature(Feature feature, Project project)
         {
-            var feature = featureRepository.GetByPredicate(f => f.ReferenceId == featureId);
-
-            feature ??= new Feature() { ReferenceId = featureId };
-
             var featureIsAddedToProject = feature.Projects.Exists(p => p.Id == project.Id);
             if (!featureIsAddedToProject)
             {
                 feature.Projects.Add(project);
             }
-
-            return feature;
         }
 
         private static IWorkItemService GetWorkItemServiceForWorkTrackingSystem(IWorkItemServiceFactory workItemServiceFactory, WorkTrackingSystems workTrackingSystem)

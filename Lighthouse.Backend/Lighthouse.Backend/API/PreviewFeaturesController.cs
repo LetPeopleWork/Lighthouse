@@ -38,18 +38,14 @@ namespace Lighthouse.Backend.API
         [HttpPost("{id}")]
         public async Task<ActionResult<PreviewFeature>> UpdatePreviewFeature(int id, [FromBody] PreviewFeature updatedFeature)
         {
-            var feature = repository.GetById(id);
-
-            if (feature == null)
+            return await this.GetEntityByIdAnExecuteAction(repository, id, async feature =>
             {
-                return NotFound();
-            }
+                feature.Enabled = updatedFeature.Enabled;
+                repository.Update(feature);
+                await repository.Save();
 
-            feature.Enabled = updatedFeature.Enabled;
-            repository.Update(feature);
-            await repository.Save();
-
-            return Ok(feature);
+                return feature;
+            });
         }
     }
 }

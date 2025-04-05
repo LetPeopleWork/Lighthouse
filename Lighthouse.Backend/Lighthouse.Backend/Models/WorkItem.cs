@@ -1,4 +1,7 @@
-﻿namespace Lighthouse.Backend.Models
+﻿
+using Octokit;
+
+namespace Lighthouse.Backend.Models
 {
     public class WorkItem : WorkItemBase
     {
@@ -18,5 +21,13 @@
         public Team Team { get; set; }
 
         public int TeamId { get; set; }
+
+        internal void Update(WorkItem item)
+        {
+            base.Update(item);
+            ReferenceId = item.ReferenceId;
+            Team = item.Team;
+            TeamId = item.TeamId;
+        }
     }
 }

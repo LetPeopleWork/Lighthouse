@@ -113,3 +113,6 @@ end_of_line = crlf
 
 # IDE0074: Use compound assignment
 dotnet_diagnostic.IDE0074.severity = none
+
+# IDE0305: Simplify collection initialization
+dotnet_diagnostic.IDE0305.severity = none

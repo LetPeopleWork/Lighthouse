@@ -138,6 +138,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
             builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();
             builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
+            builder.Services.AddScoped<IRepository<WorkItem>, WorkItemRepository>();
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
             builder.Services.AddScoped<IRepository<FeatureHistoryEntry>, FeatureHistoryRepository>();
@@ -156,6 +157,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
             builder.Services.AddScoped<IFeatureHistoryService, FeatureHistoryService>();
+            builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
 
             builder.Services.AddScoped<AzureDevOpsWorkItemService>();
             builder.Services.AddScoped<JiraWorkItemService>();

@@ -12,7 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
         private readonly IRandomNumberService randomNumberService;
 
-        public ForecastUpdateService(IRandomNumberService randomNumberService, ILogger<ForecastUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService, int trials = 10_000)
+        public ForecastUpdateService(
+            IRandomNumberService randomNumberService, ILogger<ForecastUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService, int trials = 10_000)
             : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts)
         {
             this.trials = trials;
@@ -55,12 +56,16 @@ namespace Lighthouse.Backend.Services.Implementation.Update
         {
             Logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
-            var fakeFeature = new Feature(team, remainingItems);
-            await ForecastFeatures([fakeFeature]);
+            using (var scope = CreateServiceScope())
+            {
+                var teamMetricsService = CreateServiceScope().ServiceProvider.GetRequiredService<ITeamMetricsService>();
+                var fakeFeature = new Feature(team, remainingItems);
+                await ForecastFeatures([fakeFeature], teamMetricsService);
 
-            Logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
+                Logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
-            return fakeFeature.Forecast;
+                return fakeFeature.Forecast;
+            }
         }
 
         public async Task UpdateForecastsForProject(int projectId)
@@ -76,6 +81,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             var featureRepository = serviceProvider.GetRequiredService<IRepository<Feature>>();
             var featureHistoryService = serviceProvider.GetRequiredService<IFeatureHistoryService>();
             var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
+            var teamMetricsService = serviceProvider.GetRequiredService<ITeamMetricsService>();
 
             var project = projectRepository.GetById(id);
             if (project == null)
@@ -83,10 +89,10 @@ namespace Lighthouse.Backend.Services.Implementation.Update
                 return;
             }
 
-            await UpdateForecastsForTeams(featureRepository, featureHistoryService, project.Teams);
+            await UpdateForecastsForTeams(featureRepository, featureHistoryService, teamMetricsService, project.Teams);
         }
 
-        private async Task UpdateForecastsForTeams(IRepository<Feature> featureRepository, IFeatureHistoryService featureHistoryService, IEnumerable<Team> teams)
+        private async Task UpdateForecastsForTeams(IRepository<Feature> featureRepository, IFeatureHistoryService featureHistoryService, ITeamMetricsService teamMetricsService, IEnumerable<Team> teams)
         {
             Logger.LogInformation("Running Monte Carlo Forecast for all Features with involved of teams {Teams}", string.Join(',', teams.Select(t => t.Name)));
 
@@ -94,23 +100,43 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
             Logger.LogInformation("Features with involved of those team are: {Features}", string.Join(",", features.Select(f => f.Name)));
 
-            await ForecastFeatures(features);
+            await ForecastFeatures(features, teamMetricsService);
 
             await featureRepository.Save();
 
             await ArchiveFeatures(featureHistoryService, features);
         }
 
-        private async Task ForecastFeatures(IEnumerable<Feature> features)
+        private async Task ForecastFeatures(IEnumerable<Feature> features, ITeamMetricsService teamMetricsService)
         {
+            var throughpoutByTeam = InitializeThroughputPerTeam(features, teamMetricsService);
+
             var simulationResults = InitializeSimulationResults(features);
-            await RunMonteCarloSimulation(simulationResults);
+            await RunMonteCarloSimulation(simulationResults, throughpoutByTeam);
             UpdateFeatureForecasts(features, simulationResults);
         }
 
-        private async Task RunMonteCarloSimulation(List<SimulationResult> simulationResults)
+        private static Dictionary<int, Throughput> InitializeThroughputPerTeam(IEnumerable<Feature> features, ITeamMetricsService teamMetricsService)
         {
-            var groupedSimulationResults = simulationResults.GroupBy(s => s.Team).Where(t => t.Key.TotalThroughput > 0).ToList();
+            var teams = features.SelectMany(f => f.Teams).Distinct().ToList();
+            var throughpoutByTeam = new Dictionary<int, Throughput>();
+
+            foreach (var team in teams)
+            {
+                var throughput = teamMetricsService.GetThroughputForTeam(team);
+
+                if (throughput.TotalThroughput > 0)
+                {
+                    throughpoutByTeam[team.Id] = throughput;
+                }
+            }
+
+            return throughpoutByTeam;
+        }
+
+        private async Task RunMonteCarloSimulation(List<SimulationResult> simulationResults, Dictionary<int, Throughput> throughputByTeam)
+        {
+            var groupedSimulationResults = simulationResults.GroupBy(s => s.Team).Where(g => throughputByTeam.ContainsKey(g.Key.Id)).ToList();
 
             var tasks = groupedSimulationResults.Select(simulationResultsByTeam => Task.Run(() =>
             {
@@ -122,7 +148,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
                     while (simulationResultsByTeam.GetRemainingItems() > 0)
                     {
-                        SimulateIndividualDayForFeatureForecast(simulationResultsByTeam.Key, simulationResultsByTeam.Select(x => x), simulatedDays);
+                        SimulateIndividualDayForFeatureForecast(simulationResultsByTeam.Key, throughputByTeam[simulationResultsByTeam.Key.Id], simulationResultsByTeam.Select(x => x), simulatedDays);
 
                         simulatedDays++;
                     }
@@ -171,9 +197,9 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return simulationResults;
         }
 
-        private void SimulateIndividualDayForFeatureForecast(Team team, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay)
+        private void SimulateIndividualDayForFeatureForecast(Team team, Throughput throughput, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay)
         {
-            var simulatedThroughput = GetSimulatedThroughput(team.Throughput);
+            var simulatedThroughput = GetSimulatedThroughput(throughput);
 
             for (var closedItems = 0; closedItems < simulatedThroughput && simulationResults.GetRemainingItems() > 0; closedItems++)
             {

@@ -25,8 +25,8 @@ namespace Lighthouse.Backend.Factories
             var fields = json.GetProperty(JiraFieldNames.FieldsFieldName);
             var key = GetKeyFromJson(json);
             var title = GetTitleFromFields(fields);
-            var closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates, JiraFieldNames.ResolutionDateFieldName);
-            var startedDate = GetTransitionDate(json, workitemQueryOwner.ToDoStates, JiraFieldNames.CreatedDateFieldName);
+            var closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates);
+            var startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates);
             var parentKey = GetParentFromFields(fields);
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
@@ -36,6 +36,12 @@ namespace Lighthouse.Backend.Factories
             if (string.IsNullOrEmpty(parentKey) && !string.IsNullOrEmpty(additionalRelatedField))
             {
                 parentKey = fields.GetFieldValue(additionalRelatedField);
+            }
+
+            // It can happen that no started date is set if an item is created directly in closed state. Assume that the closed date is the started date in this case.
+            if (startedDate == null && closedDate != null)
+            {
+                startedDate = closedDate;
             }
 
             logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Closed Date {ClosedDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {IssueType}, Status {Status}, Status Category {StatusCategory}", key, title, closedDate, parentKey, rank, issueType, state, statusCategory);
@@ -117,9 +123,9 @@ namespace Lighthouse.Backend.Factories
             return parentKey;
         }
 
-        private static DateTime GetTransitionDate(JsonElement json, IEnumerable<string> targetStates, string defaultField)
+        private static DateTime? GetTransitionDate(JsonElement json, IEnumerable<string> targetStates)
         {
-            var transitionDate = DateTime.MinValue;
+            DateTime? transitionDate = null;
 
             if (json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out JsonElement changelog))
             {
@@ -133,11 +139,6 @@ namespace Lighthouse.Backend.Factories
                         transitionDate = extractedDate.Value;
                     }
                 }
-            }
-
-            if (transitionDate == DateTime.MinValue)
-            {
-                transitionDate = GetDateByFieldName(defaultField, json);
             }
 
             return transitionDate;
@@ -162,18 +163,6 @@ namespace Lighthouse.Backend.Factories
             }
 
             return transitionDate;
-        }
-
-        private static DateTime GetDateByFieldName(string fieldName, JsonElement json)
-        {
-            var fields = json.GetProperty(JiraFieldNames.FieldsFieldName);
-            var defaultFieldDateString = fields.GetProperty(fieldName).GetString();
-            if (!string.IsNullOrEmpty(defaultFieldDateString))
-            {
-                return DateTime.Parse(defaultFieldDateString, CultureInfo.InvariantCulture);
-            }
-
-            return DateTime.MinValue;
         }
 
         private static string GetTitleFromFields(JsonElement fields)

@@ -66,6 +66,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<DateTime?>("ClosedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("EstimatedSize")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsUnparentedFeature")
                         .HasColumnType("boolean");
 
@@ -77,6 +80,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Order")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OwningTeam")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -393,17 +400,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("FeatureWIP")
                         .HasColumnType("integer");
 
-                    b.PrimitiveCollection<List<string>>("FeaturesInProgress")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.PrimitiveCollection<int[]>("RawThroughput")
-                        .IsRequired()
-                        .HasColumnType("integer[]");
 
                     b.Property<DateTime>("TeamUpdateTime")
                         .HasColumnType("timestamp with time zone");

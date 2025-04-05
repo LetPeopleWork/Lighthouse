@@ -13,46 +13,74 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
     public class AzureDevOpsWorkItemServiceTest
     {
         [Test]
-        [TestCase(new[] { "Closed" }, 5)]
-        [TestCase(new[] { "Closed", "Resolved" }, 6)]
-        [TestCase(new[] { "Closed", "Resolved", "Active" }, 10)]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S6561:Avoid using \"DateTime.Now\" for benchmarking or timing operations", Justification = "Not used for benchmarking here")]
-        public async Task GetClosedWorkItemsForTeam_FullHistory_DynamicThroughout_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_NoUpdateDone_GetsAllItemsThatMatchQuery()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Tags] NOT CONTAINS 'ThroughputIgnore'");
-            team.DoneStates.Clear();
-            team.DoneStates.AddRange(doneStates);
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] != 'Closed'");
 
-            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
-            team.UseFixedDatesForThroughput = false;
-            team.ThroughputHistory = history;
+            team.ResetUpdateTime();
 
-            var closedItems = await subject.GetThroughputForTeam(team);
+            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
 
-            Assert.That(closedItems.Count, Is.EqualTo(team.GetThroughputSettings().NumberOfDays));
-            Assert.That(closedItems.Sum(), Is.EqualTo(expectedItems));
+            Assert.That(matchingItems.Count, Is.EqualTo(2));
         }
+
         [Test]
-        [TestCase(new[] { "Closed" }, 5)]
-        [TestCase(new[] { "Closed", "Resolved" }, 6)]
-        [TestCase(new[] { "Closed", "Resolved", "Active" }, 10)]
-        public async Task GetClosedWorkItemsForTeam_FullHistory_FixedThroughout_TestProject_ReturnsCorrectAmountOfItems(string[] doneStates, int expectedItems)
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_NoChangedItems_DoesNotFindNewItems()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Tags] NOT CONTAINS 'ThroughputIgnore'");
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] != 'Closed'");
 
+            team.TeamUpdateTime = DateTime.UtcNow.AddDays(+1);
+
+            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+
+            Assert.That(matchingItems.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_ReturnsOnlyChangedItems()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] != 'Closed'");
+
+            team.TeamUpdateTime = new DateTime(2024, 10, 17, 0, 0, 0, DateTimeKind.Utc);
+
+            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+
+            Assert.That(matchingItems.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        [TestCase("377", "", null)]
+        [TestCase("365", "371", null)]
+        [TestCase("375", "279", "Custom.RemoteFeatureID")]
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentOverrideField)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
+            team.AdditionalRelatedField = parentOverrideField;
+
+            var workItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo(expectedParentReference));
+        }
+
+        [Test]
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_OrCaseInWorkItemQuery_HandlesCorrectly()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' OR [{AzureDevOpsFieldNames.TeamProject}] = 'DummyProject'");
+            team.DoneStates.Clear();
+            team.DoneStates.Add("Closed");
             team.UseFixedDatesForThroughput = true;
             team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            team.ThroughputHistoryEndDate = DateTime.UtcNow;
+            team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            team.DoneStates.Clear();
-            team.DoneStates.AddRange(doneStates);
+            var result = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
 
-            var closedItems = await subject.GetThroughputForTeam(team);
-
-            Assert.That(closedItems.Count, Is.EqualTo(team.GetThroughputSettings().NumberOfDays));
-            Assert.That(closedItems.Sum(), Is.EqualTo(expectedItems));
+            Assert.That(result.Count, Is.EqualTo(17));
         }
 
         [Test]
@@ -64,23 +92,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             var itemsByTag = await subject.GetFeaturesForProject(project);
 
             Assert.That(itemsByTag, Is.Empty);
-        }
-
-        [Test]
-        public async Task GetThroughputForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' OR [{AzureDevOpsFieldNames.TeamProject}] = 'DummyProject'");
-            team.DoneStates.Clear();
-            team.DoneStates.Add("Closed");
-            team.UseFixedDatesForThroughput = true;
-            team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            var result = await subject.GetThroughputForTeam(team);
-
-            var totalThroughput = result.Sum();
-            Assert.That(totalThroughput, Is.EqualTo(7));
         }
 
         [Test]
@@ -148,75 +159,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetRelatedItems_ItemIdIsParent_FindsRelation()
-        {
-
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-
-            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("370", team);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Is.EqualTo(2));
-                Assert.That(totalItems, Is.EqualTo(3));
-            });
-        }
-
-        [Test]
-        public async Task GetRelatedItems_ItemIdIsParent_AllWorkIsDone_ReturnsCorrectNumberOfRemainingAndTotalItems()
-        {
-
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-
-            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("380", team);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Is.EqualTo(0));
-                Assert.That(totalItems, Is.EqualTo(1));
-            });
-        }
-
-        [Test]
-        public async Task GetRelatedItems_ItemIdIsPartiallyMatching_DoesNotFindRelation()
-        {
-
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-
-            var (relatedItems, _) = await subject.GetRelatedWorkItems("37", team);
-
-            Assert.That(relatedItems, Is.EqualTo(0));
-        }
-
-        [Test]
-        public async Task GetRelatedItems_ItemIdIsChild_DoesNotFindRelation()
-        {
-
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            team.WorkItemTypes.Add("Feature");
-
-            var (relatedItems, _) = await subject.GetRelatedWorkItems("366", team);
-
-            Assert.That(relatedItems, Is.EqualTo(0));
-        }
-
-        [Test]
-        public async Task GetRelatedItems_ItemIdIsRemoteRelated_FindsRelation()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            team.AdditionalRelatedField = "Custom.RemoteFeatureID";
-
-            var (relatedItems, _) = await subject.GetRelatedWorkItems("279", team);
-
-            Assert.That(relatedItems, Is.EqualTo(1));
-        }
-
-        [Test]
         public async Task GetFeaturesForProjectByTag_ItemIsOpen_ReturnsItem()
         {
             var subject = CreateSubject();
@@ -273,140 +215,138 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetWorkItemDetails_ReturnsTitleAndStackRank()
+        public async Task GetFeaturesForProject_ReturnsCorrectFeatureProperties()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '366'");
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("User Story");
 
-            var (name, rank, url, state, _, _) = await subject.GetWorkItemDetails("366", team);
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "366");
 
             Assert.Multiple(() =>
             {
-                Assert.That(name, Is.EqualTo("Test Test Test"));
-                Assert.That(rank, Is.EqualTo("1999821120"));
-                Assert.That(state, Is.EqualTo("Resolved"));
-                Assert.That(url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/366"));
+                Assert.That(feature.Name, Is.EqualTo("Test Test Test"));
+                Assert.That(feature.Order, Is.EqualTo("1999821120"));
+                Assert.That(feature.State, Is.EqualTo("Resolved"));
+                Assert.That(feature.StateCategory, Is.EqualTo(StateCategories.Doing));
+                Assert.That(feature.Url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/366"));
             });
         }
 
         [Test]
-        public async Task GetWorkItemDetails_ReturnsCorrectStartedDateBasedOnStateMapping()
+        public async Task GetFeaturesForProject_ReturnsCorrectStartedDateBasedOnStateMapping()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '370'");
 
-            var (_, _, _, _, startedDate, closedDate) = await subject.GetWorkItemDetails("375", team);
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "370");
 
             Assert.Multiple(() =>
             {
-                Assert.That(startedDate.HasValue, Is.True);
-                Assert.That(startedDate?.Date, Is.EqualTo(new DateTime(2025, 2, 26, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.That(feature.StartedDate.HasValue, Is.True);
+                Assert.That(feature.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 2, 16, 0, 0, 0, DateTimeKind.Utc)));
 
-                Assert.That(closedDate.HasValue, Is.False);
+                Assert.That(feature.ClosedDate.HasValue, Is.False);
             });
         }
 
         [Test]
-        public async Task GetWorkItemDetails_ReturnsCorrectClosedDateBasedOnStateMapping()
+        public async Task GetFeaturesForProject_ReturnsCorrectClosedDateBasedOnStateMapping()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            team.DoneStates.Add("Active");
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '370'");
+            project.DoneStates.Add("Resolved");
 
-            var (_, _, _, _, _, closedDate) = await subject.GetWorkItemDetails("375", team);
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "370");
 
             Assert.Multiple(() =>
             {
-                Assert.That(closedDate.HasValue, Is.True);
-                Assert.That(closedDate?.Date, Is.EqualTo(new DateTime(2025, 2, 26, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.That(feature.ClosedDate.HasValue, Is.True);
+                Assert.That(feature.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 2, 16, 0, 0, 0, DateTimeKind.Utc)));
             });
         }
 
         [Test]
-        public async Task GetWorkItemDetails_ClosedDateButNoStartedDate_SetsStartedDateToClosedDate()
+        public async Task GetFeaturesForProject_ClosedDateButNoStartedDate_SetsStartedDateToClosedDate()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            team.DoingStates.Remove("Active");
-            team.DoneStates.Add("Active");
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '370'");
+            project.DoingStates.Remove("Resolved");
+            project.DoneStates.Add("Resolved");
 
-            var (_, _, _, _, startedDate, closedDate) = await subject.GetWorkItemDetails("375", team);
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "370");
 
             Assert.Multiple(() =>
             {
-                Assert.That(startedDate, Is.EqualTo(closedDate));
+                Assert.That(feature.StartedDate, Is.EqualTo(feature.ClosedDate));
             });
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByQuery_IgnoresClosedItems()
+        [TestCase("", "370", 0)]
+        [TestCase("MambooJamboo", "370", 0)]
+        [TestCase("Microsoft.VSTS.Scheduling.Size", "370", 12)]
+        [TestCase("Microsoft.VSTS.Scheduling.Size", "380", 0)]
+        [TestCase("Microsoft.VSTS.Scheduling.Size", "371", 2)]
+        public async Task GetFeaturesForProject_ReadsEstimatedSizeCorrect(string fieldName, string workItemId, int expectedEstimatedSize)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
+            project.SizeEstimateField = fieldName;
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == workItemId);
+
+            Assert.That(feature.EstimatedSize, Is.EqualTo(expectedEstimatedSize));
+        }
+
+        [Test]
+        [TestCase("", "370", "")]
+        [TestCase("MambooJamboo", "370", "")]
+        [TestCase("Microsoft.VSTS.Scheduling.Size", "370", "12")]
+        [TestCase("System.AreaPath", "370", "CMFTTestTeamProject")]
+        [TestCase("System.Tags", "370", "Release1")]
+        public async Task GetFeaturesForProject_ReadsFeatureOwnerFieldCorrect(string fieldName, string workItemId, string expectedFeatureOwnerFieldValue)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
+            project.FeatureOwnerField = fieldName;
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == workItemId);
+
+            Assert.That(feature.OwningTeam, Is.EqualTo(expectedFeatureOwnerFieldValue));
+        }
+
+        [Test]
+        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesClosedItems()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
-            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["User Story", "Bug"], team, "[System.Tags] CONTAINS 'ThroughputIgnore'");
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Has.Count.EqualTo(0));
-                Assert.That(totalItems, Has.Count.EqualTo(1));
-            });
+            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "[System.Tags] CONTAINS 'ThroughputIgnore'");
+            
+            Assert.That(totalItems, Has.Count.EqualTo(1));
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByQuery_IgnoresItemsOfNotMatchingWorkItemType()
+        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IgnoresItemsOfNotMatchingWorkItemType()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.Add("Bug");
 
-            var (remainingItems, _) = await subject.GetWorkItemsByQuery(["Bug"], team, "[System.Tags] CONTAINS 'Release1'");
+            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "[System.Tags] CONTAINS 'Release1'");
 
-            Assert.That(remainingItems, Has.Count.EqualTo(0));
-        }
-
-        [Test]
-        public async Task IsRelatedToFeature_ItemHasNoRelation_ReturnsFalse()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-
-            var isRelated = await subject.IsRelatedToFeature("365", ["370"], team);
-
-            Assert.That(isRelated, Is.False);
-        }
-
-        [Test]
-        public async Task IsRelatedToFeature_ItemIsChild_ReturnsTrue()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-
-            var isRelated = await subject.IsRelatedToFeature("365", ["371"], team);
-
-            Assert.That(isRelated, Is.True);
-        }
-
-        [Test]
-        public async Task IsRelatedToFeature_ItemIsChild_MultipleFeatures_ReturnsTrue()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-
-            var isRelated = await subject.IsRelatedToFeature("365", ["370", "371"], team);
-
-            Assert.That(isRelated, Is.True);
-        }
-
-        [Test]
-        public async Task IsRelatedToFeature_ItemIsRemoteRelatedViaCustomField_ReturnsTrue()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            team.AdditionalRelatedField = "Custom.RemoteFeatureID";
-
-            var isRelated = await subject.IsRelatedToFeature("375", ["279"], team);
-
-            Assert.That(isRelated, Is.True);
+            Assert.That(totalItems, Has.Count.EqualTo(0));
         }
 
         [Test]
@@ -558,68 +498,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        [TestCase("")]
-        [TestCase("MambooJamboo")]
-        public async Task GetEstimatedSizeForItem_EstimateSizeFieldNotExists_Returns0(string fieldName)
-        {
-            var subject = CreateSubject();
-
-            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            project.SizeEstimateField = fieldName;
-
-            var estimatedSize = await subject.GetEstimatedSizeForItem("370", project);
-
-            Assert.That(estimatedSize, Is.EqualTo(0));
-        }
-
-        [Test]
-        [TestCase("370", 12)]
-        [TestCase("380", 0)]
-        [TestCase("371", 2)]
-        public async Task GetEstimatedSizeForItem_GivenExistingField_ReturnsCorrectValue(string referenceId, int expectedSize)
-        {
-            var subject = CreateSubject();
-
-            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            project.SizeEstimateField = "Microsoft.VSTS.Scheduling.Size";
-
-            var estimatedSize = await subject.GetEstimatedSizeForItem(referenceId, project);
-
-            Assert.That(estimatedSize, Is.EqualTo(expectedSize));
-        }
-
-        [Test]
-        [TestCase("")]
-        [TestCase("MambooJamboo")]
-        public async Task GetFeatureOwnerByField_FeatureOwnerFieldDoesNotExist_ReturnsEmptyString(string fieldName)
-        {
-            var subject = CreateSubject();
-
-            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            project.FeatureOwnerField = fieldName;
-
-            var featureOwnerFieldContent = await subject.GetFeatureOwnerByField("370", project);
-
-            Assert.That(featureOwnerFieldContent, Is.Empty);
-        }
-
-        [Test]
-        [TestCase("370", "Microsoft.VSTS.Scheduling.Size", "12")]
-        [TestCase("377", "System.AreaPath", "CMFTTestTeamProject\\SomeReleeaseThatIsUsingAreaPaths")]
-        [TestCase("370", "System.Tags", "Release1")]
-        public async Task GetFeatureOwnerByField_GivenExistingField_ReturnsCorrectValue(string referenceId, string fieldName, string expectedValue)
-        {
-            var subject = CreateSubject();
-
-            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            project.FeatureOwnerField = fieldName;
-
-            var estimatedSize = await subject.GetFeatureOwnerByField(referenceId, project);
-
-            Assert.That(estimatedSize, Is.EqualTo(expectedValue));
-        }
-
-        [Test]
         public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();
@@ -631,35 +509,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             project.HistoricalFeaturesWorkItemQuery = $"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'";
 
-            var childItems = await subject.GetChildItemsForFeaturesInProject(project);
+            var childItems = await subject.GetHistoricalFeatureSize(project);
 
-            Assert.That(new List<int> { 1, 3, 3 }, Is.EquivalentTo(childItems));
-        }
-
-        [Test]
-        [TestCase("[System.TeamProject] = 'CMFTTestTeamProject'", 3)]
-        [TestCase("[System.TeamProject] = 'CMFTTestTeamProject' AND [System.WorkItemType] = 'Bug'", 1)]
-        [TestCase("[System.TeamProject] = 'CMFTTestTeamProject' AND [System.ID] = '377'", 1)]
-        public async Task GetFeaturesInProgressForTeam_ReturnsCorrectAmount(string teamQuery, int expectedFeaturesInProgress)
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam(teamQuery);
-
-            var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
-
-            Assert.That(featuresInProgress, Has.Count.EqualTo(expectedFeaturesInProgress));
-        }
-
-        [Test]
-        public async Task GetFeaturesInProgressForTeam_FeatureLinkedViaCustomField_ReturnsCorrectAmount()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
-            team.AdditionalRelatedField = "Custom.RemoteFeatureID";
-
-            var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
-
-            Assert.That(featuresInProgress, Has.Count.EqualTo(2));
+            Assert.That(new List<int> { 1, 3, 3 }, Is.EquivalentTo(childItems.Values));
         }
 
         private Team CreateTeam(string query)

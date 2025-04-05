@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Models
     {
         string WorkItemQuery { get; set; }
 
+        List<string> WorkItemTypes { get; set; }
+
         List<string> ToDoStates { get; set; }
 
         List<string> DoingStates { get; set; }

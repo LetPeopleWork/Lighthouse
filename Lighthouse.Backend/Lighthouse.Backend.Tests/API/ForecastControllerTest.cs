@@ -13,12 +13,14 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IForecastUpdateService> monteCarloServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
+        private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         [SetUp]
         public void Setup()
         {
             monteCarloServiceMock = new Mock<IForecastUpdateService>();
             teamRepositoryMock = new Mock<IRepository<Team>>();
+            teamMetricsServiceMock = new Mock<ITeamMetricsService>();
         }
 
         [Test]
@@ -142,7 +144,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private ForecastController CreateSubject()
         {
-            return new ForecastController(monteCarloServiceMock.Object, teamRepositoryMock.Object);
+            return new ForecastController(monteCarloServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object);
         }
     }
 }

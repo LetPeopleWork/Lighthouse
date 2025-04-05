@@ -15,6 +15,8 @@
 
         public int History => ThroughputPerUnitOfTime.Length;
 
+        public int TotalThroughput => ThroughputPerUnitOfTime.Sum();
+
         public int GetThroughputOnDay(int day)
         {
             return ThroughputPerUnitOfTime[day];

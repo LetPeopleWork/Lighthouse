@@ -38,6 +38,7 @@
         {
             return results.Sum(x => x.RemainingItems);
         }
+
         public static void ResetRemainingItems(this IEnumerable<SimulationResult> results)
         {
             foreach (var result in results)

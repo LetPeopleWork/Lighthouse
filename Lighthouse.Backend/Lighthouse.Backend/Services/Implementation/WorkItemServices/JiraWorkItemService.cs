@@ -2,7 +2,6 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Lighthouse.Backend.WorkTracking.Jira;
 using System.Net.Http.Headers;
 using System.Text;
@@ -12,8 +11,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 {
     public class JiraWorkItemService : IWorkItemService
     {
-        private readonly Cache<string, Issue> cache = new Cache<string, Issue>();
-
         private readonly ILexoRankService lexoRankService;
         private readonly IIssueFactory issueFactory;
         private readonly ILogger<JiraWorkItemService> logger;
@@ -27,222 +24,97 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             this.cryptoService = cryptoService;
         }
 
-        public async Task<IEnumerable<WorkItem>> UpdateWorkItemsForTeam(Team team)
+        public async Task<IEnumerable<WorkItem>> GetChangedWorkItemsSinceLastTeamUpdate(Team team)
         {
             var workItems = new List<WorkItem>();
 
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
-            var jiraRestClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
-
-            var workItemsQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
-            var stateQuery = PrepareStateQuery(team.AllStates);
-
-            var query = $"({team.WorkItemQuery}) {workItemsQuery} {stateQuery} ";
-
-            var updateHorizon = team.TeamUpdateTime;
-            if (team.TeamUpdateTime != DateTime.MinValue)
-            {
-                logger.LogInformation("Team was last updated on {LastUpdateTime} - Getting all items that were changed since then", team.TeamUpdateTime);
-                query += $" AND ({JiraFieldNames.UpdatedFieldName} >= '{updateHorizon:yyyy-MM-dd}')";
-            }
-            else
-            {
-                logger.LogInformation("No Update Time found - Getting all Work Items that macht the query (this might take a while...)");
-            }
-
-
-            var issues = await GetIssuesByQuery(jiraRestClient, team, query, team.AdditionalRelatedField);
+            
+            var lastUpdatedFilter = PrepareLastUpdatedQuery(team.TeamUpdateTime);
+            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)} {lastUpdatedFilter}";
+            var issues = await GetIssuesByQuery(team, query, team.AdditionalRelatedField);
 
             foreach (var issue in issues)
             {
-                var workItem = CreateWorkItemFromJiraIssue(issue, jiraRestClient.BaseAddress, team);
-                workItems.Add(workItem);
+                var workItemBase = CreateWorkItemFromJiraIssue(issue, team);
+                workItems.Add(new WorkItem(workItemBase, team, issue.ParentKey));
             }
 
             return workItems;
         }
 
-        private WorkItem CreateWorkItemFromJiraIssue(Issue issue, Uri? baseAddress, IWorkItemQueryOwner workItemQueryOwner)
+        public async Task<List<Feature>> GetFeaturesForProject(Project project)
         {
-            var url = $"{baseAddress}browse/{issue.Key}";
+            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
-            var workItem = new WorkItem()
+            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
+            var issues = await GetIssuesByQuery(project, query);
+
+            var features = new List<Feature>();
+            foreach (var issue in issues)
             {
-                ReferenceId = issue.Key,
-                Name = issue.Title,
-                ClosedDate = issue.ClosedDate,
-                StartedDate = issue.StartedDate,
-                ParentReferenceId = issue.ParentKey,
-                Order = issue.Rank,
-                Type = issue.IssueType,
-                State = issue.State,
-                Url = url,
-                StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
-            };
+                var feature = new Feature(CreateWorkItemFromJiraIssue(issue, project));
 
-            return workItem;
-        }
+                var size = await GetEstimatedSizeForItem(issue.Key, project);
+                var owner = await GetFeatureOwnerByField(issue.Key, project);
 
-        public async Task<int[]> GetThroughputForTeam(Team team)
-        {
-            logger.LogInformation("Getting Closed Work Items for Team {TeamName}", team.Name);
-            var client = GetJiraRestClient(team.WorkTrackingSystemConnection);
+                feature.EstimatedSize = size;
+                feature.OwningTeam = owner;
 
-            return await GetClosedItemsPerDay(client, team);
-        }
-
-        public Task<string[]> GetClosedWorkItemsForTeam(Team team)
-        {
-            return Task.FromResult(Array.Empty<string>());
-        }
-
-        public async Task<List<string>> GetFeaturesForProject(Project project)
-        {
-            logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
-
-            var jiraRestClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
-
-            var query = PrepareAllItemsQuery(project);
-            var issues = await GetIssuesByQuery(jiraRestClient, project, query);
-
-            var workItems = issues.Where(i => project.WorkItemTypes.Contains(i.IssueType)).ToList();
-
-            foreach (var parentKey in issues.Where(i => !string.IsNullOrEmpty(i.ParentKey)).Select(i => i.ParentKey))
-            {
-                var parentItem = await GetIssueById(jiraRestClient, project, parentKey);
-
-                if (project.WorkItemTypes.Contains(parentItem.IssueType))
-                {
-                    logger.LogInformation("Found Issue with Key {Key}", parentItem.Key);
-                    workItems.Add(parentItem);
-                }
+                features.Add(feature);
             }
 
-            return workItems.Select(x => x.Key).ToList();
+            return features;
         }
 
-        public async Task<IEnumerable<int>> GetChildItemsForFeaturesInProject(Project project)
+        public async Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
         {
-            var childItemList = new List<int>();
+            var historicalFeatureSize = new Dictionary<string, int>();
 
             logger.LogInformation("Getting Child Items for Features in Project {Project} for Work Item Types {WorkItemTypes} and Query '{Query}'", project.Name, string.Join(", ", project.WorkItemTypes), project.HistoricalFeaturesWorkItemQuery);
 
-            var jiraRestClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
+            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.HistoricalFeaturesWorkItemQuery);
+            var issues = await GetIssuesByQuery(project, query);
 
-            var workItemsQuery = PrepareWorkItemTypeQuery(project.WorkItemTypes);
-            var jql = $"{project.HistoricalFeaturesWorkItemQuery} " +
-            $"{workItemsQuery} ";
-
-            var issues = await GetIssuesByQuery(jiraRestClient, project, jql);
-
-            foreach (var issue in issues)
+            foreach (var issueKey in issues.Select(i => i.Key))
             {
-                var childItems = 0;
+                historicalFeatureSize.Add(issueKey, 0);
 
-                var tasks = project.Teams.Select(async team =>
+                foreach (var team in project.Teams)
                 {
-                    var (_, totalItems) = await GetRelatedWorkItems($"{issue.Key}", team);
-                    return totalItems;
-                }).ToList();
-
-                var results = await Task.WhenAll(tasks);
-
-                childItems = results.Sum();
-
-                childItemList.Add(childItems);
+                    var totalItems = await GetRelatedWorkItems(team, issueKey);
+                    historicalFeatureSize[issueKey] += totalItems;
+                }
             }
 
-            return childItemList.Where(i => i > 0);
+            var emptyFeatures = historicalFeatureSize.Where(kvp => kvp.Value <= 0).Select(kvp => kvp.Key).ToList();
+            foreach (var featureId in emptyFeatures)
+            {
+                historicalFeatureSize.Remove(featureId);
+            }
+
+            return historicalFeatureSize;
         }
 
-        public async Task<IEnumerable<string>> GetFeaturesInProgressForTeam(Team team)
+        public async Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
         {
-            logger.LogInformation("Getting Features in Progress for Team {TeamName}", team.Name);
+            logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", team.WorkItemTypes), additionalQuery);
 
-            var jiraRestClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
+            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery)} AND ({team.WorkItemQuery})";
+            var issues = await GetIssuesByQuery(team, query, team.AdditionalRelatedField);
 
-            var workItemQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
-            var stateQuery = PrepareGenericQuery(team.DoingStates, JiraFieldNames.StatusFieldName, "OR", "=");
+            var issueKeys = issues.Select(x => x.Key).ToList();
 
-            var query = $"({team.WorkItemQuery}) {workItemQuery} {stateQuery} ";
-            var issues = await GetIssuesByQuery(jiraRestClient, team, query, team.AdditionalRelatedField);
+            logger.LogDebug("Found following Issues: {IssueKeys}", string.Join(", ", issueKeys));
 
-            return issues.Select(i => i.ParentKey).Distinct();
-        }
-
-        public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
-        {
-            logger.LogInformation("Getting Related Issues for Feature {Id} and Team {TeamName}", featureId, team.Name);
-
-            var jiraRestClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
-
-            var (remainingItems, totalItems) = await GetRelatedWorkItems(jiraRestClient, team, featureId);
-
-            return (remainingItems, totalItems);
-        }
-
-        public async Task<(string name, string order, string url, string state, DateTime? startedDate, DateTime? closedDate)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
-        {
-            logger.LogInformation("Getting Issue Details for {IssueId} and Query {Query}", itemId, workItemQueryOwner.WorkItemQuery);
-
-            var jiraRestClient = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
-
-            var issue = await GetIssueById(jiraRestClient, workItemQueryOwner, itemId);
-
-            var url = $"{jiraRestClient.BaseAddress}browse/{issue.Key}";
-
-            return (issue.Title, issue.Rank, url, issue.State, issue.StartedDate, issue.ClosedDate);
-        }
-
-        public async Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
-        {
-            logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
-
-            var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
-
-            var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
-
-            var notDoneStateQuery = PrepareStateQuery(team.OpenStates);
-            var doneStateQuery = PrepareStateQuery(team.DoneStates);
-
-            var baseQuery = $"{unparentedItemsQuery} " +
-                $"{workItemsQuery} " +
-                $"AND ({team.WorkItemQuery})";
-
-            var doneWorkItemsQuery = $"{baseQuery} {doneStateQuery}";
-            var remainingWorkItemsQuery = $"{baseQuery} {notDoneStateQuery}";
-
-            var doneIssues = await GetIssuesByQuery(jiraClient, team, doneWorkItemsQuery, team.AdditionalRelatedField);
-            var remainingIssues = await GetIssuesByQuery(jiraClient, team, remainingWorkItemsQuery, team.AdditionalRelatedField);
-
-            var doneWorkItemsIds = doneIssues.Select(x => x.Key).ToList();
-            var remainingWorkItemIds = remainingIssues.Select(x => x.Key).ToList();
-
-            logger.LogDebug("Found following Done Work Items {DoneWorkItems}", string.Join(", ", doneWorkItemsIds));
-            logger.LogDebug("Found following Undone Work Items {RemainingWorkItems}", string.Join(", ", remainingWorkItemIds));
-
-            return (remainingWorkItemIds, remainingWorkItemIds.Union(doneWorkItemsIds).ToList());
-        }
-
-        public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
-        {
-            logger.LogInformation("Checking if Issue {Key} of Team {TeamName} is related to {FeatureIDs}", itemId, team.Name, string.Join(", ", featureIds));
-
-            var jiraClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
-            var issue = await GetIssueById(jiraClient, team, itemId, team.AdditionalRelatedField);
-
-            var isRelated = featureIds.Any(f => IsIssueRelated(issue, f));
-            logger.LogInformation("Is Issue {ID} related: {IsRelated}", itemId, isRelated);
-
-            return isRelated;
+            return issueKeys;
         }
 
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
             logger.LogInformation("Getting Adjacent Order Index for Issues {Items} in order {RelativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
 
-            var result = string.Empty;
-
+            string? result;
             if (!existingItemsOrder.Any())
             {
                 result = lexoRankService.Default;
@@ -286,14 +158,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             try
             {
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
-                var restClient = GetJiraRestClient(team.WorkTrackingSystemConnection);
+                
+                var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
+                var issues = await GetIssuesByQuery(team, workItemsQuery, team.AdditionalRelatedField);
 
-                var throughput = await GetClosedItemsPerDay(restClient, team);
-                var totalThroughput = throughput.Sum();
+                var totalItems = issues.Count();
 
-                logger.LogInformation("Found a total of {NumberOfWorkItems} Closed Work Items with specified Query in the last {Days} days", totalThroughput, team.ThroughputHistory);
+                logger.LogInformation("Found a total of {NumberOfWorkItems} Issues with specified Query settings", totalItems);
 
-                return totalThroughput > 0;
+                return totalItems > 0;
             }
             catch (Exception exception)
             {
@@ -322,7 +195,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
-        public async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
+        private async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
         {
             if (string.IsNullOrEmpty(project.SizeEstimateField))
             {
@@ -330,6 +203,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
 
             var estimateRawValue = await GetFieldValue(referenceId, project, project.SizeEstimateField);
+
             // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
             if (double.TryParse(estimateRawValue, out var estimateAsDouble))
             {
@@ -339,7 +213,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return 0;
         }
 
-        public async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
+        private async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
         {
             if (string.IsNullOrEmpty(project.FeatureOwnerField))
             {
@@ -367,31 +241,44 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         private async Task<Issue> GetIssueById(HttpClient jiraClient, IWorkItemQueryOwner workitemQueryOwner, string issueId, string? additionalRelatedField = null)
         {
             logger.LogDebug("Getting Issue by Key '{Key}'", issueId);
-            var issue = cache.Get(issueId);
 
-            if (issue == null)
-            {
-                logger.LogDebug("Not Found in Cache - Getting from Jira");
+            var url = $"rest/api/latest/issue/{issueId}?expand=changelog";
 
-                var url = $"rest/api/latest/issue/{issueId}?expand=changelog";
+            var response = await jiraClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
 
-                var response = await jiraClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
+            var responseBody = await response.Content.ReadAsStringAsync();
+            var jsonResponse = JsonDocument.Parse(responseBody);
 
-                var responseBody = await response.Content.ReadAsStringAsync();
-                var jsonResponse = JsonDocument.Parse(responseBody);
-
-                issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement, workitemQueryOwner, additionalRelatedField);
-
-                UpdateCache(issue);
-            }
+            var issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement, workitemQueryOwner, additionalRelatedField);
 
             logger.LogDebug("Found Issue by Key: {Key}", issue.Key);
 
             return issue;
         }
 
-        private async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(HttpClient jiraRestClient, Team team, string relatedWorkItemId)
+        private WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner)
+        {
+            var baseAddress = workItemQueryOwner.WorkTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
+            var url = $"{baseAddress}/browse/{issue.Key}";
+
+            var workItem = new WorkItemBase
+            {
+                ReferenceId = issue.Key,
+                Name = issue.Title,
+                ClosedDate = issue.ClosedDate,
+                StartedDate = issue.StartedDate,
+                Order = issue.Rank,
+                Type = issue.IssueType,
+                State = issue.State,
+                Url = url,
+                StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
+            };
+
+            return workItem;
+        }
+
+        private async Task<int> GetRelatedWorkItems(Team team, string relatedWorkItemId)
         {
             // Jira does not support all operators for custom fields (depending on the type), so we try to use a "match", followed by a "fuzzy match" if the first one fails
             var parentFieldName = "parent";
@@ -407,20 +294,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             {
                 var parentClause = $"AND {parentFieldName}{customFieldOperator}{relatedWorkItemId}";
 
-                var remainingItemsQuery = $"{PrepareNotClosedItemsQuery(team)} {parentClause}";
-                var closedItemsQuery = $"{PrepareClosedItemsQuery(team.WorkItemTypes, team)} {parentClause}";
+                var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)} {parentClause}";
 
                 try
                 {
-                    logger.LogDebug("Getting Remaining Items by Query...");
-                    var remainingIssues = (await GetIssuesByQuery(jiraRestClient, team, remainingItemsQuery, parentFieldName)).Select(i => i.Key).ToList();
+                    var issues = (await GetIssuesByQuery(team, query, parentFieldName)).Select(i => i.Key).ToList();
 
-                    logger.LogDebug("Getting Closed Items by Query...");
-                    var closedIssues = (await GetIssuesByQuery(jiraRestClient, team, closedItemsQuery, parentFieldName)).Select(i => i.Key).ToList();
+                    logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", issues));
 
-                    logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", remainingIssues.Union(closedIssues)));
-
-                    return (remainingIssues.Count, remainingIssues.Count + closedIssues.Count);
+                    return issues.Count;
                 }
                 catch (HttpRequestException exception)
                 {
@@ -428,46 +310,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 }
             }
 
-            return (0, 0);
+            return 0;
         }
 
-        private bool IsIssueRelated(Issue issue, string relatedWorkItemId)
-        {
-            logger.LogDebug("Checking if Issue {Key} is related to {RelatedWorkItemId}", issue.Key, relatedWorkItemId);
-            if (issue.ParentKey == relatedWorkItemId)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private async Task<int[]> GetClosedItemsPerDay(HttpClient jiraRestClient, Team team)
-        {
-            var throughputSettings = team.GetThroughputSettings();
-            var numberOfDays = throughputSettings.NumberOfDays;
-            var closedItemsPerDay = new int[numberOfDays];
-
-            var query = PrepareClosedItemsQuery(team.WorkItemTypes, team, throughputSettings);
-
-            var issues = await GetIssuesByQuery(jiraRestClient, team, query);
-
-            foreach (var issue in issues)
-            {
-                int index = (issue.ClosedDate.Date - throughputSettings.StartDate).Days;
-
-                if (index >= 0 && index < numberOfDays)
-                {
-                    closedItemsPerDay[index]++;
-                }
-            }
-
-            return closedItemsPerDay;
-        }
-
-        private async Task<IEnumerable<Issue>> GetIssuesByQuery(HttpClient client, IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, string? additionalRelatedField = null)
+        private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, string? additionalRelatedField = null)
         {
             logger.LogDebug("Getting Issues by JQL Query: '{Query}'", jqlQuery);
+            var client = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
+
             var issues = new List<Issue>();
 
             var startAt = 0;
@@ -499,75 +349,39 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                     logger.LogDebug("Found Issue {Key}", issue.Key);
 
                     issues.Add(issue);
-
-                    UpdateCache(issue);
                 }
             }
 
             return issues;
         }
 
-        private void UpdateCache(Issue issue)
+        private static string PrepareQuery(
+            IEnumerable<string> includedWorkItemTypes,
+            IEnumerable<string> includedStates,
+            string query)
         {
-            cache.Store(issue.Key, issue, TimeSpan.FromMinutes(5));
+            var workItemsQuery = PrepareGenericQuery(includedWorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
+            var stateQuery = PrepareGenericQuery(includedStates, JiraFieldNames.StatusFieldName, "OR", "=");
+
+
+            var jql = $"({query}) " +
+                $"{workItemsQuery} " +
+                $"{stateQuery} ";
+
+            return jql;
         }
 
-        private static string PrepareClosedItemsQuery(
-            IEnumerable<string> issueTypes,
-            Team team,
-            ThroughputSettings? throughputSettings = null)
+        private static string PrepareLastUpdatedQuery(DateTime lastUpdated)
         {
-            var workItemsQuery = PrepareWorkItemTypeQuery(issueTypes);
-            var stateQuery = PrepareGenericQuery(team.DoneStates, JiraFieldNames.StatusFieldName, "OR", "=");
+            var query = string.Empty;
 
-            var historyFilter = string.Empty;
-            if (throughputSettings != null)
+            var updateHorizon = lastUpdated;
+            if (lastUpdated != DateTime.MinValue)
             {
-                historyFilter = $"AND {JiraFieldNames.ResolvedFieldName} >= {throughputSettings.StartDate:yyyy-MM-dd} AND {JiraFieldNames.ResolvedFieldName} <= {throughputSettings.EndDate.AddDays(1):yyyy-MM-dd}";
+                query += $" AND ({JiraFieldNames.UpdatedFieldName} >= '{updateHorizon:yyyy-MM-dd}')";
             }
 
-            var jql = $"({team.WorkItemQuery}) " +
-                $"{workItemsQuery} " +
-                $"{stateQuery} " +
-                $"{historyFilter}";
-
-            return jql;
-        }
-
-        private static string PrepareNotClosedItemsQuery(
-            Team team)
-        {
-            var workItemsQuery = PrepareWorkItemTypeQuery(team.WorkItemTypes);
-            var stateQuery = PrepareStateQuery(team.OpenStates);
-
-            var jql = $"({team.WorkItemQuery}) " +
-                $"{workItemsQuery} " +
-                $"{stateQuery} ";
-
-            return jql;
-        }
-
-        private static string PrepareAllItemsQuery(
-            Project project)
-        {
-            var workItemsQuery = PrepareWorkItemTypeQuery(project.WorkItemTypes);
-            var stateQuery = PrepareStateQuery(project.AllStates);
-
-            var jql = $"({project.WorkItemQuery}) " +
-                $"{workItemsQuery} " +
-                $"{stateQuery} ";
-
-            return jql;
-        }
-
-        private static string PrepareWorkItemTypeQuery(IEnumerable<string> issueTypes)
-        {
-            return PrepareGenericQuery(issueTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
-        }
-
-        private static string PrepareStateQuery(IEnumerable<string> doneStates)
-        {
-            return PrepareGenericQuery(doneStates, JiraFieldNames.StatusFieldName, "OR", "=");
+            return query;
         }
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)

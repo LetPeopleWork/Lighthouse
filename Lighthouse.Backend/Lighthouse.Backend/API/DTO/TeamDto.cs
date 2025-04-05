@@ -15,8 +15,6 @@ namespace Lighthouse.Backend.API.DTO
             Id = team.Id;
             FeatureWip = team.FeatureWIP;
             LastUpdated = team.TeamUpdateTime;
-            FeaturesInProgress = team.FeaturesInProgress;
-            Throughput = team.RawThroughput;
             UseFixedDatesForThroughput = team.UseFixedDatesForThroughput;
 
             var throughputSettings = team.GetThroughputSettings();
@@ -31,10 +29,6 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public int FeatureWip { get; set; }
-
-        public List<string> FeaturesInProgress { get; } = new List<string>();
-
-        public int[] Throughput { get; set; }
 
         [JsonRequired]
         public DateTime LastUpdated { get; set; }

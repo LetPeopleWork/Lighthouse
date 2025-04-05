@@ -3,6 +3,7 @@ using System;
 using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lighthouse.Backend.Migrations
 {
     [DbContext(typeof(LighthouseAppContext))]
-    partial class LighthouseAppContextModelSnapshot : ModelSnapshot
+    [Migration("20250403121357_RemoveThroughputFeatureWIPFromTeam")]
+    partial class RemoveThroughputFeatureWIPFromTeam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.2");
@@ -58,9 +61,6 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<DateTime?>("ClosedDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("EstimatedSize")
-                        .HasColumnType("INTEGER");
-
                     b.Property<bool>("IsUnparentedFeature")
                         .HasColumnType("INTEGER");
 
@@ -72,10 +72,6 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Order")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OwningTeam")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

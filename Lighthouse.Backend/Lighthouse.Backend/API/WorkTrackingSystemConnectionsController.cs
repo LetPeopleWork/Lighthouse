@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.AspNetCore.Mvc;
@@ -63,25 +64,21 @@ namespace Lighthouse.Backend.API
         [HttpPut("{id}")]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(int id, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
         {
-            var existingConnection = repository.GetById(id);
-            if (existingConnection == null)
+            return await this.GetEntityByIdAnExecuteAction(repository, id, async existingConnection =>
             {
-                return NotFound();
-            }
+                existingConnection.Name = updatedConnection.Name;
 
-            existingConnection.Name = updatedConnection.Name;
+                foreach (var option in updatedConnection.Options)
+                {
+                    var existingOption = existingConnection.Options.Single(o => o.Key == option.Key);
+                    existingOption.Value = option.Value;
+                }
 
-            foreach (var option in updatedConnection.Options)
-            {
-                var existingOption = existingConnection.Options.Single(o => o.Key == option.Key);
-                existingOption.Value = option.Value;
-            }
+                repository.Update(existingConnection);
+                await repository.Save();
 
-            repository.Update(existingConnection);
-            await repository.Save();
-
-            var updatedConnectionDto = new WorkTrackingSystemConnectionDto(existingConnection);
-            return Ok(updatedConnectionDto);
+                return new WorkTrackingSystemConnectionDto(existingConnection);
+            });
         }
 
         [HttpDelete("{id}")]
@@ -136,12 +133,12 @@ namespace Lighthouse.Backend.API
             {
                 connection.Options.Add(
                     new WorkTrackingSystemConnectionOption
-                        {
-                            Key = option.Key,
-                            Value = option.Value,
-                            IsSecret = option.IsSecret,
-                            IsOptional = option.IsOptional,
-                        }
+                    {
+                        Key = option.Key,
+                        Value = option.Value,
+                        IsSecret = option.IsSecret,
+                        IsOptional = option.IsOptional,
+                    }
                     );
             }
 

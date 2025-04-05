@@ -56,17 +56,13 @@ namespace Lighthouse.Backend.API
         [HttpGet("{id}")]
         public ActionResult<TeamDto> GetTeam(int id)
         {
-            var team = teamRepository.GetById(id);
-
-            if (team == null)
+            return this.GetEntityByIdAnExecuteAction(teamRepository, id, team =>
             {
-                return NotFound();
-            }
+                var allProjects = projectRepository.GetAll().ToList();
+                var allFeatures = featureRepository.GetAll().ToList();
 
-            var allProjects = projectRepository.GetAll().ToList();
-            var allFeatures = featureRepository.GetAll().ToList();
-
-            return Ok(CreateTeamDto(allProjects, allFeatures, team));
+                return CreateTeamDto(allProjects, allFeatures, team);
+            });
         }
 
         [HttpPost("{id}")]
@@ -108,124 +104,41 @@ namespace Lighthouse.Backend.API
         [HttpPut("{id}")]
         public async Task<ActionResult<TeamSettingDto>> UpdateTeam(int id, TeamSettingDto teamSetting)
         {
-            var team = teamRepository.GetById(id);
-
-            if (team == null)
+            return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
             {
-                return NotFound();
-            }
+                SyncTeamWithTeamSettings(team, teamSetting);
 
-            SyncTeamWithTeamSettings(team, teamSetting);
+                team.ResetUpdateTime();
 
-            teamRepository.Update(team);
-            await teamRepository.Save();
+                teamRepository.Update(team);
+                await teamRepository.Save();
 
-            var teamSettingDto = new TeamSettingDto(team);
-            return Ok(teamSettingDto);
+                var teamSettingDto = new TeamSettingDto(team);
+                return teamSettingDto;
+            });
         }
 
         [HttpGet("{id}/settings")]
         public ActionResult<TeamSettingDto> GetTeamSettings(int id)
         {
-            var team = teamRepository.GetById(id);
-
-            if (team == null)
+            return this.GetEntityByIdAnExecuteAction(teamRepository, id, team =>
             {
-                return NotFound();
-            }
-
-            var teamSettingDto = new TeamSettingDto(team);
-
-            return Ok(teamSettingDto);
+                return new TeamSettingDto(team);
+            });
         }
 
         [HttpPost("validate")]
         public async Task<ActionResult<bool>> ValidateTeamSettings(TeamSettingDto teamSettingDto)
         {
-            var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(teamSettingDto.WorkTrackingSystemConnectionId);
-
-            if (workTrackingSystem == null)
+            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, teamSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>
             {
-                return NotFound(false);
-            }
+                var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
+                SyncTeamWithTeamSettings(team, teamSettingDto);
 
-            var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
-            SyncTeamWithTeamSettings(team, teamSettingDto);
+                var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
-
-            var result = await workItemService.ValidateTeamSettings(team);
-
-            return Ok(result);
-        }
-
-        [HttpGet("{teamId}/workitems")]
-        public async Task<ActionResult<IEnumerable<WorkItemDto>>> GetWorkItems(int teamId)
-        {
-            var team = teamRepository.GetById(teamId);
-            if (team == null)
-            {
-                return NotFound();
-            }
-
-            var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(team.WorkTrackingSystemConnectionId);
-
-            if (workTrackingSystem.WorkTrackingSystem == WorkTracking.WorkTrackingSystems.Jira)
-            {
-                // No support for Jira in PoC
-                var randomWorkItems = CreateRandomWorkItems();
-                return Ok(randomWorkItems);
-            }
-
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystem.WorkTrackingSystem);
-            var workItemIds = await workItemService.GetClosedWorkItemsForTeam(team);
-
-            var workItems = new List<WorkItemDto>();
-            var idCounter = 0;
-
-            foreach (var workItemId in workItemIds)
-            {
-                var (name, _, url, _, startedDate, closedDate) = await workItemService.GetWorkItemDetails(workItemId, team);
-                var workItem = new WorkItemBase
-                {
-                    Id = idCounter++,
-                    Name = name,
-                    ReferenceId = workItemId,
-                    Url = url,
-                    StartedDate = startedDate,
-                    ClosedDate = closedDate
-                };
-
-                workItems.Add(new WorkItemDto(workItem));
-            }
-
-            return Ok(workItems);
-        }
-
-        private static List<WorkItemDto> CreateRandomWorkItems()
-        {
-            var random = new Random();
-            var workItems = new List<WorkItemDto>();
-
-            for (int i = 0; i < 20; i++)
-            {
-                var startDate = DateTime.Now.AddDays(-random.Next(0, 30));
-                var completedDate = startDate.AddDays(random.Next(0, 10));
-
-                var workItem = new WorkItemBase
-                {
-                    Id = i + 1,
-                    Name = $"WorkItem {i + 1}",
-                    ReferenceId = $"WI-{random.Next(1000, 9999)}",
-                    Url = $"http://example.com/workitem/{i + 1}",
-                    StartedDate = startDate,
-                    ClosedDate = completedDate
-                };
-
-                workItems.Add(new WorkItemDto(workItem));
-            }
-
-            return workItems;
+                return await workItemService.ValidateTeamSettings(team);
+            });
         }
 
         private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)

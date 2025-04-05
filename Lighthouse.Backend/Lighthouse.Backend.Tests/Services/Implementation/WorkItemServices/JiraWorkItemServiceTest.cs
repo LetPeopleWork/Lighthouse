@@ -23,39 +23,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetClosedWorkItemsForTeam_FullHistory_DynamicThroughput_TestProject_ReturnsCorrectAmountOfItems()
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_NoUpdateDone_GetsAllItemsThatMatchQuery()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
+            var team = CreateTeam($"project = PROJ AND labels = ExistingLabel");
 
-            var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;
-            team.UseFixedDatesForThroughput = false;
-            team.ThroughputHistory = history;
+            team.ResetUpdateTime();
 
-            var closedItems = await subject.GetThroughputForTeam(team);
+            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
 
-            Assert.That(closedItems.Count, Is.EqualTo(team.GetThroughputSettings().NumberOfDays));
-            Assert.That(closedItems.Sum(), Is.EqualTo(6));
+            Assert.That(matchingItems.Count, Is.EqualTo(2));
         }
 
         [Test]
-        public async Task GetClosedWorkItemsForTeam_FullHistory_FixedThroughput_TestProject_ReturnsCorrectAmountOfItems()
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_NoChangedItems_DoesNotFindNewItems()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
+            var team = CreateTeam($"project = PROJ AND labels = ExistingLabel");
 
-            team.UseFixedDatesForThroughput = true;
-            team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            team.ThroughputHistoryEndDate = DateTime.Now;
+            team.TeamUpdateTime = DateTime.UtcNow.AddDays(+1);
 
-            var closedItems = await subject.GetThroughputForTeam(team);
+            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
 
-            Assert.That(closedItems.Count, Is.EqualTo(team.GetThroughputSettings().NumberOfDays));
-            Assert.That(closedItems.Sum(), Is.EqualTo(6));
+            Assert.That(matchingItems.Count, Is.EqualTo(0));
         }
 
         [Test]
-        public async Task GetThroughputForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_ReturnsOnlyChangedItems()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND labels = ExistingLabel");
+
+            team.TeamUpdateTime = new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+
+            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+
+            Assert.That(matchingItems.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_OrCaseInWorkItemQuery_HandlesCorrectly()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ OR project = DUMMY");
@@ -64,10 +71,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            var closedItems = await subject.GetThroughputForTeam(team);
+            var closedItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
 
-            var totalThroughput = closedItems.Sum();
-            Assert.That(totalThroughput, Is.EqualTo(7));
+            Assert.That(closedItems.Count, Is.EqualTo(18));
+        }
+
+        [Test]
+        [TestCase("PROJ-18", "")]
+        [TestCase("PROJ-15", "PROJ-8")]
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_SetsParentRelationCorrect(string issueKey, string expectedParentReference)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND issueKey = {issueKey}");
+
+            var workItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var workItem = workItems.Single(wi => wi.ReferenceId == issueKey);
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo(expectedParentReference));
+        }
+
+        [Test]
+        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UseParentOverride_SetsParentRelationCorrect()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
+            team.AdditionalRelatedField = "cf[10038]";
+
+            var workItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"));
         }
 
         [Test]
@@ -110,7 +143,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             var itemsByTag = await subject.GetFeaturesForProject(project);
 
-            Assert.That(itemsByTag, Has.Count.EqualTo(1));
+            Assert.That(itemsByTag, Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -128,134 +161,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetRelatedItems_ItemIdIsParent_FindsRelation()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-
-            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-9", team);
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Is.EqualTo(1));
-                Assert.That(totalItems, Is.EqualTo(4));
-            });
-        }
-
-        [Test]
-        public async Task GetRelatedItems_ItemIdIsParent_HasOpenAndClosedItems_ReturnsCorrectNumber()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = LGHTHSDMO");
-
-            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("LGHTHSDMO-9", team);
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Is.EqualTo(8));
-                Assert.That(totalItems, Is.EqualTo(11));
-            });
-        }
-
-        [Test]
-        [TestCase("project = LGHTHSDMO", 7)]
-        [TestCase("project = LGHTHSDMO and key = LGHTHSDMO-1116", 1)]
-        [TestCase("project = LGHTHSDMO and issuetype = Story", 7)]
-        [TestCase("project = LGHTHSDMO and labels IN (Phoenix)", 1)]
-        [TestCase("project = LGHTHSDMO and labels IN (Phoenix, RebelRevolt)", 3)]
-        public async Task GetFeaturesInProgressForTeam_ReturnsCorrectAmount(string teamQuery, int expectedFeaturesInProgress)
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam(teamQuery);
-
-            var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
-
-            Assert.That(featuresInProgress, Has.Count.EqualTo(expectedFeaturesInProgress));
-        }
-
-        [Test]
-        public async Task GetFeaturesInProgressForTeam_FeatureLinkedViaCustomField_ReturnsCorrectAmount()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink");
-            team.AdditionalRelatedField = "cf[10038]";
-
-            var featuresInProgress = (await subject.GetFeaturesInProgressForTeam(team)).ToList();
-
-            Assert.That(featuresInProgress, Has.Count.EqualTo(1));
-        }
-
-        [Test]
-        [TestCase(new string[] { "Story" }, 2, 3)]
-        [TestCase(new string[] { "Task" }, 2, 3)]
-        [TestCase(new string[] { "Bug" }, 1, 2)]
-        [TestCase(new string[] { "Story", "Bug" }, 3, 5)]
-        [TestCase(new string[] { "Task", "Bug" }, 3, 5)]
-        [TestCase(new string[] { "Story", "Task" }, 4, 6)]
-        [TestCase(new string[] { "Story", "Task", "Bug" }, 5, 8)]
-        public async Task GetRelatedItems_HasDifferentTypes_ReturnsCorrectNumber(string[] workItemTypes, int expectedRemainingItems, int expectedTotalItems)
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = LGHTHSDMO AND labels IN (IntegrationTest)");
-            team.WorkItemTypes.Clear();
-
-            foreach ( var workItemType in workItemTypes)
-            {
-                team.WorkItemTypes.Add(workItemType);
-            }
-
-            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("LGHTHSDMO-1041", team);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Is.EqualTo(expectedRemainingItems));
-                Assert.That(totalItems, Is.EqualTo(expectedTotalItems));
-            });
-        }
-
-        [Test]
-        public async Task GetRelatedItems_ItemIdIsParent_OnlyClosedItems_ReturnsCorrectNumber()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-
-            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-21", team);
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Is.EqualTo(0));
-                Assert.That(totalItems, Is.EqualTo(1));
-            });
-        }
-
-        [Test]
-        public async Task GetRelatedItems_ItemIdIsChild_DoesNotFindRelation()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-
-            var (remainingItems, totalItems) = await subject.GetRelatedWorkItems("PROJ-6", team);
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Is.EqualTo(0));
-                Assert.That(totalItems, Is.EqualTo(0));
-            });
-        }
-
-        [Test]
-        public async Task GetRelatedItems_ItemIdIsRemoteRelated_FindsRelation()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = LGHTHSDMO");
-            team.AdditionalRelatedField = "cf[10038]";
-
-            var (relatedItems, totalItems) = await subject.GetRelatedWorkItems("LGHTHSDMO-1724", team);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(relatedItems, Is.EqualTo(2));
-                Assert.That(totalItems, Is.EqualTo(3));
-            });
-        }
-
-        [Test]
         public async Task GetFeaturesForProject_ItemIsClosed_ReturnsItem()
         {
             var subject = CreateSubject();
@@ -270,115 +175,182 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        public async Task GetWorkItemDetails_ReturnsTitleAndStackRank()
+        public async Task GetFeaturesForProject_ReturnsCorrectFeatureProperties()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
+            var project = CreateProject($"project = PROJ AND issueKey = PROJ-18");
 
-            var (name, rank, url, state, startedDate, closedDate) = await subject.GetWorkItemDetails("PROJ-18", team);
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Story");
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-18");
 
             Assert.Multiple(() =>
             {
-                Assert.That(name, Is.EqualTo("Test 32523"));
-                Assert.That(rank, Is.EqualTo("0|i00037:9"));
-                Assert.That(state, Is.EqualTo("In Progress"));
-                Assert.That(url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
+                Assert.That(feature.Name, Is.EqualTo("Test 32523"));
+                Assert.That(feature.Order, Is.EqualTo("0|i00037:9"));
+                Assert.That(feature.State, Is.EqualTo("In Progress"));
+                Assert.That(feature.StateCategory, Is.EqualTo(StateCategories.Doing));
+                Assert.That(feature.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
             });
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByQuery_IgnoresClosedItems()
+        public async Task GetFeaturesForProject_ReturnsCorrectStartedDateBasedOnStateMapping()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
+            var project = CreateProject($"project = PROJ AND issueKey = PROJ-21");
 
-            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "labels = \"LabelOfItemThatIsClosed\"");
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-21");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(feature.StartedDate.HasValue, Is.True);
+                Assert.That(feature.StartedDate?.Date, Is.EqualTo(new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc)));
+
+                Assert.That(feature.ClosedDate.HasValue, Is.False);
+            });
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_ReturnsCorrectClosedDateBasedOnStateMapping()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"project = PROJ AND issueKey = PROJ-21");
+            project.DoneStates.Add("In Progress");
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-21");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(feature.ClosedDate.HasValue, Is.True);
+                Assert.That(feature.ClosedDate?.Date, Is.EqualTo(new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc)));
+            });
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_ClosedDateButNoStartedDate_SetsStartedDateToClosedDate()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"project = PROJ AND issueKey = PROJ-21");
+            project.DoingStates.Clear();
+            project.DoneStates.Clear();
+            project.DoneStates.Add("In Progress");
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-21");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(feature.StartedDate, Is.EqualTo(feature.ClosedDate));
+            });
+        }
+
+        [Test]
+        [TestCase("", "LGHTHSDMO-9", 0)]
+        [TestCase("MambooJamboo", "LGHTHSDMO-9", 0)]
+        [TestCase("customfield_10037", "LGHTHSDMO-9", 12)]
+        [TestCase("customfield_10037", "LGHTHSDMO-1724", 0)]
+        [TestCase("customfield_10037", "LGHTHSDMO-8", 2)]
+        public async Task GetFeaturesForProject_ReadsEstimatedSizeCorrect(string fieldName, string issueKey, int expectedEstimatedSize)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject($"project = LGHTHSDMO AND issuekey = {issueKey}");
+            project.SizeEstimateField = fieldName;
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == issueKey);
+
+            Assert.That(feature.EstimatedSize, Is.EqualTo(expectedEstimatedSize));
+        }
+
+        [Test]
+        [TestCase("", "LGHTHSDMO-9", "")]
+        [TestCase("MambooJamboo", "LGHTHSDMO-9", "")]
+        [TestCase("customfield_10037", "LGHTHSDMO-9", "12.0")]
+        [TestCase("fixVersions", "LGHTHSDMO-9", "Elixir Project")]
+        [TestCase("labels", "LGHTHSDMO-5", "Phoenix")]
+        [TestCase("labels", "LGHTHSDMO-5", "RebelRevolt")]
+        public async Task GetFeaturesForProject_ReadsFeatureOwnerFieldCorrect(string fieldName, string issueKey, string expectedFeatureOwnerFieldValue)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject($"project = LGHTHSDMO AND issuekey = {issueKey}");
+            project.FeatureOwnerField = fieldName;
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == issueKey);
             
-            Assert.Multiple(() =>
-            {
-                Assert.That(remainingItems, Has.Count.EqualTo(0));
-                Assert.That(totalItems, Has.Count.EqualTo(1));
-            });
+            Assert.That(feature.OwningTeam, Contains.Substring(expectedFeatureOwnerFieldValue));
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByQuery_IgnoresItemsOfNotMatchingWorkItemType()
+        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesClosedItems()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ");
-            var (remainingItems, _) = await subject.GetWorkItemsByQuery(["Bug"], team, "labels = \"ExistingLabel\"");
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.AddRange(["Story", "Bug"]);
 
-            Assert.That(remainingItems, Has.Count.EqualTo(0));
+            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "labels = \"LabelOfItemThatIsClosed\"");
+
+            Assert.That(totalItems, Has.Count.EqualTo(1));
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByQuery_IncludesItemsThatMatchBothTeamAndCustomQuery()
+        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IgnoresItemsOfNotMatchingWorkItemType()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ");
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.AddRange(["Bug"]);
+
+            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "labels = \"ExistingLabel\"");
+
+            Assert.That(totalItems, Has.Count.EqualTo(0));
+        }
+
+        [Test]
+        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesItemsThatMatchBothTeamAndCustomQuery()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.AddRange(["Story", "Bug"]);
 
-            var (remainingItems, _) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
+            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
 
-            Assert.That(remainingItems, Has.Count.EqualTo(2));
+            Assert.That(totalItems, Has.Count.EqualTo(2));
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByQuery_IncludesToDoAndDoneItems()
+        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesToDoAndDoneItems()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"Lagunitas\"");
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.AddRange(["Story", "Bug"]);
 
-            var (remainingItems, totalItems) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND fixVersion = \"Elixir Project\"");
+            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "project = \"LGHTHSDMO\" AND fixVersion = \"Elixir Project\"");
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(remainingItems, Has.Count.EqualTo(1));
-                Assert.That(totalItems, Has.Count.EqualTo(1));
-            }
+            Assert.That(totalItems, Has.Count.EqualTo(1));
         }
 
         [Test]
-        public async Task GetOpenWorkItemsByQuery_IgnoresItemsThatMatchCustomBotNotTeamTeamQuery()
+        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IgnoresItemsThatMatchCustomBotNotTeamTeamQuery()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = \"LGHTHSDMO\" AND labels = \"RebelRevolt\"");
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.AddRange(["Story", "Bug"]);
 
-            var (remainingItems, _) = await subject.GetWorkItemsByQuery(["Story", "Bug"], team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
+            var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "project = \"LGHTHSDMO\" AND labels = \"Oberon\"");
 
-            Assert.That(remainingItems, Has.Count.EqualTo(0));
-        }
-
-        [Test]
-        public async Task IsRelatedToFeature_ItemHasNoRelation_ReturnsFalse()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-
-            var isRelated = await subject.IsRelatedToFeature("PROJ-18", ["PROJ-8"], team);
-
-            Assert.That(isRelated, Is.False);
-        }
-
-        [Test]
-        public async Task IsRelatedToFeature_ItemIsChild_ReturnsTrue()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-
-            var isRelated = await subject.IsRelatedToFeature("PROJ-15", ["PROJ-8"], team);
-
-            Assert.That(isRelated, Is.True);
-        }
-
-        [Test]
-        public async Task IsRelatedToFeature_ItemIsChild_MultipleFeatures_ReturnsTrue()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ");
-
-            var isRelated = await subject.IsRelatedToFeature("PROJ-15", ["PROJ-9", "PROJ-8"], team);
-
-            Assert.That(isRelated, Is.True);
+            Assert.That(totalItems, Has.Count.EqualTo(0));
         }
 
         [Test]
@@ -469,7 +441,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        [TestCase("project = LGHTHSDMO", true)]
+        [TestCase("project = LGHTHSDMO AND issueKey = LGHTHSDMO-11", true)]
         [TestCase("project = LGHTHSDMO AND labels = 'NotExisting'", false)]
         [TestCase("project = SomethingThatDoesNotExist", false)]
         public async Task ValidateTeamSettings_ValidConnectionSettings_ReturnsTrueIfTeamHasThroughput(string query, bool expectedValue)
@@ -540,70 +512,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         }
 
         [Test]
-        [TestCase("")]
-        [TestCase("MambooJamboo")]
-        public async Task GetEstimatedSizeForItem_EstimateSizeFieldNotExists_Returns0(string fieldName)
-        {
-            var subject = CreateSubject();
-
-            var project = CreateProject("project = LGHTHSDMO");
-            project.SizeEstimateField = fieldName;
-
-            var estimatedSize = await subject.GetEstimatedSizeForItem("LGHTHSDMO-9", project);
-
-            Assert.That(estimatedSize, Is.EqualTo(0));
-        }
-
-        [Test]
-        [TestCase("LGHTHSDMO-9", 12)]
-        [TestCase("LGHTHSDMO-10", 0)]
-        [TestCase("LGHTHSDMO-8", 2)]
-        public async Task GetEstimatedSizeForItem_GivenExistingField_ReturnsCorrectValue(string referenceId, int expectedSize)
-        {
-            var subject = CreateSubject();
-
-            var project = CreateProject("project = LGHTHSDMO");
-            project.SizeEstimateField = "customfield_10037";
-
-            var estimatedSize = await subject.GetEstimatedSizeForItem(referenceId, project);
-
-            Assert.That(estimatedSize, Is.EqualTo(expectedSize));
-        }
-
-        [Test]
-        [TestCase("")]
-        [TestCase("MambooJamboo")]
-        public async Task GetFeatureOwnerByField_FeatureOwnerFieldDoesNotExist_ReturnsEmptyString(string fieldName)
-        {
-            var subject = CreateSubject();
-
-            var project = CreateProject("project = LGHTHSDMO");
-            project.FeatureOwnerField = fieldName;
-
-            var featureOwnerFieldContent = await subject.GetFeatureOwnerByField("LGHTHSDMO-9", project);
-
-            Assert.That(featureOwnerFieldContent, Is.Empty);
-        }
-
-        [Test]
-        [TestCase("LGHTHSDMO-9", "customfield_10037", "12.0")]
-        [TestCase("LGHTHSDMO-9", "fixVersions", "Elixir Project")]
-        [TestCase("LGHTHSDMO-1393", "labels", "Brownies")]
-        [TestCase("LGHTHSDMO-5", "labels", "Phoenix")]
-        [TestCase("LGHTHSDMO-5", "labels", "RebelRevolt")]
-        public async Task GetFeatureOwnerByField_GivenExistingField_ReturnsCorrectValue(string referenceId, string fieldName, string expectedContent)
-        {
-            var subject = CreateSubject();
-
-            var project = CreateProject("project = LGHTHSDMO");
-            project.FeatureOwnerField = fieldName;
-
-            var featureOwnerFieldContent = await subject.GetFeatureOwnerByField(referenceId, project);
-
-            Assert.That(featureOwnerFieldContent, Contains.Substring(expectedContent));
-        }
-
-        [Test]
         public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
         {
             var subject = CreateSubject();
@@ -614,9 +522,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
             project.HistoricalFeaturesWorkItemQuery = "project = LGHTHSDMO";
 
-            var childItems = await subject.GetChildItemsForFeaturesInProject(project);
+            var childItems = await subject.GetHistoricalFeatureSize(project);
 
-            Assert.That(childItems, Is.EquivalentTo(new List<int> { 8, 7, 7, 5, 9, 8, 8, 11, 6, 8 }));
+            Assert.That(childItems.Values, Is.EquivalentTo(new List<int> { 8, 7, 7, 5, 9, 8, 8, 11, 6, 8 }));
         }
 
         private Team CreateTeam(string query)

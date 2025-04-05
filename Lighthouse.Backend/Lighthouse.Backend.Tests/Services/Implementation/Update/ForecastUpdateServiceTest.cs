@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IFeatureHistoryService> featureHistoryServiceMock;
         private Mock<IAppSettingService> appSettingServiceMock;
+        private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         private int idCounter = 0;
 
@@ -26,11 +27,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             projectRepositoryMock = new Mock<IRepository<Project>>();
             featureHistoryServiceMock = new Mock<IFeatureHistoryService>();
             appSettingServiceMock = new Mock<IAppSettingService>();
+            teamMetricsServiceMock = new Mock<ITeamMetricsService>();
 
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(projectRepositoryMock.Object);
             SetupServiceProviderMock(featureRepositoryMock.Object);
             SetupServiceProviderMock(featureHistoryServiceMock.Object);
+            SetupServiceProviderMock(teamMetricsServiceMock.Object);
         }
 
         [Test]
@@ -454,19 +457,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var team1 = CreateTeam(1, [0]);
             var team2 = CreateTeam(1, [1]);
 
-            var feature1 = SetupFeature([(team1, 20, 42), (team2, 15, 17)]);
-            SetupFeatures(feature1);
-            var project = CreateProject(feature1);
+            var feature = SetupFeature([(team1, 20, 42), (team2, 15, 17)]);
+            SetupFeatures(feature);
+            var project = CreateProject(feature);
             SetupProjects(project);
 
             subject.TriggerUpdate(project.Id);
 
             Assert.Multiple(() =>
             {
-                Assert.That(feature1.Forecast.GetProbability(50), Is.EqualTo(15));
-                Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(15));
-                Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(15));
-                Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(15));
+                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(15));
+                Assert.That(feature.Forecast.GetProbability(70), Is.EqualTo(15));
+                Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(15));
+                Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(15));
             });
         }
 
@@ -561,9 +564,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             {
                 Name = "Team",
                 FeatureWIP = featureWip,
+                Id = idCounter++,
             };
 
-            team.UpdateThroughput(throughput);
+            teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(team)).Returns(new Throughput(throughput));
 
             return team;
         }

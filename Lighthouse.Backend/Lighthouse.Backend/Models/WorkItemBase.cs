@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
+using Octokit;
 
 namespace Lighthouse.Backend.Models
 {
@@ -11,16 +12,7 @@ namespace Lighthouse.Backend.Models
 
         public WorkItemBase(WorkItemBase workItemBase)
         {
-            Id = workItemBase.Id;
-            ReferenceId = workItemBase.ReferenceId;
-            Name = workItemBase.Name;
-            Type = workItemBase.Type;
-            State = workItemBase.State;
-            StateCategory = workItemBase.StateCategory;
-            Url = workItemBase.Url;
-            Order = workItemBase.Order;
-            StartedDate = workItemBase.StartedDate;
-            ClosedDate = workItemBase.ClosedDate;
+            Update(workItemBase);
         }
 
         public int Id { get; set; }
@@ -42,5 +34,18 @@ namespace Lighthouse.Backend.Models
         public DateTime? StartedDate { get; set; }
 
         public DateTime? ClosedDate { get; set; }
+
+        internal void Update(WorkItemBase workItemBase)
+        {
+            ReferenceId = workItemBase.ReferenceId;
+            Name = workItemBase.Name;
+            Type = workItemBase.Type;
+            State = workItemBase.State;
+            StateCategory = workItemBase.StateCategory;
+            Url = workItemBase.Url;
+            Order = workItemBase.Order;
+            StartedDate = workItemBase.StartedDate;
+            ClosedDate = workItemBase.ClosedDate;
+        }
     }
 }

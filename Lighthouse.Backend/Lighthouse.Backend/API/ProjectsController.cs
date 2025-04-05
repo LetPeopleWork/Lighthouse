@@ -19,9 +19,9 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
 
         public ProjectsController(
-            IRepository<Project> projectRepository, 
-            IRepository<Team> teamRepository, 
-            IWorkItemUpdateService workItemUpdateService, 
+            IRepository<Project> projectRepository,
+            IRepository<Team> teamRepository,
+            IWorkItemUpdateService workItemUpdateService,
             IWorkItemServiceFactory workItemServiceFactory,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository)
         {
@@ -51,13 +51,10 @@ namespace Lighthouse.Backend.API
         [HttpGet("{id}")]
         public ActionResult<ProjectDto> Get(int id)
         {
-            var project = projectRepository.GetById(id);
-            if (project == null)
+            return this.GetEntityByIdAnExecuteAction(projectRepository, id, project =>
             {
-                return NotFound();
-            }
-
-            return Ok(new ProjectDto(project));
+                return new ProjectDto(project);
+            });
         }
 
         [HttpPost("refresh/{id}")]
@@ -79,34 +76,26 @@ namespace Lighthouse.Backend.API
         [HttpGet("{id}/settings")]
         public ActionResult<ProjectSettingDto> GetProjectSettings(int id)
         {
-            var project = projectRepository.GetById(id);
-
-            if (project == null)
+            return this.GetEntityByIdAnExecuteAction(projectRepository, id, project =>
             {
-                return NotFound();
-            }
-
-            var projectSettingDto = new ProjectSettingDto(project);
-            return Ok(projectSettingDto);
+                var projectSettingDto = new ProjectSettingDto(project);
+                return projectSettingDto;
+            });
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult<ProjectSettingDto>> UpdateProject(int id, ProjectSettingDto projectSetting)
         {
-            var project = projectRepository.GetById(id);
-
-            if (project == null)
+            return await this.GetEntityByIdAnExecuteAction(projectRepository, id, async project =>
             {
-                return NotFound();
-            }
+                SyncProjectWithProjectSettings(project, projectSetting);
 
-            SyncProjectWithProjectSettings(project, projectSetting);
+                projectRepository.Update(project);
+                await projectRepository.Save();
 
-            projectRepository.Update(project);
-            await projectRepository.Save();
-
-            var updatedProjectSettingDto = new ProjectSettingDto(project);
-            return Ok(updatedProjectSettingDto);
+                var updatedProjectSettingDto = new ProjectSettingDto(project);
+                return updatedProjectSettingDto;
+            });
         }
 
         [HttpPost]
@@ -125,21 +114,17 @@ namespace Lighthouse.Backend.API
         [HttpPost("validate")]
         public async Task<ActionResult<bool>> ValidateProjectSettings(ProjectSettingDto projectSettingDto)
         {
-            var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(projectSettingDto.WorkTrackingSystemConnectionId);
-
-            if (workTrackingSystem == null)
+            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, projectSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>
             {
-                return NotFound(false);
-            }
+                var project = new Project { WorkTrackingSystemConnection = workTrackingSystem };
+                SyncProjectWithProjectSettings(project, projectSettingDto);
 
-            var project = new Project { WorkTrackingSystemConnection = workTrackingSystem };
-            SyncProjectWithProjectSettings(project, projectSettingDto);
+                var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
+                var result = await workItemService.ValidateProjectSettings(project);
 
-            var result = await workItemService.ValidateProjectSettings(project);
-
-            return Ok(result);
+                return result;
+            });
         }
 
         private void SyncProjectWithProjectSettings(Project project, ProjectSettingDto projectSetting)

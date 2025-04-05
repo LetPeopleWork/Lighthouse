@@ -33,8 +33,19 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             var workItemServiceFactory = serviceProvider.GetRequiredService<IWorkItemServiceFactory>();
             var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            await UpdateThroughputForTeam(team, workItemService);
-            await UpdateFeatureWipForTeam(team, workItemService);
+            var workItemRepository = serviceProvider.GetRequiredService<IRepository<WorkItem>>();
+            var teamMetricsService = serviceProvider.GetRequiredService<ITeamMetricsService>();
+
+            await UpdateWorkItemsForTeam(team, workItemService, workItemRepository);
+
+            team.RefreshUpdateTime();
+            teamMetricsService.InvalidateTeamMetrics(team);
+
+            if (team.AutomaticallyAdjustFeatureWIP)
+            {
+                var featureWip = teamMetricsService.GetFeaturesInProgressForTeam(team);
+                team.FeatureWIP = featureWip.Count;
+            }
 
             await teamRepository.Save();
         }
@@ -43,40 +54,33 @@ namespace Lighthouse.Backend.Services.Implementation.Update
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - entity.TeamUpdateTime).TotalMinutes;
 
-            Logger.LogInformation("Last Refresh of team {TeamName} was {minutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
+            Logger.LogInformation("Last Refresh of team {TeamName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
 
             return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;
         }
 
-        private async Task UpdateFeatureWipForTeam(Team team, IWorkItemService workItemService)
+        private async Task UpdateWorkItemsForTeam(Team team, IWorkItemService workItemService, IRepository<WorkItem> workItemRepository)
         {
-            Logger.LogInformation("Updating Feature Wip for Team {TeamName}", team.Name);
+            Logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
+            var items = await workItemService.GetChangedWorkItemsSinceLastTeamUpdate(team);
 
-            var featuresInProgress = await workItemService.GetFeaturesInProgressForTeam(team);
+            foreach (var item in items)
+            {
+                var existingItem = workItemRepository.GetByPredicate(i => i.ReferenceId == item.ReferenceId);
+                if (existingItem == null)
+                {
+                    workItemRepository.Add(item);
+                    Logger.LogDebug("Added Work Item {WorkItemId} to DB", item.Id);
+                }
+                else
+                {
+                    existingItem.Update(item);
+                    workItemRepository.Update(existingItem);
+                    Logger.LogDebug("Updated Work Item {WorkItemId} in DB", item.Id);
+                }
+            }
 
-            var featureReferences = featuresInProgress.Distinct();
-            team.SetFeaturesInProgress(featureReferences);
-
-            Logger.LogDebug("Following Features are In Progress: {Features}", string.Join(",", featureReferences));
-            Logger.LogInformation("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count());
-        }
-
-        private async Task UpdateThroughputForTeam(Team team, IWorkItemService workItemService)
-        {
-            Logger.LogInformation("Updating Throughput for Team {TeamName}", team.Name);
-
-            var throughput = await workItemService.GetThroughputForTeam(team);
-            var items = await workItemService.UpdateWorkItemsForTeam(team);
-
-            // Add Items to DB via Repo and Save
-            // Move Throughput and Feature WIP out of Team into Metrics Service
-            // Use MetricsService to dynamically calculate Throughput and Feature WIP based on stored Work Items
-            // Create MetricsController that uses MetricsService to provide this data to the Frontend
-            // Clean up Work Item Service (will be a lot simpler)
-            // Handle Unparented Items (update ParentReference of existing item to Unparented Feature of Project)
-
-            team.UpdateThroughput(throughput);
-            Logger.LogInformation("Finished updating Throughput for Team {TeamName}", team.Name);
+            await workItemRepository.Save();
         }
     }
 }

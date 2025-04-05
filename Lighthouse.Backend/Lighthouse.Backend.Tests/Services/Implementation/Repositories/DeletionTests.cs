@@ -85,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         public async Task TeamInProject_DeleteProjectWithMilestones_DeletesFeaturesAndProjectAsync()
         {
             var team = new Team { Name = "MyTeam", WorkTrackingSystemConnection = workTrackingSystemConnection };
-            team.UpdateThroughput([1, 0, 0, 2, 0, 1, 0, 0]);
 
             var teamRepository = ServiceProvider.GetService<IRepository<Team>>();
             teamRepository.Add(team);

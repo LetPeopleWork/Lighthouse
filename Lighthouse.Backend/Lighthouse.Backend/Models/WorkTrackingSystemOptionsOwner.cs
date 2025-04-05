@@ -1,10 +1,12 @@
 ﻿namespace Lighthouse.Backend.Models
 {
-    public class WorkTrackingSystemOptionsOwner : IWorkItemQueryOwner
+    public abstract class WorkTrackingSystemOptionsOwner : IWorkItemQueryOwner
     {
         public int Id { get; set; }
 
         public string WorkItemQuery { get; set; } = string.Empty;
+
+        public abstract List<string> WorkItemTypes { get; set; }
 
         public List<string> ToDoStates { get; set; } = new List<string> { "New", "Proposed", "To Do" };
 

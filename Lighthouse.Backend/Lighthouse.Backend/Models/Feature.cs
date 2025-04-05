@@ -9,6 +9,10 @@ namespace Lighthouse.Backend.Models
         {
         }
 
+        public Feature(WorkItemBase workItemBase) : base(workItemBase)
+        {
+        }
+
         public Feature(Team team, int remainingItems) : this([(team, remainingItems, remainingItems)])
         {
         }
@@ -38,6 +42,10 @@ namespace Lighthouse.Backend.Models
         public bool IsUnparentedFeature { get; set; }
 
         public bool IsUsingDefaultFeatureSize { get; set; } = false;
+
+        public int EstimatedSize { get; set; } = 0;
+
+        public string OwningTeam { get;set; } = string.Empty;
 
         [NotMapped]
         public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);

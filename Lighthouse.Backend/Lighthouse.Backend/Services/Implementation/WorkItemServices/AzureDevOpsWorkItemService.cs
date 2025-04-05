@@ -1,11 +1,11 @@
-﻿using Lighthouse.Backend.Cache;
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 using LighthouseWorkItem = Lighthouse.Backend.Models.WorkItem;
 
@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 {
     public class AzureDevOpsWorkItemService : IWorkItemService
     {
-        private readonly Cache<string, AdoWorkItem> workItemCache = new Cache<string, AdoWorkItem>();
-
         private readonly ILogger<AzureDevOpsWorkItemService> logger;
         private readonly ICryptoService cryptoService;
 
@@ -24,288 +22,97 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             this.cryptoService = cryptoService;
         }
 
-        // TODO: Refactor this horrible code
-        public async Task<IEnumerable<LighthouseWorkItem>> UpdateWorkItemsForTeam(Team team)
+        public async Task<IEnumerable<LighthouseWorkItem>> GetChangedWorkItemsSinceLastTeamUpdate(Team team)
         {
-            var workItems = new List<LighthouseWorkItem>();
-
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
-            var workItemQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.AdditionalRelatedField ?? string.Empty);
+            var lastUpdatedFilter = PrepareLastUpdatedQuery(team.TeamUpdateTime);
+            var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.AdditionalRelatedField ?? string.Empty)} {lastUpdatedFilter}";
 
-            var updateHorizon = team.TeamUpdateTime;
-            if (team.TeamUpdateTime != DateTime.MinValue)
+            var workItemBase = await CreateWorkItemsForAllItemsMatchingQuery(team, workItemQuery);
+
+            var workItems = new List<LighthouseWorkItem>();
+            
+            foreach (var workItem in workItemBase)
             {
-                logger.LogInformation("Team was last updated on {LastUpdateTime} - Getting all items that were changed since then", team.TeamUpdateTime);
-                workItemQuery += $" AND ([{AzureDevOpsFieldNames.ChangedDate}] >= '{updateHorizon:yyyy-MM-dd}T00:00:00.0000000Z')";
-            }
-            else
-            {
-                logger.LogInformation("No Update Time found - Getting all Work Items that macht the query (this might take a while...)");
-            }
+                var parentReference = await GetParentIdForWorkItem(int.Parse(workItem.ReferenceId), team);
 
-            var workItemReferences = await GetWorkItemsByQuery(witClient, workItemQuery);
-            foreach (var workItemReference in workItemReferences)
-            {
-                var workItemBase = await GetWorkItemById(workItemReference.Id.ToString(), team, team.AdditionalRelatedField);
-
-                var adoWorkItem = await witClient.GetWorkItemAsync(workItemReference.Id, expand: WorkItemExpand.Relations);
-                var parentId = GetParentIdForWorkItem(adoWorkItem, team.AdditionalRelatedField);
-
-                var workItem = new LighthouseWorkItem(workItemBase, team, parentId);
-                workItems.Add(workItem);
+                workItems.Add(new LighthouseWorkItem(workItem, team, parentReference));
             }
 
             return workItems;
         }
 
-        private string GetParentIdForWorkItem(AdoWorkItem adoWorkItem, string? parentOverrideFieldName)
+        public async Task<List<Feature>> GetFeaturesForProject(Project project)
         {
-            if (!string.IsNullOrEmpty(parentOverrideFieldName))
-            {
-                return adoWorkItem.Fields[parentOverrideFieldName].ToString() ?? string.Empty;
-            }
-
-            if (adoWorkItem.Relations != null)
-            {
-                foreach (var relation in adoWorkItem.Relations)
-                {
-                    if (relation.Attributes.TryGetValue("name", out var attributeValue) && attributeValue.ToString() == "Parent")
-                    {
-                        var splittedUrl = relation.Url.Split("/");
-                        var parentId = splittedUrl[splittedUrl.Length - 1];
-
-                        return parentId ?? string.Empty;
-                    }
-                }
-            }
-
-            return string.Empty;
-        }
-
-        [Obsolete]
-        public async Task<int[]> GetThroughputForTeam(Team team)
-        {
-            logger.LogInformation("Getting Closed Work Items for Team {TeamName}", team.Name);
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
-
-            return await GetClosedItemsPerDay(witClient, team);
-        }
-
-        [Obsolete]
-        public async Task<string[]> GetClosedWorkItemsForTeam(Team team)
-        {
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
-            return await GetClosedWorkItems(witClient, team);
-        }
-
-        // TODO: Return Feature instead of string
-        public async Task<List<string>> GetFeaturesForProject(Project project)
-        {
-            logger.LogInformation("Getting Open Work Items for Work Items {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
-            var witClient = GetClientService(project.WorkTrackingSystemConnection);
+            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
             var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
-            var workItems = await GetWorkItemsByQuery(witClient, query);
+            var workItemBase = await CreateWorkItemsForAllItemsMatchingQuery(project, query);
 
-            var workItemReferences = workItems.Select(wi => wi.Id.ToString()).ToList();
-            logger.LogInformation("Found Work Items with IDs {WorkItemIDs}", string.Join(", ", workItemReferences));
+            var features = new List<Feature>();
 
-            return workItemReferences;
+            foreach (var workItem in workItemBase)
+            {
+                var feature = new Feature(workItem)
+                {
+                    EstimatedSize = await GetEstimatedSizeForItem(workItem.ReferenceId, project),
+                    OwningTeam = await GetFeatureOwnerByField(workItem.ReferenceId, project)
+                };
+
+                features.Add(feature);
+            }
+
+            logger.LogInformation("Found Features with IDs {FeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
+
+            return features;
         }
 
-        [Obsolete]
-        public async Task<IEnumerable<int>> GetChildItemsForFeaturesInProject(Project project)
+        public async Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
         {
-            var childItemList = new List<int>();
+            var historicalFeatureSize = new Dictionary<string, int>();
 
             logger.LogInformation("Getting Child Items for Features in Project {Project} for Work Item Types {WorkItemTypes} and Query '{Query}'", project.Name, string.Join(", ", project.WorkItemTypes), project.HistoricalFeaturesWorkItemQuery);
 
             var witClient = GetClientService(project.WorkTrackingSystemConnection);
 
             var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.HistoricalFeaturesWorkItemQuery);
-            var features = await GetWorkItemsByQuery(witClient, query);
+            var features = await GetWorkItemReferencesByQuery(witClient, query);
 
-            foreach (var feature in features)
+            foreach (var featureId in features.Select(f => f.Id.ToString()))
             {
-                var childItems = 0;
+                historicalFeatureSize.Add(featureId, 0);
+
                 foreach (var team in project.Teams)
                 {
-                    var (_, totalItems) = await GetRelatedWorkItems($"{feature.Id}", team);
-                    childItems += totalItems;
+                    var totalItems = await GetRelatedWorkItems(team, featureId);
+                    historicalFeatureSize[featureId] += totalItems;
                 }
-
-                childItemList.Add(childItems);
             }
 
-            return childItemList.Where(i => i > 0);
+            var emptyFeatures = historicalFeatureSize.Where(kvp => kvp.Value <= 0).Select(kvp => kvp.Key).ToList();
+            foreach (var featureId in emptyFeatures)
+            {
+                historicalFeatureSize.Remove(featureId);
+            }
+
+            return historicalFeatureSize;
         }
 
-        [Obsolete]
-        public async Task<IEnumerable<string>> GetFeaturesInProgressForTeam(Team team)
+        public async Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
         {
-            logger.LogInformation("Getting Features in Progress for Team {TeamName}", team.Name);
+            logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Additional Items Query '{Query}'", team.Name, string.Join(", ", team.WorkItemTypes), additionalQuery);
 
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
-            var parentField = AzureDevOpsFieldNames.Parent;
-            if (!string.IsNullOrEmpty(team.AdditionalRelatedField))
-            {
-                parentField = team.AdditionalRelatedField;
-            }
+            var workItemsQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery, team.AdditionalRelatedField ?? string.Empty)} AND {team.WorkItemQuery}";
 
-            var query = PrepareQuery(team.WorkItemTypes, team.DoingStates, team.WorkItemQuery, parentField);
-            var workItems = await GetWorkItemsByQuery(witClient, query);
+            var matchingWorkItems = await GetWorkItemReferencesByQuery(witClient, workItemsQuery);
 
-            var featuresInProgress = new List<string>();
+            var matchingWorkItemsIds = matchingWorkItems.Select(x => x.Id.ToString()).ToList();
+            logger.LogDebug("Found following Work Items {MatchingWorkItems}", string.Join(", ", matchingWorkItemsIds));
 
-            foreach (var workItem in workItems)
-            {
-                var item = await GetWorkItemById(witClient, workItem.Id.ToString(), team, parentField);
-
-                var parentId = string.Empty;
-
-                if (item?.Fields.ContainsKey(parentField) ?? false)
-                {
-                    parentId = item.Fields[parentField].ToString() ?? string.Empty;
-                }
-
-                featuresInProgress.Add(parentId);
-            }
-
-            return featuresInProgress.Distinct();
-        }
-
-        [Obsolete]
-        public async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(string featureId, Team team)
-        {
-            logger.LogInformation("Getting Related Work Items for Feature {FeatureId} and Team {TeamName}", featureId, team.Name);
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
-
-            var relatedWorkItems = await GetRelatedWorkItems(witClient, team, featureId);
-
-            return relatedWorkItems;
-        }
-
-        // TODO: Make private?
-        // TODO: Refactor this horrible code
-        public async Task<WorkItemBase> GetWorkItemById(string itemId, IWorkItemQueryOwner workItemQueryOwner, string? parentOverrideField)
-        {
-            logger.LogInformation("Getting Work Item with ID {ItemId}", itemId);
-            var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
-
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE [{AzureDevOpsFieldNames.Id}] = '{itemId}'";
-
-            var workItems = await GetWorkItemsByQuery(witClient, wiql);
-            var workItemReference = workItems.Single();
-
-            var fields = new List<string>
-            {
-                AzureDevOpsFieldNames.State,
-                AzureDevOpsFieldNames.Title,
-                AzureDevOpsFieldNames.WorkItemType,
-                AzureDevOpsFieldNames.StackRank,
-                AzureDevOpsFieldNames.BacklogPriority,
-            };
-
-            var workItem = await witClient.GetWorkItemAsync(int.Parse(itemId), fields);
-
-            var state = workItem.Fields[AzureDevOpsFieldNames.State].ToString() ?? string.Empty;
-            var workItemTitle = workItem.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty;
-
-            var url = ((ReferenceLink)workItem.Links.Links["html"])?.Href ?? string.Empty;
-
-            var workItemOrder = string.Empty;
-            if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.StackRank, out var stackRank))
-            {
-                workItemOrder = stackRank?.ToString() ?? string.Empty;
-            }
-            else if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.BacklogPriority, out var backlogPriority))
-            {
-                workItemOrder = backlogPriority?.ToString() ?? string.Empty;
-            }
-
-            var startedDate = await GetStateTransitionDate(witClient, !string.IsNullOrEmpty(itemId) ? int.Parse(itemId) : null, workItemQueryOwner.DoingStates);
-            var closedDate = await GetStateTransitionDate(witClient, !string.IsNullOrEmpty(itemId) ? int.Parse(itemId) : null, workItemQueryOwner.DoneStates);
-            if (startedDate == null && closedDate != null)
-            {
-                startedDate = closedDate;
-            }
-
-            return new WorkItemBase
-            {
-                ReferenceId = itemId,
-                Name = workItem.Fields[AzureDevOpsFieldNames.Title].ToString() ?? string.Empty,
-                Type = workItem.Fields[AzureDevOpsFieldNames.WorkItemType].ToString() ?? string.Empty,
-                State = state,
-                StateCategory = workItemQueryOwner.MapStateToStateCategory(state),
-                Url = url,
-                Order = workItemOrder,
-                StartedDate = startedDate,
-                ClosedDate = closedDate,
-            };
-        }
-
-        // TODO: Return Feature instead?
-        // Merge with GetFeaturesForProject
-        public async Task<(string name, string order, string url, string state, DateTime? startedDate, DateTime? closedDate)> GetWorkItemDetails(string itemId, IWorkItemQueryOwner workItemQueryOwner)
-        {
-            var workItem = await GetWorkItemById(itemId, workItemQueryOwner, null);
-
-            return (workItem.Name, workItem.Order, workItem.Url, workItem.State, workItem.StartedDate, workItem.ClosedDate);
-        }
-
-        [Obsolete]
-        // TODO: Check how to handle unparented items
-        public async Task<(List<string> remainingWorkItems, List<string> allWorkItems)> GetWorkItemsByQuery(List<string> workItemTypes, Team team, string unparentedItemsQuery)
-        {
-            logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", workItemTypes), unparentedItemsQuery);
-
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
-
-            var workItemsQuery = PrepareWorkItemTypeQuery(workItemTypes);
-            var doneStateQuery = PrepareStateQuery(team.DoneStates);
-            var pendingStateQuery = PrepareStateQuery(team.OpenStates);
-
-            var queryBase = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {unparentedItemsQuery} " +
-                $"{workItemsQuery} " +
-                $" AND {team.WorkItemQuery}";
-
-            var doneWorkItemsQuery = queryBase + doneStateQuery;
-            var remainingWorkItemsQuery = queryBase + pendingStateQuery;
-
-            var doneWorkItems = await GetWorkItemsByQuery(witClient, doneWorkItemsQuery);
-            var remainingWorkItems = await GetWorkItemsByQuery(witClient, remainingWorkItemsQuery);
-
-            var doneWorkItemIds = doneWorkItems.Select(x => x.Id.ToString()).ToList();
-            var remainingWorkItemsIds = remainingWorkItems.Select(x => x.Id.ToString()).ToList();
-
-            logger.LogDebug("Found following Done Work Items {DoneWorkItems}", string.Join(", ", doneWorkItems));
-            logger.LogDebug("Found following Undone Work Items {RemainingWorkItems}", string.Join(", ", remainingWorkItemsIds));
-
-            return (remainingWorkItemsIds, remainingWorkItemsIds.Union(doneWorkItemIds).ToList());
-        }
-
-        [Obsolete]
-        public async Task<bool> IsRelatedToFeature(string itemId, IEnumerable<string> featureIds, Team team)
-        {
-            logger.LogInformation("Checking if Item {ItemID} of Team {TeamName} is related to {FeatureIDs}", itemId, team.Name, string.Join(", ", featureIds));
-
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
-
-            var workItem = await GetWorkItemById(witClient, itemId, team);
-
-            if (workItem == null)
-            {
-                return false;
-            }
-
-            var isRelated = featureIds.Any(f => IsWorkItemRelated(workItem, f, team.AdditionalRelatedField ?? string.Empty));
-
-            logger.LogInformation("Is Item {ItemID} related: {IsRelated}", itemId, isRelated);
-
-            return isRelated;
+            return matchingWorkItemsIds;
         }
 
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
@@ -361,12 +168,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
                 var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
-                var throughput = await GetClosedItemsPerDay(witClient, team);
-                var totalThroughput = throughput.Sum();
+                var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
+                var workItems = await GetWorkItemReferencesByQuery(witClient, query);
 
-                logger.LogInformation("Found a total of {NumberOfWorkItems} Closed Work Items with specified Query in the last {Days} days", totalThroughput, team.ThroughputHistory);
+                var workItemCount = workItems.Count();
 
-                return totalThroughput > 0;
+                logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items with specified Query", workItemCount);
+
+                return workItemCount > 0;
             }
             catch (Exception exception)
             {
@@ -380,12 +189,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             try
             {
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
-                var features = await GetFeaturesForProject(project);
-                var totalFeatures = features.Count;
+                
+                var witClient = GetClientService(project.WorkTrackingSystemConnection);
+                var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
 
-                logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);
+                var workItems = await GetWorkItemReferencesByQuery(witClient, query);
+                var workItemCount = workItems.Count();
 
-                return totalFeatures > 0;
+                logger.LogInformation("Found a total of {NumberOfWorkItems} Features with specified Query", workItemCount);
+
+                return workItemCount > 0;
             }
             catch (Exception exception)
             {
@@ -394,15 +207,170 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
-        // TODO: Move this to Feature Class?
-        public async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
+        private async Task<int> GetRelatedWorkItems(Team team, string relatedWorkItemId)
+        {
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
+            var allItemsQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)} {PrepareRelatedItemQuery(relatedWorkItemId, team.AdditionalRelatedField)}";
+
+            var totalWorkItems = await GetWorkItemReferencesByQuery(witClient, allItemsQuery);
+
+            return totalWorkItems.Count();
+        }
+
+        private async Task<IEnumerable<WorkItemBase>> CreateWorkItemsForAllItemsMatchingQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
+        {
+            var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
+            var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
+
+            var tasks = workItemReferences.Select(async workItemReference =>
+            {
+                var workItem = await GetAdoWorkItemById(workItemReference.Id, workItemQueryOwner);
+                var workItemBase = await CreateWorkItemFromAdoWorkItem(workItem, workItemQueryOwner);
+                return workItemBase;
+            });
+
+            var workItems = await Task.WhenAll(tasks);
+
+            return workItems;
+        }
+
+        private async Task<IEnumerable<WorkItemReference>> GetWorkItemReferencesByQuery(WorkItemTrackingHttpClient witClient, string query)
+        {
+            try
+            {
+                var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
+                return queryResult.WorkItems;
+            }
+            catch (VssServiceException ex)
+            {
+                logger.LogError(ex, "Error while querying Work Items with Query '{Query}'", query);
+                return [];
+            }
+        }
+
+        private async Task<AdoWorkItem> GetAdoWorkItemById(int workItemId, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
+        {
+            logger.LogDebug("Getting Work Item with ID {ItemId}", workItemId);
+
+            var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
+            
+            var fields = new List<string>
+            {
+                AzureDevOpsFieldNames.State,
+                AzureDevOpsFieldNames.Title,
+                AzureDevOpsFieldNames.WorkItemType,
+                AzureDevOpsFieldNames.StackRank,
+                AzureDevOpsFieldNames.BacklogPriority,
+            };
+
+            fields.AddRange(additionalFields.Where(f => !string.IsNullOrEmpty(f)));
+
+            var workItem = await witClient.GetWorkItemAsync(workItemId, fields);
+
+            return workItem;
+        }
+
+       private async Task<WorkItemBase> CreateWorkItemFromAdoWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner)
+        {
+            var state = workItem.ExtractStateFromWorkItem();
+
+            var (startedDate, closedDate) = await GetStartedAndClosedDateForWorkItem(workItemQueryOwner, workItem.Id);
+
+            return new WorkItemBase
+            {
+                ReferenceId = $"{workItem.Id}",
+                Name = workItem.ExtractTitleFromWorkItem(),
+                Type = workItem.ExtractTypeFromWorkItem(),
+                State = state,
+                StateCategory = workItemQueryOwner.MapStateToStateCategory(state),
+                Url = workItem.ExtractUrlFromWorkItem(),
+                Order = workItem.ExtractStackRankFromWorkItem(),
+                StartedDate = startedDate,
+                ClosedDate = closedDate,
+            };
+        }
+
+        private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, int? workItemId)
+        {
+            var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
+            var startedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoingStates);
+            var closedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoneStates);
+
+            // It can happen that no started date is set if an item is created directly in closed state. Assume that the closed date is the started date in this case.
+            if (startedDate == null && closedDate != null)
+            {
+                startedDate = closedDate;
+            }
+
+            return (startedDate, closedDate);
+        }
+
+        private static async Task<DateTime?> GetStateTransitionDate(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> states)
+        {
+            DateTime? latestStateChangeDate = null;
+            string? previousState = null;
+
+            if (!workItemId.HasValue)
+            {
+                return latestStateChangeDate;
+            }
+
+            var revisions = await witClient.GetRevisionsAsync(workItemId.Value);
+
+            foreach (var revision in revisions)
+            {
+                if (RevisionWasChangingState(revision, out (string state, DateTime changedDate) result))
+                {
+                    var isRelevantCategory = states.Contains(result.state) && (previousState == null || !states.Contains(previousState));
+                    var isRelevantStateChange = !latestStateChangeDate.HasValue || result.changedDate > latestStateChangeDate.Value;
+
+                    if (isRelevantStateChange && isRelevantCategory)
+                    {
+                        latestStateChangeDate = result.changedDate;
+                    }
+
+                    previousState = result.state;
+                }
+            }
+
+            return latestStateChangeDate;
+        }
+
+        private static bool RevisionWasChangingState(AdoWorkItem revision, out (string state, DateTime changedDate) result)
+        {
+            result.state = string.Empty;
+            result.changedDate = DateTime.MinValue;
+
+            if (revision.Fields.TryGetValue(AzureDevOpsFieldNames.State, out var stateValue) &&
+                    revision.Fields.TryGetValue(AzureDevOpsFieldNames.ChangedDate, out var changedDateValue))
+            {
+                result.state = stateValue.ToString() ?? string.Empty;
+                result.changedDate = (DateTime?)changedDateValue ?? DateTime.MinValue;
+            }
+
+            return !string.IsNullOrEmpty(result.state) && result.changedDate != DateTime.MinValue;
+        }
+
+        private async Task<string> GetParentIdForWorkItem(int workItemId, Team team)
+        {
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
+            var adoWorkItem = await witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.Relations);
+
+            if (!string.IsNullOrEmpty(team.AdditionalRelatedField))
+            {
+                return await GetFieldValue(workItemId, team, team.AdditionalRelatedField);
+            }
+
+            return adoWorkItem.ExtractParentFromWorkItem();
+        }
+        private async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
         {
             if (string.IsNullOrEmpty(project.SizeEstimateField))
             {
                 return 0;
             }
 
-            var estimationFieldValue = await GetFieldValue(referenceId, project, project.SizeEstimateField);
+            var estimationFieldValue = await GetFieldValue(int.Parse(referenceId), project, project.SizeEstimateField);
 
             // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
             if (double.TryParse(estimationFieldValue, out var estimateAsDouble))
@@ -413,26 +381,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return 0;
         }
 
-        // TODO: Move this to Feature Class?
-        public async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
+        private async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
         {
             if (string.IsNullOrEmpty(project.FeatureOwnerField))
             {
                 return string.Empty;
             }
 
-            var featureOwnerFieldValue = await GetFieldValue(referenceId, project, project.FeatureOwnerField);
+            var featureOwnerFieldValue = await GetFieldValue(int.Parse(referenceId), project, project.FeatureOwnerField);
 
             return featureOwnerFieldValue;
         }
 
-        private async Task<string> GetFieldValue(string referenceId, Project project, string fieldName)
+        private async Task<string> GetFieldValue(int referenceId, IWorkItemQueryOwner workItemQueryOwner, string fieldName)
         {
             try
             {
-                var witClient = GetClientService(project.WorkTrackingSystemConnection);
-
-                var workItem = await GetWorkItemById(witClient, referenceId, project, fieldName);
+                var workItem = await GetAdoWorkItemById(referenceId, workItemQueryOwner, fieldName);
 
                 if (workItem == null)
                 {
@@ -462,194 +427,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return orderAsInt;
         }
 
-        private async Task<AdoWorkItem?> GetWorkItemById(WorkItemTrackingHttpClient witClient, string workItemId, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
+        private static string PrepareQuery(
+            IEnumerable<string> includedWorkItemTypes,
+            IEnumerable<string> includedStates,
+            string query)
         {
-            var query = PrepareQuery([], workItemQueryOwner.AllStates, workItemQueryOwner.WorkItemQuery, additionalFields);
-            query += $" AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'";
-
-            logger.LogDebug("Getting Work Item by Id. ID: {WorkItemId}. Query: '{Query}'", workItemId, query);
-
-            var workItems = await GetWorkItemsByQuery(witClient, query);
-
-            var workItemReference = workItems.SingleOrDefault();
-
-            if (workItemReference == null)
-            {
-                logger.LogDebug("Found No Item");
-                return null;
-            }
-
-            logger.LogDebug("Found Item {WorkItemReferenceID}", workItemReference.Id);
-
-            return await GetWorkItemFromCache(workItemReference.Id.ToString(), witClient);
-        }
-
-        private async Task<(int remainingItems, int totalItems)> GetRelatedWorkItems(WorkItemTrackingHttpClient witClient, Team team, string relatedWorkItemId)
-        {
-            var relatedItemQuery = PrepareRelatedItemQuery(relatedWorkItemId, team.AdditionalRelatedField);
-
-            var remainingItemsQuery = PrepareQuery(team.WorkItemTypes, team.OpenStates, team.WorkItemQuery);
-            remainingItemsQuery += relatedItemQuery;
-
-            var allItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
-            allItemsQuery += relatedItemQuery;
-
-            var remainingWorkItems = await GetWorkItemsByQuery(witClient, remainingItemsQuery);
-            var totalWorkItems = await GetWorkItemsByQuery(witClient, allItemsQuery);
-
-            return (remainingWorkItems.Count(), totalWorkItems.Count());
-        }
-
-        private async Task<AdoWorkItem> GetWorkItemFromCache(string itemId, WorkItemTrackingHttpClient witClient)
-        {
-            logger.LogDebug("Trying to get Work Item {ItemId} from cache...", itemId);
-            var workItem = workItemCache.Get(itemId);
-
-            if (workItem == null)
-            {
-                logger.LogDebug("No Item in chace - getting from Azure DevOps...");
-                workItem = await witClient.GetWorkItemAsync(int.Parse(itemId), expand: WorkItemExpand.Relations);
-                workItemCache.Store(itemId, workItem, TimeSpan.FromMinutes(5));
-            }
-
-            return workItem;
-        }
-
-        private bool IsWorkItemRelated(AdoWorkItem workItem, string relatedWorkItemId, string additionalField)
-        {
-            logger.LogDebug("Checking if Work Item: {WorkItemID} is related to {RelatedWorkItemId}", workItem.Id, relatedWorkItemId);
-
-            // Check if the work item is a child of the specified relatedWorkItemId
-            if (workItem.Relations != null)
-            {
-                foreach (var relation in workItem.Relations)
-                {
-                    if (relation.Attributes.TryGetValue("name", out var attributeValue) && attributeValue.ToString() == "Parent")
-                    {
-                        var splittedUrl = relation.Url.Split("/");
-                        var parentId = splittedUrl[splittedUrl.Length - 1];
-
-                        return parentId == relatedWorkItemId;
-                    }
-                }
-            }
-
-            if (!string.IsNullOrEmpty(additionalField) && workItem.Fields.ContainsKey(additionalField) && workItem.Fields[additionalField].ToString() == $"{relatedWorkItemId}")
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-
-        private async Task<IEnumerable<WorkItemReference>> GetWorkItemsByQuery(WorkItemTrackingHttpClient witClient, string query)
-        {
-            try
-            {
-                var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
-                return queryResult.WorkItems;
-            }
-            catch (VssServiceException ex)
-            {
-                logger.LogError(ex, "Error while querying Work Items with Query '{Query}'", query);
-                return [];
-            }
-        }
-
-        private async Task<string[]> GetClosedWorkItems(WorkItemTrackingHttpClient witClient, Team team)
-        {
-            var throughputSettings = team.GetThroughputSettings();
-
-            var query = PrepareQuery(team.WorkItemTypes, team.DoneStates, team.WorkItemQuery);
-            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] <= '{throughputSettings.EndDate:yyyy-MM-dd}T00:00:00.0000000Z')";
-            query += $" AND ([{AzureDevOpsFieldNames.ClosedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ResolvedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z' OR [{AzureDevOpsFieldNames.ActivatedDate}] >= '{throughputSettings.StartDate:yyyy-MM-dd}T00:00:00.0000000Z')";
-
-            logger.LogDebug("Getting closed items per day for for team {TeamName} using query '{Query}'", team.Name, query);
-
-            var workItems = await GetWorkItemsByQuery(witClient, query);
-
-            return workItems.Select(wi => wi.Id.ToString()).ToArray();
-        }
-
-        private async Task<int[]> GetClosedItemsPerDay(WorkItemTrackingHttpClient witClient, Team team)
-        {
-            var throughputSettings = team.GetThroughputSettings();
-            var numberOfDays = throughputSettings.NumberOfDays;
-            var closedItemsPerDay = new int[numberOfDays];
-
-            var workItems = await GetClosedWorkItems(witClient, team);
-
-            foreach (var workItemId in workItems)
-            {
-                var workItem = await GetWorkItemFromCache(workItemId, witClient);
-                var closedDate = await GetStateTransitionDate(witClient, workItem.Id, team.DoneStates);
-
-                if (closedDate.HasValue)
-                {
-                    int index = (closedDate.Value.Date - throughputSettings.StartDate).Days;
-
-                    if (index >= 0 && index < numberOfDays)
-                    {
-                        closedItemsPerDay[index]++;
-                    }
-                }
-            }
-
-            return closedItemsPerDay;
-        }
-
-        private static async Task<DateTime?> GetStateTransitionDate(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> states)
-        {
-            DateTime? latestStateChangeDate = null;
-            string? previousState = null;
-
-            if (!workItemId.HasValue)
-            {
-                return latestStateChangeDate;
-            }
-
-            var revisions = await witClient.GetRevisionsAsync(workItemId.Value);
-
-            foreach (var revisionFields in revisions.Select(revision => revision.Fields))
-            {
-                if (revisionFields.TryGetValue(AzureDevOpsFieldNames.State, out var stateValue) &&
-                    revisionFields.TryGetValue(AzureDevOpsFieldNames.ChangedDate, out var changedDateValue))
-                {
-                    var state = stateValue.ToString() ?? string.Empty;
-                    var changedDate = (DateTime?)changedDateValue;
-
-                    var isRelevantCategory = states.Contains(state) && (previousState == null || !states.Contains(previousState));
-                    var isRelevantStateChange = changedDate.HasValue && (!latestStateChangeDate.HasValue || changedDate > latestStateChangeDate.Value);
-
-                    if (isRelevantStateChange && isRelevantCategory)
-                    {
-                        latestStateChangeDate = changedDate;
-                    }
-
-                    previousState = state;
-                }
-            }
-
-            return latestStateChangeDate;
+            return PrepareQuery(includedWorkItemTypes, includedStates, query, string.Empty);
         }
 
         private static string PrepareQuery(
             IEnumerable<string> includedWorkItemTypes,
             IEnumerable<string> includedStates,
             string query,
-            params string[] additionalFields)
+            string extraField)
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(includedWorkItemTypes);
             var stateQuery = PrepareStateQuery(includedStates);
 
-            var additionalFieldsQuery = string.Empty;
-            if (!string.IsNullOrEmpty(additionalFieldsQuery))
+            var extraFieldsQuery = string.Empty;
+            if (!string.IsNullOrEmpty(extraField))
             {
-                additionalFieldsQuery = ", " + string.Join(", ", additionalFields.Where(f => !string.IsNullOrEmpty(f)).Select(field => $"[{field}]"));
+                extraFieldsQuery = $", [{extraField}]";
             }
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.ClosedDate}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{additionalFieldsQuery} FROM WorkItems WHERE ({query}) " +
+            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{extraFieldsQuery} FROM WorkItems WHERE ({query}) " +
                 $"{workItemsQuery} " +
                 $"{stateQuery}";
 
@@ -664,6 +465,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         private static string PrepareStateQuery(IEnumerable<string> includedStates)
         {
             return PrepareGenericQuery(includedStates, AzureDevOpsFieldNames.State, "OR", "=");
+        }
+
+        private static string PrepareLastUpdatedQuery(DateTime lastUpdated)
+        {
+            var query = string.Empty;
+
+            var updateHorizon = lastUpdated;
+            if (lastUpdated != DateTime.MinValue)
+            {
+                query = $" AND ([{AzureDevOpsFieldNames.ChangedDate}] >= '{updateHorizon:yyyy-MM-dd}T00:00:00.0000000Z')";
+            }
+
+            return query;
         }
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)

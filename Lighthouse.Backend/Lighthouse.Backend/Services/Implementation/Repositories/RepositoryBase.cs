@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;

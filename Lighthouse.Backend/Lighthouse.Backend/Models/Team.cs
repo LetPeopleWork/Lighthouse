@@ -4,19 +4,15 @@
     {
         public string Name { get; set; }
 
-        public List<string> WorkItemTypes { get; set; } = new List<string> { "User Story", "Bug" };
+        public override List<string> WorkItemTypes { get; set; } = new List<string> { "User Story", "Bug" };
 
         public int FeatureWIP { get; set; } = 1;
 
         public bool AutomaticallyAdjustFeatureWIP { get; set; }
 
-        public List<string> FeaturesInProgress { get; set; } = new List<string>();
-
         public string? AdditionalRelatedField { get; set; } = string.Empty;
 
         public DateTime TeamUpdateTime { get; set; } = DateTime.MinValue;
-
-        public int[] RawThroughput { get; set; } = [1];
 
         public bool UseFixedDatesForThroughput { get; set; } = false;
 
@@ -26,29 +22,18 @@
 
         public int ThroughputHistory { get; set; } = 30;
 
-        public Throughput Throughput => new Throughput(RawThroughput);
-
         public List<Project> Projects { get; } = [];
 
         public List<WorkItem> WorkItems { get; } = [];
 
-        public int TotalThroughput => RawThroughput.Sum();
-
-        public void UpdateThroughput(int[] throughput)
+        public void ResetUpdateTime()
         {
-            RawThroughput = throughput;
-            TeamUpdateTime = DateTime.UtcNow;
+            TeamUpdateTime = DateTime.MinValue;
         }
 
-        public void SetFeaturesInProgress(IEnumerable<string> featureReferences)
+        public void RefreshUpdateTime()
         {
-            FeaturesInProgress.Clear();
-            FeaturesInProgress.AddRange(featureReferences);
-
-            if (AutomaticallyAdjustFeatureWIP)
-            {
-                FeatureWIP = FeaturesInProgress.Count;
-            }
+            TeamUpdateTime = DateTime.UtcNow;
         }
 
         public ThroughputSettings GetThroughputSettings()

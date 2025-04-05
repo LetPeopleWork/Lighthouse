@@ -13,11 +13,13 @@ namespace Lighthouse.Backend.API
     {
         private readonly IForecastUpdateService forecastUpdateService;
         private readonly IRepository<Team> teamRepository;
+        private readonly ITeamMetricsService teamMetricsService;
 
-        public ForecastController(IForecastUpdateService forecastUpdateService, IRepository<Team> teamRepository)
+        public ForecastController(IForecastUpdateService forecastUpdateService, IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
         {
             this.forecastUpdateService = forecastUpdateService;
             this.teamRepository = teamRepository;
+            this.teamMetricsService = teamMetricsService;
         }
 
         [HttpPost("update/{id}")]
@@ -31,37 +33,34 @@ namespace Lighthouse.Backend.API
         [HttpPost("manual/{id}")]
         public async Task<ActionResult<ManualForecastDto>> RunManualForecastAsync(int id, [FromBody] ManualForecastInputDto input)
         {
-            var team = teamRepository.GetById(id);
-
-            if (team == null)
+            return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
             {
-                return NotFound();
-            }
+                var manualForecast = new ManualForecastDto(input.RemainingItems, input.TargetDate);
 
-            var manualForecast = new ManualForecastDto(input.RemainingItems, input.TargetDate);
+                var timeToTargetDate = (input.TargetDate - DateTime.Today).Days;
 
-            var timeToTargetDate = (input.TargetDate - DateTime.Today).Days;
+                if (input.RemainingItems > 0)
+                {
+                    var whenForecast = await forecastUpdateService.When(team, input.RemainingItems);
 
-            if (input.RemainingItems > 0)
-            {
-                var whenForecast = await forecastUpdateService.When(team, input.RemainingItems);
+                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
 
-                manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
+                    if (timeToTargetDate > 0)
+                    {
+                        manualForecast.Likelihood = whenForecast.GetLikelihood(timeToTargetDate);
+                    }
+                }
 
                 if (timeToTargetDate > 0)
                 {
-                    manualForecast.Likelihood = whenForecast.GetLikelihood(timeToTargetDate);
+                    var throughput = teamMetricsService.GetThroughputForTeam(team);
+                    var howManyForecast = forecastUpdateService.HowMany(throughput, timeToTargetDate);
+
+                    manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
                 }
-            }
 
-            if (timeToTargetDate > 0)
-            {
-                var howManyForecast = forecastUpdateService.HowMany(team.Throughput, timeToTargetDate);
-
-                manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
-            }
-
-            return Ok(manualForecast);
+                return manualForecast;
+            });
         }
 
         public class ManualForecastInputDto

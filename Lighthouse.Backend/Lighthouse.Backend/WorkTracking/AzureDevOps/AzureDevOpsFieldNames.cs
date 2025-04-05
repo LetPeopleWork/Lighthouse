@@ -18,6 +18,8 @@
 
         public static string Tags => "System.Tags";
 
+        public static string UrlPropertyName => "html";
+
         public static string ActivatedDate => "Microsoft.VSTS.Common.ActivatedDate";
 
         public static string ResolvedDate => "Microsoft.VSTS.Common.ResolvedDate";

@@ -13,13 +13,14 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         private void SeedAppSettings()
         {
             RemoveIfExists(new PreviewFeature { Id = 0, Key = PreviewFeatureKeys.LighthouseChartKey, Name = "Lighthouse Chart", Description = "Shows Burndown Chart with Forecasts for each Feature in a Project", Enabled = false });
-
-            AddIfNotExists(new PreviewFeature { Id = 1, Key = PreviewFeatureKeys.CycleTimeScatterPlotKey, Name = "Cycle Time Scatter Plot", Description = "Shows Cycle Time Scatterplot for a team", Enabled = false });
+            RemoveIfExists(new PreviewFeature { Id = 1, Key = PreviewFeatureKeys.CycleTimeScatterPlotKey, Name = "Cycle Time Scatter Plot", Description = "Shows Cycle Time Scatterplot for a team", Enabled = false });
 
             SaveSync();
         }
 
+#pragma warning disable S1144 // Unused private types or members should be removed
         private void AddIfNotExists(PreviewFeature previewFeature)
+#pragma warning restore S1144 // Unused private types or members should be removed
         {
             PreviewFeature? existingDefault = GetFeatureByName(previewFeature);
             if (existingDefault == null)

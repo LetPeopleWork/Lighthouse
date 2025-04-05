@@ -7,7 +7,6 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Newtonsoft.Json.Linq;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -182,9 +181,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTeam_TeamExists_ReturnsTeam()
         {
-            var expectedThroughput = new int[] { 1, 1, 0, 2, 0, 1, 0, 0, 1, 2, 3, 0, 0, 0, 0 };
             var team = CreateTeam(1, "Numero Uno");
-            team.UpdateThroughput(expectedThroughput);
 
             var project1 = CreateProject(42, "My Project");
             project1.UpdateTeams([team]);
@@ -217,7 +214,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(returnedTeamDto.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(returnedTeamDto.Projects, Has.Count.EqualTo(2));
                 Assert.That(returnedTeamDto.Features, Has.Count.EqualTo(3));
-                Assert.That(returnedTeamDto.Throughput, Is.EqualTo(expectedThroughput));
             });
         }
 
@@ -380,6 +376,33 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdateTeam_GivenNewTeamSettings_ResetsLastUpdateTime()
+        {
+            var existingTeam = new Team { Id = 132, TeamUpdateTime = DateTime.UtcNow };
+
+            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
+
+            var updatedTeamSettings = new TeamSettingDto
+            {
+                Id = 132,
+                Name = "Updated Team",
+                FeatureWIP = 12,
+                ThroughputHistory = 30,
+                WorkItemQuery = "project = MyProject",
+                WorkItemTypes = new List<string> { "User Story", "Bug" },
+                WorkTrackingSystemConnectionId = 2,
+                RelationCustomField = "CUSTOM.AdditionalField",
+                AutomaticallyAdjustFeatureWIP = true,
+            };
+
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateTeam(132, updatedTeamSettings);
+
+            Assert.That(existingTeam.TeamUpdateTime, Is.EqualTo(DateTime.MinValue));
+        }
+
+        [Test]
         public async Task UpdateTeam_TeamNotFound_ReturnsNotFoundResultAsync()
         {
             var subject = CreateSubject();
@@ -474,13 +497,10 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.Multiple(() =>
             {
-                Assert.That(response.Result, Is.InstanceOf<NotFoundObjectResult>());
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
                 
-                var notFoundObjectResult = response.Result as NotFoundObjectResult;
+                var notFoundObjectResult = response.Result as NotFoundResult;
                 Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
-
-                var value = notFoundObjectResult.Value;
-                Assert.That(value, Is.False);
             });
         }
 
