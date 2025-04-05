@@ -8,6 +8,7 @@ import {
 import { Feature } from "../../models/Feature";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
+import { Throughput } from "../../models/Forecasts/Throughput";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
 import {
 	type ILighthouseRelease,
@@ -39,6 +40,7 @@ import type { ILogService } from "./LogService";
 import type { IPreviewFeatureService } from "./PreviewFeatureService";
 import type { IProjectService } from "./ProjectService";
 import type { ISettingsService } from "./SettingsService";
+import type { ITeamMetricsService } from "./TeamMetricsService";
 import type { ITeamService } from "./TeamService";
 import type { IVersionService } from "./VersionService";
 import type { IWorkTrackingSystemService } from "./WorkTrackingSystemService";
@@ -53,7 +55,8 @@ export class DemoApiService
 		IVersionService,
 		IWorkTrackingSystemService,
 		IPreviewFeatureService,
-		IUpdateSubscriptionService
+		IUpdateSubscriptionService,
+		ITeamMetricsService
 {
 	private readonly useDelay: boolean;
 	private readonly throwError: boolean;
@@ -61,7 +64,8 @@ export class DemoApiService
 	private readonly dayMultiplier: number = 24 * 60 * 60 * 1000;
 	private readonly today: number = Date.now();
 
-	private subscribers: Map<string, (status: IUpdateStatus) => void> = new Map();
+	private readonly subscribers: Map<string, (status: IUpdateStatus) => void> =
+		new Map();
 
 	private milestones = [
 		new Milestone(
@@ -84,6 +88,9 @@ export class DemoApiService
 	private features: Feature[] = [];
 	private projects: Project[] = [];
 	private teams: Team[] = [];
+
+	private teamThroughputs: Record<number, number[]> = {};
+	private teamFeaturesInProgress: Record<number, string[]> = {};
 
 	private dataRetentionSettings: IDataRetentionSettings = {
 		maxStorageTimeInDays: 90,
@@ -835,6 +842,20 @@ export class DemoApiService
 		const throughput3 = this.generateThroughput();
 		const throughput4 = this.generateThroughput();
 
+		this.teamThroughputs = {
+			0: throughput1,
+			1: throughput2,
+			2: throughput3,
+			3: throughput4,
+		};
+
+		this.teamFeaturesInProgress = {
+			0: ["FTR-1", "FTR-3"],
+			1: ["FTR-2", "FTR-3"],
+			2: ["FTR-3"],
+			3: ["FTR-4"],
+		};
+
 		this.teams = [
 			new Team(
 				"Binary Blazers",
@@ -842,9 +863,7 @@ export class DemoApiService
 				[],
 				[this.features[0], this.features[3]],
 				1,
-				["FTR-1", "FTR-3"],
 				new Date(),
-				throughput1,
 				false,
 				new Date(new Date().setDate(new Date().getDate() - throughput1.length)),
 				new Date(),
@@ -855,9 +874,7 @@ export class DemoApiService
 				[],
 				[this.features[1], this.features[2]],
 				2,
-				["FTR-2", "FTR-3"],
 				new Date(),
-				throughput2,
 				false,
 				new Date(new Date().setDate(new Date().getDate() - throughput2.length)),
 				new Date(),
@@ -868,9 +885,7 @@ export class DemoApiService
 				[],
 				[this.features[2]],
 				1,
-				["FTR-3"],
 				new Date(),
-				throughput3,
 				true,
 				new Date(new Date().setDate(new Date().getDate() - throughput3.length)),
 				new Date(),
@@ -881,14 +896,31 @@ export class DemoApiService
 				[],
 				[this.features[3]],
 				2,
-				["FTR-4"],
 				new Date(),
-				throughput4,
 				false,
 				new Date(new Date().setDate(new Date().getDate() - throughput4.length)),
 				new Date(),
 			),
 		];
+	}
+
+	async getThroughput(teamId: number): Promise<Throughput> {
+		console.log(`Getting Throughput for Team ${teamId}`);
+		await this.delay();
+
+		const rawThroughput = this.teamThroughputs[teamId];
+		const totalThroughput = rawThroughput.reduce(
+			(sum, items) => sum + items,
+			0,
+		);
+		return new Throughput(rawThroughput, rawThroughput.length, totalThroughput);
+	}
+
+	async getFeaturesInProgress(teamId: number): Promise<string[]> {
+		console.log(`Getting Features in Progress for Team ${teamId}`);
+		await this.delay();
+
+		return this.teamFeaturesInProgress[teamId];
 	}
 
 	async getWorkItems(teamId: number): Promise<IWorkItem[]> {

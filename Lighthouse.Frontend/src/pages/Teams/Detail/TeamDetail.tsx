@@ -16,10 +16,10 @@ import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
+import type { Throughput } from "../../../models/Forecasts/Throughput";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
-import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 import ManualForecaster from "./ManualForecaster";
 import TeamFeatureList from "./TeamFeatureList";
 import ThroughputBarChart from "./ThroughputChart";
@@ -32,6 +32,7 @@ const TeamDetail: React.FC = () => {
 	let subscribedToUpdates = false;
 
 	const [team, setTeam] = useState<Team>();
+	const [throughput, setThroughput] = useState<Throughput | null>(null);
 
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
@@ -43,25 +44,27 @@ const TeamDetail: React.FC = () => {
 	const [manualForecastResult, setManualForecastResult] =
 		useState<ManualForecast | null>(null);
 
-	const [showCycleTimeScatterPlot, setShowCycleTimeScatterPlot] =
-		useState<boolean>(false);
-
 	const {
 		teamService,
 		forecastService,
 		updateSubscriptionService,
-		previewFeatureService,
+		teamMetricsService,
 	} = useContext(ApiServiceContext);
 
 	const fetchTeam = useCallback(async () => {
 		const teamData = await teamService.getTeam(teamId);
+		const throughput = await teamMetricsService.getThroughput(teamId);
 
 		if (teamData) {
 			setTeam(teamData);
 		}
 
+		if (throughput) {
+			setThroughput(throughput);
+		}
+
 		setIsLoading(false);
-	}, [teamService, teamId]);
+	}, [teamService, teamMetricsService, teamId]);
 
 	const onUpdateTeamData = async () => {
 		if (!team) {
@@ -133,25 +136,10 @@ const TeamDetail: React.FC = () => {
 			fetchTeam();
 		}
 
-		const loadPreviewFeature = async () => {
-			const cycleTimePreviewFeature =
-				await previewFeatureService.getFeatureByKey("CycleTimeScatterPlot");
-			setShowCycleTimeScatterPlot(cycleTimePreviewFeature?.enabled ?? false);
-		};
-
-		loadPreviewFeature();
-
 		return () => {
 			updateSubscriptionService.unsubscribeFromTeamUpdates(teamId);
 		};
-	}, [
-		team,
-		subscribedToUpdates,
-		updateSubscriptionService,
-		teamId,
-		fetchTeam,
-		previewFeatureService,
-	]);
+	}, [team, subscribedToUpdates, updateSubscriptionService, teamId, fetchTeam]);
 
 	return (
 		<LoadingAnimation hasError={false} isLoading={isLoading}>
@@ -162,11 +150,6 @@ const TeamDetail: React.FC = () => {
 					<Grid container spacing={3}>
 						<Grid size={{ xs: 6 }}>
 							<Typography variant="h3">{team.name}</Typography>
-
-							<Typography variant="h6">
-								Currently working on {team.featuresInProgress.length} Features
-								in parallel
-							</Typography>
 
 							<Typography variant="h6">
 								Last Updated on{" "}
@@ -215,11 +198,18 @@ const TeamDetail: React.FC = () => {
 									</IconButton>
 								</Tooltip>
 							)}
-							<ThroughputBarChart team={team} />
 
+							{throughput && (
+								<ThroughputBarChart
+									startDate={team.throughputStartDate}
+									throughput={throughput}
+								/>
+							)}
+							{/*
 							{showCycleTimeScatterPlot && (
 								<CycleTimeScatterPlotChart team={team} />
 							)}
+							*/}
 						</InputGroup>
 					</Grid>
 				)}

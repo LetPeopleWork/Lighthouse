@@ -34,11 +34,11 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const [cycleTimeData, setCycleTimeData] = useState<CycleTimePoint[]>([]);
 	const [percentiles, setPercentiles] = useState<PercentileLine[]>([]);
 
-	const { teamService } = useContext(ApiServiceContext);
+	const { teamMetricsService } = useContext(ApiServiceContext);
 
 	useEffect(() => {
 		const fetchCycleTimeData = async () => {
-			const workItems = await teamService.getWorkItems(team.id);
+			const workItems = await teamMetricsService.getWorkItems(team.id);
 
 			// Transform data for scatter plot - add cycle time calculation
 			const scatterplotData: CycleTimePoint[] = workItems.map((workItem) => {
@@ -59,7 +59,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		};
 
 		fetchCycleTimeData();
-	}, [teamService, team]);
+	}, [teamMetricsService, team]);
 
 	useEffect(() => {
 		const calculatePercentiles = (data: CycleTimePoint[]) => {

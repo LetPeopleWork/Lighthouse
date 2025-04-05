@@ -9,6 +9,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
@@ -16,12 +17,41 @@ import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLik
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 import type { Project } from "../../../models/Project/Project";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface ProjectFeatureListProps {
 	project: Project;
 }
 
 const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
+	const { teamMetricsService } = useContext(ApiServiceContext);
+
+	const [featuresInProgress, setFeaturesInProgress] = useState<
+		Record<string, string[]>
+	>({});
+
+	useEffect(() => {
+		const fetchFeaturesInProgress = async () => {
+			const featuresByTeam: Record<string, string[]> = {};
+
+			for (const team of project.involvedTeams) {
+				try {
+					const features = await teamMetricsService.getFeaturesInProgress(
+						team.id,
+					);
+					featuresByTeam[team.id] = features;
+				} catch (error) {
+					console.error(`Failed to fetch features for team ${team.id}:`, error);
+					featuresByTeam[team.id] = [];
+				}
+			}
+
+			setFeaturesInProgress(featuresByTeam);
+		};
+
+		fetchFeaturesInProgress();
+	}, [project.involvedTeams, teamMetricsService]);
+
 	const currentOrFutureMilestones = project.milestones.filter((milestone) => {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
@@ -77,7 +107,9 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 									stateCategory={feature.stateCategory}
 									isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
 									teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
-										team.featuresInProgress.includes(feature.featureReference),
+										featuresInProgress[team.id]?.includes(
+											feature.featureReference,
+										),
 									)}
 								/>
 							</TableCell>

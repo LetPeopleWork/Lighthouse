@@ -5,6 +5,12 @@ import { Feature } from "../../../models/Feature";
 import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { Team } from "../../../models/Team/Team";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { ITeamMetricsService } from "../../../services/Api/TeamMetricsService";
+import {
+	createMockApiServiceContext,
+	createMockTeamMetricsService,
+} from "../../../tests/MockApiServiceProvider";
 import TeamFeatureList from "./TeamFeatureList";
 
 vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
@@ -28,6 +34,23 @@ vi.mock(
 		),
 	}),
 );
+
+const mockTeamMetricsService: ITeamMetricsService =
+	createMockTeamMetricsService();
+
+const MockApiServiceProvider = ({
+	children,
+}: { children: React.ReactNode }) => {
+	const mockContext = createMockApiServiceContext({
+		teamMetricsService: mockTeamMetricsService,
+	});
+
+	return (
+		<ApiServiceContext.Provider value={mockContext}>
+			{children}
+		</ApiServiceContext.Provider>
+	);
+};
 
 describe("FeatureList component", () => {
 	const team: Team = new Team(
@@ -65,9 +88,7 @@ describe("FeatureList component", () => {
 			),
 		],
 		1,
-		["FTR-1"],
 		new Date(),
-		[1],
 		false,
 		new Date(new Date().setDate(new Date().getDate() - [1].length)),
 		new Date(),
@@ -75,9 +96,11 @@ describe("FeatureList component", () => {
 
 	it("should render all features with correct data", () => {
 		render(
-			<MemoryRouter>
-				<TeamFeatureList team={team} />
-			</MemoryRouter>,
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<TeamFeatureList team={team} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
 		);
 
 		for (const feature of team.features) {
@@ -104,9 +127,11 @@ describe("FeatureList component", () => {
 
 	it("should render the correct number of features", () => {
 		render(
-			<MemoryRouter>
-				<TeamFeatureList team={team} />
-			</MemoryRouter>,
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<TeamFeatureList team={team} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
 		);
 
 		const featureRows = screen.getAllByRole("row");

@@ -7,6 +7,12 @@ import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
 import { Team } from "../../../models/Team/Team";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { ITeamMetricsService } from "../../../services/Api/TeamMetricsService";
+import {
+	createMockApiServiceContext,
+	createMockTeamMetricsService,
+} from "../../../tests/MockApiServiceProvider";
 import ProjectFeatureList from "./ProjectFeatureList";
 
 vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
@@ -37,6 +43,23 @@ vi.mock("../../../components/Common/Forecasts/ForecastLikelihood", () => ({
 	),
 }));
 
+const mockTeamMetricsService: ITeamMetricsService =
+	createMockTeamMetricsService();
+
+const MockApiServiceProvider = ({
+	children,
+}: { children: React.ReactNode }) => {
+	const mockContext = createMockApiServiceContext({
+		teamMetricsService: mockTeamMetricsService,
+	});
+
+	return (
+		<ApiServiceContext.Provider value={mockContext}>
+			{children}
+		</ApiServiceContext.Provider>
+	);
+};
+
 describe("ProjectFeatureList component", () => {
 	const team1: Team = new Team(
 		"Team A",
@@ -44,9 +67,7 @@ describe("ProjectFeatureList component", () => {
 		[],
 		[],
 		1,
-		["FTR-1"],
 		new Date(),
-		[1],
 		false,
 		new Date(new Date().setDate(new Date().getDate() - [1].length)),
 		new Date(),
@@ -57,9 +78,7 @@ describe("ProjectFeatureList component", () => {
 		[],
 		[],
 		1,
-		["FTR-1"],
 		new Date(),
-		[1],
 		false,
 		new Date(new Date().setDate(new Date().getDate() - [1].length)),
 		new Date(),
@@ -118,9 +137,11 @@ describe("ProjectFeatureList component", () => {
 
 	it("should only render milestones that are today or in the future", async () => {
 		render(
-			<MemoryRouter>
-				<ProjectFeatureList project={project} />
-			</MemoryRouter>,
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<ProjectFeatureList project={project} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
 		);
 
 		expect(screen.queryByText("Feature Name")).toBeInTheDocument();
@@ -135,9 +156,11 @@ describe("ProjectFeatureList component", () => {
 
 	it("should render all features with correct data", () => {
 		render(
-			<MemoryRouter>
-				<ProjectFeatureList project={project} />
-			</MemoryRouter>,
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<ProjectFeatureList project={project} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
 		);
 
 		for (const feature of project.features) {
@@ -175,9 +198,11 @@ describe("ProjectFeatureList component", () => {
 
 	it("should render the correct number of features", () => {
 		render(
-			<MemoryRouter>
-				<ProjectFeatureList project={project} />
-			</MemoryRouter>,
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<ProjectFeatureList project={project} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
 		);
 
 		const featureRows = screen.getAllByRole("row");
@@ -186,9 +211,11 @@ describe("ProjectFeatureList component", () => {
 
 	it("should display the warning icon for features using the default feature size", () => {
 		render(
-			<MemoryRouter>
-				<ProjectFeatureList project={project} />
-			</MemoryRouter>,
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<ProjectFeatureList project={project} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
 		);
 
 		const featureRowWithDefaultSize = screen

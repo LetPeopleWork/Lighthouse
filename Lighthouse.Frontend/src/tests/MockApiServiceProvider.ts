@@ -4,6 +4,7 @@ import type { ILogService } from "../services/Api/LogService";
 import type { IPreviewFeatureService } from "../services/Api/PreviewFeatureService";
 import type { IProjectService } from "../services/Api/ProjectService";
 import type { ISettingsService } from "../services/Api/SettingsService";
+import type { ITeamMetricsService } from "../services/Api/TeamMetricsService";
 import type { ITeamService } from "../services/Api/TeamService";
 import type { IWorkTrackingSystemService } from "../services/Api/WorkTrackingSystemService";
 import type { IUpdateSubscriptionService } from "../services/UpdateSubscriptionService";
@@ -17,6 +18,8 @@ export const createMockApiServiceContext = (
 		projectService: null as unknown as IApiServiceContext["projectService"],
 		settingsService: null as unknown as IApiServiceContext["settingsService"],
 		teamService: null as unknown as IApiServiceContext["teamService"],
+		teamMetricsService:
+			null as unknown as IApiServiceContext["teamMetricsService"],
 		versionService: null as unknown as IApiServiceContext["versionService"],
 		workTrackingSystemService:
 			null as unknown as IApiServiceContext["workTrackingSystemService"],
@@ -64,6 +67,13 @@ export const createMockTeamService = (): ITeamService => {
 		updateTeam: vi.fn(),
 		createTeam: vi.fn(),
 		updateTeamData: vi.fn(),
+	};
+};
+
+export const createMockTeamMetricsService = (): ITeamMetricsService => {
+	return {
+		getThroughput: vi.fn(),
+		getFeaturesInProgress: vi.fn(),
 		getWorkItems: vi.fn(),
 	};
 };

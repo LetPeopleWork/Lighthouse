@@ -1,6 +1,5 @@
 import type { ITeam, Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
-import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
 
 export interface ITeamService {
@@ -12,8 +11,6 @@ export interface ITeamService {
 	updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
 	createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
 	updateTeamData(teamId: number): Promise<void>;
-
-	getWorkItems(teamId: number): Promise<IWorkItem[]>;
 }
 
 export class TeamService extends BaseApiService implements ITeamService {
@@ -97,22 +94,6 @@ export class TeamService extends BaseApiService implements ITeamService {
 	async updateForecast(teamId: number): Promise<void> {
 		await this.withErrorHandling(async () => {
 			await this.apiService.post<void>(`/forecast/update/${teamId}`);
-		});
-	}
-
-	async getWorkItems(teamId: number): Promise<IWorkItem[]> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IWorkItem[]>(
-				`/teams/${teamId}/workitems`,
-			);
-
-			const workItems = response.data.map((workItem) => {
-				workItem.startedDate = new Date(workItem.startedDate);
-				workItem.closedDate = new Date(workItem.closedDate);
-				return workItem;
-			});
-
-			return workItems;
 		});
 	}
 }

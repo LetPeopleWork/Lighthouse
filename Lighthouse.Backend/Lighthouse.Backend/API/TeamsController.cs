@@ -113,6 +113,7 @@ namespace Lighthouse.Backend.API
                 if (WorkItemRelatedSettingsChanged(team, teamSetting))
                 {
                     workItemRepository.RemoveWorkItemsForTeam(team.Id);
+                    await workItemRepository.Save();
                 }
 
                 SyncTeamWithTeamSettings(team, teamSetting);

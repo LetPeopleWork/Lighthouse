@@ -9,18 +9,33 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 import type { Team } from "../../../models/Team/Team";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface FeatureListProps {
 	team: Team;
 }
 
 const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
+	const { teamMetricsService } = useContext(ApiServiceContext);
+
+	const [featuresInProgress, setFeaturesInProgress] = useState<string[]>([]);
+
+	useEffect(() => {
+		const fetchFeaturesInProgress = async () => {
+			const features = await teamMetricsService.getFeaturesInProgress(team.id);
+			setFeaturesInProgress(features);
+		};
+
+		fetchFeaturesInProgress();
+	}, [team, teamMetricsService]);
+
 	return (
 		<TableContainer component={Paper}>
 			<Table>
@@ -63,7 +78,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 									stateCategory={feature.stateCategory}
 									isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
 									teamsWorkIngOnFeature={
-										team.featuresInProgress.includes(feature.featureReference)
+										featuresInProgress.includes(feature.featureReference)
 											? [team]
 											: []
 									}
