@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         private Mock<IWorkItemService> workItemServiceMock = new Mock<IWorkItemService>();
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IRepository<Team>> teamRepoMock;
-        private Mock<IRepository<WorkItem>> workItemRepoMock;
+        private Mock<IWorkItemRepository> workItemRepoMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         private int idCounter = 0;
@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         {
             workItemServiceMock = new Mock<IWorkItemService>();
             teamRepoMock = new Mock<IRepository<Team>>();
-            workItemRepoMock = new Mock<IRepository<WorkItem>>();
+            workItemRepoMock = new Mock<IWorkItemRepository>();
             appSettingServiceMock = new Mock<IAppSettingService>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
 

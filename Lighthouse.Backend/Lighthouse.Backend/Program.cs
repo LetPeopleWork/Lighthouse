@@ -138,7 +138,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
             builder.Services.AddScoped<IRepository<Project>, ProjectRepository>();
             builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
-            builder.Services.AddScoped<IRepository<WorkItem>, WorkItemRepository>();
+            builder.Services.AddScoped<IWorkItemRepository, WorkItemRepository>();
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
             builder.Services.AddScoped<IRepository<FeatureHistoryEntry>, FeatureHistoryRepository>();

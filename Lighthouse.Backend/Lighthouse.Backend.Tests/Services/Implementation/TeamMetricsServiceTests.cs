@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     [TestFixture]
     public class TeamMetricsServiceTests
     {
-        private Mock<IRepository<WorkItem>> workItemRepositoryMock;
+        private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Team testTeam;
 
         private TeamMetricsService subject;
@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [SetUp]
         public void Setup()
         {
-            workItemRepositoryMock = new Mock<IRepository<WorkItem>>();
+            workItemRepositoryMock = new Mock<IWorkItemRepository>();
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetThroughputRefreshSettings())

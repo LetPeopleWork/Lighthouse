@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             var workItemServiceFactory = serviceProvider.GetRequiredService<IWorkItemServiceFactory>();
             var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            var workItemRepository = serviceProvider.GetRequiredService<IRepository<WorkItem>>();
+            var workItemRepository = serviceProvider.GetRequiredService<IWorkItemRepository>();
             var teamMetricsService = serviceProvider.GetRequiredService<ITeamMetricsService>();
 
             await UpdateWorkItemsForTeam(team, workItemService, workItemRepository);
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;
         }
 
-        private async Task UpdateWorkItemsForTeam(Team team, IWorkItemService workItemService, IRepository<WorkItem> workItemRepository)
+        private async Task UpdateWorkItemsForTeam(Team team, IWorkItemService workItemService, IWorkItemRepository workItemRepository)
         {
             Logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
             var items = await workItemService.GetChangedWorkItemsSinceLastTeamUpdate(team);

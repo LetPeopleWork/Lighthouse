@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             var featureRepository = serviceProvider.GetRequiredService<IRepository<Feature>>();
             var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
             var forecastUpdateService = serviceProvider.GetRequiredService<IForecastUpdateService>();
-            var workItemRepository = serviceProvider.GetRequiredService<IRepository<WorkItem>>();
+            var workItemRepository = serviceProvider.GetRequiredService<IWorkItemRepository>();
 
             var project = projectRepository.GetById(id);
             if (project == null)
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
         }
 
         private async Task UpdateFeaturesForProject(
-            IRepository<Project> projectRepository, IRepository<Feature> featureRepository, IRepository<WorkItem> workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
+            IRepository<Project> projectRepository, IRepository<Feature> featureRepository, IWorkItemRepository workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
         {
             Logger.LogInformation("Updating Features for Project {ProjectName}", project.Name);
             defaultWorkItemsBasedOnPercentile.Remove(project.Id);
@@ -195,7 +195,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return buckets;
         }
 
-        private static void UpdateRemainingWorkForFeatures(IRepository<WorkItem> workItemRepository, Project project)
+        private static void UpdateRemainingWorkForFeatures(IWorkItemRepository workItemRepository, Project project)
         {
             foreach (var feature in project.Features)
             {
@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             }
         }
 
-        private async Task UpdateUnparentedItemsForProject(IRepository<Feature> featureRepository, IRepository<WorkItem> workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
+        private async Task UpdateUnparentedItemsForProject(IRepository<Feature> featureRepository, IWorkItemRepository workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project)
         {
             if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
             {
@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             await workItemRepository.Save();
         }
 
-        private async Task UpdateUnparentedItemsForTeam(IRepository<Feature> featureRepository, IRepository<WorkItem> workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project, Feature unparentedFeature, Team team)
+        private async Task UpdateUnparentedItemsForTeam(IRepository<Feature> featureRepository, IWorkItemRepository workItemRepository, IWorkItemServiceFactory workItemServiceFactory, Project project, Feature unparentedFeature, Team team)
         {
             if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
             {
@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             }
         }
 
-        private void AssignParentToWorkItem(IRepository<Feature> featureRepository, IRepository<WorkItem> workItemRepository, Project project, Feature unparentedFeature, Team team, WorkItem? workItem)
+        private void AssignParentToWorkItem(IRepository<Feature> featureRepository, IWorkItemRepository workItemRepository, Project project, Feature unparentedFeature, Team team, WorkItem? workItem)
         {
             if (workItem != null)
             {

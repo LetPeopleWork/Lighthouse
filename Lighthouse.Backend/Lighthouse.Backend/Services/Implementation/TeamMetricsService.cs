@@ -12,11 +12,11 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly string featureWipMetricIdentifier = "FeatureWIP";
 
         private readonly ILogger<TeamMetricsService> logger;
-        private readonly IRepository<WorkItem> workItemRepository;
+        private readonly IWorkItemRepository workItemRepository;
 
         private readonly int refreshRateInMinutes;
 
-        public TeamMetricsService(ILogger<TeamMetricsService> logger, IRepository<WorkItem> workItemRepository, IAppSettingService appSettingService)
+        public TeamMetricsService(ILogger<TeamMetricsService> logger, IWorkItemRepository workItemRepository, IAppSettingService appSettingService)
         {
             this.logger = logger;
             this.workItemRepository = workItemRepository;

@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
     {
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IRepository<Project>> projectRepoMock;
-        private Mock<IRepository<WorkItem>> workItemRepositoryMock;
+        private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkItemService> workItemServiceMock;
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IForecastUpdateService> forecastUpdateServiceMock;
@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             workItemServiceMock = new Mock<IWorkItemService>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             projectRepoMock = new Mock<IRepository<Project>>();
-            workItemRepositoryMock = new Mock<IRepository<WorkItem>>();
+            workItemRepositoryMock = new Mock<IWorkItemRepository>();
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastUpdateServiceMock = new Mock<IForecastUpdateService>();
 

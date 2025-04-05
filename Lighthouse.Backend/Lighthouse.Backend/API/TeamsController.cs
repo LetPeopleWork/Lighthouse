@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,7 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Feature> featureRepository;
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
+        private readonly IWorkItemRepository workItemRepository;
         private readonly ITeamUpdateService teamUpdateService;
         private readonly IWorkItemServiceFactory workItemServiceFactory;
 
@@ -23,6 +25,7 @@ namespace Lighthouse.Backend.API
             IRepository<Project> projectRepository,
             IRepository<Feature> featureRepository,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
+            IWorkItemRepository workItemRepository,
             ITeamUpdateService teamUpdateService,
             IWorkItemServiceFactory workItemServiceFactory)
         {
@@ -30,6 +33,7 @@ namespace Lighthouse.Backend.API
             this.projectRepository = projectRepository;
             this.featureRepository = featureRepository;
             this.workTrackingSystemConnectionRepository = workTrackingSystemConnectionRepository;
+            this.workItemRepository = workItemRepository;
             this.teamUpdateService = teamUpdateService;
             this.workItemServiceFactory = workItemServiceFactory;
         }
@@ -106,6 +110,11 @@ namespace Lighthouse.Backend.API
         {
             return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
             {
+                if (WorkItemRelatedSettingsChanged(team, teamSetting))
+                {
+                    workItemRepository.RemoveWorkItemsForTeam(team.Id);
+                }
+
                 SyncTeamWithTeamSettings(team, teamSetting);
 
                 team.ResetUpdateTime();
@@ -139,6 +148,15 @@ namespace Lighthouse.Backend.API
 
                 return await workItemService.ValidateTeamSettings(team);
             });
+        }
+
+        private static bool WorkItemRelatedSettingsChanged(Team team, TeamSettingDto teamSetting)
+        {
+            var queryChanged = team.WorkItemQuery != teamSetting.WorkItemQuery;
+            var connectionChanged = team.WorkTrackingSystemConnectionId != teamSetting.WorkTrackingSystemConnectionId;
+            var workItemTypesChanged = !team.WorkItemTypes.OrderBy(x => x).SequenceEqual(teamSetting.WorkItemTypes.OrderBy(x => x));
+
+            return queryChanged || connectionChanged || workItemTypesChanged;
         }
 
         private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)

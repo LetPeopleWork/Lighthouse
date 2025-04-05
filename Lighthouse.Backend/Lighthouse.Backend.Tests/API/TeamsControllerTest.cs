@@ -15,6 +15,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IWorkItemRepository> workItemRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
 
         private Mock<ITeamUpdateService> teamUpdateServiceMock;
@@ -26,6 +27,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock = new Mock<IRepository<Team>>();
             projectRepositoryMock = new Mock<IRepository<Project>>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
+            workItemRepoMock = new Mock<IWorkItemRepository>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
 
             teamUpdateServiceMock = new Mock<ITeamUpdateService>();
@@ -397,9 +399,100 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateTeam(132, updatedTeamSettings);
+            _ = await subject.UpdateTeam(132, updatedTeamSettings);
 
             Assert.That(existingTeam.TeamUpdateTime, Is.EqualTo(DateTime.MinValue));
+        }
+
+        [Test]
+        [TestCase("New Query", true)]
+        [TestCase("Existing Query", false)]
+        public async Task UpdateTeam_GivenNewQuery_DeletesExistingWorkItems(string workItemQuery, bool shouldDelete)
+        {
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+
+            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
+
+            var updatedTeamSettings = new TeamSettingDto
+            {
+                Id = 132,
+                Name = "Updated Team",
+                FeatureWIP = 12,
+                ThroughputHistory = 30,
+                WorkItemQuery = workItemQuery,
+                WorkItemTypes = new List<string> { "User Story", "Bug" },
+                WorkTrackingSystemConnectionId = 2,
+                RelationCustomField = "CUSTOM.AdditionalField",
+                AutomaticallyAdjustFeatureWIP = true,
+            };
+
+            var subject = CreateSubject();
+
+            _ = await subject.UpdateTeam(132, updatedTeamSettings);
+
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+        }
+
+        [Test]
+        [TestCase(new string[] { "User Story", "Bug" }, false)]
+        [TestCase(new string[] { "Bug", "User Story" }, false)]
+        [TestCase(new string[] { "Story", "Bug" }, true)]
+        [TestCase(new string[] { "User Story" }, true)]
+        [TestCase(new string[] { "All New Type" }, true)]
+        [TestCase(new string[] { "User Story", "Bug", "Task" }, true)]
+        public async Task UpdateTeam_GivenWorkItemTypes_DeletesExistingWorkItems(string[] workItemTypes, bool shouldDelete)
+        {
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+
+            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
+
+            var updatedTeamSettings = new TeamSettingDto
+            {
+                Id = 132,
+                Name = "Updated Team",
+                FeatureWIP = 12,
+                ThroughputHistory = 30,
+                WorkItemQuery = "Existing Query",
+                WorkItemTypes = new List<string>(workItemTypes),
+                WorkTrackingSystemConnectionId = 2,
+                RelationCustomField = "CUSTOM.AdditionalField",
+                AutomaticallyAdjustFeatureWIP = true,
+            };
+
+            var subject = CreateSubject();
+
+            _ = await subject.UpdateTeam(132, updatedTeamSettings);
+
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+        }
+
+        [Test]
+        [TestCase(2, false)]
+        [TestCase(1, true)]
+        public async Task UpdateTeam_GivenWorkTrackingSystemConnectionId_DeletesExistingWorkItems(int workTrackingSystemConnectionId, bool shouldDelete)
+        {
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+
+            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
+
+            var updatedTeamSettings = new TeamSettingDto
+            {
+                Id = 132,
+                Name = "Updated Team",
+                FeatureWIP = 12,
+                ThroughputHistory = 30,
+                WorkItemQuery = "Existing Query",
+                WorkItemTypes = new List<string> { "User Story", "Bug" },
+                WorkTrackingSystemConnectionId = workTrackingSystemConnectionId,
+                RelationCustomField = "CUSTOM.AdditionalField",
+                AutomaticallyAdjustFeatureWIP = true,
+            };
+
+            var subject = CreateSubject();
+
+            _ = await subject.UpdateTeam(132, updatedTeamSettings);
+
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
         }
 
         [Test]
@@ -532,7 +625,7 @@ namespace Lighthouse.Backend.Tests.API
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
-            return new TeamsController(teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, teamUpdateServiceMock.Object, workItemServiceFactoryMock.Object);
+            return new TeamsController(teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, workItemServiceFactoryMock.Object);
         }
     }
 }
