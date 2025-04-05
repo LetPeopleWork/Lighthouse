@@ -14,10 +14,7 @@
 
         public void Remove(TKey key)
         {
-            if (cache.ContainsKey(key))
-            {
-                cache.Remove(key);
-            }
+            cache.Remove(key);
         }
 
         public TValue? Get(TKey key)

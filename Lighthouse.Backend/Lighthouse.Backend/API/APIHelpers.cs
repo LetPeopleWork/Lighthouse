@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    public static class APIHelpers
+    public static class ApiHelpers
     {
         public static ActionResult<TResult> GetEntityByIdAnExecuteAction<TResult, TRepo>(this ControllerBase controller, IRepository<TRepo> repo, int id, Func<TRepo, TResult> action) where TRepo : class, IEntity
         {
