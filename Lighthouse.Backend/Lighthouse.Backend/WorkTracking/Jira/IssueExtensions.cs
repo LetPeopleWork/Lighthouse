@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.WorkTracking.Jira
             /* This is done because of Jira's custom fields. In the JQL, we have to refer to them via "cf[<id>]".
              * However, when we get it from the API, it's "customfield_<id>". This method tries to convert the key from cf[<id>] to customfield_<id>.
              * This is stupid and I hate it. Do better Atlassian. */
-            var regex = new Regex(@"^cf\[(\d+)\]$");
+            var regex = new Regex(@"^cf\[(\d+)\]$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
             var match = regex.Match(fieldKey);
             if (match.Success)
             {

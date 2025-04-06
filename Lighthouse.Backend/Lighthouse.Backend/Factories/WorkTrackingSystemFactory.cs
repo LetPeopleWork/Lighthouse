@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Factories
 
         private List<WorkTrackingSystemConnectionOption> CreateOptionsForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
-            logger.LogDebug("Getting Default WorkTrackingSystemConnectionOption for {workTrackingSystem}", workTrackingSystem);
+            logger.LogDebug("Getting Default WorkTrackingSystemConnectionOption for {WorkTrackingSystem}", workTrackingSystem);
 
             switch (workTrackingSystem)
             {

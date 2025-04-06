@@ -22,12 +22,12 @@ namespace Lighthouse.Backend.Services.Factories
 
         public IWorkItemService GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
-            logger.LogDebug("Getting Work Item Service for {workTrackingSystem}", workTrackingSystem);
+            logger.LogDebug("Getting Work Item Service for {WorkTrackingSystem}", workTrackingSystem);
             var workItemSerivce = cache.Get(workTrackingSystem);
 
             if (workItemSerivce == null)
             {
-                logger.LogDebug("Work Item Service for {workTrackingSystem} not found in the cache - creating", workTrackingSystem);
+                logger.LogDebug("Work Item Service for {WorkTrackingSystem} not found in the cache - creating", workTrackingSystem);
                 switch (workTrackingSystem)
                 {
                     case WorkTrackingSystems.AzureDevOps:
