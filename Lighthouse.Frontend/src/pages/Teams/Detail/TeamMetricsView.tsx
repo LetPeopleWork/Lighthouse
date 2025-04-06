@@ -1,6 +1,7 @@
 import { Grid } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { Throughput } from "../../../models/Forecasts/Throughput";
 import type { Team } from "../../../models/Team/Team";
@@ -14,6 +15,13 @@ interface TeamMetricsViewProps {
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [throughput, setThroughput] = useState<Throughput | null>(null);
 	const { teamMetricsService } = useContext(ApiServiceContext);
+
+	const [startDate, setStartDate] = useState<Date>(() => {
+		const date = new Date();
+		date.setDate(date.getDate() - 30);
+		return date;
+	});
+	const [endDate, setEndDate] = useState<Date>(new Date());
 
 	useEffect(() => {
 		const fetchThroughput = async () => {
@@ -31,25 +39,34 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	}, [team.id, teamMetricsService]);
 
 	return (
-		<Grid container spacing={3}>
-			<Grid size={{ xs: 6 }}>
-				<InputGroup title="Throughput" initiallyExpanded={true}>
-					{throughput && (
-						<ThroughputBarChart
-							startDate={team.throughputStartDate}
-							throughput={throughput}
-						/>
-					)}
-				</InputGroup>
-			</Grid>
+		<>
+			<DateRangeSelector
+				startDate={startDate}
+				endDate={endDate}
+				onStartDateChange={(date) => date && setStartDate(date)}
+				onEndDateChange={(date) => date && setEndDate(date)}
+			/>
 
-			{/*
-			<Grid size={{xs: 6}}>
-				<InputGroup title="Cycle Time" initiallyExpanded={true}>
-					<CycleTimeScatterPlotChart team={team} />
-				</InputGroup>
-			</Grid>*/}
-		</Grid>
+			<Grid container spacing={3}>
+				<Grid size={{ xs: 6 }}>
+					<InputGroup title="Throughput" initiallyExpanded={true}>
+						{throughput && (
+							<ThroughputBarChart
+								startDate={startDate}
+								throughput={throughput}
+							/>
+						)}
+					</InputGroup>
+				</Grid>
+
+				{/*
+				<Grid size={{xs: 6}}>
+					<InputGroup title="Cycle Time" initiallyExpanded={true}>
+						<CycleTimeScatterPlotChart team={team} />
+					</InputGroup>
+				</Grid>*/}
+			</Grid>
+		</>
 	);
 };
 
