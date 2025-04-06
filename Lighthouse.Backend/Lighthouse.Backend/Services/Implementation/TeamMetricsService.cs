@@ -122,6 +122,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private void StoreMetricInCache<TMetric>(string key, TMetric metric) where TMetric : class
         {
+            metricsCache.Remove(key);
             metricsCache.Store(key, metric, TimeSpan.FromMinutes(refreshRateInMinutes));
         }
 

@@ -30,17 +30,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.AdditionalRelatedField ?? string.Empty)} {lastUpdatedFilter}";
 
             var workItemBase = await CreateWorkItemsForAllItemsMatchingQuery(team, workItemQuery);
-
-            var workItems = new List<LighthouseWorkItem>();
             
-            foreach (var workItem in workItemBase)
+            var tasks = workItemBase.Select(async workItem =>
             {
                 var parentReference = await GetParentIdForWorkItem(int.Parse(workItem.ReferenceId), team);
+                return new LighthouseWorkItem(workItem, team, parentReference);
+            });
 
-                workItems.Add(new LighthouseWorkItem(workItem, team, parentReference));
-            }
-
-            return workItems;
+            return await Task.WhenAll(tasks);
         }
 
         public async Task<List<Feature>> GetFeaturesForProject(Project project)
@@ -353,6 +350,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
         private async Task<string> GetParentIdForWorkItem(int workItemId, Team team)
         {
+            logger.LogDebug("Getting Parent ID for Work Item with ID {ItemId}", workItemId);
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
             var adoWorkItem = await witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.Relations);
 

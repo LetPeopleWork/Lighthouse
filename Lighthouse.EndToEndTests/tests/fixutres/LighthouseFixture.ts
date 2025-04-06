@@ -114,11 +114,14 @@ async function generateTestData(
 		done: ["Done"],
 	};
 
+	const historicalDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+	const historicalDateString = historicalDate.toISOString().slice(0, 10);
+
 	const team1 = await createTeam(
 		request,
 		generateRandomName(),
 		adoConnection.id,
-		'[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"',
+		`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
 		["User Story", "Bug"],
 		adoStates,
 	);
@@ -126,7 +129,7 @@ async function generateTestData(
 		request,
 		generateRandomName(),
 		adoConnection.id,
-		'[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Cyber Sultans"',
+		`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Cyber Sultans" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
 		["User Story", "Bug"],
 		adoStates,
 	);
@@ -235,13 +238,18 @@ async function updateTeamData(
 	while (updatedTeams.length < teams.length) {
 		for (const team of teams) {
 			if (!updatedTeams.some((t) => t.id === team.id)) {
-				const response = await request.get(`/api/Teams/${team.id}`);
-				const updatedTeam = await response.json();
+				const teamResponse = await request.get(`/api/Teams/${team.id}`);
+				const updatedTeam = await teamResponse.json();
+
+				const metricsRepsonse = await request.get(
+					`/api/teams/${team.id}/metrics/featuresInProgress`,
+				);
+				const featuresInProgress = (await metricsRepsonse.json()).length;
 
 				if (
 					new Date(updatedTeam.lastUpdated).getUTCMilliseconds() >
 						updateTime.getUTCMilliseconds() &&
-					updatedTeam.featuresInProgress.length > 0
+					featuresInProgress > 0
 				) {
 					updatedTeams.push(updatedTeam);
 				}

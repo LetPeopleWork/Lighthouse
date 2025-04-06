@@ -39,7 +39,6 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             await UpdateWorkItemsForTeam(team, workItemService, workItemRepository);
 
             team.RefreshUpdateTime();
-            teamMetricsService.InvalidateTeamMetrics(team);
 
             if (team.AutomaticallyAdjustFeatureWIP)
             {
@@ -48,6 +47,8 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             }
 
             await teamRepository.Save();
+
+            teamMetricsService.InvalidateTeamMetrics(team);
         }
 
         protected override bool ShouldUpdateEntity(Team entity, RefreshSettings refreshSettings)

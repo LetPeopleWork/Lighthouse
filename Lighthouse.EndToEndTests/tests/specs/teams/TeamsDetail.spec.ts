@@ -23,9 +23,9 @@ for (const { index, name, expectedFeaturesInProgress } of testData) {
 			// Wait for update to be done
 			await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-			// Make sure the features in progress is correct
-			const featuresInProgress = await teamDetailPage.getFeaturesInProgress();
-			expect(featuresInProgress).toBe(expectedFeaturesInProgress);
+			/* Commented out as the Metrics will move to a dedicated subpage
+			 * const featuresInProgress = await teamDetailPage.getFeaturesInProgress();
+			 * expect(featuresInProgress).toBe(expectedFeaturesInProgress); */
 
 			const lastUpdatedDate = await teamDetailPage.getLastUpdatedDate();
 			expectDateToBeRecent(lastUpdatedDate);
