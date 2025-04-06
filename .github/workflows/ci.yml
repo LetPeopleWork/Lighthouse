@@ -589,7 +589,7 @@ jobs:
     needs:
     - tag
     - deploy
--   - docker
+    - docker
     - verifysqlite
     - verifypostgres
 
