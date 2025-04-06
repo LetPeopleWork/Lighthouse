@@ -75,7 +75,7 @@ describe("ManualForecaster component", () => {
 	it("should call onRemainingItemsChange when items input changes", () => {
 		const itemsTextField = screen.getByLabelText(
 			"Number of Items to Forecast",
-		) as HTMLInputElement;
+		);
 		fireEvent.change(itemsTextField, { target: { value: "15" } });
 		expect(mockOnRemainingItemsChange).toHaveBeenCalled();
 		expect(mockOnRemainingItemsChange.mock.calls[0][0]).toBe(15);

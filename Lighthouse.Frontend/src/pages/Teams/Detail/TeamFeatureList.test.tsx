@@ -38,6 +38,10 @@ vi.mock(
 const mockTeamMetricsService: ITeamMetricsService =
 	createMockTeamMetricsService();
 
+const mockGetFeaturesInProgress = vi.fn();
+mockTeamMetricsService.getFeaturesInProgress = mockGetFeaturesInProgress;
+mockGetFeaturesInProgress.mockResolvedValue([]);
+
 const MockApiServiceProvider = ({
 	children,
 }: { children: React.ReactNode }) => {
@@ -52,7 +56,7 @@ const MockApiServiceProvider = ({
 	);
 };
 
-describe("FeatureList component", () => {
+describe("TeamFeatureList component", () => {
 	const team: Team = new Team(
 		"Team A",
 		1,
