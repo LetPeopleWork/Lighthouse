@@ -1,4 +1,4 @@
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Grid, Typography } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import type React from "react";
 import type { Throughput } from "../../../models/Forecasts/Throughput";
@@ -24,18 +24,23 @@ const ThroughputBarChart: React.FC<ThroughputBarChartProps> = ({
 	});
 
 	return throughput?.history > 0 ? (
-		<BarChart
-			dataset={data}
-			xAxis={[{ scaleType: "band", dataKey: "day" }]}
-			series={[
-				{
-					dataKey: "throughput",
-					label: "Throughput",
-					color: "rgba(48, 87, 78, 1)",
-				},
-			]}
-			height={500}
-		/>
+		<Grid>
+			<Typography variant="h6">
+				Total Throughput: {throughput.totalThroughput} Items
+			</Typography>
+
+			<BarChart
+				dataset={data}
+				xAxis={[{ scaleType: "band", dataKey: "day" }]}
+				series={[
+					{
+						dataKey: "throughput",
+						color: "rgba(48, 87, 78, 1)",
+					},
+				]}
+				height={500}
+			/>
+		</Grid>
 	) : (
 		<CircularProgress />
 	);

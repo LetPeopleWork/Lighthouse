@@ -21,6 +21,21 @@ describe("ThroughputBarChart component", () => {
 		expect(barElements?.length).toBeGreaterThan(0);
 	});
 
+	it("should display the correct total throughput value", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new Throughput(rawData, rawData.length, 60);
+
+		render(
+			<ThroughputBarChart
+				throughput={mockThroughputData}
+				startDate={new Date()}
+			/>,
+		);
+
+		const totalThroughputText = screen.getByText("Total Throughput: 60 Items");
+		expect(totalThroughputText).toBeInTheDocument();
+	});
+
 	it("should render CircularProgress when throughputData.history <= 0", () => {
 		const mockThroughputData: Throughput = new Throughput([], 0, 0);
 

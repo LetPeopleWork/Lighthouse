@@ -71,13 +71,13 @@ namespace Lighthouse.Backend.Services.Implementation.Update
                 if (existingItem == null)
                 {
                     workItemRepository.Add(item);
-                    Logger.LogDebug("Added Work Item {WorkItemId} to DB", item.Id);
+                    Logger.LogDebug("Added Work Item {WorkItemId} to DB", item.ReferenceId);
                 }
                 else
                 {
                     existingItem.Update(item);
                     workItemRepository.Update(existingItem);
-                    Logger.LogDebug("Updated Work Item {WorkItemId} in DB", item.Id);
+                    Logger.LogDebug("Updated Work Item {WorkItemId} in DB", item.ReferenceId);
                 }
             }
 

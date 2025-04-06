@@ -3,26 +3,23 @@ import {
 	Button,
 	Container,
 	IconButton,
+	Tab,
+	Tabs,
 	Tooltip,
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import dayjs from "dayjs";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
-import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
-import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
-import type { Throughput } from "../../../models/Forecasts/Throughput";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
-import ManualForecaster from "./ManualForecaster";
-import TeamFeatureList from "./TeamFeatureList";
-import ThroughputBarChart from "./ThroughputChart";
+import TeamForecastView from "./TeamForecastView";
+import TeamMetricsView from "./TeamMetricsView";
 
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -32,39 +29,24 @@ const TeamDetail: React.FC = () => {
 	let subscribedToUpdates = false;
 
 	const [team, setTeam] = useState<Team>();
-	const [throughput, setThroughput] = useState<Throughput | null>(null);
-
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
-
-	const [remainingItems, setRemainingItems] = useState<number>(10);
-	const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(
-		dayjs().add(2, "week"),
+	const [activeView, setActiveView] = useState<"forecast" | "metrics">(
+		"forecast",
 	);
-	const [manualForecastResult, setManualForecastResult] =
-		useState<ManualForecast | null>(null);
 
-	const {
-		teamService,
-		forecastService,
-		updateSubscriptionService,
-		teamMetricsService,
-	} = useContext(ApiServiceContext);
+	const { teamService, updateSubscriptionService } =
+		useContext(ApiServiceContext);
 
 	const fetchTeam = useCallback(async () => {
 		const teamData = await teamService.getTeam(teamId);
-		const throughput = await teamMetricsService.getThroughput(teamId);
 
 		if (teamData) {
 			setTeam(teamData);
 		}
 
-		if (throughput) {
-			setThroughput(throughput);
-		}
-
 		setIsLoading(false);
-	}, [teamService, teamMetricsService, teamId]);
+	}, [teamService, teamId]);
 
 	const onUpdateTeamData = async () => {
 		if (!team) {
@@ -73,23 +55,6 @@ const TeamDetail: React.FC = () => {
 
 		setIsTeamUpdating(true);
 		await teamService.updateTeamData(team.id);
-	};
-
-	const onRunManualForecast = async () => {
-		if (!team || !targetDate) {
-			return;
-		}
-
-		try {
-			const manualForecast = await forecastService.runManualForecast(
-				team.id,
-				remainingItems,
-				targetDate?.toDate(),
-			);
-			setManualForecastResult(manualForecast);
-		} catch (error) {
-			console.error("Error getting throughput:", error);
-		}
 	};
 
 	const onEditTeam = () => {
@@ -141,6 +106,13 @@ const TeamDetail: React.FC = () => {
 		};
 	}, [team, subscribedToUpdates, updateSubscriptionService, teamId, fetchTeam]);
 
+	const handleViewChange = (
+		_event: React.SyntheticEvent,
+		newView: "forecast" | "metrics",
+	) => {
+		setActiveView(newView);
+	};
+
 	return (
 		<LoadingAnimation hasError={false} isLoading={isLoading}>
 			<Container maxWidth={false}>
@@ -148,8 +120,18 @@ const TeamDetail: React.FC = () => {
 					<></>
 				) : (
 					<Grid container spacing={3}>
-						<Grid size={{ xs: 6 }}>
-							<Typography variant="h3">{team.name}</Typography>
+						<Grid size={{ xs: 4 }}>
+							<Typography variant="h3">
+								{team.name}
+
+								{team.useFixedDatesForThroughput && (
+									<Tooltip title="This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts">
+										<IconButton size="small" sx={{ ml: 1 }}>
+											<GppMaybeOutlinedIcon sx={{ color: "warning.main" }} />
+										</IconButton>
+									</Tooltip>
+								)}
+							</Typography>
 
 							<Typography variant="h6">
 								Last Updated on{" "}
@@ -159,8 +141,27 @@ const TeamDetail: React.FC = () => {
 								/>
 							</Typography>
 						</Grid>
+
 						<Grid
-							size={{ xs: 6 }}
+							size={{ xs: 4 }}
+							sx={{
+								display: "flex",
+								justifyContent: "center",
+								alignItems: "center",
+							}}
+						>
+							<Tabs
+								value={activeView}
+								onChange={handleViewChange}
+								aria-label="team view tabs"
+							>
+								<Tab label="Forecasts" value="forecast" />
+								<Tab label="Metrics" value="metrics" />
+							</Tabs>
+						</Grid>
+
+						<Grid
+							size={{ xs: 4 }}
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
 							<ActionButton
@@ -177,40 +178,16 @@ const TeamDetail: React.FC = () => {
 								Edit Team
 							</Button>
 						</Grid>
-						<InputGroup title="Features">
-							<TeamFeatureList team={team} />
-						</InputGroup>
-						<InputGroup title="Team Forecast">
-							<ManualForecaster
-								remainingItems={remainingItems}
-								targetDate={targetDate}
-								manualForecastResult={manualForecastResult}
-								onRemainingItemsChange={setRemainingItems}
-								onTargetDateChange={setTargetDate}
-								onRunManualForecast={onRunManualForecast}
-							/>
-						</InputGroup>
-						<InputGroup title="Metrics" initiallyExpanded={false}>
-							{team.useFixedDatesForThroughput && (
-								<Tooltip title="This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts">
-									<IconButton size="small" sx={{ ml: 1 }}>
-										<GppMaybeOutlinedIcon sx={{ color: "warning.main" }} />
-									</IconButton>
-								</Tooltip>
+
+						<Grid size={{ xs: 12 }}>
+							{activeView === "forecast" && team && (
+								<TeamForecastView team={team} />
 							)}
 
-							{throughput && (
-								<ThroughputBarChart
-									startDate={team.throughputStartDate}
-									throughput={throughput}
-								/>
+							{activeView === "metrics" && team && (
+								<TeamMetricsView team={team} />
 							)}
-							{/*
-							{showCycleTimeScatterPlot && (
-								<CycleTimeScatterPlotChart team={team} />
-							)}
-							*/}
-						</InputGroup>
+						</Grid>
 					</Grid>
 				)}
 			</Container>
