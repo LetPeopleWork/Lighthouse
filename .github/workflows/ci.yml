@@ -464,7 +464,12 @@ jobs:
 
       - name: Run Postgres
         run: |
-          docker run -d --name lighthouse-postgres -e POSTGRES_DB=lighthouse -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -v "$(pwd)/data/postgres:/var/lib/postgresql/data" --restart always postgres:17.2-alpine
+          docker run -d --name lighthouse-postgres -e POSTGRES_DB=lighthouse -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17.2-alpine
+
+          # Wait for PostgreSQL to be ready
+          echo "Waiting for PostgreSQL to start..."
+          timeout 30 bash -c 'until docker exec lighthouse-postgres pg_isready -U postgres; do sleep 1; echo "Waiting for PostgreSQL..."; done'
+          echo "PostgreSQL is ready!"
 
       - name: Install Chromium
         run: npx playwright install chromium --with-deps
