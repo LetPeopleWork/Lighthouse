@@ -114,7 +114,7 @@ async function generateTestData(
 		done: ["Done"],
 	};
 
-	const historicalDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+	const historicalDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
 	const historicalDateString = historicalDate.toISOString().slice(0, 10);
 
 	const team1 = await createTeam(
@@ -227,25 +227,22 @@ async function updateTeamData(
 	request: APIRequestContext,
 	teams: ModelIdentifier[],
 ): Promise<void> {
-	const updateTime = new Date(new Date().toUTCString());
 
 	for (const team of teams) {
 		await updateTeam(request, team.id);
 	}
-
 	const updatedTeams: ModelIdentifier[] = [];
 
 	while (updatedTeams.length < teams.length) {
 		for (const team of teams) {
 			if (!updatedTeams.some((t) => t.id === team.id)) {
-				const teamResponse = await request.get(`/api/Teams/${team.id}`);
-				const updatedTeam = await teamResponse.json();
+				const response = await request.get(
+					`/api/teams/${team.id}/metrics/featuresInProgress`,
+				);
+				const featuresInProgress = await response.json();
 
-				if (
-					new Date(updatedTeam.lastUpdated).getUTCMilliseconds() >
-						updateTime.getUTCMilliseconds()
-				) {
-					updatedTeams.push(updatedTeam);
+				if (featuresInProgress.length > 0) {
+					updatedTeams.push(team);
 				}
 			}
 

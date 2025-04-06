@@ -323,7 +323,7 @@ jobs:
           name: Lighthouse ${{ needs.tag.outputs.version }}
           path: ./Lighthouse.Backend/Lighthouse.Backend/publish      
 
-  verifyapp:
+  verifysqlite:
     name: Verify Standalone App against sqlite
     runs-on: ubuntu-latest
     needs:
@@ -440,11 +440,11 @@ jobs:
             --build-arg VERSION=$VERSION \
             --push .
 
-  verifyappdocker:
-    name: Verify Docker Image against Postgres
+  verifypostgres:
+    name: Verify Lighthouse against Postgres
     runs-on: ubuntu-latest
     needs:
-      - docker
+      - packageapp
       - tag
       
     steps:
@@ -452,33 +452,53 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse ${{ needs.tag.outputs.version }}
+          path: ./Lighthouse  
+
       - name: Install E2E dependencies
         run: npm ci
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Run Postgres
+        run: |
+          docker run -d --name lighthouse-postgres -e POSTGRES_DB=lighthouse -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -v "$(pwd)/data/postgres:/var/lib/postgresql/data" --restart always postgres:17.2-alpine
 
       - name: Install Chromium
         run: npx playwright install chromium --with-deps
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
 
+      - name: Set linux executable permission
+        run: sudo chmod -R +x ./linux-x64
+        working-directory: ./Lighthouse  
+
       - name: Run Lighthouse
         run: |
-          docker compose up -d lighthouse
-        working-directory: examples/postgres
+          ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: ./Lighthouse/linux-x64
+        env:
+          Database__Provider: postgres
+          Database__ConnectionString: 'Host=localhost;Port=5432;Database=lighthouse;Username=postgres;Password=postgres'
 
       - name: Wait for Lighthouse to start
         run: |
           echo "Waiting for server to be ready..."
-          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:8081; do sleep 1; done'
+          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5001; do sleep 1; done'
           echo "Server is ready!"
+
+          cat lighthouse.log
+        working-directory: ./Lighthouse/linux-x64
+
 
       - name: Run Playwright tests
         run: npm run test
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         env:
-          LIGHTHOUSEURL: https://localhost:8081
+          LIGHTHOUSEURL: https://localhost:5001
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -487,12 +507,13 @@ jobs:
           path: ./Lighthouse.EndToEndTests/playwright-report/
           retention-days: 30
 
-      - name: Show Lighthouse Docker Logs
+      - name: Stop Lighthouse Server
         if: always()
         run: |
-          docker compose logs lighthouse
-          docker compose down
-        working-directory: examples/postgres
+          pkill Lighthouse || true
+          cat ./linux-x64/lighthouse.log
+          rm -rf ./linux-x64/logs
+        working-directory: ./Lighthouse
 
 
   deploy:
@@ -568,8 +589,9 @@ jobs:
     needs:
     - tag
     - deploy
-    - verifyapp
-    - verifyappdocker
+-   - docker
+    - verifysqlite
+    - verifypostgres
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 

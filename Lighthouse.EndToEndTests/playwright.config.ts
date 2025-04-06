@@ -19,7 +19,7 @@ export class TestConfig {
 	public static get LighthouseUrl(): string {
 		return TestConfig.getEnvVariable(
 			TestConfig.LIGHTHOUSEURLNAME,
-			"https://localhost:8888/",
+			"http://localhost:5169/",
 		);
 	}
 
@@ -62,7 +62,7 @@ export default defineConfig({
 	},
 
 	/* Set longer timeouts as we depend for some tests on 3rd party software we don't have control over (ADO/Jira) */
-	timeout: 90000,
+	timeout: 120000,
 	expect: {
 		timeout: 30000,
 	},

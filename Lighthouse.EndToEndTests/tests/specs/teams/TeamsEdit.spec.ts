@@ -64,7 +64,7 @@ testWithData(
 			await expect(teamEditPage.validateButton).toBeDisabled();
 
 			await teamEditPage.setWorkItemQuery(
-				'[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"',
+				`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
 			);
 			await expect(teamEditPage.validateButton).toBeEnabled();
 		});
@@ -124,6 +124,9 @@ testWithData(
 	},
 );
 
+const historicalDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+const historicalDateString = historicalDate.toISOString().slice(0, 10);
+
 const newTeamConfigurations = [
 	{
 		name: "Jira",
@@ -155,7 +158,7 @@ const newTeamConfigurations = [
 				done: ["Done"],
 			},
 			validQuery:
-				'[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"',
+				`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
 			invalidQuery:
 				'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Lighthouse Demo\\Binary Blazers"',
 		},

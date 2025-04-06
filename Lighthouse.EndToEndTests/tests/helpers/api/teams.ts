@@ -12,7 +12,7 @@ export async function createTeam(
 		data: {
 			id: 0,
 			name: name,
-			throughputHistory: 30,
+			throughputHistory: 5,
 			featureWIP: 1,
 			workItemQuery: workItemQuery,
 			workItemTypes: workItemTypes,
