@@ -1,5 +1,4 @@
-﻿using Lighthouse.Backend.Cache;
-using Lighthouse.Backend.Factories;
+﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.WorkTracking.Jira;

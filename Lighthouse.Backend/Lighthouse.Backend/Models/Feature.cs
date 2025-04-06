@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Models
         {
             if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)
             {
-                var timeToTargetDate = (date - DateTime.Today).Days;
+                var timeToTargetDate = (date - DateTime.UtcNow.Date).Days;
 
                 return Forecast?.GetLikelihood(timeToTargetDate) ?? 0;
             }

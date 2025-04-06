@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Factories
                 }
             }
 
-            return transitionDate;
+            return transitionDate?.ToUniversalTime();
         }
 
         private static DateTime? ExtractDateFromHistory(IEnumerable<string> targetStates, JsonElement history)

@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogInformation("Archiving Feature {Feature} ({ID})", feature.Name, feature.Id);
 
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
             var historyEntry = repository.GetByPredicate(fh => fh.FeatureId == feature.Id && fh.Snapshot == today);
 
             if (historyEntry == null)
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogInformation("Cleaning Up Feature History Entry Data");
 
             var cleanUpDataHistorySettings = appSettingsService.GetDataRetentionSettings();
-            var cutOffDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-cleanUpDataHistorySettings.MaxStorageTimeInDays));
+            var cutOffDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-cleanUpDataHistorySettings.MaxStorageTimeInDays));
 
             var oldEntries = repository.GetAllByPredicate(fh => fh.Snapshot < cutOffDate);
             foreach (var entry in oldEntries)

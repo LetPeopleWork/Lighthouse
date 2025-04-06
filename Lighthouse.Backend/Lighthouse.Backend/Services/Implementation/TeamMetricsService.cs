@@ -67,6 +67,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public void InvalidateTeamMetrics(Team team)
         {
+            logger.LogInformation("Invalidating Metrics for Team {TeamName} (Id: {TeamId})", team.Name, team.Id);
             var teamKeys = metricsCache.Keys.Where(k => k.StartsWith($"{team.Id}_")).ToList();
             foreach (var entry in teamKeys)
             {

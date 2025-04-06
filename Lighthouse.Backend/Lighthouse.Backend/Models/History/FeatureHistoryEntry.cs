@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Models.History
         {
             FeatureId = feature.Id;
             FeatureReferenceId = feature.ReferenceId;
-            Snapshot = DateOnly.FromDateTime(DateTime.Today);
+            Snapshot = DateOnly.FromDateTime(DateTime.UtcNow.Date);
             State = feature.State;
 
             FeatureWork.Clear();

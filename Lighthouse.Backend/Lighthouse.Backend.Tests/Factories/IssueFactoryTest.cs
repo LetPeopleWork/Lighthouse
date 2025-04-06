@@ -177,7 +177,8 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.That(issue.ClosedDate, Is.EqualTo(DateTime.Parse("2024-09-27T21:21:28.640+0200", CultureInfo.InvariantCulture)));
+            Assert.That(issue.ClosedDate, Is.EqualTo(DateTime.Parse("2024-09-27T19:21:28.640+0200", CultureInfo.InvariantCulture)));
+            Assert.That(issue.ClosedDate.Value.Kind, Is.EqualTo(DateTimeKind.Utc));
         }
 
         [Test]
@@ -192,7 +193,8 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.That(issue.StartedDate, Is.EqualTo(DateTime.Parse("2024-09-27T21:21:28.640+0200", CultureInfo.InvariantCulture)));
+            Assert.That(issue.StartedDate, Is.EqualTo(DateTime.Parse("2024-09-27T19:21:28.640+0200", CultureInfo.InvariantCulture)));
+            Assert.That(issue.StartedDate.Value.Kind, Is.EqualTo(DateTimeKind.Utc));
         }
 
         [Test]
