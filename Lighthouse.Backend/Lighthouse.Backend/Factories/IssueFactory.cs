@@ -147,7 +147,7 @@ namespace Lighthouse.Backend.Factories
         private static DateTime? ExtractDateFromHistory(IEnumerable<string> targetStates, JsonElement history)
         {
             var historyEntryCreationDateAsString = history.GetProperty(JiraFieldNames.CreatedDateFieldName).GetString() ?? string.Empty;
-            var historyEntryCreationDate = DateTime.Parse(historyEntryCreationDateAsString, CultureInfo.InvariantCulture);
+            var historyEntryCreationDate = DateTime.Parse(historyEntryCreationDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
 
             DateTime? transitionDate = null;
 
