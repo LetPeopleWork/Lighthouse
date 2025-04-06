@@ -4,9 +4,11 @@ namespace Lighthouse.Backend.Services.Interfaces
 {
     public interface ITeamMetricsService
     {
-        Throughput GetThroughputForTeam(Team team);
+        Throughput GetCurrentThroughputForTeam(Team team);
 
-        List<string> GetFeaturesInProgressForTeam(Team team);
+        Throughput GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        List<string> GetCurrentFeaturesInProgressForTeam(Team team);
 
         void InvalidateTeamMetrics(Team team);
     }

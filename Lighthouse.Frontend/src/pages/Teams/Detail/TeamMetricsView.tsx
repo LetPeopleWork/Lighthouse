@@ -26,7 +26,11 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	useEffect(() => {
 		const fetchThroughput = async () => {
 			try {
-				const throughputData = await teamMetricsService.getThroughput(team.id);
+				const throughputData = await teamMetricsService.getThroughput(
+					team.id,
+					startDate,
+					endDate,
+				);
 				if (throughputData) {
 					setThroughput(throughputData);
 				}
@@ -36,7 +40,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		};
 
 		fetchThroughput();
-	}, [team.id, teamMetricsService]);
+	}, [team.id, teamMetricsService, startDate, endDate]);
 
 	return (
 		<>

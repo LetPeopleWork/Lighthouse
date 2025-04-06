@@ -904,8 +904,14 @@ export class DemoApiService
 		];
 	}
 
-	async getThroughput(teamId: number): Promise<Throughput> {
-		console.log(`Getting Throughput for Team ${teamId}`);
+	async getThroughput(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<Throughput> {
+		console.log(
+			`Getting Throughput for Team ${teamId} and Dates ${startDate} - ${endDate}`,
+		);
 		await this.delay();
 
 		const rawThroughput = this.teamThroughputs[teamId];

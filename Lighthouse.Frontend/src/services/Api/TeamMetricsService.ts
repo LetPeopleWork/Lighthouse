@@ -3,7 +3,11 @@ import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
 
 export interface ITeamMetricsService {
-	getThroughput(teamId: number): Promise<Throughput>;
+	getThroughput(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<Throughput>;
 	getFeaturesInProgress(teamId: number): Promise<string[]>;
 	getWorkItems(teamId: number): Promise<IWorkItem[]>;
 }
@@ -12,10 +16,16 @@ export class TeamMetricsService
 	extends BaseApiService
 	implements ITeamMetricsService
 {
-	async getThroughput(teamId: number): Promise<Throughput> {
+	async getThroughput(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<Throughput> {
 		return this.withErrorHandling(async () => {
+			const formattedStartDate = startDate.toISOString().split("T")[0];
+			const formattedEndDate = endDate.toISOString().split("T")[0];
 			const response = await this.apiService.get<Throughput>(
-				`/teams/${teamId}/metrics/throughput`,
+				`/teams/${teamId}/metrics/throughput?startDate=${formattedStartDate}&endDate=${formattedEndDate}`,
 			);
 
 			return new Throughput(

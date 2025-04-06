@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.API
 
                 if (timeToTargetDate > 0)
                 {
-                    var throughput = teamMetricsService.GetThroughputForTeam(team);
+                    var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
                     var howManyForecast = forecastUpdateService.HowMany(throughput, timeToTargetDate);
 
                     manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));

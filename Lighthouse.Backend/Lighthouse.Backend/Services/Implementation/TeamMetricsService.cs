@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation
             refreshRateInMinutes = appSettingService.GetThroughputRefreshSettings().Interval;
         }
 
-        public List<string> GetFeaturesInProgressForTeam(Team team)
+        public List<string> GetCurrentFeaturesInProgressForTeam(Team team)
         {
             logger.LogInformation("Getting Feature Wip for Team {TeamName}", team.Name);
 
@@ -39,9 +39,9 @@ namespace Lighthouse.Backend.Services.Implementation
             });
         }
 
-        public Throughput GetThroughputForTeam(Team team)
+        public Throughput GetCurrentThroughputForTeam(Team team)
         {
-            logger.LogDebug("Getting Throughput for Team {TeamName}", team.Name);
+            logger.LogDebug("Getting Current Throughput for Team {TeamName}", team.Name);
 
             return GetFromCacheIfExists(team, throughputMetricIdentifier, () =>
             {
@@ -54,15 +54,22 @@ namespace Lighthouse.Backend.Services.Implementation
                     endDate = team.ThroughputHistoryEndDate ?? endDate;
                 }
 
-                var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
-                var throughputByDay = GenerateThroughputByDay(startDate, endDate, closedItemsOfTeam);
-
-                logger.LogDebug("Finished updating Throughput for Team {TeamName}", team.Name);
-
-                var throughput = new Throughput(throughputByDay);
-
-                return throughput;
+                return GetThroughputForTeam(team, startDate, endDate);
             });
+        }
+
+        public Throughput GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Throughput for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
+            var throughputByDay = GenerateThroughputByDay(startDate, endDate, closedItemsOfTeam);
+
+            logger.LogDebug("Finished updating Throughput for Team {TeamName}", team.Name);
+
+            var throughput = new Throughput(throughputByDay);
+
+            return throughput;
         }
 
         public void InvalidateTeamMetrics(Team team)

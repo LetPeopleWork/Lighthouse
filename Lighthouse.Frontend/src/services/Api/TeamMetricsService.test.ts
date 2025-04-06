@@ -28,13 +28,21 @@ describe("TeamMetricsService", () => {
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockThroughputData });
 
-		const result = await teamMetricsService.getThroughput(1);
+		const startDate = new Date("2023-01-01");
+		const endDate = new Date("2023-01-31");
+		const result = await teamMetricsService.getThroughput(
+			1,
+			startDate,
+			endDate,
+		);
 
 		expect(result).toBeInstanceOf(Throughput);
 		expect(result.throughputPerUnitOfTime).toBe(5);
 		expect(result.history).toEqual([3, 4, 5, 6, 7]);
 		expect(result.totalThroughput).toBe(25);
-		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1/metrics/throughput");
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/1/metrics/throughput?startDate=2023-01-01&endDate=2023-01-31",
+		);
 	});
 
 	it("should get features in progress for a team", async () => {
@@ -106,9 +114,9 @@ describe("TeamMetricsService", () => {
 		const errorMessage = "Network Error";
 		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
 
-		await expect(teamMetricsService.getThroughput(1)).rejects.toThrow(
-			errorMessage,
-		);
+		await expect(
+			teamMetricsService.getThroughput(1, new Date(), new Date()),
+		).rejects.toThrow(errorMessage);
 	});
 
 	it("should handle errors when getting features in progress", async () => {

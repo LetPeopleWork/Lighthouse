@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetThroughput(1337);
+            var response = subject.GetThroughput(1337, DateTime.Now, DateTime.Now);
 
             Assert.Multiple(() =>
             {
@@ -35,17 +35,33 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetThroughput_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetThroughput(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            });
+        }
+
+        [Test]
         public void GetThroughput_TeamExists_GetsThroughputFromTeamMetricsService()
         {
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
             var expectedThroughput = new Throughput([1, 88, 6]);
-            teamMetricsServiceMock.Setup(service => service.GetThroughputForTeam(team)).Returns(expectedThroughput);
+            teamMetricsServiceMock.Setup(service => service.GetThroughputForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedThroughput);
 
             var subject = CreateSubject();
 
-            var response = subject.GetThroughput(team.Id);
+            var response = subject.GetThroughput(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
             Assert.Multiple(() =>
             {
@@ -80,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
             var expectedFeatures = new List<string> { "Vfl", "GCZ" };
-            teamMetricsServiceMock.Setup(service => service.GetFeaturesInProgressForTeam(team)).Returns(expectedFeatures);
+            teamMetricsServiceMock.Setup(service => service.GetCurrentFeaturesInProgressForTeam(team)).Returns(expectedFeatures);
 
             var subject = CreateSubject();
 

@@ -18,15 +18,20 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("throughput")]
-        public ActionResult<Throughput> GetThroughput(int teamId)
+        public ActionResult<Throughput> GetThroughput(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetThroughputForTeam);
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest("Start date must be before end date.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetThroughputForTeam(team, startDate, endDate));
         }
 
         [HttpGet("featuresInProgress")]
         public ActionResult<List<string>> GetFeaturesInProgress(int teamId)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetFeaturesInProgressForTeam);
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetCurrentFeaturesInProgressForTeam);
         }
     }
 }

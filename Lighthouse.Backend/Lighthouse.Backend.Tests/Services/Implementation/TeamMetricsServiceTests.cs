@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.ToDo, 1, "Feature1");
             AddWorkItem(StateCategories.Done, 1, "Feature1");
 
-            var featuresInProgress = subject.GetFeaturesInProgressForTeam(testTeam);
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 2, "Feature1");
 
-            var featuresInProgress = subject.GetFeaturesInProgressForTeam(testTeam);
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetFeaturesInProgressForTeam(testTeam);
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
         }
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
 
-            var featuresInProgress = subject.GetFeaturesInProgressForTeam(testTeam);
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
@@ -88,11 +88,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetFeaturesInProgressForTeam(testTeam);
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetFeaturesInProgressForTeam(testTeam);
+            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
         }
 
@@ -101,39 +101,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetFeaturesInProgressForTeam(testTeam);
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
             subject.InvalidateTeamMetrics(testTeam);
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetFeaturesInProgressForTeam(testTeam);
+            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
 
         [Test]
-        public void GetThroughputForTeam_NoItemsDone_ReturnsEmpty()
+        public void GetCurrentThroughputForTeam_NoItemsDone_ReturnsEmpty()
         {
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
             AddWorkItem(StateCategories.Doing, 1, string.Empty);
             AddWorkItem(StateCategories.Unknown, 1, string.Empty);
 
-            var throughput = subject.GetThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
             Assert.That(throughput.TotalThroughput, Is.EqualTo(0));
         }
 
         [Test]
-        public void GetThroughputForTeam_ItemForOtherTeamDone_ReturnsEmpty()
+        public void GetCurrentThroughputForTeam_ItemForOtherTeamDone_ReturnsEmpty()
         {
             AddWorkItem(StateCategories.Done, 2, string.Empty);
 
-            var throughput = subject.GetThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
             Assert.That(throughput.TotalThroughput, Is.EqualTo(0));
         }
 
         [Test]
-        public void GetThroughputForTeam_ItemsDone_ReturnsThroughputByDay()
+        public void GetCurrentThroughputForTeam_ItemsDone_ReturnsThroughputByDay()
         {
             testTeam.ThroughputHistory = 10;
 
@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 workItem.ClosedDate = DateTime.UtcNow.AddDays(-i);
             }
 
-            var throughput = subject.GetThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
             Assert.Multiple(() =>
             {
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetThroughputForTeam_ItemClosedBeforeHistory_DoesNotIncludeInThroughput()
+        public void GetCurrentThroughputForTeam_ItemClosedBeforeHistory_DoesNotIncludeInThroughput()
         {
             testTeam.ThroughputHistory = 10;
 
@@ -171,25 +171,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Before
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-11);
 
-            var throughput = subject.GetThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
             Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
         }
 
         [Test]
-        public void GetThroughputForTeam_ItemClosedAfterHistory_DoesNotIncludeInThroughput()
+        public void GetCurrentThroughputForTeam_ItemClosedAfterHistory_DoesNotIncludeInThroughput()
         {
             testTeam.ThroughputHistory = 10;
             AddWorkItem(StateCategories.Done, 1, string.Empty);
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(11);
 
-            var throughput = subject.GetThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
             Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
         }
 
         [Test]
-        public void GetThroughputForTeam_UseFixedThroughput_UsesSpecificTimeRange()
+        public void GetCurrentThroughputForTeam_UseFixedThroughput_UsesSpecificTimeRange()
         {
             testTeam.UseFixedDatesForThroughput = true;
             testTeam.ThroughputHistoryStartDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -206,37 +206,78 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // After
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 3, 31, 0, 0, 0, DateTimeKind.Utc);
 
-            var throughput = subject.GetThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
             Assert.That(throughput.TotalThroughput, Is.EqualTo(3));
         }
 
         [Test]
-        public void GetThroughputForTeam_CachesValue()
+        public void GetThroughputForTeam_GivenStartAndEndDate_ReturnsThroughputFromThisRange()
+        {
+            testTeam.UseFixedDatesForThroughput = false;
+            testTeam.ThroughputHistory = 7;
+
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            // Before
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 9, 0, 0, 0, DateTimeKind.Utc);
+
+            // In Range
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            // After
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 3, 31, 0, 0, 0, DateTimeKind.Utc);
+
+            var throughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
+
+            Assert.That(throughput.TotalThroughput, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void GetCurrentThroughputForTeam_CachesValue()
         {
             AddWorkItem(StateCategories.Done, 1, string.Empty);
 
-            var throughput = subject.GetThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
             Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
 
             AddWorkItem(StateCategories.Done, 1, string.Empty);
-            throughput = subject.GetThroughputForTeam(testTeam);
+            throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
             Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
         }
 
         [Test]
-        public void GetThroughputForTeam_InvalidateCache()
+        public void GetCurrentThroughputForTeam_InvalidateCache()
         {
             AddWorkItem(StateCategories.Done, 1, string.Empty);
 
-            var throughput = subject.GetThroughputForTeam(testTeam);
+            var throughput = subject.GetCurrentThroughputForTeam(testTeam);
             Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
 
             AddWorkItem(StateCategories.Done, 1, string.Empty);
             subject.InvalidateTeamMetrics(testTeam);
 
-            throughput = subject.GetThroughputForTeam(testTeam);
+            throughput = subject.GetCurrentThroughputForTeam(testTeam);
+
+            Assert.That(throughput.TotalThroughput, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetThroughputForTeam_DoesNotCacheValue()
+        {
+            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            var startDate = DateTime.UtcNow.AddDays(-1);
+            var endDate = DateTime.UtcNow;
+
+            var throughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
+            Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty);
+            throughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
 
             Assert.That(throughput.TotalThroughput, Is.EqualTo(2));
         }

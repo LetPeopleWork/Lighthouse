@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
             foreach (var team in teams)
             {
-                var throughput = teamMetricsService.GetThroughputForTeam(team);
+                var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
 
                 if (throughput.TotalThroughput > 0)
                 {

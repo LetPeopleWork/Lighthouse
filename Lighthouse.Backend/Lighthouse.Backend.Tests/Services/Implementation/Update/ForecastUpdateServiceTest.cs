@@ -567,7 +567,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 Id = idCounter++,
             };
 
-            teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(team)).Returns(new Throughput(throughput));
+            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeam(team)).Returns(new Throughput(throughput));
 
             return team;
         }

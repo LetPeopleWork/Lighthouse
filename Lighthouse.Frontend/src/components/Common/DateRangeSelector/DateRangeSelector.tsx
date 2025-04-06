@@ -5,7 +5,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs, { type Dayjs } from "dayjs";
 import type React from "react";
 
-interface DateRangeSelectorProps {
+export interface DateRangeSelectorProps {
 	startDate: Date;
 	endDate: Date;
 	onStartDateChange: (date: Date | null) => void;
@@ -18,11 +18,9 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 	onStartDateChange,
 	onEndDateChange,
 }) => {
-	// Convert Date objects to Dayjs objects
 	const startDateDayjs = dayjs(startDate);
 	const endDateDayjs = dayjs(endDate);
 
-	// Handle date changes and convert Dayjs back to Date
 	const handleStartDateChange = (date: Dayjs | null) => {
 		onStartDateChange(date ? date.toDate() : null);
 	};
