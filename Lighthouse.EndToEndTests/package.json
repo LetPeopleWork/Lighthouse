@@ -8,6 +8,7 @@
     "test": "playwright test --grep-invert @screenshot",
     "screenshots": "playwright test --grep @screenshot",
     "test-docker": "npm run docker-start && cross-env LIGHTHOUSEURL=https://localhost:8888 cross-env CI=true npm run test && npm run docker-stop",
+    "docker-update": "docker pull ghcr.io/letpeoplework/lighthouse:dev-latest",
     "docker-start": "docker ps --filter \"name=lighthouse_test\" --filter \"status=running\" -q > /dev/null || (docker start lighthouse_test || docker run -p 8888:5001 -d --restart always --name lighthouse_test ghcr.io/letpeoplework/lighthouse:dev-latest) && npx wait-on https://localhost:8888",
     "docker-stop": "docker stop lighthouse_test && docker rm lighthouse_test",
     "docker-screenshots": "npm run docker-start && cross-env LIGHTHOUSEURL=https://localhost:8888 cross-env CI=true npm run screenshots && npm run docker-stop "

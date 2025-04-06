@@ -241,21 +241,15 @@ async function updateTeamData(
 				const teamResponse = await request.get(`/api/Teams/${team.id}`);
 				const updatedTeam = await teamResponse.json();
 
-				const metricsRepsonse = await request.get(
-					`/api/teams/${team.id}/metrics/featuresInProgress`,
-				);
-				const featuresInProgress = (await metricsRepsonse.json()).length;
-
 				if (
 					new Date(updatedTeam.lastUpdated).getUTCMilliseconds() >
-						updateTime.getUTCMilliseconds() &&
-					featuresInProgress > 0
+						updateTime.getUTCMilliseconds()
 				) {
 					updatedTeams.push(updatedTeam);
 				}
 			}
 
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			await new Promise((resolve) => setTimeout(resolve, 5000));
 		}
 	}
 }

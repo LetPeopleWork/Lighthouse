@@ -29,15 +29,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var lastUpdatedFilter = PrepareLastUpdatedQuery(team.TeamUpdateTime);
             var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.AdditionalRelatedField ?? string.Empty)} {lastUpdatedFilter}";
 
-            var workItemBase = await CreateWorkItemsForAllItemsMatchingQuery(team, workItemQuery);
-            
-            var tasks = workItemBase.Select(async workItem =>
-            {
-                var parentReference = await GetParentIdForWorkItem(int.Parse(workItem.ReferenceId), team);
-                return new LighthouseWorkItem(workItem, team, parentReference);
-            });
+            var adoWorkItems = await FetchAdoWorkItemsByQuery(team, workItemQuery, team.AdditionalRelatedField ?? string.Empty);
+            var parentReferences = await GetParentReferenceForWorkItems(adoWorkItems, team);
+            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team);
 
-            return await Task.WhenAll(tasks);
+            return workItems.Select(workItem =>
+            {
+                return new LighthouseWorkItem(workItem, team, parentReferences[workItem.ReferenceId]);
+            });
         }
 
         public async Task<List<Feature>> GetFeaturesForProject(Project project)
@@ -45,16 +44,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
             var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
-            var workItemBase = await CreateWorkItemsForAllItemsMatchingQuery(project, query);
+            var adoWorkItems = await FetchAdoWorkItemsByQuery(project, query, project.SizeEstimateField ?? string.Empty, project.FeatureOwnerField ?? string.Empty);
+            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, project);
+
+            var estimatedSizes = ExtractFieldValue(adoWorkItems, project.SizeEstimateField ?? string.Empty);
+            var featureOwners = ExtractFieldValue(adoWorkItems, project.FeatureOwnerField ?? string.Empty);
 
             var features = new List<Feature>();
 
             foreach (var workItem in workItemBase)
             {
+                var estimatedSize = GetEstimatedSizeForItem(estimatedSizes[workItem.ReferenceId]);
+
                 var feature = new Feature(workItem)
                 {
-                    EstimatedSize = await GetEstimatedSizeForItem(workItem.ReferenceId, project),
-                    OwningTeam = await GetFeatureOwnerByField(workItem.ReferenceId, project)
+                    EstimatedSize = estimatedSize,
+                    OwningTeam = featureOwners[workItem.ReferenceId]
                 };
 
                 features.Add(feature);
@@ -166,7 +171,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
                 var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
-                var workItems = await GetWorkItemReferencesByQuery(witClient, query);
+                var workItems = await FetchAdoWorkItemsByQuery(team, query, team.AdditionalRelatedField ?? string.Empty);
 
                 var workItemCount = workItems.Count();
 
@@ -190,7 +195,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 var witClient = GetClientService(project.WorkTrackingSystemConnection);
                 var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
 
-                var workItems = await GetWorkItemReferencesByQuery(witClient, query);
+                var workItems = await FetchAdoWorkItemsByQuery(project, query, project.SizeEstimateField ?? string.Empty, project.FeatureOwnerField ?? string.Empty);
                 var workItemCount = workItems.Count();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Features with specified Query", workItemCount);
@@ -214,20 +219,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return totalWorkItems.Count();
         }
 
-        private async Task<IEnumerable<WorkItemBase>> CreateWorkItemsForAllItemsMatchingQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
+        private async Task<IEnumerable<AdoWorkItem>> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query, params string[] additionalFields)
         {
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
             var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
 
-            var tasks = workItemReferences.Select(async workItemReference =>
+            var adoWorkItems = await GetAdoWorkItemsById(workItemReferences.Select(wi => wi.Id), workItemQueryOwner, additionalFields);
+
+            return adoWorkItems;
+        }
+
+        private async Task<IEnumerable<WorkItemBase>> ConvertAdoWorkItemToLighthouseWorkItemBase(IEnumerable<AdoWorkItem> adoWorkItems, IWorkItemQueryOwner workItemQueryOwner)
+        {
+            var tasks = adoWorkItems.Select(async adoWorkItem =>
             {
-                var workItem = await GetAdoWorkItemById(workItemReference.Id, workItemQueryOwner);
-                var workItemBase = await CreateWorkItemFromAdoWorkItem(workItem, workItemQueryOwner);
+                var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItem(adoWorkItem, workItemQueryOwner);
                 return workItemBase;
             });
 
             var workItems = await Task.WhenAll(tasks);
-
+            
             return workItems;
         }
 
@@ -245,9 +256,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
         }
 
-        private async Task<AdoWorkItem> GetAdoWorkItemById(int workItemId, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
+        private async Task<IEnumerable<AdoWorkItem>> GetAdoWorkItemsById(IEnumerable<int> workItemIds, IWorkItemQueryOwner workItemQueryOwner, params string[] additionalFields)
         {
-            logger.LogDebug("Getting Work Item with ID {ItemId}", workItemId);
+            if (!workItemIds.Any())
+            {
+                return [];
+            }
+
+            logger.LogDebug("Getting Work Item with IDs {ItemIds}", string.Join(",", workItemIds));
 
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
             
@@ -262,12 +278,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             fields.AddRange(additionalFields.Where(f => !string.IsNullOrEmpty(f)));
 
-            var workItem = await witClient.GetWorkItemAsync(workItemId, fields);
+            var workItems = await witClient.GetWorkItemsAsync(workItemIds, fields, expand: WorkItemExpand.Links);
 
-            return workItem;
+            return workItems;
         }
 
-       private async Task<WorkItemBase> CreateWorkItemFromAdoWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner)
+       private async Task<WorkItemBase> ConvertAdoWorkItemToLighthouseWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner)
         {
             var state = workItem.ExtractStateFromWorkItem();
 
@@ -348,30 +364,63 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return !string.IsNullOrEmpty(result.state) && result.changedDate != DateTime.MinValue;
         }
 
-        private async Task<string> GetParentIdForWorkItem(int workItemId, Team team)
+        private async Task<Dictionary<string, string>> GetParentReferenceForWorkItems(IEnumerable<AdoWorkItem> adoWorkItems, Team team)
         {
-            logger.LogDebug("Getting Parent ID for Work Item with ID {ItemId}", workItemId);
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
-            var adoWorkItem = await witClient.GetWorkItemAsync(workItemId, expand: WorkItemExpand.Relations);
+            var itemIds = adoWorkItems.Select(wi => wi.Id ?? -1).Where(i => i >= 0).ToList();
+
+            if (!itemIds.Any())
+            {
+                return new Dictionary<string, string>();
+            }
+
+            logger.LogDebug("Getting Parent Ids for Work Items with IDs {ItemIds}", string.Join(",", itemIds));
 
             if (!string.IsNullOrEmpty(team.AdditionalRelatedField))
             {
-                return await GetFieldValue(workItemId, team, team.AdditionalRelatedField);
+                logger.LogDebug("Getting Parent Ids for Work Items with Additional Related Field {AdditionalRelatedField}", team.AdditionalRelatedField);
+                return ExtractFieldValue(adoWorkItems, team.AdditionalRelatedField);
             }
 
-            return adoWorkItem.ExtractParentFromWorkItem();
+            return await GetParentReferencesFromRelationFields(team, itemIds);
         }
-        private async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
+
+        private async Task<Dictionary<string, string>> GetParentReferencesFromRelationFields(Team team, List<int> itemIds)
         {
-            if (string.IsNullOrEmpty(project.SizeEstimateField))
+            logger.LogDebug("Getting Parent Ids for Work Items with Parent Field");
+
+            var parentReferences = new Dictionary<string, string>();
+            foreach (var id in itemIds)
+            {
+                parentReferences.Add($"{id}", string.Empty);
+            }
+
+            var witClient = GetClientService(team.WorkTrackingSystemConnection);
+
+            var workItemsWithParentRelation = await witClient.GetWorkItemsAsync(itemIds, expand: WorkItemExpand.Relations);
+
+            foreach (var adoWorkItem in workItemsWithParentRelation)
+            {
+                var parentReference = adoWorkItem.ExtractParentFromWorkItem();
+                parentReferences[adoWorkItem.Id.ToString() ?? "-1"] = parentReference;
+            }
+
+            return parentReferences;
+        }
+
+        private static int GetEstimatedSizeForItem(string estimatedSizeRawValue)
+        {
+            if (string.IsNullOrEmpty(estimatedSizeRawValue))
             {
                 return 0;
             }
 
-            var estimationFieldValue = await GetFieldValue(int.Parse(referenceId), project, project.SizeEstimateField);
+            if (int.TryParse(estimatedSizeRawValue, out var estimatedSize))
+            {
+                return estimatedSize;
+            }
 
             // Try parsing double because for sure someone will have the brilliant idea to make this a decimal
-            if (double.TryParse(estimationFieldValue, out var estimateAsDouble))
+            if (double.TryParse(estimatedSizeRawValue, out var estimateAsDouble))
             {
                 return (int)estimateAsDouble;
             }
@@ -379,35 +428,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             return 0;
         }
 
-        private async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
+        private static Dictionary<string, string> ExtractFieldValue(IEnumerable<AdoWorkItem> adoWorkItems, string fieldName)
         {
-            if (string.IsNullOrEmpty(project.FeatureOwnerField))
+            var fieldValues = new Dictionary<string, string>();
+            foreach (var adoWorkItem in adoWorkItems)
             {
-                return string.Empty;
-            }
-
-            var featureOwnerFieldValue = await GetFieldValue(int.Parse(referenceId), project, project.FeatureOwnerField);
-
-            return featureOwnerFieldValue;
-        }
-
-        private async Task<string> GetFieldValue(int referenceId, IWorkItemQueryOwner workItemQueryOwner, string fieldName)
-        {
-            try
-            {
-                var workItem = await GetAdoWorkItemById(referenceId, workItemQueryOwner, fieldName);
-
-                if (workItem == null)
+                var key = adoWorkItem.Id?.ToString() ?? string.Empty;
+                if (string.IsNullOrEmpty(key))
                 {
-                    return string.Empty;
+                    continue;
                 }
 
-                return workItem.Fields[fieldName].ToString() ?? string.Empty;
+                fieldValues[key] = string.Empty;
+
+                if (!string.IsNullOrEmpty(fieldName) && adoWorkItem.Fields.TryGetValue(fieldName, out var fieldValue))
+                {
+                    fieldValues[key] = fieldValue.ToString() ?? string.Empty;
+                }
             }
-            catch
-            {
-                return string.Empty;
-            }
+
+            return fieldValues;
         }
 
         private static List<int> ConvertToIntegers(IEnumerable<string> orderAsStrings)

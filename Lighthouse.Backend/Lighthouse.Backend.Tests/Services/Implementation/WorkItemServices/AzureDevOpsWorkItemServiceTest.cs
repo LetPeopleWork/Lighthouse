@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         public async Task GetChangedWorkItemsSinceLastTeamUpdate_NoUpdateDone_GetsAllItemsThatMatchQuery()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] != 'Closed'");
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] <> 'Closed'");
 
             team.ResetUpdateTime();
 
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
         public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_NoChangedItems_DoesNotFindNewItems()
         {
             var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] != 'Closed'");
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] <> 'Closed'");
 
             team.TeamUpdateTime = DateTime.UtcNow.AddDays(+1);
 
@@ -289,7 +289,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
         [Test]
         [TestCase("", "370", 0)]
-        [TestCase("MambooJamboo", "370", 0)]
         [TestCase("Microsoft.VSTS.Scheduling.Size", "370", 12)]
         [TestCase("Microsoft.VSTS.Scheduling.Size", "380", 0)]
         [TestCase("Microsoft.VSTS.Scheduling.Size", "371", 2)]
@@ -308,7 +307,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
 
         [Test]
         [TestCase("", "370", "")]
-        [TestCase("MambooJamboo", "370", "")]
         [TestCase("Microsoft.VSTS.Scheduling.Size", "370", "12")]
         [TestCase("System.AreaPath", "370", "CMFTTestTeamProject")]
         [TestCase("System.Tags", "370", "Release1")]
@@ -491,6 +489,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
                 ]);
 
             project.WorkTrackingSystemConnection = connectionSetting;
+
+            var isValid = await subject.ValidateProjectSettings(project);
+
+            Assert.That(isValid, Is.False);
+        }
+
+        [Test]
+        public async Task ValidateProjectSettings_NotExistingEstimateField_ReturnsFalse()
+        {
+            _ = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            var project = CreateProject("[System.TeamProject] = 'CMFTTestTeamProject'");
+            project.SizeEstimateField = "MamboJambo";
+
+            var subject = CreateSubject();
+
+            var isValid = await subject.ValidateProjectSettings(project);
+
+            Assert.That(isValid, Is.False);
+        }
+
+        [Test]
+        public async Task ValidateProjectSettings_NotExistingFeatureOwnerField_ReturnsFalse()
+        {
+            _ = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject'");
+            var project = CreateProject("[System.TeamProject] = 'CMFTTestTeamProject'");
+            project.FeatureOwnerField = "System.AreaPaths";
+
+            var subject = CreateSubject();
 
             var isValid = await subject.ValidateProjectSettings(project);
 
