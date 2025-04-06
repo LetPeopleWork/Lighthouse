@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Services.Implementation
             refreshRateInMinutes = appSettingService.GetThroughputRefreshSettings().Interval;
         }
 
-        public List<WorkItemDto> GetCurrentFeaturesInProgressForTeam(Team team)
+        public IEnumerable<WorkItemDto> GetCurrentFeaturesInProgressForTeam(Team team)
         {
             logger.LogDebug("Getting Feature Wip for Team {TeamName}", team.Name);
 
@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation
             });
         }
 
-        public List<WorkItemDto> GetCurrentWipForTeam(Team team)
+        public IEnumerable<WorkItemDto> GetCurrentWipForTeam(Team team)
         {
             logger.LogDebug("Getting WIP for Team {TeamName}", team.Name);
 
@@ -106,6 +106,30 @@ namespace Lighthouse.Backend.Services.Implementation
             return throughput;
         }
 
+        public IEnumerable<WorkItemDto> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+
+            return closedItemsInDateRange.Select(item => new WorkItemDto(item)).ToList();
+        }
+
+        public IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cycle Time Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+
+            var cycleTimes = closedItemsInDateRange.Select(CalculateCycleTime).Where(ct => ct > 0).ToList();
+
+            return [
+                new PercentileValue(50, PercentileCalculator.CalculatePercentile(cycleTimes, 50)),
+                new PercentileValue(70, PercentileCalculator.CalculatePercentile(cycleTimes, 70)),
+                new PercentileValue(85, PercentileCalculator.CalculatePercentile(cycleTimes, 85)),
+                new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
+            ];
+        }
+
         public void InvalidateTeamMetrics(Team team)
         {
             logger.LogInformation("Invalidating Metrics for Team {TeamName} (Id: {TeamId})", team.Name, team.Id);
@@ -116,9 +140,26 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
+        private IEnumerable<WorkItem> GetWorkItemsClosedInDateRange(Team team, DateTime startDate, DateTime endDate)
+        {
+            var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
+            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate >= startDate && i.ClosedDate <= endDate);
+            return closedItemsInDateRange;
+        }
+
         private IEnumerable<WorkItem> GetInProgressWorkItemsForTeam(Team team)
         {
             return workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Doing);
+        }
+
+        private static int CalculateCycleTime(WorkItem item)
+        {
+            if (item.ClosedDate.HasValue && item.StartedDate.HasValue)
+            {
+                return ((int)(item.ClosedDate.Value.Date - item.StartedDate.Value.Date).TotalDays) + 1;
+            }
+
+            return 0;
         }
 
         private static int[] GenerateThroughputByDay(DateTime startDate, DateTime endDate, IQueryable<WorkItem> closedItemsOfTeam)

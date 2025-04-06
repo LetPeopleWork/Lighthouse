@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             if (team.AutomaticallyAdjustFeatureWIP)
             {
                 var featureWip = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team);
-                team.FeatureWIP = featureWip.Count;
+                team.FeatureWIP = featureWip.Count();
             }
 
             await teamRepository.Save();

@@ -43,8 +43,8 @@ describe("ItemsInProgress component", () => {
 
 	it("should apply success color to chip when count equals idealWip", () => {
 		render(
-            <ItemsInProgress title="Work Items" items={mockItems} idealWip={2} />
-        );
+			<ItemsInProgress title="Work Items" items={mockItems} idealWip={2} />,
+		);
 
 		const chip = screen.getByText("Goal: 2");
 		expect(chip).toBeInTheDocument();

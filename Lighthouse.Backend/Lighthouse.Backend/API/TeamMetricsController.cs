@@ -31,15 +31,37 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("featuresInProgress")]
-        public ActionResult<List<WorkItemDto>> GetFeaturesInProgress(int teamId)
+        public ActionResult<IEnumerable<WorkItemDto>> GetFeaturesInProgress(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetCurrentFeaturesInProgressForTeam);
         }
 
         [HttpGet("wip")]
-        public ActionResult<List<WorkItemDto>> GetCurrentWipForTeam(int teamId)
+        public ActionResult<IEnumerable<WorkItemDto>> GetCurrentWipForTeam(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetCurrentWipForTeam);
+        }
+
+        [HttpGet("cycleTimePercentiles")]
+        public ActionResult<IEnumerable<PercentileValue>> GetCycleTimePercentilesForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest("Start date must be before end date.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate));
+        }
+
+        [HttpGet("cycleTimeData")]
+        public ActionResult<IEnumerable<WorkItemDto>> GetCycleTimeDataForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest("Start date must be before end date.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetCycleTimeDataForTeam(team, startDate, endDate));
         }
     }
 }

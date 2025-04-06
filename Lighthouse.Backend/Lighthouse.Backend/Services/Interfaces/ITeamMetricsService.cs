@@ -10,9 +10,13 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Throughput GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        List<WorkItemDto> GetCurrentFeaturesInProgressForTeam(Team team);
+        IEnumerable<WorkItemDto> GetCurrentFeaturesInProgressForTeam(Team team);
 
-        List<WorkItemDto> GetCurrentWipForTeam(Team team);
+        IEnumerable<WorkItemDto> GetCurrentWipForTeam(Team team);
+        
+        IEnumerable<WorkItemDto> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
         void InvalidateTeamMetrics(Team team);
     }

@@ -18,6 +18,7 @@ import {
 	type ILighthouseReleaseAsset,
 	LighthouseReleaseAsset,
 } from "../../models/LighthouseRelease/LighthouseReleaseAsset";
+import type { IPercentileValue } from "../../models/PercentileValue";
 import { PreviewFeature } from "../../models/Preview/PreviewFeature";
 import { Milestone } from "../../models/Project/Milestone";
 import { Project } from "../../models/Project/Project";
@@ -189,6 +190,46 @@ export class DemoApiService
 				this.teams[3],
 			];
 		}
+	}
+	async getCycleTimePercentiles(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPercentileValue[]> {
+		console.log(
+			`Getting Cycle Time Percentiles for Team ${teamId} between ${startDate} - ${endDate}`,
+		);
+		await this.delay();
+
+		return [
+			{ percentile: 50, value: 5 },
+			{ percentile: 70, value: 7 },
+			{ percentile: 85, value: 10 },
+			{ percentile: 95, value: 12 },
+		];
+	}
+	async getCycleTimeData(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IWorkItem[]> {
+		console.log(
+			`Getting Cycle Time Data for Team ${teamId} between ${startDate} - ${endDate}`,
+		);
+
+		await this.delay();
+
+		const items: IWorkItem[] = [];
+		let counter = 0;
+
+		const numberOfItems = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
+		for (let i = 0; i < numberOfItems; i++) {
+			const workItem = this.generateWorkItem(counter++);
+			workItem.workItemReference = `WI-${counter}`;
+
+			items.push(workItem);
+		}
+		return items;
 	}
 
 	async initialize(): Promise<void> {
