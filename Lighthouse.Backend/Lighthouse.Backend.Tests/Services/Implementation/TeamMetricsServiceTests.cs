@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     public class TeamMetricsServiceTests
     {
         private Mock<IWorkItemRepository> workItemRepositoryMock;
+        private Mock<IRepository<Feature>> featureRepositoryMock;
         private Team testTeam;
 
         private TeamMetricsService subject;
@@ -21,13 +22,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void Setup()
         {
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
+            featureRepositoryMock = new Mock<IRepository<Feature>>();
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetThroughputRefreshSettings())
                 .Returns(new RefreshSettings { Interval = 1 });
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
-            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, appSettingsServiceMock.Object);
+            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object);
             workItems = new List<WorkItem>();
 
             workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
@@ -107,6 +109,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
             featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam);
+            Assert.That(featuresInProgress, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void GetCurrentWipForTeam_NoWorkItemsInDoing_ReturnsEmpty()
+        {
+            AddWorkItem(StateCategories.ToDo, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty);
+
+            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam);
+
+            Assert.That(featuresInProgress, Has.Count.EqualTo(0));
+        }
+
+        [Test]
+        public void GetCurrentWipForTeam_NoWorkOfTeamInDoing_ReturnsEmpty()
+        {
+            AddWorkItem(StateCategories.Doing, 2, string.Empty);
+
+            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam);
+
+            Assert.That(featuresInProgress, Has.Count.EqualTo(0));
+        }
+
+        [Test]
+        public void GetCurrentWipForTeam_MultipleItemsInProgress_ReturnsAllItems()
+        {
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+
+            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam);
+
+            Assert.That(featuresInProgress, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void GetCurrentWipForTeam_MultipleItemsOfDifferentFeatureInProgress_ReturnsItems()
+        {
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+
+            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam);
+
+            Assert.That(featuresInProgress, Has.Count.EqualTo(3));
+        }
+
+        [Test]
+        public void GetCurrentWipForTeam_CachesValue()
+        {
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+
+            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam);
+            Assert.That(featuresInProgress, Has.Count.EqualTo(1));
+
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+            featuresInProgress = subject.GetCurrentWipForTeam(testTeam);
+            Assert.That(featuresInProgress, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void GetCurrentWipForTeam_InvalidateCache()
+        {
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+
+            var featuresInProgress = subject.GetCurrentWipForTeam(testTeam);
+            Assert.That(featuresInProgress, Has.Count.EqualTo(1));
+            subject.InvalidateTeamMetrics(testTeam);
+
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+            featuresInProgress = subject.GetCurrentWipForTeam(testTeam);
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
 

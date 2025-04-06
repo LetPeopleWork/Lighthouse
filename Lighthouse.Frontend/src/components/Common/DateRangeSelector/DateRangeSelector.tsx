@@ -1,4 +1,4 @@
-import { Box, TextField } from "@mui/material";
+import { Box, Grid, TextField } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -30,34 +30,36 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 	};
 
 	return (
-		<LocalizationProvider dateAdapter={AdapterDayjs}>
-			<Box
-				sx={{
-					display: "flex",
-					alignItems: "center",
-					gap: 2,
-					mb: 3,
-					width: "100%",
-				}}
-			>
-				<DatePicker
-					label="From"
-					value={startDateDayjs}
-					onChange={handleStartDateChange}
-					slots={{ textField: TextField }}
-					slotProps={{ textField: { fullWidth: true } }}
-					maxDate={endDateDayjs}
-				/>
-				<DatePicker
-					label="To"
-					value={endDateDayjs}
-					onChange={handleEndDateChange}
-					slots={{ textField: TextField }}
-					slotProps={{ textField: { fullWidth: true } }}
-					minDate={startDateDayjs}
-				/>
-			</Box>
-		</LocalizationProvider>
+		<Grid size={{ xs: 4 }} spacing={3}>
+			<LocalizationProvider dateAdapter={AdapterDayjs}>
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						gap: 2,
+						mb: 3,
+						width: "100%",
+					}}
+				>
+					<DatePicker
+						label="From"
+						value={startDateDayjs}
+						onChange={handleStartDateChange}
+						slots={{ textField: TextField }}
+						slotProps={{ textField: { fullWidth: true } }}
+						maxDate={endDateDayjs}
+					/>
+					<DatePicker
+						label="To"
+						value={endDateDayjs}
+						onChange={handleEndDateChange}
+						slots={{ textField: TextField }}
+						slotProps={{ textField: { fullWidth: true } }}
+						minDate={startDateDayjs}
+					/>
+				</Box>
+			</LocalizationProvider>
+		</Grid>
 	);
 };
 

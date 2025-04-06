@@ -39,7 +39,9 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 					const features = await teamMetricsService.getFeaturesInProgress(
 						team.id,
 					);
-					featuresByTeam[team.id] = features;
+					featuresByTeam[team.id] = features.map(
+						(feature) => feature.workItemReference,
+					);
 				} catch (error) {
 					console.error(`Failed to fetch features for team ${team.id}:`, error);
 					featuresByTeam[team.id] = [];

@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Metrics;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;

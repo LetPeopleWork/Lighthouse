@@ -30,7 +30,9 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	useEffect(() => {
 		const fetchFeaturesInProgress = async () => {
 			const features = await teamMetricsService.getFeaturesInProgress(team.id);
-			setFeaturesInProgress(features);
+			setFeaturesInProgress(
+				features.map((feature) => feature.workItemReference),
+			);
 		};
 
 		fetchFeaturesInProgress();

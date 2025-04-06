@@ -1,4 +1,6 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Metrics;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,9 +31,15 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("featuresInProgress")]
-        public ActionResult<List<string>> GetFeaturesInProgress(int teamId)
+        public ActionResult<List<WorkItemDto>> GetFeaturesInProgress(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetCurrentFeaturesInProgressForTeam);
+        }
+
+        [HttpGet("wip")]
+        public ActionResult<List<WorkItemDto>> GetCurrentWipForTeam(int teamId)
+        {
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetCurrentWipForTeam);
         }
     }
 }

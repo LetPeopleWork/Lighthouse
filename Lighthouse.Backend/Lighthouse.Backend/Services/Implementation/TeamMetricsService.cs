@@ -1,4 +1,6 @@
-﻿using Lighthouse.Backend.Cache;
+﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Metrics;
+using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 
@@ -10,32 +12,64 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private readonly string throughputMetricIdentifier = "Throughput";
         private readonly string featureWipMetricIdentifier = "FeatureWIP";
+        private readonly string wipMetricIdentifier = "WIP";
 
         private readonly ILogger<TeamMetricsService> logger;
         private readonly IWorkItemRepository workItemRepository;
+        private readonly IRepository<Feature> featureRepository;
 
         private readonly int refreshRateInMinutes;
 
-        public TeamMetricsService(ILogger<TeamMetricsService> logger, IWorkItemRepository workItemRepository, IAppSettingService appSettingService)
+        public TeamMetricsService(ILogger<TeamMetricsService> logger, IWorkItemRepository workItemRepository, IRepository<Feature> featureRepository, IAppSettingService appSettingService)
         {
             this.logger = logger;
             this.workItemRepository = workItemRepository;
-
+            this.featureRepository = featureRepository;
             refreshRateInMinutes = appSettingService.GetThroughputRefreshSettings().Interval;
         }
 
-        public List<string> GetCurrentFeaturesInProgressForTeam(Team team)
+        public List<WorkItemDto> GetCurrentFeaturesInProgressForTeam(Team team)
         {
-            logger.LogInformation("Getting Feature Wip for Team {TeamName}", team.Name);
+            logger.LogDebug("Getting Feature Wip for Team {TeamName}", team.Name);
 
             return GetFromCacheIfExists(team, featureWipMetricIdentifier, () =>
             {
-                var activeWorkItemsForTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Doing);
+                var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team);
                 var featureReferences = activeWorkItemsForTeam.Select(wi => wi.ParentReferenceId).Distinct().ToList();
 
-                logger.LogInformation("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count);
+                var featureDtos = new List<WorkItemDto>();
+                foreach (var featureReference in featureReferences)
+                {
+                    var feature = featureRepository.GetByPredicate(wi => wi.ReferenceId == featureReference);
+                    if (feature != null)
+                    {
+                        featureDtos.Add(new WorkItemDto(feature));
+                    }
+                    else
+                    {
+                        featureDtos.Add(WorkItemDto.CreateUnknownWorkItemDto(featureReference));
+                    }
+                }
 
-                return featureReferences;
+                logger.LogDebug("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count);
+
+                return featureDtos;
+            });
+        }
+
+        public List<WorkItemDto> GetCurrentWipForTeam(Team team)
+        {
+            logger.LogDebug("Getting WIP for Team {TeamName}", team.Name);
+
+            return GetFromCacheIfExists(team, wipMetricIdentifier, () =>
+            {
+                var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team);
+
+                var itemsInProgress = activeWorkItemsForTeam.Select(wi => new WorkItemDto(wi)).ToList();
+
+                logger.LogDebug("Finished updating Wip for Team {TeamName} - Found {WIP} Items in Progress", team.Name, itemsInProgress.Count);
+
+                return itemsInProgress;
             });
         }
 
@@ -80,6 +114,11 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 metricsCache.Remove(entry);
             }
+        }
+
+        private IEnumerable<WorkItem> GetInProgressWorkItemsForTeam(Team team)
+        {
+            return workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Doing);
         }
 
         private static int[] GenerateThroughputByDay(DateTime startDate, DateTime endDate, IQueryable<WorkItem> closedItemsOfTeam)

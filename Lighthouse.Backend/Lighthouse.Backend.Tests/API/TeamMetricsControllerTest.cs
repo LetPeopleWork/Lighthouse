@@ -1,4 +1,6 @@
 ﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Metrics;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -95,7 +97,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var expectedFeatures = new List<string> { "Vfl", "GCZ" };
+            var expectedFeatures = new List<WorkItemDto> { WorkItemDto.CreateUnknownWorkItemDto("Vfl"), WorkItemDto.CreateUnknownWorkItemDto("GCZ") };
             teamMetricsServiceMock.Setup(service => service.GetCurrentFeaturesInProgressForTeam(team)).Returns(expectedFeatures);
 
             var subject = CreateSubject();
@@ -109,6 +111,45 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedFeatures));
+            });
+        }
+
+        [Test]
+        public void GetWipForTeam_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetCurrentWipForTeam(1337);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
+        [Test]
+        public void GetWipForTeam_TeamExists_GetsItemsFromTeamMetricsService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedItems = new List<WorkItemDto> { WorkItemDto.CreateUnknownWorkItemDto("Vfl"), WorkItemDto.CreateUnknownWorkItemDto("GCZ") };
+            teamMetricsServiceMock.Setup(service => service.GetCurrentWipForTeam(team)).Returns(expectedItems);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetCurrentWipForTeam(team.Id);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedItems));
             });
         }
 

@@ -74,7 +74,7 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 	return {
 		getThroughput: vi.fn(),
 		getFeaturesInProgress: vi.fn(),
-		getWorkItems: vi.fn(),
+		getInProgressItems: vi.fn(),
 	};
 };
 

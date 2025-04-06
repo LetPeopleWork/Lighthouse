@@ -1,8 +1,8 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Throughput } from "../../models/Forecasts/Throughput";
-import type { IWorkItem } from "../../models/WorkItem";
 import { TeamMetricsService } from "./TeamMetricsService";
+import type { IWorkItem } from "../../models/WorkItem";
 
 vi.mock("axios");
 const mockedAxios = vi.mocked(axios, true);
@@ -46,68 +46,45 @@ describe("TeamMetricsService", () => {
 	});
 
 	it("should get features in progress for a team", async () => {
-		const mockFeaturesInProgress = ["Feature A", "Feature B", "Feature C"];
+		const mockFeaturesInProgress = [createMockWorkItem("Feature A"), createMockWorkItem("Feature B"), createMockWorkItem("Feature C")];
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockFeaturesInProgress });
 
 		const result = await teamMetricsService.getFeaturesInProgress(1);
 
-		expect(result).toEqual(["Feature A", "Feature B", "Feature C"]);
+		expect(result).toHaveLength(3);
+		expect(result[0].name).toBe("Feature A");
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/teams/1/metrics/featuresInProgress",
 		);
 	});
 
-	it("should get work items for a team", async () => {
-		const startDate = new Date("2023-01-01");
-		const closedDate = new Date("2023-01-10");
-
-		const mockWorkItems = [
-			{
-				id: 1,
-				workItemReference: "Work Item 1",
-				url: "",
-				name: "Work Item 1",
-				startedDate: startDate.toISOString(),
-				closedDate: closedDate.toISOString(),
-			},
-			{
-				id: 2,
-				workItemReference: "Work Item 2",
-				url: "",
-				name: "Work Item 2",
-				startedDate: startDate.toISOString(),
-				closedDate: closedDate.toISOString(),
-			},
-		];
-
-		const expectedWorkItems: IWorkItem[] = [
-			{
-				id: 1,
-				workItemReference: "Work Item 1",
-				url: "",
-				name: "Work Item 1",
-				startedDate: startDate,
-				closedDate: closedDate,
-			},
-			{
-				id: 2,
-				workItemReference: "Work Item 2",
-				url: "",
-				name: "Work Item 2",
-				startedDate: startDate,
-				closedDate: closedDate,
-			},
+	it("should get in-progress items for a team", async () => {
+		const mockWorkItems: IWorkItem[] = [
+			createMockWorkItem("Item A"),
+			createMockWorkItem("Item B"),
 		];
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockWorkItems });
 
-		const result = await teamMetricsService.getWorkItems(1);
+		const result = await teamMetricsService.getInProgressItems(1);
 
-		expect(result).toEqual(expectedWorkItems);
+		expect(result).toHaveLength(2);
+		expect(result[0].name).toBe("Item A");
 		expect(result[0].startedDate).toBeInstanceOf(Date);
+		expect(result[1].startedDate).toBeInstanceOf(Date);
 		expect(result[0].closedDate).toBeInstanceOf(Date);
-		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1/workitems");
+		expect(result[1].closedDate).toBeInstanceOf(Date);
+		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1/metrics/wip");
+	});
+
+	it("should handle errors when getting in-progress items", async () => {
+		const errorMessage = "Network Error";
+		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
+
+		await expect(teamMetricsService.getInProgressItems(1)).rejects.toThrow(
+			errorMessage
+		);
 	});
 
 	it("should handle errors when getting throughput", async () => {
@@ -127,13 +104,15 @@ describe("TeamMetricsService", () => {
 			errorMessage,
 		);
 	});
-
-	it("should handle errors when getting work items", async () => {
-		const errorMessage = "Network Error";
-		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
-
-		await expect(teamMetricsService.getWorkItems(1)).rejects.toThrow(
-			errorMessage,
-		);
+	
+	const createMockWorkItem = (name: string): IWorkItem => ({
+		id: Math.floor(Math.random() * 1000),
+		workItemReference: Math.floor(Math.random() * 1000).toString(),
+		url: '',
+		name,
+		startedDate: new Date("2023-01-15"),
+		closedDate: new Date("2023-01-20"),
+		state: "In Progress",
+		type: "Task"
 	});
 });

@@ -922,57 +922,68 @@ export class DemoApiService
 		return new Throughput(rawThroughput, rawThroughput.length, totalThroughput);
 	}
 
-	async getFeaturesInProgress(teamId: number): Promise<string[]> {
+	async getFeaturesInProgress(teamId: number): Promise<IWorkItem[]> {
 		console.log(`Getting Features in Progress for Team ${teamId}`);
 		await this.delay();
 
-		return this.teamFeaturesInProgress[teamId];
+		const featuresInProgress: IWorkItem[] = [];
+		let counter = 0;
+
+		for (const item in this.teamFeaturesInProgress[teamId]) {
+			const workItem = this.generateWorkItem(counter++);
+			workItem.workItemReference = item;
+
+			featuresInProgress.push(workItem);
+		}
+		return featuresInProgress;
 	}
 
-	async getWorkItems(teamId: number): Promise<IWorkItem[]> {
-		console.log(`Getting Work Items for Team ${teamId}`);
-
+	async getInProgressItems(teamId: number): Promise<IWorkItem[]> {
+		console.log(`Getting Items in Progress for Team ${teamId}`);
 		await this.delay();
 
-		const workItems: IWorkItem[] = [];
+		const items: IWorkItem[] = [];
+		let counter = 0;
 
-		// Generate random dates within the last 30 days
-		const generateWorkItem = (id: number) => {
-			// Random date between now and 30 days ago
-			const getRandomDate = (maxDaysAgo: number) => {
-				const today = new Date();
-				const daysAgo = Math.floor(Math.random() * (maxDaysAgo + 1));
-				const date = new Date(today);
-				date.setDate(today.getDate() - daysAgo);
-				return date;
-			};
+		const numberOfItems = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
+		for (let i = 0; i < numberOfItems; i++) {
+			const workItem = this.generateWorkItem(counter++);
+			workItem.workItemReference = `WI-${counter}`;
 
-			// Generate random work item
-			const startedDate = getRandomDate(30);
-			// Closed date must be after start date (or same day)
-			const daysAfterStart = Math.floor(
-				Math.random() * (30 - (30 - startedDate.getDate()) + 1),
-			);
-			const closedDate = new Date(startedDate);
-			closedDate.setDate(startedDate.getDate() + daysAfterStart);
+			items.push(workItem);
+		}
+		return items;
+	}
 
-			return {
-				name: `Work Item ${id}`,
-				id: id,
-				workItemReference: `WI-${id}`,
-				url: `https://example.com/work-items/${id}`,
-				startedDate,
-				closedDate,
-			};
+	generateWorkItem(id: number): IWorkItem {
+		// Random date between now and 30 days ago
+		const getRandomDate = (maxDaysAgo: number) => {
+			const today = new Date();
+			const daysAgo = Math.floor(Math.random() * (maxDaysAgo + 1));
+			const date = new Date(today);
+			date.setDate(today.getDate() - daysAgo);
+			return date;
 		};
 
-		// Generate 20 work items
-		for (let i = 1; i <= 20; i++) {
-			const workItem = generateWorkItem(i);
-			workItems.push(workItem);
-		}
+		// Generate random work item
+		const startedDate = getRandomDate(30);
+		// Closed date must be after start date (or same day)
+		const daysAfterStart = Math.floor(
+			Math.random() * (30 - (30 - startedDate.getDate()) + 1),
+		);
+		const closedDate = new Date(startedDate);
+		closedDate.setDate(startedDate.getDate() + daysAfterStart);
 
-		return workItems;
+		return {
+			name: `Work Item ${id}`,
+			id: id,
+			workItemReference: `WI-${id}`,
+			url: `https://example.com/work-items/${id}`,
+			state: "In Progress",
+			type: "Feature",
+			startedDate,
+			closedDate,
+		};
 	}
 
 	recreateFeatures(): void {

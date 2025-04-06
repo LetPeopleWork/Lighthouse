@@ -36,9 +36,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 	const { teamMetricsService } = useContext(ApiServiceContext);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		const fetchCycleTimeData = async () => {
-			const workItems = await teamMetricsService.getWorkItems(team.id);
+			const workItems: IWorkItem[] = [];
 
 			// Transform data for scatter plot - add cycle time calculation
 			const scatterplotData: CycleTimePoint[] = workItems.map((workItem) => {

@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Models
+﻿namespace Lighthouse.Backend.API.DTO.Metrics
 {
     public class Throughput
     {
@@ -6,7 +6,7 @@
         {
         }
 
-        public Throughput(int[] throughputPerUnitOfTime) 
+        public Throughput(int[] throughputPerUnitOfTime)
         {
             ThroughputPerUnitOfTime = throughputPerUnitOfTime;
         }

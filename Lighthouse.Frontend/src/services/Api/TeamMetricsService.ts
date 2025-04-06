@@ -8,8 +8,8 @@ export interface ITeamMetricsService {
 		startDate: Date,
 		endDate: Date,
 	): Promise<Throughput>;
-	getFeaturesInProgress(teamId: number): Promise<string[]>;
-	getWorkItems(teamId: number): Promise<IWorkItem[]>;
+	getFeaturesInProgress(teamId: number): Promise<IWorkItem[]>;
+	getInProgressItems(teamId: number): Promise<IWorkItem[]>;
 }
 
 export class TeamMetricsService
@@ -36,20 +36,26 @@ export class TeamMetricsService
 		});
 	}
 
-	async getFeaturesInProgress(teamId: number): Promise<string[]> {
+	async getFeaturesInProgress(teamId: number): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<string[]>(
+			const response = await this.apiService.get<IWorkItem[]>(
 				`/teams/${teamId}/metrics/featuresInProgress`,
 			);
 
-			return response.data;
+			const workItems = response.data.map((workItem) => {
+				workItem.startedDate = new Date(workItem.startedDate);
+				workItem.closedDate = new Date(workItem.closedDate);
+				return workItem;
+			});
+
+			return workItems;
 		});
 	}
 
-	async getWorkItems(teamId: number): Promise<IWorkItem[]> {
+	async getInProgressItems(teamId: number): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IWorkItem[]>(
-				`/teams/${teamId}/workitems`,
+				`/teams/${teamId}/metrics/wip`,
 			);
 
 			const workItems = response.data.map((workItem) => {
