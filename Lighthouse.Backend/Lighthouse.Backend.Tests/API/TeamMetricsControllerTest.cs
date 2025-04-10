@@ -1,10 +1,11 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
-using Lighthouse.Backend.API.DTO.Metrics;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Collections.Generic;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -97,7 +98,18 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var expectedFeatures = new List<WorkItemDto> { WorkItemDto.CreateUnknownWorkItemDto("Vfl"), WorkItemDto.CreateUnknownWorkItemDto("GCZ") };
+            var feature1 = new Feature
+            {
+                Name = "Vfl"
+            };
+
+            var feature2 = new Feature
+            {
+                Name = "GCZ"
+            };
+
+
+            var expectedFeatures = new List<Feature> { feature1, feature2 };
             teamMetricsServiceMock.Setup(service => service.GetCurrentFeaturesInProgressForTeam(team)).Returns(expectedFeatures);
 
             var subject = CreateSubject();
@@ -110,7 +122,11 @@ namespace Lighthouse.Backend.Tests.API
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
-                Assert.That(result.Value, Is.EqualTo(expectedFeatures));
+
+                var actualItems = (IEnumerable<FeatureDto>)result.Value;
+                Assert.That(actualItems?.Count(), Is.EqualTo(2));
+                Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
+                Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
             });
         }
 
@@ -136,7 +152,18 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var expectedItems = new List<WorkItemDto> { WorkItemDto.CreateUnknownWorkItemDto("Vfl"), WorkItemDto.CreateUnknownWorkItemDto("GCZ") };
+
+            var item1 = new WorkItem
+            {
+                Name = "Vfl"
+            };
+
+            var item2 = new WorkItem
+            {
+                Name = "GCZ"
+            };
+
+            var expectedItems = new List<WorkItem> { item1, item2 };
             teamMetricsServiceMock.Setup(service => service.GetCurrentWipForTeam(team)).Returns(expectedItems);
 
             var subject = CreateSubject();
@@ -149,7 +176,140 @@ namespace Lighthouse.Backend.Tests.API
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
-                Assert.That(result.Value, Is.EqualTo(expectedItems));
+
+                var actualItems = (IEnumerable<WorkItemDto>)result.Value;
+                Assert.That(actualItems?.Count(), Is.EqualTo(2));
+                Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
+                Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
+            });
+        }
+
+        [Test]
+        public void GetCycleTimePercentilesForTeam_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetCycleTimePercentilesForTeam(1337, DateTime.Now, DateTime.Now);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
+        [Test]
+        public void GetCycleTimePercentilesForTeam_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetCycleTimePercentilesForTeam(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            });
+        }
+
+        [Test]
+        public void GetCycleTimePercentilesForTeam_TeamExists_GetsPercentilesFromTeamMetricsService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedPercentiles = new List<PercentileValue>
+            {
+                new PercentileValue(50, 5),
+                new PercentileValue (90, 10)
+            };
+
+            teamMetricsServiceMock.Setup(service => service.GetCycleTimePercentilesForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPercentiles);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetCycleTimePercentilesForTeam(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedPercentiles));
+            });
+        }
+
+        [Test]
+        public void GetCycleTimeDataForTeam_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetCycleTimeDataForTeam(1337, DateTime.Now, DateTime.Now);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
+        [Test]
+        public void GetCycleTimeDataForTeam_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetCycleTimeDataForTeam(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            });
+        }
+
+        [Test]
+        public void GetCycleTimeDataForTeam_TeamExists_GetsDataFromTeamMetricsService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var item1 = new WorkItem
+            {
+                Name = "Vfl"
+            };
+
+            var item2 = new WorkItem
+            {
+                Name = "GCZ"
+            };
+
+            var expectedItems = new List<WorkItem> { item1, item2 };
+            teamMetricsServiceMock.Setup(service => service.GetClosedItemsForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedItems);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetCycleTimeDataForTeam(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+
+                var actualItems = (IEnumerable<WorkItemDto>)result.Value;
+                Assert.That(actualItems?.Count(), Is.EqualTo(2));
+                Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
+                Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
             });
         }
 

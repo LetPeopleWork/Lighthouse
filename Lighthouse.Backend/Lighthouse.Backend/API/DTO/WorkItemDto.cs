@@ -4,15 +4,6 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class WorkItemDto
     {
-        private WorkItemDto()
-        {
-            Name = string.Empty;
-            WorkItemReference = string.Empty;
-            Url = string.Empty;
-            Type = string.Empty;
-            State = string.Empty;
-        }
-
         public WorkItemDto(WorkItemBase workItem)
         {
             Name = workItem.Name;
@@ -23,37 +14,25 @@ namespace Lighthouse.Backend.API.DTO
             State = workItem.State;
             StartedDate = workItem.StartedDate;
             ClosedDate = workItem.ClosedDate;
+            CycleTime = workItem.CycleTime;
         }
 
-        public string Name { get; set; }
+        public string Name { get; }
 
-        public int Id { get; set; }
+        public int Id { get; }
 
-        public string WorkItemReference { get; set; }
+        public string WorkItemReference { get; }
 
-        public string Url { get; set; }
+        public string Url { get; }
 
-        public string Type { get; set; }
+        public string Type { get; }
 
-        public string State { get; set; }
+        public string State { get; }
 
-        public DateTime? StartedDate { get; set; }
+        public int CycleTime { get; }
 
-        public DateTime? ClosedDate { get; set; }
+        public DateTime? StartedDate { get; }
 
-        public static WorkItemDto CreateUnknownWorkItemDto(string referenceId)
-        {
-            var workItemDto = new WorkItemDto
-            {
-                Id = -1,
-                WorkItemReference = referenceId,
-                Name = $"{referenceId} (Item not tracked by Lighthouse)",
-                StartedDate = null,
-                ClosedDate = null,
-                Url = string.Empty
-            };
-
-            return workItemDto;
-        }
+        public DateTime? ClosedDate { get; }
     }
 }

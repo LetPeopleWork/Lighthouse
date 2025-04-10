@@ -1,7 +1,6 @@
-﻿using Lighthouse.Backend.API.DTO;
-using Lighthouse.Backend.API.DTO.Metrics;
-using Lighthouse.Backend.Cache;
+﻿using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -28,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation
             refreshRateInMinutes = appSettingService.GetThroughputRefreshSettings().Interval;
         }
 
-        public List<WorkItemDto> GetCurrentFeaturesInProgressForTeam(Team team)
+        public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team)
         {
             logger.LogDebug("Getting Feature Wip for Team {TeamName}", team.Name);
 
@@ -37,39 +36,51 @@ namespace Lighthouse.Backend.Services.Implementation
                 var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team);
                 var featureReferences = activeWorkItemsForTeam.Select(wi => wi.ParentReferenceId).Distinct().ToList();
 
-                var featureDtos = new List<WorkItemDto>();
+                var features = new List<Feature>();
                 foreach (var featureReference in featureReferences)
                 {
                     var feature = featureRepository.GetByPredicate(wi => wi.ReferenceId == featureReference);
                     if (feature != null)
                     {
-                        featureDtos.Add(new WorkItemDto(feature));
+                        features.Add(feature);
                     }
                     else
                     {
-                        featureDtos.Add(WorkItemDto.CreateUnknownWorkItemDto(featureReference));
+                        var reference = string.IsNullOrEmpty(featureReference) ? "Unknown" : featureReference;
+
+                        var unknownFeature = new Feature
+                        {
+                            Id = -1,
+                            ReferenceId = reference,
+                            Name = $"{reference} (Item not tracked by Lighthouse)",
+                            Type = string.Empty,
+                            State = string.Empty,
+                            StateCategory = StateCategories.Unknown,
+                            Url = string.Empty,
+                            Order = string.Empty,
+                        };
+
+                        features.Add(unknownFeature);
                     }
                 }
 
                 logger.LogDebug("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count);
 
-                return featureDtos;
+                return features;
             });
         }
 
-        public List<WorkItemDto> GetCurrentWipForTeam(Team team)
+        public IEnumerable<WorkItem> GetCurrentWipForTeam(Team team)
         {
             logger.LogDebug("Getting WIP for Team {TeamName}", team.Name);
 
             return GetFromCacheIfExists(team, wipMetricIdentifier, () =>
             {
-                var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team);
+                var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team).ToList();
 
-                var itemsInProgress = activeWorkItemsForTeam.Select(wi => new WorkItemDto(wi)).ToList();
+                logger.LogDebug("Finished updating Wip for Team {TeamName} - Found {WIP} Items in Progress", team.Name, activeWorkItemsForTeam.Count);
 
-                logger.LogDebug("Finished updating Wip for Team {TeamName} - Found {WIP} Items in Progress", team.Name, itemsInProgress.Count);
-
-                return itemsInProgress;
+                return activeWorkItemsForTeam;
             });
         }
 
@@ -106,6 +117,30 @@ namespace Lighthouse.Backend.Services.Implementation
             return throughput;
         }
 
+        public IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+
+            return closedItemsInDateRange.ToList();
+        }
+
+        public IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cycle Time Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+
+            var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime).Where(ct => ct > 0).ToList();
+
+            return [
+                new PercentileValue(50, PercentileCalculator.CalculatePercentile(cycleTimes, 50)),
+                new PercentileValue(70, PercentileCalculator.CalculatePercentile(cycleTimes, 70)),
+                new PercentileValue(85, PercentileCalculator.CalculatePercentile(cycleTimes, 85)),
+                new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
+            ];
+        }
+
         public void InvalidateTeamMetrics(Team team)
         {
             logger.LogInformation("Invalidating Metrics for Team {TeamName} (Id: {TeamId})", team.Name, team.Id);
@@ -114,6 +149,13 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 metricsCache.Remove(entry);
             }
+        }
+
+        private IEnumerable<WorkItem> GetWorkItemsClosedInDateRange(Team team, DateTime startDate, DateTime endDate)
+        {
+            var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
+            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate >= startDate && i.ClosedDate <= endDate);
+            return closedItemsInDateRange;
         }
 
         private IEnumerable<WorkItem> GetInProgressWorkItemsForTeam(Team team)

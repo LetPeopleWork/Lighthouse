@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
                 if (historicalFeatureSize.Count != 0)
                 {
-                    defaultItems = CalculatePercentile(historicalFeatureSize.Values.ToList(), project.DefaultWorkItemPercentile);
+                    defaultItems = PercentileCalculator.CalculatePercentile(historicalFeatureSize.Values.ToList(), project.DefaultWorkItemPercentile);
 
                     Logger.LogInformation("{Percentile} Percentile Based on Query {Query} is {DefaultItems}", project.DefaultWorkItemPercentile, project.HistoricalFeaturesWorkItemQuery, defaultItems);
                 }
@@ -164,16 +164,6 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
             defaultWorkItemsBasedOnPercentile.Add(project.Id, defaultItems);
             return defaultItems;
-        }
-
-        private static int CalculatePercentile(List<int> items, int percentile)
-        {
-            items.Sort();
-            var index = (int)Math.Floor(percentile / 100.0 * items.Count) - 1;
-
-            index = Math.Min(Math.Max(index, 0), items.Count - 1);
-
-            return items[index];
         }
 
         private static int[] SplitIntoBuckets(int itemCount, int numBuckets)

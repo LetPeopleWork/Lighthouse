@@ -1,8 +1,8 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Throughput } from "../../models/Forecasts/Throughput";
-import { TeamMetricsService } from "./TeamMetricsService";
 import type { IWorkItem } from "../../models/WorkItem";
+import { TeamMetricsService } from "./TeamMetricsService";
 
 vi.mock("axios");
 const mockedAxios = vi.mocked(axios, true);
@@ -46,7 +46,11 @@ describe("TeamMetricsService", () => {
 	});
 
 	it("should get features in progress for a team", async () => {
-		const mockFeaturesInProgress = [createMockWorkItem("Feature A"), createMockWorkItem("Feature B"), createMockWorkItem("Feature C")];
+		const mockFeaturesInProgress = [
+			createMockWorkItem("Feature A"),
+			createMockWorkItem("Feature B"),
+			createMockWorkItem("Feature C"),
+		];
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockFeaturesInProgress });
 
@@ -83,7 +87,7 @@ describe("TeamMetricsService", () => {
 		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
 
 		await expect(teamMetricsService.getInProgressItems(1)).rejects.toThrow(
-			errorMessage
+			errorMessage,
 		);
 	});
 
@@ -104,15 +108,20 @@ describe("TeamMetricsService", () => {
 			errorMessage,
 		);
 	});
-	
+
 	const createMockWorkItem = (name: string): IWorkItem => ({
 		id: Math.floor(Math.random() * 1000),
 		workItemReference: Math.floor(Math.random() * 1000).toString(),
-		url: '',
+		url: "",
 		name,
 		startedDate: new Date("2023-01-15"),
 		closedDate: new Date("2023-01-20"),
+		cycleTime:
+			Math.floor(
+				(new Date("2023-01-20").getTime() - new Date("2023-01-15").getTime()) /
+					(1000 * 60 * 60 * 24),
+			) + 1,
 		state: "In Progress",
-		type: "Task"
+		type: "Task",
 	});
 });

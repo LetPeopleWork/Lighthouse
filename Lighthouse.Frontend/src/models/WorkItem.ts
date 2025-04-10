@@ -7,4 +7,5 @@ export interface IWorkItem {
 	url: string | null;
 	startedDate: Date;
 	closedDate: Date;
+	cycleTime: number;
 }

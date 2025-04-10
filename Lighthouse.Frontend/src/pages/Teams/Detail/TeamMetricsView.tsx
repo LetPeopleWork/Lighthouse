@@ -3,9 +3,12 @@ import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { Throughput } from "../../../models/Forecasts/Throughput";
+import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import CycleTimePercentiles from "./CycleTimePercentiles";
+import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 import ItemsInProgress from "./ItemsInProgress";
 import ThroughputBarChart from "./ThroughputChart";
 
@@ -17,6 +20,11 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [throughput, setThroughput] = useState<Throughput | null>(null);
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
 	const [inProgressItems, setInProgressItems] = useState<IWorkItem[]>([]);
+	const [cycleTimeData, setCycleTimeData] = useState<IWorkItem[]>([]);
+	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
+		[],
+	);
+
 	const { teamMetricsService } = useContext(ApiServiceContext);
 
 	const [startDate, setStartDate] = useState<Date>(() => {
@@ -73,6 +81,30 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		fetchInProgressItems();
 	}, [team.id, teamMetricsService]);
 
+	useEffect(() => {
+		const fetchCycleTimeData = async () => {
+			try {
+				const cycleTimeData = await teamMetricsService.getCycleTimeData(
+					team.id,
+					startDate,
+					endDate,
+				);
+				setCycleTimeData(cycleTimeData);
+
+				const percentiles = await teamMetricsService.getCycleTimePercentiles(
+					team.id,
+					startDate,
+					endDate,
+				);
+				setPercentileValues(percentiles);
+			} catch (err) {
+				console.error("Error fetching cycle time data:", err);
+			}
+		};
+
+		fetchCycleTimeData();
+	}, [team.id, teamMetricsService, startDate, endDate]);
+
 	return (
 		<>
 			<DateRangeSelector
@@ -97,18 +129,22 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 						idealWip={0}
 					/>
 				</Grid>
+				<Grid size={{ xs: 3 }} spacing={3}>
+					<CycleTimePercentiles percentileValues={percentileValues} />
+				</Grid>
+
 				<Grid size={{ xs: 6 }}>
 					{throughput && (
 						<ThroughputBarChart startDate={startDate} throughput={throughput} />
 					)}
 				</Grid>
 
-				{/*
-				<Grid size={{xs: 6}}>
-					<InputGroup title="Cycle Time" initiallyExpanded={true}>
-						<CycleTimeScatterPlotChart team={team} />
-					</InputGroup>
-				</Grid>*/}
+				<Grid size={{ xs: 6 }}>
+					<CycleTimeScatterPlotChart
+						cycleTimeDataPoints={cycleTimeData}
+						percentileValues={percentileValues}
+					/>
+				</Grid>
 			</Grid>
 		</>
 	);

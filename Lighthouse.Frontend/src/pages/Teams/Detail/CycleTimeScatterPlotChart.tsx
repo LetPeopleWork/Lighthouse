@@ -1,4 +1,4 @@
-import { CircularProgress } from "@mui/material";
+import { Card, CardContent, CircularProgress, Typography } from "@mui/material";
 import {
 	ChartsReferenceLine,
 	ChartsTooltip,
@@ -9,84 +9,30 @@ import {
 	type ScatterValueType,
 } from "@mui/x-charts";
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
-import type { ITeam } from "../../../models/Team/Team";
+import { useEffect, useState } from "react";
+import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 
 interface CycleTimeScatterPlotChartProps {
-	team: ITeam;
-}
-
-interface CycleTimePoint extends IWorkItem {
-	cycleTime: number;
-}
-
-interface PercentileLine {
-	percentile: number;
-	value: number;
-	color: string;
+	percentileValues: IPercentileValue[];
+	cycleTimeDataPoints: IWorkItem[];
 }
 
 const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
-	team,
+	percentileValues,
+	cycleTimeDataPoints,
 }) => {
-	const [cycleTimeData, setCycleTimeData] = useState<CycleTimePoint[]>([]);
-	const [percentiles, setPercentiles] = useState<PercentileLine[]>([]);
-
-	const { teamMetricsService } = useContext(ApiServiceContext);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-	useEffect(() => {
-		const fetchCycleTimeData = async () => {
-			const workItems: IWorkItem[] = [];
-
-			// Transform data for scatter plot - add cycle time calculation
-			const scatterplotData: CycleTimePoint[] = workItems.map((workItem) => {
-				const cycleTimeDays =
-					Math.floor(
-						(workItem.closedDate.getTime() - workItem.startedDate.getTime()) /
-							(1000 * 60 * 60 * 24),
-					) + 1;
-
-				// Update the work item with cycle time data
-				return {
-					...workItem,
-					cycleTime: cycleTimeDays,
-				};
-			});
-
-			setCycleTimeData(scatterplotData);
-		};
-
-		fetchCycleTimeData();
-	}, [teamMetricsService, team]);
+	const [cycleTimeData, setCycleTimeData] = useState<IWorkItem[]>([]);
+	const [percentiles, setPercentiles] = useState<IPercentileValue[]>([]);
 
 	useEffect(() => {
-		const calculatePercentiles = (data: CycleTimePoint[]) => {
-			const values = [...data.map((item) => item.cycleTime)].sort(
-				(a, b) => a - b,
-			);
-			const getPercentile = (p: number) => {
-				const pos = (values.length * p) / 100 - 1;
-				const index = Math.ceil(pos);
+		setCycleTimeData(cycleTimeDataPoints);
+	}, [cycleTimeDataPoints]);
 
-				if (index < 0) return values[0];
-				if (index >= values.length) return values[values.length - 1];
-
-				return values[index];
-			};
-
-			setPercentiles([
-				{ percentile: 50, value: getPercentile(50), color: "green" },
-				{ percentile: 70, value: getPercentile(70), color: "blue" },
-				{ percentile: 85, value: getPercentile(85), color: "orange" },
-				{ percentile: 95, value: getPercentile(95), color: "red" },
-			]);
-		};
-
-		calculatePercentiles(cycleTimeData);
-	}, [cycleTimeData]);
+	useEffect(() => {
+		setPercentiles(percentileValues);
+	}, [percentileValues]);
 
 	const handleItemClick = (itemId: number) => {
 		const item = cycleTimeData.find((d) => d.id === itemId);
@@ -105,70 +51,78 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	};
 
 	return cycleTimeData.length > 0 ? (
-		<ResponsiveChartContainer
-			height={500}
-			xAxis={[
-				{
-					id: "timeAxis",
-					scaleType: "time",
-					label: "Date",
-					valueFormatter: (value) => {
-						return new Date(value).toLocaleDateString();
-					},
-				},
-			]}
-			yAxis={[
-				{
-					id: "cycleTimeAxis",
-					scaleType: "linear",
-					label: "Cycle Time (days)",
-					min: 0,
-				},
-			]}
-			series={[
-				{
-					type: "scatter",
-					data: cycleTimeData.map((point) => ({
-						x: point.closedDate.getTime(),
-						y: point.cycleTime,
-						id: point.id,
-						data: point,
-					})),
-					xAxisId: "timeAxis",
-					yAxisId: "cycleTimeAxis",
-					color: "rgba(48, 87, 78, 1)",
-					valueFormatter: formatValue,
-					markerSize: 6,
-					highlightScope: { highlighted: "item", faded: "global" },
-				},
-			]}
-		>
-			{/* Add reference lines for each percentile */}
-			{percentiles.map((p) => (
-				<ChartsReferenceLine
-					key={`percentile-${p.percentile}`}
-					y={p.value}
-					label={`${p.percentile}th percentile: ${p.value} days`}
-					labelAlign="start"
-					lineStyle={{
-						stroke: p.color,
-						strokeWidth: 1,
-						strokeDasharray: "5 5",
-					}}
-				/>
-			))}
+		<Card sx={{ p: 2, borderRadius: 2 }}>
+			<CardContent>
+				<Typography variant="h6">Cycle Time</Typography>
+				<ResponsiveChartContainer
+					height={500}
+					xAxis={[
+						{
+							id: "timeAxis",
+							scaleType: "time",
+							label: "Date",
+							valueFormatter: (value) => {
+								return new Date(value).toLocaleDateString();
+							},
+						},
+					]}
+					yAxis={[
+						{
+							id: "cycleTimeAxis",
+							scaleType: "linear",
+							label: "Cycle Time (days)",
+							min: 0,
+						},
+					]}
+					series={[
+						{
+							type: "scatter",
+							data: cycleTimeData.map((point) => ({
+								x: point.closedDate.getTime(),
+								y: point.cycleTime,
+								id: point.id,
+								data: point,
+							})),
+							xAxisId: "timeAxis",
+							yAxisId: "cycleTimeAxis",
+							color: "rgba(48, 87, 78, 1)",
+							valueFormatter: formatValue,
+							markerSize: 6,
+							highlightScope: { highlighted: "item", faded: "global" },
+						},
+					]}
+				>
+					{/* Add reference lines for each percentile */}
+					{percentiles.map((p) => {
+						const forecastLevel = new ForecastLevel(p.percentile);
+						return (
+							<ChartsReferenceLine
+								key={`percentile-${p.percentile}`}
+								y={p.value}
+								label={`${p.percentile}th percentile: ${p.value} days`}
+								labelAlign="start"
+								lineStyle={{
+									stroke: forecastLevel.color,
+									strokeWidth: 1,
+									strokeDasharray: "5 5",
+								}}
+							/>
+						);
+					})}
 
-			<ChartsXAxis />
-			<ChartsYAxis />
-			<ScatterPlot
-				onItemClick={(_event, itemData) => {
-					if (itemData?.dataIndex) {
-						handleItemClick(itemData.dataIndex);
-					}
-				}}
-			/>
-			<ChartsTooltip trigger="item" />
-		</ResponsiveChartContainer>
+					<ChartsXAxis />
+					<ChartsYAxis />
+					<ScatterPlot
+						onItemClick={(_event, itemData) => {
+							if (itemData?.dataIndex) {
+								handleItemClick(itemData.dataIndex);
+							}
+						}}
+					/>
+					<ChartsTooltip trigger="item" />
+				</ResponsiveChartContainer>
+			</CardContent>
+		</Card>
 	) : (
 		<CircularProgress />
 	);

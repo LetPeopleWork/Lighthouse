@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
-using Octokit;
 
 namespace Lighthouse.Backend.Models
 {
@@ -7,7 +6,7 @@ namespace Lighthouse.Backend.Models
     {
         public WorkItemBase()
         {
-            
+
         }
 
         public WorkItemBase(WorkItemBase workItemBase)
@@ -34,6 +33,19 @@ namespace Lighthouse.Backend.Models
         public DateTime? StartedDate { get; set; }
 
         public DateTime? ClosedDate { get; set; }
+
+        public int CycleTime
+        {
+            get
+            {
+                if (StateCategory == StateCategories.Done && ClosedDate?.Date >= StartedDate?.Date)
+                {
+                    return ((int)(ClosedDate.Value.Date - StartedDate.Value.Date).TotalDays) + 1;
+                }
+
+                return 0;
+            }
+        }
 
         internal void Update(WorkItemBase workItemBase)
         {

@@ -1,6 +1,5 @@
-﻿using Lighthouse.Backend.API.DTO;
-using Lighthouse.Backend.API.DTO.Metrics;
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
@@ -10,9 +9,13 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Throughput GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        List<WorkItemDto> GetCurrentFeaturesInProgressForTeam(Team team);
+        IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team);
 
-        List<WorkItemDto> GetCurrentWipForTeam(Team team);
+        IEnumerable<WorkItem> GetCurrentWipForTeam(Team team);
+        
+        IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
         void InvalidateTeamMetrics(Team team);
     }
