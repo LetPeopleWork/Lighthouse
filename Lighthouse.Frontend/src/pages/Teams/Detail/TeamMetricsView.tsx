@@ -1,4 +1,4 @@
-import { Grid, Typography } from "@mui/material";
+import { Grid } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
@@ -115,7 +115,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 					onEndDateChange={(date) => date && setEndDate(date)}
 				/>
 			</Grid>
-			<Grid size={{ xs: 4 }} >
+			<Grid size={{ xs: 4 }}>
 				<ItemsInProgress
 					title="Work Items In Progress:"
 					items={inProgressItems}

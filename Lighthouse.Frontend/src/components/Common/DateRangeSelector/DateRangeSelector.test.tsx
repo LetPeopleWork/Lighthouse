@@ -26,7 +26,7 @@ describe("DateRangeSelector", () => {
 
 	it("renders date range component correctly", () => {
 		renderDateRangeSelector(defaultProps);
-		
+
 		// Check if the calendar inputs exist
 		const dateInputs = screen.getAllByRole("textbox");
 		expect(dateInputs.length).toBeGreaterThan(0);
@@ -34,11 +34,11 @@ describe("DateRangeSelector", () => {
 
 	it("preserves the date range selection", () => {
 		renderDateRangeSelector(defaultProps);
-		
+
 		// Verify that the date range is displayed
 		const dateElements = screen.getAllByRole("textbox");
 		expect(dateElements.length).toBeGreaterThan(0);
-		
+
 		// Verify that the component has the correct props
 		expect(mockStartDate).toEqual(defaultProps.startDate);
 		expect(mockEndDate).toEqual(defaultProps.endDate);

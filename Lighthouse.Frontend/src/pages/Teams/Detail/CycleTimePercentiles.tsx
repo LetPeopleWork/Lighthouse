@@ -7,8 +7,8 @@ import {
 	TableRow,
 	Typography,
 } from "@mui/material";
-import type { IPercentileValue } from "../../../models/PercentileValue";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
+import type { IPercentileValue } from "../../../models/PercentileValue";
 
 interface CycleTimePercentilesProps {
 	percentileValues: IPercentileValue[];
@@ -27,9 +27,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 	};
 
 	return (
-		<Card
-			sx={{ m:2, p:1, borderRadius: 2, cursor: "pointer" }}
-		>
+		<Card sx={{ m: 2, p: 1, borderRadius: 2, cursor: "pointer" }}>
 			<CardContent>
 				<Typography variant="h6" gutterBottom>
 					Cycle Time Percentiles
@@ -37,42 +35,42 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 				{percentileValues.length > 0 ? (
 					<Table size="small">
 						<TableBody>
-              {percentileValues
-                .slice()
-                .sort((a, b) => b.percentile - a.percentile)
-                .map((item) => {
-                  const forecastLevel = getForecastLevel(item.percentile);
-                  const IconComponent = forecastLevel.IconComponent;
+							{percentileValues
+								.slice()
+								.sort((a, b) => b.percentile - a.percentile)
+								.map((item) => {
+									const forecastLevel = getForecastLevel(item.percentile);
+									const IconComponent = forecastLevel.IconComponent;
 
-                  return (
-                    <TableRow key={item.percentile}>
-                      <TableCell sx={{ border: 0, padding: "4px 0" }}>
-                        <Typography
-                          variant="body2"
-                          sx={{ display: "flex", alignItems: "center" }}
-                        >
-                          <IconComponent
-                            fontSize="small"
-                            sx={{ color: forecastLevel.color, mr: 1 }}
-                          />
-                          {item.percentile}th
-                        </Typography>
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ border: 0, padding: "4px 0" }}
-                      >
-                        <Typography
-                          variant="body1"
-                          fontWeight="bold"
-                          sx={{ color: forecastLevel.color }}
-                        >
-                          {formatDays(item.value)}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+									return (
+										<TableRow key={item.percentile}>
+											<TableCell sx={{ border: 0, padding: "4px 0" }}>
+												<Typography
+													variant="body2"
+													sx={{ display: "flex", alignItems: "center" }}
+												>
+													<IconComponent
+														fontSize="small"
+														sx={{ color: forecastLevel.color, mr: 1 }}
+													/>
+													{item.percentile}th
+												</Typography>
+											</TableCell>
+											<TableCell
+												align="right"
+												sx={{ border: 0, padding: "4px 0" }}
+											>
+												<Typography
+													variant="body1"
+													fontWeight="bold"
+													sx={{ color: forecastLevel.color }}
+												>
+													{formatDays(item.value)}
+												</Typography>
+											</TableCell>
+										</TableRow>
+									);
+								})}
 						</TableBody>
 					</Table>
 				) : (

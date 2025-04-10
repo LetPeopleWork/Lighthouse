@@ -44,7 +44,7 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 	return (
 		<>
 			<Card
-				sx={{ m:2, p: 1, borderRadius: 2, cursor: "pointer" }}
+				sx={{ m: 2, p: 1, borderRadius: 2, cursor: "pointer" }}
 				onClick={handleOpen}
 			>
 				<CardContent sx={{ display: "flex", alignItems: "center", gap: 1 }}>
