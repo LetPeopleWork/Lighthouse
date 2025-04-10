@@ -35,7 +35,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var items = new List<int>();
             var percentile = 50;
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => PercentileCalculator.CalculatePercentile(items, percentile));
+            var result = PercentileCalculator.CalculatePercentile(items, percentile);
+
+            Assert.That(result, Is.EqualTo(0));
         }
     }
 }
