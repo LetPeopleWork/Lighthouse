@@ -1,9 +1,8 @@
-import { Box, Grid, TextField } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import dayjs, { type Dayjs } from "dayjs";
+import { Box, Grid } from "@mui/material";
 import type React from "react";
+import { DateRange } from "react-date-range";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 export interface DateRangeSelectorProps {
 	startDate: Date;
@@ -18,48 +17,37 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 	onStartDateChange,
 	onEndDateChange,
 }) => {
-	const startDateDayjs = dayjs(startDate);
-	const endDateDayjs = dayjs(endDate);
+	interface RangeSelection {
+		selection?: {
+			startDate: Date;
+			endDate: Date;
+		};
+	}
 
-	const handleStartDateChange = (date: Dayjs | null) => {
-		onStartDateChange(date ? date.toDate() : null);
+	const handleRangeChange = (ranges: RangeSelection) => {
+		if (ranges.selection) {
+			onStartDateChange(ranges.selection.startDate);
+			onEndDateChange(ranges.selection.endDate);
+		}
 	};
 
-	const handleEndDateChange = (date: Dayjs | null) => {
-		onEndDateChange(date ? date.toDate() : null);
+	const selectionRange = {
+		startDate: startDate,
+		endDate: endDate,
+		key: "selection",
 	};
 
 	return (
-		<Grid size={{ xs: 4 }} spacing={3}>
-			<LocalizationProvider dateAdapter={AdapterDayjs}>
-				<Box
-					sx={{
-						display: "flex",
-						alignItems: "center",
-						gap: 2,
-						mb: 3,
-						width: "100%",
-					}}
-				>
-					<DatePicker
-						label="From"
-						value={startDateDayjs}
-						onChange={handleStartDateChange}
-						slots={{ textField: TextField }}
-						slotProps={{ textField: { fullWidth: true } }}
-						maxDate={endDateDayjs}
-					/>
-					<DatePicker
-						label="To"
-						value={endDateDayjs}
-						onChange={handleEndDateChange}
-						slots={{ textField: TextField }}
-						slotProps={{ textField: { fullWidth: true } }}
-						minDate={startDateDayjs}
-					/>
-				</Box>
-			</LocalizationProvider>
-		</Grid>
+		<DateRange
+			ranges={[selectionRange]}
+			onChange={handleRangeChange}
+			moveRangeOnFirstSelection={false}
+			editableDateInputs={true}
+			months={1}
+			color="rgba(48, 87, 78, 1)"
+			rangeColors={["rgba(48, 87, 78, 1)"]}
+			direction="horizontal"
+		/>
 	);
 };
 

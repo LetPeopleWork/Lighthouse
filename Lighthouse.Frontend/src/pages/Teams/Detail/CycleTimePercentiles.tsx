@@ -28,7 +28,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 
 	return (
 		<Card
-			sx={{ p: 2, borderRadius: 2, cursor: "pointer" }}
+			sx={{ m:2, p:1, borderRadius: 2, cursor: "pointer" }}
 		>
 			<CardContent>
 				<Typography variant="h6" gutterBottom>

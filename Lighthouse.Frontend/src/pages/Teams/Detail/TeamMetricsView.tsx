@@ -1,4 +1,4 @@
-import { Grid } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
@@ -106,47 +106,44 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	}, [team.id, teamMetricsService, startDate, endDate]);
 
 	return (
-		<>
-			<DateRangeSelector
-				startDate={startDate}
-				endDate={endDate}
-				onStartDateChange={(date) => date && setStartDate(date)}
-				onEndDateChange={(date) => date && setEndDate(date)}
-			/>
-
-			<Grid container spacing={3}>
-				<Grid size={{ xs: 3 }} spacing={3}>
-					<ItemsInProgress
-						title="Features In Progress"
-						items={inProgressFeatures}
-						idealWip={team.featureWip}
-					/>
-				</Grid>
-				<Grid size={{ xs: 3 }} spacing={3}>
-					<ItemsInProgress
-						title="Work Items In Progress"
-						items={inProgressItems}
-						idealWip={0}
-					/>
-				</Grid>
-				<Grid size={{ xs: 3 }} spacing={3}>
-					<CycleTimePercentiles percentileValues={percentileValues} />
-				</Grid>
-
-				<Grid size={{ xs: 6 }}>
-					{throughput && (
-						<ThroughputBarChart startDate={startDate} throughput={throughput} />
-					)}
-				</Grid>
-
-				<Grid size={{ xs: 6 }}>
-					<CycleTimeScatterPlotChart
-						cycleTimeDataPoints={cycleTimeData}
-						percentileValues={percentileValues}
-					/>
-				</Grid>
+		<Grid container spacing={2}>
+			<Grid size={{ xs: 2 }}>
+				<DateRangeSelector
+					startDate={startDate}
+					endDate={endDate}
+					onStartDateChange={(date) => date && setStartDate(date)}
+					onEndDateChange={(date) => date && setEndDate(date)}
+				/>
 			</Grid>
-		</>
+			<Grid size={{ xs: 4 }} >
+				<ItemsInProgress
+					title="Work Items In Progress:"
+					items={inProgressItems}
+					idealWip={0}
+				/>
+				<ItemsInProgress
+					title="Features being Worked On:"
+					items={inProgressFeatures}
+					idealWip={team.featureWip}
+				/>
+			</Grid>
+			<Grid size={{ xs: 4 }} spacing={3}>
+				<CycleTimePercentiles percentileValues={percentileValues} />
+			</Grid>
+
+			<Grid size={{ xs: 6 }}>
+				{throughput && (
+					<ThroughputBarChart startDate={startDate} throughput={throughput} />
+				)}
+			</Grid>
+
+			<Grid size={{ xs: 6 }}>
+				<CycleTimeScatterPlotChart
+					cycleTimeDataPoints={cycleTimeData}
+					percentileValues={percentileValues}
+				/>
+			</Grid>
+		</Grid>
 	);
 };
 
