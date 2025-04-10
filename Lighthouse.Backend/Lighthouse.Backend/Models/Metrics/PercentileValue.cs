@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.API.DTO.Metrics
+﻿namespace Lighthouse.Backend.Models.Metrics
 {
     public class PercentileValue
     {

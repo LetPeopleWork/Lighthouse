@@ -11,6 +11,11 @@ describe("ItemsInProgress component", () => {
 		name,
 		startedDate: new Date("2023-01-15"),
 		closedDate: new Date("2023-01-20"),
+		cycleTime:
+			Math.floor(
+				(new Date("2023-01-20").getTime() - new Date("2023-01-15").getTime()) /
+					(1000 * 60 * 60 * 24),
+			) + 1,
 		state: "In Progress",
 		type: "Task",
 	});

@@ -1024,6 +1024,7 @@ export class DemoApiService
 			type: "Feature",
 			startedDate,
 			closedDate,
+			cycleTime: daysAfterStart + 1,
 		};
 	}
 

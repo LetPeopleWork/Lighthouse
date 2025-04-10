@@ -1,6 +1,4 @@
 ﻿
-using Octokit;
-
 namespace Lighthouse.Backend.Models
 {
     public class WorkItem : WorkItemBase

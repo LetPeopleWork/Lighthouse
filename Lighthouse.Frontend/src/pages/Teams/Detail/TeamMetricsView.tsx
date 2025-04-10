@@ -7,10 +7,10 @@ import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import CycleTimePercentiles from "./CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 import ItemsInProgress from "./ItemsInProgress";
 import ThroughputBarChart from "./ThroughputChart";
-import CycleTimePercentiles from "./CycleTimePercentiles";
 
 interface TeamMetricsViewProps {
 	team: Team;

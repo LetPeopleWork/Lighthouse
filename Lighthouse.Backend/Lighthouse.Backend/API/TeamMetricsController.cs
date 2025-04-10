@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
-using Lighthouse.Backend.API.DTO.Metrics;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -31,15 +31,24 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("featuresInProgress")]
-        public ActionResult<IEnumerable<WorkItemDto>> GetFeaturesInProgress(int teamId)
+        public ActionResult<IEnumerable<FeatureDto>> GetFeaturesInProgress(int teamId)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetCurrentFeaturesInProgressForTeam);
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var features = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team);
+
+                return features.Select(f => new FeatureDto(f));
+            });
         }
 
         [HttpGet("wip")]
         public ActionResult<IEnumerable<WorkItemDto>> GetCurrentWipForTeam(int teamId)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetCurrentWipForTeam);
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var workItems = teamMetricsService.GetCurrentWipForTeam(team);
+                return workItems.Select(w => new WorkItemDto(w));
+            });
         }
 
         [HttpGet("cycleTimePercentiles")]
@@ -61,7 +70,11 @@ namespace Lighthouse.Backend.API
                 return BadRequest("Start date must be before end date.");
             }
 
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetCycleTimeDataForTeam(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var workItems = teamMetricsService.GetClosedItemsForTeam(team, startDate, endDate);
+                return workItems.Select(w => new WorkItemDto(w));
+            });
         }
     }
 }

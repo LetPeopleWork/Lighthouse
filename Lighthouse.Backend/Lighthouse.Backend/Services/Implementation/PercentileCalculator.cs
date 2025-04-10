@@ -9,6 +9,11 @@
 
             index = Math.Min(Math.Max(index, 0), items.Count - 1);
 
+            if (index < 0 || index >= items.Count)
+            {
+                return 0;
+            }
+
             return items[index];
         }
     }

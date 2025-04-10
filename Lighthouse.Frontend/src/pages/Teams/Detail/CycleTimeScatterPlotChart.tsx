@@ -12,45 +12,22 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 
 interface CycleTimeScatterPlotChartProps {
 	percentileValues: IPercentileValue[];
 	cycleTimeDataPoints: IWorkItem[];
 }
 
-interface CycleTimePoint extends IWorkItem {
-	cycleTime: number;
-}
-
 const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	percentileValues,
 	cycleTimeDataPoints,
 }) => {
-	const [cycleTimeData, setCycleTimeData] = useState<CycleTimePoint[]>([]);
+	const [cycleTimeData, setCycleTimeData] = useState<IWorkItem[]>([]);
 	const [percentiles, setPercentiles] = useState<IPercentileValue[]>([]);
 
 	useEffect(() => {
-		const fetchCycleTimeData = async () => {
-			// Transform data for scatter plot - add cycle time calculation
-			const scatterplotData: CycleTimePoint[] = cycleTimeDataPoints.map(
-				(workItem) => {
-					const cycleTimeDays =
-						Math.floor(
-							(workItem.closedDate.getTime() - workItem.startedDate.getTime()) /
-								(1000 * 60 * 60 * 24),
-						) + 1;
-
-					return {
-						...workItem,
-						cycleTime: cycleTimeDays,
-					};
-				},
-			);
-
-			setCycleTimeData(scatterplotData);
-		};
-
-		fetchCycleTimeData();
+		setCycleTimeData(cycleTimeDataPoints);
 	}, [cycleTimeDataPoints]);
 
 	useEffect(() => {
@@ -116,19 +93,22 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					]}
 				>
 					{/* Add reference lines for each percentile */}
-					{percentiles.map((p) => (
-						<ChartsReferenceLine
-							key={`percentile-${p.percentile}`}
-							y={p.value}
-							label={`${p.percentile}th percentile: ${p.value} days`}
-							labelAlign="start"
-							lineStyle={{
-								stroke: "orange",
-								strokeWidth: 1,
-								strokeDasharray: "5 5",
-							}}
-						/>
-					))}
+					{percentiles.map((p) => {
+						const forecastLevel = new ForecastLevel(p.percentile);
+						return (
+							<ChartsReferenceLine
+								key={`percentile-${p.percentile}`}
+								y={p.value}
+								label={`${p.percentile}th percentile: ${p.value} days`}
+								labelAlign="start"
+								lineStyle={{
+									stroke: forecastLevel.color,
+									strokeWidth: 1,
+									strokeDasharray: "5 5",
+								}}
+							/>
+						);
+					})}
 
 					<ChartsXAxis />
 					<ChartsYAxis />
