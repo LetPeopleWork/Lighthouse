@@ -1022,6 +1022,7 @@ export class DemoApiService
 			url: `https://example.com/work-items/${id}`,
 			state: "In Progress",
 			type: "Feature",
+			workItemAge: Math.floor(Math.random() * (19 - 3 + 1)) + 3,
 			startedDate,
 			closedDate,
 			cycleTime: daysAfterStart + 1,

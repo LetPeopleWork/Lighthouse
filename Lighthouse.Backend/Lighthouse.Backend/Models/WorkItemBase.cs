@@ -40,11 +40,29 @@ namespace Lighthouse.Backend.Models
             {
                 if (StateCategory == StateCategories.Done && ClosedDate?.Date >= StartedDate?.Date)
                 {
-                    return ((int)(ClosedDate.Value.Date - StartedDate.Value.Date).TotalDays) + 1;
+                    return GetDateDifference(StartedDate.Value, ClosedDate.Value);
                 }
 
                 return 0;
             }
+        }
+
+        public int WorkItemAge
+        {
+            get
+            {
+                if (StateCategory == StateCategories.Doing && StartedDate?.Date <= DateTime.UtcNow.Date)
+                {
+                    return GetDateDifference(StartedDate.Value, DateTime.UtcNow);
+                }
+
+                return 0;
+            }
+        }
+
+        private int GetDateDifference(DateTime start, DateTime end)
+        {
+            return ((int)(end.Date - start.Date).TotalDays) + 1;
         }
 
         internal void Update(WorkItemBase workItemBase)

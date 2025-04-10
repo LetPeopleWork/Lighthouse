@@ -11,6 +11,7 @@ import {
 	Table,
 	TableBody,
 	TableCell,
+	TableHead,
 	TableRow,
 	Typography,
 } from "@mui/material";
@@ -40,6 +41,15 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 
 	const handleOpen = () => setOpen(true);
 	const handleClose = () => setOpen(false);
+
+	// Sort items by age (oldest first)
+	const sortedItems = [...items].sort((a, b) => {
+		return b.workItemAge - a.workItemAge;
+	});
+
+	const formatAge = (days: number) => {
+		return `${days} days`;
+	};
 
 	return (
 		<>
@@ -75,8 +85,16 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 				<DialogContent>
 					{count > 0 ? (
 						<Table>
+							 <TableHead>
+								<TableRow>
+									<TableCell>Name</TableCell>
+									<TableCell>Type</TableCell>
+									<TableCell>State</TableCell>
+									<TableCell>Age</TableCell>
+								</TableRow>
+							</TableHead>
 							<TableBody>
-								{items.map((item) => (
+								{sortedItems.map((item) => (
 									<TableRow key={item.id}>
 										<TableCell>
 											{item.url ? (
@@ -93,6 +111,7 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 										</TableCell>
 										<TableCell>{item.type}</TableCell>
 										<TableCell>{item.state}</TableCell>
+										<TableCell>{formatAge(item.workItemAge)}</TableCell>
 									</TableRow>
 								))}
 							</TableBody>

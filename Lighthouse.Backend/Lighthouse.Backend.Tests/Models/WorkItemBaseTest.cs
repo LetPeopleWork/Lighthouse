@@ -99,8 +99,72 @@ namespace Lighthouse.Backend.Tests.Models
 
             Assert.That(cycleTime, Is.EqualTo(2));
         }
+        [Test]
+        [TestCase(StateCategories.Unknown)]
+        [TestCase(StateCategories.Done)]
+        [TestCase(StateCategories.ToDo)]
+        public void GetWorkItemAge_GivenNotInProgressItem_Returns0(StateCategories state)
+        {
+            var subject = CreateSubject();
 
-        private WorkItemBase CreateSubject()
+            subject.StartedDate = DateTime.UtcNow.AddDays(-2);
+            subject.StateCategory = state;
+
+            var workItemAge = subject.WorkItemAge;
+
+            Assert.That(workItemAge, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void GetWorkItemAge_ItemInProgress_NoStartedDate_Returns0()
+        {
+            var subject = CreateSubject();
+            subject.StateCategory = StateCategories.Doing;
+
+            var workItemAge = subject.WorkItemAge;
+            
+            Assert.That(workItemAge, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void GetWorkItemAge_ItemInProgress_StartedDateAfterToday_Returns0()
+        {
+            var subject = CreateSubject();
+            subject.StartedDate = DateTime.UtcNow.AddDays(1);
+            subject.StateCategory = StateCategories.Doing;
+
+            var workItemAge = subject.WorkItemAge;
+            
+            Assert.That(workItemAge, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void GetWorkItemAge_ItemInProgress_StartedDateBeforeToday_ReturnsWorkItemAge()
+        {
+            var subject = CreateSubject();
+
+            subject.StartedDate = DateTime.UtcNow.AddDays(-1);
+            subject.StateCategory = StateCategories.Doing;
+
+            var workItemAge = subject.WorkItemAge;
+
+            Assert.That(workItemAge, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetWorkItemAge_ItemInProgress_StartedDateAndTodayOnSameDay_Returns1()
+        {
+            var subject = CreateSubject();
+
+            subject.StartedDate = DateTime.UtcNow;
+            subject.StateCategory = StateCategories.Doing;
+
+            var workItemAge = subject.WorkItemAge;
+
+            Assert.That(workItemAge, Is.EqualTo(1));
+        }
+
+        private static WorkItemBase CreateSubject()
         {
             return new WorkItemBase();
         }

@@ -114,6 +114,7 @@ describe("TeamMetricsService", () => {
 		workItemReference: Math.floor(Math.random() * 1000).toString(),
 		url: "",
 		name,
+		workItemAge: 7,
 		startedDate: new Date("2023-01-15"),
 		closedDate: new Date("2023-01-20"),
 		cycleTime:

@@ -8,4 +8,5 @@ export interface IWorkItem {
 	startedDate: Date;
 	closedDate: Date;
 	cycleTime: number;
+	workItemAge: number;
 }
