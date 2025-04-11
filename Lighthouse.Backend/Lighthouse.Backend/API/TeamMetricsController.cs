@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("throughput")]
-        public ActionResult<Throughput> GetThroughput(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartData> GetThroughput(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {

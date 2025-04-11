@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
             var forecast = new HowManyForecast();
 
-            monteCarloServiceMock.Setup(x => x.HowMany(It.IsAny<Throughput>(), 3)).Returns(forecast);
+            monteCarloServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(forecast);
 
             var subject = CreateSubject();
 
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
 
             monteCarloServiceMock.Setup(x => x.When(expectedTeam, 42)).Returns(Task.FromResult(new WhenForecast()));
-            monteCarloServiceMock.Setup(x => x.HowMany(It.IsAny<Throughput>(), 3)).Returns(new HowManyForecast());
+            monteCarloServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(new HowManyForecast());
 
             var subject = CreateSubject();
 

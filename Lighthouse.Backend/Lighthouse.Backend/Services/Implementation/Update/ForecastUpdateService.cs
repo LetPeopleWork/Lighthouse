@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
         }
 
-        public HowManyForecast HowMany(Throughput throughput, int days)
+        public HowManyForecast HowMany(RunChartData throughput, int days)
         {
             Logger.LogInformation("Running Monte Carlo Forecast How Many for {Days} days.", days);
 
@@ -117,16 +117,16 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             UpdateFeatureForecasts(features, simulationResults);
         }
 
-        private static Dictionary<int, Throughput> InitializeThroughputPerTeam(IEnumerable<Feature> features, ITeamMetricsService teamMetricsService)
+        private static Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features, ITeamMetricsService teamMetricsService)
         {
             var teams = features.SelectMany(f => f.Teams).Distinct().ToList();
-            var throughpoutByTeam = new Dictionary<int, Throughput>();
+            var throughpoutByTeam = new Dictionary<int, RunChartData>();
 
             foreach (var team in teams)
             {
                 var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
 
-                if (throughput.TotalThroughput > 0)
+                if (throughput.Total > 0)
                 {
                     throughpoutByTeam[team.Id] = throughput;
                 }
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return throughpoutByTeam;
         }
 
-        private async Task RunMonteCarloSimulation(List<SimulationResult> simulationResults, Dictionary<int, Throughput> throughputByTeam)
+        private async Task RunMonteCarloSimulation(List<SimulationResult> simulationResults, Dictionary<int, RunChartData> throughputByTeam)
         {
             var groupedSimulationResults = simulationResults.GroupBy(s => s.Team).Where(g => throughputByTeam.ContainsKey(g.Key.Id)).ToList();
 
@@ -198,7 +198,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return simulationResults;
         }
 
-        private void SimulateIndividualDayForFeatureForecast(Team team, Throughput throughput, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay)
+        private void SimulateIndividualDayForFeatureForecast(Team team, RunChartData throughput, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay)
         {
             var simulatedThroughput = GetSimulatedThroughput(throughput);
 
@@ -258,10 +258,10 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             simulationResults[simulationResult]++;
         }
 
-        private int GetSimulatedThroughput(Throughput throughput)
+        private int GetSimulatedThroughput(RunChartData throughput)
         {
             var randomDay = randomNumberService.GetRandomNumber(throughput.History);
-            return throughput.GetThroughputOnDay(randomDay);
+            return throughput.GetValueOnDay(randomDay);
         }
 
         private static async Task ArchiveFeatures(IFeatureHistoryService featureHistoryService, IEnumerable<Feature> features)

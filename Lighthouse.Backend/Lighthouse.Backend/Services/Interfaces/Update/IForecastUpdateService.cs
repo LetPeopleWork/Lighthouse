@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
     {
         Task UpdateForecastsForProject(int projectId);
 
-        HowManyForecast HowMany(Throughput throughput, int days);
+        HowManyForecast HowMany(RunChartData throughput, int days);
 
         Task<WhenForecast> When(Team team, int remainingItems);
     }

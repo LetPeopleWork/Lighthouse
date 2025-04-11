@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Services.Implementation
             });
         }
 
-        public Throughput GetCurrentThroughputForTeam(Team team)
+        public RunChartData GetCurrentThroughputForTeam(Team team)
         {
             logger.LogDebug("Getting Current Throughput for Team {TeamName}", team.Name);
 
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation
             });
         }
 
-        public Throughput GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
+        public RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Throughput for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             logger.LogDebug("Finished updating Throughput for Team {TeamName}", team.Name);
 
-            var throughput = new Throughput(throughputByDay);
+            var throughput = new RunChartData(throughputByDay);
 
             return throughput;
         }
@@ -163,20 +163,20 @@ namespace Lighthouse.Backend.Services.Implementation
             return workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Doing);
         }
 
-        private static int[] GenerateThroughputByDay(DateTime startDate, DateTime endDate, IQueryable<WorkItem> closedItemsOfTeam)
+        private static int[] GenerateThroughputByDay(DateTime startDate, DateTime endDate, IQueryable<WorkItem> items)
         {
             var totalDays = (endDate - startDate).Days + 1;
-            var throughputByDay = new int[totalDays];
+            var runChartData = new int[totalDays];
 
-            foreach (var index in closedItemsOfTeam.Select(i => GetThroughputIndexForItem(startDate, i)))
+            foreach (var index in items.Select(i => GetThroughputIndexForItem(startDate, i)))
             {
                 if (index >= 0 && index < totalDays)
                 {
-                    throughputByDay[index]++;
+                    runChartData[index]++;
                 }
             }
 
-            return throughputByDay;
+            return runChartData;
         }
 
         private static int GetThroughputIndexForItem(DateTime startDate, WorkItem item)

@@ -1,8 +1,9 @@
 import { Grid } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
-import type { Throughput } from "../../../models/Forecasts/Throughput";
+import type { RunChartData } from "../../../models/Forecasts/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -10,14 +11,14 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import CycleTimePercentiles from "./CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 import ItemsInProgress from "./ItemsInProgress";
-import ThroughputBarChart from "./ThroughputChart";
 
 interface TeamMetricsViewProps {
 	team: Team;
 }
 
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
-	const [throughput, setThroughput] = useState<Throughput | null>(null);
+	const [throughputRunChartData, setThroughputRunChartData] =
+		useState<RunChartData | null>(null);
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
 	const [inProgressItems, setInProgressItems] = useState<IWorkItem[]>([]);
 	const [cycleTimeData, setCycleTimeData] = useState<IWorkItem[]>([]);
@@ -43,7 +44,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 					endDate,
 				);
 				if (throughputData) {
-					setThroughput(throughputData);
+					setThroughputRunChartData(throughputData);
 				}
 			} catch (error) {
 				console.error("Error getting throughput:", error);
@@ -132,8 +133,13 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			</Grid>
 
 			<Grid size={{ xs: 6 }}>
-				{throughput && (
-					<ThroughputBarChart startDate={startDate} throughput={throughput} />
+				{throughputRunChartData && (
+					<BarRunChart
+						title="Throughput"
+						startDate={startDate}
+						chartData={throughputRunChartData}
+						displayTotal={true}
+					/>
 				)}
 			</Grid>
 

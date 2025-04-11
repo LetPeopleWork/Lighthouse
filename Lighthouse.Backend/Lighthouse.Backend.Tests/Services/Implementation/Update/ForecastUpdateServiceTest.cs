@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var forecast = subject.HowMany(new Throughput([]), TimeSpan.FromHours(0).Days);
+            var forecast = subject.HowMany(new RunChartData([]), TimeSpan.FromHours(0).Days);
 
             Assert.That(forecast, Is.InstanceOf<HowManyForecast>());
         }
@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var forecast = subject.HowMany(new Throughput([1]), TimeSpan.FromDays(timespan).Days);
+            var forecast = subject.HowMany(new RunChartData([1]), TimeSpan.FromDays(timespan).Days);
 
             Assert.Multiple(() =>
             {
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         public void HowMany_FixedThroughputAndSimulatedDays_ReturnsCorrectForecast()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var throughput = new RunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
 
             var forecast = subject.HowMany(throughput, 10);
 
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         public void HowMany_RealData_RunRealForecast_ExpectCorrectResults()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var throughput = new Throughput([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var throughput = new RunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
 
             var forecast = subject.HowMany(throughput, 30);
 
@@ -568,7 +568,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
                 Id = idCounter++,
             };
 
-            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeam(team)).Returns(new Throughput(throughput));
+            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeam(team)).Returns(new RunChartData(throughput));
 
             return team;
         }

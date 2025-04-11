@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var expectedThroughput = new Throughput([1, 88, 6]);
+            var expectedThroughput = new RunChartData([1, 88, 6]);
             teamMetricsServiceMock.Setup(service => service.GetThroughputForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedThroughput);
 
             var subject = CreateSubject();

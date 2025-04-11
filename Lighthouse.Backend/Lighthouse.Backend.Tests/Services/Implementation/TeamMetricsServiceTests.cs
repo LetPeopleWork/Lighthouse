@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(0));
+            Assert.That(throughput.Total, Is.EqualTo(0));
         }
 
         [Test]
@@ -202,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(0));
+            Assert.That(throughput.Total, Is.EqualTo(0));
         }
 
         [Test]
@@ -220,10 +220,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.Multiple(() =>
             {
-                Assert.That(throughput.TotalThroughput, Is.EqualTo(10));
+                Assert.That(throughput.Total, Is.EqualTo(10));
                 Assert.That(throughput.History, Is.EqualTo(10));
 
-                foreach (var day in throughput.ThroughputPerUnitOfTime)
+                foreach (var day in throughput.ValuePerUnitOfTime)
                 {
                     Assert.That(day, Is.EqualTo(1));
                 }
@@ -246,7 +246,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
+            Assert.That(throughput.Total, Is.EqualTo(1));
         }
 
         [Test]
@@ -258,7 +258,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
+            Assert.That(throughput.Total, Is.EqualTo(1));
         }
 
         [Test]
@@ -281,7 +281,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(3));
+            Assert.That(throughput.Total, Is.EqualTo(3));
         }
 
         [Test]
@@ -306,7 +306,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(3));
+            Assert.That(throughput.Total, Is.EqualTo(3));
         }
 
         [Test]
@@ -315,12 +315,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty);
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
+            Assert.That(throughput.Total, Is.EqualTo(1));
 
             AddWorkItem(StateCategories.Done, 1, string.Empty);
             throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
+            Assert.That(throughput.Total, Is.EqualTo(1));
         }
 
         [Test]
@@ -329,14 +329,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty);
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
+            Assert.That(throughput.Total, Is.EqualTo(1));
 
             AddWorkItem(StateCategories.Done, 1, string.Empty);
             subject.InvalidateTeamMetrics(testTeam);
 
             throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(2));
+            Assert.That(throughput.Total, Is.EqualTo(2));
         }
 
         [Test]
@@ -347,12 +347,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var endDate = DateTime.UtcNow;
 
             var throughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(1));
+            Assert.That(throughput.Total, Is.EqualTo(1));
 
             AddWorkItem(StateCategories.Done, 1, string.Empty);
             throughput = subject.GetThroughputForTeam(testTeam, startDate, endDate);
 
-            Assert.That(throughput.TotalThroughput, Is.EqualTo(2));
+            Assert.That(throughput.Total, Is.EqualTo(2));
         }
 
         [Test]

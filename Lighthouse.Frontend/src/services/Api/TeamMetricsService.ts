@@ -1,4 +1,4 @@
-import { Throughput } from "../../models/Forecasts/Throughput";
+import { RunChartData } from "../../models/Forecasts/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
@@ -8,7 +8,7 @@ export interface ITeamMetricsService {
 		teamId: number,
 		startDate: Date,
 		endDate: Date,
-	): Promise<Throughput>;
+	): Promise<RunChartData>;
 	getFeaturesInProgress(teamId: number): Promise<IWorkItem[]>;
 	getInProgressItems(teamId: number): Promise<IWorkItem[]>;
 	getCycleTimePercentiles(
@@ -31,16 +31,16 @@ export class TeamMetricsService
 		teamId: number,
 		startDate: Date,
 		endDate: Date,
-	): Promise<Throughput> {
+	): Promise<RunChartData> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<Throughput>(
+			const response = await this.apiService.get<RunChartData>(
 				`/teams/${teamId}/metrics/throughput?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
-			return new Throughput(
-				response.data.throughputPerUnitOfTime,
+			return new RunChartData(
+				response.data.valuePerUnitOfTime,
 				response.data.history,
-				response.data.totalThroughput,
+				response.data.total,
 			);
 		});
 	}

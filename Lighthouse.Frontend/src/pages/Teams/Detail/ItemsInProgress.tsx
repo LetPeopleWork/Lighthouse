@@ -85,14 +85,14 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 				<DialogContent>
 					{count > 0 ? (
 						<Table>
-							 <TableHead>
+							<TableHead>
 								<TableRow>
 									<TableCell>Name</TableCell>
 									<TableCell>Type</TableCell>
 									<TableCell>State</TableCell>
-									{sortedItems.some(item => item.workItemAge !== undefined) && (
-										<TableCell>Age</TableCell>
-									)}
+									{sortedItems.some(
+										(item) => item.workItemAge !== undefined,
+									) && <TableCell>Age</TableCell>}
 								</TableRow>
 							</TableHead>
 							<TableBody>
@@ -114,9 +114,7 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 										<TableCell>{item.type}</TableCell>
 										<TableCell>{item.state}</TableCell>
 										{item.workItemAge !== undefined && (
-											<TableCell>
-												{formatAge(item.workItemAge)}
-											</TableCell>
+											<TableCell>{formatAge(item.workItemAge)}</TableCell>
 										)}
 									</TableRow>
 								))}

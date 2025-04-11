@@ -111,19 +111,21 @@ describe("ItemsInProgress component", () => {
 		const itemsWithDifferentAges: IWorkItem[] = [
 			{
 				...createMockWorkItem("Newer Item"),
-				workItemAge: 5
+				workItemAge: 5,
 			},
 			{
 				...createMockWorkItem("Oldest Item"),
-				workItemAge: 15
+				workItemAge: 15,
 			},
 			{
 				...createMockWorkItem("Middle Item"),
-				workItemAge: 10
-			}
+				workItemAge: 10,
+			},
 		];
 
-		render(<ItemsInProgress title="Work Items" items={itemsWithDifferentAges} />);
+		render(
+			<ItemsInProgress title="Work Items" items={itemsWithDifferentAges} />,
+		);
 
 		// Open the dialog
 		const card = screen.getByText("Work Items").closest(".MuiCard-root");
@@ -139,7 +141,7 @@ describe("ItemsInProgress component", () => {
 
 		// Verify items are sorted by age with correct age values
 		const rows = within(dialog).getAllByRole("row");
-		
+
 		// First row is header, skip it
 		const firstItemRow = rows[1];
 		const secondItemRow = rows[2];
@@ -148,10 +150,10 @@ describe("ItemsInProgress component", () => {
 		// Check that items are in the correct order (oldest first)
 		expect(within(firstItemRow).getByText("Oldest Item")).toBeInTheDocument();
 		expect(within(firstItemRow).getByText("15 days")).toBeInTheDocument();
-		
+
 		expect(within(secondItemRow).getByText("Middle Item")).toBeInTheDocument();
 		expect(within(secondItemRow).getByText("10 days")).toBeInTheDocument();
-		
+
 		expect(within(thirdItemRow).getByText("Newer Item")).toBeInTheDocument();
 		expect(within(thirdItemRow).getByText("5 days")).toBeInTheDocument();
 	});

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Throughput } from "../../models/Forecasts/Throughput";
+import { RunChartData } from "../../models/Forecasts/RunChartData";
 import type { IWorkItem } from "../../models/WorkItem";
 import { TeamMetricsService } from "./TeamMetricsService";
 
@@ -21,9 +21,9 @@ describe("TeamMetricsService", () => {
 
 	it("should get throughput for a team", async () => {
 		const mockThroughputData = {
-			throughputPerUnitOfTime: 5,
-			history: [3, 4, 5, 6, 7],
-			totalThroughput: 25,
+			valuePerUnitOfTime: [3, 4, 5, 6, 7],
+			history: 5,
+			total: 25,
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockThroughputData });
@@ -36,10 +36,10 @@ describe("TeamMetricsService", () => {
 			endDate,
 		);
 
-		expect(result).toBeInstanceOf(Throughput);
-		expect(result.throughputPerUnitOfTime).toBe(5);
-		expect(result.history).toEqual([3, 4, 5, 6, 7]);
-		expect(result.totalThroughput).toBe(25);
+		expect(result).toBeInstanceOf(RunChartData);
+		expect(result.valuePerUnitOfTime).toEqual([3, 4, 5, 6, 7]);
+		expect(result.history).toBe(5);
+		expect(result.total).toBe(25);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/teams/1/metrics/throughput?startDate=2023-01-01&endDate=2023-01-31",
 		);

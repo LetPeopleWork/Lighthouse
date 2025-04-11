@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { Throughput } from "./Throughput";
+import { RunChartData } from "./RunChartData";
 
 describe("Throughput", () => {
 	it("should create a Throughput instance with the correct properties", () => {
 		const throughputData = [10, 20, 30, 40, 50];
-		const throughput = new Throughput(
+		const throughput = new RunChartData(
 			throughputData,
 			throughputData.length,
 			150,
 		);
 
-		expect(throughput.throughputPerUnitOfTime).toBe(throughputData);
+		expect(throughput.valuePerUnitOfTime).toBe(throughputData);
 	});
 
 	it("should return the correct history length", () => {
 		const throughputData = [10, 20, 30, 40, 50];
-		const throughput = new Throughput(
+		const throughput = new RunChartData(
 			throughputData,
 			throughputData.length,
 			150,
@@ -26,29 +26,29 @@ describe("Throughput", () => {
 
 	it("should return the correct throughput on a given day", () => {
 		const throughputData = [10, 20, 30, 40, 50];
-		const throughput = new Throughput(
+		const throughput = new RunChartData(
 			throughputData,
 			throughputData.length,
 			150,
 		);
 
-		expect(throughput.getThroughputOnDay(0)).toBe(10);
-		expect(throughput.getThroughputOnDay(1)).toBe(20);
-		expect(throughput.getThroughputOnDay(2)).toBe(30);
-		expect(throughput.getThroughputOnDay(3)).toBe(40);
-		expect(throughput.getThroughputOnDay(4)).toBe(50);
+		expect(throughput.getValueOnDay(0)).toBe(10);
+		expect(throughput.getValueOnDay(1)).toBe(20);
+		expect(throughput.getValueOnDay(2)).toBe(30);
+		expect(throughput.getValueOnDay(3)).toBe(40);
+		expect(throughput.getValueOnDay(4)).toBe(50);
 	});
 
 	it("should handle requests for throughput on an invalid day gracefully", () => {
 		const throughputData = [10, 20, 30, 40, 50];
-		const throughput = new Throughput(
+		const throughput = new RunChartData(
 			throughputData,
 			throughputData.length,
 			150,
 		);
 
-		expect(() => throughput.getThroughputOnDay(-1)).toThrow(RangeError);
-		expect(() => throughput.getThroughputOnDay(throughputData.length)).toThrow(
+		expect(() => throughput.getValueOnDay(-1)).toThrow(RangeError);
+		expect(() => throughput.getValueOnDay(throughputData.length)).toThrow(
 			RangeError,
 		);
 	});

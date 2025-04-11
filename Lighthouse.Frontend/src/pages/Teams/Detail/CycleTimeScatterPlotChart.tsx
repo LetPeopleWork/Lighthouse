@@ -110,7 +110,6 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					<ChartsYAxis />
 					<ScatterPlot
 						onItemClick={(_event, itemData) => {
-
 							if (itemData?.dataIndex >= 0) {
 								handleItemClick(itemData.dataIndex);
 							}

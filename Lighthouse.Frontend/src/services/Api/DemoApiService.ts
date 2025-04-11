@@ -8,7 +8,7 @@ import {
 import { Feature } from "../../models/Feature";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
-import { Throughput } from "../../models/Forecasts/Throughput";
+import { RunChartData } from "../../models/Forecasts/RunChartData";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
 import {
 	type ILighthouseRelease,
@@ -949,7 +949,7 @@ export class DemoApiService
 		teamId: number,
 		startDate: Date,
 		endDate: Date,
-	): Promise<Throughput> {
+	): Promise<RunChartData> {
 		console.log(
 			`Getting Throughput for Team ${teamId} and Dates ${startDate} - ${endDate}`,
 		);
@@ -960,7 +960,11 @@ export class DemoApiService
 			(sum, items) => sum + items,
 			0,
 		);
-		return new Throughput(rawThroughput, rawThroughput.length, totalThroughput);
+		return new RunChartData(
+			rawThroughput,
+			rawThroughput.length,
+			totalThroughput,
+		);
 	}
 
 	async getFeaturesInProgress(teamId: number): Promise<IWorkItem[]> {
