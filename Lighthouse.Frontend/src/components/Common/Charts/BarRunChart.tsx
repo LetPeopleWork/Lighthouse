@@ -29,6 +29,14 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 						day: item.day,
 						value: item.value,
 					}))}
+					yAxis={[
+						{
+							min: 0,
+							valueFormatter: (value) => {
+								return Number.isInteger(value) ? value.toString() : "";
+							},
+						},
+					]}
 					xAxis={[{ scaleType: "band", dataKey: "day" }]}
 					series={[
 						{

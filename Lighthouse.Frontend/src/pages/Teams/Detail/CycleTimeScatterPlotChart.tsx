@@ -68,6 +68,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							scaleType: "linear",
 							label: "Cycle Time (days)",
 							min: 0,
+							valueFormatter: (value) => {
+								return Number.isInteger(value) ? value.toString() : "";
+							},
 						},
 					]}
 					series={[

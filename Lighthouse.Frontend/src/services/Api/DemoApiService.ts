@@ -967,6 +967,37 @@ export class DemoApiService
 		);
 	}
 
+	async getWorkInProgressOverTime(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData> {
+		console.log(
+			`Getting Work In Progress over time for Team ${teamId} and Dates ${startDate} - ${endDate}`,
+		);
+
+		await this.delay();
+
+		// Generate an array of random WIP numbers for each day in the date range
+		const rawWIP: number[] = [];
+		const startTimestamp = startDate.getTime();
+		const endTimestamp = endDate.getTime();
+		const oneDay = 24 * 60 * 60 * 1000;
+
+		// Generate a data point for each day in the range (inclusive)
+		for (
+			let timestamp = startTimestamp;
+			timestamp <= endTimestamp;
+			timestamp += oneDay
+		) {
+			// Generate random WIP between 1 and 8
+			const wip = Math.floor(Math.random() * 8) + 1;
+			rawWIP.push(wip);
+		}
+
+		return new RunChartData(rawWIP, rawWIP.length, 0);
+	}
+
 	async getFeaturesInProgress(teamId: number): Promise<IWorkItem[]> {
 		console.log(`Getting Features in Progress for Team ${teamId}`);
 		await this.delay();

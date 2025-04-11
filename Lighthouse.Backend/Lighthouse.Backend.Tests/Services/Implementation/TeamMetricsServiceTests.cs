@@ -377,7 +377,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 for (var index = 0; index < 10 ; index++)
                 {
-                    Assert.That(wipData.ValuePerUnitOfTime[index], Is.EqualTo(10 - index));
+                    Assert.That(wipData.ValuePerUnitOfTime[index], Is.EqualTo(9 - index));
                 }
             });
         }
@@ -417,11 +417,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var startDate = DateTime.UtcNow.AddDays(-10);
             var endDate = DateTime.UtcNow;
 
-            AddWorkItem(StateCategories.Doing, 2, string.Empty);
+            AddWorkItem(StateCategories.Doing, 1, string.Empty);
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
             Assert.That(wipData.ValuePerUnitOfTime.Sum(), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void GetWorkInProgressOverTime_ItemClosed_DoesNotAddItemToDayWhenItWasClosed()
+        {
+            var startDate = DateTime.UtcNow.AddDays(-1);
+            var endDate = DateTime.UtcNow;
+
+            var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            workItem.StartedDate = startDate;
+            workItem.ClosedDate = endDate;
+
+            var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(wipData.ValuePerUnitOfTime.Length, Is.EqualTo(2));
+                Assert.That(wipData.ValuePerUnitOfTime[0], Is.EqualTo(1));
+                Assert.That(wipData.ValuePerUnitOfTime[1], Is.EqualTo(0));
+            });
         }
 
         [Test]

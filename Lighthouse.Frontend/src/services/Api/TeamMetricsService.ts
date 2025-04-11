@@ -9,6 +9,11 @@ export interface ITeamMetricsService {
 		startDate: Date,
 		endDate: Date,
 	): Promise<RunChartData>;
+	getWorkInProgressOverTime(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData>;
 	getFeaturesInProgress(teamId: number): Promise<IWorkItem[]>;
 	getInProgressItems(teamId: number): Promise<IWorkItem[]>;
 	getCycleTimePercentiles(
@@ -35,6 +40,24 @@ export class TeamMetricsService
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<RunChartData>(
 				`/teams/${teamId}/metrics/throughput?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return new RunChartData(
+				response.data.valuePerUnitOfTime,
+				response.data.history,
+				response.data.total,
+			);
+		});
+	}
+
+	async getWorkInProgressOverTime(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RunChartData>(
+				`/teams/${teamId}/metrics/wipOverTime?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
 			return new RunChartData(

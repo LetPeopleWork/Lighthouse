@@ -121,7 +121,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting WIP Over Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done));
+            var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
             var wipOverTime = GenerateWorkInProgressByDay(startDate, endDate, itemsFromTeam);
 
             logger.LogDebug("Finished updating WIP Over Time for Team {TeamName}", team.Name);
@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return runChartData;
         }
 
-        private int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IQueryable<WorkItem> items)
+        private int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItem> items)
         {
             var totalDays = (endDate - startDate).Days + 1;
             var runChartData = new int[totalDays];
@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Services.Implementation
             for (var index = 0; index < runChartData.Length; index++)
             {
                 var currentDate = startDate.AddDays(index);
-                var itemsInProgressOnDay = items.Where(i => WasItemProgressOnDay(currentDate, i)).Count();
+                var itemsInProgressOnDay = items.Count(i => WasItemProgressOnDay(currentDate, i));
 
                 runChartData[index] = itemsInProgressOnDay;
             }
@@ -231,7 +231,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return true;
             }
 
-            return item.StartedDate?.Date <= day.Date && item.ClosedDate?.Date >= day.Date;
+            return item.StartedDate?.Date <= day.Date && item.ClosedDate?.Date > day.Date;
         }
 
         private TMetric GetFromCacheIfExists<TMetric>(Team team, string metricIdentifier, Func<TMetric> calculateMetric) where TMetric : class

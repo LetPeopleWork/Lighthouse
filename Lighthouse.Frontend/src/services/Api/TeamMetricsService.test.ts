@@ -79,7 +79,7 @@ describe("TeamMetricsService", () => {
 		expect(result[1].startedDate).toBeInstanceOf(Date);
 		expect(result[0].closedDate).toBeInstanceOf(Date);
 		expect(result[1].closedDate).toBeInstanceOf(Date);
-		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1/metrics/wip");
+		expect(mockedAxios.get).toHaveBeenCalledWith("/teams/1/metrics/currentwip");
 	});
 
 	it("should handle errors when getting in-progress items", async () => {

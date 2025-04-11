@@ -29,6 +29,14 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 
 				return (
 					<LineChart
+						yAxis={[
+							{
+								min: 0,
+								valueFormatter: (value) => {
+									return Number.isInteger(value) ? value.toString() : "";
+								},
+							},
+						]}
 						xAxis={[
 							{
 								data: xLabels,

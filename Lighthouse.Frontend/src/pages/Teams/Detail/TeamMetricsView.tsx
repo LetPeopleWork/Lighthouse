@@ -2,6 +2,7 @@ import { Grid } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
+import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { RunChartData } from "../../../models/Forecasts/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -19,6 +20,11 @@ interface TeamMetricsViewProps {
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [throughputRunChartData, setThroughputRunChartData] =
 		useState<RunChartData | null>(null);
+
+	const [wipOverTimeData, setWipOverTimeData] = useState<RunChartData | null>(
+		null,
+	);
+
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
 	const [inProgressItems, setInProgressItems] = useState<IWorkItem[]>([]);
 	const [cycleTimeData, setCycleTimeData] = useState<IWorkItem[]>([]);
@@ -74,13 +80,21 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			try {
 				const wipData = await teamMetricsService.getInProgressItems(team.id);
 				setInProgressItems(wipData);
+
+				const wipOverTimeData =
+					await teamMetricsService.getWorkInProgressOverTime(
+						team.id,
+						startDate,
+						endDate,
+					);
+				setWipOverTimeData(wipOverTimeData);
 			} catch (err) {
 				console.error("Error fetching items in progress:", err);
 			}
 		};
 
 		fetchInProgressItems();
-	}, [team.id, teamMetricsService]);
+	}, [team.id, teamMetricsService, startDate, endDate]);
 
 	useEffect(() => {
 		const fetchCycleTimeData = async () => {
@@ -148,6 +162,17 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 					cycleTimeDataPoints={cycleTimeData}
 					percentileValues={percentileValues}
 				/>
+			</Grid>
+
+			<Grid size={{ xs: 6 }}>
+				{wipOverTimeData && (
+					<LineRunChart
+						title="WIP Over Time"
+						startDate={startDate}
+						chartData={wipOverTimeData}
+						displayTotal={false}
+					/>
+				)}
 			</Grid>
 		</Grid>
 	);
