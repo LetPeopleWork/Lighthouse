@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogDebug("Getting Throughput for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
             var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
-            var throughputByDay = GenerateThroughputByDay(startDate, endDate, closedItemsOfTeam);
+            var throughputByDay = GenerateThroughputByDay(DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc), closedItemsOfTeam);
 
             logger.LogDebug("Finished updating Throughput for Team {TeamName}", team.Name);
 
@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogDebug("Getting WIP Over Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
             var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
-            var wipOverTime = GenerateWorkInProgressByDay(startDate, endDate, itemsFromTeam);
+            var wipOverTime = GenerateWorkInProgressByDay(DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc), itemsFromTeam);
 
             logger.LogDebug("Finished updating WIP Over Time for Team {TeamName}", team.Name);
 
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc));
 
             return closedItemsInDateRange.ToList();
         }
@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.Services.Implementation
         public IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
-            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc));
 
             var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime).Where(ct => ct > 0).ToList();
 
