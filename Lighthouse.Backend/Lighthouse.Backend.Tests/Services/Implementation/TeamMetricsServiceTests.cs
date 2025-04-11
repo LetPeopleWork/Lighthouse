@@ -438,7 +438,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.Multiple(() =>
             {
-                Assert.That(wipData.ValuePerUnitOfTime.Length, Is.EqualTo(2));
+                Assert.That(wipData.ValuePerUnitOfTime, Has.Length.EqualTo(2));
                 Assert.That(wipData.ValuePerUnitOfTime[0], Is.EqualTo(1));
                 Assert.That(wipData.ValuePerUnitOfTime[1], Is.EqualTo(0));
             });

@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return runChartData;
         }
 
-        private int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItem> items)
+        private static int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItem> items)
         {
             var totalDays = (endDate - startDate).Days + 1;
             var runChartData = new int[totalDays];

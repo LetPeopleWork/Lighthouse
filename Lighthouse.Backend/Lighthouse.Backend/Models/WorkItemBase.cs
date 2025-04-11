@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Models
             }
         }
 
-        private int GetDateDifference(DateTime start, DateTime end)
+        private static int GetDateDifference(DateTime start, DateTime end)
         {
             return ((int)(end.Date - start.Date).TotalDays) + 1;
         }

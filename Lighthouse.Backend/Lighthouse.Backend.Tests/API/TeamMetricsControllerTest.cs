@@ -5,7 +5,6 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using System.Collections.Generic;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -351,7 +350,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var expectedData = new RunChartData(new[] { 1, 2, 3 });
+            var expectedData = new RunChartData([1, 2, 3]);
             teamMetricsServiceMock.Setup(service => service.GetWorkInProgressOverTimeForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedData);
 
             var subject = CreateSubject();
