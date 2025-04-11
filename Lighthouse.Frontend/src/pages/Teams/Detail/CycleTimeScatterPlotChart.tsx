@@ -23,26 +23,22 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	percentileValues,
 	cycleTimeDataPoints,
 }) => {
-	const [cycleTimeData, setCycleTimeData] = useState<IWorkItem[]>([]);
 	const [percentiles, setPercentiles] = useState<IPercentileValue[]>([]);
-
-	useEffect(() => {
-		setCycleTimeData(cycleTimeDataPoints);
-	}, [cycleTimeDataPoints]);
 
 	useEffect(() => {
 		setPercentiles(percentileValues);
 	}, [percentileValues]);
 
 	const handleItemClick = (itemId: number) => {
-		const item = cycleTimeData.find((d) => d.id === itemId);
+		const item = cycleTimeDataPoints[itemId];
+
 		if (item?.url) {
 			window.open(item.url, "_blank");
 		}
 	};
 
 	const formatValue = (value: ScatterValueType) => {
-		const point = cycleTimeData.find((d) => d.id === value.id);
+		const point = cycleTimeDataPoints.find((d) => d.id === value.id);
 		if (point) {
 			return `${point.name} - Cycle Time: ${point.cycleTime} days`;
 		}
@@ -50,7 +46,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		return "";
 	};
 
-	return cycleTimeData.length > 0 ? (
+	return cycleTimeDataPoints.length > 0 ? (
 		<Card sx={{ p: 2, borderRadius: 2 }}>
 			<CardContent>
 				<Typography variant="h6">Cycle Time</Typography>
@@ -77,7 +73,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					series={[
 						{
 							type: "scatter",
-							data: cycleTimeData.map((point) => ({
+							data: cycleTimeDataPoints.map((point) => ({
 								x: point.closedDate.getTime(),
 								y: point.cycleTime,
 								id: point.id,
@@ -114,7 +110,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					<ChartsYAxis />
 					<ScatterPlot
 						onItemClick={(_event, itemData) => {
-							if (itemData?.dataIndex) {
+
+							if (itemData?.dataIndex >= 0) {
 								handleItemClick(itemData.dataIndex);
 							}
 						}}

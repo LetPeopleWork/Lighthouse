@@ -58,8 +58,8 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             defaultWorkItemsBasedOnPercentile.Remove(project.Id);
 
             await RefreshFeaturesForProject(featureRepository, workItemServiceFactory, project);
-            await UpdateUnparentedItemsForProject(featureRepository, workItemRepository, workItemServiceFactory, project);
 
+            await UpdateUnparentedItemsForProject(featureRepository, workItemRepository, workItemServiceFactory, project);
             UpdateRemainingWorkForFeatures(workItemRepository, project);
 
             await ExtrapolateNotBrokenDownFeatures(workItemServiceFactory, project);
@@ -328,6 +328,8 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             }
 
             project.UpdateFeatures(features.OrderBy(f => f, new FeatureComparer()));
+
+            await featureRepository.Save();
         }
 
         private static void AddProjectToFeature(Feature feature, Project project)

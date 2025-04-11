@@ -15,6 +15,7 @@ namespace Lighthouse.Backend.API.DTO
             StartedDate = workItem.StartedDate;
             ClosedDate = workItem.ClosedDate;
             CycleTime = workItem.CycleTime;
+            WorkItemAge = workItem.WorkItemAge;
         }
 
         public string Name { get; }
@@ -30,6 +31,8 @@ namespace Lighthouse.Backend.API.DTO
         public string State { get; }
 
         public int CycleTime { get; }
+
+        public int WorkItemAge { get; }
 
         public DateTime? StartedDate { get; }
 

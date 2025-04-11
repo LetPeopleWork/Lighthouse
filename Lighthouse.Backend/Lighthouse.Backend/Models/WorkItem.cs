@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Models
         internal void Update(WorkItem item)
         {
             base.Update(item);
-            ReferenceId = item.ReferenceId;
+            ParentReferenceId = item.ParentReferenceId;
             Team = item.Team;
             TeamId = item.TeamId;
         }
