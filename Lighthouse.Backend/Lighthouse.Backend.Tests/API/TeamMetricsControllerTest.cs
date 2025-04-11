@@ -313,6 +313,61 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        public void GetWorkInProgressOverTime_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetWorkInProgressOverTime(1337, DateTime.Now, DateTime.Now);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
+        [Test]
+        public void GetWorkInProgressOverTime_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetWorkInProgressOverTime(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            });
+        }
+
+        [Test]
+        public void GetWorkInProgressOverTime_TeamExists_GetsWorkInProgressOverTimeFromTeamMetricsService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var expectedData = new RunChartData(new[] { 1, 2, 3 });
+            teamMetricsServiceMock.Setup(service => service.GetWorkInProgressOverTimeForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedData);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetWorkInProgressOverTime(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedData));
+            });
+        }
+
         private TeamMetricsController CreateSubject()
         {
             return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object);

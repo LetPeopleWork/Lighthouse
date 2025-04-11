@@ -9,6 +9,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        RunChartData GetWorkInProgressOverTimeForTeam(Team team, DateTime startDate, DateTime endDate);
+
         IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team);
 
         IEnumerable<WorkItem> GetCurrentWipForTeam(Team team);

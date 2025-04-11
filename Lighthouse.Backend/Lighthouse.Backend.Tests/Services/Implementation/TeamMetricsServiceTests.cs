@@ -356,6 +356,75 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetWorkInProgressForTeam_ReturnsWorkInProgressPerDay()
+        {
+            var startDate = DateTime.UtcNow.AddDays(-9);
+            var endDate = DateTime.UtcNow;
+
+            // Add items that are all in progress, and that are closed one after the other
+            for (var index = 0; index < 10; index++)
+            {
+                var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+                workItem.StartedDate = startDate.AddDays(-1);
+                workItem.ClosedDate = startDate.AddDays(index);
+            }
+
+            var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(wipData.History, Is.EqualTo(10));
+
+                for (var index = 0; index < 10 ; index++)
+                {
+                    Assert.That(wipData.ValuePerUnitOfTime[index], Is.EqualTo(10 - index));
+                }
+            });
+        }
+
+        [Test]
+        public void GetWorkInProgressForTeam_ItemClosedBeforeStartDate_DoesNotCount()
+        {
+            var startDate = DateTime.UtcNow.AddDays(-9);
+            var endDate = DateTime.UtcNow;
+            
+            var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            workItem.StartedDate = startDate.AddDays(-1);
+            workItem.ClosedDate = startDate.AddDays(-1);
+
+            var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
+
+            Assert.That(wipData.ValuePerUnitOfTime.Sum(), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void GetWorkInProgressOverTime_NoWorkItemsInDoing_ReturnsEmpty()
+        {
+            var startDate = DateTime.UtcNow.AddDays(-10);
+            var endDate = DateTime.UtcNow;
+
+            AddWorkItem(StateCategories.ToDo, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty);
+
+            var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
+
+            Assert.That(wipData.ValuePerUnitOfTime.Sum(), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void GetWorkInProgressOverTime_NoWorkOfTeamInDoing_ReturnsEmpty()
+        {
+            var startDate = DateTime.UtcNow.AddDays(-10);
+            var endDate = DateTime.UtcNow;
+
+            AddWorkItem(StateCategories.Doing, 2, string.Empty);
+
+            var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
+
+            Assert.That(wipData.ValuePerUnitOfTime.Sum(), Is.EqualTo(0));
+        }
+
+        [Test]
         public void GetCycleTimePercentilesForTeam_GetsCycleTimeForItemsInRange()
         {
             // Set up work item cycle times (1, 2, 3, ... 10)

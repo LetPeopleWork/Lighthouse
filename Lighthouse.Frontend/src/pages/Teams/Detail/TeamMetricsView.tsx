@@ -108,7 +108,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 
 	return (
 		<Grid container spacing={2}>
-			<Grid size={{ xs: 2 }}>
+			<Grid size={{ xs: 4 }}>
 				<DateRangeSelector
 					startDate={startDate}
 					endDate={endDate}

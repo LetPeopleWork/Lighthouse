@@ -64,7 +64,7 @@ export class TeamMetricsService
 	async getInProgressItems(teamId: number): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IWorkItem[]>(
-				`/teams/${teamId}/metrics/wip`,
+				`/teams/${teamId}/metrics/currentwip`,
 			);
 
 			const workItems = response.data.map((workItem) => {

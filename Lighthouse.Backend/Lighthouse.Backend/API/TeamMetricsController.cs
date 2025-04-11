@@ -30,6 +30,17 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetThroughputForTeam(team, startDate, endDate));
         }
 
+        [HttpGet("wipOverTime")]
+        public ActionResult<RunChartData> GetWorkInProgressOverTime(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest("Start date must be before end date.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetWorkInProgressOverTimeForTeam(team, startDate, endDate));
+        }
+
         [HttpGet("featuresInProgress")]
         public ActionResult<IEnumerable<FeatureDto>> GetFeaturesInProgress(int teamId)
         {
@@ -41,7 +52,7 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        [HttpGet("wip")]
+        [HttpGet("currentwip")]
         public ActionResult<IEnumerable<WorkItemDto>> GetCurrentWipForTeam(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>

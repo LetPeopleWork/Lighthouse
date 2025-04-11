@@ -117,6 +117,20 @@ namespace Lighthouse.Backend.Services.Implementation
             return throughput;
         }
 
+        public RunChartData GetWorkInProgressOverTimeForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting WIP Over Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done));
+            var wipOverTime = GenerateWorkInProgressByDay(startDate, endDate, itemsFromTeam);
+
+            logger.LogDebug("Finished updating WIP Over Time for Team {TeamName}", team.Name);
+
+            var throughput = new RunChartData(wipOverTime);
+
+            return throughput;
+        }
+
         public IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
@@ -179,6 +193,22 @@ namespace Lighthouse.Backend.Services.Implementation
             return runChartData;
         }
 
+        private int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IQueryable<WorkItem> items)
+        {
+            var totalDays = (endDate - startDate).Days + 1;
+            var runChartData = new int[totalDays];
+
+            for (var index = 0; index < runChartData.Length; index++)
+            {
+                var currentDate = startDate.AddDays(index);
+                var itemsInProgressOnDay = items.Where(i => WasItemProgressOnDay(currentDate, i)).Count();
+
+                runChartData[index] = itemsInProgressOnDay;
+            }
+
+            return runChartData;
+        }
+
         private static int GetThroughputIndexForItem(DateTime startDate, WorkItem item)
         {
             if (!item.ClosedDate.HasValue)
@@ -187,6 +217,21 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return (item.ClosedDate.Value.Date - startDate).Days;
+        }
+
+        private static bool WasItemProgressOnDay(DateTime day, WorkItem item)
+        {
+            if (!item.StartedDate.HasValue)
+            {
+                return false;
+            }
+
+            if (!item.ClosedDate.HasValue)
+            {
+                return true;
+            }
+
+            return item.StartedDate?.Date <= day.Date && item.ClosedDate?.Date >= day.Date;
         }
 
         private TMetric GetFromCacheIfExists<TMetric>(Team team, string metricIdentifier, Func<TMetric> calculateMetric) where TMetric : class
