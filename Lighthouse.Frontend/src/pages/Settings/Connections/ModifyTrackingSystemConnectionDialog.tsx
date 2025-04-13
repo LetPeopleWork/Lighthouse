@@ -52,6 +52,15 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		}
 	}, [open, workTrackingSystems]);
 
+	useEffect(() => {
+		const optionsValid = selectedOptions.every(
+			(option) => option.isOptional || option.value !== "",
+		);
+		const nameValid = name !== "";
+
+		setInputsValid(optionsValid && nameValid);
+	}, [name, selectedOptions]);
+
 	const handleSystemChange = (event: SelectChangeEvent<string>) => {
 		const system = workTrackingSystems.find(
 			(system) => system.workTrackingSystem === event.target.value,
@@ -70,15 +79,6 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		}
 	};
 
-	const onInputsChanged = () => {
-		const optionsValid = selectedOptions.every(
-			(option) => option.isOptional || option.value !== "",
-		);
-		const nameValid = name !== "";
-
-		setInputsValid(optionsValid && nameValid);
-	};
-
 	const handleOptionChange = (
 		changedOption: IWorkTrackingSystemOption,
 		newValue: string,
@@ -90,13 +90,10 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					: option,
 			),
 		);
-
-		onInputsChanged();
 	};
 
 	const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setName(event.target.value);
-		onInputsChanged();
 	};
 
 	const handleValidate = async () => {

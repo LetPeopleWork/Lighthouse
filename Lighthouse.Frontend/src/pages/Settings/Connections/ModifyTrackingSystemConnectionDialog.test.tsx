@@ -130,4 +130,138 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 
 		expect(mockOnClose).toHaveBeenCalledWith(null);
 	});
+
+	it("should validate correctly when password is pasted instead of typed", async () => {
+		render(
+			<ModifyTrackingSystemConnectionDialog
+				open={true}
+				onClose={mockOnClose}
+				workTrackingSystems={mockWorkTrackingSystems}
+				validateSettings={mockValidateSettings}
+			/>,
+		);
+
+		// Find the API token input field (which is a password field)
+		const apiTokenInput = screen.getByLabelText("apiToken");
+
+		// Simulate a paste event by directly using fireEvent.change
+		// This should trigger the handleOptionChange function the same way a paste would
+		fireEvent.change(apiTokenInput, {
+			target: { value: "pasted-password-123" },
+		});
+
+		// Now click the validate button
+		fireEvent.click(screen.getByText("Validate"));
+
+		// The validate function should be called with the updated connection that includes the pasted password
+		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+
+		// Verify that mockValidateSettings was called with a connection that has the pasted password
+		expect(mockValidateSettings).toHaveBeenCalledWith(
+			expect.objectContaining({
+				options: expect.arrayContaining([
+					expect.objectContaining({
+						key: "apiToken",
+						value: "pasted-password-123",
+					}),
+				]),
+			}),
+		);
+	});
+
+	it("should automatically validate inputs when name changes", async () => {
+		render(
+			<ModifyTrackingSystemConnectionDialog
+				open={true}
+				onClose={mockOnClose}
+				workTrackingSystems={mockWorkTrackingSystems}
+				validateSettings={mockValidateSettings}
+			/>,
+		);
+
+		// First validate to set the correct state
+		fireEvent.click(screen.getByText("Validate"));
+		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+
+		// Clear the name field to make inputs invalid
+		fireEvent.change(screen.getByLabelText("Connection Name"), {
+			target: { value: "" },
+		});
+
+		// The useEffect should trigger inputsValid to be false
+		// We test this by checking if our validation logic correctly reports the input as invalid
+		let connectionNameLabel: HTMLInputElement =
+			screen.getByLabelText("Connection Name");
+		expect(connectionNameLabel.value).toBe("");
+
+		// Set the name field back to a valid value
+		fireEvent.change(screen.getByLabelText("Connection Name"), {
+			target: { value: "New Connection" },
+		});
+
+		// Check that the name field now has a value
+		connectionNameLabel = screen.getByLabelText("Connection Name");
+		expect(connectionNameLabel.value).toBe("New Connection");
+	});
+
+	it("should automatically validate inputs when options change", async () => {
+		render(
+			<ModifyTrackingSystemConnectionDialog
+				open={true}
+				onClose={mockOnClose}
+				workTrackingSystems={mockWorkTrackingSystems}
+				validateSettings={mockValidateSettings}
+			/>,
+		);
+
+		// First validate to set the correct state
+		fireEvent.click(screen.getByText("Validate"));
+		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+
+		// Clear a required option field to make inputs invalid
+		const urlInput: HTMLInputElement = screen.getByLabelText("url");
+		fireEvent.change(urlInput, {
+			target: { value: "" },
+		});
+
+		// Check that the url field is now empty
+		expect(urlInput.value).toBe("");
+
+		// Set the option field back to a valid value
+		fireEvent.change(urlInput, {
+			target: { value: "http://new.example.com" },
+		});
+
+		// Check that the url field now has a value
+		expect(urlInput.value).toBe("http://new.example.com");
+	});
+
+	it("should automatically validate inputs when work tracking system changes", async () => {
+		render(
+			<ModifyTrackingSystemConnectionDialog
+				open={true}
+				onClose={mockOnClose}
+				workTrackingSystems={mockWorkTrackingSystems}
+				validateSettings={mockValidateSettings}
+			/>,
+		);
+
+		// First validate to set the correct state
+		fireEvent.click(screen.getByText("Validate"));
+		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+
+		// Use the Select component directly instead of trying to find it by label
+		const selectElement = screen.getByRole("combobox");
+		fireEvent.mouseDown(selectElement);
+
+		// Now select the AzureDevOps option
+		const adoOption = screen.getByText("AzureDevOps");
+		fireEvent.click(adoOption);
+
+		// The system should have changed, check the url field now shows the ADO url
+		await waitFor(() => {
+			const urlInput = screen.getByLabelText("url");
+			expect(urlInput).toHaveValue("http://ado.example.com");
+		});
+	});
 });

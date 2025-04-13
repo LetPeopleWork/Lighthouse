@@ -40,12 +40,22 @@ for (const {
 				await settingsPage.goToWorkTrackingSystems();
 
 			const workTrackingSystemDialog =
-				await workTrackingSystemsPage.addNewWorkTrackingSystem();
+				await workTrackingSystemsPage.addNewWorkTrackingSystem();	
 
 			await test.step("Select Work Tracking System", async () => {
 				await workTrackingSystemDialog.selectWorkTrackingSystem(
 					workTrackingSystemName,
 				);
+
+				await expect(workTrackingSystemDialog.validateButton).toBeDisabled();
+				await expect(workTrackingSystemDialog.createButton).toBeDisabled();
+			});			
+
+			// We select the Work Tracking System first because it will clear the name
+			const wtsName = generateRandomName();
+
+			await test.step("Set Name of Work Tracking System", async () => {
+				await workTrackingSystemDialog.setConnectionName(wtsName);
 
 				await expect(workTrackingSystemDialog.validateButton).toBeDisabled();
 				await expect(workTrackingSystemDialog.createButton).toBeDisabled();
@@ -58,15 +68,6 @@ for (const {
 						option.value,
 					);
 				}
-
-				await expect(workTrackingSystemDialog.validateButton).toBeDisabled();
-				await expect(workTrackingSystemDialog.createButton).toBeDisabled();
-			});
-
-			const wtsName = generateRandomName();
-
-			await test.step("Set Name should enable Validation", async () => {
-				await workTrackingSystemDialog.setConnectionName(wtsName);
 
 				await expect(workTrackingSystemDialog.validateButton).toBeEnabled();
 				await expect(workTrackingSystemDialog.createButton).toBeDisabled();
