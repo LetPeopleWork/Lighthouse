@@ -43,8 +43,14 @@ describe("Team Class", () => {
 			{ 1: "Project 1" },
 			{ 1: 10, 2: 20 },
 			{ 1: 10, 2: 20 },
-			{},
+			{ 0: 88.7 },
 			[new WhenForecast(0.8, new Date("2023-08-01"))],
+			null,
+			"ToDo",
+			new Date("2023-07-01"),
+			new Date("2023-07-10"),
+			9,
+			10,
 		);
 		const feature2 = new Feature(
 			"Feature 2",
@@ -57,8 +63,14 @@ describe("Team Class", () => {
 			{ 2: "Project 2" },
 			{ 1: 5, 2: 15 },
 			{ 1: 5, 2: 15 },
-			{},
+			{ 0: 54.3 },
 			[new WhenForecast(0.6, new Date("2023-09-01"))],
+			null,
+			"Doing",
+			new Date("2023-07-01"),
+			new Date("2023-07-09"),
+			8,
+			9,
 		);
 		features = [feature1, feature2];
 

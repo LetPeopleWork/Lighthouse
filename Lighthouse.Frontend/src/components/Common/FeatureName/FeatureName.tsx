@@ -7,8 +7,8 @@ import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import { IconButton, Tooltip } from "@mui/material";
 import React from "react";
 import { Link } from "react-router-dom";
-import type { StateCategory } from "../../../models/Feature";
 import type { ITeam } from "../../../models/Team/Team";
+import type { StateCategory } from "../../../models/WorkItem";
 
 interface FeatureNameProps {
 	name: string;

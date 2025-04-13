@@ -7,14 +7,11 @@ namespace Lighthouse.Backend.Models
         {            
         }
 
-        public WorkItem(WorkItemBase workItemBase, Team team, string parentId) : base(workItemBase)
+        public WorkItem(WorkItemBase workItemBase, Team team) : base(workItemBase)
         {
             Team = team;
             TeamId = team.Id;
-            ParentReferenceId = parentId;
         }
-
-        public string ParentReferenceId { get; set; } = string.Empty;
 
         public Team Team { get; set; }
 
@@ -23,7 +20,6 @@ namespace Lighthouse.Backend.Models
         internal void Update(WorkItem item)
         {
             base.Update(item);
-            ParentReferenceId = item.ParentReferenceId;
             Team = item.Team;
             TeamId = item.TeamId;
         }

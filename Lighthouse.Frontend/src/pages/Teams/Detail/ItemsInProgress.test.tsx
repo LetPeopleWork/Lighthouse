@@ -18,6 +18,7 @@ describe("ItemsInProgress component", () => {
 					(1000 * 60 * 60 * 24),
 			) + 1,
 		state: "In Progress",
+		stateCategory: "Doing",
 		type: "Task",
 	});
 

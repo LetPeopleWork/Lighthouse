@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, expect } from "vitest";
-import type { StateCategory } from "../../../models/Feature";
 import { Team } from "../../../models/Team/Team";
+import type { StateCategory } from "../../../models/WorkItem";
 import FeatureName from "./FeatureName";
 
 // Mock component for proper rendering with router

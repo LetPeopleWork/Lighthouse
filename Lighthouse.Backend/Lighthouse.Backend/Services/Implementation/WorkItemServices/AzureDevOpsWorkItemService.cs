@@ -30,12 +30,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.AdditionalRelatedField ?? string.Empty)} {lastUpdatedFilter}";
 
             var adoWorkItems = await FetchAdoWorkItemsByQuery(team, workItemQuery, team.AdditionalRelatedField ?? string.Empty);
-            var parentReferences = await GetParentReferenceForWorkItems(adoWorkItems, team);
+            var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, team);
             var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team);
+
+            var parentReferences = await parentReferencesTask;
+            foreach (var workItem in workItems)
+            {
+                workItem.ParentReferenceId = parentReferences[workItem.ReferenceId];
+            }
 
             return workItems.Select(workItem =>
             {
-                return new LighthouseWorkItem(workItem, team, parentReferences[workItem.ReferenceId]);
+                return new LighthouseWorkItem(workItem, team);
             });
         }
 
@@ -168,7 +174,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             try
             {
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
-                var witClient = GetClientService(team.WorkTrackingSystemConnection);
 
                 var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
                 var workItems = await FetchAdoWorkItemsByQuery(team, query, team.AdditionalRelatedField ?? string.Empty);
@@ -191,8 +196,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             try
             {
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
-                
-                var witClient = GetClientService(project.WorkTrackingSystemConnection);
+
                 var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
 
                 var workItems = await FetchAdoWorkItemsByQuery(project, query, project.SizeEstimateField ?? string.Empty, project.FeatureOwnerField ?? string.Empty);
@@ -368,7 +372,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
         {
             var itemIds = adoWorkItems.Select(wi => wi.Id ?? -1).Where(i => i >= 0).ToList();
 
-            if (!itemIds.Any())
+            if (itemIds.Count == 0)
             {
                 return new Dictionary<string, string>();
             }

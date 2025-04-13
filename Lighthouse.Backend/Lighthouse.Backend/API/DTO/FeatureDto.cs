@@ -2,18 +2,11 @@
 
 namespace Lighthouse.Backend.API.DTO
 {
-    public class FeatureDto
+    public class FeatureDto : WorkItemDto
     {
-        public FeatureDto(Feature feature)
-        {
-            Name = feature.Name;
-            Id = feature.Id;
-            FeatureReference = feature.ReferenceId;
-            Url = feature.Url;
-            StateCategory = feature.StateCategory;
-            Order = feature.Order;
+        public FeatureDto(Feature feature) : base(feature)
+        {            
             LastUpdated = feature.Forecast?.CreationTime ?? DateTime.MinValue;
-
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
 
             Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(50, 70, 85, 95) ?? []);
@@ -40,18 +33,6 @@ namespace Lighthouse.Backend.API.DTO
                 }
             }
         }
-
-        public string Name { get; }
-
-        public int Id { get; }
-
-        public string FeatureReference { get; }
-
-        public string Url { get; }
-
-        public StateCategories StateCategory { get; }
-
-        public string Order { get; }
         
         public bool IsUsingDefaultFeatureSize { get; }
 

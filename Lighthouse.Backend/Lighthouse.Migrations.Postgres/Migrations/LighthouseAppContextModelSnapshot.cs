@@ -87,6 +87,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ParentReferenceId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ReferenceId")
                         .IsRequired()
                         .HasColumnType("text");

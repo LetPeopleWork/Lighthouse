@@ -80,7 +80,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 									stateCategory={feature.stateCategory}
 									isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
 									teamsWorkIngOnFeature={
-										featuresInProgress.includes(feature.featureReference)
+										featuresInProgress.includes(feature.workItemReference)
 											? [team]
 											: []
 									}

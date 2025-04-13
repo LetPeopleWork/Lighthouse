@@ -110,7 +110,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 									isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
 									teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
 										featuresInProgress[team.id]?.includes(
-											feature.featureReference,
+											feature.workItemReference,
 										),
 									)}
 								/>

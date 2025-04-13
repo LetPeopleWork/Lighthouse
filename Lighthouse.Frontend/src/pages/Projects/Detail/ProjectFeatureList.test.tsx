@@ -110,6 +110,12 @@ describe("ProjectFeatureList component", () => {
 		{ 1: 5, 2: 5 },
 		{},
 		[new WhenForecast(80, new Date())],
+		null,
+		"ToDo",
+		new Date("2023-07-01"),
+		new Date("2023-07-10"),
+		9,
+		10,
 	);
 	const feature2: Feature = new Feature(
 		"Feature 2",
@@ -124,6 +130,12 @@ describe("ProjectFeatureList component", () => {
 		{ 1: 10, 2: 5 },
 		{},
 		[new WhenForecast(60, new Date())],
+		null,
+		"Doing",
+		new Date("2023-07-01"),
+		new Date("2023-07-09"),
+		8,
+		9,
 	);
 
 	const project: Project = new Project(

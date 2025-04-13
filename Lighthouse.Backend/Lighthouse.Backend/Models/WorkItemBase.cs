@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Models
 
         public string ReferenceId { get; set; } = string.Empty;
 
+        public string ParentReferenceId { get; set; } = string.Empty;
+
         public string Name { get; set; }
 
         public string Type { get; set; } = string.Empty;
@@ -68,6 +70,7 @@ namespace Lighthouse.Backend.Models
         internal void Update(WorkItemBase workItemBase)
         {
             ReferenceId = workItemBase.ReferenceId;
+            ParentReferenceId = workItemBase.ParentReferenceId;
             Name = workItemBase.Name;
             Type = workItemBase.Type;
             State = workItemBase.State;

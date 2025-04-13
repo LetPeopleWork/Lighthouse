@@ -1,13 +1,7 @@
 import type { IWhenForecast } from "./Forecasts/WhenForecast";
+import type { IWorkItem, StateCategory } from "./WorkItem";
 
-export type StateCategory = "Unknown" | "ToDo" | "Doing" | "Done";
-
-export interface IFeature {
-	name: string;
-	id: number;
-	featureReference: string;
-	url: string | null;
-	stateCategory: StateCategory;
+export interface IFeature extends IWorkItem {
 	lastUpdated: Date;
 	isUsingDefaultFeatureSize: boolean;
 	remainingWork: { [key: number]: number };
@@ -24,9 +18,9 @@ export interface DictionaryObject<TValue> {
 export class Feature implements IFeature {
 	name!: string;
 	id!: number;
-	featureReference!: string;
-	url: string | null;
-	stateCategory: StateCategory;
+	workItemReference!: string;
+	state!: string;
+	type!: string;
 	lastUpdated!: Date;
 	isUsingDefaultFeatureSize!: boolean;
 	projects: DictionaryObject<string>;
@@ -34,13 +28,19 @@ export class Feature implements IFeature {
 	totalWork: { [key: number]: number };
 	milestoneLikelihood: DictionaryObject<number>;
 	forecasts!: IWhenForecast[];
+	url: string | null;
+	stateCategory: StateCategory;
+	startedDate!: Date;
+	closedDate!: Date;
+	cycleTime!: number;
+	workItemAge!: number;
 
 	constructor(
 		name: string,
 		id: number,
-		featureReference: string,
-		url: string | null,
-		stateCategory: StateCategory,
+		workItemReference: string,
+		state: string,
+		type: string,
 		lastUpdated: Date,
 		isUsingDefaultFeatureSize: boolean,
 		projects: DictionaryObject<string>,
@@ -48,12 +48,18 @@ export class Feature implements IFeature {
 		totalWork: { [key: number]: number },
 		milestoneLikelihood: DictionaryObject<number>,
 		forecasts: IWhenForecast[],
+		url: string | null,
+		stateCategory: StateCategory,
+		startedDate: Date,
+		closedDate: Date,
+		cycleTime: number,
+		workItemAge: number,
 	) {
 		this.name = name;
 		this.id = id;
-		this.featureReference = featureReference;
-		this.url = url;
-		this.stateCategory = stateCategory;
+		this.workItemReference = workItemReference;
+		this.state = state;
+		this.type = type;
 		this.lastUpdated = lastUpdated;
 		this.isUsingDefaultFeatureSize = isUsingDefaultFeatureSize;
 		this.projects = projects;
@@ -61,6 +67,12 @@ export class Feature implements IFeature {
 		this.totalWork = totalWork;
 		this.milestoneLikelihood = milestoneLikelihood;
 		this.forecasts = forecasts;
+		this.url = url;
+		this.stateCategory = stateCategory;
+		this.startedDate = startedDate;
+		this.closedDate = closedDate;
+		this.cycleTime = cycleTime;
+		this.workItemAge = workItemAge;
 	}
 
 	getRemainingWorkForTeam(id: number): number {
@@ -102,6 +114,8 @@ export class Feature implements IFeature {
 	}
 
 	getAllWork(work: { [key: number]: number }): number {
+		if (!work) return 0;
+
 		let totalWork = 0;
 		const values = Object.values(work);
 
@@ -113,6 +127,7 @@ export class Feature implements IFeature {
 	}
 
 	getWorkForTeam(id: number, work: { [key: number]: number }): number {
+		if (!work) return 0;
 		return work[id] ?? 0;
 	}
 }

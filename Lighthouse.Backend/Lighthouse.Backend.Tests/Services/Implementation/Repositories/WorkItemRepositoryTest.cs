@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var team = new Team { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
             var workItemBase = new WorkItemBase { ClosedDate = DateTime.UtcNow, StartedDate = DateTime.UtcNow, Name = "Item", Order = "12", ReferenceId = "1337", State = "Done", StateCategory = StateCategories.Done, Type = "Bug", Url = "https://letpeople.work/1886" };
-            var workItem = new WorkItem(workItemBase, team, string.Empty);
+            var workItem = new WorkItem(workItemBase, team);
 
             subject.Add(workItem);
             await subject.Save();

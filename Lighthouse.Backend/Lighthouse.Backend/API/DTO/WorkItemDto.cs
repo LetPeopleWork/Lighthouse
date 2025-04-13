@@ -9,9 +9,11 @@ namespace Lighthouse.Backend.API.DTO
             Name = workItem.Name;
             Id = workItem.Id;
             WorkItemReference = workItem.ReferenceId;
+            ParentWorkItemReference = workItem.ParentReferenceId;
             Url = workItem.Url;
             Type = workItem.Type;
             State = workItem.State;
+            StateCategory = workItem.StateCategory;
             StartedDate = workItem.StartedDate;
             ClosedDate = workItem.ClosedDate;
             CycleTime = workItem.CycleTime;
@@ -24,11 +26,15 @@ namespace Lighthouse.Backend.API.DTO
 
         public string WorkItemReference { get; }
 
+        public string ParentWorkItemReference { get; }
+
         public string Url { get; }
 
         public string Type { get; }
 
         public string State { get; }
+
+        public StateCategories StateCategory { get; }
 
         public int CycleTime { get; }
 

@@ -102,9 +102,9 @@ export class BaseApiService {
 			return new Feature(
 				feature.name,
 				feature.id,
-				feature.featureReference,
-				feature.url,
-				feature.stateCategory,
+				feature.workItemReference,
+				feature.state,
+				feature.type,
 				new Date(feature.lastUpdated),
 				feature.isUsingDefaultFeatureSize,
 				feature.projects,
@@ -112,6 +112,12 @@ export class BaseApiService {
 				feature.totalWork,
 				feature.milestoneLikelihood,
 				forecasts,
+				feature.url,
+				feature.stateCategory,
+				feature.startedDate ? new Date(feature.startedDate) : new Date(),
+				feature.closedDate ? new Date(feature.closedDate) : new Date(),
+				feature.cycleTime || 0,
+				feature.workItemAge || 0,
 			);
 		});
 	}

@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             foreach (var issue in issues)
             {
                 var workItemBase = CreateWorkItemFromJiraIssue(issue, team);
-                workItems.Add(new WorkItem(workItemBase, team, issue.ParentKey));
+                workItems.Add(new WorkItem(workItemBase, team));
             }
 
             return workItems;
@@ -264,6 +264,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             var workItem = new WorkItemBase
             {
                 ReferenceId = issue.Key,
+                ParentReferenceId = issue.ParentKey,
                 Name = issue.Title,
                 ClosedDate = issue.ClosedDate,
                 StartedDate = issue.StartedDate,
