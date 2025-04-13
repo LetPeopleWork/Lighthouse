@@ -19,6 +19,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Collections.Concurrent;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
+using Lighthouse.Backend.MCP;
 
 namespace Lighthouse.Backend
 {
@@ -92,6 +93,7 @@ namespace Lighthouse.Backend
             app.UseAuthorization();
 
             app.MapControllers();
+
             app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
 
             app.UseSpa(spa =>
@@ -99,6 +101,8 @@ namespace Lighthouse.Backend
                 spa.Options.SourcePath = "wwwroot";
                 spa.Options.DefaultPage = "/index.html";
             });
+
+            app.MapMcp();
         }
 
         private static void ConfigureServices(WebApplicationBuilder builder)
@@ -119,6 +123,9 @@ namespace Lighthouse.Backend
                                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                                 });
 
+            builder.Services.AddMcpServer()
+                .WithTools<LightouseTeamTools>();
+
             // Add Swagger services
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -130,6 +137,8 @@ namespace Lighthouse.Backend
                      options.PayloadSerializerOptions.Converters
                         .Add(new JsonStringEnumConverter());
                  });
+
+            builder.Services.AddHttpClient();
         }
 
         private static void RegisterServices(WebApplicationBuilder builder)
@@ -220,7 +229,7 @@ namespace Lighthouse.Backend
             using var scope = builder.Services.BuildServiceProvider().CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-     
+
             logger.LogInformation("Migrating Database");
             context.Database.Migrate();
         }
