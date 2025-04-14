@@ -45,13 +45,8 @@ export class TeamDetailPage {
 		return parsedLikelihood;
 	}
 
-	async getFeaturesInProgress(): Promise<number> {
-		const featureWIPText =
-			(await this.page
-				.getByRole("heading", { name: /^Currently working on/ })
-				.textContent()) ?? "0";
-		const match = /Currently working on (\d+)/.exec(featureWIPText);
-		return Number(match?.[1] ?? 0);
+	async goToMetrics(): Promise<void> {
+		await this.page.getByRole("tab", { name: "Metrics" }).click();
 	}
 
 	async getLastUpdatedDate(): Promise<Date> {
@@ -60,6 +55,20 @@ export class TeamDetailPage {
 				.getByRole("heading", { name: /^Last Updated/ })
 				.textContent()) ?? "";
 		return getLastUpdatedDateFromText(lastUpdatedText);
+	}
+
+	async getFeaturesInProgress(): Promise<number> {
+		const featuresInProgressText = await this.page
+			.getByText(/Features being Worked On:(\d+)/)
+			.first()
+			.innerText();
+
+		// Extract just the number after "Features being Worked On:"
+		const regex = /Features being Worked On:\s*(\d+)/;
+		const match = regex.exec(featuresInProgressText);
+		const count = match ? Number.parseInt(match[1], 10) : 0;
+
+		return count;
 	}
 
 	getFeatureLink(featureName: string): Locator {
@@ -78,5 +87,38 @@ export class TeamDetailPage {
 		const url = new URL(this.page.url());
 		const teamId = url.pathname.split("/").pop() ?? "0";
 		return Number.parseInt(teamId, 10);
+	}
+
+	get getFeaturesInProgressWidget(): Locator {
+		return this.page.getByText(/Features being Worked On:(\d+)/);
+	}
+
+	get workInProgressWidget(): Locator {
+		return this.page.getByRole("heading", {
+			name: "Work Items In Progress:",
+		});
+	}
+
+	get cycleTimePercentileWidget(): Locator {
+		return this.page.getByRole("heading", { name: "Cycle Time Percentiles" });
+	}
+
+	get cycleTimeScatterplotWidget(): Locator {
+		return this.page.getByRole("heading", {
+			name: "Cycle Time",
+			exact: true,
+		});
+	}
+
+	get throughputRunChartWidget(): Locator {
+		return this.page.getByRole("heading", {
+			name: "Throughput",
+		});
+	}
+
+	get wipOverTimeWidget(): Locator {
+		return this.page.getByRole("heading", {
+			name: "WIP Over Time",
+		});
 	}
 }
