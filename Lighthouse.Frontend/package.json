@@ -43,7 +43,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^22.14.1",
-    "@types/react": "^19.1.1",
+    "@types/react": "^19.1.2",
     "@types/react-date-range": "^1.4.10",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.3.4",
