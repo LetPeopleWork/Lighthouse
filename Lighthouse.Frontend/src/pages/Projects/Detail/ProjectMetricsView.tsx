@@ -32,7 +32,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 
 	const [startDate, setStartDate] = useState<Date>(() => {
 		const date = new Date();
-		date.setDate(date.getDate() - 90);
+		date.setDate(date.getDate() - 91);
 		return date;
 	});
 	const [endDate, setEndDate] = useState<Date>(new Date());

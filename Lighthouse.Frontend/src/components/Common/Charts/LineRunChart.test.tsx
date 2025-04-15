@@ -32,13 +32,12 @@ describe("LineRunChart component", () => {
 		expect(totalText).toBeInTheDocument();
 	});
 
-	it("should render CircularProgress when chartData.history <= 0", () => {
+	it("should display 'No data available' when no percentiles are provided", () => {
 		const mockChartData: RunChartData = new RunChartData([], 0, 0);
 
 		render(<LineRunChart chartData={mockChartData} startDate={new Date()} />);
 
-		const circularProgressElement = screen.getByRole("progressbar");
-		expect(circularProgressElement).toBeInTheDocument();
+		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
 
 	it("should render with custom title", () => {

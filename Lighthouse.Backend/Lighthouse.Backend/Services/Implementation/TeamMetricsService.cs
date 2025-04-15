@@ -1,14 +1,11 @@
-﻿using Lighthouse.Backend.Cache;
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class TeamMetricsService : ITeamMetricsService
+    public class TeamMetricsService : BaseMetricsService, ITeamMetricsService
     {
-        private static readonly Cache<string, object> metricsCache = new Cache<string, object>();
-
         private readonly string throughputMetricIdentifier = "Throughput";
         private readonly string featureWipMetricIdentifier = "FeatureWIP";
         private readonly string wipMetricIdentifier = "WIP";
@@ -17,21 +14,19 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IWorkItemRepository workItemRepository;
         private readonly IRepository<Feature> featureRepository;
 
-        private readonly int refreshRateInMinutes;
-
         public TeamMetricsService(ILogger<TeamMetricsService> logger, IWorkItemRepository workItemRepository, IRepository<Feature> featureRepository, IAppSettingService appSettingService)
+            : base(appSettingService.GetThroughputRefreshSettings().Interval)
         {
             this.logger = logger;
             this.workItemRepository = workItemRepository;
             this.featureRepository = featureRepository;
-            refreshRateInMinutes = appSettingService.GetThroughputRefreshSettings().Interval;
         }
 
         public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team)
         {
             logger.LogDebug("Getting Feature Wip for Team {TeamName}", team.Name);
 
-            return GetFromCacheIfExists(team, featureWipMetricIdentifier, () =>
+            return GetFromCacheIfExists<IEnumerable<Feature>, Team>(team, featureWipMetricIdentifier, () =>
             {
                 var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team);
                 var featureReferences = activeWorkItemsForTeam.Select(wi => wi.ParentReferenceId).Distinct().ToList();
@@ -67,28 +62,28 @@ namespace Lighthouse.Backend.Services.Implementation
                 logger.LogDebug("Finished updating Feature Wip for Team {TeamName} - Found {FeatureWIP} Features in Progress", team.Name, featureReferences.Count);
 
                 return features;
-            });
+            }, logger);
         }
 
         public IEnumerable<WorkItem> GetCurrentWipForTeam(Team team)
         {
             logger.LogDebug("Getting WIP for Team {TeamName}", team.Name);
 
-            return GetFromCacheIfExists(team, wipMetricIdentifier, () =>
+            return GetFromCacheIfExists<IEnumerable<WorkItem>, Team>(team, wipMetricIdentifier, () =>
             {
                 var activeWorkItemsForTeam = GetInProgressWorkItemsForTeam(team).ToList();
 
                 logger.LogDebug("Finished updating Wip for Team {TeamName} - Found {WIP} Items in Progress", team.Name, activeWorkItemsForTeam.Count);
 
                 return activeWorkItemsForTeam;
-            });
+            }, logger);
         }
 
         public RunChartData GetCurrentThroughputForTeam(Team team)
         {
             logger.LogDebug("Getting Current Throughput for Team {TeamName}", team.Name);
 
-            return GetFromCacheIfExists(team, throughputMetricIdentifier, () =>
+            return GetFromCacheIfExists<RunChartData, Team>(team, throughputMetricIdentifier, () =>
             {
                 var startDate = DateTime.UtcNow.Date.AddDays(-(team.ThroughputHistory - 1));
                 var endDate = DateTime.UtcNow;
@@ -100,7 +95,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
 
                 return GetThroughputForTeam(team, startDate, endDate);
-            });
+            }, logger);
         }
 
         public RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -157,12 +152,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public void InvalidateTeamMetrics(Team team)
         {
-            logger.LogInformation("Invalidating Metrics for Team {TeamName} (Id: {TeamId})", team.Name, team.Id);
-            var teamKeys = metricsCache.Keys.Where(k => k.StartsWith($"{team.Id}_")).ToList();
-            foreach (var entry in teamKeys)
-            {
-                metricsCache.Remove(entry);
-            }
+            InvalidateMetrics(team, logger);
         }
 
         private IEnumerable<WorkItem> GetWorkItemsClosedInDateRange(Team team, DateTime startDate, DateTime endDate)
@@ -175,101 +165,6 @@ namespace Lighthouse.Backend.Services.Implementation
         private IEnumerable<WorkItem> GetInProgressWorkItemsForTeam(Team team)
         {
             return workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Doing);
-        }
-
-        private static int[] GenerateThroughputByDay(DateTime startDate, DateTime endDate, IQueryable<WorkItem> items)
-        {
-            var totalDays = (endDate - startDate).Days + 1;
-            var runChartData = new int[totalDays];
-
-            foreach (var index in items.Select(i => GetThroughputIndexForItem(startDate, i)))
-            {
-                if (index >= 0 && index < totalDays)
-                {
-                    runChartData[index]++;
-                }
-            }
-
-            return runChartData;
-        }
-
-        private static int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItem> items)
-        {
-            var totalDays = (endDate - startDate).Days + 1;
-            var runChartData = new int[totalDays];
-
-            for (var index = 0; index < runChartData.Length; index++)
-            {
-                var currentDate = startDate.AddDays(index);
-                var itemsInProgressOnDay = items.Count(i => WasItemProgressOnDay(currentDate, i));
-
-                runChartData[index] = itemsInProgressOnDay;
-            }
-
-            return runChartData;
-        }
-
-        private static int GetThroughputIndexForItem(DateTime startDate, WorkItem item)
-        {
-            if (!item.ClosedDate.HasValue)
-            {
-                return -1;
-            }
-
-            return (item.ClosedDate.Value.Date - startDate).Days;
-        }
-
-        private static bool WasItemProgressOnDay(DateTime day, WorkItem item)
-        {
-            if (!item.StartedDate.HasValue)
-            {
-                return false;
-            }
-
-            if (!item.ClosedDate.HasValue)
-            {
-                return true;
-            }
-
-            return item.StartedDate?.Date <= day.Date && item.ClosedDate?.Date > day.Date;
-        }
-
-        private TMetric GetFromCacheIfExists<TMetric>(Team team, string metricIdentifier, Func<TMetric> calculateMetric) where TMetric : class
-        {
-            var cacheKey = GetCacheKey(team, metricIdentifier);
-
-            var cachedMetric = GetMetricFromCache<TMetric>(cacheKey);
-
-            if (cachedMetric != null)
-            {
-                logger.LogDebug("Found {CacheKey} in Cache - Don't caclulate", cacheKey);
-                return cachedMetric;
-            }
-
-            logger.LogDebug("Did not find {CacheKey} in Cache - Recalculating", cacheKey);
-            var metric = calculateMetric();
-
-            StoreMetricInCache(cacheKey, metric);
-
-            return metric;
-        }
-
-        private void StoreMetricInCache<TMetric>(string key, TMetric metric) where TMetric : class
-        {
-            metricsCache.Remove(key);
-            metricsCache.Store(key, metric, TimeSpan.FromMinutes(refreshRateInMinutes));
-        }
-
-        private static TMetric? GetMetricFromCache<TMetric>(string key) where TMetric : class
-        {
-            var metric = metricsCache.Get(key);
-
-            return metric as TMetric;
-        }
-
-        private static string GetCacheKey(Team team, string metricIdentifier)
-        {
-            return $"{team.Id}_{metricIdentifier}";
         }
     }
 }

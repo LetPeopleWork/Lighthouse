@@ -158,6 +158,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
             builder.Services.AddScoped<IFeatureHistoryService, FeatureHistoryService>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
+            builder.Services.AddScoped<IProjectMetricsService, ProjectMetricsService>();
 
             builder.Services.AddScoped<AzureDevOpsWorkItemService>();
             builder.Services.AddScoped<JiraWorkItemService>();

@@ -34,14 +34,13 @@ describe("ThroughputBarChart component", () => {
 		expect(totalThroughputText).toBeInTheDocument();
 	});
 
-	it("should render CircularProgress when throughputData.history <= 0", () => {
+	it("should display 'No data available' when no percentiles are provided", () => {
 		const mockThroughputData: RunChartData = new RunChartData([], 0, 0);
 
 		render(
 			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
 		);
 
-		const circularProgressElement = screen.getByRole("progressbar");
-		expect(circularProgressElement).toBeInTheDocument();
+		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
 });

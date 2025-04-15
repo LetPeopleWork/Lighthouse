@@ -86,7 +86,7 @@ describe("BaseRunChart component", () => {
 		expect(totalElement).toBeInTheDocument();
 	});
 
-	it("should render CircularProgress when chartData.history <= 0", () => {
+	it("should display 'No data available' when no percentiles are provided", () => {
 		const mockChartData = new RunChartData([], 0, 0);
 
 		render(
@@ -95,10 +95,6 @@ describe("BaseRunChart component", () => {
 			</BaseRunChart>,
 		);
 
-		const progressElement = screen.getByRole("progressbar");
-		expect(progressElement).toBeInTheDocument();
-		expect(
-			screen.queryByText("This should not render"),
-		).not.toBeInTheDocument();
+		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
 });

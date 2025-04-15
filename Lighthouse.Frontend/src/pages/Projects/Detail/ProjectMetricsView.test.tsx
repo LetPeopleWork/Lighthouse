@@ -425,7 +425,7 @@ describe("ProjectMetricsView component", () => {
 		consoleSpy.mockRestore();
 	});
 
-	it("initializes with default date range (90 days)", async () => {
+	it("initializes with default date range (90 days)", () => {
 		const mockApiContext = createMockApiServiceContext({
 			projectMetricsService: mockProjectMetricsService,
 		});
@@ -436,29 +436,27 @@ describe("ProjectMetricsView component", () => {
 			</ApiServiceContext.Provider>,
 		);
 
-		// Wait for component to finish rendering with act() warnings
-		await waitFor(() => {
-			const startDateElement = screen.getByTestId("start-date");
-			const endDateElement = screen.getByTestId("end-date");
+		const startDateElement = screen.getByTestId("start-date");
+		const endDateElement = screen.getByTestId("end-date");
 
-			const startDate = new Date(startDateElement.textContent || "");
-			const endDate = new Date(endDateElement.textContent || "");
+		const startDate = new Date(startDateElement.textContent || "");
+		const endDate = new Date(endDateElement.textContent || "");
+		const today = new Date();
 
-			// Calculate difference in days, accounting for time zones and DST
-			const daysDifference = Math.round(
-				(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-			);
+		// Set both dates to midnight for comparison
+		today.setHours(0, 0, 0, 0);
+		endDate.setHours(0, 0, 0, 0);
 
-			// Check that start date is roughly 90 days before end date
-			// Using a more flexible assertion (89-91 days is acceptable)
-			expect(daysDifference).toBeGreaterThanOrEqual(89);
-			expect(daysDifference).toBeLessThanOrEqual(91);
+		const daysDifference = Math.floor(
+			(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+		);
 
-			// Check that end date is today (only compare dates, not times)
-			const today = new Date();
-			expect(endDate.getDate()).toBe(today.getDate());
-			expect(endDate.getMonth()).toBe(today.getMonth());
-			expect(endDate.getFullYear()).toBe(today.getFullYear());
-		});
+		// Check that start date is roughly 90 days before end date (allowing for some hours difference)
+		expect(daysDifference).toBeCloseTo(90, 0);
+
+		// Check that end date is today
+		expect(endDate.getDate()).toBe(today.getDate());
+		expect(endDate.getMonth()).toBe(today.getMonth());
+		expect(endDate.getFullYear()).toBe(today.getFullYear());
 	});
 });

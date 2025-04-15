@@ -52,7 +52,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		vi.resetAllMocks();
 	});
 
-	it("renders a loading indicator when no data points are provided", () => {
+	it("should display 'No data available' when no percentiles are provided", () => {
 		render(
 			<CycleTimeScatterPlotChart
 				percentileValues={mockPercentileValues}
@@ -60,8 +60,8 @@ describe("CycleTimeScatterPlotChart component", () => {
 			/>,
 		);
 
-		const loadingIndicator = screen.getByRole("progressbar");
-		expect(loadingIndicator).toBeInTheDocument();
+		
+		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
 
 	it("renders the chart with correct title when data is provided", () => {

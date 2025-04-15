@@ -1,4 +1,4 @@
-import { Card, CardContent, CircularProgress, Typography } from "@mui/material";
+import { Card, CardContent, Typography } from "@mui/material";
 import {
 	ChartsReferenceLine,
 	ChartsTooltip,
@@ -123,7 +123,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 			</CardContent>
 		</Card>
 	) : (
-		<CircularProgress />
+		<Typography variant="body2" color="text.secondary">
+			No data available
+		</Typography>
 	);
 };
 
