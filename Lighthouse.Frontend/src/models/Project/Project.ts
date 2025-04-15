@@ -9,6 +9,10 @@ export interface IProject extends IFeatureOwner {
 	involvedTeams: ITeam[];
 	lastUpdated: Date;
 	milestones: IMilestone[];
+
+	get remainingWork(): number;
+	get totalWork(): number;
+	get remainingFeatures(): number;
 }
 
 export class Project implements IProject {

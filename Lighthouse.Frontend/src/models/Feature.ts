@@ -9,6 +9,12 @@ export interface IFeature extends IWorkItem {
 	milestoneLikelihood: { [key: number]: number };
 	projects: { [key: number]: string };
 	forecasts: IWhenForecast[];
+
+	getRemainingWorkForFeature(): number;
+	getRemainingWorkForTeam(id: number): number;
+	getTotalWorkForFeature(): number;
+	getTotalWorkForTeam(id: number): number;
+	getMilestoneLikelihood(milestoneId: number): number;
 }
 
 export interface DictionaryObject<TValue> {

@@ -10,9 +10,9 @@ import {
 } from "@mui/x-charts";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { ForecastLevel } from "../Forecasts/ForecastLevel";
 
 interface CycleTimeScatterPlotChartProps {
 	percentileValues: IPercentileValue[];

@@ -7,8 +7,8 @@ import {
 	TableRow,
 	Typography,
 } from "@mui/material";
-import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import { ForecastLevel } from "../Forecasts/ForecastLevel";
 
 interface CycleTimePercentilesProps {
 	percentileValues: IPercentileValue[];

@@ -16,11 +16,11 @@ import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoL
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
-import type { Project } from "../../../models/Project/Project";
+import type { IProject } from "../../../models/Project/Project";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface ProjectFeatureListProps {
-	project: Project;
+	project: IProject;
 }
 
 const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {

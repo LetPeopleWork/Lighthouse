@@ -8,109 +8,93 @@ import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { RunChartData } from "../../../models/Forecasts/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
-import type { Team } from "../../../models/Team/Team";
+import type { IProject } from "../../../models/Project/Project";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import ItemsInProgress from "./ItemsInProgress";
+import ItemsInProgress from "../../Teams/Detail/ItemsInProgress";
 
-interface TeamMetricsViewProps {
-	team: Team;
+interface ProjectMetricsViewProps {
+	project: IProject;
 }
 
-const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
-	const [throughputRunChartData, setThroughputRunChartData] =
+const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
+	const [featuresCompletedData, setFeaturesCompletedData] =
 		useState<RunChartData | null>(null);
-
-	const [wipOverTimeData, setWipOverTimeData] = useState<RunChartData | null>(
-		null,
-	);
-
+	const [featuresInProgressData, setFeaturesInProgressData] =
+		useState<RunChartData | null>(null);
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
-	const [inProgressItems, setInProgressItems] = useState<IWorkItem[]>([]);
 	const [cycleTimeData, setCycleTimeData] = useState<IWorkItem[]>([]);
 	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
 		[],
 	);
 
-	const { teamMetricsService } = useContext(ApiServiceContext);
+	const { projectMetricsService } = useContext(ApiServiceContext);
 
 	const [startDate, setStartDate] = useState<Date>(() => {
 		const date = new Date();
-		date.setDate(date.getDate() - 30);
+		date.setDate(date.getDate() - 90);
 		return date;
 	});
 	const [endDate, setEndDate] = useState<Date>(new Date());
 
 	useEffect(() => {
-		const fetchThroughput = async () => {
+		const fetchFeaturesCompleted = async () => {
 			try {
-				const throughputData = await teamMetricsService.getThroughput(
-					team.id,
+				const data = await projectMetricsService.getThroughputForProject(
+					project.id,
 					startDate,
 					endDate,
 				);
-				if (throughputData) {
-					setThroughputRunChartData(throughputData);
-				}
+				setFeaturesCompletedData(data);
 			} catch (error) {
-				console.error("Error getting throughput:", error);
+				console.error("Error getting features completed:", error);
 			}
 		};
 
-		fetchThroughput();
-	}, [team.id, teamMetricsService, startDate, endDate]);
+		fetchFeaturesCompleted();
+	}, [project.id, projectMetricsService, startDate, endDate]);
 
 	useEffect(() => {
-		const fetchFeatures = async () => {
+		const fetchFeaturesInProgress = async () => {
 			try {
-				const featuresData = await teamMetricsService.getFeaturesInProgress(
-					team.id,
-				);
-				setInProgressFeatures(featuresData);
-			} catch (err) {
-				console.error("Error fetching features in progress:", err);
-			}
-		};
+				const wipData =
+					await projectMetricsService.getInProgressFeaturesForProject(
+						project.id,
+					);
+				setInProgressFeatures(wipData);
 
-		fetchFeatures();
-	}, [team.id, teamMetricsService]);
-
-	useEffect(() => {
-		const fetchInProgressItems = async () => {
-			try {
-				const wipData = await teamMetricsService.getInProgressItems(team.id);
-				setInProgressItems(wipData);
-
-				const wipOverTimeData =
-					await teamMetricsService.getWorkInProgressOverTime(
-						team.id,
+				const data =
+					await projectMetricsService.getFeaturesInProgressOverTimeForProject(
+						project.id,
 						startDate,
 						endDate,
 					);
-				setWipOverTimeData(wipOverTimeData);
-			} catch (err) {
-				console.error("Error fetching items in progress:", err);
+				setFeaturesInProgressData(data);
+			} catch (error) {
+				console.error("Error getting features in progress:", error);
 			}
 		};
 
-		fetchInProgressItems();
-	}, [team.id, teamMetricsService, startDate, endDate]);
+		fetchFeaturesInProgress();
+	}, [project.id, projectMetricsService, startDate, endDate]);
 
 	useEffect(() => {
 		const fetchCycleTimeData = async () => {
 			try {
-				const cycleTimeData = await teamMetricsService.getCycleTimeData(
-					team.id,
-					startDate,
-					endDate,
-				);
+				const cycleTimeData =
+					await projectMetricsService.getCycleTimeDataForProject(
+						project.id,
+						startDate,
+						endDate,
+					);
 				setCycleTimeData(cycleTimeData);
 
-				const percentiles = await teamMetricsService.getCycleTimePercentiles(
-					team.id,
-					startDate,
-					endDate,
-				);
+				const percentiles =
+					await projectMetricsService.getCycleTimePercentilesForProject(
+						project.id,
+						startDate,
+						endDate,
+					);
 				setPercentileValues(percentiles);
 			} catch (err) {
 				console.error("Error fetching cycle time data:", err);
@@ -118,7 +102,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		};
 
 		fetchCycleTimeData();
-	}, [team.id, teamMetricsService, startDate, endDate]);
+	}, [project.id, projectMetricsService, startDate, endDate]);
 
 	return (
 		<Grid container spacing={2}>
@@ -130,28 +114,25 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 					onEndDateChange={(date) => date && setEndDate(date)}
 				/>
 			</Grid>
+
 			<Grid size={{ xs: 4 }}>
-				<ItemsInProgress
-					title="Work Items In Progress:"
-					items={inProgressItems}
-					idealWip={0}
-				/>
 				<ItemsInProgress
 					title="Features being Worked On:"
 					items={inProgressFeatures}
-					idealWip={team.featureWip}
+					idealWip={0}
 				/>
 			</Grid>
+
 			<Grid size={{ xs: 4 }} spacing={3}>
 				<CycleTimePercentiles percentileValues={percentileValues} />
 			</Grid>
 
 			<Grid size={{ xs: 6 }}>
-				{throughputRunChartData && (
+				{featuresCompletedData && (
 					<BarRunChart
-						title="Throughput"
+						title="Features Completed"
 						startDate={startDate}
-						chartData={throughputRunChartData}
+						chartData={featuresCompletedData}
 						displayTotal={true}
 					/>
 				)}
@@ -165,11 +146,11 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			</Grid>
 
 			<Grid size={{ xs: 6 }}>
-				{wipOverTimeData && (
+				{featuresInProgressData && (
 					<LineRunChart
-						title="WIP Over Time"
+						title="Features In Progress Over Time"
 						startDate={startDate}
-						chartData={wipOverTimeData}
+						chartData={featuresInProgressData}
 						displayTotal={false}
 					/>
 				)}
@@ -178,4 +159,4 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	);
 };
 
-export default TeamMetricsView;
+export default ProjectMetricsView;

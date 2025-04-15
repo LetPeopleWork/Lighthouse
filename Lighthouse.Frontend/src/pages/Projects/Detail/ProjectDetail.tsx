@@ -1,4 +1,4 @@
-import { Button, Container, Typography } from "@mui/material";
+import { Button, Container, Tab, Tabs, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -6,15 +6,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
-import MilestonesComponent from "../../../components/Common/Milestones/MilestonesComponent";
-import type { IMilestone } from "../../../models/Project/Milestone";
 import type { IProject, Project } from "../../../models/Project/Project";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
-import InvolvedTeamsList from "./InvolvedTeamsList";
-import ProjectFeatureList from "./ProjectFeatureList";
+import ProjectForecastView from "./ProjectForecastView";
+import ProjectMetricsView from "./ProjectMetricsView";
 
 const ProjectDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -27,6 +25,9 @@ const ProjectDetail: React.FC = () => {
 
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isProjectUpdating, setIsProjectUpdating] = useState<boolean>(false);
+	const [activeView, setActiveView] = useState<"forecast" | "metrics">(
+		"forecast",
+	);
 
 	const [projectSettings, setProjectSettings] =
 		useState<IProjectSettings | null>(null);
@@ -71,54 +72,6 @@ const ProjectDetail: React.FC = () => {
 		await projectService.refreshFeaturesForProject(project.id);
 	};
 
-	const handleAddMilestone = async (milestone: IMilestone) => {
-		if (!projectSettings) {
-			return;
-		}
-
-		const updatedProjectSettings: IProjectSettings = {
-			...projectSettings,
-			milestones: [...(projectSettings.milestones || []), milestone],
-		};
-
-		await onMilestonesChanged(updatedProjectSettings);
-	};
-
-	const handleRemoveMilestone = async (name: string) => {
-		if (!projectSettings) {
-			return;
-		}
-
-		const updatedProjectSettings: IProjectSettings = {
-			...projectSettings,
-			milestones: (projectSettings.milestones || []).filter(
-				(milestone) => milestone.name !== name,
-			),
-		};
-
-		await onMilestonesChanged(updatedProjectSettings);
-	};
-
-	const handleUpdateMilestone = async (
-		name: string,
-		updatedMilestone: Partial<IMilestone>,
-	) => {
-		if (!projectSettings) {
-			return;
-		}
-
-		const updatedProjectSettings: IProjectSettings = {
-			...projectSettings,
-			milestones: (projectSettings?.milestones || []).map((milestone) =>
-				milestone.name === name
-					? { ...milestone, ...updatedMilestone }
-					: milestone,
-			),
-		};
-
-		await onMilestonesChanged(updatedProjectSettings);
-	};
-
 	const onMilestonesChanged = async (
 		updatedProjectSettings: IProjectSettings,
 	) => {
@@ -136,6 +89,13 @@ const ProjectDetail: React.FC = () => {
 		await teamService.updateTeam(updatedTeamSettings);
 
 		await projectService.refreshForecastsForProject(projectId);
+	};
+
+	const handleViewChange = (
+		_event: React.SyntheticEvent,
+		newView: "forecast" | "metrics",
+	) => {
+		setActiveView(newView);
 	};
 
 	useEffect(() => {
@@ -201,7 +161,7 @@ const ProjectDetail: React.FC = () => {
 					<></>
 				) : (
 					<Grid container spacing={3}>
-						<Grid size={{ xs: 6 }}>
+						<Grid size={{ xs: 4 }}>
 							<Typography variant="h3">{project.name}</Typography>
 							<Typography variant="h6">
 								Last Updated on{" "}
@@ -213,7 +173,25 @@ const ProjectDetail: React.FC = () => {
 						</Grid>
 
 						<Grid
-							size={{ xs: 6 }}
+							size={{ xs: 4 }}
+							sx={{
+								display: "flex",
+								justifyContent: "center",
+								alignItems: "center",
+							}}
+						>
+							<Tabs
+								value={activeView}
+								onChange={handleViewChange}
+								aria-label="project view tabs"
+							>
+								<Tab label="Forecasts" value="forecast" />
+								<Tab label="Metrics" value="metrics" />
+							</Tabs>
+						</Grid>
+
+						<Grid
+							size={{ xs: 4 }}
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
 							<ActionButton
@@ -232,22 +210,19 @@ const ProjectDetail: React.FC = () => {
 						</Grid>
 
 						<Grid size={{ xs: 12 }}>
-							<MilestonesComponent
-								milestones={projectSettings?.milestones || []}
-								initiallyExpanded={false}
-								onAddMilestone={handleAddMilestone}
-								onRemoveMilestone={handleRemoveMilestone}
-								onUpdateMilestone={handleUpdateMilestone}
-							/>
-						</Grid>
-						<Grid size={{ xs: 12 }}>
-							<InvolvedTeamsList
-								teams={involvedTeams}
-								onTeamUpdated={onTeamSettingsChange}
-							/>
-						</Grid>
-						<Grid size={{ xs: 12 }}>
-							<ProjectFeatureList project={project} />
+							{activeView === "forecast" && project && projectSettings && (
+								<ProjectForecastView
+									project={project}
+									projectSettings={projectSettings}
+									involvedTeams={involvedTeams}
+									onMilestonesChanged={onMilestonesChanged}
+									onTeamSettingsChange={onTeamSettingsChange}
+								/>
+							)}
+
+							{activeView === "metrics" && project && (
+								<ProjectMetricsView project={project} />
+							)}
 						</Grid>
 					</Grid>
 				)}

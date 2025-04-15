@@ -10,6 +10,10 @@ import {
 	type IPreviewFeatureService,
 	PreviewFeatureService,
 } from "./PreviewFeatureService";
+import {
+	type IProjectMetricsService,
+	ProjectMetricsService,
+} from "./ProjectMetricsService";
 import { type IProjectService, ProjectService } from "./ProjectService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
 import {
@@ -30,6 +34,7 @@ export interface IApiServiceContext {
 	settingsService: ISettingsService;
 	teamService: ITeamService;
 	teamMetricsService: ITeamMetricsService;
+	projectMetricsService: IProjectMetricsService;
 	versionService: IVersionService;
 	workTrackingSystemService: IWorkTrackingSystemService;
 	previewFeatureService: IPreviewFeatureService;
@@ -47,6 +52,7 @@ const defaultServices: IApiServiceContext = {
 	settingsService: new SettingsService(),
 	teamService: new TeamService(),
 	teamMetricsService: new TeamMetricsService(),
+	projectMetricsService: new ProjectMetricsService(),
 	versionService: new VersionService(),
 	workTrackingSystemService: new WorkTrackingSystemService(),
 	previewFeatureService: new PreviewFeatureService(),
@@ -63,6 +69,7 @@ const demoServices: IApiServiceContext = {
 	settingsService: demoApiService,
 	teamService: demoApiService,
 	teamMetricsService: demoApiService,
+	projectMetricsService: demoApiService,
 	versionService: demoApiService,
 	workTrackingSystemService: demoApiService,
 	previewFeatureService: demoApiService,
