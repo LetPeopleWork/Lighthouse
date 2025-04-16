@@ -117,7 +117,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 
 			<Grid size={{ xs: 4 }}>
 				<ItemsInProgress
-					title="Features being Worked On:"
+					title="Features in Progress:"
 					items={inProgressFeatures}
 					idealWip={0}
 				/>
