@@ -38,17 +38,11 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
             await UpdateWorkItemsForTeam(team, workItemService, workItemRepository);
 
+            teamMetricsService.InvalidateTeamMetrics(team);
             team.RefreshUpdateTime();
-
-            if (team.AutomaticallyAdjustFeatureWIP)
-            {
-                var featureWip = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team);
-                team.FeatureWIP = featureWip.Count();
-            }
+            UpdateFeatureWIPForTeam(team, teamMetricsService);
 
             await teamRepository.Save();
-
-            teamMetricsService.InvalidateTeamMetrics(team);
         }
 
         protected override bool ShouldUpdateEntity(Team entity, RefreshSettings refreshSettings)
@@ -82,6 +76,19 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             }
 
             await workItemRepository.Save();
+        }
+
+        private static void UpdateFeatureWIPForTeam(Team team, ITeamMetricsService teamMetricsService)
+        {
+            if (team.AutomaticallyAdjustFeatureWIP)
+            {
+                var featureWip = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team).Count();
+
+                if (featureWip > 0)
+                {
+                    team.FeatureWIP = featureWip;
+                }
+            }
         }
     }
 }

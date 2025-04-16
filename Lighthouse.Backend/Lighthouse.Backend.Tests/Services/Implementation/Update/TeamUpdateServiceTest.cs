@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -40,79 +41,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             SetupRefreshSettings(10, 10);
         }
-        /* 
-        [Test]
-        public void UpdateTeam_GetsClosedItemsFromWorkItemService_UpdatesThroughput()
-        {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
-            team.ThroughputHistory = 7;
-            SetupTeams([team]);
-
-            int[] closedItemsPerDay = [0, 0, 1, 3, 12, 3, 0];
-            teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(team)).Returns(new Throughput(closedItemsPerDay));
-
-            var subject = CreateSubject();
-
-            subject.TriggerUpdate(team.Id);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(team.Throughput.History, Is.EqualTo(closedItemsPerDay.Length));
-                for (var index = 0; index < closedItemsPerDay.Length; index++)
-                {
-                    Assert.That(team.Throughput.GetThroughputOnDay(index), Is.EqualTo(closedItemsPerDay[index]));
-                }
-            });
-        }
-
-        [Test]
-        [TestCase(new[] { "12" }, new[] { "12" })]
-        [TestCase(new[] { "" }, new[] { "" })]
-        [TestCase(new[] { "12", "12" }, new[] { "12" })]
-        [TestCase(new[] { "12", "" }, new[] { "12", "" })]
-        [TestCase(new[] { "12", "123", "34", "231324" }, new[] { "12", "123", "34", "231324" })]
-        [TestCase(new string[0], new string[0])]
-        public void UpdateTeam_GetsOpenItemsFromWorkItemService_SetsActualWip(string[] inProgressFeatures, string[] expectedFeaturesInProgress)
-        {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
-            SetupTeams([team]);
-
-            workItemServiceMock.Setup(x => x.GetFeaturesInProgressForTeam(team)).ReturnsAsync(inProgressFeatures);
-
-            var subject = CreateSubject();
-
-            subject.TriggerUpdate(team.Id);
-
-            Assert.That(team.FeaturesInProgress, Is.EquivalentTo(expectedFeaturesInProgress));
-        }
-
-        [Test]
-        [TestCase(true, new[] { "13", "37", "42" }, 3)]
-        [TestCase(false, new[] { "13", "37", "42" }, 2)]
-        public void UpdateTeam_UpdatesFeatureWIP_DependingOnSetting(bool automaticallyAdjustFeatureWIP, string[] inProgressFeatures, int expectedFeatureWIP)
-        {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
-            SetupTeams([team]);
-
-            workItemServiceMock.Setup(x => x.GetFeaturesInProgressForTeam(team)).ReturnsAsync(inProgressFeatures);
-            team.FeatureWIP = 2;
-            team.AutomaticallyAdjustFeatureWIP = automaticallyAdjustFeatureWIP;
-
-            var subject = CreateSubject();
-
-            subject.TriggerUpdate(team.Id);
-
-            Assert.That(team.FeatureWIP, Is.EqualTo(expectedFeatureWIP));
-        }*/
-
-        /* Following Changes are Needed
-            - Get *changed* Work Items from Service and store in DB
-            - Get *new* Work Items from Service and store in DB
-            - If "AutoWIP" is set, get Feature WIP from TeamMetricsService and update
-            - If "AutoWIP" is not set - don't
-            - Reset TeamUpdateTime to now
-            - Invalidate TeamMetrics
-         */
 
         [Test]
         public async Task ExecuteAsync_ReadyToRefresh_RefreshesAllTeams()
@@ -158,6 +86,107 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
 
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Team, team1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Team, team2.Id, It.IsAny<Func<IServiceProvider, Task>>()), Times.Never);
+        }
+
+        [Test]
+        public async Task ExecuteAsync_InvalidatesMetricForTeam()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+
+            SetupRefreshSettings(10, 360);
+            SetupTeams([team]);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            teamMetricsServiceMock.Verify(x => x.InvalidateTeamMetrics(team), Times.Once);
+        }
+
+        [Test]
+        public async Task ExecuteAsync_RefreshesUpdateTimeForTeam()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+
+            SetupRefreshSettings(10, 360);
+            SetupTeams([team]);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            Assert.That(team.TeamUpdateTime, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-1)));
+        }
+
+        [Test]
+        public async Task ExecuteAsync_TeamHasAutomaticallyAdjustFeatureWIPSetting_SetsFeatureWIPToRealWIP()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            team.FeatureWIP = 2;
+            team.AutomaticallyAdjustFeatureWIP = true;
+
+            var featuresInProgress = new List<Feature>
+            {
+                new Feature(team, 1),
+                new Feature(team, 1),
+                new Feature(team, 1),
+            };
+
+            teamMetricsServiceMock.Setup(x => x.GetCurrentFeaturesInProgressForTeam(team)).Returns(featuresInProgress);
+
+            SetupRefreshSettings(10, 360);
+            SetupTeams([team]);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            Assert.That(team.FeatureWIP, Is.EqualTo(3));
+        }
+
+        [Test]
+        public async Task ExecuteAsync_TeamHasNoAutomaticallyAdjustFeatureWIPSetting_DoesNotChangeWIP()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            team.FeatureWIP = 2;
+            team.AutomaticallyAdjustFeatureWIP = false;
+
+            var featuresInProgress = new List<Feature>
+            {
+                new Feature(team, 1),
+                new Feature(team, 1),
+                new Feature(team, 1),
+            };
+
+            teamMetricsServiceMock.Setup(x => x.GetCurrentFeaturesInProgressForTeam(team)).Returns(featuresInProgress);
+
+            SetupRefreshSettings(10, 360);
+            SetupTeams([team]);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            Assert.That(team.FeatureWIP, Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task ExecuteAsync_TeamHasAutomaticallyAdjustFeatureWIPSetting_NewFeatureWIPIsInvalide_DoesNotChangeFeatureWIP()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            team.FeatureWIP = 2;
+            team.AutomaticallyAdjustFeatureWIP = true;
+
+            teamMetricsServiceMock.Setup(x => x.GetCurrentFeaturesInProgressForTeam(team)).Returns(Enumerable.Empty<Feature>());
+
+            SetupRefreshSettings(10, 360);
+            SetupTeams([team]);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            Assert.That(team.FeatureWIP, Is.EqualTo(2));
         }
 
         private void SetupRefreshSettings(int interval, int refreshAfter)
