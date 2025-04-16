@@ -189,6 +189,9 @@ namespace Lighthouse.Backend.Services.Implementation.Update
         {
             foreach (var feature in project.Features)
             {
+                feature.ClearFeatureWork();
+                feature.IsUsingDefaultFeatureSize = false;
+
                 var allWorkForFeature = workItemRepository.GetAllByPredicate(wi => wi.ParentReferenceId == feature.ReferenceId).ToList();
 
                 foreach (var team in project.Teams)

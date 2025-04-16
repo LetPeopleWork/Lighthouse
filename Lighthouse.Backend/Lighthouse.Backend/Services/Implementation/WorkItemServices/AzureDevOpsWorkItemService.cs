@@ -13,6 +13,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 {
     public class AzureDevOpsWorkItemService : IWorkItemService
     {
+        private const int maxChunkSize = 200;
+
         private readonly ILogger<AzureDevOpsWorkItemService> logger;
         private readonly ICryptoService cryptoService;
 
@@ -242,7 +244,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             });
 
             var workItems = await Task.WhenAll(tasks);
-            
+
             return workItems;
         }
 
@@ -270,7 +272,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             logger.LogDebug("Getting Work Item with IDs {ItemIds}", string.Join(",", workItemIds));
 
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
-            
+
             var fields = new List<string>
             {
                 AzureDevOpsFieldNames.State,
@@ -282,12 +284,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
 
             fields.AddRange(additionalFields.Where(f => !string.IsNullOrEmpty(f)));
 
-            var workItems = await witClient.GetWorkItemsAsync(workItemIds, fields, expand: WorkItemExpand.Links);
+            return await GetWorkItemsInChunks(workItemIds, witClient, WorkItemExpand.Links, fields);
+        }
+
+        private async Task<IEnumerable<AdoWorkItem>> GetWorkItemsInChunks(IEnumerable<int> workItemIds, WorkItemTrackingHttpClient witClient, WorkItemExpand expand, IEnumerable<string> fields)
+        {
+            var workItems = new List<AdoWorkItem>();
+
+            foreach (var chunk in workItemIds.Chunk(maxChunkSize))
+            {
+                logger.LogDebug("Fetching chunk of Work Item IDs: {ChunkIds}", string.Join(",", chunk));
+                var chunkWorkItems = await witClient.GetWorkItemsAsync(chunk, fields, expand: expand);
+                workItems.AddRange(chunkWorkItems);
+            }
 
             return workItems;
         }
 
-       private async Task<WorkItemBase> ConvertAdoWorkItemToLighthouseWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner)
+        private async Task<WorkItemBase> ConvertAdoWorkItemToLighthouseWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner)
         {
             var state = workItem.ExtractStateFromWorkItem();
 
@@ -399,8 +413,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
             }
 
             var witClient = GetClientService(team.WorkTrackingSystemConnection);
-
-            var workItemsWithParentRelation = await witClient.GetWorkItemsAsync(itemIds, expand: WorkItemExpand.Relations);
+            var workItemsWithParentRelation = await GetWorkItemsInChunks(itemIds, witClient, WorkItemExpand.Relations, []);
 
             foreach (var adoWorkItem in workItemsWithParentRelation)
             {
