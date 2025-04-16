@@ -60,7 +60,6 @@ describe("CycleTimeScatterPlotChart component", () => {
 			/>,
 		);
 
-		
 		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
 
