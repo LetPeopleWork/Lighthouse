@@ -267,7 +267,7 @@ describe("ProjectMetricsView component", () => {
 		// Check components are rendered with correct data
 		await waitFor(() => {
 			expect(
-				screen.getByTestId("items-in-progress-Features being Worked On:"),
+				screen.getByTestId("items-in-progress-Features in Progress:"),
 			).toBeInTheDocument();
 			expect(screen.getByTestId("items-count")).toHaveTextContent("2");
 			expect(screen.getByTestId("cycle-time-percentiles")).toBeInTheDocument();
