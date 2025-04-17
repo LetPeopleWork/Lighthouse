@@ -3,7 +3,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Globalization;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.Factories
@@ -215,7 +214,12 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.That(issue.CreatedDate?.Date, Is.EqualTo(new DateTime(2024, 4, 7).Date));
+            Assert.Multiple(() =>
+            {
+                Assert.That(issue.CreatedDate.HasValue, Is.True);
+                Assert.That(issue.CreatedDate?.Date, Is.EqualTo(new DateTime(2024, 4, 7, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.CreatedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+            });
         }
 
         [Test]

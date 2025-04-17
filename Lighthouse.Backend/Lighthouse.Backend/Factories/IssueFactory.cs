@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Factories
                 }
             }
 
-            return transitionDate;
+            return transitionDate?.ToUniversalTime();
         }
 
         private static DateTime? GetCreatedDateFromFields(JsonElement fields)
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Factories
             }
 
             var createdDate = DateTime.Parse(createdDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-            return createdDate;
+            return createdDate.ToUniversalTime();
         }
 
         private static string GetTitleFromFields(JsonElement fields)
