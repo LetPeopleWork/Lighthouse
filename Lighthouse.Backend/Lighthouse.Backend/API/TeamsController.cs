@@ -155,8 +155,12 @@ namespace Lighthouse.Backend.API
             var queryChanged = team.WorkItemQuery != teamSetting.WorkItemQuery;
             var connectionChanged = team.WorkTrackingSystemConnectionId != teamSetting.WorkTrackingSystemConnectionId;
             var workItemTypesChanged = !team.WorkItemTypes.OrderBy(x => x).SequenceEqual(teamSetting.WorkItemTypes.OrderBy(x => x));
+            var statesChanged =
+                !team.ToDoStates.OrderBy(x => x).SequenceEqual(teamSetting.ToDoStates.OrderBy(x => x)) ||
+                !team.DoingStates.OrderBy(x => x).SequenceEqual(teamSetting.DoingStates.OrderBy(x => x)) ||
+                !team.DoneStates.OrderBy(x => x).SequenceEqual(teamSetting.DoneStates.OrderBy(x => x));
 
-            return queryChanged || connectionChanged || workItemTypesChanged;
+            return queryChanged || connectionChanged || workItemTypesChanged || statesChanged;
         }
 
         private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)

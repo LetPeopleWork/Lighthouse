@@ -420,6 +420,9 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
                 WorkItemQuery = workItemQuery,
+                ToDoStates = existingTeam.ToDoStates,
+                DoingStates = existingTeam.DoingStates,
+                DoneStates = existingTeam.DoneStates,
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
                 RelationCustomField = "CUSTOM.AdditionalField",
@@ -453,7 +456,47 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
                 WorkItemQuery = "Existing Query",
-                WorkItemTypes = new List<string>(workItemTypes),
+                ToDoStates = existingTeam.ToDoStates,
+                DoingStates = existingTeam.DoingStates,
+                DoneStates = existingTeam.DoneStates,
+                WorkItemTypes = [.. workItemTypes],
+                WorkTrackingSystemConnectionId = 2,
+                RelationCustomField = "CUSTOM.AdditionalField",
+                AutomaticallyAdjustFeatureWIP = true,
+            };
+
+            var subject = CreateSubject();
+
+            _ = await subject.UpdateTeam(132, updatedTeamSettings);
+
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+        }
+
+        [Test]
+        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Done" }, false)]
+        [TestCase(new string[] { "ToDo" }, new string[] { "Doing" }, new string[] { "Done" }, true)]
+        [TestCase(new string[] { "To Do" }, new string[] { "Boing" }, new string[] { "Done" }, true)]
+        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Donny" }, true)]
+        [TestCase(new string[] { "To Do", "New" }, new string[] { "Doing" }, new string[] { "Done" }, true)]
+        [TestCase(new string[] { "To Do" }, new string[] { "Doing", "In Progress" }, new string[] { "Done" }, true)]
+        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Done", "Closed" }, true)]
+        public async Task UpdateTeam_GivenChangedStates_DeletesExistingWorkItems(string[] toDoStates, string[] doingStates, string[] doneStates, bool shouldDelete)
+        {
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+
+            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
+
+            var updatedTeamSettings = new TeamSettingDto
+            {
+                Id = 132,
+                Name = "Updated Team",
+                FeatureWIP = 12,
+                ThroughputHistory = 30,
+                WorkItemQuery = "Existing Query",
+                WorkItemTypes = ["User Story", "Bug"],
+                ToDoStates = toDoStates.ToList(),
+                DoingStates = doingStates.ToList(),
+                DoneStates = doneStates.ToList(),
                 WorkTrackingSystemConnectionId = 2,
                 RelationCustomField = "CUSTOM.AdditionalField",
                 AutomaticallyAdjustFeatureWIP = true,
@@ -482,6 +525,9 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
                 WorkItemQuery = "Existing Query",
+                ToDoStates = existingTeam.ToDoStates,
+                DoingStates = existingTeam.DoingStates,
+                DoneStates = existingTeam.DoneStates,
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = workTrackingSystemConnectionId,
                 RelationCustomField = "CUSTOM.AdditionalField",
