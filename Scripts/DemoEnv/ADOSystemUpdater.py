@@ -43,6 +43,8 @@ today_index = today.day - 1
 formatted_date = today.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 display_date = today.strftime("%Y-%m-%d")
 
+print(f"🔄 Running ADO System Updater on {display_date} (day index: {today_index})")
+
 
 def get_random_count_from_throughput(target):
     return max(0, int(random.gauss(target, max(1, target * 0.3))))
@@ -55,7 +57,7 @@ def create_work_item(title, area_path, work_item_type):
         {"op": "add", "path": "/fields/System.State", "value": "New"},
     ]
     if dry_run:
-        print(f"[DRY-RUN] Would create {work_item_type} '{title}' in {area_path}")
+        print(f"🔍 [DRY-RUN] Would create {work_item_type} '{title}' in {area_path}")
         return None
     response = requests.post(
         f"{organization_url}/{project_name}/_apis/wit/workitems/${work_item_type}?api-version=6.0",
@@ -64,16 +66,17 @@ def create_work_item(title, area_path, work_item_type):
     )
     if response.status_code in [200, 201]:
         item = response.json()
-        print(f"[Created] {work_item_type} {item['id']} - {title}")
+        print(f"✅ Created {work_item_type} {item['id']} - {title}")
         return item["id"]
     else:
         print(
-            f"[Error] Failed to create {work_item_type}: {response.status_code} - {response.text}"
+            f"❌ Failed to create {work_item_type}: {response.status_code} - {response.text}"
         )
         return None
 
 
 def query_work_items(state, area_path, title_prefix, work_item_type):
+    print(f"🔍 Querying {work_item_type}s in '{state}' state for {area_path}")
     wiql = {
         "query": f"""
         SELECT [System.Id]
@@ -92,15 +95,17 @@ def query_work_items(state, area_path, title_prefix, work_item_type):
         json=wiql,
     )
     if response.status_code != 200:
-        print(f"[Error] WIQL query failed: {response.status_code} - {response.text}")
+        print(f"❌ WIQL query failed: {response.status_code} - {response.text}")
         return []
-    return [item["id"] for item in response.json().get("workItems", [])]
+    results = [item["id"] for item in response.json().get("workItems", [])]
+    print(f"📊 Found {len(results)} {work_item_type}(s) in '{state}' state")
+    return results
 
 
 def update_work_item_state(work_item_id, new_state):
     payload = [{"op": "add", "path": "/fields/System.State", "value": new_state}]
     if dry_run:
-        print(f"[DRY-RUN] Would update work item {work_item_id} to '{new_state}'")
+        print(f"🔍 [DRY-RUN] Would update work item {work_item_id} to '{new_state}'")
         return
     response = requests.patch(
         f"{organization_url}/_apis/wit/workitems/{work_item_id}?api-version=6.0",
@@ -108,10 +113,10 @@ def update_work_item_state(work_item_id, new_state):
         json=payload,
     )
     if response.status_code == 200:
-        print(f"[Updated] Work item {work_item_id} → {new_state}")
+        print(f"➡️ Updated Work item {work_item_id} → {new_state}")
     else:
         print(
-            f"[Error] Failed to update {work_item_id}: {response.status_code} - {response.text}"
+            f"❌ Failed to update {work_item_id}: {response.status_code} - {response.text}"
         )
 
 
@@ -122,8 +127,12 @@ for area_path, throughput_pattern in area_path_targets.items():
     work_item_type = "Epic" if is_portfolio else "User Story"
     title_prefix = "Auto-Generated Epic" if is_portfolio else "Auto-Generated"
 
+    print(f"\n📂 Processing area path: {area_path}")
+    print(f"📊 Target throughput for today: {target} {work_item_type}(s)")
+
     # 1. Create items in "New"
     count_to_create = get_random_count_from_throughput(target)
+    print(f"🆕 Creating {count_to_create} new {work_item_type}(s)")
     for i in range(count_to_create):
         title = f"{title_prefix} {display_date} #{i + 1}"
         create_work_item(title, area_path, work_item_type)
@@ -133,6 +142,7 @@ for area_path, throughput_pattern in area_path_targets.items():
 
     random_count = random.randint(0, len(new_items))
     to_activate = random.sample(new_items, random_count)
+    print(f"🔄 Moving {len(to_activate)}/{len(new_items)} {work_item_type}(s) from 'New' to 'Active'")
 
     for item_id in to_activate:
         update_work_item_state(item_id, "Active")
@@ -141,6 +151,9 @@ for area_path, throughput_pattern in area_path_targets.items():
     active_items = query_work_items("Active", area_path, title_prefix, work_item_type)
     random_count = random.randint(0, len(active_items))
     to_close = random.sample(active_items, random_count)
+    print(f"✅ Moving {len(to_close)}/{len(active_items)} {work_item_type}(s) from 'Active' to 'Closed'")
 
     for item_id in to_close:
         update_work_item_state(item_id, "Closed")
+
+print("\n🏁 ADO System Update complete!")
