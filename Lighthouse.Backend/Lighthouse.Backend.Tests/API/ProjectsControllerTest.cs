@@ -201,7 +201,10 @@ namespace Lighthouse.Backend.Tests.API
                 WorkItemQuery = "SELECT * FROM WorkItems",
                 UnparentedItemsQuery = "SELECT * FROM UnparentedItems",
                 DefaultAmountOfWorkItemsPerFeature = 5,
-                WorkTrackingSystemConnectionId = 101
+                WorkTrackingSystemConnectionId = 101,
+                ToDoStates = new List<string> { "To Do " },
+                DoingStates = new List<string> { " In Progress" },
+                DoneStates = new List<string> { "Done" },
             };
 
             var subject = CreateSubject();
@@ -224,15 +227,21 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(newProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(newProjectSettings.WorkItemTypes));
                 Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(newProjectSettings.Milestones.Count));
+
                 for (int i = 0; i < newProjectSettings.Milestones.Count; i++)
                 {
                     Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(newProjectSettings.Milestones[i].Id));
                     Assert.That(projectSettingDto.Milestones[i].Name, Is.EqualTo(newProjectSettings.Milestones[i].Name));
                 }
+
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(newProjectSettings.WorkItemQuery));
                 Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(newProjectSettings.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(newProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newProjectSettings.WorkTrackingSystemConnectionId));
+
+                Assert.That(projectSettingDto.ToDoStates, Contains.Item("To Do"));
+                Assert.That(projectSettingDto.DoingStates, Contains.Item("In Progress"));
+                Assert.That(projectSettingDto.DoneStates, Contains.Item("Done"));
             });
         }
 

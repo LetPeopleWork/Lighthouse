@@ -24,6 +24,26 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(stateCategory, Is.EqualTo(expectedStateCategory));
         }
 
+        [Test]
+        [TestCase("New", StateCategories.ToDo)]
+        [TestCase("NEW", StateCategories.ToDo)]
+        [TestCase("new", StateCategories.ToDo)]
+        [TestCase("nEw", StateCategories.ToDo)]
+        public void MapStateToStateCategory_IgnoresCasing(string state, StateCategories expectedStateCategory)
+        {
+            var subject = CreateSubject();
+            subject.ToDoStates.Clear();
+            subject.ToDoStates.AddRange(["New", "Prioritized"]);
+            subject.DoingStates.Clear();
+            subject.DoingStates.AddRange(["Analysis In Progress", "Implementation"]);
+            subject.DoneStates.Clear();
+            subject.DoneStates.AddRange(["Delivered"]);
+
+            var stateCategory = subject.MapStateToStateCategory(state);
+
+            Assert.That(stateCategory, Is.EqualTo(expectedStateCategory));
+        }
+
         private WorkTrackingSystemOptionsOwnerTestClass CreateSubject()
         {
             return new WorkTrackingSystemOptionsOwnerTestClass();

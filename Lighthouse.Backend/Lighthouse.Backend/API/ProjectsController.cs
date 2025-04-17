@@ -152,9 +152,14 @@ namespace Lighthouse.Backend.API
 
         private static void SyncStates(Project project, ProjectSettingDto projectSetting)
         {
-            project.ToDoStates = projectSetting.ToDoStates;
-            project.DoingStates = projectSetting.DoingStates;
-            project.DoneStates = projectSetting.DoneStates;
+            project.ToDoStates = TrimListEntries(projectSetting.ToDoStates);
+            project.DoingStates = TrimListEntries(projectSetting.DoingStates);
+            project.DoneStates = TrimListEntries(projectSetting.DoneStates);
+        }
+
+        private static List<string> TrimListEntries(List<string> list)
+        {
+            return list.Select(s => s.Trim()).ToList();
         }
 
         private void SyncTeams(Project project, ProjectSettingDto projectSetting)

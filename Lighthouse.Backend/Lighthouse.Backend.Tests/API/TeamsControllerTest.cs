@@ -299,7 +299,10 @@ namespace Lighthouse.Backend.Tests.API
                 WorkItemQuery = "project = MyProject",
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
-                RelationCustomField = "CUSTOM.AdditionalField"
+                RelationCustomField = "CUSTOM.AdditionalField",
+                ToDoStates = new List<string> { " To Do" },
+                DoingStates = new List<string> { "Doing" },
+                DoneStates = new List<string> { "Done " },
             };
 
             var subject = CreateSubject();
@@ -326,6 +329,10 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(newTeamSettings.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newTeamSettings.WorkTrackingSystemConnectionId));
                 Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(newTeamSettings.RelationCustomField));
+
+                Assert.That(teamSettingDto.ToDoStates, Contains.Item("To Do"));
+                Assert.That(teamSettingDto.DoingStates, Contains.Item("Doing"));
+                Assert.That(teamSettingDto.DoneStates, Contains.Item("Done"));
             });
         }
 

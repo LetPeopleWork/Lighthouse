@@ -174,11 +174,22 @@ namespace Lighthouse.Backend.API
             team.ThroughputHistoryStartDate = teamSetting.ThroughputHistoryStartDate;
             team.ThroughputHistoryEndDate = teamSetting.ThroughputHistoryEndDate;
             team.WorkItemTypes = teamSetting.WorkItemTypes;
-            team.ToDoStates = teamSetting.ToDoStates;
-            team.DoingStates = teamSetting.DoingStates;
-            team.DoneStates = teamSetting.DoneStates;
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
             team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
+
+            SyncStates(team, teamSetting);
+        }
+
+        private static void SyncStates(Team team, TeamSettingDto teamSetting)
+        {
+            team.ToDoStates = TrimListEntries(teamSetting.ToDoStates);
+            team.DoingStates = TrimListEntries(teamSetting.DoingStates);
+            team.DoneStates = TrimListEntries(teamSetting.DoneStates);
+        }
+
+        private static List<string> TrimListEntries(List<string> list)
+        {
+            return list.Select(s => s.Trim()).ToList();
         }
 
         private static TeamDto CreateTeamDto(List<Project> allProjects, List<Feature> allFeatures, Team team)
