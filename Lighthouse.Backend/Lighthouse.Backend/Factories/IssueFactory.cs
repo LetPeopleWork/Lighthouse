@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Factories
             var fields = json.GetProperty(JiraFieldNames.FieldsFieldName);
             var key = GetKeyFromJson(json);
             var title = GetTitleFromFields(fields);
+            var createdDate = GetCreatedDateFromFields(fields);
             var closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates);
             var startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates);
             var parentKey = GetParentFromFields(fields);
@@ -46,7 +47,7 @@ namespace Lighthouse.Backend.Factories
 
             logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Closed Date {ClosedDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {IssueType}, Status {Status}, Status Category {StatusCategory}", key, title, closedDate, parentKey, rank, issueType, state, statusCategory);
 
-            return new Issue(key, title, closedDate, startedDate, parentKey, rank, issueType, state, statusCategory, fields);
+            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, statusCategory, fields);
         }
 
         private static string GetIssueTypeFromFields(JsonElement fields)
@@ -163,6 +164,19 @@ namespace Lighthouse.Backend.Factories
             }
 
             return transitionDate;
+        }
+
+        private static DateTime? GetCreatedDateFromFields(JsonElement fields)
+        {
+            var createdDateAsString = fields.GetProperty(JiraFieldNames.CreatedDateFieldName).GetString() ?? string.Empty;
+
+            if (string.IsNullOrEmpty(createdDateAsString))
+            {
+                return DateTime.MinValue;
+            }
+
+            var createdDate = DateTime.Parse(createdDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+            return createdDate;
         }
 
         private static string GetTitleFromFields(JsonElement fields)

@@ -280,6 +280,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 AzureDevOpsFieldNames.WorkItemType,
                 AzureDevOpsFieldNames.StackRank,
                 AzureDevOpsFieldNames.BacklogPriority,
+                AzureDevOpsFieldNames.CreatedDate,
             };
 
             fields.AddRange(additionalFields.Where(f => !string.IsNullOrEmpty(f)));
@@ -316,6 +317,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(state),
                 Url = workItem.ExtractUrlFromWorkItem(),
                 Order = workItem.ExtractStackRankFromWorkItem(),
+                CreatedDate = workItem.ExtractCreatedDateFromWorkItem(),
                 StartedDate = startedDate,
                 ClosedDate = closedDate,
             };

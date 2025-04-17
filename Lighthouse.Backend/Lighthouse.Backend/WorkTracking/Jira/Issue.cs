@@ -4,12 +4,13 @@ namespace Lighthouse.Backend.WorkTracking.Jira
 {
     public class Issue
     {
-        public Issue(string key, string title, DateTime? closedDate, DateTime? startedDate, string parentKey, string rank, string issueType, string status, string statusCategory, JsonElement fields)
+        public Issue(string key, string title, DateTime? createdDate, DateTime? closedDate, DateTime? startedDate, string parentKey, string rank, string issueType, string status, string statusCategory, JsonElement fields)
         {   
             Key = key;
             Title = title;
             ClosedDate = closedDate;
             StartedDate = startedDate;
+            CreatedDate = createdDate;
             ParentKey = parentKey;
             Rank = rank;
             IssueType = issueType;
@@ -19,6 +20,8 @@ namespace Lighthouse.Backend.WorkTracking.Jira
         }
 
         public string Key { get; }
+
+        public DateTime? CreatedDate { get; }
 
         public DateTime? ClosedDate { get; }
 

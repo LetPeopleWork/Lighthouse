@@ -31,5 +31,7 @@
         public static string BacklogPriority => "Microsoft.VSTS.Common.BacklogPriority";
 
         public static string ChangedDate => "System.ChangedDate";
+
+        public static string CreatedDate => "System.CreatedDate";
     }
 }

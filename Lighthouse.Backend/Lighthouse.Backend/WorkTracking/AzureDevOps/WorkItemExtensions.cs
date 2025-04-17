@@ -1,6 +1,5 @@
 ﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi;
-using Mono.TextTemplating;
 
 namespace Lighthouse.Backend.WorkTracking.AzureDevOps
 {
@@ -58,6 +57,11 @@ namespace Lighthouse.Backend.WorkTracking.AzureDevOps
         public static string ExtractUrlFromWorkItem(this WorkItem workItem)
         {
             return ((ReferenceLink)workItem.Links.Links[AzureDevOpsFieldNames.UrlPropertyName])?.Href ?? string.Empty;
+        }
+
+        public static DateTime ExtractCreatedDateFromWorkItem(this WorkItem workItem)
+        {
+            return (DateTime?)workItem.Fields[AzureDevOpsFieldNames.CreatedDate] ?? DateTime.MinValue;
         }
 
         private static string ExtractFieldFromWorkItem(WorkItem workItem, string fieldName)

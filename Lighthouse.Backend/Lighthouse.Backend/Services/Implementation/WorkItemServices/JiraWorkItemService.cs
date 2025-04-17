@@ -266,6 +266,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
                 ReferenceId = issue.Key,
                 ParentReferenceId = issue.ParentKey,
                 Name = issue.Title,
+                CreatedDate = issue.CreatedDate,
                 ClosedDate = issue.ClosedDate,
                 StartedDate = issue.StartedDate,
                 Order = issue.Rank,

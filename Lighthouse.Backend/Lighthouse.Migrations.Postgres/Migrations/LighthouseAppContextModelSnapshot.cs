@@ -66,6 +66,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<DateTime?>("ClosedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("EstimatedSize")
                         .HasColumnType("integer");
 
@@ -454,6 +457,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime?>("ClosedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")

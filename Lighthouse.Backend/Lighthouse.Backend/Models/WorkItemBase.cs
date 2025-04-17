@@ -6,7 +6,6 @@ namespace Lighthouse.Backend.Models
     {
         public WorkItemBase()
         {
-
         }
 
         public WorkItemBase(WorkItemBase workItemBase)
@@ -31,6 +30,8 @@ namespace Lighthouse.Backend.Models
         public string? Url { get; set; }
 
         public string Order { get; set; }
+
+        public DateTime? CreatedDate { get; set; }
 
         public DateTime? StartedDate { get; set; }
 
@@ -77,6 +78,7 @@ namespace Lighthouse.Backend.Models
             StateCategory = workItemBase.StateCategory;
             Url = workItemBase.Url;
             Order = workItemBase.Order;
+            CreatedDate = workItemBase.CreatedDate;
             StartedDate = workItemBase.StartedDate;
             ClosedDate = workItemBase.ClosedDate;
         }
