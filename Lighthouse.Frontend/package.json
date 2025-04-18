@@ -23,7 +23,7 @@
     "@mui/lab": "^7.0.0-beta.11",
     "@mui/material": "^7.0.1",
     "@mui/x-charts": "^8.0.0",
-    "@mui/x-date-pickers": "^7.28.3",
+    "@mui/x-date-pickers": "^8.0.0",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
     "lodash.debounce": "^4.0.8",
@@ -32,7 +32,7 @@
     "react-date-range": "^2.0.1",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.5.0",
+    "react-router-dom": "^7.5.1",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
@@ -51,7 +51,7 @@
     "cross-env": "^7.0.3",
     "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
-    "vite": "^6.3.1",
+    "vite": "^6.3.2",
     "vitest": "^3.0.3",
     "vitest-sonar-reporter": "^2.0.0"
   }
