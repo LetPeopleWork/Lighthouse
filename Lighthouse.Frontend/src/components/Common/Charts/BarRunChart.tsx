@@ -32,7 +32,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 					yAxis={[
 						{
 							min: 0,
-							valueFormatter: (value) => {
+							valueFormatter: (value: number) => {
 								return Number.isInteger(value) ? value.toString() : "";
 							},
 						},

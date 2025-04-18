@@ -32,7 +32,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 						yAxis={[
 							{
 								min: 0,
-								valueFormatter: (value) => {
+								valueFormatter: (value: number) => {
 									return Number.isInteger(value) ? value.toString() : "";
 								},
 							},

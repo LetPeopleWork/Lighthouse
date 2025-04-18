@@ -1,12 +1,11 @@
 import { Card, CardContent, Typography } from "@mui/material";
 import {
+	ChartContainer,
 	ChartsReferenceLine,
 	ChartsTooltip,
 	ChartsXAxis,
 	ChartsYAxis,
-	ResponsiveChartContainer,
 	ScatterPlot,
-	type ScatterValueType,
 } from "@mui/x-charts";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -37,27 +36,18 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		}
 	};
 
-	const formatValue = (value: ScatterValueType) => {
-		const point = cycleTimeDataPoints.find((d) => d.id === value.id);
-		if (point) {
-			return `${point.name} - Cycle Time: ${point.cycleTime} days`;
-		}
-
-		return "";
-	};
-
 	return cycleTimeDataPoints.length > 0 ? (
 		<Card sx={{ p: 2, borderRadius: 2 }}>
 			<CardContent>
 				<Typography variant="h6">Cycle Time</Typography>
-				<ResponsiveChartContainer
+				<ChartContainer
 					height={500}
 					xAxis={[
 						{
 							id: "timeAxis",
 							scaleType: "time",
 							label: "Date",
-							valueFormatter: (value) => {
+							valueFormatter: (value: number) => {
 								return new Date(value).toLocaleDateString();
 							},
 						},
@@ -68,7 +58,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							scaleType: "linear",
 							label: "Cycle Time (days)",
 							min: 0,
-							valueFormatter: (value) => {
+							valueFormatter: (value: number) => {
 								return Number.isInteger(value) ? value.toString() : "";
 							},
 						},
@@ -80,14 +70,23 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								x: point.closedDate.getTime(),
 								y: point.cycleTime,
 								id: point.id,
-								data: point,
 							})),
 							xAxisId: "timeAxis",
 							yAxisId: "cycleTimeAxis",
 							color: "rgba(48, 87, 78, 1)",
-							valueFormatter: formatValue,
 							markerSize: 6,
-							highlightScope: { highlighted: "item", faded: "global" },
+							highlightScope: { highlight: "item", fade: "global" },
+							valueFormatter: (item) => {
+								if (!item?.id) return "";
+
+								const workItem = cycleTimeDataPoints.find(
+									(p) => p.id === item.id,
+								);
+								if (workItem) {
+									return `${workItem.name} - Cycle Time: ${workItem.cycleTime} days`;
+								}
+								return "";
+							},
 						},
 					]}
 				>
@@ -119,7 +118,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 						}}
 					/>
 					<ChartsTooltip trigger="item" />
-				</ResponsiveChartContainer>
+				</ChartContainer>
 			</CardContent>
 		</Card>
 	) : (
