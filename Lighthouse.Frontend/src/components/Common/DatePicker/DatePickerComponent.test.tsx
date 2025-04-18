@@ -18,10 +18,12 @@ describe("DatePickerComponent", () => {
 				value={dayjs()}
 				onChange={mockOnChange}
 			/>,
-		 );
+		);
 
 		// Find the label directly without relying on associations
-		const labelElement = screen.getByText("Burndown Start Date", { selector: "label" });
+		const labelElement = screen.getByText("Burndown Start Date", {
+			selector: "label",
+		});
 		expect(labelElement).toBeInTheDocument();
 	});
 
@@ -33,17 +35,17 @@ describe("DatePickerComponent", () => {
 				value={dayjs()}
 				onChange={mockOnChange}
 			/>,
-		 );
+		);
 
 		// Find and click the calendar icon button to open the date picker
 		const calendarButton = screen.getByLabelText(/choose date/i);
 		await user.click(calendarButton);
-		
+
 		// Find a date from the calendar popup and click it
 		// First make sure the calendar is open and accessible
 		const dateCell = await screen.findByRole("gridcell", { name: "15" });
 		await user.click(dateCell);
-		
+
 		expect(mockOnChange).toHaveBeenCalled();
 	});
 });
