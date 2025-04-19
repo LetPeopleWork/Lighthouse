@@ -97,9 +97,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			<TableCell>
 				{Object.entries(feature.projects).map(([projectId, projectName]) => (
 					<div key={projectId}>
-						<StyledLink to={`/projects/${projectId}`}>
-							{projectName}
-						</StyledLink>
+						<StyledLink to={`/projects/${projectId}`}>{projectName}</StyledLink>
 					</div>
 				))}
 			</TableCell>

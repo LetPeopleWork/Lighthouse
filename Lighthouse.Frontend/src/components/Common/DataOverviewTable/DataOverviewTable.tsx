@@ -4,6 +4,7 @@ import {
 	Container,
 	Fade,
 	IconButton,
+	Link as MuiLink,
 	Paper,
 	Table,
 	TableBody,
@@ -112,21 +113,23 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					>
 						<Typography variant="body1">
 							No {api} Defined.{" "}
-							<Link
-								to="https://docs.lighthouse.letpeople.work"
+							<MuiLink
+								href="https://docs.lighthouse.letpeople.work"
 								target="_blank"
 								rel="noopener noreferrer"
 								style={{
 									color: theme.palette.primary.main,
 									textDecoration: "none",
 									fontWeight: 500,
+								}}
+								sx={{
 									"&:hover": {
 										textDecoration: "underline",
 									},
 								}}
 							>
 								Check the documentation
-							</Link>{" "}
+							</MuiLink>{" "}
 							for more information.
 						</Typography>
 					</Alert>
@@ -210,8 +213,8 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									}}
 								>
 									<TableCell>
-										<Link
-											to={`/${api}/${item.id}`}
+										<MuiLink
+											href={`/${api}/${item.id}`}
 											style={{
 												textDecoration: "none",
 												color: theme.palette.primary.main,
@@ -219,7 +222,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 											}}
 										>
 											{item.name}
-										</Link>
+										</MuiLink>
 									</TableCell>
 									{!isMobile && (
 										<TableCell>

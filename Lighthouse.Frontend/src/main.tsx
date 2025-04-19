@@ -124,10 +124,12 @@ const darkTheme = createTheme({
 });
 
 // This component will use the ThemeContext and apply the appropriate MUI theme
-const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({
+	children,
+}) => {
 	const { mode } = useTheme();
 	const theme = mode === "light" ? lightTheme : darkTheme;
-	
+
 	return (
 		<MuiThemeProvider theme={theme}>
 			<CssBaseline />

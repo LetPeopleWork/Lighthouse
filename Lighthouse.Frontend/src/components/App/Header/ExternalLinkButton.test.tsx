@@ -12,11 +12,11 @@ vi.mock("@mui/material", async () => {
 		useTheme: () => ({
 			palette: {
 				primary: {
-					main: "rgba(48, 87, 78, 1)"
+					main: "rgba(48, 87, 78, 1)",
 				},
-				mode: "light"
-			}
-		})
+				mode: "light",
+			},
+		}),
 	};
 });
 

@@ -118,9 +118,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 						<div key={team.id}>
 							<ProgressIndicator
 								title={
-									<StyledLink to={`/teams/${team.id}`}>
-										{team.name}
-									</StyledLink>
+									<StyledLink to={`/teams/${team.id}`}>{team.name}</StyledLink>
 								}
 								progressableItem={{
 									remainingWork: feature.getRemainingWorkForTeam(team.id),

@@ -12,8 +12,8 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/system";
-import { Link } from "react-router-dom";
 import type React from "react";
+import { Link } from "react-router-dom";
 import ForecastInfoList from "../../components/Common/Forecasts/ForecastInfoList";
 import LocalDateTimeDisplay from "../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ProgressIndicator from "../../components/Common/ProgressIndicator/ProgressIndicator";
@@ -28,7 +28,10 @@ const ProjectCardStyle = styled(Card)(({ theme }) => ({
 	transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
 	"&:hover": {
 		transform: "translateY(-4px)",
-		boxShadow: theme.shadows[8],
+		boxShadow:
+			theme.palette.mode === "dark"
+				? "0px 8px 16px rgba(0, 0, 0, 0.6)"
+				: "0px 8px 16px rgba(0, 0, 0, 0.15)",
 	},
 	borderRadius: 12,
 }));
@@ -108,7 +111,7 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 										sx={{
 											cursor: "pointer",
 											"&:hover": {
-												bgcolor: theme.palette.primary.main + "20",
+												bgcolor: `${theme.palette.primary.main}20`,
 											},
 										}}
 									/>

@@ -1,12 +1,12 @@
 import CellTowerIcon from "@mui/icons-material/CellTower";
 import { Typography, useTheme } from "@mui/material";
 import { Box } from "@mui/system";
-import { Link } from "react-router-dom";
 import type React from "react";
+import { Link } from "react-router-dom";
 
 const LighthouseLogo: React.FC = () => {
 	const theme = useTheme();
-	
+
 	return (
 		<Link to="/" style={{ textDecoration: "none" }}>
 			<Box display="flex" alignItems="center">

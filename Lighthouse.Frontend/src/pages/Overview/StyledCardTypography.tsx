@@ -22,7 +22,7 @@ const StyledCardTypography: React.FC<StyledCardTypographyProps> = ({
 	children,
 }) => {
 	const theme = useTheme();
-	
+
 	return (
 		<StyledTypography variant="body1">
 			<Icon

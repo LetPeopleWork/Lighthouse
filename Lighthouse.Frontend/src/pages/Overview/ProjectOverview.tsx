@@ -53,9 +53,18 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 									color: theme.palette.primary.main,
 									textDecoration: "none",
 									fontWeight: 500,
-									"&:hover": {
-										textDecoration: "underline",
-									},
+								}}
+								onMouseOver={(e) => {
+									e.currentTarget.style.textDecoration = "underline";
+								}}
+								onMouseOut={(e) => {
+									e.currentTarget.style.textDecoration = "none";
+								}}
+								onFocus={(e) => {
+									e.currentTarget.style.textDecoration = "underline";
+								}}
+								onBlur={(e) => {
+									e.currentTarget.style.textDecoration = "none";
 								}}
 							>
 								Check the documentation
@@ -83,7 +92,10 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 			) : (
 				<Grid container spacing={3}>
 					{filteredProjects.map((project) => (
-						<Grid size={{ xs: 12, sm:6, md: 4, lg: 4, xl: 3}} key={project.id}>
+						<Grid
+							size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }}
+							key={project.id}
+						>
 							<Box
 								sx={{
 									height: "100%",

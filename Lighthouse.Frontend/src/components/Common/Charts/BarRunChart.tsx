@@ -1,5 +1,5 @@
-import { BarChart } from "@mui/x-charts";
 import { useTheme } from "@mui/material";
+import { BarChart } from "@mui/x-charts";
 import type React from "react";
 import type { RunChartData } from "../../../models/Forecasts/RunChartData";
 import BaseRunChart from "./BaseRunChart";
@@ -18,7 +18,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 	title = "Bar Chart",
 }) => {
 	const theme = useTheme();
-	
+
 	return (
 		<BaseRunChart
 			chartData={chartData}

@@ -17,7 +17,7 @@ const StyleCardNavLink: React.FC<StyledNavLinkProps> = ({
 	isTitle = false,
 }) => {
 	const theme = useTheme();
-	
+
 	return (
 		<NavLink
 			to={link}

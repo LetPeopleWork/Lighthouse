@@ -1,5 +1,5 @@
-import { LineChart } from "@mui/x-charts/LineChart";
 import { useTheme } from "@mui/material";
+import { LineChart } from "@mui/x-charts/LineChart";
 import type React from "react";
 import type { RunChartData } from "../../../models/Forecasts/RunChartData";
 import BaseRunChart from "./BaseRunChart";
@@ -18,7 +18,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 	displayTotal = false,
 }) => {
 	const theme = useTheme();
-	
+
 	return (
 		<BaseRunChart
 			chartData={chartData}
