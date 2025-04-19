@@ -58,12 +58,16 @@ describe("ProgressIndicator component", () => {
 
 		// Wait for animation to complete and check the text using regex to handle spacing/formatting issues
 		await act(async () => {
-			await new Promise(resolve => setTimeout(resolve, 200));
+			await new Promise((resolve) => setTimeout(resolve, 200));
 		});
-		
+
 		// Use a more flexible approach - check for parts of the text
-		expect(screen.getByText(new RegExp(`${completionPercentage}%`))).toBeInTheDocument();
-		expect(screen.getByText(new RegExp(`${completedItems}/${totalItems}`))).toBeInTheDocument();
+		expect(
+			screen.getByText(new RegExp(`${completionPercentage}%`)),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(new RegExp(`${completedItems}/${totalItems}`)),
+		).toBeInTheDocument();
 	});
 
 	it("shows 'Could not determine work' when total work is 0", () => {
@@ -96,8 +100,12 @@ describe("ProgressIndicator component", () => {
 		const completionText = "6/10";
 
 		// These should not be in the document
-		expect(screen.queryByText(new RegExp(percentageText))).not.toBeInTheDocument();
-		expect(screen.queryByText(new RegExp(completionText))).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(new RegExp(percentageText)),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(new RegExp(completionText)),
+		).not.toBeInTheDocument();
 	});
 
 	it("applies custom height when specified", () => {

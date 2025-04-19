@@ -84,16 +84,20 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 			}}
 		>
 			{isWaiting ? (
-				<CircularProgress
-					size={24}
-					thickness={4}
-					sx={{
-						color:
-							buttonVariant === "contained"
-								? "#fff"
-								: `${theme.palette[color].main}`,
-					}}
-				/>
+				<>
+					<CircularProgress
+						size={24}
+						thickness={4}
+						sx={{
+							color:
+								buttonVariant === "contained"
+									? "#fff"
+									: `${theme.palette[color].main}`,
+							marginRight: 1,
+						}}
+					/>
+					{buttonText}
+				</>
 			) : (
 				buttonText
 			)}
