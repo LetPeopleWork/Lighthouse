@@ -191,6 +191,6 @@ describe("ActionButton component", () => {
 		);
 
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();
-		expect(screen.queryByText(buttonText)).not.toBeInTheDocument();
+		expect(screen.queryByText(buttonText)).toBeInTheDocument();
 	});
 });
