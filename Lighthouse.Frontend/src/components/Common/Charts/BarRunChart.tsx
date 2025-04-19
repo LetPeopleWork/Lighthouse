@@ -1,4 +1,5 @@
 import { BarChart } from "@mui/x-charts";
+import { useTheme } from "@mui/material";
 import type React from "react";
 import type { RunChartData } from "../../../models/Forecasts/RunChartData";
 import BaseRunChart from "./BaseRunChart";
@@ -16,6 +17,8 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 	displayTotal = false,
 	title = "Bar Chart",
 }) => {
+	const theme = useTheme();
+	
 	return (
 		<BaseRunChart
 			chartData={chartData}
@@ -41,7 +44,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 					series={[
 						{
 							dataKey: "value",
-							color: "rgba(48, 87, 78, 1)",
+							color: theme.palette.primary.main,
 						},
 					]}
 					height={500}

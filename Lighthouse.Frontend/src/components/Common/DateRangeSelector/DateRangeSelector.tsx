@@ -1,7 +1,8 @@
+import { Box, Card, Stack, Typography, useTheme } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import type React from "react";
-import { DateRange } from "react-date-range";
-import "react-date-range/dist/styles.css";
-import "react-date-range/dist/theme/default.css";
 
 export interface DateRangeSelectorProps {
 	startDate: Date;
@@ -16,37 +17,90 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 	onStartDateChange,
 	onEndDateChange,
 }) => {
-	interface RangeSelection {
-		selection?: {
-			startDate: Date;
-			endDate: Date;
-		};
-	}
-
-	const handleRangeChange = (ranges: RangeSelection) => {
-		if (ranges.selection) {
-			onStartDateChange(ranges.selection.startDate);
-			onEndDateChange(ranges.selection.endDate);
-		}
-	};
-
-	const selectionRange = {
-		startDate: startDate,
-		endDate: endDate,
-		key: "selection",
-	};
-
+	const theme = useTheme();
+	
 	return (
-		<DateRange
-			ranges={[selectionRange]}
-			onChange={handleRangeChange}
-			moveRangeOnFirstSelection={false}
-			editableDateInputs={true}
-			months={1}
-			color="rgba(48, 87, 78, 1)"
-			rangeColors={["rgba(48, 87, 78, 1)"]}
-			direction="horizontal"
-		/>
+		<LocalizationProvider dateAdapter={AdapterDateFns}>
+			<Card
+				elevation={1}
+				sx={{ 
+					width: '100%',
+					m :2,
+					borderRadius: 2,
+					p: 1,
+					overflow: 'visible'
+				}}
+			>
+				<Box 
+					sx={{ 
+						p: { xs: 1.5, sm: 2 },
+						display: 'flex',
+						flexDirection: 'column',
+						gap: 2
+					}}
+				>
+					<Stack spacing={1}>
+						<Typography variant="subtitle2" color="text.primary" fontWeight="medium">
+							Start Date
+						</Typography>
+						<DatePicker
+							value={startDate}
+							onChange={(newValue) => onStartDateChange(newValue)}
+							sx={{ 
+								width: '100%',
+								'& .MuiInputBase-root': {
+									borderColor: theme.palette.primary.main,
+								}
+							}}
+							slotProps={{
+								textField: { 
+									size: 'small',
+									fullWidth: true 
+								},
+								day: {
+									sx: {
+										'&.Mui-selected': {
+											backgroundColor: theme.palette.primary.main,
+										}
+									}
+								}
+							}}
+							maxDate={endDate}
+						 />
+					</Stack>
+					
+					<Stack spacing={1}>
+						<Typography variant="subtitle2" color="text.primary" fontWeight="medium">
+							End Date
+						</Typography>
+						<DatePicker
+							value={endDate}
+							onChange={(newValue) => onEndDateChange(newValue)}
+							sx={{ 
+								width: '100%',
+								'& .MuiInputBase-root': {
+									borderColor: theme.palette.primary.main,
+								}
+							}}
+							slotProps={{
+								textField: { 
+									size: 'small',
+									fullWidth: true 
+								},
+								day: {
+									sx: {
+										'&.Mui-selected': {
+											backgroundColor: theme.palette.primary.main,
+										}
+									}
+								}
+							}}
+							minDate={startDate}
+						/>
+					</Stack>
+				</Box>
+			</Card>
+		</LocalizationProvider>
 	);
 };
 

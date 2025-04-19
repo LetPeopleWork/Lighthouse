@@ -1,4 +1,5 @@
 import type { SvgIconComponent } from "@mui/icons-material";
+import { useTheme } from "@mui/material";
 import type React from "react";
 import { NavLink } from "react-router-dom";
 
@@ -15,6 +16,8 @@ const StyleCardNavLink: React.FC<StyledNavLinkProps> = ({
 	icon: Icon,
 	isTitle = false,
 }) => {
+	const theme = useTheme();
+	
 	return (
 		<NavLink
 			to={link}
@@ -28,7 +31,7 @@ const StyleCardNavLink: React.FC<StyledNavLinkProps> = ({
 			}}
 		>
 			<Icon
-				style={{ color: "rgba(48, 87, 78, 1)", marginRight: 8 }}
+				style={{ color: theme.palette.primary.main, marginRight: 8 }}
 				data-testid="styled-card-icon"
 			/>
 			{text}

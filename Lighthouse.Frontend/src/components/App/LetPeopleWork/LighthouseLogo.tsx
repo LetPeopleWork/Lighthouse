@@ -1,32 +1,39 @@
 import CellTowerIcon from "@mui/icons-material/CellTower";
-import { Typography } from "@mui/material";
+import { Typography, useTheme } from "@mui/material";
+import { Box } from "@mui/system";
+import { Link } from "react-router-dom";
 import type React from "react";
 
 const LighthouseLogo: React.FC = () => {
+	const theme = useTheme();
+	
 	return (
-		<>
-			<CellTowerIcon
-				sx={{ display: { xs: "none", md: "flex" }, mr: 1, color: "black" }}
-			/>
-			<Typography
-				style={{
-					fontFamily: "Quicksand, sans-serif",
-					color: "rgba(48, 87, 78, 1)",
-					fontWeight: "bold",
-				}}
-			>
-				Light
-			</Typography>
-			<Typography
-				style={{
-					fontFamily: "Quicksand, sans-serif",
-					color: "black",
-					fontWeight: "bold",
-				}}
-			>
-				house
-			</Typography>
-		</>
+		<Link to="/" style={{ textDecoration: "none" }}>
+			<Box display="flex" alignItems="center">
+				<CellTowerIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
+				<Typography
+					variant="h6"
+					component="div"
+					sx={{
+						fontFamily: "Quicksand, sans-serif",
+						fontWeight: "bold",
+						display: "flex",
+					}}
+				>
+					<Box component="span" sx={{ color: theme.palette.primary.main }}>
+						Light
+					</Box>
+					<Box
+						component="span"
+						sx={{
+							color: theme.palette.mode === "dark" ? "#fff" : "#000",
+						}}
+					>
+						house
+					</Box>
+				</Typography>
+			</Box>
+		</Link>
 	);
 };
 

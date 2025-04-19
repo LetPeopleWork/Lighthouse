@@ -1,12 +1,12 @@
 import { TableCell, TableRow, Typography } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import FeatureListBase from "../../../components/Common/FeaturesList/FeatureListBase";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
+import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type { IFeature } from "../../../models/Feature";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -97,7 +97,9 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			<TableCell>
 				{Object.entries(feature.projects).map(([projectId, projectName]) => (
 					<div key={projectId}>
-						<Link to={`/projects/${projectId}`}>{projectName}</Link>
+						<StyledLink to={`/projects/${projectId}`}>
+							{projectName}
+						</StyledLink>
 					</div>
 				))}
 			</TableCell>

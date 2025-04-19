@@ -106,7 +106,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 
 	return (
 		<Grid container spacing={2}>
-			<Grid size={{ xs: 2 }}>
+			<Grid size={{ xs: 12, sm:8, md: 6, lg: 4, xl: 3}}>
 				<DateRangeSelector
 					startDate={startDate}
 					endDate={endDate}
@@ -115,7 +115,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 				/>
 			</Grid>
 
-			<Grid size={{ xs: 4 }}>
+			<Grid size={{ xs: 12, sm:8, md: 6, lg: 4, xl: 3}}>
 				<ItemsInProgress
 					title="Features in Progress:"
 					items={inProgressFeatures}
@@ -123,11 +123,11 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 				/>
 			</Grid>
 
-			<Grid size={{ xs: 4 }} spacing={3}>
+			<Grid size={{ xs: 12, sm:8, md: 6, lg: 4, xl: 3}}>
 				<CycleTimePercentiles percentileValues={percentileValues} />
 			</Grid>
 
-			<Grid size={{ xs: 6 }}>
+			<Grid size={{ xs: 12, sm:12, md: 12, lg: 9, xl: 6}}>
 				{featuresCompletedData && (
 					<BarRunChart
 						title="Features Completed"
@@ -138,14 +138,14 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 				)}
 			</Grid>
 
-			<Grid size={{ xs: 6 }}>
+			<Grid size={{ xs: 12, sm:12, md: 12, lg: 9, xl: 6}}>
 				<CycleTimeScatterPlotChart
 					cycleTimeDataPoints={cycleTimeData}
 					percentileValues={percentileValues}
 				/>
 			</Grid>
 
-			<Grid size={{ xs: 6 }}>
+			<Grid size={{ xs: 12, sm:12, md: 12, lg: 9, xl: 6}}>
 				{featuresInProgressData && (
 					<LineRunChart
 						title="Features In Progress Over Time"

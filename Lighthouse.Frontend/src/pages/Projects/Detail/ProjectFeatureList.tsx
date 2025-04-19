@@ -1,13 +1,13 @@
 import { TableCell, TableRow, Typography } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import FeatureListBase from "../../../components/Common/FeaturesList/FeatureListBase";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
+import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type { IFeature } from "../../../models/Feature";
 import type { IProject } from "../../../models/Project/Project";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -117,7 +117,11 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 					.map((team) => (
 						<div key={team.id}>
 							<ProgressIndicator
-								title={<Link to={`/teams/${team.id}`}>{`${team.name}`}</Link>}
+								title={
+									<StyledLink to={`/teams/${team.id}`}>
+										{team.name}
+									</StyledLink>
+								}
 								progressableItem={{
 									remainingWork: feature.getRemainingWorkForTeam(team.id),
 									totalWork: feature.getTotalWorkForTeam(team.id),
