@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IProgressable } from "../../../models/IProgressable";
 import ProgressIndicator from "./ProgressIndicator";
@@ -41,7 +41,7 @@ describe("ProgressIndicator component", () => {
 		expect(screen.getByText(title)).toBeInTheDocument();
 	});
 
-	it("displays correct completion percentage", () => {
+	it("displays correct completion percentage", async () => {
 		const progressable = createProgressable(4, 10); // 6/10 = 60%
 
 		render(
@@ -52,12 +52,18 @@ describe("ProgressIndicator component", () => {
 		);
 
 		// Calculate completed items
-		const expectedText = "60% (6/10)";
+		const completionPercentage = 60;
+		const completedItems = 6;
+		const totalItems = 10;
 
-		// Wait for animation to complete and check the text
-		setTimeout(() => {
-			expect(screen.getByText(expectedText)).toBeInTheDocument();
-		}, 200);
+		// Wait for animation to complete and check the text using regex to handle spacing/formatting issues
+		await act(async () => {
+			await new Promise(resolve => setTimeout(resolve, 200));
+		});
+		
+		// Use a more flexible approach - check for parts of the text
+		expect(screen.getByText(new RegExp(`${completionPercentage}%`))).toBeInTheDocument();
+		expect(screen.getByText(new RegExp(`${completedItems}/${totalItems}`))).toBeInTheDocument();
 	});
 
 	it("shows 'Could not determine work' when total work is 0", () => {
@@ -86,10 +92,12 @@ describe("ProgressIndicator component", () => {
 		);
 
 		// Calculate expected percentage text that should NOT be visible
-		const percentageText = "60% (6/10)";
+		const percentageText = "60%";
+		const completionText = "6/10";
 
-		// This should not be in the document
-		expect(screen.queryByText(percentageText)).not.toBeInTheDocument();
+		// These should not be in the document
+		expect(screen.queryByText(new RegExp(percentageText))).not.toBeInTheDocument();
+		expect(screen.queryByText(new RegExp(completionText))).not.toBeInTheDocument();
 	});
 
 	it("applies custom height when specified", () => {
