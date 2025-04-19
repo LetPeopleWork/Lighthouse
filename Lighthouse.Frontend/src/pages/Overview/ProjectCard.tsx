@@ -1,15 +1,13 @@
-import { ViewKanban } from "@mui/icons-material";
+import ViewKanban from "@mui/icons-material/ViewKanban";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import {
-	Card,
-	CardContent,
-	Chip,
-	Divider,
-	Stack,
-	Typography,
-	useMediaQuery,
-	useTheme,
-} from "@mui/material";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/system";
 import type React from "react";
@@ -100,6 +98,7 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 							>
 								{project.involvedTeams.map((team) => (
 									<Chip
+										data-testid="team-link"
 										key={team.id}
 										size="small"
 										label={team.name}

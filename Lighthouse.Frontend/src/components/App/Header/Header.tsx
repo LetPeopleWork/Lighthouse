@@ -1,18 +1,16 @@
-import { BugReport } from "@mui/icons-material";
+import BugReport from "@mui/icons-material/BugReport";
 import HandshakeIcon from "@mui/icons-material/Handshake";
 import HelpIcon from "@mui/icons-material/Help";
 import MenuIcon from "@mui/icons-material/Menu";
-import {
-	AppBar,
-	Box,
-	Drawer,
-	IconButton,
-	List,
-	ListItem,
-	Toolbar,
-	useMediaQuery,
-	useTheme,
-} from "@mui/material";
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import Toolbar from "@mui/material/Toolbar";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import type React from "react";
 import { useState } from "react";
 import ThemeToggler from "../../Common/ThemeToggler/ThemeToggler";

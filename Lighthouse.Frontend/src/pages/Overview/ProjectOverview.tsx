@@ -1,4 +1,8 @@
-import { Alert, Box, Fade, Typography, useTheme } from "@mui/material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Fade from "@mui/material/Fade";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import type { Project } from "../../models/Project/Project";
@@ -85,8 +89,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 						}}
 						data-testid="no-projects-message"
 					>
-						No projects found matching the filter:{" "}
-						<strong>"{filterText}"</strong>
+						No projects found matching the filter.
 					</Alert>
 				</Fade>
 			) : (

@@ -8,14 +8,12 @@ import StorageIcon from "@mui/icons-material/Storage";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
-import {
-	Box,
-	Container,
-	Paper,
-	Typography,
-	useMediaQuery,
-	useTheme,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import Tab from "@mui/material/Tab";
 import type React from "react";
 import { useEffect, useState } from "react";

@@ -1,4 +1,6 @@
-import { Box, CssBaseline, useTheme } from "@mui/material";
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+import { useTheme } from "@mui/material/styles";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
