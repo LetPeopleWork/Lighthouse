@@ -213,8 +213,8 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									}}
 								>
 									<TableCell>
-										<MuiLink
-											href={`/${api}/${item.id}`}
+										<Link
+											to={`/${api}/${item.id}`}
 											style={{
 												textDecoration: "none",
 												color: theme.palette.primary.main,
@@ -222,7 +222,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 											}}
 										>
 											{item.name}
-										</MuiLink>
+										</Link>
 									</TableCell>
 									{!isMobile && (
 										<TableCell>
