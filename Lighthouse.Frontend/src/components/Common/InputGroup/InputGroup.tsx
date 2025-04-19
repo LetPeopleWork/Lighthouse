@@ -40,7 +40,7 @@ const InputGroup: React.FC<InputGroupProps> = ({
 				borderRadius: 2,
 				transition: "all 0.3s ease",
 				boxShadow: expanded ? theme.shadows[1] : "none",
-				border: `1px solid ${expanded ? theme.palette.divider : theme.palette.divider}`,
+				border: `1px solid ${theme.palette.divider}`,
 				"&:hover": {
 					borderColor: expanded
 						? theme.palette.primary.main

@@ -1,5 +1,5 @@
 import type React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 
 type ThemeMode = "light" | "dark";
 
@@ -29,17 +29,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 		);
 	});
 
-	const toggleTheme = () => {
+	const toggleTheme = useCallback(() => {
 		setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
-	};
+	}, []);
 
 	// Save theme preference to localStorage whenever it changes
 	useEffect(() => {
 		localStorage.setItem("theme", mode);
 	}, [mode]);
 
+	// Memoize the context value to prevent unnecessary re-renders
+	const contextValue = useMemo(
+		() => ({ mode, toggleTheme }),
+		[mode, toggleTheme],
+	);
+
 	return (
-		<ThemeContext.Provider value={{ mode, toggleTheme }}>
+		<ThemeContext.Provider value={contextValue}>
 			{children}
 		</ThemeContext.Provider>
 	);
