@@ -1,4 +1,10 @@
 /* Reset default margins and paddings */
+:root {
+	--primary-color: #30574e;
+	--primary-color-light: #4a9183;
+	--secondary-color: #46232d;
+}
+
 body,
 html {
 	margin: 0;
@@ -28,12 +34,25 @@ html {
 }
 
 .nav-link {
-	color: rgba(48, 87, 78, 1);
+	color: var(--primary-color);
 	text-decoration: none;
 }
 
 .active {
 	font-weight: bold;
+}
+
+/* Navigation styles */
+.nav-item {
+	position: relative;
+}
+
+.nav-item:hover {
+	border-bottom: 2px solid var(--primary-color) !important;
+}
+
+.nav-item.nav-dark:hover {
+	border-bottom: 2px solid #ffffff !important;
 }
 
 /* Content area styles */

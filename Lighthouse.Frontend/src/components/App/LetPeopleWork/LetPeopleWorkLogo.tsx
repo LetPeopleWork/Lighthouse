@@ -1,9 +1,13 @@
-import { Button } from "@mui/material";
+import { Button, useTheme } from "@mui/material";
 import type React from "react";
 import { Link } from "react-router-dom";
-import logo from "../../../assets/LetPeopleWorkLogo.png";
+import lightLogo from "../../../assets/LetPeopleWorkLogo.png";
+import darkLogo from "../../../assets/logo_black.png";
 
 const LetPeopleWorkLogo: React.FC = () => {
+	const theme = useTheme();
+	const logo = theme.palette.mode === "dark" ? darkLogo : lightLogo;
+
 	return (
 		<Button
 			component={Link}

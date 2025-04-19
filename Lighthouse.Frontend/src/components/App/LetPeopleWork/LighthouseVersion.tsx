@@ -1,5 +1,5 @@
 import UpdateIcon from "@mui/icons-material/Update";
-import { Button, IconButton, Tooltip } from "@mui/material";
+import { Button, IconButton, Tooltip, useTheme } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -9,6 +9,7 @@ import LoadingAnimation from "../../Common/LoadingAnimation/LoadingAnimation";
 import LatestReleaseInformationDialog from "./LatestReleaseInformationDialog";
 
 const LighthouseVersion: React.FC = () => {
+	const theme = useTheme();
 	const [version, setVersion] = useState<string>();
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasError, setHasError] = useState(false);
@@ -62,7 +63,7 @@ const LighthouseVersion: React.FC = () => {
 					sx={{
 						textDecoration: "none",
 						fontFamily: "Quicksand, sans-serif",
-						color: "rgba(48, 87, 78, 1)",
+						color: theme.palette.primary.main,
 						fontWeight: "bold",
 					}}
 				>
@@ -74,7 +75,7 @@ const LighthouseVersion: React.FC = () => {
 							onClick={handleDialogOpen}
 							sx={{
 								marginLeft: 1,
-								color: "rgba(48, 87, 78, 1)",
+								color: theme.palette.primary.main,
 								animation: "pulse 2s infinite",
 								"@keyframes pulse": {
 									"0%": { transform: "scale(1)" },

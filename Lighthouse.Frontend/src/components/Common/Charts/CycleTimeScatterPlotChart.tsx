@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography } from "@mui/material";
+import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import {
 	ChartContainer,
 	ChartsReferenceLine,
@@ -23,6 +23,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	cycleTimeDataPoints,
 }) => {
 	const [percentiles, setPercentiles] = useState<IPercentileValue[]>([]);
+	const theme = useTheme();
 
 	useEffect(() => {
 		setPercentiles(percentileValues);
@@ -73,7 +74,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							})),
 							xAxisId: "timeAxis",
 							yAxisId: "cycleTimeAxis",
-							color: "rgba(48, 87, 78, 1)",
+							color: theme.palette.primary.main,
 							markerSize: 6,
 							highlightScope: { highlight: "item", fade: "global" },
 							valueFormatter: (item) => {

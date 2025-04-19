@@ -2,28 +2,51 @@ import CallIcon from "@mui/icons-material/Call";
 import EmailIcon from "@mui/icons-material/Email";
 import ForumIcon from "@mui/icons-material/Forum";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import { Box, Container, Typography } from "@mui/material";
+import {
+	Box,
+	Container,
+	Typography,
+	useMediaQuery,
+	useTheme,
+} from "@mui/material";
 import type React from "react";
 import ExternalLinkButton from "../Header/ExternalLinkButton";
 import LetPeopleWorkLogo from "../LetPeopleWork/LetPeopleWorkLogo";
 import LighthouseVersion from "../LetPeopleWork/LighthouseVersion";
 
 const Footer: React.FC = () => {
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
 	return (
 		<Box
 			component="footer"
 			className="footer"
-			sx={{ backgroundColor: "white", py: 2 }}
+			sx={{
+				backgroundColor: theme.palette.background.paper,
+				py: 2,
+				borderTop: `1px solid ${theme.palette.divider}`,
+				mt: "auto",
+				transition: "background-color 0.3s ease",
+			}}
 		>
 			<Container maxWidth={false}>
-				<Box display="flex" justifyContent="space-between" alignItems="center">
+				<Box
+					display="flex"
+					flexDirection={isMobile ? "column" : "row"}
+					justifyContent="space-between"
+					alignItems={isMobile ? "center" : "flex-start"}
+					gap={isMobile ? 2 : 0}
+				>
 					<Box>
 						<LetPeopleWorkLogo />
 					</Box>
 
 					<Box textAlign="center">
-						<Typography variant="body2">Contact us:</Typography>
-						<Box>
+						<Typography variant="body2" sx={{ mb: 1 }}>
+							Contact us:
+						</Typography>
+						<Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
 							<ExternalLinkButton
 								link="mailto:contact@letpeople.work"
 								icon={EmailIcon}

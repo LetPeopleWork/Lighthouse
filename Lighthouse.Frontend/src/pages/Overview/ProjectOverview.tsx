@@ -1,5 +1,9 @@
-import { Typography } from "@mui/material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Fade from "@mui/material/Fade";
 import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 import type React from "react";
 import type { Project } from "../../models/Project/Project";
 import ProjectCard from "./ProjectCard";
@@ -13,6 +17,8 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 	projects,
 	filterText,
 }) => {
+	const theme = useTheme();
+
 	const filteredProjects = projects.filter(
 		(project) =>
 			isMatchingFilterText(project.name) ||
@@ -28,41 +34,91 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 	}
 
 	return (
-		<Grid container spacing={2}>
+		<Box sx={{ py: 2 }}>
 			{projects.length === 0 ? (
-				<Grid size={{ xs: 12 }} data-testid="empty-projects-message">
-					<Typography variant="h6" align="center">
-						No Projects Defined.{" "}
-						<a
-							href="https://docs.lighthouse.letpeople.work"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							Check the documentation
-						</a>{" "}
-						for more information.
-					</Typography>
-				</Grid>
-			) : null}
-			{filteredProjects.length === 0 ? (
-				<Grid size={{ xs: 12 }} data-testid="no-projects-message">
-					<Typography variant="h6" align="center">
+				<Fade in={true} timeout={800}>
+					<Alert
+						severity="info"
+						variant="outlined"
+						sx={{
+							mb: 3,
+							borderRadius: 2,
+							boxShadow: theme.shadows[1],
+						}}
+						data-testid="empty-projects-message"
+					>
+						<Typography variant="body1">
+							No Projects Defined.{" "}
+							<a
+								href="https://docs.lighthouse.letpeople.work"
+								target="_blank"
+								rel="noopener noreferrer"
+								style={{
+									color: theme.palette.primary.main,
+									textDecoration: "none",
+									fontWeight: 500,
+								}}
+								onMouseOver={(e) => {
+									e.currentTarget.style.textDecoration = "underline";
+								}}
+								onMouseOut={(e) => {
+									e.currentTarget.style.textDecoration = "none";
+								}}
+								onFocus={(e) => {
+									e.currentTarget.style.textDecoration = "underline";
+								}}
+								onBlur={(e) => {
+									e.currentTarget.style.textDecoration = "none";
+								}}
+							>
+								Check the documentation
+							</a>{" "}
+							for more information.
+						</Typography>
+					</Alert>
+				</Fade>
+			) : filterText && filteredProjects.length === 0 ? (
+				<Fade in={true} timeout={500}>
+					<Alert
+						severity="warning"
+						variant="outlined"
+						sx={{
+							mb: 3,
+							borderRadius: 2,
+							boxShadow: theme.shadows[1],
+						}}
+						data-testid="no-projects-message"
+					>
 						No projects found matching the filter.
-					</Typography>
-				</Grid>
+					</Alert>
+				</Fade>
 			) : (
-				filteredProjects.map((project) => (
-					<Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }} key={project.id}>
-						<div
-							style={{ width: "100%", maxWidth: 1920 }}
-							data-testid={`project-card-${project.id}`}
+				<Grid container spacing={3}>
+					{filteredProjects.map((project) => (
+						<Grid
+							size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }}
+							key={project.id}
 						>
-							<ProjectCard key={project.id} project={project} />
-						</div>
-					</Grid>
-				))
+							<Box
+								sx={{
+									height: "100%",
+									opacity: 0,
+									animation: "fadeIn 0.5s forwards",
+									animationDelay: `${(filteredProjects.indexOf(project) % 10) * 0.1}s`,
+									"@keyframes fadeIn": {
+										"0%": { opacity: 0, transform: "translateY(10px)" },
+										"100%": { opacity: 1, transform: "translateY(0)" },
+									},
+								}}
+								data-testid={`project-card-${project.id}`}
+							>
+								<ProjectCard project={project} />
+							</Box>
+						</Grid>
+					))}
+				</Grid>
 			)}
-		</Grid>
+		</Box>
 	);
 };
 

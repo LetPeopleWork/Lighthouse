@@ -67,7 +67,9 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 							<DatePicker
 								label="Target Date"
 								value={targetDate}
-								onChange={onTargetDateChange}
+								onChange={(value) =>
+									onTargetDateChange(value as dayjs.Dayjs | null)
+								}
 								minDate={dayjs()}
 								format={getLocaleDateFormat()}
 								sx={{ width: "100%" }}

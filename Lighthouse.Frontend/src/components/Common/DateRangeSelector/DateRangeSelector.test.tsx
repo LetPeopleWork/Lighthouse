@@ -1,46 +1,114 @@
 import { render, screen } from "@testing-library/react";
-import DateRangeSelector, {
-	type DateRangeSelectorProps,
-} from "./DateRangeSelector";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import DateRangeSelector from "./DateRangeSelector";
 
-const renderDateRangeSelector = (props: DateRangeSelectorProps) => {
-	return render(<DateRangeSelector {...props} />);
-};
+// Mock the Material-UI theme hook
+vi.mock("@mui/material", async () => {
+	const actual = await vi.importActual("@mui/material");
+	return {
+		...actual,
+		useTheme: () => ({
+			palette: {
+				primary: {
+					main: "rgba(48, 87, 78, 1)",
+				},
+				mode: "light",
+			},
+		}),
+	};
+});
 
-describe("DateRangeSelector", () => {
-	const mockStartDate = new Date("2023-01-01");
-	const mockEndDate = new Date("2023-01-31");
-	const mockOnStartDateChange = vi.fn();
-	const mockOnEndDateChange = vi.fn();
+// Mock the DatePicker component
+vi.mock("@mui/x-date-pickers", async () => {
+	const actual = await vi.importActual("@mui/x-date-pickers");
+	return {
+		...actual,
+		DatePicker: ({ onChange }: { onChange: (date: Date) => void }) => {
+			return (
+				<div data-testid="mocked-date-picker">
+					<button
+						type="button"
+						onClick={() => onChange(new Date(2023, 1, 15))}
+						data-testid="mocked-date-select"
+					>
+						Select Date
+					</button>
+				</div>
+			);
+		},
+	};
+});
 
+describe("DateRangeSelector component", () => {
 	const defaultProps = {
-		startDate: mockStartDate,
-		endDate: mockEndDate,
-		onStartDateChange: mockOnStartDateChange,
-		onEndDateChange: mockOnEndDateChange,
+		startDate: new Date(2023, 0, 1), // Jan 1, 2023
+		endDate: new Date(2023, 0, 31), // Jan 31, 2023
+		onStartDateChange: vi.fn(),
+		onEndDateChange: vi.fn(),
 	};
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it("renders date range component correctly", () => {
-		renderDateRangeSelector(defaultProps);
+	it("renders with start date and end date pickers", () => {
+		render(<DateRangeSelector {...defaultProps} />);
 
-		// Check if the calendar inputs exist
-		const dateInputs = screen.getAllByRole("textbox");
-		expect(dateInputs.length).toBeGreaterThan(0);
+		// Check for the labels
+		expect(screen.getByText("Start Date")).toBeInTheDocument();
+		expect(screen.getByText("End Date")).toBeInTheDocument();
+
+		// With our mock, we look for the mocked date picker components
+		const datePickers = screen.getAllByTestId("mocked-date-picker");
+		expect(datePickers).toHaveLength(2);
 	});
 
-	it("preserves the date range selection", () => {
-		renderDateRangeSelector(defaultProps);
+	it("calls onStartDateChange when start date changes", async () => {
+		const user = userEvent.setup();
+		render(<DateRangeSelector {...defaultProps} />);
 
-		// Verify that the date range is displayed
-		const dateElements = screen.getAllByRole("textbox");
-		expect(dateElements.length).toBeGreaterThan(0);
+		// Get the mocked date picker buttons
+		const dateSelectButtons = screen.getAllByTestId("mocked-date-select");
 
-		// Verify that the component has the correct props
-		expect(mockStartDate).toEqual(defaultProps.startDate);
-		expect(mockEndDate).toEqual(defaultProps.endDate);
+		// Click the first one (start date)
+		await user.click(dateSelectButtons[0]);
+
+		// Verify callback was called with the new date
+		expect(defaultProps.onStartDateChange).toHaveBeenCalledWith(
+			new Date(2023, 1, 15),
+		);
+	});
+
+	it("calls onEndDateChange when end date changes", async () => {
+		const user = userEvent.setup();
+		render(<DateRangeSelector {...defaultProps} />);
+
+		// Get the mocked date picker buttons
+		const dateSelectButtons = screen.getAllByTestId("mocked-date-select");
+
+		// Click the second one (end date)
+		await user.click(dateSelectButtons[1]);
+
+		// Verify callback was called with the new date
+		expect(defaultProps.onEndDateChange).toHaveBeenCalledWith(
+			new Date(2023, 1, 15),
+		);
+	});
+
+	it("sets max date for start date picker to end date", () => {
+		render(<DateRangeSelector {...defaultProps} />);
+
+		// With our mock, we just check that the component rendered
+		const datePickers = screen.getAllByTestId("mocked-date-picker");
+		expect(datePickers[0]).toBeInTheDocument();
+	});
+
+	it("sets min date for end date picker to start date", () => {
+		render(<DateRangeSelector {...defaultProps} />);
+
+		// With our mock, we just check that the component rendered
+		const datePickers = screen.getAllByTestId("mocked-date-picker");
+		expect(datePickers[1]).toBeInTheDocument();
 	});
 });

@@ -1,5 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import {
+	certainColor,
+	confidentColor,
+	realisticColor,
+	riskyColor,
+} from "../../../utils/theme/colors";
 import { ForecastLevel } from "./ForecastLevel";
 import ForecastLikelihood from "./ForecastLikelihood";
 
@@ -11,10 +17,10 @@ vi.mock("../LocalDateTimeDisplay/LocalDateTimeDisplay", () => ({
 
 const colorToRGB = (colorName: string) => {
 	const colors: { [key: string]: string } = {
-		red: "rgb(255, 0, 0)",
-		orange: "rgb(255, 165, 0)",
-		lightgreen: "rgb(144, 238, 144)",
-		green: "rgb(0, 128, 0)",
+		[riskyColor]: "rgb(255, 0, 0)",
+		[realisticColor]: "rgb(255, 165, 0)",
+		[confidentColor]: "rgb(144, 238, 144)",
+		[certainColor]: "rgb(0, 128, 0)",
 	};
 	return colors[colorName];
 };

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 import FilterBar from "./FilterBar";
 
 describe("FilterBar", () => {
@@ -14,8 +14,12 @@ describe("FilterBar", () => {
 			/>,
 		);
 
-		const inputElement = screen.getByPlaceholderText("Search");
+		const inputElement = screen.getByRole("textbox");
 		expect(inputElement).toBeInTheDocument();
+		expect(inputElement).toHaveAttribute(
+			"placeholder",
+			expect.stringContaining("Search by project or team name"),
+		);
 		expect(inputElement).toHaveValue(filterText);
 	});
 
@@ -30,7 +34,7 @@ describe("FilterBar", () => {
 			/>,
 		);
 
-		const inputElement = screen.getByPlaceholderText("Search");
+		const inputElement = screen.getByRole("textbox");
 		fireEvent.change(inputElement, { target: { value: "new text" } });
 
 		// Check if onFilterTextChange is called with the correct value

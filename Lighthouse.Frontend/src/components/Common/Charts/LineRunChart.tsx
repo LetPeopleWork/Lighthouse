@@ -1,3 +1,4 @@
+import { useTheme } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
 import type React from "react";
 import type { RunChartData } from "../../../models/Forecasts/RunChartData";
@@ -16,6 +17,8 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 	title = "Run Chart",
 	displayTotal = false,
 }) => {
+	const theme = useTheme();
+
 	return (
 		<BaseRunChart
 			chartData={chartData}
@@ -46,7 +49,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 						series={[
 							{
 								data: yValues,
-								color: "rgba(48, 87, 78, 1)",
+								color: theme.palette.primary.main,
 							},
 						]}
 						height={500}
