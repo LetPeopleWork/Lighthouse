@@ -1,9 +1,9 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Fade from "@mui/material/Fade";
+import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import { useTheme } from "@mui/material/styles";
-import Grid from "@mui/material/Grid";
 import type React from "react";
 import type { Project } from "../../models/Project/Project";
 import ProjectCard from "./ProjectCard";
