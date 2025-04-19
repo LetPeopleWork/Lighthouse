@@ -53,6 +53,6 @@ describe("LighthouseLogo component", () => {
 		expect(houseText.parentElement).toHaveStyle(
 			"font-family: Quicksand,sans-serif",
 		);
-		expect(houseText).toHaveStyle("color: rgb(0, 0, 0)");
+		expect(houseText).toHaveStyle("color: rgb(0, 0, 0, 0.87)");
 	});
 });

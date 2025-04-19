@@ -162,10 +162,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					<Table>
 						<TableHead
 							sx={{
-								bgcolor:
-									theme.palette.mode === "dark"
-										? "rgba(255, 255, 255, 0.08)"
-										: "rgba(0, 0, 0, 0.03)",
+								bgcolor: theme.palette.action.hover,
 							}}
 						>
 							<TableRow>
@@ -205,10 +202,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 											"100%": { opacity: 1, transform: "translateY(0)" },
 										},
 										"&:hover": {
-											bgcolor:
-												theme.palette.mode === "dark"
-													? "rgba(255, 255, 255, 0.05)"
-													: "rgba(0, 0, 0, 0.02)",
+											bgcolor: theme.palette.action.hover,
 										},
 									}}
 								>

@@ -18,6 +18,13 @@ export const appColors = {
 		dark: "#2f171e",
 		contrastText: "#ffffff",
 	},
+	// Forecast level colors
+	forecast: {
+		risky: "red",
+		realistic: "orange",
+		confident: "lightgreen",
+		certain: "green",
+	},
 	// Theme colors
 	light: {
 		background: "#f5f5f5",
@@ -40,6 +47,12 @@ export const appColors = {
 // Common color values that need to be referenced directly
 export const primaryColor = appColors.primary.main;
 export const secondaryColor = appColors.secondary.main;
+
+// Forecast level colors
+export const riskyColor = appColors.forecast.risky;
+export const realisticColor = appColors.forecast.realistic;
+export const confidentColor = appColors.forecast.confident;
+export const certainColor = appColors.forecast.certain;
 
 // Legacy color formats for compatibility
 export const primaryColorRGBA = "rgba(48, 87, 78, 1)"; // #30574e in rgba

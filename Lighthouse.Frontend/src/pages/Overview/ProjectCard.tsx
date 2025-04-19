@@ -26,10 +26,9 @@ const ProjectCardStyle = styled(Card)(({ theme }) => ({
 	transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
 	"&:hover": {
 		transform: "translateY(-4px)",
-		boxShadow:
-			theme.palette.mode === "dark"
-				? "0px 8px 16px rgba(0, 0, 0, 0.6)"
-				: "0px 8px 16px rgba(0, 0, 0, 0.15)",
+		boxShadow: theme.shadows
+			? theme.shadows[4 as keyof typeof theme.shadows]
+			: "none",
 	},
 	borderRadius: 12,
 }));

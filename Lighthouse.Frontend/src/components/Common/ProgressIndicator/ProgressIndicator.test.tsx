@@ -12,11 +12,15 @@ vi.mock("@mui/material", async () => {
 			palette: {
 				primary: {
 					main: "#1976d2",
+					contrastText: "#ffffff",
 				},
 				mode: "light",
 				text: {
 					primary: "#333333",
 					secondary: "#666666",
+				},
+				action: {
+					disabledBackground: "#e0e0e0",
 				},
 			},
 		}),

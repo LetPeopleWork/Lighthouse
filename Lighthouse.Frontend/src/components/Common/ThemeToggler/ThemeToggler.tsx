@@ -16,14 +16,7 @@ const ThemeToggler: React.FC = () => {
 				onClick={toggleTheme}
 				color="inherit"
 				sx={{
-					color:
-						muiTheme.palette.mode === "dark"
-							? "#ffffff"
-							: muiTheme.palette.primary.main,
-					transition: "all 0.3s ease",
-					"&:hover": {
-						transform: "rotate(30deg)",
-					},
+					color: muiTheme.palette.primary.main,
 				}}
 			>
 				{mode === "light" ? <DarkMode /> : <LightMode />}

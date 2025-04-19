@@ -136,10 +136,7 @@ const Settings: React.FC = () => {
 							sx={{
 								borderBottom: 1,
 								borderColor: "divider",
-								bgcolor:
-									theme.palette.mode === "dark"
-										? "rgba(255,255,255,0.05)"
-										: "rgba(0,0,0,0.02)",
+								bgcolor: theme.palette.action.hover,
 							}}
 						>
 							<TabList

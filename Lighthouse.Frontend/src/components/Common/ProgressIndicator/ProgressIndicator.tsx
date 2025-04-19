@@ -33,12 +33,6 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 		((100 / progressableItem.totalWork) * completedItems).toFixed(2),
 	);
 
-	// Determine appropriate color based on completion percentage
-	const getColorForPercentage = () => {
-		// Use theme's primary color consistently instead of changing colors based on completion percentage
-		return theme.palette.primary.main;
-	};
-
 	// Animate progress on component mount
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -73,12 +67,9 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 						width: "100%",
 						height: `${height}px`,
 						borderRadius: height / 3,
-						bgcolor:
-							theme.palette.mode === "dark"
-								? "rgba(255,255,255,0.1)"
-								: "rgba(0,0,0,0.05)",
+						bgcolor: theme.palette.action.disabledBackground,
 						"& .MuiLinearProgress-bar": {
-							backgroundColor: getColorForPercentage(),
+							backgroundColor: theme.palette.primary.main,
 							transition: "transform 1s ease-out",
 						},
 					}}
@@ -92,18 +83,16 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 							left: "50%",
 							transform: "translateX(-50%)",
 							color:
-								theme.palette.mode === "dark"
-									? "#fff"
-									: completionPercentage > 50
-										? "#fff"
-										: theme.palette.text.primary,
+								completionPercentage > 50
+									? theme.palette.primary.contrastText
+									: theme.palette.text.primary,
 							fontWeight: "bold",
 							whiteSpace: "nowrap",
 							display: "flex",
 							alignItems: "center",
 							fontSize: `${Math.min(height * 0.6, 12)}px`,
 							textShadow:
-								theme.palette.mode === "dark" || completionPercentage > 50
+								completionPercentage > 50
 									? "0px 0px 2px rgba(0,0,0,0.7)"
 									: "none",
 						}}
@@ -122,10 +111,7 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 										sx={{
 											marginLeft: "4px",
 											padding: "0px",
-											color:
-												theme.palette.mode === "dark"
-													? "#fff"
-													: theme.palette.text.primary,
+											color: theme.palette.text.primary,
 										}}
 									>
 										<InfoOutlinedIcon fontSize="small" />

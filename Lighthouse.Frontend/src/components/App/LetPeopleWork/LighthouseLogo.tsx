@@ -23,12 +23,7 @@ const LighthouseLogo: React.FC = () => {
 					<Box component="span" sx={{ color: theme.palette.primary.main }}>
 						Light
 					</Box>
-					<Box
-						component="span"
-						sx={{
-							color: theme.palette.mode === "dark" ? "#fff" : "#000",
-						}}
-					>
+					<Box component="span" sx={{ color: theme.palette.text.primary }}>
 						house
 					</Box>
 				</Typography>
