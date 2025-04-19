@@ -4,11 +4,11 @@ import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import PauseCircleOutlineOutlinedIcon from "@mui/icons-material/PauseCircleOutlineOutlined";
 import PlayCircleFilledWhiteOutlinedIcon from "@mui/icons-material/PlayCircleFilledWhiteOutlined";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
-import { IconButton, Tooltip } from "@mui/material";
+import { IconButton, Link, Tooltip } from "@mui/material";
 import React from "react";
-import { Link } from "react-router-dom";
 import type { ITeam } from "../../../models/Team/Team";
 import type { StateCategory } from "../../../models/WorkItem";
+import StyledLink from "../StyledLink/StyledLink";
 
 interface FeatureNameProps {
 	name: string;
@@ -26,15 +26,28 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 	teamsWorkIngOnFeature,
 }) => {
 	const teamLinks = teamsWorkIngOnFeature.map((team) => (
-		<Link key={team.id} to={`/teams/${team.id}`}>
+		<StyledLink key={team.id} to={`/teams/${team.id}`} variant="body2">
 			{team.name}
-		</Link>
+		</StyledLink>
 	));
 
 	return (
 		<span>
 			{url ? (
-				<Link to={url} target="_blank" rel="noopener noreferrer">
+				<Link
+					href={url}
+					target="_blank"
+					rel="noopener noreferrer"
+					sx={{
+						textDecoration: "none",
+						color: (theme) => theme.palette.primary.main,
+						fontWeight: 500,
+						"&:hover": {
+							textDecoration: "underline",
+							opacity: 0.9,
+						},
+					}}
+				>
 					{name}
 				</Link>
 			) : (
@@ -60,7 +73,6 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 									{curr}
 								</React.Fragment>
 							))}{" "}
-							{/* Initial value set to an empty fragment */}
 						</div>
 					}
 				>

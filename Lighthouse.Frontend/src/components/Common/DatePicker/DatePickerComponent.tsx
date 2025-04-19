@@ -28,7 +28,7 @@ const DatePickerComponent: React.FC<DatePickerComponentProps> = ({
 			<DatePicker
 				label={label}
 				value={value}
-				onChange={handleChange}
+				onChange={(newValue) => handleChange(newValue as Dayjs | null)}
 				maxDate={dayjs()}
 				sx={{ width: "100%" }}
 			/>

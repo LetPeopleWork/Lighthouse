@@ -1,3 +1,4 @@
+import { useTheme } from "@mui/material";
 import type React from "react";
 import { NavLink } from "react-router-dom";
 
@@ -7,10 +8,24 @@ interface NavigationItemProps {
 }
 
 const NavigationItem: React.FC<NavigationItemProps> = ({ path, text }) => {
+	const theme = useTheme();
+
 	return (
 		<NavLink
 			to={path}
-			className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+			style={({ isActive }) => ({
+				color: theme.palette.text.primary,
+				fontWeight: isActive ? "bold" : "normal",
+				textDecoration: "none",
+				position: "relative",
+				padding: "4px 8px",
+				transition: "all 0.2s ease",
+				borderBottom: isActive
+					? `2px solid ${theme.palette.primary.main}`
+					: "2px solid transparent",
+			})}
+			// Using NavLink's className to add a custom class we can target with CSS
+			className={({ isActive }) => `nav-item ${isActive ? "nav-active" : ""}`}
 		>
 			{text}
 		</NavLink>

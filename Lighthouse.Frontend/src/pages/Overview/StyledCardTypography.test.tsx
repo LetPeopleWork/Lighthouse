@@ -1,5 +1,6 @@
 import type { SvgIconComponent } from "@mui/icons-material";
 import SvgIcon from "@mui/material/SvgIcon";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import StyledCardTypography from "./StyledCardTypography";
@@ -10,8 +11,21 @@ describe("StyledCardTypography component", () => {
 	const mockText = "Styled Card Typography";
 	const mockChildren = <span>Mock Children</span>;
 
+	// Create a test theme that matches the one used in the app
+	const theme = createTheme({
+		palette: {
+			primary: {
+				main: "rgb(25, 118, 210)",
+			},
+		},
+	});
+
 	it("renders text and icon correctly", () => {
-		render(<StyledCardTypography text={mockText} icon={MockIcon} />);
+		render(
+			<ThemeProvider theme={theme}>
+				<StyledCardTypography text={mockText} icon={MockIcon} />
+			</ThemeProvider>,
+		);
 
 		const iconElement = screen.getByTestId("styled-card-icon");
 		expect(iconElement).toBeInTheDocument();
@@ -22,9 +36,11 @@ describe("StyledCardTypography component", () => {
 
 	it("renders text, icon, and children correctly", () => {
 		render(
-			<StyledCardTypography text={mockText} icon={MockIcon}>
-				{mockChildren}
-			</StyledCardTypography>,
+			<ThemeProvider theme={theme}>
+				<StyledCardTypography text={mockText} icon={MockIcon}>
+					{mockChildren}
+				</StyledCardTypography>
+			</ThemeProvider>,
 		);
 
 		const iconElement = screen.getByTestId("styled-card-icon");
@@ -38,10 +54,14 @@ describe("StyledCardTypography component", () => {
 	});
 
 	it("uses default icon style", () => {
-		render(<StyledCardTypography text={mockText} icon={MockIcon} />);
+		render(
+			<ThemeProvider theme={theme}>
+				<StyledCardTypography text={mockText} icon={MockIcon} />
+			</ThemeProvider>,
+		);
 
 		const iconElement = screen.getByTestId("styled-card-icon");
-		expect(iconElement).toHaveStyle("color: rgba(48, 87, 78, 1)");
+		expect(iconElement).toHaveStyle("color: rgb(25, 118, 210)");
 		expect(iconElement).toHaveStyle("margin-right: 8px");
 	});
 });
