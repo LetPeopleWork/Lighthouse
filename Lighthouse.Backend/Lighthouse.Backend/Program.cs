@@ -20,6 +20,9 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Services.Interfaces.TeamData;
+using Lighthouse.Backend.Services.Implementation.TeamData;
 
 namespace Lighthouse.Backend
 {
@@ -161,6 +164,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             builder.Services.AddScoped<IProjectMetricsService, ProjectMetricsService>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
+            builder.Services.AddScoped<ITeamDataService, TeamDataService>();
 
             builder.Services.AddScoped<AzureDevOpsWorkItemService>();
             builder.Services.AddScoped<JiraWorkItemService>();

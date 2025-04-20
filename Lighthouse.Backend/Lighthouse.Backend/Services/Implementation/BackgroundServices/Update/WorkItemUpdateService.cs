@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.WorkTracking;
 

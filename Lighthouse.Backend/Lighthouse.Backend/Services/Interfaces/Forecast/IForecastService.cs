@@ -2,7 +2,7 @@
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.Services.Interfaces.Update
+namespace Lighthouse.Backend.Services.Interfaces.Forecast
 {
     public interface IForecastService
     {

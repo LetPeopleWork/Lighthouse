@@ -1,14 +1,15 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
-using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public class TeamUpdateService : UpdateServiceBase<Team>, ITeamUpdateService
     {
-        public TeamUpdateService(ILogger<TeamUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService) : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Team)
+        public TeamUpdateService(ILogger<TeamUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
+            : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Team)
         {
         }
 
@@ -30,19 +31,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            var workItemServiceFactory = serviceProvider.GetRequiredService<IWorkItemServiceFactory>();
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
-
-            var workItemRepository = serviceProvider.GetRequiredService<IWorkItemRepository>();
-            var teamMetricsService = serviceProvider.GetRequiredService<ITeamMetricsService>();
-
-            await UpdateWorkItemsForTeam(team, workItemService, workItemRepository);
-
-            teamMetricsService.InvalidateTeamMetrics(team);
-            team.RefreshUpdateTime();
-            UpdateFeatureWIPForTeam(team, teamMetricsService);
-
-            await teamRepository.Save();
+            var teamDataService = serviceProvider.GetRequiredService<ITeamDataService>();
+            await teamDataService.UpdateTeamData(team);
         }
 
         protected override bool ShouldUpdateEntity(Team entity, RefreshSettings refreshSettings)
@@ -52,43 +42,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             Logger.LogInformation("Last Refresh of team {TeamName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
 
             return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;
-        }
-
-        private async Task UpdateWorkItemsForTeam(Team team, IWorkItemService workItemService, IWorkItemRepository workItemRepository)
-        {
-            Logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
-            var items = await workItemService.GetChangedWorkItemsSinceLastTeamUpdate(team);
-
-            foreach (var item in items)
-            {
-                var existingItem = workItemRepository.GetByPredicate(i => i.ReferenceId == item.ReferenceId);
-                if (existingItem == null)
-                {
-                    workItemRepository.Add(item);
-                    Logger.LogDebug("Added Work Item {WorkItemId} to DB", item.ReferenceId);
-                }
-                else
-                {
-                    existingItem.Update(item);
-                    workItemRepository.Update(existingItem);
-                    Logger.LogDebug("Updated Work Item {WorkItemId} in DB", item.ReferenceId);
-                }
-            }
-
-            await workItemRepository.Save();
-        }
-
-        private static void UpdateFeatureWIPForTeam(Team team, ITeamMetricsService teamMetricsService)
-        {
-            if (team.AutomaticallyAdjustFeatureWIP)
-            {
-                var featureWip = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team).Count();
-
-                if (featureWip > 0)
-                {
-                    team.FeatureWIP = featureWip;
-                }
-            }
         }
     }
 }
