@@ -35,13 +35,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetThroughputRefreshSettings_ReturnsCorrectSettings()
+        public void GetTeamDataRefreshSettings_ReturnsCorrectSettings()
         {
-            SetupRepositoryForKeys(AppSettingKeys.ThroughputRefreshInterval, "30", AppSettingKeys.ThroughputRefreshAfter, "180", AppSettingKeys.ThroughputRefreshStartDelay, "2");
+            SetupRepositoryForKeys(AppSettingKeys.TeamDataRefreshInterval, "30", AppSettingKeys.TeamDataRefreshAfter, "180", AppSettingKeys.TeamDataRefreshStartDelay, "2");
 
             var service = CreateService();
 
-            var settings = service.GetThroughputRefreshSettings();
+            var settings = service.GetTeamDataRefreshSettings();
 
             Assert.Multiple(() =>
             {
@@ -67,18 +67,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task UpdateThroughputRefreshSettings_UpdatesCorrectlyAsync()
+        public async Task UpdateTeamDataRefreshSettings_UpdatesCorrectlyAsync()
         {
-            SetupRepositoryForKeys(AppSettingKeys.ThroughputRefreshInterval, "30", AppSettingKeys.ThroughputRefreshAfter, "180", AppSettingKeys.ThroughputRefreshStartDelay, "2");
+            SetupRepositoryForKeys(AppSettingKeys.TeamDataRefreshInterval, "30", AppSettingKeys.TeamDataRefreshAfter, "180", AppSettingKeys.TeamDataRefreshStartDelay, "2");
 
             var service = CreateService();
 
             var newSettings = new RefreshSettings { Interval = 35, RefreshAfter = 190, StartDelay = 3 };
-            await service.UpdateThroughputRefreshSettings(newSettings);
+            await service.UpdateTeamDataRefreshSettings(newSettings);
 
-            VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshInterval, "35");
-            VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshAfter, "190");
-            VerifyUpdateCalled(AppSettingKeys.ThroughputRefreshStartDelay, "3");
+            VerifyUpdateCalled(AppSettingKeys.TeamDataRefreshInterval, "35");
+            VerifyUpdateCalled(AppSettingKeys.TeamDataRefreshAfter, "190");
+            VerifyUpdateCalled(AppSettingKeys.TeamDataRefreshStartDelay, "3");
         }
 
         [Test]

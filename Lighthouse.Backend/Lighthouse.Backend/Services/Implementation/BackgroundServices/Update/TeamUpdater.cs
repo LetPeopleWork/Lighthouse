@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             using (var scope = CreateServiceScope())
             {
-                return GetServiceFromServiceScope<IAppSettingService>(scope).GetThroughputRefreshSettings();
+                return GetServiceFromServiceScope<IAppSettingService>(scope).GetTeamDataRefreshSettings();
             }
         }
 

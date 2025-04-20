@@ -13,9 +13,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         private void SeedAppSettings()
         {
-            AddIfNotExists(new AppSetting { Id = 0, Key = AppSettingKeys.ThroughputRefreshInterval, Value = "60" });
-            AddIfNotExists(new AppSetting { Id = 1, Key = AppSettingKeys.ThroughputRefreshAfter, Value = "180" });
-            AddIfNotExists(new AppSetting { Id = 2, Key = AppSettingKeys.ThroughputRefreshStartDelay, Value = "10" });
+            AddIfNotExists(new AppSetting { Id = 0, Key = AppSettingKeys.TeamDataRefreshInterval, Value = "60" });
+            AddIfNotExists(new AppSetting { Id = 1, Key = AppSettingKeys.TeamDataRefreshAfter, Value = "180" });
+            AddIfNotExists(new AppSetting { Id = 2, Key = AppSettingKeys.TeamDataRefreshStartDelay, Value = "10" });
             AddIfNotExists(new AppSetting { Id = 3, Key = AppSettingKeys.FeaturesRefreshInterval, Value = "60" });
             AddIfNotExists(new AppSetting { Id = 4, Key = AppSettingKeys.FeaturesRefreshAfter, Value = "180" });
             AddIfNotExists(new AppSetting { Id = 5, Key = AppSettingKeys.FeaturesRefreshStartDelay, Value = "15" });

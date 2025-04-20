@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IRepository<Feature> featureRepository;
 
         public TeamMetricsService(ILogger<TeamMetricsService> logger, IWorkItemRepository workItemRepository, IRepository<Feature> featureRepository, IAppSettingService appSettingService)
-            : base(appSettingService.GetThroughputRefreshSettings().Interval)
+            : base(appSettingService.GetTeamDataRefreshSettings().Interval)
         {
             this.logger = logger;
             this.workItemRepository = workItemRepository;

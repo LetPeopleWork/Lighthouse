@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             featureRepositoryMock = new Mock<IRepository<Feature>>();
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
-            appSettingsServiceMock.Setup(x => x.GetThroughputRefreshSettings())
+            appSettingsServiceMock.Setup(x => x.GetTeamDataRefreshSettings())
                 .Returns(new RefreshSettings { Interval = 1 });
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };

@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private void SetupRefreshSettings(int interval, int refreshAfter)
         {
             var refreshSettings = new RefreshSettings { Interval = interval, RefreshAfter = refreshAfter, StartDelay = 0 };
-            appSettingServiceMock.Setup(x => x.GetThroughputRefreshSettings()).Returns(refreshSettings);
+            appSettingServiceMock.Setup(x => x.GetTeamDataRefreshSettings()).Returns(refreshSettings);
         }
 
         private void SetupTeams(IEnumerable<Team> teams)

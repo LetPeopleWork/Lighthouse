@@ -54,14 +54,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetThroughputRefreshSettings_ReturnsSettings()
+        public void GetTeamDataRefreshSettings_ReturnsSettings()
         {
             var settings = new RefreshSettings();
-            appSettingServiceMock.Setup(x => x.GetThroughputRefreshSettings()).Returns(settings);
+            appSettingServiceMock.Setup(x => x.GetTeamDataRefreshSettings()).Returns(settings);
 
             var subject = CreateSubject();
 
-            var result = subject.GetThroughputRefreshSettings();
+            var result = subject.GetTeamDataRefreshSettings();
 
             Assert.Multiple(() =>
             {
@@ -74,17 +74,17 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateThroughputRefreshSettings_UpdatesSettings()
+        public async Task UpdateTeamDataRefreshSettings_UpdatesSettings()
         {
             var refreshSettings = new RefreshSettings();
 
             var subject = CreateSubject();
 
-            var result = await subject.UpdateThroughputRefreshSettings(refreshSettings);
+            var result = await subject.UpdateTeamDataRefreshSettings(refreshSettings);
 
             Assert.Multiple(() =>
             {
-                appSettingServiceMock.Verify(x => x.UpdateThroughputRefreshSettings(refreshSettings), Times.Once);
+                appSettingServiceMock.Verify(x => x.UpdateTeamDataRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             });
         }

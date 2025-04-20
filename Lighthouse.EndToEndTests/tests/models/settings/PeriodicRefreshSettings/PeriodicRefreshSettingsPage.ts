@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-export type PeriodicRefreshSettingType = "Throughput" | "Feature" | "Forecast";
+export type PeriodicRefreshSettingType = "Team" | "Feature" | "Forecast";
 
 export class PeriodicRefreshSettingsPage {
 	page: Page;
