@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            workItemServiceMock.Verify(x => x.UpdateWorkItemsForProject(project));
+            workItemServiceMock.Verify(x => x.UpdateFeaturesForProject(project));
         }
 
         [Test]

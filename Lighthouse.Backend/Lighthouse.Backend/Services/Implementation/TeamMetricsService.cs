@@ -156,6 +156,29 @@ namespace Lighthouse.Backend.Services.Implementation
             InvalidateMetrics(team, logger);
         }
 
+        public async Task UpdateTeamMetrics(Team team)
+        {
+            InvalidateTeamMetrics(team);
+
+            team.RefreshUpdateTime();
+            UpdateFeatureWIPForTeam(team);
+
+            await workItemRepository.Save();
+        }
+
+        private void UpdateFeatureWIPForTeam(Team team)
+        {
+            if (team.AutomaticallyAdjustFeatureWIP)
+            {
+                var featureWip = GetCurrentFeaturesInProgressForTeam(team).Count();
+
+                if (featureWip > 0)
+                {
+                    team.FeatureWIP = featureWip;
+                }
+            }
+        }
+
         private IEnumerable<WorkItem> GetWorkItemsClosedInDateRange(Team team, DateTime startDate, DateTime endDate)
         {
             var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);

@@ -22,46 +22,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_NoUpdateDone_GetsAllItemsThatMatchQuery()
+        public async Task GetWorkItemsForTeam_GetsAllItemsThatMatchQuery()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND labels = ExistingLabel");
 
             team.ResetUpdateTime();
 
-            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var matchingItems = await subject.GetWorkItemsForTeam(team);
 
             Assert.That(matchingItems.Count, Is.EqualTo(2));
         }
 
         [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_NoChangedItems_DoesNotFindNewItems()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ AND labels = ExistingLabel");
-
-            team.TeamUpdateTime = DateTime.UtcNow.AddDays(+1);
-
-            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
-
-            Assert.That(matchingItems.Count, Is.EqualTo(0));
-        }
-
-        [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_ReturnsOnlyChangedItems()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"project = PROJ AND labels = ExistingLabel");
-
-            team.TeamUpdateTime = new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc);
-
-            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
-
-            Assert.That(matchingItems.Count, Is.EqualTo(1));
-        }
-
-        [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_OrCaseInWorkItemQuery_HandlesCorrectly()
+        public async Task GetWorkItemsForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ OR project = DUMMY");
@@ -70,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            var closedItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var closedItems = await subject.GetWorkItemsForTeam(team);
 
             Assert.That(closedItems.Count, Is.EqualTo(18));
         }
@@ -78,25 +52,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         [TestCase("PROJ-18", "")]
         [TestCase("PROJ-15", "PROJ-8")]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_SetsParentRelationCorrect(string issueKey, string expectedParentReference)
+        public async Task GetWorkItemsForTeam_SetsParentRelationCorrect(string issueKey, string expectedParentReference)
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND issueKey = {issueKey}");
 
-            var workItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == issueKey);
 
             Assert.That(workItem.ParentReferenceId, Is.EqualTo(expectedParentReference));
         }
 
         [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UseParentOverride_SetsParentRelationCorrect()
+        public async Task GetWorkItemsForTeam_UseParentOverride_SetsParentRelationCorrect()
         {
             var subject = CreateSubject();
             var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
             team.AdditionalRelatedField = "cf[10038]";
 
-            var workItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
 
             Assert.That(workItem.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"));

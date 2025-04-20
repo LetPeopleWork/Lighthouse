@@ -12,62 +12,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     public class AzureDevOpsWorkTrackingConnectorTest
     {
         [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_NoUpdateDone_GetsAllItemsThatMatchQuery()
+        public async Task GetWorkItemsForTeam_GetsAllItemsThatMatchQuery()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] <> 'Closed'");
 
             team.ResetUpdateTime();
 
-            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var matchingItems = await subject.GetWorkItemsForTeam(team);
 
             Assert.That(matchingItems.Count, Is.EqualTo(2));
-        }
-
-        [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_NoChangedItems_DoesNotFindNewItems()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] <> 'Closed'");
-
-            team.TeamUpdateTime = DateTime.UtcNow.AddDays(+1);
-
-            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
-
-            Assert.That(matchingItems.Count, Is.EqualTo(0));
-        }
-
-        [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_UpdateDone_ReturnsOnlyChangedItems()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [System.Title] CONTAINS 'Unparented' AND [System.State] != 'Closed'");
-
-            team.TeamUpdateTime = new DateTime(2024, 10, 17, 0, 0, 0, DateTimeKind.Utc);
-
-            var matchingItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
-
-            Assert.That(matchingItems.Count, Is.EqualTo(1));
         }
 
         [Test]
         [TestCase("377", "", null)]
         [TestCase("365", "371", null)]
         [TestCase("375", "279", "Custom.RemoteFeatureID")]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentOverrideField)
+        public async Task GetWorkItemsForTeam_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentOverrideField)
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
             team.AdditionalRelatedField = parentOverrideField;
 
-            var workItems = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
 
             Assert.That(workItem.ParentReferenceId, Is.EqualTo(expectedParentReference));
         }
 
         [Test]
-        public async Task GetChangedWorkItemsSinceLastTeamUpdate_OrCaseInWorkItemQuery_HandlesCorrectly()
+        public async Task GetWorkItemsForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' OR [{AzureDevOpsFieldNames.TeamProject}] = 'DummyProject'");
@@ -77,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            var result = await subject.GetChangedWorkItemsSinceLastTeamUpdate(team);
+            var result = await subject.GetWorkItemsForTeam(team);
 
             Assert.That(result.Count, Is.EqualTo(17));
         }
@@ -424,7 +398,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("[System.TeamProject] = 'CMFTTestTeamProject'", true)]
         [TestCase("[System.TeamProject] = 'CMFTTestTeamProject' AND [System.Tags] CONTAINS 'NotExistingTag'", false)]
         [TestCase("[System.TeamProject] = 'SomethingThatDoesNotExist'", false)]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S6561:Avoid using \"DateTime.Now\" for benchmarking or timing operations", Justification = "Not used for benchmarking here")]
         public async Task ValidateTeamSettings_ValidConnectionSettings_ReturnsTrueIfTeamHasThroughput(string query, bool expectedValue)
         {
             var history = (DateTime.Now - new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)).Days;

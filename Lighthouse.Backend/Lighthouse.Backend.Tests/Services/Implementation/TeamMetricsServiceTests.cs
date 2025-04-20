@@ -547,6 +547,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             });
         }
 
+        [Test]
+        public async Task UpdateTeamMetrics_RefreshesUpdateTimeForTeam()
+        {
+            testTeam.TeamUpdateTime = DateTime.Now.AddDays(-1);
+
+            await subject.UpdateTeamMetrics(testTeam);
+
+            Assert.That(testTeam.TeamUpdateTime, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-1)));
+        }
+
+        [Test]
+        public async Task UpdateTeamMetrics_TeamHasAutomaticallyAdjustFeatureWIPSetting_SetsFeatureWIPToRealWIP()
+        {
+            testTeam.FeatureWIP = 2;
+            testTeam.AutomaticallyAdjustFeatureWIP = true;
+
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+            AddWorkItem(StateCategories.Doing, 1, "Feature3");
+
+            await subject.UpdateTeamMetrics(testTeam);
+
+            Assert.That(testTeam.FeatureWIP, Is.EqualTo(3));
+        }
+
+        [Test]
+        public async Task UpdateTeamMetrics_TeamHasNoAutomaticallyAdjustFeatureWIPSetting_DoesNotChangeWIP()
+        {
+            testTeam.FeatureWIP = 2;
+            testTeam.AutomaticallyAdjustFeatureWIP = false;
+
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+            AddWorkItem(StateCategories.Doing, 1, "Feature3");
+
+            await subject.UpdateTeamMetrics(testTeam);
+
+            Assert.That(testTeam.FeatureWIP, Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task UpdateTeamMetrics_TeamHasAutomaticallyAdjustFeatureWIPSetting_NewFeatureWIPIsInvalid_DoesNotChangeFeatureWIP()
+        {
+            testTeam.FeatureWIP = 2;
+            testTeam.AutomaticallyAdjustFeatureWIP = true;
+
+            await subject.UpdateTeamMetrics(testTeam);
+
+            Assert.That(testTeam.FeatureWIP, Is.EqualTo(2));
+        }
+
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)
         {
             var workItem = new WorkItem

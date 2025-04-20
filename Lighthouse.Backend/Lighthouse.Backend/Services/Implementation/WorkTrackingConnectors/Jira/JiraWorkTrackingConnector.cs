@@ -24,14 +24,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             this.cryptoService = cryptoService;
         }
 
-        public async Task<IEnumerable<WorkItem>> GetChangedWorkItemsSinceLastTeamUpdate(Team team)
+        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             var workItems = new List<WorkItem>();
 
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
             
-            var lastUpdatedFilter = PrepareLastUpdatedQuery(team.TeamUpdateTime);
-            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)} {lastUpdatedFilter}";
+            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)}";
             var issues = await GetIssuesByQuery(team, query, team.AdditionalRelatedField);
 
             foreach (var issue in issues)
@@ -160,7 +159,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
                 
                 var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
-                var issues = await GetIssuesByQuery(team, workItemsQuery, team.AdditionalRelatedField);
+                var issues = await GetIssuesByQuery(team, workItemsQuery, team.AdditionalRelatedField, 10);
 
                 var totalItems = issues.Count();
 
@@ -315,7 +314,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return 0;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, string? additionalRelatedField = null)
+        private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, string? additionalRelatedField = null, int? maxResultsOverride = null)
         {
             logger.LogDebug("Getting Issues by JQL Query: '{Query}'", jqlQuery);
             var client = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
@@ -323,7 +322,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var issues = new List<Issue>();
 
             var startAt = 0;
-            var maxResults = 1000;
+            var maxResults = maxResultsOverride ?? 1000;
             var isLast = false;
 
             while (!isLast)
@@ -342,7 +341,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 maxResults = int.Parse(maxResultActual);
                 startAt += maxResults;
-                isLast = int.Parse(totalResultsActual) < startAt;
+                isLast = maxResultsOverride.HasValue || int.Parse(totalResultsActual) < startAt;
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {
@@ -371,19 +370,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 $"{stateQuery} ";
 
             return jql;
-        }
-
-        private static string PrepareLastUpdatedQuery(DateTime lastUpdated)
-        {
-            var query = string.Empty;
-
-            var updateHorizon = lastUpdated;
-            if (lastUpdated != DateTime.MinValue)
-            {
-                query += $" AND ({JiraFieldNames.UpdatedFieldName} >= '{updateHorizon:yyyy-MM-dd}')";
-            }
-
-            return query;
         }
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)

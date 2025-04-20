@@ -1,74 +1,40 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
+using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 
 namespace Lighthouse.Backend.Services.Implementation.TeamData
 { 
     public class TeamDataService : ITeamDataService
     {
         private readonly ILogger<TeamDataService> logger;
-        private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
-        private readonly IWorkItemRepository workItemRepository;
         private readonly ITeamMetricsService teamMetricsService;
+        private readonly IWorkItemService workItemService;
+        private readonly IForecastUpdater forecastUpdater;
 
-        public TeamDataService(ILogger<TeamDataService> logger, IWorkTrackingConnectorFactory workTrackingConnectorFactory, IWorkItemRepository workItemRepository, ITeamMetricsService teamMetricsService)
+        public TeamDataService(
+            ILogger<TeamDataService> logger, ITeamMetricsService teamMetricsService, IWorkItemService workItemService, IForecastUpdater forecastUpdater)
         {
             this.logger = logger;
-            this.workTrackingConnectorFactory = workTrackingConnectorFactory;
-            this.workItemRepository = workItemRepository;
             this.teamMetricsService = teamMetricsService;
+            this.workItemService = workItemService;
+            this.forecastUpdater = forecastUpdater;
         }
 
         public async Task UpdateTeamData(Team team)
         {
-            await UpdateWorkItemsForTeam(team);
+            logger.LogInformation("Updating Team Data for {TeamName}", team.Name);
 
-            teamMetricsService.InvalidateTeamMetrics(team);
-            team.RefreshUpdateTime();
-            UpdateFeatureWIPForTeam(team, teamMetricsService);
+            await workItemService.UpdateWorkItemsForTeam(team);
+            await teamMetricsService.UpdateTeamMetrics(team);
 
-            await workItemRepository.Save();
-        }
-
-        private async Task UpdateWorkItemsForTeam(Team team)
-        {
-            logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
-
-            var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
-            var items = await workItemService.GetChangedWorkItemsSinceLastTeamUpdate(team);
-
-            foreach (var item in items)
+            foreach (var project in team.Projects)
             {
-                var existingItem = workItemRepository.GetByPredicate(i => i.ReferenceId == item.ReferenceId);
-                if (existingItem == null)
-                {
-                    workItemRepository.Add(item);
-                    logger.LogDebug("Added Work Item {WorkItemId} to DB", item.ReferenceId);
-                }
-                else
-                {
-                    existingItem.Update(item);
-                    workItemRepository.Update(existingItem);
-                    logger.LogDebug("Updated Work Item {WorkItemId} in DB", item.ReferenceId);
-                }
+                forecastUpdater.TriggerUpdate(project.Id);
             }
 
-            await workItemRepository.Save();
-        }
-
-        private static void UpdateFeatureWIPForTeam(Team team, ITeamMetricsService teamMetricsService)
-        {
-            if (team.AutomaticallyAdjustFeatureWIP)
-            {
-                var featureWip = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team).Count();
-
-                if (featureWip > 0)
-                {
-                    team.FeatureWIP = featureWip;
-                }
-            }
+            logger.LogInformation("Finished updating Team Data for {TeamName}", team.Name);
         }
     }
 }

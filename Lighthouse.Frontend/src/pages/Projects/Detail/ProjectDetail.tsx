@@ -110,7 +110,9 @@ const ProjectDetail: React.FC = () => {
 			};
 
 			const updateProjectRefreshButton = (update: IUpdateStatus | null) => {
-				const isFeatureUpdate = update?.updateType === "Features";
+				const isFeatureUpdate =
+					update?.updateType === "Features" ||
+					update?.updateType === "Forecasts";
 
 				if (isFeatureUpdate) {
 					const isUpdating =
@@ -128,11 +130,13 @@ const ProjectDetail: React.FC = () => {
 				handleProjectUpdate,
 			);
 
-			const updateStatus = await updateSubscriptionService.getUpdateStatus(
-				"Features",
-				projectId,
-			);
-			updateProjectRefreshButton(updateStatus);
+			const projectUpdateStatus =
+				await updateSubscriptionService.getUpdateStatus("Features", projectId);
+			updateProjectRefreshButton(projectUpdateStatus);
+
+			const forecastUpdateStatus =
+				await updateSubscriptionService.getUpdateStatus("Forecasts", projectId);
+			updateProjectRefreshButton(forecastUpdateStatus);
 		};
 
 		if (project && !subscribedToUpdates) {

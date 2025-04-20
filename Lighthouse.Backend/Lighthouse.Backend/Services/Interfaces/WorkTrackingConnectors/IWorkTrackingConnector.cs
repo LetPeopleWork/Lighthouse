@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
     public interface IWorkTrackingConnector
     {
-        Task<IEnumerable<WorkItem>> GetChangedWorkItemsSinceLastTeamUpdate(Team team);
+        Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team);
 
         Task<List<Feature>> GetFeaturesForProject(Project project);
 

@@ -4,6 +4,8 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkItems
 {
     public interface IWorkItemService
     {
-        Task UpdateWorkItemsForProject(Project project);
+        Task UpdateFeaturesForProject(Project project);
+
+        Task UpdateWorkItemsForTeam(Team team);
     }
 }

@@ -24,12 +24,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             this.cryptoService = cryptoService;
         }
 
-        public async Task<IEnumerable<LighthouseWorkItem>> GetChangedWorkItemsSinceLastTeamUpdate(Team team)
+        public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team)
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
-            var lastUpdatedFilter = PrepareLastUpdatedQuery(team.TeamUpdateTime);
-            var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.AdditionalRelatedField ?? string.Empty)} {lastUpdatedFilter}";
+            var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery, team.AdditionalRelatedField ?? string.Empty)}";
 
             var adoWorkItems = await FetchAdoWorkItemsByQuery(team, workItemQuery, team.AdditionalRelatedField ?? string.Empty);
             var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, team);
@@ -178,7 +177,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
 
                 var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
-                var workItems = await FetchAdoWorkItemsByQuery(team, query, team.AdditionalRelatedField ?? string.Empty);
+                var witClient = GetClientService(team.WorkTrackingSystemConnection);
+                var workItems = await GetWorkItemReferencesByQuery(witClient, query);
 
                 var workItemCount = workItems.Count();
 
@@ -522,19 +522,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private static string PrepareStateQuery(IEnumerable<string> includedStates)
         {
             return PrepareGenericQuery(includedStates, AzureDevOpsFieldNames.State, "OR", "=");
-        }
-
-        private static string PrepareLastUpdatedQuery(DateTime lastUpdated)
-        {
-            var query = string.Empty;
-
-            var updateHorizon = lastUpdated;
-            if (lastUpdated != DateTime.MinValue)
-            {
-                query = $" AND ([{AzureDevOpsFieldNames.ChangedDate}] >= '{updateHorizon:yyyy-MM-dd}T00:00:00.0000000Z')";
-            }
-
-            return query;
         }
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)

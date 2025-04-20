@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            await workItemService.UpdateWorkItemsForProject(project);
+            await workItemService.UpdateFeaturesForProject(project);
             await forecastUpdateService.UpdateForecastsForProject(project);
         }
     }
