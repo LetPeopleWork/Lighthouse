@@ -2,6 +2,8 @@ import { Grid } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
+import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
+import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { RunChartData } from "../../../models/Forecasts/RunChartData";
@@ -9,8 +11,6 @@ import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import CycleTimePercentiles from "./CycleTimePercentiles";
-import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 import ItemsInProgress from "./ItemsInProgress";
 
 interface TeamMetricsViewProps {
@@ -122,7 +122,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 
 	return (
 		<Grid container spacing={2}>
-			<Grid size={{ xs: 4 }}>
+			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
 				<DateRangeSelector
 					startDate={startDate}
 					endDate={endDate}
@@ -130,7 +130,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 					onEndDateChange={(date) => date && setEndDate(date)}
 				/>
 			</Grid>
-			<Grid size={{ xs: 4 }}>
+			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
 				<ItemsInProgress
 					title="Work Items In Progress:"
 					items={inProgressItems}
@@ -142,11 +142,11 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 					idealWip={team.featureWip}
 				/>
 			</Grid>
-			<Grid size={{ xs: 4 }} spacing={3}>
+			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
 				<CycleTimePercentiles percentileValues={percentileValues} />
 			</Grid>
 
-			<Grid size={{ xs: 6 }}>
+			<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
 				{throughputRunChartData && (
 					<BarRunChart
 						title="Throughput"
@@ -157,14 +157,14 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 				)}
 			</Grid>
 
-			<Grid size={{ xs: 6 }}>
+			<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
 				<CycleTimeScatterPlotChart
 					cycleTimeDataPoints={cycleTimeData}
 					percentileValues={percentileValues}
 				/>
 			</Grid>
 
-			<Grid size={{ xs: 6 }}>
+			<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
 				{wipOverTimeData && (
 					<LineRunChart
 						title="WIP Over Time"

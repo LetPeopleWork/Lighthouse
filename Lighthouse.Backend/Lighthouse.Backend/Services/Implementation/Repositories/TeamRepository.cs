@@ -17,15 +17,17 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         {
             return Context.Teams
                 .Include(x => x.WorkTrackingSystemConnection)
-                .ThenInclude(wtsc => wtsc.Options);
+                    .ThenInclude(wtsc => wtsc.Options)
+                .Include(x => x.Projects)
+                    .ThenInclude(p => p.Features)
+                        .ThenInclude(f => f.FeatureWork)
+                            .ThenInclude(rw => rw.Team);
         }
 
         public override Team? GetById(int id)
         {
             logger.LogDebug("Getting Team by Id. Id {id}", id);
-            return Context.Teams
-                .Include(x => x.WorkTrackingSystemConnection)
-                .ThenInclude(wtsc => wtsc.Options)
+            return GetAll()
                 .SingleOrDefault(t => t.Id == id);
         }
     }

@@ -20,5 +20,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
         void InvalidateTeamMetrics(Team team);
+
+        Task UpdateTeamMetrics(Team team);
     }
 }

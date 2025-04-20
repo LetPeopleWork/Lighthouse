@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
@@ -11,13 +13,15 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class ForecastController : ControllerBase
     {
-        private readonly IForecastUpdateService forecastUpdateService;
+        private readonly IForecastUpdater forecastUpdater;
+        private readonly IForecastService forecastService;
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
 
-        public ForecastController(IForecastUpdateService forecastUpdateService, IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
+        public ForecastController(IForecastUpdater forecastUpdater, IForecastService forecastService, IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
         {
-            this.forecastUpdateService = forecastUpdateService;
+            this.forecastUpdater = forecastUpdater;
+            this.forecastService = forecastService;
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
         }
@@ -25,7 +29,7 @@ namespace Lighthouse.Backend.API
         [HttpPost("update/{id}")]
         public ActionResult UpdateForecastForProject(int id)
         {
-            forecastUpdateService.TriggerUpdate(id);
+            forecastUpdater.TriggerUpdate(id);
 
             return Ok();
         }
@@ -41,7 +45,7 @@ namespace Lighthouse.Backend.API
 
                 if (input.RemainingItems > 0)
                 {
-                    var whenForecast = await forecastUpdateService.When(team, input.RemainingItems);
+                    var whenForecast = await forecastService.When(team, input.RemainingItems);
 
                     manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
 
@@ -54,7 +58,7 @@ namespace Lighthouse.Backend.API
                 if (timeToTargetDate > 0)
                 {
                     var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
-                    var howManyForecast = forecastUpdateService.HowMany(throughput, timeToTargetDate);
+                    var howManyForecast = forecastService.HowMany(throughput, timeToTargetDate);
 
                     manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
                 }

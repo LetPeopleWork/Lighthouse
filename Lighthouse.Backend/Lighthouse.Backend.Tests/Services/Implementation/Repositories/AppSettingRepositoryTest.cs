@@ -13,9 +13,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        [TestCase(AppSettingKeys.ThroughputRefreshInterval, "60")]
-        [TestCase(AppSettingKeys.ThroughputRefreshAfter, "180")]
-        [TestCase(AppSettingKeys.ThroughputRefreshStartDelay, "10")]
+        [TestCase(AppSettingKeys.TeamDataRefreshInterval, "60")]
+        [TestCase(AppSettingKeys.TeamDataRefreshAfter, "180")]
+        [TestCase(AppSettingKeys.TeamDataRefreshStartDelay, "10")]
         [TestCase(AppSettingKeys.FeaturesRefreshInterval, "60")]
         [TestCase(AppSettingKeys.FeaturesRefreshAfter, "180")]
         [TestCase(AppSettingKeys.FeaturesRefreshStartDelay, "15")]

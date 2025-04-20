@@ -2,11 +2,11 @@
 {
     public static class AppSettingKeys
     {
-        public const string ThroughputRefreshInterval = "PeriodicRefresh:Throughput:Interval";
+        public const string TeamDataRefreshInterval = "PeriodicRefresh:Throughput:Interval";
         
-        public const string ThroughputRefreshAfter = "PeriodicRefresh:Throughput:RefreshAfter";
+        public const string TeamDataRefreshAfter = "PeriodicRefresh:Throughput:RefreshAfter";
 
-        public const string ThroughputRefreshStartDelay = "PeriodicRefresh:Throughput:StartDelay";
+        public const string TeamDataRefreshStartDelay = "PeriodicRefresh:Throughput:StartDelay";
 
         public const string FeaturesRefreshInterval = "PeriodicRefresh:Features:Interval";
         

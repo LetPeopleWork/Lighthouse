@@ -1,4 +1,4 @@
-import { Card, CardContent, CircularProgress, Typography } from "@mui/material";
+import { Card, CardContent, Typography } from "@mui/material";
 import type React from "react";
 import type { RunChartData } from "../../../models/Forecasts/RunChartData";
 
@@ -43,7 +43,9 @@ const BaseRunChart: React.FC<BaseRunChartProps> = ({
 			</CardContent>
 		</Card>
 	) : (
-		<CircularProgress />
+		<Typography variant="body2" color="text.secondary">
+			No data available
+		</Typography>
 	);
 };
 

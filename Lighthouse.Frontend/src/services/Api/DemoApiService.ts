@@ -5,7 +5,7 @@ import {
 	type IRefreshSettings,
 	RefreshSettings,
 } from "../../models/AppSettings/RefreshSettings";
-import { Feature } from "../../models/Feature";
+import { Feature, type IFeature } from "../../models/Feature";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import { RunChartData } from "../../models/Forecasts/RunChartData";
@@ -39,6 +39,7 @@ import type {
 import type { IForecastService } from "./ForecastService";
 import type { ILogService } from "./LogService";
 import type { IPreviewFeatureService } from "./PreviewFeatureService";
+import type { IProjectMetricsService } from "./ProjectMetricsService";
 import type { IProjectService } from "./ProjectService";
 import type { ISettingsService } from "./SettingsService";
 import type { ITeamMetricsService } from "./TeamMetricsService";
@@ -57,7 +58,8 @@ export class DemoApiService
 		IWorkTrackingSystemService,
 		IPreviewFeatureService,
 		IUpdateSubscriptionService,
-		ITeamMetricsService
+		ITeamMetricsService,
+		IProjectMetricsService
 {
 	private readonly useDelay: boolean;
 	private readonly throwError: boolean;
@@ -1210,5 +1212,177 @@ export class DemoApiService
 				this.lastUpdated,
 			),
 		];
+	}
+
+	// Project Metrics Service Implementation
+	async getThroughputForProject(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData> {
+		console.log(
+			`Getting Throughput for Project ${projectId} and Dates ${startDate} - ${endDate}`,
+		);
+		await this.delay();
+
+		// For project, we'll combine the throughput of all teams in the project
+		const project = await this.getProject(projectId);
+		if (!project) {
+			return new RunChartData([], 0, 0);
+		}
+
+		// Get throughput for each team in the project and combine
+		const teams = project.involvedTeams;
+		const combinedThroughput: number[] = [];
+		let totalHistory = 0;
+		let totalSum = 0;
+
+		for (const team of teams) {
+			const teamThroughput = this.teamThroughputs[team.id];
+			if (teamThroughput) {
+				// If combinedThroughput is empty, initialize it with the first team's data
+				if (combinedThroughput.length === 0) {
+					combinedThroughput.push(...teamThroughput);
+					totalHistory = teamThroughput.length;
+				} else {
+					// Otherwise, sum the throughputs for each day
+					// (assuming they have the same length, which is a simplification)
+					for (
+						let i = 0;
+						i < Math.min(combinedThroughput.length, teamThroughput.length);
+						i++
+					) {
+						combinedThroughput[i] += teamThroughput[i];
+					}
+				}
+
+				totalSum += teamThroughput.reduce((sum, val) => sum + val, 0);
+			}
+		}
+
+		return new RunChartData(combinedThroughput, totalHistory, totalSum);
+	}
+
+	async getFeaturesInProgressOverTimeForProject(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData> {
+		console.log(
+			`Getting Features In Progress over time for Project ${projectId} and Dates ${startDate} - ${endDate}`,
+		);
+
+		await this.delay();
+
+		// Generate an array of random WIP numbers for each day in the date range
+		const rawWIP: number[] = [];
+		const startTimestamp = startDate.getTime();
+		const endTimestamp = endDate.getTime();
+		const oneDay = 24 * 60 * 60 * 1000;
+
+		// Generate a data point for each day in the range (inclusive)
+		for (
+			let timestamp = startTimestamp;
+			timestamp <= endTimestamp;
+			timestamp += oneDay
+		) {
+			// Generate random WIP between 1 and 5 (features are typically fewer than regular items)
+			const wip = Math.floor(Math.random() * 5) + 1;
+			rawWIP.push(wip);
+		}
+
+		// Calculate total features in progress (sum of the daily values)
+		const total = rawWIP.reduce((sum, val) => sum + val, 0);
+
+		return new RunChartData(rawWIP, rawWIP.length, total);
+	}
+
+	async getInProgressFeaturesForProject(
+		projectId: number,
+	): Promise<IFeature[]> {
+		console.log(`Getting In Progress Features for Project ${projectId}`);
+		await this.delay();
+
+		// Get the project
+		const project = await this.getProject(projectId);
+		if (!project) {
+			return [];
+		}
+
+		// Return the project's features that are in progress
+		const inProgressFeatures = project.features.filter(
+			(feature) => feature.stateCategory !== "Doing",
+		);
+
+		return inProgressFeatures;
+	}
+
+	async getCycleTimePercentilesForProject(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPercentileValue[]> {
+		console.log(
+			`Getting Cycle Time Percentiles for Project ${projectId} between ${startDate} - ${endDate}`,
+		);
+		await this.delay();
+
+		// For a project, cycle times might be higher than for individual teams
+		return [
+			{ percentile: 50, value: 8 },
+			{ percentile: 70, value: 12 },
+			{ percentile: 85, value: 18 },
+			{ percentile: 95, value: 25 },
+		];
+	}
+
+	async getCycleTimeDataForProject(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeature[]> {
+		console.log(
+			`Getting Cycle Time Data for Project ${projectId} between ${startDate} - ${endDate}`,
+		);
+
+		await this.delay();
+
+		const features: IFeature[] = [];
+		let counter = 0;
+
+		const numberOfItems = Math.floor(Math.random() * (8 - 3 + 1)) + 3;
+		for (let i = 0; i < numberOfItems; i++) {
+			const workItem = this.generateWorkItem(counter++);
+
+			// Create a feature based on the work item
+			const projects = {};
+			const remainingWork = {};
+			const totalWork = {};
+			const milestoneLikelihood = {};
+
+			const feature = new Feature(
+				`Feature ${counter}`,
+				workItem.id,
+				`P-FTR-${counter}`,
+				workItem.state,
+				"Feature",
+				new Date(),
+				false,
+				projects,
+				remainingWork,
+				totalWork,
+				milestoneLikelihood,
+				[],
+				workItem.url,
+				workItem.stateCategory,
+				workItem.startedDate,
+				workItem.closedDate,
+				workItem.cycleTime,
+				workItem.workItemAge,
+			);
+
+			features.push(feature);
+		}
+		return features;
 	}
 }

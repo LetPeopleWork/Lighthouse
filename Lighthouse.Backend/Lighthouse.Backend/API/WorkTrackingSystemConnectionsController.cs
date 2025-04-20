@@ -3,8 +3,9 @@ using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -15,15 +16,15 @@ namespace Lighthouse.Backend.API
     {
         private readonly IWorkTrackingSystemFactory workTrackingSystemFactory;
         private readonly IRepository<WorkTrackingSystemConnection> repository;
-        private readonly IWorkItemServiceFactory workItemServiceFactory;
+        private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
         private readonly ICryptoService cryptoService;
 
         public WorkTrackingSystemConnectionsController(
-            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkItemServiceFactory workItemServiceFactory, ICryptoService cryptoService)
+            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService)
         {
             this.workTrackingSystemFactory = workTrackingSystemFactory;
             this.repository = repository;
-            this.workItemServiceFactory = workItemServiceFactory;
+            this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.cryptoService = cryptoService;
         }
 
@@ -104,7 +105,7 @@ namespace Lighthouse.Backend.API
                 option.Value = cryptoService.Encrypt(option.Value);
             }
 
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(connectionDto.WorkTrackingSystem);
+            var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(connectionDto.WorkTrackingSystem);
             var connection = CreateConnectionFromDto(connectionDto);
 
             var isConnectionValid = await workItemService.ValidateConnection(connection);

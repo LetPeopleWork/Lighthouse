@@ -29,12 +29,12 @@ describe("RefreshSettingsTab", () => {
 
 		// Assert
 		// Check titles
-		expect(screen.getByText("Throughput Refresh")).toBeInTheDocument();
+		expect(screen.getByText("Team Refresh")).toBeInTheDocument();
 		expect(screen.getByText("Feature Refresh")).toBeInTheDocument();
 
 		// Check RefreshSettingUpdater components
 		expect(
-			screen.getByTestId("refresh-setting-updater-Throughput"),
+			screen.getByTestId("refresh-setting-updater-Team"),
 		).toBeInTheDocument();
 		expect(
 			screen.getByTestId("refresh-setting-updater-Feature"),

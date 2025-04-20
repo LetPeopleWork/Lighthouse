@@ -24,22 +24,27 @@
 
         public StateCategories MapStateToStateCategory(string state)
         {
-            if (ToDoStates.Contains(state))
+            if (IsStateInList(state, ToDoStates))
             {
                 return StateCategories.ToDo;
             }
 
-            if (DoingStates.Contains(state))
+            if (IsStateInList(state, DoingStates))
             {
                 return StateCategories.Doing;
             }
 
-            if (DoneStates.Contains(state))
+            if (IsStateInList(state, DoneStates))
             {
                 return StateCategories.Done;
             }
 
             return StateCategories.Unknown;
+        }
+
+        private static bool IsStateInList(string state, List<string> states)
+        {
+            return states.Any(s => string.Equals(s, state, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

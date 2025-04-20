@@ -2,6 +2,7 @@ import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import { DemoApiService } from "../services/Api/DemoApiService";
 import type { ILogService } from "../services/Api/LogService";
 import type { IPreviewFeatureService } from "../services/Api/PreviewFeatureService";
+import type { IProjectMetricsService } from "../services/Api/ProjectMetricsService";
 import type { IProjectService } from "../services/Api/ProjectService";
 import type { ISettingsService } from "../services/Api/SettingsService";
 import type { ITeamMetricsService } from "../services/Api/TeamMetricsService";
@@ -26,6 +27,8 @@ export const createMockApiServiceContext = (
 		previewFeatureService:
 			null as unknown as IApiServiceContext["previewFeatureService"],
 		updateSubscriptionService: new DemoApiService(false, false),
+		projectMetricsService:
+			null as unknown as IApiServiceContext["projectMetricsService"],
 		...overrides,
 	};
 };
@@ -78,6 +81,18 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getInProgressItems: vi.fn(),
 		getCycleTimeData: vi.fn(),
 		getCycleTimePercentiles: vi.fn(),
+	};
+};
+
+export const createMockProjectMetricsService = (): IProjectMetricsService => {
+	return {
+		getThroughputForProject: vi.fn().mockResolvedValue({ data: [], total: 0 }),
+		getFeaturesInProgressOverTimeForProject: vi
+			.fn()
+			.mockResolvedValue({ data: [], total: 0 }),
+		getCycleTimeDataForProject: vi.fn().mockResolvedValue([]),
+		getCycleTimePercentilesForProject: vi.fn().mockResolvedValue([]),
+		getInProgressFeaturesForProject: vi.fn().mockResolvedValue([]),
 	};
 };
 

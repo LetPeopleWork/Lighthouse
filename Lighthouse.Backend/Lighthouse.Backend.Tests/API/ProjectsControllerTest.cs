@@ -2,9 +2,10 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
-using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -15,9 +16,9 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Project>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
 
-        private Mock<IWorkItemUpdateService> workItemCollectorServiceMock;
+        private Mock<IProjectUpdater> workItemCollectorServiceMock;
         
-        private Mock<IWorkItemServiceFactory> workItemServiceFactoryMock;
+        private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
 
@@ -26,8 +27,8 @@ namespace Lighthouse.Backend.Tests.API
         {
             projectRepoMock = new Mock<IRepository<Project>>();
             teamRepoMock = new Mock<IRepository<Team>>();
-            workItemCollectorServiceMock = new Mock<IWorkItemUpdateService>();
-            workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
+            workItemCollectorServiceMock = new Mock<IProjectUpdater>();
+            workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
         }
 
@@ -201,7 +202,10 @@ namespace Lighthouse.Backend.Tests.API
                 WorkItemQuery = "SELECT * FROM WorkItems",
                 UnparentedItemsQuery = "SELECT * FROM UnparentedItems",
                 DefaultAmountOfWorkItemsPerFeature = 5,
-                WorkTrackingSystemConnectionId = 101
+                WorkTrackingSystemConnectionId = 101,
+                ToDoStates = new List<string> { "To Do " },
+                DoingStates = new List<string> { " In Progress" },
+                DoneStates = new List<string> { "Done" },
             };
 
             var subject = CreateSubject();
@@ -224,15 +228,21 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(newProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(newProjectSettings.WorkItemTypes));
                 Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(newProjectSettings.Milestones.Count));
+
                 for (int i = 0; i < newProjectSettings.Milestones.Count; i++)
                 {
                     Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(newProjectSettings.Milestones[i].Id));
                     Assert.That(projectSettingDto.Milestones[i].Name, Is.EqualTo(newProjectSettings.Milestones[i].Name));
                 }
+
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(newProjectSettings.WorkItemQuery));
                 Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(newProjectSettings.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(newProjectSettings.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newProjectSettings.WorkTrackingSystemConnectionId));
+
+                Assert.That(projectSettingDto.ToDoStates, Contains.Item("To Do"));
+                Assert.That(projectSettingDto.DoingStates, Contains.Item("In Progress"));
+                Assert.That(projectSettingDto.DoneStates, Contains.Item("Done"));
             });
         }
 
@@ -337,10 +347,10 @@ namespace Lighthouse.Backend.Tests.API
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
             var projectSettings = new ProjectSettingDto { WorkTrackingSystemConnectionId = 1886 };
 
-            var workItemServiceMock = new Mock<IWorkItemService>();
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
-            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workItemServiceMock.Object);
-            workItemServiceMock.Setup(x => x.ValidateProjectSettings(It.IsAny<Project>())).ReturnsAsync(expectedResult);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
+            workTrackingConnectorServiceMock.Setup(x => x.ValidateProjectSettings(It.IsAny<Project>())).ReturnsAsync(expectedResult);
 
             var subject = CreateSubject();
 
@@ -384,7 +394,7 @@ namespace Lighthouse.Backend.Tests.API
                 projectRepoMock.Object,
                 teamRepoMock.Object,
                 workItemCollectorServiceMock.Object,
-                workItemServiceFactoryMock.Object,
+                workTrackingConnectorFactoryMock.Object,
                 workTrackingSystemConnectionRepoMock.Object
             );
         }

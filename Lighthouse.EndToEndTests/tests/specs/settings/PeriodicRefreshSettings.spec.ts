@@ -1,7 +1,7 @@
 import { expect, test } from "../../fixutres/LighthouseFixture";
 import type { PeriodicRefreshSettingType } from "../../models/settings/PeriodicRefreshSettings/PeriodicRefreshSettingsPage";
 
-const settings: PeriodicRefreshSettingType[] = ["Throughput", "Feature"];
+const settings: PeriodicRefreshSettingType[] = ["Team", "Feature"];
 
 for (const settingName of settings) {
 	test(`Should persist ${settingName} Refresh Settings on Save`, async ({

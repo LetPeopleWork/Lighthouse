@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -25,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             featureRepositoryMock = new Mock<IRepository<Feature>>();
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
-            appSettingsServiceMock.Setup(x => x.GetThroughputRefreshSettings())
+            appSettingsServiceMock.Setup(x => x.GetTeamDataRefreshSettings())
                 .Returns(new RefreshSettings { Interval = 1 });
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
@@ -544,6 +545,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
                 }
             });
+        }
+
+        [Test]
+        public async Task UpdateTeamMetrics_RefreshesUpdateTimeForTeam()
+        {
+            testTeam.TeamUpdateTime = DateTime.Now.AddDays(-1);
+
+            await subject.UpdateTeamMetrics(testTeam);
+
+            Assert.That(testTeam.TeamUpdateTime, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-1)));
+        }
+
+        [Test]
+        public async Task UpdateTeamMetrics_TeamHasAutomaticallyAdjustFeatureWIPSetting_SetsFeatureWIPToRealWIP()
+        {
+            testTeam.FeatureWIP = 2;
+            testTeam.AutomaticallyAdjustFeatureWIP = true;
+
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+            AddWorkItem(StateCategories.Doing, 1, "Feature3");
+
+            await subject.UpdateTeamMetrics(testTeam);
+
+            Assert.That(testTeam.FeatureWIP, Is.EqualTo(3));
+        }
+
+        [Test]
+        public async Task UpdateTeamMetrics_TeamHasNoAutomaticallyAdjustFeatureWIPSetting_DoesNotChangeWIP()
+        {
+            testTeam.FeatureWIP = 2;
+            testTeam.AutomaticallyAdjustFeatureWIP = false;
+
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+            AddWorkItem(StateCategories.Doing, 1, "Feature3");
+
+            await subject.UpdateTeamMetrics(testTeam);
+
+            Assert.That(testTeam.FeatureWIP, Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task UpdateTeamMetrics_TeamHasAutomaticallyAdjustFeatureWIPSetting_NewFeatureWIPIsInvalid_DoesNotChangeFeatureWIP()
+        {
+            testTeam.FeatureWIP = 2;
+            testTeam.AutomaticallyAdjustFeatureWIP = true;
+
+            await subject.UpdateTeamMetrics(testTeam);
+
+            Assert.That(testTeam.FeatureWIP, Is.EqualTo(2));
         }
 
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)

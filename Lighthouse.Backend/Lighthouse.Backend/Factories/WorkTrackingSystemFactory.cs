@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.WorkTracking;
-using Lighthouse.Backend.WorkTracking.AzureDevOps;
-using Lighthouse.Backend.WorkTracking.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 
 namespace Lighthouse.Backend.Factories
 {

@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Services.Implementation.Update;
+﻿using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;

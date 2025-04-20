@@ -2,9 +2,10 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
-using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -18,8 +19,8 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemRepository> workItemRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
 
-        private Mock<ITeamUpdateService> teamUpdateServiceMock;
-        private Mock<IWorkItemServiceFactory> workItemServiceFactoryMock;
+        private Mock<ITeamUpdater> teamUpdateServiceMock;
+        private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         [SetUp]
         public void Setup()
@@ -30,8 +31,8 @@ namespace Lighthouse.Backend.Tests.API
             workItemRepoMock = new Mock<IWorkItemRepository>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
 
-            teamUpdateServiceMock = new Mock<ITeamUpdateService>();
-            workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
+            teamUpdateServiceMock = new Mock<ITeamUpdater>();
+            workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
         }
 
         [Test]
@@ -299,7 +300,10 @@ namespace Lighthouse.Backend.Tests.API
                 WorkItemQuery = "project = MyProject",
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
-                RelationCustomField = "CUSTOM.AdditionalField"
+                RelationCustomField = "CUSTOM.AdditionalField",
+                ToDoStates = new List<string> { " To Do" },
+                DoingStates = new List<string> { "Doing" },
+                DoneStates = new List<string> { "Done " },
             };
 
             var subject = CreateSubject();
@@ -326,6 +330,10 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(newTeamSettings.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(newTeamSettings.WorkTrackingSystemConnectionId));
                 Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(newTeamSettings.RelationCustomField));
+
+                Assert.That(teamSettingDto.ToDoStates, Contains.Item("To Do"));
+                Assert.That(teamSettingDto.DoingStates, Contains.Item("Doing"));
+                Assert.That(teamSettingDto.DoneStates, Contains.Item("Done"));
             });
         }
 
@@ -420,6 +428,9 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
                 WorkItemQuery = workItemQuery,
+                ToDoStates = existingTeam.ToDoStates,
+                DoingStates = existingTeam.DoingStates,
+                DoneStates = existingTeam.DoneStates,
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = 2,
                 RelationCustomField = "CUSTOM.AdditionalField",
@@ -453,7 +464,47 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
                 WorkItemQuery = "Existing Query",
-                WorkItemTypes = new List<string>(workItemTypes),
+                ToDoStates = existingTeam.ToDoStates,
+                DoingStates = existingTeam.DoingStates,
+                DoneStates = existingTeam.DoneStates,
+                WorkItemTypes = [.. workItemTypes],
+                WorkTrackingSystemConnectionId = 2,
+                RelationCustomField = "CUSTOM.AdditionalField",
+                AutomaticallyAdjustFeatureWIP = true,
+            };
+
+            var subject = CreateSubject();
+
+            _ = await subject.UpdateTeam(132, updatedTeamSettings);
+
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+        }
+
+        [Test]
+        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Done" }, false)]
+        [TestCase(new string[] { "ToDo" }, new string[] { "Doing" }, new string[] { "Done" }, true)]
+        [TestCase(new string[] { "To Do" }, new string[] { "Boing" }, new string[] { "Done" }, true)]
+        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Donny" }, true)]
+        [TestCase(new string[] { "To Do", "New" }, new string[] { "Doing" }, new string[] { "Done" }, true)]
+        [TestCase(new string[] { "To Do" }, new string[] { "Doing", "In Progress" }, new string[] { "Done" }, true)]
+        [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Done", "Closed" }, true)]
+        public async Task UpdateTeam_GivenChangedStates_DeletesExistingWorkItems(string[] toDoStates, string[] doingStates, string[] doneStates, bool shouldDelete)
+        {
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+
+            teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
+
+            var updatedTeamSettings = new TeamSettingDto
+            {
+                Id = 132,
+                Name = "Updated Team",
+                FeatureWIP = 12,
+                ThroughputHistory = 30,
+                WorkItemQuery = "Existing Query",
+                WorkItemTypes = ["User Story", "Bug"],
+                ToDoStates = toDoStates.ToList(),
+                DoingStates = doingStates.ToList(),
+                DoneStates = doneStates.ToList(),
                 WorkTrackingSystemConnectionId = 2,
                 RelationCustomField = "CUSTOM.AdditionalField",
                 AutomaticallyAdjustFeatureWIP = true,
@@ -482,6 +533,9 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureWIP = 12,
                 ThroughputHistory = 30,
                 WorkItemQuery = "Existing Query",
+                ToDoStates = existingTeam.ToDoStates,
+                DoingStates = existingTeam.DoingStates,
+                DoneStates = existingTeam.DoneStates,
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 WorkTrackingSystemConnectionId = workTrackingSystemConnectionId,
                 RelationCustomField = "CUSTOM.AdditionalField",
@@ -556,10 +610,10 @@ namespace Lighthouse.Backend.Tests.API
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
             var teamSettings = new TeamSettingDto { WorkTrackingSystemConnectionId = 1886 };
 
-            var workItemServiceMock = new Mock<IWorkItemService>();
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
             workTrackingSystemConnectionRepositoryMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
-            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workItemServiceMock.Object);            
-            workItemServiceMock.Setup(x => x.ValidateTeamSettings(It.IsAny<Team>())).ReturnsAsync(expectedResult);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);            
+            workTrackingConnectorServiceMock.Setup(x => x.ValidateTeamSettings(It.IsAny<Team>())).ReturnsAsync(expectedResult);
 
             var subject = CreateSubject();
 
@@ -625,7 +679,7 @@ namespace Lighthouse.Backend.Tests.API
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
-            return new TeamsController(teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, workItemServiceFactoryMock.Object);
+            return new TeamsController(teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object);
         }
     }
 }

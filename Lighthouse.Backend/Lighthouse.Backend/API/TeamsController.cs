@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,8 +16,8 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Feature> featureRepository;
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
         private readonly IWorkItemRepository workItemRepository;
-        private readonly ITeamUpdateService teamUpdateService;
-        private readonly IWorkItemServiceFactory workItemServiceFactory;
+        private readonly ITeamUpdater teamUpdateService;
+        private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
 
         public TeamsController(
             IRepository<Team> teamRepository,
@@ -25,8 +25,8 @@ namespace Lighthouse.Backend.API
             IRepository<Feature> featureRepository,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
             IWorkItemRepository workItemRepository,
-            ITeamUpdateService teamUpdateService,
-            IWorkItemServiceFactory workItemServiceFactory)
+            ITeamUpdater teamUpdateService,
+            IWorkTrackingConnectorFactory workTrackingConnectorFactory)
         {
             this.teamRepository = teamRepository;
             this.projectRepository = projectRepository;
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.API
             this.workTrackingSystemConnectionRepository = workTrackingSystemConnectionRepository;
             this.workItemRepository = workItemRepository;
             this.teamUpdateService = teamUpdateService;
-            this.workItemServiceFactory = workItemServiceFactory;
+            this.workTrackingConnectorFactory = workTrackingConnectorFactory;
         }
 
         [HttpGet]
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.API
                 var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
                 SyncTeamWithTeamSettings(team, teamSettingDto);
 
-                var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+                var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
                 return await workItemService.ValidateTeamSettings(team);
             });
@@ -155,8 +155,12 @@ namespace Lighthouse.Backend.API
             var queryChanged = team.WorkItemQuery != teamSetting.WorkItemQuery;
             var connectionChanged = team.WorkTrackingSystemConnectionId != teamSetting.WorkTrackingSystemConnectionId;
             var workItemTypesChanged = !team.WorkItemTypes.OrderBy(x => x).SequenceEqual(teamSetting.WorkItemTypes.OrderBy(x => x));
+            var statesChanged =
+                !team.ToDoStates.OrderBy(x => x).SequenceEqual(teamSetting.ToDoStates.OrderBy(x => x)) ||
+                !team.DoingStates.OrderBy(x => x).SequenceEqual(teamSetting.DoingStates.OrderBy(x => x)) ||
+                !team.DoneStates.OrderBy(x => x).SequenceEqual(teamSetting.DoneStates.OrderBy(x => x));
 
-            return queryChanged || connectionChanged || workItemTypesChanged;
+            return queryChanged || connectionChanged || workItemTypesChanged || statesChanged;
         }
 
         private static void SyncTeamWithTeamSettings(Team team, TeamSettingDto teamSetting)
@@ -170,11 +174,22 @@ namespace Lighthouse.Backend.API
             team.ThroughputHistoryStartDate = teamSetting.ThroughputHistoryStartDate;
             team.ThroughputHistoryEndDate = teamSetting.ThroughputHistoryEndDate;
             team.WorkItemTypes = teamSetting.WorkItemTypes;
-            team.ToDoStates = teamSetting.ToDoStates;
-            team.DoingStates = teamSetting.DoingStates;
-            team.DoneStates = teamSetting.DoneStates;
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
             team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
+
+            SyncStates(team, teamSetting);
+        }
+
+        private static void SyncStates(Team team, TeamSettingDto teamSetting)
+        {
+            team.ToDoStates = TrimListEntries(teamSetting.ToDoStates);
+            team.DoingStates = TrimListEntries(teamSetting.DoingStates);
+            team.DoneStates = TrimListEntries(teamSetting.DoneStates);
+        }
+
+        private static List<string> TrimListEntries(List<string> list)
+        {
+            return list.Select(s => s.Trim()).ToList();
         }
 
         private static TeamDto CreateTeamDto(List<Project> allProjects, List<Feature> allFeatures, Team team)

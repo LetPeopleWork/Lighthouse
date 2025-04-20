@@ -301,7 +301,7 @@ describe("ProjectDetail component", () => {
 		});
 	});
 
-	it("should not set Refresh Button to Disabled if Forecast Update Queued", async () => {
+	it("should set Refresh Button to Disabled if Forecast Update Queued", async () => {
 		mockGetUpdateStatus.mockResolvedValueOnce({
 			status: "Queued",
 			updateType: "Forecasts",
@@ -310,11 +310,11 @@ describe("ProjectDetail component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(async () => {
-			expect(await screen.findByText("Refresh Features")).toBeEnabled();
+			expect(await screen.findByText("Refresh Features")).toBeDisabled();
 		});
 	});
 
-	it("should not set Refresh Button to Disabled if Forecast Update In Progress", async () => {
+	it("should set Refresh Button to Disabled if Forecast Update In Progress", async () => {
 		mockGetUpdateStatus.mockResolvedValueOnce({
 			status: "InProgress",
 			updateType: "Forecasts",
@@ -323,7 +323,7 @@ describe("ProjectDetail component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(async () => {
-			expect(await screen.findByText("Refresh Features")).toBeEnabled();
+			expect(await screen.findByText("Refresh Features")).toBeDisabled();
 		});
 	});
 

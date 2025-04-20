@@ -1,5 +1,5 @@
 ﻿using Lighthouse.Backend.Models.Preview;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API

@@ -58,6 +58,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<DateTime?>("ClosedDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("EstimatedSize")
                         .HasColumnType("INTEGER");
 
@@ -428,6 +431,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("ClosedDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")

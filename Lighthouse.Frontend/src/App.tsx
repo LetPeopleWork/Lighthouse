@@ -1,4 +1,6 @@
-import { Box, CssBaseline } from "@mui/material";
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+import { useTheme } from "@mui/material/styles";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
@@ -21,6 +23,7 @@ import {
 } from "./services/Api/ApiServiceContext";
 
 const App: React.FC = () => {
+	const theme = useTheme();
 	const [isDemoDialogOpen, setIsDemoDialogOpen] = useState(false);
 	const apiServices: IApiServiceContext = getApiServices();
 
@@ -45,10 +48,25 @@ const App: React.FC = () => {
 	return (
 		<Router>
 			<ApiServiceContext.Provider value={apiServices}>
-				<Box className="container">
+				<Box
+					className="container"
+					sx={{
+						bgcolor: theme.palette.background.default,
+						color: theme.palette.text.primary,
+						transition: "background-color 0.3s ease, color 0.3s ease",
+					}}
+				>
 					<CssBaseline />
 					<Header />
-					<Box component="main" className="main-content">
+					<Box
+						component="main"
+						className="main-content"
+						sx={{
+							bgcolor: theme.palette.background.default,
+							pt: 2,
+							pb: 4,
+						}}
+					>
 						<Routes>
 							<Route path="/" element={<OverviewDashboard />} />
 							<Route path="/teams">

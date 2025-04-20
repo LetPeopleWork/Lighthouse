@@ -1,5 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.WorkTracking.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Factories

@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Preview;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Moq;

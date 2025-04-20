@@ -30,17 +30,17 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
-        [HttpGet("ThroughputRefresh")]
-        public ActionResult<RefreshSettings> GetThroughputRefreshSettings()
+        [HttpGet("TeamRefresh")]
+        public ActionResult<RefreshSettings> GetTeamDataRefreshSettings()
         {
-            var settings = appSettingService.GetThroughputRefreshSettings();
+            var settings = appSettingService.GetTeamDataRefreshSettings();
             return Ok(settings);
         }
 
-        [HttpPut("ThroughputRefresh")]
-        public async Task<ActionResult> UpdateThroughputRefreshSettings(RefreshSettings refreshSettings)
+        [HttpPut("TeamRefresh")]
+        public async Task<ActionResult> UpdateTeamDataRefreshSettings(RefreshSettings refreshSettings)
         {
-            await appSettingService.UpdateThroughputRefreshSettings(refreshSettings);
+            await appSettingService.UpdateTeamDataRefreshSettings(refreshSettings);
             return Ok();
         }
 

@@ -65,7 +65,7 @@ describe("DataOverviewTable", () => {
 		renderWithRouter(
 			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
 		);
-		const filterInput = screen.getByPlaceholderText("Search");
+		const filterInput = screen.getByRole("textbox", { name: "" });
 
 		fireEvent.change(filterInput, { target: { value: "Item" } });
 		expect(screen.getByText("Item 1")).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe("DataOverviewTable", () => {
 		renderWithRouter(
 			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
 		);
-		const filterInput = screen.getByPlaceholderText("Search");
+		const filterInput = screen.getByRole("textbox", { name: "" });
 
 		fireEvent.change(filterInput, { target: { value: "Non-existing Item" } });
 		expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
@@ -96,9 +96,12 @@ describe("DataOverviewTable", () => {
 			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
 		);
 
-		const addButton = screen.getByText("Add New");
+		// Find the button by startsWith to handle dynamic text
+		const addButton = screen.getByText((content) =>
+			content.startsWith("Add New"),
+		);
 		fireEvent.click(addButton);
 
-		expect(navigate).toHaveBeenCalledWith("new");
+		expect(navigate).toHaveBeenCalledWith("/api/new");
 	});
 });

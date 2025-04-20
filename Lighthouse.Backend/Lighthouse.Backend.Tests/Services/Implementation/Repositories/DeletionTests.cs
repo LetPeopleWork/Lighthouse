@@ -1,8 +1,8 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             featureRepository.Add(feature);
             await featureRepository.Save();
 
-            var forecastUpdateService = ServiceProvider.GetService<IForecastUpdateService>();
+            var forecastUpdateService = ServiceProvider.GetService<IForecastUpdater>();
             forecastUpdateService.TriggerUpdate(project.Id);
 
             // Act

@@ -1,4 +1,5 @@
 import type { SvgIconComponent } from "@mui/icons-material";
+import { useTheme } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import type React from "react";
@@ -14,6 +15,8 @@ const ExternalLinkButton: React.FC<ExternalLinkButtonProps> = ({
 	icon: Icon,
 	tooltip,
 }) => {
+	const theme = useTheme();
+
 	return (
 		<Tooltip title={tooltip} arrow>
 			<IconButton
@@ -26,7 +29,7 @@ const ExternalLinkButton: React.FC<ExternalLinkButtonProps> = ({
 				aria-label={tooltip}
 				data-testid={link}
 			>
-				<Icon style={{ color: "rgba(48, 87, 78, 1)" }} />
+				<Icon style={{ color: theme.palette.primary.main }} />
 			</IconButton>
 		</Tooltip>
 	);

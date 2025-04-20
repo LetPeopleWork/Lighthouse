@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
 import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
@@ -34,6 +34,30 @@ vi.mock(
 		),
 	}),
 );
+
+// Mock the FeatureListBase component to simplify testing
+vi.mock("../../../components/Common/FeaturesList/FeatureListBase", () => ({
+	default: ({
+		features,
+		renderTableHeader,
+		renderTableRow,
+	}: {
+		features: Feature[];
+		renderTableHeader: () => React.ReactNode;
+		renderTableRow: (feature: Feature) => React.ReactNode;
+	}) => (
+		<div data-testid="feature-list-base">
+			<table>
+				<thead>{renderTableHeader()}</thead>
+				<tbody>
+					{features.map((feature: Feature) => (
+						<tr key={feature.id}>{renderTableRow(feature)}</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	),
+}));
 
 const mockTeamMetricsService: ITeamMetricsService =
 	createMockTeamMetricsService();
@@ -102,6 +126,26 @@ describe("TeamFeatureList component", () => {
 				8,
 				9,
 			),
+			new Feature(
+				"Feature 3",
+				3,
+				"FTR-3",
+				"",
+				"Unknown",
+				new Date(),
+				false,
+				{ 0: "" },
+				{ 1: 0 },
+				{ 1: 10 },
+				{},
+				[new WhenForecast(100, new Date())],
+				null,
+				"Done",
+				new Date("2023-07-01"),
+				new Date("2023-07-08"),
+				7,
+				8,
+			),
 		],
 		1,
 		new Date(),
@@ -119,26 +163,23 @@ describe("TeamFeatureList component", () => {
 			</MockApiServiceProvider>,
 		);
 
+		// Verify the base component was used
+		expect(screen.getByTestId("feature-list-base")).toBeInTheDocument();
+
 		for (const feature of team.features) {
 			const featureNameElement = screen.getByText(feature.name);
 			expect(featureNameElement).toBeInTheDocument();
-
-			const forecastInfoListElements = screen.getAllByTestId((id) =>
-				id.startsWith("forecast-info-list-"),
-			);
-
-			for (const element of forecastInfoListElements) {
-				expect(element).toBeInTheDocument();
-			}
-
-			const localDateTimeDisplayElements = screen.getAllByTestId((id) =>
-				id.startsWith("local-date-time-display"),
-			);
-
-			for (const localDateTimeDisplayElement of localDateTimeDisplayElements) {
-				expect(localDateTimeDisplayElement).toBeInTheDocument();
-			}
 		}
+
+		const forecastInfoListElements = screen.getAllByTestId((id) =>
+			id.startsWith("forecast-info-list-"),
+		);
+		expect(forecastInfoListElements.length).toBe(team.features.length);
+
+		const localDateTimeDisplayElements = screen.getAllByTestId(
+			"local-date-time-display",
+		);
+		expect(localDateTimeDisplayElements.length).toBe(team.features.length);
 	});
 
 	it("should render the correct number of features", () => {
@@ -150,7 +191,28 @@ describe("TeamFeatureList component", () => {
 			</MockApiServiceProvider>,
 		);
 
-		const featureRows = screen.getAllByRole("row");
-		expect(featureRows).toHaveLength(team.features.length + 1); // Including the header row
+		// Check that our base component is rendered
+		expect(screen.getByTestId("feature-list-base")).toBeInTheDocument();
+
+		// Check for feature names
+		expect(screen.getByText("Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("Feature 2")).toBeInTheDocument();
+		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+	});
+
+	it("should render appropriate table headers", () => {
+		render(
+			<MockApiServiceProvider>
+				<MemoryRouter>
+					<TeamFeatureList team={team} />
+				</MemoryRouter>
+			</MockApiServiceProvider>,
+		);
+
+		expect(screen.getByText("Feature Name")).toBeInTheDocument();
+		expect(screen.getByText("Progress")).toBeInTheDocument();
+		expect(screen.getByText("Forecasts")).toBeInTheDocument();
+		expect(screen.getByText("Projects")).toBeInTheDocument();
+		expect(screen.getByText("Updated On")).toBeInTheDocument();
 	});
 });

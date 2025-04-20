@@ -5,9 +5,9 @@ namespace Lighthouse.Backend.Services.Interfaces
 {
     public interface IAppSettingService
     {
-        RefreshSettings GetThroughputRefreshSettings();
+        RefreshSettings GetTeamDataRefreshSettings();
 
-        Task UpdateThroughputRefreshSettings(RefreshSettings refreshSettings);
+        Task UpdateTeamDataRefreshSettings(RefreshSettings refreshSettings);
         
         RefreshSettings GetFeaturRefreshSettings();
 

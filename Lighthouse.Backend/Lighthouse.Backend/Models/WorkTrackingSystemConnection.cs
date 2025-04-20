@@ -1,5 +1,5 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.WorkTracking;
+﻿using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {

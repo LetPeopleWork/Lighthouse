@@ -23,12 +23,25 @@ for (const { index, name, expectedFeaturesInProgress } of testData) {
 			// Wait for update to be done
 			await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-			/* Commented out as the Metrics will move to a dedicated subpage
-			 * const featuresInProgress = await teamDetailPage.getFeaturesInProgress();
-			 * expect(featuresInProgress).toBe(expectedFeaturesInProgress); */
-
 			const lastUpdatedDate = await teamDetailPage.getLastUpdatedDate();
 			expectDateToBeRecent(lastUpdatedDate);
+
+			// Check metrics
+			await teamDetailPage.goToMetrics();
+
+			// Add a small delay to give metrics time to load
+			await teamDetailPage.page.waitForTimeout(300);
+
+			await expect(teamDetailPage.workInProgressWidget).toBeVisible();
+			await expect(teamDetailPage.cycleTimeScatterplotWidget).toBeVisible();
+			await expect(teamDetailPage.throughputRunChartWidget).toBeVisible();
+			await expect(teamDetailPage.wipOverTimeWidget).toBeVisible();
+			await expect(teamDetailPage.cycleTimePercentileWidget).toBeVisible();
+			await expect(teamDetailPage.getFeaturesInProgressWidget).toBeVisible();
+
+			const actualFeaturesInProgress =
+				await teamDetailPage.getFeaturesInProgress();
+			expect(actualFeaturesInProgress).toBe(expectedFeaturesInProgress);
 		},
 	);
 }

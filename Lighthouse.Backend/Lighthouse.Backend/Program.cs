@@ -8,17 +8,26 @@ using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Data;
 using System.Globalization;
-using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Serilog;
 using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
 using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Models.Preview;
-using Lighthouse.Backend.Services.Implementation.Update;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Collections.Concurrent;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Services.Interfaces.TeamData;
+using Lighthouse.Backend.Services.Implementation.TeamData;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkItems;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.MCP;
 
 namespace Lighthouse.Backend
@@ -154,7 +163,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<PreviewFeature>, PreviewFeatureRepository>();
 
             // Factories
-            builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
+            builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
             builder.Services.AddScoped<IIssueFactory, IssueFactory>();
             builder.Services.AddScoped<IWorkTrackingSystemFactory, WorkTrackingSystemFactory>();
 
@@ -167,20 +176,26 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
             builder.Services.AddScoped<IFeatureHistoryService, FeatureHistoryService>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
+            builder.Services.AddScoped<IProjectMetricsService, ProjectMetricsService>();
+            builder.Services.AddScoped<IForecastService, ForecastService>();
+            builder.Services.AddScoped<ITeamDataService, TeamDataService>();
+            builder.Services.AddScoped<IWorkItemService, WorkItemService>();
 
-            builder.Services.AddScoped<AzureDevOpsWorkItemService>();
-            builder.Services.AddScoped<JiraWorkItemService>();
+            builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
+            builder.Services.AddScoped<JiraWorkTrackingConnector>();
 
             // Background Services
-            builder.Services.AddHostedService<TeamUpdateService>();
-            builder.Services.AddSingleton<ITeamUpdateService, TeamUpdateService>();
+            builder.Services.AddHostedService<TeamUpdater>();
+            builder.Services.AddSingleton<ITeamUpdater, TeamUpdater>();
 
-            builder.Services.AddHostedService<WorkItemUpdateService>();
-            builder.Services.AddSingleton<IWorkItemUpdateService, WorkItemUpdateService>();
+            builder.Services.AddHostedService<ProjectUpdater>();
+            builder.Services.AddSingleton<IProjectUpdater, ProjectUpdater>();
+
+            builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
 
             builder.Services.AddHostedService<DataRetentionService>();
 
-            builder.Services.AddSingleton<IForecastUpdateService, ForecastUpdateService>();
+
             builder.Services.AddSingleton<ICryptoService, CryptoService>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();

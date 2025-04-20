@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -22,12 +23,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 AppSettingKeys.FeaturesRefreshStartDelay);
         }
 
-        public RefreshSettings GetThroughputRefreshSettings()
+        public RefreshSettings GetTeamDataRefreshSettings()
         {
             return CreateRefreshSettings(
-               AppSettingKeys.ThroughputRefreshInterval,
-               AppSettingKeys.ThroughputRefreshAfter,
-               AppSettingKeys.ThroughputRefreshStartDelay);
+               AppSettingKeys.TeamDataRefreshInterval,
+               AppSettingKeys.TeamDataRefreshAfter,
+               AppSettingKeys.TeamDataRefreshStartDelay);
         }
 
         public async Task UpdateFeatureRefreshSettings(RefreshSettings refreshSettings)
@@ -35,9 +36,9 @@ namespace Lighthouse.Backend.Services.Implementation
             await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.FeaturesRefreshInterval, AppSettingKeys.FeaturesRefreshAfter, AppSettingKeys.FeaturesRefreshStartDelay);
         }
 
-        public async Task UpdateThroughputRefreshSettings(RefreshSettings refreshSettings)
+        public async Task UpdateTeamDataRefreshSettings(RefreshSettings refreshSettings)
         {
-            await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.ThroughputRefreshInterval, AppSettingKeys.ThroughputRefreshAfter, AppSettingKeys.ThroughputRefreshStartDelay);
+            await UpdateRefreshSettingsAsync(refreshSettings, AppSettingKeys.TeamDataRefreshInterval, AppSettingKeys.TeamDataRefreshAfter, AppSettingKeys.TeamDataRefreshStartDelay);
         }
 
         public TeamSettingDto GetDefaultTeamSettings()

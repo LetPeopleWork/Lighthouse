@@ -2,6 +2,12 @@ import CertainIcon from "@mui/icons-material/CheckCircle";
 import ConfidentIcon from "@mui/icons-material/CheckCircleOutline";
 import RiskyIcon from "@mui/icons-material/ErrorOutline";
 import RealisticIcon from "@mui/icons-material/QueryBuilder";
+import {
+	certainColor,
+	confidentColor,
+	realisticColor,
+	riskyColor,
+} from "../../../utils/theme/colors";
 
 export class ForecastLevel {
 	level: string;
@@ -13,22 +19,22 @@ export class ForecastLevel {
 			case probability <= 50:
 				this.level = "Risky";
 				this.IconComponent = RiskyIcon;
-				this.color = "red";
+				this.color = riskyColor;
 				break;
 			case probability <= 70:
 				this.level = "Realistic";
 				this.IconComponent = RealisticIcon;
-				this.color = "orange";
+				this.color = realisticColor;
 				break;
 			case probability <= 85:
 				this.level = "Confident";
 				this.IconComponent = ConfidentIcon;
-				this.color = "lightgreen";
+				this.color = confidentColor;
 				break;
 			default:
 				this.level = "Certain";
 				this.IconComponent = CertainIcon;
-				this.color = "green";
+				this.color = certainColor;
 		}
 	}
 }

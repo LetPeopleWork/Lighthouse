@@ -227,7 +227,6 @@ async function updateTeamData(
 	request: APIRequestContext,
 	teams: ModelIdentifier[],
 ): Promise<void> {
-
 	for (const team of teams) {
 		await updateTeam(request, team.id);
 	}

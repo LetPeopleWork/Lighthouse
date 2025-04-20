@@ -3,8 +3,10 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework.Internal;
@@ -17,7 +19,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IRepository<WorkTrackingSystemConnection>> repositoryMock;
 
-        private Mock<IWorkItemServiceFactory> workItemServiceFactoryMock;
+        private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         private Mock<ICryptoService> cryptoServiceMock;
 
@@ -26,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             workTrackingSystemsFactoryMock = new Mock<IWorkTrackingSystemFactory>();
             repositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
-            workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
+            workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             cryptoServiceMock = new Mock<ICryptoService>();
 
             cryptoServiceMock.Setup(x => x.Encrypt(It.IsAny<string>())).Returns((string input) => { return input; });
@@ -211,10 +213,10 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var workItemServiceMock = new Mock<IWorkItemService>();
-            workItemServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
 
-            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(workTrackingSystem)).Returns(workItemServiceMock.Object);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
 
             var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = workTrackingSystem };
             var result = await subject.ValidateConnection(connectionDto);
@@ -234,9 +236,9 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var workItemServiceMock = new Mock<IWorkItemService>();
-            workItemServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
-            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingConnectorServiceMock.Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>())).ReturnsAsync(true);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
 
             cryptoServiceMock.Setup(x => x.Encrypt("SecretValue")).Returns("EncryptedSecret");
 
@@ -245,12 +247,12 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.ValidateConnection(connectionDto);
 
-            workItemServiceMock.Verify(x => x.ValidateConnection(It.Is<WorkTrackingSystemConnection>(c => c.Options.Single().Value == "EncryptedSecret")));
+            workTrackingConnectorServiceMock.Verify(x => x.ValidateConnection(It.Is<WorkTrackingSystemConnection>(c => c.Options.Single().Value == "EncryptedSecret")));
         }
 
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionsController(workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workItemServiceFactoryMock.Object, cryptoServiceMock.Object);
+            return new WorkTrackingSystemConnectionsController(workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object);
         }
     }
 }

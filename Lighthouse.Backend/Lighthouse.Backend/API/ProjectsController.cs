@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,22 +13,22 @@ namespace Lighthouse.Backend.API
     {
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Team> teamRepository;
-        private readonly IWorkItemUpdateService workItemUpdateService;
-        private readonly IWorkItemServiceFactory workItemServiceFactory;
+        private readonly IProjectUpdater workItemUpdateService;
+        private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
 
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
 
         public ProjectsController(
             IRepository<Project> projectRepository,
             IRepository<Team> teamRepository,
-            IWorkItemUpdateService workItemUpdateService,
-            IWorkItemServiceFactory workItemServiceFactory,
+            IProjectUpdater workItemUpdateService,
+            IWorkTrackingConnectorFactory workTrackingConnectorFactory,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository)
         {
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
             this.workItemUpdateService = workItemUpdateService;
-            this.workItemServiceFactory = workItemServiceFactory;
+            this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.workTrackingSystemConnectionRepository = workTrackingSystemConnectionRepository;
         }
 
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.API
                 var project = new Project { WorkTrackingSystemConnection = workTrackingSystem };
                 SyncProjectWithProjectSettings(project, projectSettingDto);
 
-                var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
+                var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
                 var result = await workItemService.ValidateProjectSettings(project);
 
@@ -152,9 +152,14 @@ namespace Lighthouse.Backend.API
 
         private static void SyncStates(Project project, ProjectSettingDto projectSetting)
         {
-            project.ToDoStates = projectSetting.ToDoStates;
-            project.DoingStates = projectSetting.DoingStates;
-            project.DoneStates = projectSetting.DoneStates;
+            project.ToDoStates = TrimListEntries(projectSetting.ToDoStates);
+            project.DoingStates = TrimListEntries(projectSetting.DoingStates);
+            project.DoneStates = TrimListEntries(projectSetting.DoneStates);
+        }
+
+        private static List<string> TrimListEntries(List<string> list)
+        {
+            return list.Select(s => s.Trim()).ToList();
         }
 
         private void SyncTeams(Project project, ProjectSettingDto projectSetting)

@@ -5,8 +5,8 @@ import RefreshSettingUpdater from "./RefreshSettingUpdater";
 const RefreshSettingsTab: React.FC = () => {
 	return (
 		<>
-			<InputGroup title="Throughput Refresh">
-				<RefreshSettingUpdater settingName="Throughput" />
+			<InputGroup title="Team Refresh">
+				<RefreshSettingUpdater settingName="Team" />
 			</InputGroup>
 			<InputGroup title="Feature Refresh">
 				<RefreshSettingUpdater settingName="Feature" />

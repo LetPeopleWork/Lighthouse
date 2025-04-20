@@ -1,0 +1,127 @@
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+
+namespace Lighthouse.Backend.Services.Implementation
+{
+    public class ProjectMetricsService : BaseMetricsService, IProjectMetricsService
+    {
+        private readonly string inProgressFeaturesMetricIdentifier = "InProgressFeatures";
+
+        private readonly ILogger<ProjectMetricsService> logger;
+        private readonly IRepository<Feature> featureRepository;
+
+        public ProjectMetricsService(
+            ILogger<ProjectMetricsService> logger,
+            IRepository<Feature> featureRepository,
+            IAppSettingService appSettingService)
+            : base(appSettingService.GetFeaturRefreshSettings().Interval)
+        {
+            this.logger = logger;
+            this.featureRepository = featureRepository;
+        }
+
+        public RunChartData GetThroughputForProject(Project project, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Throughput for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
+
+            var projectFeatures = featureRepository.GetAllByPredicate(f =>
+                f.Projects.Any(p => p.Id == project.Id) &&
+                f.StateCategory == StateCategories.Done);
+
+            var throughputByDay = GenerateThroughputByDay(
+                DateTime.SpecifyKind(startDate, DateTimeKind.Utc),
+                DateTime.SpecifyKind(endDate, DateTimeKind.Utc),
+                projectFeatures);
+
+            logger.LogDebug("Finished calculating Throughput for Project {ProjectName}", project.Name);
+
+            return new RunChartData(throughputByDay);
+        }
+
+        public RunChartData GetFeaturesInProgressOverTimeForProject(Project project, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Features In Progress Over Time for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
+
+            var features = featureRepository.GetAllByPredicate(f =>
+                    f.Projects.Any(p => p.Id == project.Id) &&
+                    (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
+                .ToList();
+
+            var wipOverTime = GenerateWorkInProgressByDay(
+                DateTime.SpecifyKind(startDate, DateTimeKind.Utc),
+                DateTime.SpecifyKind(endDate, DateTimeKind.Utc),
+                features);
+
+            logger.LogDebug("Finished calculating Features In Progress Over Time for Project {ProjectName}", project.Name);
+
+            return new RunChartData(wipOverTime);
+        }
+
+        public IEnumerable<Feature> GetInProgressFeaturesForProject(Project project)
+        {
+            logger.LogDebug("Getting In Progress Features for Project {ProjectName}", project.Name);
+
+            return GetFromCacheIfExists<IEnumerable<Feature>, Project>(project, inProgressFeaturesMetricIdentifier, () =>
+            {
+                var features = featureRepository.GetAllByPredicate(f =>
+                    f.Projects.Any(p => p.Id == project.Id) &&
+                    f.StateCategory == StateCategories.Doing)
+                    .ToList();
+
+                logger.LogDebug("Found {FeatureCount} In Progress Features for Project {ProjectName}", features.Count, project.Name);
+                return features;
+            }, logger);
+        }
+
+        public IEnumerable<PercentileValue> GetCycleTimePercentilesForProject(Project project, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cycle Time Percentiles for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
+
+            var closedFeaturesInDateRange = GetFeaturesClosedInDateRange(project, startDate, endDate);
+            var cycleTimes = closedFeaturesInDateRange.Select(f => f.CycleTime).Where(ct => ct > 0).ToList();
+
+            if (cycleTimes.Count == 0)
+            {
+                logger.LogDebug("No closed features found in the specified date range for Project {ProjectName}", project.Name);
+                return [];
+            }
+
+            return [
+                new PercentileValue(50, PercentileCalculator.CalculatePercentile(cycleTimes, 50)),
+                new PercentileValue(70, PercentileCalculator.CalculatePercentile(cycleTimes, 70)),
+                new PercentileValue(85, PercentileCalculator.CalculatePercentile(cycleTimes, 85)),
+                new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
+            ];
+        }
+
+        public IEnumerable<Feature> GetCycleTimeDataForProject(Project project, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Cycle Time Data for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
+
+            return GetFeaturesClosedInDateRange(project, startDate, endDate).ToList();
+        }
+
+        public void InvalidateProjectMetrics(Project project)
+        {
+            InvalidateMetrics(project, logger);
+        }
+
+        private IEnumerable<Feature> GetFeaturesClosedInDateRange(Project project, DateTime startDate, DateTime endDate)
+        {
+            var closedFeaturesOfProject = featureRepository.GetAllByPredicate(f =>
+                f.Projects.Any(p => p.Id == project.Id) &&
+                f.StateCategory == StateCategories.Done);
+
+            var startDateUtc = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+            var endDateUtc = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+
+            return closedFeaturesOfProject
+                .AsEnumerable()
+                .Where(f => f.ClosedDate.HasValue &&
+                           f.ClosedDate.Value >= startDateUtc &&
+                           f.ClosedDate.Value <= endDateUtc);
+        }
+    }
+}
