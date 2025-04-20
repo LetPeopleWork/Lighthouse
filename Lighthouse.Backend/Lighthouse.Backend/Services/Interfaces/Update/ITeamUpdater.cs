@@ -1,7 +1,7 @@
 ﻿namespace Lighthouse.Backend.Services.Interfaces.Update
 {
 
-    public interface ITeamUpdateService : IUpdateService
+    public interface ITeamUpdater : IUpdateService
     {
     }
 }

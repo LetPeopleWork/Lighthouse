@@ -6,10 +6,10 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
-    public class ForecastUpdateService : UpdateServiceBase<Project>, IForecastUpdateService
+    public class ForecastUpdater : UpdateServiceBase<Project>, IForecastUpdater
     {
-        public ForecastUpdateService(
-            ILogger<ForecastUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
+        public ForecastUpdater(
+            ILogger<ForecastUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
             : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts)
         {
         }

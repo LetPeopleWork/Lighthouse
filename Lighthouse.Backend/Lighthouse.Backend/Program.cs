@@ -26,6 +26,8 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkItems;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 
 namespace Lighthouse.Backend
 {
@@ -168,18 +170,19 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IProjectMetricsService, ProjectMetricsService>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
+            builder.Services.AddScoped<IWorkItemService, WorkItemService>();
 
             builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<JiraWorkTrackingConnector>();
 
             // Background Services
-            builder.Services.AddHostedService<TeamUpdateService>();
-            builder.Services.AddSingleton<ITeamUpdateService, TeamUpdateService>();
+            builder.Services.AddHostedService<TeamUpdater>();
+            builder.Services.AddSingleton<ITeamUpdater, TeamUpdater>();
 
-            builder.Services.AddHostedService<WorkItemUpdateService>();
-            builder.Services.AddSingleton<IWorkItemUpdateService, WorkItemUpdateService>();
+            builder.Services.AddHostedService<ProjectUpdater>();
+            builder.Services.AddSingleton<IProjectUpdater, ProjectUpdater>();
 
-            builder.Services.AddSingleton<IForecastUpdateService, ForecastUpdateService>();
+            builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
 
             builder.Services.AddHostedService<DataRetentionService>();
 

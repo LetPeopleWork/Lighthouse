@@ -10,7 +10,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
-    public class TeamUpdateServiceTest : UpdateServiceTestBase
+    public class TeamUpdaterTest : UpdateServiceTestBase
     {
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IRepository<Team>> teamRepoMock;
@@ -105,9 +105,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             };
         }
 
-        private TeamUpdateService CreateSubject()
+        private TeamUpdater CreateSubject()
         {
-            return new TeamUpdateService(Mock.Of<ILogger<TeamUpdateService>>(), ServiceScopeFactory, UpdateQueueService);
+            return new TeamUpdater(Mock.Of<ILogger<TeamUpdater>>(), ServiceScopeFactory, UpdateQueueService);
         }
     }
 }

@@ -13,14 +13,14 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class ForecastController : ControllerBase
     {
-        private readonly IForecastUpdateService forecastUpdateService;
+        private readonly IForecastUpdater forecastUpdater;
         private readonly IForecastService forecastService;
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
 
-        public ForecastController(IForecastUpdateService forecastUpdateService, IForecastService forecastService, IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
+        public ForecastController(IForecastUpdater forecastUpdater, IForecastService forecastService, IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
         {
-            this.forecastUpdateService = forecastUpdateService;
+            this.forecastUpdater = forecastUpdater;
             this.forecastService = forecastService;
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.API
         [HttpPost("update/{id}")]
         public ActionResult UpdateForecastForProject(int id)
         {
-            forecastUpdateService.TriggerUpdate(id);
+            forecastUpdater.TriggerUpdate(id);
 
             return Ok();
         }

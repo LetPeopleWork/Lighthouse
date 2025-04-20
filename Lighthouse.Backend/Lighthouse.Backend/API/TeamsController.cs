@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Feature> featureRepository;
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
         private readonly IWorkItemRepository workItemRepository;
-        private readonly ITeamUpdateService teamUpdateService;
+        private readonly ITeamUpdater teamUpdateService;
         private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
 
         public TeamsController(
@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.API
             IRepository<Feature> featureRepository,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
             IWorkItemRepository workItemRepository,
-            ITeamUpdateService teamUpdateService,
+            ITeamUpdater teamUpdateService,
             IWorkTrackingConnectorFactory workTrackingConnectorFactory)
         {
             this.teamRepository = teamRepository;

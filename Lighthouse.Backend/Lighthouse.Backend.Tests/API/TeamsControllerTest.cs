@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemRepository> workItemRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
 
-        private Mock<ITeamUpdateService> teamUpdateServiceMock;
+        private Mock<ITeamUpdater> teamUpdateServiceMock;
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         [SetUp]
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API
             workItemRepoMock = new Mock<IWorkItemRepository>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
 
-            teamUpdateServiceMock = new Mock<ITeamUpdateService>();
+            teamUpdateServiceMock = new Mock<ITeamUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
         }
 

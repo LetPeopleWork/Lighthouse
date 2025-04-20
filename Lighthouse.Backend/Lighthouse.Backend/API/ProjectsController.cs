@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.API
     {
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Team> teamRepository;
-        private readonly IWorkItemUpdateService workItemUpdateService;
+        private readonly IProjectUpdater workItemUpdateService;
         private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
 
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.API
         public ProjectsController(
             IRepository<Project> projectRepository,
             IRepository<Team> teamRepository,
-            IWorkItemUpdateService workItemUpdateService,
+            IProjectUpdater workItemUpdateService,
             IWorkTrackingConnectorFactory workTrackingConnectorFactory,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository)
         {

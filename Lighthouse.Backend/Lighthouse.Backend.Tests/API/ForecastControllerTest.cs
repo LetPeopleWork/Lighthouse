@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API
 {
     public class ForecastControllerTest
     {
-        private Mock<IForecastUpdateService> forecastUpdateServiceMock;
+        private Mock<IForecastUpdater> forecastUpdaterMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API
         [SetUp]
         public void Setup()
         {
-            forecastUpdateServiceMock = new Mock<IForecastUpdateService>();
+            forecastUpdaterMock = new Mock<IForecastUpdater>();
             forecastServiceMock = new Mock<IForecastService>();
 
             teamRepositoryMock = new Mock<IRepository<Team>>();
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
-                forecastUpdateServiceMock.Verify(x => x.TriggerUpdate(12), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(12), Times.Once);
             });
         }
 
@@ -152,7 +152,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private ForecastController CreateSubject()
         {
-            return new ForecastController(forecastUpdateServiceMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object);
+            return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object);
         }
     }
 }

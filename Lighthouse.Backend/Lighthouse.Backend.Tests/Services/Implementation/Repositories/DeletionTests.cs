@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             featureRepository.Add(feature);
             await featureRepository.Save();
 
-            var forecastUpdateService = ServiceProvider.GetService<IForecastUpdateService>();
+            var forecastUpdateService = ServiceProvider.GetService<IForecastUpdater>();
             forecastUpdateService.TriggerUpdate(project.Id);
 
             // Act

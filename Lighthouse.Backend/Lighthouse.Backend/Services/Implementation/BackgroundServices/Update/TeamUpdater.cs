@@ -7,9 +7,9 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
-    public class TeamUpdateService : UpdateServiceBase<Team>, ITeamUpdateService
+    public class TeamUpdater : UpdateServiceBase<Team>, ITeamUpdater
     {
-        public TeamUpdateService(ILogger<TeamUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
+        public TeamUpdater(ILogger<TeamUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
             : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Team)
         {
         }

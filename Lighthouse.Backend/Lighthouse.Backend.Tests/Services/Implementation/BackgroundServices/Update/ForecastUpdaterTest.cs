@@ -9,7 +9,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
-    public class ForecastUpdateServiceTest : UpdateServiceTestBase
+    public class ForecastUpdaterTest : UpdateServiceTestBase
     {
         private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IAppSettingService> appSettingServiceMock;
@@ -80,9 +80,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             forecastServiceMock.Verify(x => x.UpdateForecastsForProject(project), Times.Once);
         }
 
-        private ForecastUpdateService CreateSubject()
+        private ForecastUpdater CreateSubject()
         {
-            return new ForecastUpdateService(Mock.Of<ILogger<ForecastUpdateService>>(), ServiceScopeFactory, UpdateQueueService);
+            return new ForecastUpdater(Mock.Of<ILogger<ForecastUpdater>>(), ServiceScopeFactory, UpdateQueueService);
         }
 
         private Project CreateProject(params Feature[] features)

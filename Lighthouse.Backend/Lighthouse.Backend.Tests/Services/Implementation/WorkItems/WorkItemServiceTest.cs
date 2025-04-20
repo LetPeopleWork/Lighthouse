@@ -1,27 +1,20 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
-    public class WorkItemUpdateServiceTest : UpdateServiceTestBase
+    public class WorkItemServiceTest
     {
         private Mock<IRepository<Feature>> featureRepositoryMock;
-        private Mock<IRepository<Project>> projectRepoMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
-        private Mock<IWorkTrackingConnector> workTrackingConnectorServiceMock;
-        private Mock<IAppSettingService> appSettingServiceMock;
-        private Mock<IForecastService> forecastServiceMock;
+        private Mock<IWorkTrackingConnector> workTrackingConnectorMock;
 
         private int idCounter = 0;
         private List<WorkItem> workItems;
@@ -29,47 +22,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [SetUp]
         public void SetUp()
         {
-            workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingConnectorMock = new Mock<IWorkTrackingConnector>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
-            projectRepoMock = new Mock<IRepository<Project>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            appSettingServiceMock = new Mock<IAppSettingService>();
-            forecastServiceMock = new Mock<IForecastService>();
 
-            var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
-            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
-
-            SetupServiceProviderMock(projectRepoMock.Object);
-            SetupServiceProviderMock(featureRepositoryMock.Object);
-            SetupServiceProviderMock(workItemRepositoryMock.Object);
-            SetupServiceProviderMock(appSettingServiceMock.Object);
-            SetupServiceProviderMock(workTrackingConnectorFactoryMock.Object);
-            SetupServiceProviderMock(forecastServiceMock.Object);
-
-            SetupRefreshSettings(10, 10);
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
 
             workItems = new List<WorkItem>();
+
             workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-            .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
+                .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
             workItemRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<WorkItem, bool>>()))
-            .Returns((Func<WorkItem, bool> predicate) => workItems.SingleOrDefault(predicate));
+                .Returns((Func<WorkItem, bool> predicate) => workItems.SingleOrDefault(predicate));
         }
 
         [Test]
-        public void UpdateFeaturesForProject_SingleTeamInvolved_FindsFeauture()
+        public async Task UpdateFeaturesForProject_SingleTeamInvolved_FindsFeauture()
         {
             var team = CreateTeam();
 
             var project = CreateProject(team);
             var feature = new Feature(team, 12) { ReferenceId = "12" };
-            SetupProjects(project);
+
             SetupWorkForFeature(feature, 1, 0, team);
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -82,36 +62,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdatesFeatures_TriggersReforecast()
-        {
-            var team = CreateTeam();
-
-            var project = CreateProject(team);
-            var feature = new Feature(team, 12) { ReferenceId = "12" };
-            SetupProjects(project);
-
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
-
-            var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
-
-            forecastServiceMock.Verify(x => x.UpdateForecastsForProject(project));
-        }
-
-        [Test]
-        public void UpdateFeaturesForProject_GivenExistingFeatures_ClearsExistingFeatures()
+        public async Task UpdateFeaturesForProject_GivenExistingFeatures_ClearsExistingFeatures()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
-            SetupProjects(project);
+            
             var existingFeature = new Feature(team, 12) { Id = 12 };
 
             project.Features.Add(existingFeature);
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.That(project.Features, Is.Empty);
         }
@@ -119,11 +82,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         [TestCase("Analysis in Progress", 2, 42, 42)]
         [TestCase("Analysis Done", 7, 42, 7)]
-        public void UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_UsesDefaultItems(string featureState, int remainingWork, int defaultWork, int expectedWork)
+        public async Task UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_UsesDefaultItems(string featureState, int remainingWork, int defaultWork, int expectedWork)
         {
             var team = CreateTeam();
-            var project = CreateProject(team);
-            SetupProjects(project);
+            var project = CreateProject(team);            
 
             project.DefaultAmountOfWorkItemsPerFeature = defaultWork;
             project.OverrideRealChildCountStates.Add("Analysis in Progress");
@@ -134,10 +96,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupWorkForFeature(feature1, 10, remainingWork, team);
             SetupWorkForFeature(feature2, 15, 12, team);
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -156,11 +118,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [TestCase(0, 10, 0)]
         [TestCase(10, 10, 10)]
         [TestCase(0, 0, 0)]
-        public void UpdateFeaturesForProject_IsInDoneState_DoesNotUsesDefaultItems(int remainingWork, int totalWork, int expectedWork)
+        public async Task UpdateFeaturesForProject_IsInDoneState_DoesNotUsesDefaultItems(int remainingWork, int totalWork, int expectedWork)
         {
             var team = CreateTeam();
             var project = CreateProject(team);
-            SetupProjects(project);
+            
 
             project.DoneStates.Clear();
             project.DoneStates.Add("Done");
@@ -170,10 +132,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature = new Feature(team, remainingWork) { ReferenceId = "12", State = "Done", StateCategory = StateCategories.Done };
             SetupWorkForFeature(feature, totalWork, remainingWork, team);
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -187,11 +149,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_ItemWasMovedBack_UsesDefaultItems()
+        public async Task UpdateFeaturesForProject_HasRemainingWork_InStateToOverrideRealWork_ItemWasMovedBack_UsesDefaultItems()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
-            SetupProjects(project);
+            
 
             project.DefaultAmountOfWorkItemsPerFeature = 7;
             project.OverrideRealChildCountStates.Add("Analysis in Progress");
@@ -201,12 +163,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             var features = new List<Feature>() { feature1, feature2 };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => features.SingleOrDefault(predicate));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -219,20 +181,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_NoRemainingWork_NoTotalWork_AddsDefaultRemainingWorkToFeature()
+        public async Task UpdateFeaturesForProject_NoRemainingWork_NoTotalWork_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-            SetupProjects(project);
+            
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -252,11 +214,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 1, 1)]
         [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 65, 6)]
         [TestCase(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, 85, 8)]
-        public void UpdateFeaturesForProject_UseCalculatedDefault_AddsDefaultRemainingWorkBasedOnPercentileToFeature(int[] childItemCount, int percentile, int expectedValue)
+        public async Task UpdateFeaturesForProject_UseCalculatedDefault_AddsDefaultRemainingWorkBasedOnPercentileToFeature(int[] childItemCount, int percentile, int expectedValue)
         {
             var team = CreateTeam();
             var project = CreateProject(team);
-            SetupProjects(project);
+            
 
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
             project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
@@ -266,14 +228,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var itemCounter = 0;
             var historicalFeatureSize = childItemCount.ToDictionary(x => $"{itemCounter++}", x => x);
-            workTrackingConnectorServiceMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(historicalFeatureSize);
+            workTrackingConnectorMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(historicalFeatureSize);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -284,7 +246,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseCalculatedDefault_QueryHasNoMatches_AddsDefaultRemainingWork()
+        public async Task UpdateFeaturesForProject_UseCalculatedDefault_QueryHasNoMatches_AddsDefaultRemainingWork()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
@@ -293,16 +255,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
             project.DefaultWorkItemPercentile = 80;
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-            SetupProjects(project);
+            
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
-            workTrackingConnectorServiceMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(new Dictionary<string, int>());
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(new Dictionary<string, int>());
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -313,88 +275,88 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_NoRemainingWork_NotTotalWork_SizeEstimateFieldSet_SizeEstimateNotAvailable_AddsDefaultRemainingWorkToFeature()
+        public async Task UpdateFeaturesForProject_NoRemainingWork_NotTotalWork_SizeEstimateFieldSet_SizeEstimateNotAvailable_AddsDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.SizeEstimateField = "customfield_10037";
-            SetupProjects(project);
+            
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 0 };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
             Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
         }
 
         [Test]
-        public void UpdateFeaturesForProject_NoRemainingWork_NoTotalWork_SizeEstimateFieldSet_SizeEstimateAvailable_AddsEstimatedWorkToFeature()
+        public async Task UpdateFeaturesForProject_NoRemainingWork_NoTotalWork_SizeEstimateFieldSet_SizeEstimateAvailable_AddsEstimatedWorkToFeature()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.SizeEstimateField = "customfield_10037";
-            SetupProjects(project);
+            
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 7 };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
             Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(7));
         }
 
         [Test]
-        public void UpdateFeaturesForProject_NoRemainingWork_HasTotalWork_DoesNotAddDefaultRemainingWorkToFeature()
+        public async Task UpdateFeaturesForProject_NoRemainingWork_HasTotalWork_DoesNotAddDefaultRemainingWorkToFeature()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-            SetupProjects(project);
+            
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             SetupWorkForFeature(feature1, 7, 0, team);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
             Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(0));
         }
 
         [Test]
-        public void UpdateFeaturesForProject_NoTotalWork_MulitpleTeams_SplitsDefaultRemainingWorkByTeam()
+        public async Task UpdateFeaturesForProject_NoTotalWork_MulitpleTeams_SplitsDefaultRemainingWorkByTeam()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
             var project = CreateProject(team1, team2);
-            SetupProjects(project);
+            
 
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
             var feature1 = new Feature([(team1, 0, 12), (team2, 0, 10)]) { ReferenceId = "17" };
             var feature2 = new Feature([(team1, 2, 13), (team2, 2, 3)]) { ReferenceId = "19" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
             SetupWorkForFeature(feature1, 0, 0);
             SetupWorkForFeature(feature2, 12, 12);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -408,20 +370,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_SingleTeamInvolved_FindsRemainingWorkByTeam()
+        public async Task UpdateFeaturesForProject_SingleTeamInvolved_FindsRemainingWorkByTeam()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
-            SetupProjects(project);
+            
 
             var remainingWorkItems = 12;
             var feature = new Feature(team, remainingWorkItems) { ReferenceId = "42" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 12, remainingWorkItems, team);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             var actualFeature = project.Features.Single();
             Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(remainingWorkItems));
@@ -429,42 +391,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
 
         [Test]
-        public void UpdateFeaturesForProject_MultipleTeamsInvolved()
+        public async Task UpdateFeaturesForProject_MultipleTeamsInvolved()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
             var project = CreateProject(team1, team2);
-            SetupProjects(project);
+            
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
-            workTrackingConnectorServiceMock.Verify(x => x.GetFeaturesForProject(project), Times.Exactly(1));
+            workTrackingConnectorMock.Verify(x => x.GetFeaturesForProject(project), Times.Exactly(1));
         }
 
         [Test]
-        public void UpdateFeaturesForProject_TwoTeamsInvolved_IndividualFeatures_FindsRemainingWorkByTeam()
+        public async Task UpdateFeaturesForProject_TwoTeamsInvolved_IndividualFeatures_FindsRemainingWorkByTeam()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
             var project = CreateProject(team1, team2);
-            SetupProjects(project);
+            
 
             var remainingWorkItemsFeature1 = 12;
             var remainingWorkItemsFeature2 = 7;
             var feature1 = new Feature(team1, remainingWorkItemsFeature1) { ReferenceId = "1" };
             var feature2 = new Feature(team2, remainingWorkItemsFeature1) { ReferenceId = "2" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             SetupWorkForFeature(feature1, 12, remainingWorkItemsFeature1, team1);
             SetupWorkForFeature(feature2, 12, remainingWorkItemsFeature2, team2);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             var actualFeature1 = project.Features[0];
             Assert.That(actualFeature1.GetRemainingWorkForTeam(team1), Is.EqualTo(remainingWorkItemsFeature1));
@@ -473,25 +435,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_TwoTeamsInvolved_SingleFeature_FindsRemainingWorkByTeam()
+        public async Task UpdateFeaturesForProject_TwoTeamsInvolved_SingleFeature_FindsRemainingWorkByTeam()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
             var project = CreateProject(team1, team2);
-            SetupProjects(project);
+            
 
             var remainingWorkItemsTeam1 = 12;
             var remainingWorkItemsTeam2 = 7;
             var feature = new Feature(team1, remainingWorkItemsTeam1) { ReferenceId = "1" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             SetupWorkForFeature(feature, 12, remainingWorkItemsTeam1, team1);
             SetupWorkForFeature(feature, 12, remainingWorkItemsTeam2, team2);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             var actualFeature = project.Features.Single();
             Assert.Multiple(() =>
@@ -504,30 +466,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         [TestCase(new[] { "12", "1337", "42" }, new string[0], 3)]
         [TestCase(new[] { "12", "1337", "42" }, new string[] { "In Progress" }, 3)]
-        public void UpdateFeaturesForProject_UnparentedItems_CreatesDummyFeatureForUnparented(string[] unparentedItems, string[] overrideStates, int expectedItems)
+        public async Task UpdateFeaturesForProject_UnparentedItems_CreatesDummyFeatureForUnparented(string[] unparentedItems, string[] overrideStates, int expectedItems)
         {
             var expectedUnparentedOrder = "123";
             var team = CreateTeam();
             var project = CreateProject(team);
-            SetupProjects(project);
+            
 
             project.OverrideRealChildCountStates.AddRange(overrideStates);
             project.UnparentedItemsQuery = "[System.Tags] CONTAINS Release 123";
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
 
             foreach (var unparentedItem in unparentedItems)
             {
                 SetupUnparentedWorkItems(unparentedItem, team);
             }
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetWorkItemsIdsForTeamWithAdditionalQuery(team, project.UnparentedItemsQuery))
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsIdsForTeamWithAdditionalQuery(team, project.UnparentedItemsQuery))
                 .Returns(Task.FromResult(new List<string>(unparentedItems)));
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetAdjacentOrderIndex(It.IsAny<IEnumerable<string>>(), RelativeOrder.Above)).Returns(expectedUnparentedOrder);
+            workTrackingConnectorMock.Setup(x => x.GetAdjacentOrderIndex(It.IsAny<IEnumerable<string>>(), RelativeOrder.Above)).Returns(expectedUnparentedOrder);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             var actualFeature = project.Features.Single();
             Assert.Multiple(() =>
@@ -540,23 +502,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseDefaultWork_NoOwningTeam_SplitsWorkByAllInvolvedTeams()
+        public async Task UpdateFeaturesForProject_UseDefaultWork_NoOwningTeam_SplitsWorkByAllInvolvedTeams()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
 
             var project = CreateProject(team1, team2);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-            SetupProjects(project);
+            
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -569,7 +531,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseDefaultWork_OwningTeam_AssignsAllWorkToOwningTeam()
+        public async Task UpdateFeaturesForProject_UseDefaultWork_OwningTeam_AssignsAllWorkToOwningTeam()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
@@ -577,16 +539,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(team1, team2);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.OwningTeam = team2;
-            SetupProjects(project);
+            
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -599,7 +561,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseDefaultWork_NoOwningTeam_FeatureOwnerDefined_AssignsAllWorkToOwningTeam()
+        public async Task UpdateFeaturesForProject_UseDefaultWork_NoOwningTeam_FeatureOwnerDefined_AssignsAllWorkToOwningTeam()
         {
             var team1 = CreateTeam();
             team1.Name = "Godzilla";
@@ -611,16 +573,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.OwningTeam = null;
             project.FeatureOwnerField = "System.AreaPath";
-            SetupProjects(project);
+            
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Project\\The Most Awesome\\Features" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -633,7 +595,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseDefaultWork_OwningTeam_FeatureOwnerDefined_AssignsAllWorkToFeatureOwningTeam()
+        public async Task UpdateFeaturesForProject_UseDefaultWork_OwningTeam_FeatureOwnerDefined_AssignsAllWorkToFeatureOwningTeam()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
@@ -643,16 +605,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.OwningTeam = team1;
             project.FeatureOwnerField = "System.AreaPath";
-            SetupProjects(project);
+            
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Project\\The Most Awesome\\Features" };
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -665,7 +627,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseDefaultWork_NoOwningTeam_MultipleFeatureOwnerDefined_SplitsAllWorkAcrossFeatureOwningTeams()
+        public async Task UpdateFeaturesForProject_UseDefaultWork_NoOwningTeam_MultipleFeatureOwnerDefined_SplitsAllWorkAcrossFeatureOwningTeams()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
@@ -677,16 +639,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(team1, team2, team3);
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.FeatureOwnerField = "System.Tags";
-            SetupProjects(project);
+            
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "The Most Awesome;Other" };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -701,7 +663,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseDefaultWork_OwningTeam_MultipleFeatureOwnerDefined_SplitsAllWorkAcrossFeatureOwningTeams()
+        public async Task UpdateFeaturesForProject_UseDefaultWork_OwningTeam_MultipleFeatureOwnerDefined_SplitsAllWorkAcrossFeatureOwningTeams()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
@@ -714,16 +676,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.FeatureOwnerField = "System.Tags";
             project.OwningTeam = team1;
-            SetupProjects(project);
+            
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "The Most Awesome;Other" };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -738,7 +700,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseDefaultWork_OwningTeam_FeatureOwnerNotFound_AssignsWorkToOwningTeam()
+        public async Task UpdateFeaturesForProject_UseDefaultWork_OwningTeam_FeatureOwnerNotFound_AssignsWorkToOwningTeam()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
@@ -751,16 +713,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             project.DefaultAmountOfWorkItemsPerFeature = 12;
             project.FeatureOwnerField = "System.Tags";
             project.OwningTeam = team1;
-            SetupProjects(project);
+            
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Some Random String That does not contain a team name!" };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -773,7 +735,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateFeaturesForProject_UseDefaultWork_NoOwningTeam_FeatureOwnerNotFound_SplitsAcrossAllTeams()
+        public async Task UpdateFeaturesForProject_UseDefaultWork_NoOwningTeam_FeatureOwnerNotFound_SplitsAcrossAllTeams()
         {
             var team1 = CreateTeam();
             var team2 = CreateTeam();
@@ -785,16 +747,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(team1, team2, team3);
             project.DefaultAmountOfWorkItemsPerFeature = 15;
             project.FeatureOwnerField = "System.Tags";
-            SetupProjects(project);
+            
 
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0), (team3, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Some Random String That does not contain a team name!" };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
+            await subject.UpdateWorkItemsForProject(project);
 
             Assert.Multiple(() =>
             {
@@ -807,61 +769,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     Assert.That(fw.TotalWorkItems, Is.EqualTo(5));
                 }
             });
-        }
-
-        [Test]
-        public async Task ExecuteAsync_ReadyToRefresh_RefreshesAllProjectsAsync()
-        {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
-            SetupProjects(project);
-
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
-
-            var subject = CreateSubject();
-
-            await subject.StartAsync(CancellationToken.None);
-
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            projectRepoMock.Verify(x => x.Save());
-        }
-
-        [Test]
-        public async Task ExecuteAsync_MultipleProjects_RefreshesAllProjectsAsync()
-        {
-            var project1 = CreateProject(DateTime.Now.AddDays(-1));
-            var project2 = CreateProject(DateTime.Now.AddDays(-1));
-            SetupProjects(project1, project2);
-
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
-
-            var subject = CreateSubject();
-
-            await subject.StartAsync(CancellationToken.None);
-
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            projectRepoMock.Verify(x => x.Save(), Times.Exactly(2));
-        }
-
-        [Test]
-        public async Task ExecuteAsync_MultipleProjects_RefreshesOnlyProjectsWhereLastRefreshIsOlderThanConfiguredSetting()
-        {
-            var project1 = CreateProject(DateTime.Now.AddDays(-1));
-            var project2 = CreateProject(DateTime.Now);
-
-            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
-
-            SetupRefreshSettings(10, 360);
-
-            SetupProjects(project1, project2);
-
-            var subject = CreateSubject();
-
-            await subject.StartAsync(CancellationToken.None);
-
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
-            Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()), Times.Never);
-            projectRepoMock.Verify(x => x.Save(), Times.Exactly(1));
         }
 
         private void SetupUnparentedWorkItems(string referenceId, Team team)
@@ -908,23 +815,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             workItems.AddRange(newWorkItems);
         }
 
-        private void SetupProjects(params Project[] projects)
-        {
-            projectRepoMock.Setup(x => x.GetAll()).Returns(projects);
-
-            foreach (var project in projects)
-            {
-                projectRepoMock.Setup(x => x.GetById(project.Id)).Returns(project);
-            }
-        }
-
-        private void SetupRefreshSettings(int interval, int refreshAfter)
-        {
-            var refreshSettings = new RefreshSettings { Interval = interval, RefreshAfter = refreshAfter, StartDelay = 0 };
-            appSettingServiceMock.Setup(x => x.GetFeaturRefreshSettings()).Returns(refreshSettings);
-        }
-
-
         private Team CreateTeam()
         {
             var team = new Team { Name = "Team", Id = idCounter++ };
@@ -961,9 +851,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             return project;
         }
 
-        private WorkItemUpdateService CreateSubject()
+        private WorkItemService CreateSubject()
         {
-            return new WorkItemUpdateService(Mock.Of<ILogger<WorkItemUpdateService>>(), ServiceScopeFactory, UpdateQueueService);
+            var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorMock.Object);
+
+            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object);
         }
     }
 }
