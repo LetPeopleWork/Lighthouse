@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Repositories

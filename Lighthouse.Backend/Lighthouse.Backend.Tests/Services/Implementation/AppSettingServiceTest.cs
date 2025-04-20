@@ -1,9 +1,9 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Implementation;
 using Moq;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {

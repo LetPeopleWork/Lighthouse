@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Services.Interfaces.Repositories
 {
     public interface IRepository<T> where T : class
     {

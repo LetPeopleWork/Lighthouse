@@ -1,5 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.WorkTracking;

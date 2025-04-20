@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update

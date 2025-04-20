@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Services.Interfaces.Repositories
 {
     public interface IWorkItemRepository : IRepository<WorkItem>
     {

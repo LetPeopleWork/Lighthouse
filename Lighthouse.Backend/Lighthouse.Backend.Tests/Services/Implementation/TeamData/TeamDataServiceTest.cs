@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.TeamData;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;

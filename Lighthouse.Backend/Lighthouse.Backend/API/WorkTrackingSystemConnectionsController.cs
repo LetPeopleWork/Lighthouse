@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.WorkTracking;
 using Microsoft.AspNetCore.Mvc;
 
