@@ -1,10 +1,10 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 {
     public class TeamUpdateServiceTest : UpdateServiceTestBase
     {
-        private Mock<IWorkItemService> workItemServiceMock = new Mock<IWorkItemService>();
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IRepository<Team>> teamRepoMock;
 
@@ -21,7 +20,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [SetUp]
         public void Setup()
         {
-            workItemServiceMock = new Mock<IWorkItemService>();
             teamRepoMock = new Mock<IRepository<Team>>();
             appSettingServiceMock = new Mock<IAppSettingService>();
 

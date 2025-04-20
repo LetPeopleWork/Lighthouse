@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Lighthouse.Backend.WorkTracking.Jira
+namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     public static class IssueExtensions
     {

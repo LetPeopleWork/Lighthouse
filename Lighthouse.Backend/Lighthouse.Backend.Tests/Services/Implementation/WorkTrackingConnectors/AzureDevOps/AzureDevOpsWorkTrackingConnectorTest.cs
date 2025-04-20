@@ -1,16 +1,15 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkItemServices;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.WorkTracking;
-using Lighthouse.Backend.WorkTracking.AzureDevOps;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
     [Category("Integration")]
-    public class AzureDevOpsWorkItemServiceTest
+    public class AzureDevOpsWorkTrackingConnectorTest
     {
         [Test]
         public async Task GetChangedWorkItemsSinceLastTeamUpdate_NoUpdateDone_GetsAllItemsThatMatchQuery()
@@ -587,9 +586,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             return connectionSetting;
         }
 
-        private static AzureDevOpsWorkItemService CreateSubject()
+        private static AzureDevOpsWorkTrackingConnector CreateSubject()
         {
-            return new AzureDevOpsWorkItemService(Mock.Of<ILogger<AzureDevOpsWorkItemService>>(), new FakeCryptoService());
+            return new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), new FakeCryptoService());
         }
     }
 }

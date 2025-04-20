@@ -1,26 +1,26 @@
 ﻿using Lighthouse.Backend.Cache;
-using Lighthouse.Backend.Services.Implementation.WorkItemServices;
-using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Factories
 {
-    public class WorkItemServiceFactory : IWorkItemServiceFactory
+    public class WorkTrackingConnectorFactory : IWorkTrackingConnectorFactory
     {
-        private readonly Cache<WorkTrackingSystems, IWorkItemService> cache = new Cache<WorkTrackingSystems, IWorkItemService>();
+        private readonly Cache<WorkTrackingSystems, IWorkTrackingConnector> cache = new Cache<WorkTrackingSystems, IWorkTrackingConnector>();
         private readonly IServiceProvider serviceProvider;
-        private readonly ILogger<WorkItemServiceFactory> logger;
+        private readonly ILogger<WorkTrackingConnectorFactory> logger;
 
-        public WorkItemServiceFactory(
+        public WorkTrackingConnectorFactory(
             IServiceProvider serviceProvider,
-            ILogger<WorkItemServiceFactory> logger)
+            ILogger<WorkTrackingConnectorFactory> logger)
         {
             this.serviceProvider = serviceProvider;
             this.logger = logger;
         }
 
-
-        public IWorkItemService GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
+        public IWorkTrackingConnector GetWorkTrackingConnector(WorkTrackingSystems workTrackingSystem)
         {
             logger.LogDebug("Getting Work Item Service for {WorkTrackingSystem}", workTrackingSystem);
             var workItemSerivce = cache.Get(workTrackingSystem);
@@ -31,10 +31,10 @@ namespace Lighthouse.Backend.Services.Factories
                 switch (workTrackingSystem)
                 {
                     case WorkTrackingSystems.AzureDevOps:
-                        workItemSerivce = serviceProvider.GetRequiredService<AzureDevOpsWorkItemService>();
+                        workItemSerivce = serviceProvider.GetRequiredService<AzureDevOpsWorkTrackingConnector>();
                         break;
                     case WorkTrackingSystems.Jira:
-                        workItemSerivce = serviceProvider.GetRequiredService<JiraWorkItemService>();
+                        workItemSerivce = serviceProvider.GetRequiredService<JiraWorkTrackingConnector>();
                         break;
                     default:
                         throw new NotSupportedException();

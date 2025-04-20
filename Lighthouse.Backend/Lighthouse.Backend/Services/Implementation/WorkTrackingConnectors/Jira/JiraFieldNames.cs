@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.WorkTracking.Jira
+﻿namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     public static class JiraFieldNames
     {

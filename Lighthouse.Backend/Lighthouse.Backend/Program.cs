@@ -8,7 +8,6 @@ using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Data;
 using System.Globalization;
-using Lighthouse.Backend.Services.Implementation.WorkItemServices;
 using Serilog;
 using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
@@ -24,6 +23,9 @@ using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Implementation.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 
 namespace Lighthouse.Backend
 {
@@ -150,7 +152,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<PreviewFeature>, PreviewFeatureRepository>();
 
             // Factories
-            builder.Services.AddScoped<IWorkItemServiceFactory, WorkItemServiceFactory>();
+            builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
             builder.Services.AddScoped<IIssueFactory, IssueFactory>();
             builder.Services.AddScoped<IWorkTrackingSystemFactory, WorkTrackingSystemFactory>();
 
@@ -167,8 +169,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
 
-            builder.Services.AddScoped<AzureDevOpsWorkItemService>();
-            builder.Services.AddScoped<JiraWorkItemService>();
+            builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
+            builder.Services.AddScoped<JiraWorkTrackingConnector>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdateService>();

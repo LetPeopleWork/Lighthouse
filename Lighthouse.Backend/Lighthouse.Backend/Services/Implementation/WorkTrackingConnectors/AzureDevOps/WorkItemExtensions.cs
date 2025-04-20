@@ -1,7 +1,7 @@
 ﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi;
 
-namespace Lighthouse.Backend.WorkTracking.AzureDevOps
+namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
     public static class WorkItemExtensions
     {

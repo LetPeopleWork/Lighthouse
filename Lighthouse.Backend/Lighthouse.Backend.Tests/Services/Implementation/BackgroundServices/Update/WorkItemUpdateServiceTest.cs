@@ -2,11 +2,12 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.WorkTracking;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
@@ -18,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IRepository<Project>> projectRepoMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
-        private Mock<IWorkItemService> workItemServiceMock;
+        private Mock<IWorkTrackingConnector> workTrackingConnectorServiceMock;
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IForecastService> forecastServiceMock;
 
@@ -28,22 +29,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [SetUp]
         public void SetUp()
         {
-            workItemServiceMock = new Mock<IWorkItemService>();
+            workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             projectRepoMock = new Mock<IRepository<Project>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = new Mock<IForecastService>();
 
-            var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
-            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
+            var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
 
             SetupServiceProviderMock(projectRepoMock.Object);
             SetupServiceProviderMock(featureRepositoryMock.Object);
             SetupServiceProviderMock(workItemRepositoryMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
-            SetupServiceProviderMock(workItemServiceFactoryMock.Object);
+            SetupServiceProviderMock(workTrackingConnectorFactoryMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
@@ -65,7 +66,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupProjects(project);
             SetupWorkForFeature(feature, 1, 0, team);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -89,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature = new Feature(team, 12) { ReferenceId = "12" };
             SetupProjects(project);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -107,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             project.Features.Add(existingFeature);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -133,7 +134,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupWorkForFeature(feature1, 10, remainingWork, team);
             SetupWorkForFeature(feature2, 15, 12, team);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -169,7 +170,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature = new Feature(team, remainingWork) { ReferenceId = "12", State = "Done", StateCategory = StateCategories.Done };
             SetupWorkForFeature(feature, totalWork, remainingWork, team);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -200,7 +201,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             var features = new List<Feature>() { feature1, feature2 };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => features.SingleOrDefault(predicate));
 
@@ -228,7 +229,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -265,11 +266,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var itemCounter = 0;
             var historicalFeatureSize = childItemCount.ToDictionary(x => $"{itemCounter++}", x => x);
-            workItemServiceMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(historicalFeatureSize);
+            workTrackingConnectorServiceMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(historicalFeatureSize);
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -297,8 +298,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
-            workItemServiceMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(new Dictionary<string, int>());
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(new Dictionary<string, int>());
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -323,7 +324,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 0 };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -344,7 +345,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 7 };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -364,7 +365,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             SetupWorkForFeature(feature1, 7, 0, team);
 
@@ -388,7 +389,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature([(team1, 0, 12), (team2, 0, 10)]) { ReferenceId = "17" };
             var feature2 = new Feature([(team1, 2, 13), (team2, 2, 3)]) { ReferenceId = "19" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
             SetupWorkForFeature(feature1, 0, 0);
             SetupWorkForFeature(feature2, 12, 12);
 
@@ -416,7 +417,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var remainingWorkItems = 12;
             var feature = new Feature(team, remainingWorkItems) { ReferenceId = "42" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 12, remainingWorkItems, team);
 
             var subject = CreateSubject();
@@ -435,12 +436,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(team1, team2);
             SetupProjects(project);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            workItemServiceMock.Verify(x => x.GetFeaturesForProject(project), Times.Exactly(1));
+            workTrackingConnectorServiceMock.Verify(x => x.GetFeaturesForProject(project), Times.Exactly(1));
         }
 
         [Test]
@@ -457,7 +458,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature1 = new Feature(team1, remainingWorkItemsFeature1) { ReferenceId = "1" };
             var feature2 = new Feature(team2, remainingWorkItemsFeature1) { ReferenceId = "2" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             SetupWorkForFeature(feature1, 12, remainingWorkItemsFeature1, team1);
             SetupWorkForFeature(feature2, 12, remainingWorkItemsFeature2, team2);
@@ -484,7 +485,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var remainingWorkItemsTeam2 = 7;
             var feature = new Feature(team1, remainingWorkItemsTeam1) { ReferenceId = "1" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             SetupWorkForFeature(feature, 12, remainingWorkItemsTeam1, team1);
             SetupWorkForFeature(feature, 12, remainingWorkItemsTeam2, team2);
@@ -513,17 +514,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             project.OverrideRealChildCountStates.AddRange(overrideStates);
             project.UnparentedItemsQuery = "[System.Tags] CONTAINS Release 123";
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature>()));
 
             foreach (var unparentedItem in unparentedItems)
             {
                 SetupUnparentedWorkItems(unparentedItem, team);
             }
 
-            workItemServiceMock.Setup(x => x.GetWorkItemsIdsForTeamWithAdditionalQuery(team, project.UnparentedItemsQuery))
+            workTrackingConnectorServiceMock.Setup(x => x.GetWorkItemsIdsForTeamWithAdditionalQuery(team, project.UnparentedItemsQuery))
                 .Returns(Task.FromResult(new List<string>(unparentedItems)));
 
-            workItemServiceMock.Setup(x => x.GetAdjacentOrderIndex(It.IsAny<IEnumerable<string>>(), RelativeOrder.Above)).Returns(expectedUnparentedOrder);
+            workTrackingConnectorServiceMock.Setup(x => x.GetAdjacentOrderIndex(It.IsAny<IEnumerable<string>>(), RelativeOrder.Above)).Returns(expectedUnparentedOrder);
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -551,7 +552,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
@@ -581,7 +582,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
@@ -615,7 +616,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Project\\The Most Awesome\\Features" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
@@ -647,7 +648,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var teams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Project\\The Most Awesome\\Features" };
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
@@ -682,7 +683,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "The Most Awesome;Other" };
             SetupWorkForFeature(feature, 0, 0);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -719,7 +720,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "The Most Awesome;Other" };
             SetupWorkForFeature(feature, 0, 0);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -756,7 +757,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Some Random String That does not contain a team name!" };
             SetupWorkForFeature(feature, 0, 0);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -790,7 +791,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var feature = new Feature(teams) { ReferenceId = "42", OwningTeam = "Some Random String That does not contain a team name!" };
             SetupWorkForFeature(feature, 0, 0);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -814,7 +815,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(DateTime.Now.AddDays(-1));
             SetupProjects(project);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
 
@@ -831,7 +832,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project2 = CreateProject(DateTime.Now.AddDays(-1));
             SetupProjects(project1, project2);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
 
@@ -848,7 +849,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project1 = CreateProject(DateTime.Now.AddDays(-1));
             var project2 = CreateProject(DateTime.Now);
 
-            workItemServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorServiceMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
 
             SetupRefreshSettings(10, 360);
 

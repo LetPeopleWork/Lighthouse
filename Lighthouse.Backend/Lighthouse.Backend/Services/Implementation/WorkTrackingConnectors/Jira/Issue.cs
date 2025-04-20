@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace Lighthouse.Backend.WorkTracking.Jira
+namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     public class Issue
     {

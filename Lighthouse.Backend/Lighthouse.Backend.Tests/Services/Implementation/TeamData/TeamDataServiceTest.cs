@@ -1,9 +1,10 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.TeamData;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -11,7 +12,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
 {
     public class TeamDataServiceTest
     {
-        private Mock<IWorkItemService> workItemServiceMock = new Mock<IWorkItemService>();
+        private Mock<IWorkTrackingConnector> workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
         private Mock<IWorkItemRepository> workItemRepoMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
@@ -20,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         [SetUp]
         public void Setup()
         {
-            workItemServiceMock = new Mock<IWorkItemService>();
+            workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
             workItemRepoMock = new Mock<IWorkItemRepository>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
         }
@@ -127,10 +128,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
 
         private TeamDataService CreateSubject()
         {
-            var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
-            workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
+            var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorServiceMock.Object);
 
-            return new TeamDataService(Mock.Of<ILogger<TeamDataService>>(), workItemServiceFactoryMock.Object, workItemRepoMock.Object, teamMetricsServiceMock.Object);
+            return new TeamDataService(Mock.Of<ILogger<TeamDataService>>(), workTrackingConnectorFactoryMock.Object, workItemRepoMock.Object, teamMetricsServiceMock.Object);
         }
     }
 }

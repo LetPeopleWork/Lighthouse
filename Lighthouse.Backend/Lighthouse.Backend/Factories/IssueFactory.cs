@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkItemServices;
-using Lighthouse.Backend.WorkTracking.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using System.Globalization;
 using System.Text.Json;
 

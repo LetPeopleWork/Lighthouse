@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.WorkTracking.AzureDevOps;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -9,16 +9,16 @@ using Microsoft.VisualStudio.Services.WebApi;
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 using LighthouseWorkItem = Lighthouse.Backend.Models.WorkItem;
 
-namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
+namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
-    public class AzureDevOpsWorkItemService : IWorkItemService
+    public class AzureDevOpsWorkTrackingConnector : IWorkTrackingConnector
     {
         private const int maxChunkSize = 200;
 
-        private readonly ILogger<AzureDevOpsWorkItemService> logger;
+        private readonly ILogger<AzureDevOpsWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
 
-        public AzureDevOpsWorkItemService(ILogger<AzureDevOpsWorkItemService> logger, ICryptoService cryptoService)
+        public AzureDevOpsWorkTrackingConnector(ILogger<AzureDevOpsWorkTrackingConnector> logger, ICryptoService cryptoService)
         {
             this.logger = logger;
             this.cryptoService = cryptoService;

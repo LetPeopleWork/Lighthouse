@@ -1,8 +1,8 @@
-﻿using Lighthouse.Backend.Services.Implementation.WorkItemServices;
+﻿using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
     public class LexoRankServiceTest
     {

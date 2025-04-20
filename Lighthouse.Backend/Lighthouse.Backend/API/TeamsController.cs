@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
         private readonly IWorkItemRepository workItemRepository;
         private readonly ITeamUpdateService teamUpdateService;
-        private readonly IWorkItemServiceFactory workItemServiceFactory;
+        private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
 
         public TeamsController(
             IRepository<Team> teamRepository,
@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
             IWorkItemRepository workItemRepository,
             ITeamUpdateService teamUpdateService,
-            IWorkItemServiceFactory workItemServiceFactory)
+            IWorkTrackingConnectorFactory workTrackingConnectorFactory)
         {
             this.teamRepository = teamRepository;
             this.projectRepository = projectRepository;
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.API
             this.workTrackingSystemConnectionRepository = workTrackingSystemConnectionRepository;
             this.workItemRepository = workItemRepository;
             this.teamUpdateService = teamUpdateService;
-            this.workItemServiceFactory = workItemServiceFactory;
+            this.workTrackingConnectorFactory = workTrackingConnectorFactory;
         }
 
         [HttpGet]
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.API
                 var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
                 SyncTeamWithTeamSettings(team, teamSettingDto);
 
-                var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+                var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
                 return await workItemService.ValidateTeamSettings(team);
             });

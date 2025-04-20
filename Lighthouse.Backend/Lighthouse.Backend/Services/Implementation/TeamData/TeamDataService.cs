@@ -9,14 +9,14 @@ namespace Lighthouse.Backend.Services.Implementation.TeamData
     public class TeamDataService : ITeamDataService
     {
         private readonly ILogger<TeamDataService> logger;
-        private readonly IWorkItemServiceFactory workItemServiceFactory;
+        private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
         private readonly IWorkItemRepository workItemRepository;
         private readonly ITeamMetricsService teamMetricsService;
 
-        public TeamDataService(ILogger<TeamDataService> logger, IWorkItemServiceFactory workItemServiceFactory, IWorkItemRepository workItemRepository, ITeamMetricsService teamMetricsService)
+        public TeamDataService(ILogger<TeamDataService> logger, IWorkTrackingConnectorFactory workTrackingConnectorFactory, IWorkItemRepository workItemRepository, ITeamMetricsService teamMetricsService)
         {
             this.logger = logger;
-            this.workItemServiceFactory = workItemServiceFactory;
+            this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.workItemRepository = workItemRepository;
             this.teamMetricsService = teamMetricsService;
         }
@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Services.Implementation.TeamData
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
-            var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
             var items = await workItemService.GetChangedWorkItemsSinceLastTeamUpdate(team);
 
             foreach (var item in items)

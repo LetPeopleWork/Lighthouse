@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.WorkTracking.AzureDevOps
+﻿namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
     public static class AzureDevOpsWorkTrackingOptionNames
     {

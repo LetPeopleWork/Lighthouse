@@ -1,4 +1,6 @@
-﻿namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
+﻿using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
+
+namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     public class LexoRankService : ILexoRankService
     {

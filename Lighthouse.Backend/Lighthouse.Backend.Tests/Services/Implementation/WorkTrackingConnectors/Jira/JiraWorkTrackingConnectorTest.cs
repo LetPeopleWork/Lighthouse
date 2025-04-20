@@ -1,18 +1,17 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkItemServices;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.WorkTracking;
-using Lighthouse.Backend.WorkTracking.AzureDevOps;
-using Lighthouse.Backend.WorkTracking.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
     [Category("Integration")]
-    public class JiraWorkItemServiceTest
+    public class JiraWorkTrackingConnectorTest
     {
         private Mock<ILexoRankService> lexoRankServiceMock;
 
@@ -599,9 +598,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemServices
             return connectionSetting;
         }
 
-        private JiraWorkItemService CreateSubject()
+        private JiraWorkTrackingConnector CreateSubject()
         {
-            return new JiraWorkItemService(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkItemService>>(), new FakeCryptoService());
+            return new JiraWorkTrackingConnector(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService());
         }
     }
 }

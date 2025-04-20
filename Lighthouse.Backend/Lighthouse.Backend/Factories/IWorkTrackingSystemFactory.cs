@@ -1,5 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.WorkTracking;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Factories
 {

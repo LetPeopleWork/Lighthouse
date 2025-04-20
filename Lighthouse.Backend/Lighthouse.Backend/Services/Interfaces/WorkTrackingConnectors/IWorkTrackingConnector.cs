@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
     public enum RelativeOrder
     {
@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         Below,
     }
 
-    public interface IWorkItemService
+    public interface IWorkTrackingConnector
     {
         Task<IEnumerable<WorkItem>> GetChangedWorkItemsSinceLastTeamUpdate(Team team);
 

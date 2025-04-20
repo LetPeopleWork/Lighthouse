@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Team> teamRepository;
         private readonly IWorkItemUpdateService workItemUpdateService;
-        private readonly IWorkItemServiceFactory workItemServiceFactory;
+        private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
 
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
 
@@ -22,13 +22,13 @@ namespace Lighthouse.Backend.API
             IRepository<Project> projectRepository,
             IRepository<Team> teamRepository,
             IWorkItemUpdateService workItemUpdateService,
-            IWorkItemServiceFactory workItemServiceFactory,
+            IWorkTrackingConnectorFactory workTrackingConnectorFactory,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository)
         {
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
             this.workItemUpdateService = workItemUpdateService;
-            this.workItemServiceFactory = workItemServiceFactory;
+            this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.workTrackingSystemConnectionRepository = workTrackingSystemConnectionRepository;
         }
 
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.API
                 var project = new Project { WorkTrackingSystemConnection = workTrackingSystem };
                 SyncProjectWithProjectSettings(project, projectSettingDto);
 
-                var workItemService = workItemServiceFactory.GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
+                var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
                 var result = await workItemService.ValidateProjectSettings(project);
 

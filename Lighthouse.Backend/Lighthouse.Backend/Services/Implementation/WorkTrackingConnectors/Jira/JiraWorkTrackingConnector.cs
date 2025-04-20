@@ -1,21 +1,22 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.WorkTracking.Jira;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace Lighthouse.Backend.Services.Implementation.WorkItemServices
+namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
-    public class JiraWorkItemService : IWorkItemService
+    public class JiraWorkTrackingConnector : IWorkTrackingConnector
     {
         private readonly ILexoRankService lexoRankService;
         private readonly IIssueFactory issueFactory;
-        private readonly ILogger<JiraWorkItemService> logger;
+        private readonly ILogger<JiraWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
 
-        public JiraWorkItemService(ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkItemService> logger, ICryptoService cryptoService)
+        public JiraWorkTrackingConnector(ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService)
         {
             this.lexoRankService = lexoRankService;
             this.issueFactory = issueFactory;
