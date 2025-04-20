@@ -46,10 +46,6 @@ display_date = today.strftime("%Y-%m-%d")
 print(f"🔄 Running ADO System Updater on {display_date} (day index: {today_index})")
 
 
-def get_random_count_from_throughput(target):
-    return max(0, int(random.gauss(target, max(1, target * 0.3))))
-
-
 def create_work_item(title, area_path, work_item_type):
     fields = [
         {"op": "add", "path": "/fields/System.Title", "value": title},
@@ -122,18 +118,17 @@ def update_work_item_state(work_item_id, new_state):
 
 # --- Main loop ---
 for area_path, throughput_pattern in area_path_targets.items():
-    target = throughput_pattern[today_index]
+    throughput = throughput_pattern[today_index]
     is_portfolio = "Portfolio" in area_path
     work_item_type = "Epic" if is_portfolio else "User Story"
     title_prefix = "Auto-Generated Epic" if is_portfolio else "Auto-Generated"
 
     print(f"\n📂 Processing area path: {area_path}")
-    print(f"📊 Target throughput for today: {target} {work_item_type}(s)")
+    print(f"📊 Target throughput for today: {throughput} {work_item_type}(s)")
 
     # 1. Create items in "New"
-    count_to_create = get_random_count_from_throughput(target)
-    print(f"🆕 Creating {count_to_create} new {work_item_type}(s)")
-    for i in range(count_to_create):
+    print(f"🆕 Creating {throughput} new {work_item_type}(s)")
+    for i in range(throughput):
         title = f"{title_prefix} {display_date} #{i + 1}"
         create_work_item(title, area_path, work_item_type)
 

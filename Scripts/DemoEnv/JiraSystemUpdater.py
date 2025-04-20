@@ -44,7 +44,7 @@ stats = {
 
 for team, throughput in teams_targets.items():
     count = throughput[day_index]
-    
+
     print(f"\n📂 Processing team: {team}")
     print(f"📊 Target throughput for today: {count} item(s)")
 
@@ -54,7 +54,7 @@ for team, throughput in teams_targets.items():
 
     # Create new issues (stories or epics)
     print(f"🆕 Generating {count} item(s) for '{team}'...")
-    
+
     for i in range(count):
         is_epic = team == "Epics"
         item_type = "Epic" if is_epic else "Story"
