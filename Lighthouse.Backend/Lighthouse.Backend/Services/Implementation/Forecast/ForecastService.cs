@@ -1,39 +1,39 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
-namespace Lighthouse.Backend.Services.Implementation.Update
+namespace Lighthouse.Backend.Services.Implementation.Forecast
 {
-    public class ForecastUpdateService : UpdateServiceBase<Project>, IForecastUpdateService
+    public class ForecastService : IForecastService
     {
-        private readonly int trials;
+        // Read from Env Vars or settings in future?
+        private readonly int trials = 10_000;
 
         private readonly IRandomNumberService randomNumberService;
+        private readonly ILogger<ForecastService> logger;
+        private readonly ITeamMetricsService teamMetricsService;
+        private readonly IRepository<Feature> featureRepository;
+        private readonly IFeatureHistoryService featureHistoryService;
 
-        public ForecastUpdateService(
-            IRandomNumberService randomNumberService, ILogger<ForecastUpdateService> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService, int trials = 10_000)
-            : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts)
+        public ForecastService(
+            IRandomNumberService randomNumberService,
+            ILogger<ForecastService> logger,
+            ITeamMetricsService teamMetricsService,
+            IRepository<Feature> featureRepository,
+            IFeatureHistoryService featureHistoryService)
         {
-            this.trials = trials;
             this.randomNumberService = randomNumberService;
-        }
-
-        protected override RefreshSettings GetRefreshSettings()
-        {
-            throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
-        }
-
-        protected override bool ShouldUpdateEntity(Project entity, RefreshSettings refreshSettings)
-        {
-            throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
+            this.logger = logger;
+            this.teamMetricsService = teamMetricsService;
+            this.featureRepository = featureRepository;
+            this.featureHistoryService = featureHistoryService;
         }
 
         public HowManyForecast HowMany(RunChartData throughput, int days)
         {
-            Logger.LogInformation("Running Monte Carlo Forecast How Many for {Days} days.", days);
+            logger.LogInformation("Running Monte Carlo Forecast How Many for {Days} days.", days);
 
             var simulationResults = new Dictionary<int, int>();
 
@@ -48,76 +48,53 @@ namespace Lighthouse.Backend.Services.Implementation.Update
                 AddSimulationResult(simulationResults, simulatedThroughput);
             });
 
-            Logger.LogInformation("Finished running Monte Carlo How Many for {Days} days.", days);
+            logger.LogInformation("Finished running Monte Carlo How Many for {Days} days.", days);
 
             return new HowManyForecast(simulationResults, days);
         }
 
         public async Task<WhenForecast> When(Team team, int remainingItems)
         {
-            Logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
+            logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
-            using (var scope = CreateServiceScope())
-            {
-                var teamMetricsService = CreateServiceScope().ServiceProvider.GetRequiredService<ITeamMetricsService>();
-                var fakeFeature = new Feature(team, remainingItems);
-                await ForecastFeatures([fakeFeature], teamMetricsService);
+            var fakeFeature = new Feature(team, remainingItems);
+            await ForecastFeatures([fakeFeature]);
 
-                Logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
+            logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
-                return fakeFeature.Forecast;
-            }
+            return fakeFeature.Forecast;
         }
 
-        public async Task UpdateForecastsForProject(int projectId)
+        public async Task UpdateForecastsForProject(Project project)
         {
-            using (var scope = CreateServiceScope())
-            {
-                await Update(projectId, CreateServiceScope().ServiceProvider);
-            }
+            await UpdateForecastsForTeams(project.Teams);
         }
 
-        protected override async Task Update(int id, IServiceProvider serviceProvider)
+        private async Task UpdateForecastsForTeams(IEnumerable<Team> teams)
         {
-            var featureRepository = serviceProvider.GetRequiredService<IRepository<Feature>>();
-            var featureHistoryService = serviceProvider.GetRequiredService<IFeatureHistoryService>();
-            var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
-            var teamMetricsService = serviceProvider.GetRequiredService<ITeamMetricsService>();
-
-            var project = projectRepository.GetById(id);
-            if (project == null)
-            {
-                return;
-            }
-
-            await UpdateForecastsForTeams(featureRepository, featureHistoryService, teamMetricsService, project.Teams);
-        }
-
-        private async Task UpdateForecastsForTeams(IRepository<Feature> featureRepository, IFeatureHistoryService featureHistoryService, ITeamMetricsService teamMetricsService, IEnumerable<Team> teams)
-        {
-            Logger.LogInformation("Running Monte Carlo Forecast for all Features with involved of teams {Teams}", string.Join(',', teams.Select(t => t.Name)));
+            logger.LogInformation("Running Monte Carlo Forecast for all Features with involved of teams {Teams}", string.Join(',', teams.Select(t => t.Name)));
 
             var features = featureRepository.GetAll().Where(f => f.Teams.Any(t => teams.Contains(t))).ToList();
 
-            Logger.LogInformation("Features with involved of those team are: {Features}", string.Join(",", features.Select(f => f.Name)));
+            logger.LogInformation("Features with involved of those team are: {Features}", string.Join(",", features.Select(f => f.Name)));
 
-            await ForecastFeatures(features, teamMetricsService);
+            await ForecastFeatures(features);
 
             await featureRepository.Save();
 
-            await ArchiveFeatures(featureHistoryService, features);
+            await ArchiveFeatures(features);
         }
 
-        private async Task ForecastFeatures(IEnumerable<Feature> features, ITeamMetricsService teamMetricsService)
+        private async Task ForecastFeatures(IEnumerable<Feature> features)
         {
-            var throughpoutByTeam = InitializeThroughputPerTeam(features, teamMetricsService);
+            var throughpoutByTeam = InitializeThroughputPerTeam(features);
 
             var simulationResults = InitializeSimulationResults(features);
             await RunMonteCarloSimulation(simulationResults, throughpoutByTeam);
             UpdateFeatureForecasts(features, simulationResults);
         }
 
-        private static Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features, ITeamMetricsService teamMetricsService)
+        private Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features)
         {
             var teams = features.SelectMany(f => f.Teams).Distinct().ToList();
             var throughpoutByTeam = new Dictionary<int, RunChartData>();
@@ -264,7 +241,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             return throughput.GetValueOnDay(randomDay);
         }
 
-        private static async Task ArchiveFeatures(IFeatureHistoryService featureHistoryService, IEnumerable<Feature> features)
+        private async Task ArchiveFeatures(IEnumerable<Feature> features)
         {
             foreach (var feature in features)
             {

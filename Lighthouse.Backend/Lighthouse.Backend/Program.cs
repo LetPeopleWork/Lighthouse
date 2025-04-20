@@ -14,11 +14,12 @@ using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
 using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Models.Preview;
-using Lighthouse.Backend.Services.Implementation.Update;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Collections.Concurrent;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 
 namespace Lighthouse.Backend
 {
@@ -159,6 +160,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IFeatureHistoryService, FeatureHistoryService>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             builder.Services.AddScoped<IProjectMetricsService, ProjectMetricsService>();
+            builder.Services.AddScoped<IForecastService, ForecastService>();
 
             builder.Services.AddScoped<AzureDevOpsWorkItemService>();
             builder.Services.AddScoped<JiraWorkItemService>();
@@ -170,9 +172,11 @@ namespace Lighthouse.Backend
             builder.Services.AddHostedService<WorkItemUpdateService>();
             builder.Services.AddSingleton<IWorkItemUpdateService, WorkItemUpdateService>();
 
+            builder.Services.AddSingleton<IForecastUpdateService, ForecastUpdateService>();
+
             builder.Services.AddHostedService<DataRetentionService>();
 
-            builder.Services.AddSingleton<IForecastUpdateService, ForecastUpdateService>();
+
             builder.Services.AddSingleton<ICryptoService, CryptoService>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();

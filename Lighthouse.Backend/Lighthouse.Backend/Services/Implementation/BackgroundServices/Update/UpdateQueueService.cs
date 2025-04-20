@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Services.Implementation.Update
+﻿namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     using Lighthouse.Backend.Services.Interfaces.Update;
     using Microsoft.AspNetCore.SignalR;

@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.WorkTracking;
 
-namespace Lighthouse.Backend.Services.Implementation.Update
+namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public class WorkItemUpdateService : UpdateServiceBase<Project>, IWorkItemUpdateService
     {
@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
             var workItemServiceFactory = serviceProvider.GetRequiredService<IWorkItemServiceFactory>();
             var featureRepository = serviceProvider.GetRequiredService<IRepository<Feature>>();
             var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
-            var forecastUpdateService = serviceProvider.GetRequiredService<IForecastUpdateService>();
+            var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
             var workItemRepository = serviceProvider.GetRequiredService<IWorkItemRepository>();
 
             var project = projectRepository.GetById(id);
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation.Update
 
             await UpdateFeaturesForProject(projectRepository, featureRepository, workItemRepository, workItemServiceFactory, project);
 
-            await forecastUpdateService.UpdateForecastsForProject(project.Id);
+            await forecastUpdateService.UpdateForecastsForProject(project);
         }
 
         private async Task UpdateFeaturesForProject(

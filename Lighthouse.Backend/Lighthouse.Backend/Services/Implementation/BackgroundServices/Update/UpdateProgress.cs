@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Services.Implementation.Update
+﻿namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public enum UpdateProgress
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
-namespace Lighthouse.Backend.Services.Implementation.Update
+namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public class UpdateNotificationHub : Hub
     {

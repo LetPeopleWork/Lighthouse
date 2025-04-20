@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
-namespace Lighthouse.Backend.Services.Implementation.Update
+namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public class TeamUpdateService : UpdateServiceBase<Team>, ITeamUpdateService
     {

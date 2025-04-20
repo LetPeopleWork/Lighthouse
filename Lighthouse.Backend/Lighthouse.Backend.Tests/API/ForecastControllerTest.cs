@@ -12,20 +12,23 @@ namespace Lighthouse.Backend.Tests.API
 {
     public class ForecastControllerTest
     {
-        private Mock<IForecastUpdateService> monteCarloServiceMock;
+        private Mock<IForecastUpdateService> forecastUpdateServiceMock;
+        private Mock<IForecastService> forecastServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         [SetUp]
         public void Setup()
         {
-            monteCarloServiceMock = new Mock<IForecastUpdateService>();
+            forecastUpdateServiceMock = new Mock<IForecastUpdateService>();
+            forecastServiceMock = new Mock<IForecastService>();
+
             teamRepositoryMock = new Mock<IRepository<Team>>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
         }
 
         [Test]
-        public void UpdateForecast_ProjectExists_UpdatesForecastAndSaves()
+        public void UpdateForecast_ProjectExists_TriggersForecastUpdate()
         {
             var subject = CreateSubject();
 
@@ -37,6 +40,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                forecastUpdateServiceMock.Verify(x => x.TriggerUpdate(12), Times.Once);
             });
         }
 
@@ -47,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
             var forecast = new HowManyForecast();
 
-            monteCarloServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(forecast);
+            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(forecast);
 
             var subject = CreateSubject();
 
@@ -76,7 +81,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
             var forecast = new WhenForecast();
 
-            monteCarloServiceMock.Setup(x => x.When(expectedTeam, 42)).Returns(Task.FromResult(forecast));
+            forecastServiceMock.Setup(x => x.When(expectedTeam, 42)).Returns(Task.FromResult(forecast));
 
             var subject = CreateSubject();
 
@@ -104,8 +109,8 @@ namespace Lighthouse.Backend.Tests.API
             var expectedTeam = new Team();
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
 
-            monteCarloServiceMock.Setup(x => x.When(expectedTeam, 42)).Returns(Task.FromResult(new WhenForecast()));
-            monteCarloServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(new HowManyForecast());
+            forecastServiceMock.Setup(x => x.When(expectedTeam, 42)).Returns(Task.FromResult(new WhenForecast()));
+            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(new HowManyForecast());
 
             var subject = CreateSubject();
 
@@ -145,7 +150,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private ForecastController CreateSubject()
         {
-            return new ForecastController(monteCarloServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object);
+            return new ForecastController(forecastUpdateServiceMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object);
         }
     }
 }

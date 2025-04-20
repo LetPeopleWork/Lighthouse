@@ -2,7 +2,7 @@
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
-namespace Lighthouse.Backend.Services.Implementation.Update
+namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public abstract class UpdateServiceBase<TEntity> : BackgroundService, IUpdateService where TEntity : class, IEntity
     {
@@ -24,7 +24,14 @@ namespace Lighthouse.Backend.Services.Implementation.Update
         {
             updateQueueService.EnqueueUpdate(updateType, id, async serviceProvider =>
             {
-                await Update(id, serviceProvider);
+                try
+                {
+                    await Update(id, serviceProvider);
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError(exception, "An exception occurred while updating {Entity} with ID {Id}: {Exception}", typeof(TEntity).Name, id, exception.Message);
+                }
             });
         }
 

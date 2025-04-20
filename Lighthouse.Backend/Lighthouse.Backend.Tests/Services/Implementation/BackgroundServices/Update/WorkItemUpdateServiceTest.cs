@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation.Update;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Update
+namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
     public class WorkItemUpdateServiceTest : UpdateServiceTestBase
     {
@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkItemService> workItemServiceMock;
         private Mock<IAppSettingService> appSettingServiceMock;
-        private Mock<IForecastUpdateService> forecastUpdateServiceMock;
+        private Mock<IForecastService> forecastServiceMock;
 
         private int idCounter = 0;
         private List<WorkItem> workItems;
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             projectRepoMock = new Mock<IRepository<Project>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             appSettingServiceMock = new Mock<IAppSettingService>();
-            forecastUpdateServiceMock = new Mock<IForecastUpdateService>();
+            forecastServiceMock = new Mock<IForecastService>();
 
             var workItemServiceFactoryMock = new Mock<IWorkItemServiceFactory>();
             workItemServiceFactoryMock.Setup(x => x.GetWorkItemServiceForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(workItemServiceMock.Object);
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             SetupServiceProviderMock(workItemRepositoryMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(workItemServiceFactoryMock.Object);
-            SetupServiceProviderMock(forecastUpdateServiceMock.Object);
+            SetupServiceProviderMock(forecastServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
 
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Update
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            forecastUpdateServiceMock.Verify(x => x.UpdateForecastsForProject(project.Id));
+            forecastServiceMock.Verify(x => x.UpdateForecastsForProject(project));
         }
 
         [Test]

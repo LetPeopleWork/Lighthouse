@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Services.Implementation.Update;
+﻿using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 
 namespace Lighthouse.Backend.Services.Interfaces.Update
 {

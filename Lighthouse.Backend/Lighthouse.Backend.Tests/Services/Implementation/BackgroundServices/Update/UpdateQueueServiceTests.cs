@@ -1,11 +1,11 @@
-using Lighthouse.Backend.Services.Implementation.Update;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Update
+namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
     [TestFixture]
     public class UpdateQueueServiceTests

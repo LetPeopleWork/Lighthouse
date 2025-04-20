@@ -12,12 +12,14 @@ namespace Lighthouse.Backend.API
     public class ForecastController : ControllerBase
     {
         private readonly IForecastUpdateService forecastUpdateService;
+        private readonly IForecastService forecastService;
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
 
-        public ForecastController(IForecastUpdateService forecastUpdateService, IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
+        public ForecastController(IForecastUpdateService forecastUpdateService, IForecastService forecastService, IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService)
         {
             this.forecastUpdateService = forecastUpdateService;
+            this.forecastService = forecastService;
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
         }
@@ -41,7 +43,7 @@ namespace Lighthouse.Backend.API
 
                 if (input.RemainingItems > 0)
                 {
-                    var whenForecast = await forecastUpdateService.When(team, input.RemainingItems);
+                    var whenForecast = await forecastService.When(team, input.RemainingItems);
 
                     manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
 
@@ -54,7 +56,7 @@ namespace Lighthouse.Backend.API
                 if (timeToTargetDate > 0)
                 {
                     var throughput = teamMetricsService.GetCurrentThroughputForTeam(team);
-                    var howManyForecast = forecastUpdateService.HowMany(throughput, timeToTargetDate);
+                    var howManyForecast = forecastService.HowMany(throughput, timeToTargetDate);
 
                     manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
                 }
