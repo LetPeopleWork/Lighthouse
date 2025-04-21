@@ -45,12 +45,13 @@ jobs:
         working-directory: ./Lighthouse.EndToEndTests
         
       - name: Download Lighthouse Artifacts
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: ci.yml
           name: Lighthouse ${{ steps.version.outputs.ARTIFACT_VERSION }}
           path: ./Lighthouse
+          workflow_conclusion: ""
           
       - name: Set linux executable permission
         run: sudo chmod -R +x ./linux-x64
