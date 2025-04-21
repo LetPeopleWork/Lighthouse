@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             RemoveIfExists(new PreviewFeature { Id = 0, Key = PreviewFeatureKeys.LighthouseChartKey, Name = "Lighthouse Chart", Description = "Shows Burndown Chart with Forecasts for each Feature in a Project", Enabled = false });
             RemoveIfExists(new PreviewFeature { Id = 1, Key = PreviewFeatureKeys.CycleTimeScatterPlotKey, Name = "Cycle Time Scatter Plot", Description = "Shows Cycle Time Scatterplot for a team", Enabled = false });
 
+            AddIfNotExists(new PreviewFeature { Id = 2, Key = PreviewFeatureKeys.McpServerKey, Name = "MCP Server", Description = "Enables MCP Server to integrate with AI Agents (requires restart)", Enabled = false });
+
             SaveSync();
         }
 
