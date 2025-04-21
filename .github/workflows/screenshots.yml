@@ -26,8 +26,12 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
             echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            echo "ARTIFACT_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           else
+            # Get the latest tag from the main branch for artifact download
+            LATEST_TAG=$(git describe --tags --abbrev=0 origin/main)
             echo "VERSION=dev-latest" >> $GITHUB_OUTPUT
+            echo "ARTIFACT_VERSION=${LATEST_TAG}" >> $GITHUB_OUTPUT
           fi
 
       - name: Install E2E dependencies
@@ -39,16 +43,33 @@ jobs:
         run: npx playwright install chromium --with-deps
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
+        
+      - name: Download Lighthouse Artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: ci.yml
+          name: Lighthouse ${{ steps.version.outputs.ARTIFACT_VERSION }}
+          path: ./Lighthouse
+          
+      - name: Set linux executable permission
+        run: sudo chmod -R +x ./linux-x64
+        working-directory: ./Lighthouse  
 
-      - name: Run Lighthouse ${{ steps.version.outputs.VERSION }}
-        run: docker run -p 5001:5001 -d --name lighthouse --restart always ghcr.io/letpeoplework/lighthouse:${{ steps.version.outputs.VERSION }}
-        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+      - name: Run Lighthouse
+        run: |
+          ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: ./Lighthouse/linux-x64
+        env:
+          Database__Provider: sqlite
+          Database__ConnectionString: 'Data Source=lighthouse.db'
 
       - name: Wait for Lighthouse to start
         run: |
           echo "Waiting for server to be ready..."
           timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5001; do sleep 1; done'
           echo "Server is ready!"
+          cat lighthouse.log
       
       - name: Recreating Screenshot using Playwright
         run: npm run screenshots
@@ -76,3 +97,10 @@ jobs:
                 documentation
                 automated pr
             draft: false
+            
+      - name: Stop Lighthouse Server
+        if: always()
+        run: |
+          pkill Lighthouse || true
+          cat ./linux-x64/lighthouse.log
+        working-directory: ./Lighthouse
