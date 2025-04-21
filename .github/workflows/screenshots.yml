@@ -70,7 +70,6 @@ jobs:
           echo "Waiting for server to be ready..."
           timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5001; do sleep 1; done'
           echo "Server is ready!"
-          cat lighthouse.log
       
       - name: Recreating Screenshot using Playwright
         run: npm run screenshots
