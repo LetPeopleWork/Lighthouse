@@ -23,10 +23,6 @@ export class TeamDetailPage {
 		await this.page.getByLabel("toggle").first().click();
 	}
 
-	async toggleThroughput(): Promise<void> {
-		await this.page.getByLabel("toggle").nth(2).click();
-	}
-
 	async toggleForecast(): Promise<void> {
 		await this.page.getByLabel("toggle").nth(1).click();
 	}
@@ -47,6 +43,10 @@ export class TeamDetailPage {
 
 	async goToMetrics(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Metrics" }).click();
+	}
+
+	async goToForecasts(): Promise<void> {
+		await this.page.getByRole("tab", { name: "Forecasts" }).click();
 	}
 
 	async getLastUpdatedDate(): Promise<Date> {

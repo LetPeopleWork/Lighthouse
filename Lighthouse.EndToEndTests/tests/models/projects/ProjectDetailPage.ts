@@ -98,6 +98,10 @@ export class ProjectDetailPage {
 		await this.refreshFeatureButton.click();
 	}
 
+	async goToMetrics(): Promise<void> {
+		await this.page.getByRole("tab", { name: "Metrics" }).click();
+	}
+
 	get refreshFeatureButton(): Locator {
 		return this.page.getByRole("button", { name: "Refresh Features" });
 	}

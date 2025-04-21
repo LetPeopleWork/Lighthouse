@@ -170,14 +170,12 @@ testWithData(
 		await teamDetailPage.forecast(10);
 		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
-		// Collapse Features and Forecast, and show Throughput
-		await teamDetailPage.toggleFeatures();
-		await teamDetailPage.toggleForecast();
-		await teamDetailPage.toggleThroughput();
+		// Go to Metrics Tab
+		await teamDetailPage.goToMetrics();
 
 		await takePageScreenshot(
 			teamDetailPage.page,
-			"features/teamdetail_throughput.png",
+			"features/teamdetail_metrics.png",
 			15,
 		);
 
