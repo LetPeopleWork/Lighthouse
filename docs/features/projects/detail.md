@@ -18,10 +18,10 @@ You can directly go to the project detail page if you bookmark the specific URL.
 
 ![Project Details](../../assets/features/projectdetail.png)
 
-# General Project Information
+# General Project Information and Actions
 On top you can see general project information, which includes the name of the project and it was last updated.
 
-# Refresh Features
+## Refresh Features
 While projects are continuously updated, you can trigger a refresh manually by clicking on the *Refresh Features* button. This will update the [Features](#features) and all associated forecasts.
 
 A manual update can be useful if you just made significant changes (for example added new features to the projects) and do not want to wait for the periodic update to kick in.
@@ -29,20 +29,22 @@ A manual update can be useful if you just made significant changes (for example 
 {: .note}
 After you trigger the manual update, the button *Refresh Features* will be disabled while the project is updated. Depending on the load of the server and other operations which might be in progress, it can take a while. While every context and project is different, an update should normally not take longer than two minutes.
 
-# Edit Project
+## Edit Project
 You can modify the project settings by clicking on the *Edit Project* button on the top right. This will bring you to the [Project Modification Page](./edit.html).
 
-# Features
+# Forecasts
+
+## Features
 For every project, all the features are listed with additional details.
 
-## Feature Order
+### Feature Order
 Features are ordered based on the [order in your Work Tracking System](../../concepts/concepts.html#feature-order).
 
 {: .important}
 You **can't** reorder Features in Lighthouse itself, but have to adjust your Work Tracking System and [Refresh the Features](#refresh-features).  
 The order is crucial, as Lighthouse forecasts based on the [Feature WIP of each Team](#feature-wip) from highest to lowest ordered Feature.
 
-## Feature Name
+### Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
 
 Furthermore, there can be two indicators for each feature:
@@ -55,22 +57,22 @@ If features towards the bottom are in progress, you may focus on the wrong thing
 > 
 > Use Lighthouse to make such things transparent and trigger a discussion around what to focus on!
 
-## Feature Progress
+### Feature Progress
 In the progress column, you can see how many items are done and how many are pending for this feature. This is split by the total amount for the feature and a more detailed view for every involved team.
 
 {: .note}
 If a team is working solo on a feature, both bars will show the same numbers.
 
-## Forecasts
+### Forecasts
 For each Feature you will see the forecasted completion date. You'll get [four different probabilities](../overview/overview.html#projected-completion), from *Certain* to *Risky*. Naturally, the riskier the forecast, the earlier the projected completion.
 
 {: .note}
 The completion dates of each feature will take into account **all teams** that are involved. If a single item is planned to be done by one team, but this is far down their priority, this will mean that the feature completion will be moving backwards. Lighthouse cares about delivering complete features. You may be able to use such scenarios to kick off a discussion about how work or teams are sliced (as less dependencies mean more effective delivery).
 
-## Milestone Probability
+### Milestone Probability
 If you have [Milestones](#milestones) defined, you will see the likelihood to get the Feature done in time for each milestone.
 
-# Milestones  
+## Milestones  
 
 {: .definition}
 Milestones are relevant events that have a specific date.
@@ -84,7 +86,7 @@ We know sometimes life happens, and things may shift. You can always adjust the 
 {: .note}
 Milestones that are in the past will not be displayed in the Features to save space.
 
-# Feature WIP
+## Feature WIP
 [Lighthouse forecasts](../../concepts/howlighthouseforecasts.html) based on the [Order](#feature-order) and the [Feature WIP](../teams/edit.html#feature-wip) of each involved team. You can change this via the [Edit Page of a Team](../teams/edit.html#feature-wip) or directly in the Project Detail View. If you expand the *Involved Teams (Feature WIP)* box, you can see the current Feature WIP for each team of this project.  
 
 You can adjust the Feature WIP, and it will automatically reforecast the completion dates and likelihoods for each milestone:
@@ -102,3 +104,8 @@ You may use Lighthouse to make it transparent what a change in Feature WIP can m
 {: .note}
 If a team is configured to [Automatically Adjust Feature WIP](../teams/edit.html#automatically-adjust-feature-wip), you can still change the settings manually. However, they will be overridden the next time the Team Data will be updated.
 
+# Metrics
+Similar to the Team Details, the Project contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Project. Check the [Team Page](../teams/detail.html#metrics) for details on the metrics.
+
+{: .note}
+Many metrics can only be collected on collected items. It is therefore important to make sure **not to exclude** done items if you want to see metrics on Project level.

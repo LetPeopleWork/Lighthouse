@@ -67,10 +67,10 @@ One of the main advantages of Lighthouse is the fact that it's not only offering
 
 ## Refresh Types
 There are two types of refreshes:
-- Throughput
+- Team
 - Feature
 
-The Throughput relates to your teams data, and is doing what can manually be done via the [Update Team Data Button](../teams/detail.html#update-team-data), while the Features relate to the different projects and is doing what can be manually trigger via the [Refresh Feature Button](../projects/detail.html#refresh-features).
+The Team refresh fetches all items related to your team, and is doing what can manually be done via the [Update Team Data Button](../teams/detail.html#update-team-data), while the Features relate to the different projects and is doing what can be manually trigger via the [Refresh Feature Button](../projects/detail.html#refresh-features).
 
 ## Setting Details
 Each refresh type contains three different settings. All settings are specified in minutes. After adjusting the setting, the *Update Settings* button must be pressed for the changes to become effective.
