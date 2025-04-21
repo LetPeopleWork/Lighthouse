@@ -29,6 +29,9 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.MCP;
+using ModelContextProtocol.Server;
+using ModelContextProtocol.Protocol.Types;
+using NuGet.Protocol.Core.Types;
 
 namespace Lighthouse.Backend
 {
@@ -51,6 +54,8 @@ namespace Lighthouse.Backend
                 ConfigureHttps(builder);
                 ConfigureServices(builder);
                 ConfigureDatabase(builder);
+
+                ConfigureOptionalServices(builder);
 
                 var app = builder.Build();
                 ConfigureApp(app);
@@ -132,9 +137,6 @@ namespace Lighthouse.Backend
                                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                                 });
 
-            builder.Services.AddMcpServer()
-                .WithTools<LightouseTeamTools>();
-
             // Add Swagger services
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -148,6 +150,28 @@ namespace Lighthouse.Backend
                  });
 
             builder.Services.AddHttpClient();
+        }
+
+        private static void ConfigureOptionalServices(WebApplicationBuilder builder)
+        {
+            var serviceProvider = builder.Services.BuildServiceProvider();
+            var previewFeatureRepository = serviceProvider.GetRequiredService<IRepository<PreviewFeature>>();
+
+            var mcpFeature = previewFeatureRepository.GetByPredicate(f => f.Key == PreviewFeatureKeys.McpServerKey);
+            ConfigureMcpServer(builder, mcpFeature);
+        }
+
+        private static void ConfigureMcpServer(WebApplicationBuilder builder, PreviewFeature? mcpFeature)
+        {
+            if (mcpFeature?.Enabled ?? false)
+            {
+                builder.Services.AddMcpServer()
+                    .WithTools<LighthouseTeamTools>()
+                    .WithGetPromptHandler((request, cancellationToken) => Task.FromResult(new GetPromptResult()))
+                    .WithListPromptsHandler((request, cancellationToken) => Task.FromResult(new ListPromptsResult()))
+                    .WithReadResourceHandler((request, cancellationToken) => Task.FromResult(new ReadResourceResult()))
+                    .WithListResourcesHandler((request, cancellationToken) => Task.FromResult(new ListResourcesResult()));
+            }
         }
 
         private static void RegisterServices(WebApplicationBuilder builder)
