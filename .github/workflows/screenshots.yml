@@ -78,6 +78,19 @@ jobs:
         env:
           LIGHTHOUSEURL: https://localhost:5001
 
+      - name: Stop Lighthouse Server
+        if: always()
+        run: |
+          pkill Lighthouse || true
+          cat ./linux-x64/lighthouse.log
+        working-directory: ./Lighthouse
+
+      - name: Delete Downloaded Artifacts
+        run: |
+          echo "Removing downloaded Lighthouse artifacts..."
+          rm -rf ./Lighthouse
+        shell: bash
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
@@ -98,9 +111,3 @@ jobs:
                 automated pr
             draft: false
             
-      - name: Stop Lighthouse Server
-        if: always()
-        run: |
-          pkill Lighthouse || true
-          cat ./linux-x64/lighthouse.log
-        working-directory: ./Lighthouse
