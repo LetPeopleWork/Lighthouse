@@ -51,7 +51,7 @@
     "typescript": "^5.8.3",
     "vite": "^6.3.2",
     "vite-plugin-pwa": "^1.0.0",
-    "vitest": "^3.0.3",
+    "vitest": "^3.1.2",
     "vitest-sonar-reporter": "^2.0.0"
   }
 }
