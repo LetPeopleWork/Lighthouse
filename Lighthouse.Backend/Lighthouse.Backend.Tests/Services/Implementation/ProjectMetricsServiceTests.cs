@@ -170,12 +170,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCycleTimeDataForProject_FeatureClosedAtEndDate_ReturnsFeature()
         {
-            var startDate = DateTime.Today.AddDays(-1);
-            var endDate = DateTime.Today;
+            var startDate = DateTime.UtcNow.AddDays(-1);
+            var endDate = DateTime.UtcNow;
 
             var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
 
-            closedFeatures.First().ClosedDate = DateTime.Now;
+            closedFeatures.First().ClosedDate = DateTime.Now.ToUniversalTime();
 
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
@@ -231,10 +231,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Name = "Test Project"
             };
 
-            var jan2 = new DateTime(2023, 1, 2);
-            var jan4 = new DateTime(2023, 1, 4);
-            var jan5 = new DateTime(2023, 1, 5);
-            var jan10 = new DateTime(2023, 1, 10);
+            var jan2 = new DateTime(2023, 1, 2).ToUniversalTime();
+            var jan4 = new DateTime(2023, 1, 4).ToUniversalTime();
+            var jan5 = new DateTime(2023, 1, 5).ToUniversalTime();
+            var jan10 = new DateTime(2023, 1, 10).ToUniversalTime();
 
             features = new List<Feature>
             {

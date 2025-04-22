@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task When_ReturnsWhenForecastAsync()
+        public async Task When_ReturnsWhenForecast()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -105,7 +105,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task When_FixedThroughputAndRemainingDays_ReturnsCorrectForecastAsync()
+        public void PredictWorkItemCreation_GivenWorkItemTypes_CreatesHowManyForecast()
+        {
+            var startDate = DateTime.Now.AddDays(-30);
+            var endDate = DateTime.Now;
+
+            var daysToForecast = 10;
+            var workItemTypes = new string[] { "User Story" };
+
+            var itemCreationRunChart = new RunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var team = CreateTeam(1, [1]);
+
+            teamMetricsServiceMock.Setup(x => x.GetCreatedItemsForTeam(team, workItemTypes, startDate, endDate)).Returns(itemCreationRunChart);
+
+            var subject = CreateSubjectWithRealThroughput();
+            var itemCreationForecast = subject.PredictWorkItemCreation(team, workItemTypes, startDate, endDate, daysToForecast);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(itemCreationForecast.GetProbability(50), Is.InRange(9, 11));
+                Assert.That(itemCreationForecast.GetProbability(70), Is.InRange(7, 9));
+                Assert.That(itemCreationForecast.GetProbability(85), Is.InRange(5, 7));
+                Assert.That(itemCreationForecast.GetProbability(95), Is.InRange(3, 5));
+            });
+        }
+
+        [Test]
+        public async Task When_FixedThroughputAndRemainingDays_ReturnsCorrectForecast()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -140,7 +166,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task When_RealData_RunRealForecast_ExpectCorrectResultsAsync()
+        public async Task When_RealData_RunRealForecast_ExpectCorrectResults()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -182,7 +208,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPOneAsync()
+        public async Task FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPOne()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -210,7 +236,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPTwoAsync()
+        public async Task FeatureForecast_SingleTeam_TwoFeatures_FeatureWIPTwo()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -235,7 +261,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPTwoAsync()
+        public async Task FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPTwo()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -270,7 +296,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPThreeAsync()
+        public async Task FeatureForecast_SingleTeam_ThreeFeatures_FeatureWIPThree()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -305,7 +331,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_TwoFeatures_FeatureWIPOneAsync()
+        public async Task FeatureForecast_MultiTeam_TwoFeatures_FeatureWIPOne()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -330,7 +356,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPOneAsync()
+        public async Task FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPOne()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -361,7 +387,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPTwoAsync()
+        public async Task FeatureForecast_MultiTeam_ThreeFeatures_FeatureWIPTwo()
         {
             var subject = CreateSubjectWithRealThroughput();
 
@@ -392,7 +418,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_SingleFeatures_FeatureWIPOneAsync()
+        public async Task FeatureForecast_MultiTeam_SingleFeatures_FeatureWIPOne()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
@@ -416,7 +442,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_TeamHasNoThroughput_WillIgnoreThisTeamAsync()
+        public async Task FeatureForecast_TeamHasNoThroughput_WillIgnoreThisTeam()
         {
             var subject = CreateSubjectWithRealThroughput();
             var team = CreateTeam(1, [0, 0, 0, 0]);
@@ -431,7 +457,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task FeatureForecast_MultiTeam_OneTeamHasNoThroughput_UsesTeamWithThroughputsForecastAsync()
+        public async Task FeatureForecast_MultiTeam_OneTeamHasNoThroughput_UsesTeamWithThroughputsForecast()
         {
             var subject = CreateSubjectWithPersistentThroughput();
 

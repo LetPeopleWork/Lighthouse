@@ -34,6 +34,21 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        [HttpPost("itemprediction/{id}")]
+        public ActionResult<ManualForecastDto> RunItemCreationPrediction(int id, [FromBody] ItemCreationPredictionInputDto input)
+        {
+            return this.GetEntityByIdAnExecuteAction(teamRepository, id, team =>
+            {
+                var itemCreationPrediction = new ManualForecastDto(0, input.TargetDate);
+                var timeToTargetDate = (input.TargetDate - DateTime.Today).Days;
+
+                var howManyForecast = forecastService.PredictWorkItemCreation(team, input.WorkItemTypes, input.StartDate, input.EndDate, timeToTargetDate);
+                itemCreationPrediction.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
+
+                return itemCreationPrediction;
+            });
+        }
+
         [HttpPost("manual/{id}")]
         public async Task<ActionResult<ManualForecastDto>> RunManualForecastAsync(int id, [FromBody] ManualForecastInputDto input)
         {
@@ -74,6 +89,21 @@ namespace Lighthouse.Backend.API
 
             [JsonRequired]
             public DateTime TargetDate { get; set; }
+        }
+
+        public class ItemCreationPredictionInputDto
+        {
+            [JsonRequired]
+            public DateTime StartDate { get; set; } = DateTime.Today.AddDays(-30);
+
+            [JsonRequired]
+            public DateTime EndDate { get; set; } = DateTime.Today;
+
+            [JsonRequired]
+            public DateTime TargetDate { get; set; } = DateTime.Today.AddDays(30);
+
+            [JsonRequired]
+            public string[] WorkItemTypes { get; set; } = [];
         }
     }
 }

@@ -32,6 +32,16 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             this.featureHistoryService = featureHistoryService;
         }
 
+        public HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast)
+        {
+            logger.LogInformation("Predicting Work Item Creation for team {TeamName} in the next {Days} days for Work Items {WorkItems} based on the time from {Start} to {End}",
+                team.Name, daysToForecast, string.Join(", ", workItemTypes), startDate, endDate);
+
+            var createdItemsRunChart = teamMetricsService.GetCreatedItemsForTeam(team, workItemTypes, startDate, endDate);
+
+            return HowMany(createdItemsRunChart, daysToForecast);
+        }
+
         public HowManyForecast HowMany(RunChartData throughput, int days)
         {
             logger.LogInformation("Running Monte Carlo Forecast How Many for {Days} days.", days);

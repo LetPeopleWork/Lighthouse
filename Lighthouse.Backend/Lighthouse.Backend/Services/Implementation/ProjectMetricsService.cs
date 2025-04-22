@@ -30,9 +30,9 @@ namespace Lighthouse.Backend.Services.Implementation
                 f.Projects.Any(p => p.Id == project.Id) &&
                 f.StateCategory == StateCategories.Done);
 
-            var throughputByDay = GenerateThroughputByDay(
-                DateTime.SpecifyKind(startDate, DateTimeKind.Utc),
-                DateTime.SpecifyKind(endDate, DateTimeKind.Utc),
+            var throughputByDay = GenerateThroughputRunChart(
+                startDate,
+                endDate,
                 projectFeatures);
 
             logger.LogDebug("Finished calculating Throughput for Project {ProjectName}", project.Name);
@@ -50,8 +50,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
 
             var wipOverTime = GenerateWorkInProgressByDay(
-                DateTime.SpecifyKind(startDate, DateTimeKind.Utc),
-                DateTime.SpecifyKind(endDate, DateTimeKind.Utc),
+                startDate,
+                endDate,
                 features);
 
             logger.LogDebug("Finished calculating Features In Progress Over Time for Project {ProjectName}", project.Name);
@@ -114,8 +114,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 f.Projects.Any(p => p.Id == project.Id) &&
                 f.StateCategory == StateCategories.Done);
 
-            var startDateUtc = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
-            var endDateUtc = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+            var startDateUtc = startDate.ToUniversalTime();
+            var endDateUtc = endDate.ToUniversalTime();
 
             return closedFeaturesOfProject
                 .Where(f => f.ClosedDate.HasValue &&

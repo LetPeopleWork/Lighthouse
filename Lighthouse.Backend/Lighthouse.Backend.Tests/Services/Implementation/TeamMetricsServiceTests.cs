@@ -311,6 +311,96 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetCreatedItemsRunChartForTeam_GivenStartAndEndDate_ReturnsCreatedItemsFromThisRange()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            // Before
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 4, 9, 0, 0, 0, DateTimeKind.Utc);
+
+            // In Range
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            var bugItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            bugItem.CreatedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            bugItem.Type = "Bug";
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            // After
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 3, 31, 0, 0, 0, DateTimeKind.Utc);
+
+            var createdItems = subject.GetCreatedItemsForTeam(testTeam, ["User Story", "Bug"], startDate, endDate);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(createdItems.Total, Is.EqualTo(3));
+                Assert.That(createdItems.History, Is.EqualTo(8));
+                Assert.That(createdItems.ValuePerUnitOfTime, Is.EqualTo([1, 0, 0, 0, 1, 0, 0, 1]));
+            });
+        }
+
+        [Test]
+        [TestCase("User Story")]
+        [TestCase("USER STORY")]
+        [TestCase("user story")]
+        [TestCase("UsEr StOrY")]
+        public void GetCreatedItemsRunChartForTeam_GivenWorkItemTypeFilter_ReturnsOnlyItemsOfType(string includedWorkItemType)
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            // Before
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 4, 9, 0, 0, 0, DateTimeKind.Utc);
+
+            // In Range
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            var bugItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            bugItem.CreatedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            bugItem.Type = "Bug";
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            // After
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 3, 31, 0, 0, 0, DateTimeKind.Utc);
+
+            var createdItems = subject.GetCreatedItemsForTeam(testTeam, [includedWorkItemType], startDate, endDate);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(createdItems.Total, Is.EqualTo(2));
+                Assert.That(createdItems.History, Is.EqualTo(8));
+                Assert.That(createdItems.ValuePerUnitOfTime, Is.EqualTo([1, 0, 0, 0, 0, 0, 0, 1]));
+            });
+        }
+
+
+
+        [Test]
+        public void GetCreatedItemsRunChartForTeam_NoMatchingItems_ReturnsEmpty()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            // Before
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 4, 9, 0, 0, 0, DateTimeKind.Utc);
+
+            // After
+            AddWorkItem(StateCategories.Done, 1, string.Empty).CreatedDate = new DateTime(1991, 3, 31, 0, 0, 0, DateTimeKind.Utc);
+
+            var createdItems = subject.GetCreatedItemsForTeam(testTeam, ["User Story", "Bug"], startDate, endDate);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(createdItems.Total, Is.EqualTo(0));
+                Assert.That(createdItems.History, Is.EqualTo(8));
+                Assert.That(createdItems.ValuePerUnitOfTime, Is.EqualTo([0, 0, 0, 0, 0, 0, 0, 0]));
+            });
+        }
+
+        [Test]
         public void GetCurrentThroughputForTeam_CachesValue()
         {
             AddWorkItem(StateCategories.Done, 1, string.Empty);
@@ -376,7 +466,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(wipData.History, Is.EqualTo(10));
 
-                for (var index = 0; index < 10 ; index++)
+                for (var index = 0; index < 10; index++)
                 {
                     Assert.That(wipData.ValuePerUnitOfTime[index], Is.EqualTo(9 - index));
                 }
@@ -388,7 +478,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var startDate = DateTime.UtcNow.AddDays(-9);
             var endDate = DateTime.UtcNow;
-            
+
             var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
             workItem.StartedDate = startDate.AddDays(-1);
             workItem.ClosedDate = startDate.AddDays(-1);
@@ -527,10 +617,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetClosedItemsForTeam_ItemClosedAtEndDate_ReturnsItem()
         {
             var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
-            workItem.StartedDate = DateTime.Now.AddDays(-1);
-            workItem.ClosedDate = DateTime.Now;
+            workItem.StartedDate = DateTime.UtcNow.AddDays(-1);
+            workItem.ClosedDate = DateTime.UtcNow;
 
-            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.Today.AddDays(-1), DateTime.Today).ToList();
+            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow).ToList();
 
             Assert.Multiple(() =>
             {
@@ -638,7 +728,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = stateCategory,
                 TeamId = teamId,
                 ParentReferenceId = parentReference,
-                ClosedDate = DateTime.UtcNow
+                ClosedDate = DateTime.UtcNow,
+                Type = "User Story",
             };
 
             workItems.Add(workItem);

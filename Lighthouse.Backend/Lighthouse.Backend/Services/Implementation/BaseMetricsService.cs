@@ -14,12 +14,22 @@ namespace Lighthouse.Backend.Services.Implementation
             this.refreshRateInMinutes = refreshRateInMinutes;
         }
 
-        protected static int[] GenerateThroughputByDay(DateTime startDate, DateTime endDate, IQueryable<WorkItemBase> items)
+        protected static int[] GenerateThroughputRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
-            var totalDays = (endDate - startDate).Days + 1;
+            return GenerateRunChartByDay(startDate, endDate, items, GetClosedIndexForItem);
+        }
+
+        protected static int[] GenerateCreationRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        {
+            return GenerateRunChartByDay(startDate, endDate, items, GetCreatedIndexForItem);
+        }
+
+        protected static int[] GenerateRunChartByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items, Func<DateTime, WorkItemBase, int> getDayIndex)
+        {
+            var totalDays = (endDate.ToUniversalTime() - startDate.ToUniversalTime()).Days + 1;
             var runChartData = new int[totalDays];
 
-            foreach (var index in items.Select(i => GetThroughputIndexForItem(startDate, i)))
+            foreach (var index in items.Select(i => getDayIndex(startDate.ToUniversalTime(), i)))
             {
                 if (index >= 0 && index < totalDays)
                 {
@@ -32,12 +42,13 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
-            var totalDays = (endDate - startDate).Days + 1;
+            var startDateUtc = startDate.ToUniversalTime();
+            var totalDays = (endDate.ToUniversalTime() - startDateUtc).Days + 1;
             var runChartData = new int[totalDays];
 
             for (var index = 0; index < runChartData.Length; index++)
             {
-                var currentDate = startDate.AddDays(index);
+                var currentDate = startDateUtc.AddDays(index);
                 var itemsInProgressOnDay = items.Count(i => WasItemProgressOnDay(currentDate, i));
 
                 runChartData[index] = itemsInProgressOnDay;
@@ -46,14 +57,24 @@ namespace Lighthouse.Backend.Services.Implementation
             return runChartData;
         }
 
-        protected static int GetThroughputIndexForItem(DateTime startDate, WorkItemBase item)
+        protected static int GetClosedIndexForItem(DateTime startDate, WorkItemBase item)
         {
-            if (!item.ClosedDate.HasValue)
+            return GetDateIndexBasedOnStartDate(startDate, item.ClosedDate);
+        }
+
+        protected static int GetCreatedIndexForItem(DateTime startDate, WorkItemBase item)
+        {
+            return GetDateIndexBasedOnStartDate(startDate, item.CreatedDate);
+        }
+
+        protected static int GetDateIndexBasedOnStartDate(DateTime startDate, DateTime? date)
+        {
+            if (!date.HasValue)
             {
                 return -1;
             }
 
-            return (item.ClosedDate.Value.Date - startDate).Days;
+            return (date.Value.Date - startDate.Date).Days;
         }
 
         protected static bool WasItemProgressOnDay(DateTime day, WorkItemBase item)

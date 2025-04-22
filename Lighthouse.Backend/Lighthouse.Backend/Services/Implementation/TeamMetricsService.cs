@@ -104,11 +104,23 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogDebug("Getting Throughput for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
             var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
-            var throughputByDay = GenerateThroughputByDay(DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc), closedItemsOfTeam);
-
-            logger.LogDebug("Finished updating Throughput for Team {TeamName}", team.Name);
+            var throughputByDay = GenerateThroughputRunChart(startDate, endDate, closedItemsOfTeam);
 
             var throughput = new RunChartData(throughputByDay);
+
+            return throughput;
+        }
+
+        public RunChartData GetCreatedItemsForTeam(Team team, IEnumerable<string> workItemTypes, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Created Items of type {WorkItemTypes} for Team {TeamName} between {StartDate} and {EndDate}", string.Join(", ", workItemTypes), team.Name, startDate.Date, endDate.Date);
+
+            var includedWorkItems = workItemTypes.Select(workItemTypes => workItemTypes.ToLowerInvariant()).ToList();
+
+            var allItemsForTeam = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList().Where(item => includedWorkItems.Contains(item.Type.ToLowerInvariant()));
+            var creationRunChart = GenerateCreationRunChart(startDate, endDate, allItemsForTeam);
+
+            var throughput = new RunChartData(creationRunChart);
 
             return throughput;
         }
@@ -118,7 +130,7 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogDebug("Getting WIP Over Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
             var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
-            var wipOverTime = GenerateWorkInProgressByDay(DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc), itemsFromTeam);
+            var wipOverTime = GenerateWorkInProgressByDay(startDate, endDate, itemsFromTeam);
 
             logger.LogDebug("Finished updating WIP Over Time for Team {TeamName}", team.Name);
 
@@ -183,8 +195,8 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
 
-            var startDateUtc = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
-            var endDateUtc = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+            var startDateUtc = startDate.ToUniversalTime();
+            var endDateUtc = endDate.ToUniversalTime();
 
             var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate.Value.Date >= startDateUtc.Date && i.ClosedDate.Value.Date <= endDateUtc.Date);
             return closedItemsInDateRange;

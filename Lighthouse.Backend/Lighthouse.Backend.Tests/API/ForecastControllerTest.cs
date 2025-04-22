@@ -150,6 +150,59 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        public void RunItemCreationPrediction_TeamExists_ReturnsPredictionForecast()
+        {
+            var subject = CreateSubject();
+
+            var expectedTeam = new Team();
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            var itemCreationPredictionInput = new ForecastController.ItemCreationPredictionInputDto
+            {
+                WorkItemTypes = ["Bug", "Task"],
+                StartDate = DateTime.Now.AddDays(-1),
+                EndDate = DateTime.Now.AddDays(30)
+            };
+
+            var expectedForecast = new HowManyForecast();
+
+            forecastServiceMock.Setup(x => x.PredictWorkItemCreation(expectedTeam, itemCreationPredictionInput.WorkItemTypes, itemCreationPredictionInput.StartDate, itemCreationPredictionInput.EndDate, 30))
+                .Returns(expectedForecast);
+
+            var result = subject.RunItemCreationPrediction(12, itemCreationPredictionInput);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                var prediction = okResult.Value as ManualForecastDto;
+
+                Assert.That(prediction.HowManyForecasts, Has.Count.EqualTo(4));
+                Assert.That(prediction.WhenForecasts, Has.Count.EqualTo(0));
+                Assert.That(prediction.Likelihood, Is.EqualTo(0));
+            });
+        }
+
+        [Test]
+        public void RunItemCreationPrediction_TeamDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var result = subject.RunItemCreationPrediction(12, new ForecastController.ItemCreationPredictionInputDto());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = result.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
         private ForecastController CreateSubject()
         {
             return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object);

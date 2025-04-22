@@ -10,6 +10,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Forecast
 
         HowManyForecast HowMany(RunChartData throughput, int days);
 
-        Task<WhenForecast> When(Team team, int remainingItems);
-    }
+        HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast);
+
+
+        Task<WhenForecast> When(Team team, int remainingItems);    }
 }
