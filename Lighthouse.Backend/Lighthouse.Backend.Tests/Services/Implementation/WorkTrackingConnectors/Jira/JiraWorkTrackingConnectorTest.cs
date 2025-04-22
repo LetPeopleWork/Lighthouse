@@ -77,6 +77,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetWorkItemsForTeam_QueryContainsAmpersand_EscapesCorrectly()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO");
+
+            team.ToDoStates.Clear();
+            team.DoneStates.Clear();
+            team.DoingStates.Clear();
+            team.DoingStates.Add("QA&Testing");
+
+            var workItems = await subject.GetWorkItemsForTeam(team);
+
+            Assert.That(workItems.ToList(), Has.Count.EqualTo(1));
+        }
+
+        [Test]
         public async Task GetFeaturesForProject_LabelDoesNotExist_ReturnsNoItems()
         {
             var subject = CreateSubject();

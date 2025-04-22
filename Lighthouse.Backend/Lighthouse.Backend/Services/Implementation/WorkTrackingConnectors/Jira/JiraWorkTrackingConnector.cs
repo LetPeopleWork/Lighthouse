@@ -320,14 +320,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var client = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
 
             var issues = new List<Issue>();
-
+            
             var startAt = 0;
             var maxResults = maxResultsOverride ?? 1000;
             var isLast = false;
 
+            // Properly encode the JQL query to handle special characters like ampersands
+            var encodedJqlQuery = Uri.EscapeDataString(jqlQuery);
+            
             while (!isLast)
             {
-                var url = $"rest/api/latest/search?jql={jqlQuery}&startAt={startAt}&maxResults={maxResults}&expand=changelog";
+                var url = $"rest/api/latest/search?jql={encodedJqlQuery}&startAt={startAt}&maxResults={maxResults}&expand=changelog";
 
                 var response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
