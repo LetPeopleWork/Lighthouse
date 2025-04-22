@@ -4,12 +4,62 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse v25.2.26.1848
+# Lighthouse v25.4.21.945
 {: .d-inline-block }
+Latest
+{: .label .label-green }
 
-Pre-Release
-{: .label .label-yellow  }
-*Get all details and downloads on [GitHub](https://github.com/LetPeopleWork/Lighthouse/releases/tag/v25.2.23.1248)*
+## New UI
+We've spent some time in overhauling the UI, making it look more modern. It's also more responsive now, meaning you can get a decent look at Lighthouse from your mobile device.
+
+Furthermore, we've added a toggle to switch between _Light_ and _Dark_ Mode.
+
+![LightDarkMode](https://private-user-images.githubusercontent.com/5486874/435688749-7e891c80-7855-402e-8f9b-fdc20a133fbb.gif?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDUzMDY5MjAsIm5iZiI6MTc0NTMwNjYyMCwicGF0aCI6Ii81NDg2ODc0LzQzNTY4ODc0OS03ZTg5MWM4MC03ODU1LTQwMmUtOGY5Yi1mZGMyMGExMzNmYmIuZ2lmP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MDQyMiUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTA0MjJUMDcyMzQwWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9MDkzYzYxMzEyNDY2YjA0OTUwNjJkYjliY2RiNDczNGM4NTA5ZmM0M2NhMTk2YWQ5OGUzYzNkNjg0NTMxZWY4MyZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.nN4cVk5o1Mhdn3VeASkWjnPg-w9VMC77kfzIaZMkxJ0)
+
+## Flow Metrics for Teams and Projects
+We've added support for basic Flow Metrics, both for Teams and Projects. You can now switch on the respective Detail pages between _Forecasts_ and _Metrics_.
+
+The following Metrics are shown:
+- Work Items In Progress (based on state configuration in settings)
+- Features being worked on based on Work Items In Progress (Team only)
+- Cycle Time Percentiles
+- Throughput Run Chart
+- Cycle Time Scatterplot
+- WIP Run Chart
+
+![Team Metrics](../assets/features/teamdetail_metrics.png)
+
+### Important 🚨
+To enable metrics visualization, a lot of changes had to be made on the backend side. While your configuration does not need to be changed, you have to refresh the team data once to start getting the metrics.
+
+Due to the nature of the change, it can also be that refreshing teams will take longer now. Please let us know if it takes too long.
+
+## Support for Integration with AI Clients
+While everybody on LinkedIn seems to be an AI Expert, Prompt Engineer, or Vibe Coding Coach, we stay true to ourselves and practice rather than just talk. So we've made Lighthouse an [MCP Server](https://modelcontextprotocol.io/introduction) that integrates with your AI tool of choice. You can enable the feature via the settings:
+
+![MCP Server Feature Toggle](../assets/settings/previewfeatures.png)
+
+Once done, you can set up your tool of choice (see https://modelcontextprotocol.io/clients for supported clients) to interact with Lighthouse. We've tested the integration with:
+- VS Code Copilot
+- Claude Desktop
+- LibreChat through a self-hosted ollama instance
+
+Currently, Lighthouse will expose tools to:
+- Get all teams
+- Get details on a team
+- Run _When_ and _How Many_ forecasts for a team
+- Get the Flow Metrics for a team
+
+![ClaudeLighthouseIntegration](https://private-user-images.githubusercontent.com/5486874/435694689-8d91787d-e63b-46ed-9ad5-5ecf5002e492.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDUzMDY5MjAsIm5iZiI6MTc0NTMwNjYyMCwicGF0aCI6Ii81NDg2ODc0LzQzNTY5NDY4OS04ZDkxNzg3ZC1lNjNiLTQ2ZWQtOWFkNS01ZWNmNTAwMmU0OTIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MDQyMiUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTA0MjJUMDcyMzQwWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9YjdlMWQ1NmQyYTFmZTU5MTYxNGY2YzRhMzM1NDA5NGQ4NzExZTQ2YmIwYzcxMzMxYzE1OGJlMTk3MjdhNWE4NyZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.6HWhkYY7SH2ps8reHZKI_uhZ15ai7LBWMJfACBAnEno)
+
+Keep an eye on the documentation for more information.
+
+## Other Changes
+- Update of various third party libraries
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.2.26.1848...v25.4.21.945)
+
+# Lighthouse v25.2.26.1848
 
 ## Experimental Postgres Support 🧪
 This release adds **experimental** support for Postgres as a Database provider next to the (default) SQLite database. Please check the [documentation](https://docs.lighthouse.letpeople.work/Installation/configuration.html#database) for details.
@@ -40,8 +90,6 @@ If you want to contribute too, please join our [Slack Community](https://join.sl
 # Lighthouse v25.2.8.1238
 {: .d-inline-block }
 
-Latest
-{: .label .label-green }
 ## New Features
 - Allow to have a _fixed_ Throughput specified by Start and End Date, instead of only a rolling window of days. This may be useful for special periods where the full team is off for an extended period of time.
 
