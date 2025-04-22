@@ -118,10 +118,9 @@ namespace Lighthouse.Backend.Services.Implementation
             var endDateUtc = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
 
             return closedFeaturesOfProject
-                .AsEnumerable()
                 .Where(f => f.ClosedDate.HasValue &&
-                           f.ClosedDate.Value >= startDateUtc &&
-                           f.ClosedDate.Value <= endDateUtc);
+                           f.ClosedDate.Value.Date >= startDateUtc.Date &&
+                           f.ClosedDate.Value.Date <= endDateUtc.Date);
         }
     }
 }

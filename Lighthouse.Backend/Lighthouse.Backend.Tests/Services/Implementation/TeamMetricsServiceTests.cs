@@ -524,23 +524,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetClosedItemsForTeam_ItemClosedAtEndDate_ReturnsItem()
+        {
+            var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            workItem.StartedDate = DateTime.Now.AddDays(-1);
+            workItem.ClosedDate = DateTime.Now;
+
+            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.Today.AddDays(-1), DateTime.Today).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
+                Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(2));
+            });
+        }
+
+        [Test]
+        public void GetClosedItemsForTeam_ItemClosedAtStartDate_ReturnsItem()
+        {
+            var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            workItem.StartedDate = DateTime.Now.AddDays(-1);
+            workItem.ClosedDate = DateTime.Now.AddDays(-1);
+
+            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.Today.AddDays(-1), DateTime.Today).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
+                Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(1));
+            });
+        }
+
+        [Test]
         public void GetClosedItemsForTeam_IgnoresItemsOutOfDateRange()
         {
             // Set up work item cycle times (1, 2, 3, ... 20)
             for (var index = 0; index < 20; index++)
             {
                 AddWorkItem(StateCategories.Done, 1, string.Empty);
-                workItems[index].ClosedDate = DateTime.UtcNow.AddDays(-index);
+                workItems[index].ClosedDate = DateTime.Now.AddDays(-index);
                 workItems[index].StartedDate = workItems[index].ClosedDate?.AddDays(-index);
             }
 
-            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow).ToList();
+            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.Now.AddDays(-10), DateTime.Now).ToList();
 
             Assert.Multiple(() =>
             {
-                Assert.That(closedItemsInRange, Has.Count.EqualTo(10));
+                Assert.That(closedItemsInRange, Has.Count.EqualTo(11));
 
-                for (var index = 0; index < 10; index++)
+                for (var index = 0; index < 11; index++)
                 {
                     Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
                 }

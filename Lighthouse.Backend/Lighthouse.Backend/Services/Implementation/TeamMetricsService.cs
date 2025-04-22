@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc));
+            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
 
             return closedItemsInDateRange.ToList();
         }
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Services.Implementation
         public IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
-            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc));
+            var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
 
             var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime).Where(ct => ct > 0).ToList();
 
@@ -182,7 +182,11 @@ namespace Lighthouse.Backend.Services.Implementation
         private IEnumerable<WorkItem> GetWorkItemsClosedInDateRange(Team team, DateTime startDate, DateTime endDate)
         {
             var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
-            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate >= startDate && i.ClosedDate <= endDate);
+
+            var startDateUtc = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+            var endDateUtc = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+
+            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate.Value.Date >= startDateUtc.Date && i.ClosedDate.Value.Date <= endDateUtc.Date);
             return closedItemsInDateRange;
         }
 

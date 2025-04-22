@@ -102,7 +102,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCycleTimePercentilesForProject_ReturnsCorrectPercentileValues()
         {
-            // Arrange
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
             
@@ -111,7 +110,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns(closedFeatures);
 
-            // Act
             var result = sut.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
 
             Assert.Multiple(() =>
@@ -149,16 +147,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCycleTimeDataForProject_ReturnsClosedFeatures()
         {
-            // Arrange
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
             
             var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
+
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns(closedFeatures);
 
-            // Act
             var result = sut.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
 
             Assert.Multiple(() =>
@@ -171,9 +168,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetCycleTimeDataForProject_FeatureClosedAtEndDate_ReturnsFeature()
+        {
+            var startDate = DateTime.Today.AddDays(-1);
+            var endDate = DateTime.Today;
+
+            var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
+
+            closedFeatures.First().ClosedDate = DateTime.Now;
+
+            featureRepository.Setup(x => x.GetAllByPredicate(
+                It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns(closedFeatures);
+
+            var result = sut.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Count.EqualTo(1));
+                Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
+                Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.False);
+            });
+        }
+
+        [Test]
+        public void GetCycleTimeDataForProject_FeatureClosedAtStartDate_ReturnsFeature()
+        {
+            var startDate = DateTime.Today.AddDays(-1);
+            var endDate = DateTime.Today;
+
+            var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
+
+            closedFeatures.First().ClosedDate = DateTime.Now.AddDays(-1);
+
+            featureRepository.Setup(x => x.GetAllByPredicate(
+                It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns(closedFeatures);
+
+            var result = sut.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Count.EqualTo(1));
+                Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
+                Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.False);
+            });
+        }
+
+        [Test]
         public void InvalidateProjectMetrics_DoesNotThrow()
         {
-            // Act & Assert
             Assert.DoesNotThrow(() => sut.InvalidateProjectMetrics(project));
         }
 
