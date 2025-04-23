@@ -26,8 +26,6 @@ namespace Lighthouse.Backend.Factories
             var key = GetKeyFromJson(json);
             var title = GetTitleFromFields(fields);
             var createdDate = GetCreatedDateFromFields(fields);
-            var closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates);
-            var startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates);
             var parentKey = GetParentFromFields(fields);
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
@@ -38,15 +36,36 @@ namespace Lighthouse.Backend.Factories
                 parentKey = fields.GetFieldValue(additionalRelatedField);
             }
 
+            (var startedDate, var closedDate) = GetStartedAndClosedDate(json, workitemQueryOwner, state);
+
+            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, fields);
+        }
+
+        private static (DateTime? startedDate, DateTime? closedDate) GetStartedAndClosedDate(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string state)
+        {
+            var stateCategory = workitemQueryOwner.MapStateToStateCategory(state);
+
+            // If the StateCategory is ToDo or Unknown, we have neither started nor finished
+            DateTime? closedDate = null;
+            DateTime? startedDate = null;
+
+            if (stateCategory == StateCategories.Done)
+            {
+                closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates);
+                startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates);
+            }
+            else if (stateCategory == StateCategories.Doing)
+            {
+                startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates);
+            }
+
             // It can happen that no started date is set if an item is created directly in closed state. Assume that the closed date is the started date in this case.
             if (startedDate == null && closedDate != null)
             {
                 startedDate = closedDate;
             }
 
-            logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Closed Date {ClosedDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {IssueType}, Status {Status}", key, title, closedDate, parentKey, rank, issueType, state);
-
-            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, fields);
+            return (startedDate, closedDate);
         }
 
         private static string GetIssueTypeFromFields(JsonElement fields)
