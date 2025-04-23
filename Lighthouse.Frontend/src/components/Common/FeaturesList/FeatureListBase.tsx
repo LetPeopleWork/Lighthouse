@@ -9,32 +9,43 @@ import {
 	TableHead,
 } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { IFeature } from "../../../models/Feature";
 
 export interface FeatureListBaseProps {
 	features: IFeature[];
 	renderTableHeader: () => React.ReactNode;
 	renderTableRow: (feature: IFeature) => React.ReactNode;
+	contextId: number;
+	contextType: "project" | "team";
 }
 
-/**
- * Base component for feature lists with shared functionality
- * like filtering completed features
- */
 const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 	features,
 	renderTableHeader,
 	renderTableRow,
+	contextId,
+	contextType,
 }) => {
 	const [hideCompletedFeatures, setHideCompletedFeatures] =
 		useState<boolean>(false);
 
+	const baseKey = "lighthouse_hide_completed_features";
+	const storageKey = `${baseKey}_${contextType}_${contextId}`;
+
+	useEffect(() => {
+		const storedPreference = localStorage.getItem(storageKey);
+		if (storedPreference !== null) {
+			setHideCompletedFeatures(storedPreference === "true");
+		}
+	}, [storageKey]);
+
 	const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setHideCompletedFeatures(event.target.checked);
+		const newValue = event.target.checked;
+		setHideCompletedFeatures(newValue);
+		localStorage.setItem(storageKey, newValue.toString());
 	};
 
-	// Filter features based on hideCompletedFeatures state
 	const displayedFeatures = hideCompletedFeatures
 		? features.filter((feature) => feature.stateCategory !== "Done")
 		: features;

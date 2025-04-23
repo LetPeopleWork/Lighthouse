@@ -112,6 +112,8 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			features={team.features}
 			renderTableHeader={renderTableHeader}
 			renderTableRow={renderTableRow}
+			contextId={team.id}
+			contextType="team"
 		/>
 	);
 };

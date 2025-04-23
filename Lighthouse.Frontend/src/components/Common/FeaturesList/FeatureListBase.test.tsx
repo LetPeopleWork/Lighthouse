@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
 import type { IFeature } from "../../../models/Feature";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
@@ -40,10 +40,31 @@ describe("FeatureListBase component", () => {
 		createFeature(3, "Feature 3", "Done"),
 	];
 
+	// Mock localStorage before each test
+	let mockLocalStorage: { [key: string]: string } = {};
+
+	beforeEach(() => {
+		mockLocalStorage = {};
+
+		// Mock localStorage methods
+		Storage.prototype.getItem = vi.fn((key) => mockLocalStorage[key] || null);
+		Storage.prototype.setItem = vi.fn((key, value) => {
+			mockLocalStorage[key] = value.toString();
+		});
+		Storage.prototype.removeItem = vi.fn((key) => {
+			delete mockLocalStorage[key];
+		});
+		Storage.prototype.clear = vi.fn(() => {
+			mockLocalStorage = {};
+		});
+	});
+
 	it("should render all features initially", () => {
 		render(
 			<FeatureListBase
 				features={features}
+				contextId={1}
+				contextType="project"
 				renderTableHeader={() => (
 					<tr>
 						<th>Name</th>
@@ -67,6 +88,8 @@ describe("FeatureListBase component", () => {
 		render(
 			<FeatureListBase
 				features={features}
+				contextId={1}
+				contextType="project"
 				renderTableHeader={() => (
 					<tr>
 						<th>Name</th>
@@ -100,6 +123,8 @@ describe("FeatureListBase component", () => {
 		render(
 			<FeatureListBase
 				features={features}
+				contextId={1}
+				contextType="project"
 				renderTableHeader={() => (
 					<tr>
 						<th>Name</th>
@@ -124,6 +149,144 @@ describe("FeatureListBase component", () => {
 		await user.click(toggle);
 
 		// Verify all features are shown again
+		expect(screen.getByText("Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("Feature 2")).toBeInTheDocument();
+		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+	});
+
+	it("should load the saved preference from localStorage on mount", async () => {
+		mockLocalStorage.lighthouse_hide_completed_features_project_1 = "true";
+
+		render(
+			<FeatureListBase
+				features={features}
+				contextId={1}
+				contextType="project"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		// Verify completed feature is hidden on initial render because of localStorage
+		expect(screen.getByText("Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("Feature 2")).toBeInTheDocument();
+		expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+
+		expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+	});
+
+	it("should use different storage keys for different contexts", async () => {
+		const user = userEvent.setup();
+
+		// Render with project context
+		const { unmount } = render(
+			<FeatureListBase
+				features={features}
+				contextId={1}
+				contextType="project"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		// Activate toggle for project context
+		const projectToggle = screen.getByTestId("hide-completed-features-toggle");
+		await user.click(projectToggle);
+
+		// Verify localStorage was set for project context
+		expect(mockLocalStorage.lighthouse_hide_completed_features_project_1).toBe(
+			"true",
+		);
+
+		// Unmount the component
+		unmount();
+
+		// Render with team context
+		render(
+			<FeatureListBase
+				features={features}
+				contextId={1}
+				contextType="team"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		// Verify the team context toggle starts unchecked (not affected by project setting)
+		expect(
+			screen.getByTestId("hide-completed-features-toggle"),
+		).not.toBeChecked();
+		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+
+		// Activate toggle for team context
+		const teamToggle = screen.getByTestId("hide-completed-features-toggle");
+		await user.click(teamToggle);
+
+		// Verify localStorage was set for team context
+		expect(mockLocalStorage.lighthouse_hide_completed_features_team_1).toBe(
+			"true",
+		);
+
+		// Verify both settings exist independently in localStorage
+		expect(mockLocalStorage.lighthouse_hide_completed_features_project_1).toBe(
+			"true",
+		);
+		expect(mockLocalStorage.lighthouse_hide_completed_features_team_1).toBe(
+			"true",
+		);
+	});
+
+	it("should use default setting when no localStorage value exists", () => {
+		// No localStorage value is set
+
+		render(
+			<FeatureListBase
+				features={features}
+				contextId={42}
+				contextType="project"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		// Verify all features are shown by default (including completed ones)
+		expect(screen.getByText("Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("Feature 2")).toBeInTheDocument();
+		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+
+		// Verify the toggle is unchecked by default (by confirming all features are visible)
 		expect(screen.getByText("Feature 1")).toBeInTheDocument();
 		expect(screen.getByText("Feature 2")).toBeInTheDocument();
 		expect(screen.getByText("Feature 3")).toBeInTheDocument();

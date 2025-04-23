@@ -152,6 +152,8 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 			features={project.features}
 			renderTableHeader={renderTableHeader}
 			renderTableRow={renderTableRow}
+			contextId={project.id}
+			contextType="project"
 		/>
 	);
 };
