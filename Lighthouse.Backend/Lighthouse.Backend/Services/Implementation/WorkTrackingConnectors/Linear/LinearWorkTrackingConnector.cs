@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear
 {
-    public class LinearWorkTrackingConnector : IWorkTrackingConnector
+    public partial class LinearWorkTrackingConnector : IWorkTrackingConnector
     {
         private readonly ILogger<LinearWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
@@ -57,7 +57,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 logger.LogInformation("Validating Linear connection");
 
-                var client = GetLinearGraphQLClient(connection);
                 var query = @"
                     query {
                         viewer {
@@ -65,8 +64,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                         }
                     }";
 
-                var response = await client.SendQueryAsync<ViewerResponse>(query);
-                return response.Errors == null || response.Errors.Length == 0;
+                var response = await SendQuery<LinearResponses.ViewerResponse>(connection, query);
+                return true;
             }
             catch (Exception ex)
             {
@@ -83,8 +82,76 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         public async Task<bool> ValidateTeamSettings(Team team)
         {
-            // Will implement later - placeholder for now
-            throw new NotImplementedException();
+            try
+            {
+                logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
+
+                var query = @"
+                    query {
+                        teams {
+                            nodes {
+                                id
+                                name
+                            }
+                        }
+                    }";
+
+                var response = await SendQuery<LinearResponses.TeamsResponse>(team.WorkTrackingSystemConnection, query);
+
+                if (response?.Teams?.Nodes == null)
+                {
+                    logger.LogError("Failed to get teams from Linear API");
+                    return false;
+                }
+
+                var teamNode = response.Teams.Nodes.FirstOrDefault(t => t.Name == team.WorkItemQuery);
+
+                if (teamNode == null)
+                {
+                    logger.LogInformation("Team with name '{TeamName}' not found in Linear", team.WorkItemQuery);
+                    return false;
+                }
+
+                var teamId = teamNode.Id;
+
+                var issueQuery = $@"
+                    query {{
+                        team(id: ""{teamId}"") {{
+                            id
+                            name
+                            issues {{
+                                nodes {{
+                                    id
+                                    title
+                                    state {{
+                                        id
+                                        name
+                                      }}
+                                }}
+                            }}
+                        }}
+                    }}";
+
+                var issueResponse = await SendQuery<LinearResponses.TeamResponse>(team.WorkTrackingSystemConnection, issueQuery);
+
+                var issueCount = issueResponse.Team.Issues.Nodes.Count;
+                logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items for team {TeamName}", issueCount, team.WorkItemQuery);
+
+                return issueCount > 0;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error during Validation of Team Settings for Team {TeamName}", team.Name);
+                return false;
+            }
+        }
+
+        private async Task<T> SendQuery<T>(WorkTrackingSystemConnection connection, string query) where T : class
+        {
+            var client = GetLinearGraphQLClient(connection);
+
+            var response = await client.SendQueryAsync<T>(query);
+            return response.Data;
         }
 
         private GraphQLHttpClient GetLinearGraphQLClient(WorkTrackingSystemConnection connection)
@@ -102,17 +169,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 EndPoint = new Uri(LinearWorkTrackingOptionNames.ApiUrl)
             }, new NewtonsoftJsonSerializer(), client); ;
-        }
-
-
-        public class ViewerResponse
-        {
-            public Viewer viewer { get; set; }
-        }
-
-        public class Viewer
-        {
-            public string id { get; set; }
         }
     }
 }
