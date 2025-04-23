@@ -32,9 +32,8 @@ namespace Lighthouse.Backend.Factories
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
             var state = GetStateFromFields(fields);
-            var statusCategory = GetStatusCategoryFromFields(fields);
 
-            if (string.IsNullOrEmpty(parentKey) && !string.IsNullOrEmpty(additionalRelatedField))
+            if (!string.IsNullOrEmpty(additionalRelatedField))
             {
                 parentKey = fields.GetFieldValue(additionalRelatedField);
             }
@@ -45,9 +44,9 @@ namespace Lighthouse.Backend.Factories
                 startedDate = closedDate;
             }
 
-            logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Closed Date {ClosedDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {IssueType}, Status {Status}, Status Category {StatusCategory}", key, title, closedDate, parentKey, rank, issueType, state, statusCategory);
+            logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Closed Date {ClosedDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {IssueType}, Status {Status}", key, title, closedDate, parentKey, rank, issueType, state);
 
-            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, statusCategory, fields);
+            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, fields);
         }
 
         private static string GetIssueTypeFromFields(JsonElement fields)
@@ -58,11 +57,6 @@ namespace Lighthouse.Backend.Factories
         private static string GetStateFromFields(JsonElement fields)
         {
             return fields.GetProperty(JiraFieldNames.StatusFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
-        }
-
-        private static string GetStatusCategoryFromFields(JsonElement fields)
-        {
-            return fields.GetProperty(JiraFieldNames.StatusFieldName).GetProperty(JiraFieldNames.StatusCategoryFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
         }
 
         private string GetRankFromFields(JsonElement fields)
