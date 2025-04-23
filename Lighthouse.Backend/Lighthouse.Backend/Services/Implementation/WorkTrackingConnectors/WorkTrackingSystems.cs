@@ -5,5 +5,7 @@
         AzureDevOps,
 
         Jira,
+        
+        Linear,
     }
 }

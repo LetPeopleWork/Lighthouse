@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 
 namespace Lighthouse.Backend.Factories
 {
@@ -38,6 +39,8 @@ namespace Lighthouse.Backend.Factories
                     return GetOptionsForAzureDevOps();
                 case WorkTrackingSystems.Jira:
                     return GetOptionsForJira();
+                case WorkTrackingSystems.Linear:
+                    return GetOptionsForLinear();
                 default:
                     throw new NotSupportedException("Selected Work Tracking System is Not Supported");
             }
@@ -86,6 +89,20 @@ namespace Lighthouse.Backend.Factories
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken,
+                    Value = string.Empty,
+                    IsSecret = true,
+                    IsOptional = false,
+                }
+            };
+        }
+
+        private List<WorkTrackingSystemConnectionOption> GetOptionsForLinear()
+        {
+            return new List<WorkTrackingSystemConnectionOption>
+            {
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = LinearWorkTrackingOptionNames.ApiKey,
                     Value = string.Empty,
                     IsSecret = true,
                     IsOptional = false,

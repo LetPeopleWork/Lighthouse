@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Factories
@@ -35,6 +36,9 @@ namespace Lighthouse.Backend.Services.Factories
                         break;
                     case WorkTrackingSystems.Jira:
                         workItemSerivce = serviceProvider.GetRequiredService<JiraWorkTrackingConnector>();
+                        break;
+                    case WorkTrackingSystems.Linear:
+                        workItemSerivce = serviceProvider.GetRequiredService<LinearWorkTrackingConnector>();
                         break;
                     default:
                         throw new NotSupportedException();
