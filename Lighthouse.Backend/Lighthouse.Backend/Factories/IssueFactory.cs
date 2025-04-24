@@ -14,10 +14,17 @@ namespace Lighthouse.Backend.Factories
         // customfield_10019 is how Jira stores the rank.
         private static readonly List<string> rankCustomFieldNames = new List<string> { "customfield_10019" };
 
-        public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger)
+        public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger, IConfiguration configuration)
         {
             this.lexoRankService = lexoRankService;
             this.logger = logger;
+
+            var rankFieldOverride = configuration["Jira:RankFieldOverride"];
+            if (!string.IsNullOrEmpty(rankFieldOverride))
+            {
+                rankCustomFieldNames.Clear();
+                rankCustomFieldNames.Add(rankFieldOverride);
+            }
         }
 
         public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null)

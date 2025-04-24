@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;
@@ -15,13 +16,15 @@ namespace Lighthouse.Backend.Tests.Factories
 
         private Mock<IWorkItemQueryOwner> workItemQueryOwnerMock;
 
+        private Mock<IConfiguration> configurationMock;
+
         private string jsonTemplate;
 
         [SetUp]
         public void SetUp()
         {
             lexoRankServiceMock = new Mock<ILexoRankService>();
-
+            configurationMock = new Mock<IConfiguration>();
             workItemQueryOwnerMock = new Mock<IWorkItemQueryOwner>();
 
             var toDoStates = new List<string> { "Backlog", "Analysis" };
@@ -117,17 +120,25 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
-        public void CreateIssue_RankAvailableInNonDefaultField_ParsesRankCorrect()
+        [TestCase("customfield_1886", "0|GCZ4EVER:")]
+        [TestCase("customfield_10115", "0|i0007z:")]
+        [TestCase("", "0|i0007z:")]
+        public void CreateIssue_RankAvailableInNonDefaultField_ParsesRankCorrect(string rankFieldOverride, string expectedResult)
         {
             var jsonDocument = CreateJsonDocument(json =>
             {
                 json["fields"].AsObject().Remove("customfield_10019");
                 json["fields"].AsObject().Add("customfield_10115", "0|i0007z:");
+                json["fields"].AsObject().Add("customfield_1886", "0|GCZ4EVER:");
             });
+
+            configurationMock
+                .Setup(x => x[It.Is<string>(key => key == "Jira:RankFieldOverride")])
+                .Returns(rankFieldOverride);
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.That(issue.Rank, Is.EqualTo("0|i0007z:"));
+            Assert.That(issue.Rank, Is.EqualTo(expectedResult));
         }
 
         [Test]
@@ -557,7 +568,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
         private IssueFactory CreateIssueFactory()
         {
-            return new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>());
+            return new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>(), configurationMock.Object);
         }
     }
 }
