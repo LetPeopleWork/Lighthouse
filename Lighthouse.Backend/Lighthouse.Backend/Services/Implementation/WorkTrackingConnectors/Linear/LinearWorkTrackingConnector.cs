@@ -4,9 +4,7 @@ using GraphQL.Client.Serializer.Newtonsoft;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text.Json;
+using static Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear.LinearWorkTrackingConnector.LinearResponses;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear
 {
@@ -64,7 +62,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                         }
                     }";
 
-                var response = await SendQuery<LinearResponses.ViewerResponse>(connection, query);
+                var response = await SendQuery<ViewerResponse>(connection, query);
                 return true;
             }
             catch (Exception ex)
@@ -86,35 +84,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
 
-                var query = @"
-                    query {
-                        teams {
-                            nodes {
-                                id
-                                name
-                            }
-                        }
-                    }";
+                var issues = await GetIssuesForTeam(team.WorkTrackingSystemConnection, team.WorkItemQuery);
+                logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items for team {TeamName}", issues.Count, team.WorkItemQuery);
 
-                var response = await SendQuery<LinearResponses.TeamsResponse>(team.WorkTrackingSystemConnection, query);
+                return issues.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error during Validation of Team Settings for Team {TeamName}", team.Name);
+                return false;
+            }
+        }
 
-                if (response?.Teams?.Nodes == null)
-                {
-                    logger.LogError("Failed to get teams from Linear API");
-                    return false;
-                }
+        private async Task<List<IssueNode>> GetIssuesForTeam(WorkTrackingSystemConnection connection, string teamName)
+        {
+            var teamNode = await GetTeamByName(connection, teamName);
 
-                var teamNode = response.Teams.Nodes.FirstOrDefault(t => t.Name == team.WorkItemQuery);
+            if (teamNode == null)
+            {
+                logger.LogInformation("Team with name '{TeamName}' not found", teamName);
+                return [];
+            }
 
-                if (teamNode == null)
-                {
-                    logger.LogInformation("Team with name '{TeamName}' not found in Linear", team.WorkItemQuery);
-                    return false;
-                }
+            var teamId = teamNode.Id;
+            var teamDetails = await GetTeamDetails(connection, teamId);
 
-                var teamId = teamNode.Id;
+            return teamDetails?.Team?.Issues?.Nodes ?? [];
+        }
 
-                var issueQuery = $@"
+        private async Task<TeamResponse> GetTeamDetails(WorkTrackingSystemConnection connection, string teamId)
+        {
+            var issueQuery = $@"
                     query {{
                         team(id: ""{teamId}"") {{
                             id
@@ -132,18 +132,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                         }}
                     }}";
 
-                var issueResponse = await SendQuery<LinearResponses.TeamResponse>(team.WorkTrackingSystemConnection, issueQuery);
+            return await SendQuery<TeamResponse>(connection, issueQuery);
+        }
 
-                var issueCount = issueResponse.Team.Issues.Nodes.Count;
-                logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items for team {TeamName}", issueCount, team.WorkItemQuery);
+        private async Task<TeamNode?> GetTeamByName(WorkTrackingSystemConnection connection, string teamName)
+        {
+            var query = @"
+                    query {
+                        teams {
+                            nodes {
+                                id
+                                name
+                            }
+                        }
+                    }"
+            ;
 
-                return issueCount > 0;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error during Validation of Team Settings for Team {TeamName}", team.Name);
-                return false;
-            }
+            var response = await SendQuery<TeamsResponse>(connection, query);
+
+            return response?.Teams?.Nodes.FirstOrDefault(t => t.Name == teamName);
         }
 
         private async Task<T> SendQuery<T>(WorkTrackingSystemConnection connection, string query) where T : class

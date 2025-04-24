@@ -1,5 +1,3 @@
-using Octokit;
-
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear
 {
     public static class LinearWorkTrackingOptionNames
