@@ -53,7 +53,158 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.That(result.Count, Is.EqualTo(17));
+            Assert.That(result.Count, Is.EqualTo(22));
+        }
+
+        [Test]
+        public async Task SetStartedAndClosedDate_RegularStateTransition_SetsStartedAndClosedDateCorrect()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '395'");
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 5, 4, 707, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.True);
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 6, 34, 677, DateTimeKind.Utc)));
+            });
+        }
+
+        [Test]
+        public async Task SetStartedDate_IgnoresStateTransitionWithinStateCategory()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '396'");
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 10, 647, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.False);
+            });
+        }
+
+        [Test]
+        public async Task SetClosedDate_IgnoresTransitionWithinStateCategory()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '395'");
+            team.DoingStates.Remove("Resolved");
+            team.DoneStates.Add("Resolved");
+
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 5, 4, 707, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.True);
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 5, 57, 453, DateTimeKind.Utc)));
+            });
+        }
+
+        [Test]
+        public async Task SetStartedDate_ItemMovedFromDoingToToDoBackToDoing_UsesSecondTransitionToDoing()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '396'");
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 10, 647, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.False);
+            });
+        }
+
+        [Test]
+        public async Task SetStartedAndClosedDate_ItemMovedFromDoneToDoingBackToDone_UsesSecondTransitionToSetDates()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '397'");
+
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 5, 54, 907, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.True);
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 22, 12, 623, DateTimeKind.Utc)));
+            });
+        }
+
+        [Test]
+        public async Task SetStartedAndClosedDate_ItemMovedFromUnknownStateToDoingToDone_SetsDatesCorrectly()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '398'");
+
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 7, 54, 460, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.True);
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 58, 753, DateTimeKind.Utc)));
+            });
+        }
+
+        [Test]
+        public async Task SetStartedAndClosedDate_ItemMovedFromUnknownStateToDone_SetsDatesCorrectly()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '399'");
+
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 25, 25, 217, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.True);
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 25, 25, 217, DateTimeKind.Utc)));
+            });
         }
 
         [Test]
@@ -231,6 +382,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
             var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '370'");
+            project.DoingStates.Remove("Resolved");
             project.DoneStates.Add("Resolved");
 
             var features = await subject.GetFeaturesForProject(project);

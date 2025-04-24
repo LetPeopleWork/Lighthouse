@@ -29,7 +29,7 @@ Invoke-WebRequest -Uri $assetUrl -OutFile $assetName
 
 # Extract the zip file
 Write-Host "Extracting $assetName..."
-Expand-Archive -Path $assetName -DestinationPath .
+Expand-Archive -Force -Path $assetName -DestinationPath .
 
 # Make the Lighthouse executable (if applicable)
 $executable = ".\Lighthouse"

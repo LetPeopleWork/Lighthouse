@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -208,6 +209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
             var project = CreateProject($"project = PROJ AND issueKey = PROJ-21");
+            project.DoingStates.Remove("In Progress");
             project.DoneStates.Add("In Progress");
 
             var features = await subject.GetFeaturesForProject(project);
@@ -590,7 +592,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private JiraWorkTrackingConnector CreateSubject()
         {
-            return new JiraWorkTrackingConnector(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService());
+            return new JiraWorkTrackingConnector(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>(), Mock.Of<IConfiguration>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService());
         }
     }
 }

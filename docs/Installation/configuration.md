@@ -174,3 +174,27 @@ To provide the custom certificate to you instance running in docker, you can map
 ```bash
 docker run -v ".:/app/Data" -e "Certificate__Path=/app/Data/MyCustomCertificate.pfx" -e "Certificate__Password=Password" ghcr.io/letpeoplework/lighthouse:latest
 ```
+
+## Work Tracking Systems
+While Lighthouse tries to stay agnostic to the different work tracking systems, there are situations where you need a specific configuration for your system. We don't want to pollute the UI with these special things. Instead, we chose to make it certain elements configurable, but not particularly nice to use (because you should clean up your Work Tracking System instead). Under this section in the settings, you can add some special configuration for your systems.
+
+### Jira
+Our beloved Jira was the reason we introduced this section. So far Lighthouse supports one special setting for Jira systems.
+
+#### Rank Field Override
+As we learned in the [Concepts](../concepts/jira.html#feature-order), the order is very important. If for some reason the order is not working correctly on your Jira instance, you can specify a different field that will be used when trying to find out the order.
+
+{: .important}
+As explained in the concepts, Jira is using the LexoRank algorithm for the order. Whatever field you specify, Lighthouse assumes it contains strings that follow this algorithm. While you can specify any field you want, Lighthouse will only work if the content the fields contains such a string.  
+
+If you have not read about the LexoRank algorithm, this is your queue to this **before** you start changing stuff. It is critical that you know what you are doing if you change this. If you adjusted it and something stops working because you did not read what we've written, and complain to us that it stops working, we'll be very annoyed at you. We may support you anyway.
+
+**Default Value:** `customfield_10019`
+
+{: .note}
+Don't ask us why this is the default value - feel free to reach out to Atlassian and check with them. Please let us know if you have any more information 🤷‍♂️
+
+**Override Options:**
+- Command Line: `--WorkTrackingSystems:Jira:RankFieldOverride`
+- Environment Variable: `WorkTrackingSystems__Jira__RankFieldOverride`
+

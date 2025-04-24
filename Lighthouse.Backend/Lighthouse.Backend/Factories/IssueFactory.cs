@@ -14,10 +14,17 @@ namespace Lighthouse.Backend.Factories
         // customfield_10019 is how Jira stores the rank.
         private static readonly List<string> rankCustomFieldNames = new List<string> { "customfield_10019" };
 
-        public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger)
+        public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger, IConfiguration configuration)
         {
             this.lexoRankService = lexoRankService;
             this.logger = logger;
+
+            var rankFieldOverride = configuration["WorkTrackingSystems:Jira:RankFieldOverride"];
+            if (!string.IsNullOrEmpty(rankFieldOverride))
+            {
+                rankCustomFieldNames.Clear();
+                rankCustomFieldNames.Add(rankFieldOverride);
+            }
         }
 
         public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null)
@@ -26,17 +33,37 @@ namespace Lighthouse.Backend.Factories
             var key = GetKeyFromJson(json);
             var title = GetTitleFromFields(fields);
             var createdDate = GetCreatedDateFromFields(fields);
-            var closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates);
-            var startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates);
             var parentKey = GetParentFromFields(fields);
             var rank = GetRankFromFields(fields);
             var issueType = GetIssueTypeFromFields(fields);
             var state = GetStateFromFields(fields);
-            var statusCategory = GetStatusCategoryFromFields(fields);
 
-            if (string.IsNullOrEmpty(parentKey) && !string.IsNullOrEmpty(additionalRelatedField))
+            if (!string.IsNullOrEmpty(additionalRelatedField))
             {
                 parentKey = fields.GetFieldValue(additionalRelatedField);
+            }
+
+            (var startedDate, var closedDate) = GetStartedAndClosedDate(json, workitemQueryOwner, state);
+
+            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, fields);
+        }
+
+        private static (DateTime? startedDate, DateTime? closedDate) GetStartedAndClosedDate(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string state)
+        {
+            var stateCategory = workitemQueryOwner.MapStateToStateCategory(state);
+
+            // If the StateCategory is ToDo or Unknown, we have neither started nor finished
+            DateTime? closedDate = null;
+            DateTime? startedDate = null;
+
+            if (stateCategory == StateCategories.Done)
+            {
+                closedDate = GetTransitionDate(json, workitemQueryOwner.DoneStates, []);
+                startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates, workitemQueryOwner.DoneStates);
+            }
+            else if (stateCategory == StateCategories.Doing)
+            {
+                startedDate = GetTransitionDate(json, workitemQueryOwner.DoingStates, workitemQueryOwner.DoneStates);
             }
 
             // It can happen that no started date is set if an item is created directly in closed state. Assume that the closed date is the started date in this case.
@@ -45,9 +72,7 @@ namespace Lighthouse.Backend.Factories
                 startedDate = closedDate;
             }
 
-            logger.LogDebug("Creating Issue with Key {Key}, Title {Title}, Closed Date {ClosedDate}, Parent Key {ParentKey}, Rank {Rank}, Issue Type {IssueType}, Status {Status}, Status Category {StatusCategory}", key, title, closedDate, parentKey, rank, issueType, state, statusCategory);
-
-            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, statusCategory, fields);
+            return (startedDate, closedDate);
         }
 
         private static string GetIssueTypeFromFields(JsonElement fields)
@@ -58,11 +83,6 @@ namespace Lighthouse.Backend.Factories
         private static string GetStateFromFields(JsonElement fields)
         {
             return fields.GetProperty(JiraFieldNames.StatusFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
-        }
-
-        private static string GetStatusCategoryFromFields(JsonElement fields)
-        {
-            return fields.GetProperty(JiraFieldNames.StatusFieldName).GetProperty(JiraFieldNames.StatusCategoryFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
         }
 
         private string GetRankFromFields(JsonElement fields)
@@ -124,28 +144,34 @@ namespace Lighthouse.Backend.Factories
             return parentKey;
         }
 
-        private static DateTime? GetTransitionDate(JsonElement json, IEnumerable<string> targetStates)
+        private static DateTime? GetTransitionDate(JsonElement json, IEnumerable<string> targetStates, IEnumerable<string> statesToIgnoreTransition)
         {
-            DateTime? transitionDate = null;
+            var movedToStateCategory = new List<DateTime>();
 
             if (json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out JsonElement changelog))
             {
                 var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
                 foreach (var history in histories.EnumerateArray())
                 {
-                    var extractedDate = ExtractDateFromHistory(targetStates, history);
+                    var extractedDate = ExtractDateOfStateTransitionFromHistory(targetStates, statesToIgnoreTransition, history);
 
                     if (extractedDate.HasValue)
                     {
-                        transitionDate = extractedDate.Value;
+                        movedToStateCategory.Add(extractedDate.Value);
                     }
                 }
             }
 
-            return transitionDate?.ToUniversalTime();
+            var lastTransitionDate = movedToStateCategory.OrderByDescending(date => date).FirstOrDefault();
+            if (lastTransitionDate == default)
+            {
+                return null;
+            }
+
+            return lastTransitionDate.ToUniversalTime();
         }
 
-        private static DateTime? ExtractDateFromHistory(IEnumerable<string> targetStates, JsonElement history)
+        private static DateTime? ExtractDateOfStateTransitionFromHistory(IEnumerable<string> targetStates, IEnumerable<string> statesToIgnoreTransitions, JsonElement history)
         {
             var historyEntryCreationDateAsString = history.GetProperty(JiraFieldNames.CreatedDateFieldName).GetString() ?? string.Empty;
             var historyEntryCreationDate = DateTime.Parse(historyEntryCreationDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
@@ -156,8 +182,9 @@ namespace Lighthouse.Backend.Factories
             {
                 var changedField = item.GetProperty(JiraFieldNames.FieldFieldName).GetString();
                 var newStatus = item.GetProperty(JiraFieldNames.ToStringPropertyName).GetString();
+                var oldStatus = item.GetProperty(JiraFieldNames.FromStringPropertyName).GetString();
 
-                if (changedField == JiraFieldNames.StatusFieldName && targetStates.Contains(newStatus))
+                if (changedField == JiraFieldNames.StatusFieldName && targetStates.Contains(newStatus) && !targetStates.Contains(oldStatus) && !statesToIgnoreTransitions.Contains(oldStatus))
                 {
                     transitionDate = historyEntryCreationDate;
                 }

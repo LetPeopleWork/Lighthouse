@@ -114,13 +114,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 f.Projects.Any(p => p.Id == project.Id) &&
                 f.StateCategory == StateCategories.Done);
 
-            var startDateUtc = startDate.ToUniversalTime();
-            var endDateUtc = endDate.ToUniversalTime();
-
             return closedFeaturesOfProject
                 .Where(f => f.ClosedDate.HasValue &&
-                           f.ClosedDate.Value.Date >= startDateUtc.Date &&
-                           f.ClosedDate.Value.Date <= endDateUtc.Date);
+                           f.ClosedDate.Value.Date >= startDate.Date &&
+                           f.ClosedDate.Value.Date <= endDate.Date);
         }
     }
 }

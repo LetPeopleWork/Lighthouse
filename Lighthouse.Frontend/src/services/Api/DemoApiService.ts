@@ -1026,7 +1026,15 @@ export class DemoApiService
 		const numberOfItems = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
 		for (let i = 0; i < numberOfItems; i++) {
 			const workItem = this.generateWorkItem(counter++);
+			const lorem = new LoremIpsum({
+				wordsPerSentence: {
+					max: 10,
+					min: 1,
+				},
+			});
+			const nameLength = Math.floor(Math.random() * 9) + 1; // 1-4 words
 			workItem.workItemReference = `WI-${counter}`;
+			workItem.name = lorem.generateWords(nameLength);
 
 			items.push(workItem);
 		}

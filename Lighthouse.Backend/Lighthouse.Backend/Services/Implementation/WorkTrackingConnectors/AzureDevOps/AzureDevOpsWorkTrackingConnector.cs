@@ -305,8 +305,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<WorkItemBase> ConvertAdoWorkItemToLighthouseWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner)
         {
             var state = workItem.ExtractStateFromWorkItem();
+            var stateCategory = workItemQueryOwner.MapStateToStateCategory(state);
 
-            var (startedDate, closedDate) = await GetStartedAndClosedDateForWorkItem(workItemQueryOwner, workItem.Id);
+            var (startedDate, closedDate) = await GetStartedAndClosedDateForWorkItem(workItemQueryOwner, stateCategory, workItem.Id);
 
             return new WorkItemBase
             {
@@ -314,7 +315,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 Name = workItem.ExtractTitleFromWorkItem(),
                 Type = workItem.ExtractTypeFromWorkItem(),
                 State = state,
-                StateCategory = workItemQueryOwner.MapStateToStateCategory(state),
+                StateCategory = stateCategory,
                 Url = workItem.ExtractUrlFromWorkItem(),
                 Order = workItem.ExtractStackRankFromWorkItem(),
                 CreatedDate = workItem.ExtractCreatedDateFromWorkItem(),
@@ -323,11 +324,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             };
         }
 
-        private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, int? workItemId)
+        private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId)
         {
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
-            var startedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoingStates);
-            var closedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoneStates);
+
+            DateTime? startedDate = null;
+            DateTime? closedDate = null;
+
+            if (stateCategory == StateCategories.Done)
+            {
+                startedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoingStates, workItemQueryOwner.DoneStates);
+                closedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoneStates, []);
+            }
+            else if (stateCategory == StateCategories.Doing)
+            {
+                startedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoingStates, workItemQueryOwner.DoneStates);
+            }
 
             // It can happen that no started date is set if an item is created directly in closed state. Assume that the closed date is the started date in this case.
             if (startedDate == null && closedDate != null)
@@ -338,14 +350,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (startedDate, closedDate);
         }
 
-        private static async Task<DateTime?> GetStateTransitionDate(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> states)
+        private static async Task<DateTime?> GetStateTransitionDate(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> targetStates, List<string> statesToIgnore)
         {
-            DateTime? latestStateChangeDate = null;
-            string? previousState = null;
+            var movedToStateCategory = new List<DateTime>();
+
+            var previousState = string.Empty;
 
             if (!workItemId.HasValue)
             {
-                return latestStateChangeDate;
+                return null;
             }
 
             var revisions = await witClient.GetRevisionsAsync(workItemId.Value);
@@ -354,19 +367,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 if (RevisionWasChangingState(revision, out (string state, DateTime changedDate) result))
                 {
-                    var isRelevantCategory = states.Contains(result.state) && (previousState == null || !states.Contains(previousState));
-                    var isRelevantStateChange = !latestStateChangeDate.HasValue || result.changedDate > latestStateChangeDate.Value;
+                    var isRelevantCategory = targetStates.Contains(result.state) && !targetStates.Contains(previousState) && !statesToIgnore.Contains(previousState);
 
-                    if (isRelevantStateChange && isRelevantCategory)
+                    if (isRelevantCategory)
                     {
-                        latestStateChangeDate = result.changedDate;
+                        movedToStateCategory.Add(result.changedDate);
                     }
 
                     previousState = result.state;
                 }
             }
 
-            return latestStateChangeDate;
+            var lastTransitionDate = movedToStateCategory.OrderByDescending(date => date).FirstOrDefault();
+            if (lastTransitionDate == default)
+            {
+                return null;
+            }
+
+            return lastTransitionDate.ToUniversalTime();
         }
 
         private static bool RevisionWasChangingState(AdoWorkItem revision, out (string state, DateTime changedDate) result)

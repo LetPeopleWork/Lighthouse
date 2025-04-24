@@ -6,8 +6,6 @@
 
         public static string StatusFieldName => "status";
 
-        public static string StatusCategoryFieldName => "statusCategory";
-
         public static string ResolvedFieldName => "resolved";
 
         public static string ParentFieldName => "parent";
@@ -33,6 +31,8 @@
         public static string KeyPropertyName => "key";
         
         public static string ToStringPropertyName => "toString";
+
+        public static string FromStringPropertyName => "fromString";
 
         public static string UpdatedFieldName => "updated";
     }
