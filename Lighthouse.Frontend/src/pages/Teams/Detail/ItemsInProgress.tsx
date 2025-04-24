@@ -98,7 +98,13 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 							<TableBody>
 								{sortedItems.map((item) => (
 									<TableRow key={item.id}>
-										<TableCell>
+										<TableCell
+											sx={{
+												whiteSpace: "normal",
+												wordBreak: "break-word",
+												maxWidth: "300px",
+											}}
+										>
 											{item.url ? (
 												<Link
 													href={item.url}
