@@ -26,10 +26,10 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static int[] GenerateRunChartByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items, Func<DateTime, WorkItemBase, int> getDayIndex)
         {
-            var totalDays = (endDate.ToUniversalTime() - startDate.ToUniversalTime()).Days + 1;
+            var totalDays = (endDate - startDate).Days + 1;
             var runChartData = new int[totalDays];
 
-            foreach (var index in items.Select(i => getDayIndex(startDate.ToUniversalTime(), i)))
+            foreach (var index in items.Select(i => getDayIndex(startDate, i)))
             {
                 if (index >= 0 && index < totalDays)
                 {
@@ -42,13 +42,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
-            var startDateUtc = startDate.ToUniversalTime();
-            var totalDays = (endDate.ToUniversalTime() - startDateUtc).Days + 1;
+            var totalDays = (endDate - startDate).Days + 1;
             var runChartData = new int[totalDays];
 
             for (var index = 0; index < runChartData.Length; index++)
             {
-                var currentDate = startDateUtc.AddDays(index);
+                var currentDate = startDate.AddDays(index);
                 var itemsInProgressOnDay = items.Count(i => WasItemProgressOnDay(currentDate, i));
 
                 runChartData[index] = itemsInProgressOnDay;

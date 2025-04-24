@@ -195,10 +195,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
 
-            var startDateUtc = startDate.ToUniversalTime();
-            var endDateUtc = endDate.ToUniversalTime();
-
-            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate.Value.Date >= startDateUtc.Date && i.ClosedDate.Value.Date <= endDateUtc.Date);
+            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate.Value.Date >= startDate.Date && i.ClosedDate.Value.Date <= endDate.Date);
             return closedItemsInDateRange;
         }
 
