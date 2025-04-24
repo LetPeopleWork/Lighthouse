@@ -32,6 +32,8 @@
         
         public static string ToStringPropertyName => "toString";
 
+        public static string FromStringPropertyName => "fromString";
+
         public static string UpdatedFieldName => "updated";
     }
 }

@@ -324,9 +324,123 @@ namespace Lighthouse.Backend.Tests.Factories
 
                 AddChangelogEntries(json, new JsonArray
                 {
-                    CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Backlog", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Backlog", "Verification", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
+                    CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item started
+                    CreateChangelogEntry("Implementation", "Backlog", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item moved to ToDo
+                    CreateChangelogEntry("Backlog", "Verification", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))  // // <-- Item moved back to Doing
+                });
+            });
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(issue.StartedDate.HasValue, Is.True);
+                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(issue.ClosedDate.HasValue, Is.False);
+            });
+        }
+
+        [Test]
+        public void IssueInDone_MovedToOtherDoneState_ClosedDateSetToFirstTimeItEnteredDoing()
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
+
+                AddChangelogEntries(json, new JsonArray
+                {
+                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item Started
+                    CreateChangelogEntry("Implementation", "Verification", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 9, 29, 0, 0, 0, DateTimeKind.Utc)), // <-- Item Closed
+                    CreateChangelogEntry("Resolved", "Closed", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
+                });
+            });
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(issue.StartedDate.HasValue, Is.True);
+                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(issue.ClosedDate.HasValue, Is.True);
+                Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 29, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+            });
+        }
+
+        [Test]
+        public void IssueInDone_MovedToDoingAndBackToDone_ClosedDateSetToSecondTimeItEnteredDone()
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Resolved";
+
+                AddChangelogEntries(json, new JsonArray
+                {
+                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Resolved", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed the first time
+                    CreateChangelogEntry("Resolved", "Verification", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),  // <-- Item reopened
+                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))  // <-- Item closed again
+                });
+            });
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(issue.StartedDate.HasValue, Is.True);
+                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(issue.ClosedDate.HasValue, Is.True);
+                Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+            });
+        }
+
+        [Test]
+        public void IssueInDone_MovedToToDoAndBackToDone_ClosedDateSetToSecondTimeItEnteredDone()
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
+
+                AddChangelogEntries(json, new JsonArray
+                {
+                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Resolved", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed the first time
+                    CreateChangelogEntry("Resolved", "Analysis", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)), // <-- Item repopened
+                    CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Verification", new DateTime(2024, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 10, 2, 0, 0, 0, DateTimeKind.Utc)), // <-- Item closed again
+                    CreateChangelogEntry("Resolved", "Closed", new DateTime(2024, 10, 3, 0, 0, 0, DateTimeKind.Utc)) // <-- Moved within Done states -> ignore
+                });
+            });
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(issue.StartedDate.HasValue, Is.True);
+                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(issue.ClosedDate.HasValue, Is.True);
+                Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 10, 2, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+            });
+        }
+
+        [Test]
+        public void IssueInUnknownState_MovedToToDo_SetsStartedDate()
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Implementation";
+
+                AddChangelogEntries(json, new JsonArray
+                {
+                    CreateChangelogEntry("Removed", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
                 });
             });
 
@@ -342,7 +456,7 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
-        public void IssueInDone_MovedToOtherDoneState_ClosedDateSetToFirstTimeItEnteredDoing()
+        public void IssueInUnknownState_MovedToDoingAndThenDone_SetsStartedAndClosedDate()
         {
             var jsonDocument = CreateJsonDocument(json =>
             {
@@ -350,10 +464,8 @@ namespace Lighthouse.Backend.Tests.Factories
 
                 AddChangelogEntries(json, new JsonArray
                 {
-                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Verification", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Resolved", "Closed", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
+                    CreateChangelogEntry("Removed", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
+                    CreateChangelogEntry("Implementation", "Closed", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc)),
                 });
             });
 
@@ -365,69 +477,34 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
+                Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+            });
+        }
+
+        [Test]
+        public void IssueInUnknownState_MovedToDone_SetsStartedAndClosedDate()
+        {
+            var jsonDocument = CreateJsonDocument(json =>
+            {
+                json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
+
+                AddChangelogEntries(json, new JsonArray
+                {
+                    CreateChangelogEntry("Removed", "Closed", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
+                });
+            });
+
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
-        }
-
-        [Test]
-        public void IssueInDone_MovedToDoingAndBackToDone_ClosedDateSetToSecondTimeItEnteredDone()
-        {
-            var jsonDocument = CreateJsonDocument(json =>
-            {
-                json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Resolved";
-
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Resolved", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Resolved", "Verification", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc))
-                });
-            });
-
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(issue.StartedDate.HasValue, Is.True);
-                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
-                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
-                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
-                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
-        }
-
-        [Test]
-        public void IssueInDone_MovedToToDoAndBackToDone_ClosedDateSetToSecondTimeItEnteredDone()
-        {
-            var jsonDocument = CreateJsonDocument(json =>
-            {
-                json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Closed";
-
-                AddChangelogEntries(json, new JsonArray
-                {
-                    CreateChangelogEntry("Backlog", "Implementation", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Resolved", new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Resolved", "Analysis", new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Analysis", "Implementation", new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Implementation", "Verification", new DateTime(2024, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Verification", "Resolved", new DateTime(2024, 10, 2, 0, 0, 0, DateTimeKind.Utc)),
-                    CreateChangelogEntry("Resolved", "Closed", new DateTime(2024, 10, 3, 0, 0, 0, DateTimeKind.Utc))
-                });
-            });
-
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(issue.StartedDate.HasValue, Is.True);
-                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
-                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-                Assert.That(issue.ClosedDate.HasValue, Is.True);
-                Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 10, 3, 0, 0, 0, DateTimeKind.Utc).Date));
-                Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc).Date));
+                Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
             });
         }
 
@@ -442,22 +519,22 @@ namespace Lighthouse.Backend.Tests.Factories
         private void AddChangelogEntries(JsonNode jsonNode, JsonArray changelogEntries)
         {
             var changelog = jsonNode[JiraFieldNames.ChangelogFieldName];
-            changelog["total"] = changelogEntries.Count();
+            changelog["total"] = changelogEntries.Count;
 
-            changelog["histories"] = changelogEntries;
+            changelog[JiraFieldNames.HistoriesFieldName] = changelogEntries;
         }
 
         private JsonObject CreateChangelogEntry(string fromState, string toState, DateTime dateTime)
         {
             var changelogEntry = new JsonObject
             {
-                ["created"] = dateTime.ToString("o"),
-                ["items"] = new JsonArray {
+                [JiraFieldNames.CreatedDateFieldName] = dateTime.ToString("o"),
+                [JiraFieldNames.ItemsFieldName] = new JsonArray {
                     new JsonObject
                     {
-                        ["field"] = "status",
-                        ["fromString"] = fromState,
-                        ["toString"] = toState
+                        [JiraFieldNames.FieldFieldName] = JiraFieldNames.StatusFieldName,
+                        [JiraFieldNames.FromStringPropertyName] = fromState,
+                        [JiraFieldNames.ToStringPropertyName] = toState
                     },
                 }
             };
@@ -467,13 +544,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
         private JsonDocument CreateJsonDocument(Action<JsonNode>? modifyAction = null)
         {
-            var jsonNode = JsonNode.Parse(jsonTemplate);
-
-            if (jsonNode == null)
-            {
-                throw new InvalidOperationException("Failed to parse JSON template.");
-            }
-
+            var jsonNode = JsonNode.Parse(jsonTemplate) ?? throw new InvalidOperationException("Failed to parse JSON template.");
             modifyAction?.Invoke(jsonNode);
 
             using var stream = new MemoryStream();
