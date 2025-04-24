@@ -19,6 +19,47 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             this.cryptoService = cryptoService;
         }
 
+        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
+        {
+            logger.LogInformation("Getting Work Items for Team {TeamName}", team.Name);
+
+            try
+            {
+                var workItems = new List<WorkItem>();
+                var issues = await GetIssuesForTeam(team.WorkTrackingSystemConnection, team.WorkItemQuery);
+
+                if (issues == null || !issues.Any())
+                {
+                    logger.LogInformation("No issues found for team {TeamName}", team.Name);
+                    return workItems;
+                }
+
+                var types = team.WorkItemTypes;
+                var states = team.AllStates.ToList();
+
+                foreach (var issue in issues.Where(i => types.Contains(i.LastAppliedTemplate.Name) && states.Contains(i.State.Name)))
+                {
+                    var workItem = CreateWorkItemFromIssue(issue, team);
+                    workItems.Add(workItem);
+                }
+
+                return workItems;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error getting work items for team {TeamName}", team.Name);
+                return Enumerable.Empty<WorkItem>();
+            }
+        }
+
+        public async Task<List<Feature>> GetFeaturesForProject(Project project)
+        {
+            // Will implement later - placeholder for now
+            throw new NotImplementedException();
+
+            // Don't forget to adjust FeatureComparer to handle float order from Linear...
+        }
+
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
             // Will implement later - placeholder for now
@@ -26,18 +67,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         }
 
         public async Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
-        {
-            // Will implement later - placeholder for now
-            throw new NotImplementedException();
-        }
-
-        public async Task<List<Feature>> GetFeaturesForProject(Project project)
-        {
-            // Will implement later - placeholder for now
-            throw new NotImplementedException();
-        }
-
-        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             // Will implement later - placeholder for now
             throw new NotImplementedException();
@@ -96,6 +125,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
+        private WorkItem CreateWorkItemFromIssue(IssueNode issue, Team team)
+        {
+            var state = issue.State?.Name ?? "Unknown";
+            var stateCategory = team.MapStateToStateCategory(state);
+
+            if (issue.CompletedAt != null && issue.StartedAt == null)
+            {
+                issue.StartedAt = issue.CompletedAt;
+            }
+
+            var workItemBase = new WorkItemBase
+            {
+                ReferenceId = issue.Identifier?.ToLowerInvariant() ?? $"issue-{issue.Number}",
+                Name = issue.Title,
+                Type = issue.LastAppliedTemplate?.Name ?? "Unknown",
+                State = state,
+                StateCategory = stateCategory,
+                Url = issue.Url,
+                ParentReferenceId = issue.Parent?.Identifier ?? string.Empty,
+                Order = issue.SortOrder.ToString(),
+                CreatedDate = issue.CreatedAt,
+                StartedDate = issue.StartedAt,
+                ClosedDate = issue.CompletedAt,
+            };
+
+            return new WorkItem(workItemBase, team);
+        }
+
         private async Task<List<IssueNode>> GetIssuesForTeam(WorkTrackingSystemConnection connection, string teamName)
         {
             var teamNode = await GetTeamByName(connection, teamName);
@@ -109,7 +166,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             var teamId = teamNode.Id;
             var teamDetails = await GetTeamDetails(connection, teamId);
 
-            return teamDetails?.Team?.Issues?.Nodes ?? [];
+            var issues = teamDetails?.Team?.Issues?.Nodes ?? [];
+
+            // Items without template should be mapped to "Default"
+            foreach (var issue in issues.Where(i => i.LastAppliedTemplate == null))
+            {
+                issue.LastAppliedTemplate = new TemplateNode { Id = "Unknown", Name = "Default", Type = "Default" };
+            }
+
+            return issues;
         }
 
         private async Task<TeamResponse> GetTeamDetails(WorkTrackingSystemConnection connection, string teamId)
@@ -123,10 +188,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                                 nodes {{
                                     id
                                     title
+                                    identifier
+                                    url
+                                    number
+                                    sortOrder
+                                    createdAt
+                                    startedAt
+                                    completedAt
+                                    parent {{ 
+                                        id 
+                                        identifier
+                                    }}
+                                    lastAppliedTemplate {{
+                                        id
+                                        name
+                                        type
+                                    }}
                                     state {{
                                         id
                                         name
-                                      }}
+                                    }}
                                 }}
                             }}
                         }}
@@ -158,6 +239,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             var client = GetLinearGraphQLClient(connection);
 
             var response = await client.SendQueryAsync<T>(query);
+
+            foreach (var error in response.Errors ?? [])
+            {
+                logger.LogDebug("GraphQL Error: {ErrorMessage}", error.Message);
+            }
+
             return response.Data;
         }
 
