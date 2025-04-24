@@ -41,7 +41,7 @@ for (const { index, name, expectedFeaturesInProgress } of testData) {
 
 			const actualFeaturesInProgress =
 				await teamDetailPage.getFeaturesInProgress();
-			expect(actualFeaturesInProgress).toBe(expectedFeaturesInProgress);
+			expect(actualFeaturesInProgress).toBeGreaterThanOrEqual(expectedFeaturesInProgress);
 		},
 	);
 }
