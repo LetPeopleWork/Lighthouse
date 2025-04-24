@@ -208,6 +208,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
             var project = CreateProject($"project = PROJ AND issueKey = PROJ-21");
+            project.DoingStates.Remove("In Progress");
             project.DoneStates.Add("In Progress");
 
             var features = await subject.GetFeaturesForProject(project);
