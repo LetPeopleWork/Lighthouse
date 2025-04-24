@@ -1,8 +1,8 @@
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { Link } from "react-router-dom";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
+import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 
 interface InvolvedTeamsListProps {
@@ -39,7 +39,9 @@ const InvolvedTeamsList: React.FC<InvolvedTeamsListProps> = ({
 						<TextField
 							variant="outlined"
 							margin="normal"
-							label={<Link to={`/teams/${team.id}`}>{team.name}</Link>}
+							label={
+								<StyledLink to={`/teams/${team.id}`}>{team.name}</StyledLink>
+							}
 							type="number"
 							onChange={(e) =>
 								onTeamFeatureWIPUpdated(
