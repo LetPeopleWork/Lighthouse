@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.Factories
             });
 
             configurationMock
-                .Setup(x => x[It.Is<string>(key => key == "Jira:RankFieldOverride")])
+                .Setup(x => x[It.Is<string>(key => key == "WorkTrackingSystems:Jira:RankFieldOverride")])
                 .Returns(rankFieldOverride);
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);

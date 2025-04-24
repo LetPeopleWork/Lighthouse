@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Factories
             this.lexoRankService = lexoRankService;
             this.logger = logger;
 
-            var rankFieldOverride = configuration["Jira:RankFieldOverride"];
+            var rankFieldOverride = configuration["WorkTrackingSystems:Jira:RankFieldOverride"];
             if (!string.IsNullOrEmpty(rankFieldOverride))
             {
                 rankCustomFieldNames.Clear();
