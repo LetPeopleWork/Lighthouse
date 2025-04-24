@@ -111,8 +111,9 @@ namespace Lighthouse.Backend.Services.Implementation
         private IEnumerable<Feature> GetFeaturesClosedInDateRange(Project project, DateTime startDate, DateTime endDate)
         {
             var closedFeaturesOfProject = featureRepository.GetAllByPredicate(f =>
-                f.Projects.Any(p => p.Id == project.Id) &&
-                f.StateCategory == StateCategories.Done);
+                    f.Projects.Any(p => p.Id == project.Id) &&
+                    f.StateCategory == StateCategories.Done)    
+                .ToList();
 
             return closedFeaturesOfProject
                 .Where(f => f.ClosedDate.HasValue &&
