@@ -111,10 +111,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return $"{orderIndex}";
         }
 
-        public async Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
+        public Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
         {
-            // Will implement later - placeholder for now
-            throw new NotImplementedException();
+            return Task.FromResult(new Dictionary<string, int>());
         }
 
         public async Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
