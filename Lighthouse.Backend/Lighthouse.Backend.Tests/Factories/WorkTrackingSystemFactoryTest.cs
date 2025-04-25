@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -22,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Factories
             Assert.Multiple(() =>
             {
                 Assert.That(defaultConnection.Id, Is.EqualTo(0));
-                Assert.That(defaultConnection.Name, Is.EqualTo($"New {workTrackingSystem.ToString()} Connection"));
+                Assert.That(defaultConnection.Name, Is.EqualTo($"New {workTrackingSystem} Connection"));
                 Assert.That(defaultConnection.WorkTrackingSystem, Is.EqualTo(workTrackingSystem));
             });
         }
@@ -55,6 +56,20 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Username, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.ApiToken, true), Is.True);
+            });
+        }
+
+        [Test]
+        public void CreateOptionsForWorkTrackingSystem_GivenLinear_ReturnsCorrectOptions()
+        {
+            var subject = CreateSubject();
+
+            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Linear);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(connection.Options, Has.Count.EqualTo(1));
+                Assert.That(ContainsOption(connection.Options, LinearWorkTrackingOptionNames.ApiKey, true, false), Is.True);
             });
         }
 

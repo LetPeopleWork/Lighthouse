@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Linear
 {
@@ -142,6 +143,69 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 04, 23, 08, 27, 38, 556, DateTimeKind.Utc)));
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 04, 23, 08, 27, 38, 556, DateTimeKind.Utc)));
             });
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_SetsOrderCorrect()
+        {
+            var subject = CreateSubject();
+
+            var team = CreateTeam();
+
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.Add("Default");
+            team.WorkItemTypes.Add("Bug");
+
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoingStates.Add("Development");
+
+            team.DoneStates.Clear();
+
+            var workItems = await subject.GetWorkItemsForTeam(team);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(workItems.ToList(), Has.Count.EqualTo(2));
+                var item1 = workItems.First();
+                var item2 = workItems.Last();
+
+                Assert.That(item2.ReferenceId, Is.EqualTo("lig-2"));
+                Assert.That(item1.ReferenceId, Is.EqualTo("lig-13"));
+
+                var item1Order = double.Parse(item1.Order);
+                var item2Order = double.Parse(item2.Order);
+
+                // Ordering = Manual, Less = "higher up"
+                Assert.That(item2Order, Is.LessThan(item1Order));
+            });
+        }
+
+        [Test]
+        [TestCase(RelativeOrder.Below)]
+        [TestCase(RelativeOrder.Above)]
+        public void GetAdjacentOrderIndex_NoExistingItems_Returns0(RelativeOrder relativeOrder)
+        {
+            var subject = CreateSubject();
+
+            var orderIndex = subject.GetAdjacentOrderIndex([], relativeOrder);
+            
+            Assert.That(orderIndex, Is.EqualTo("0"));
+        }
+
+        [Test]
+        [TestCase(RelativeOrder.Above, new string[] { "-92.3", "-82.9", "-83.23" }, "-93.3")]
+        [TestCase(RelativeOrder.Below, new string[] { "-92.3", "-82.9", "-83.23" }, "-81.9")]
+        [TestCase(RelativeOrder.Above, new string[] { "92.3", "82.9", "83.23" }, "81.9")]
+        [TestCase(RelativeOrder.Below, new string[] { "92.3", "82.9", "83.23" }, "93.3")]
+        [TestCase(RelativeOrder.Below, new string[] { "13.37", "BANANA?", "188.6" }, "189.6")]
+        public void GetAdjacentOrderIndex_ExistingItems_ReturnsCorrectOrderIndex(RelativeOrder relativeOrder, string[] existingItemsOrder, string expectedOrderIndex)
+        {
+            var subject = CreateSubject();
+
+            var orderIndex = subject.GetAdjacentOrderIndex(existingItemsOrder, relativeOrder);
+            
+            Assert.That(orderIndex, Is.EqualTo(expectedOrderIndex));
         }
 
         private Team CreateTeam()

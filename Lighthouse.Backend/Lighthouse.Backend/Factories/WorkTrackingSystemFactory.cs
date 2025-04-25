@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Factories
         {
             var newConnection = new WorkTrackingSystemConnection
             {
-                Name = $"New {workTrackingSystem.ToString()} Connection",
+                Name = $"New {workTrackingSystem} Connection",
                 WorkTrackingSystem = workTrackingSystem
             };
 

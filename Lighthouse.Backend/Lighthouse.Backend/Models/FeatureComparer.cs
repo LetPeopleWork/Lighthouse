@@ -8,26 +8,35 @@
         public int Compare(Feature? x, Feature? y)
         {
             // Convert order strings to integers for comparison
-            var xIsNumeric = int.TryParse(x.Order, out int xNum);
-            var yIsNumeric = int.TryParse(y.Order, out int yNum);
+            var xIsInt = int.TryParse(x.Order, out int xNum);
+            var yIsInt = int.TryParse(y.Order, out int yNum);
 
-            if (xIsNumeric && yIsNumeric)
+            if (xIsInt && yIsInt)
             {
                 // Both are numbers, compare them numerically
                 return xNum.CompareTo(yNum);
             }
-            else if (xIsNumeric)
+            else if (xIsInt)
             {
                 // x is a number, it should come first
                 return -1;
             }
-            else if (yIsNumeric)
+            else if (yIsInt)
             {
                 // y is a number, it should come first
                 return 1;
             }
             else
             {
+                var xIsDouble = double.TryParse(x.Order, out double xDouble);
+                var yIsDouble = double.TryParse(y.Order, out double yDouble);
+
+                if (xIsDouble && yIsDouble)
+                {
+                    // Linear is using double values, but the lower the number, the higher the index.
+                    return xDouble.CompareTo(yDouble) * -1;
+                }
+
                 // Both are strings, compare them alphabetically
                 return string.Compare(x.Order, y.Order);
             }

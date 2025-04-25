@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [TestCase(WorkTrackingSystems.Jira, WorkTrackingSystems.AzureDevOps)]
+        [TestCase(WorkTrackingSystems.Jira, WorkTrackingSystems.AzureDevOps, WorkTrackingSystems.Linear)]
         public void GetSupportedWorkTrackingSystems_ReturnsDefaultSystemsFromFactory(params WorkTrackingSystems[] workTrackingSystems)
         {
             var subject = CreateSubject();
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(supportedSystems?.Count(), Is.EqualTo(workTrackingSystems.Length));
             });
 
-            workTrackingSystemsFactoryMock.Verify(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>()), Times.Exactly(2));
+            workTrackingSystemsFactoryMock.Verify(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>()), Times.Exactly(workTrackingSystems.Length));
         }
 
         [Test]

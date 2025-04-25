@@ -10,6 +10,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 {
     public partial class LinearWorkTrackingConnector : IWorkTrackingConnector
     {
+        private const string UnknownStateIdentifier = "Unknown";
+        private const string DefaultTemplateIdentifier = "Default";
+
         private readonly ILogger<LinearWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
 
@@ -62,8 +65,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
-            // Will implement later - placeholder for now
-            throw new NotImplementedException();
+            logger.LogInformation("Getting Adjacent Order Index for items {ExistingItemsOrder} in order {RelativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);
+
+            var orderIndex = 0.0;
+
+            var existingItems = existingItemsOrder
+                .Select(x => double.TryParse(x, out var value) ? value : double.MaxValue)
+                .Where(order => order != double.MaxValue)
+                .ToList();
+
+            if (existingItems.Count > 0)
+            {
+                if (relativeOrder == RelativeOrder.Above)
+                {
+                    var lowestOrder = existingItems.Min();
+                    orderIndex = lowestOrder - 1;
+                }
+                else
+                {
+                    var highestOrder = existingItems.Max();
+                    orderIndex = highestOrder + 1;
+                }
+            }
+
+            return $"{orderIndex}";
         }
 
         public async Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
@@ -84,14 +109,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 logger.LogInformation("Validating Linear connection");
 
-                var query = @"
+                var viewerQuery = @"
                     query {
                         viewer {
                             id
                         }
                     }";
 
-                var response = await SendQuery<ViewerResponse>(connection, query);
+                var response = await SendQuery<ViewerResponse>(connection, viewerQuery);
                 return true;
             }
             catch (Exception ex)
@@ -127,7 +152,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         private WorkItem CreateWorkItemFromIssue(IssueNode issue, Team team)
         {
-            var state = issue.State?.Name ?? "Unknown";
+            var state = issue.State?.Name ?? UnknownStateIdentifier;
+
             var stateCategory = team.MapStateToStateCategory(state);
 
             if (issue.CompletedAt != null && issue.StartedAt == null)
@@ -139,7 +165,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 ReferenceId = issue.Identifier?.ToLowerInvariant() ?? $"issue-{issue.Number}",
                 Name = issue.Title,
-                Type = issue.LastAppliedTemplate?.Name ?? "Unknown",
+                Type = issue.LastAppliedTemplate?.Name ?? UnknownStateIdentifier,
                 State = state,
                 StateCategory = stateCategory,
                 Url = issue.Url,
@@ -171,7 +197,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             // Items without template should be mapped to "Default"
             foreach (var issue in issues.Where(i => i.LastAppliedTemplate == null))
             {
-                issue.LastAppliedTemplate = new TemplateNode { Id = "Unknown", Name = "Default", Type = "Default" };
+                issue.LastAppliedTemplate = new TemplateNode { Id = UnknownStateIdentifier, Name = DefaultTemplateIdentifier, Type = DefaultTemplateIdentifier };
             }
 
             return issues;
