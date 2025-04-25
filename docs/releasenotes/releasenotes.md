@@ -4,10 +4,29 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse v25.4.21.945
+# Lighthouse v25.4.25.614
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Allow to override rank field for Jira
+In some occasions, it may be needed to define a specific _rank_ field in Jira. This is now possible via the config file. See [documentation](https://docs.lighthouse.letpeople.work/Installation/configuration.html#rank-field-override) for details.
+
+## Fixed Bugs
+- The calculation of the _Started_ and _Closed_ dates was not always correct when items moved between states that belonged to the same category. This is fixed now for both Azure DevOps and Jira
+- There would be an error if you had a status with an _&_ in the name (like "Dev&Test"). Lighthouse can now handle such cases.
+
+## Improvements
+- The "Hide Completed Features" toggle is not resetting every time, but the state is remembered
+- The dialog that shows the in-progress items is now handling long item names better (with a line break instead of expanding the width)
+- Updated various third-party libraries
+- 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.4.21.945...v25.4.25.614)
+
+## Contributions ❤️ 
+Special Thanks to [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/) and [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/) for their contributions!
+
+# Lighthouse v25.4.21.945
 
 ## New UI
 We've spent some time in overhauling the UI, making it look more modern. It's also more responsive now, meaning you can get a decent look at Lighthouse from your mobile device.

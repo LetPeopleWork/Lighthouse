@@ -59,6 +59,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Laurence Grantham-Clarke**](https://www.linkedin.com/in/laurence-grantham-clarke-a03316131/)
 - [**Andy Normington**](https://www.linkedin.com/in/andynormington/)
 - [**Valentin Badea**](https://www.linkedin.com/in/valentin-g-badea/)
+- [**Gonzalo Mendez**](https://www.linkedin.com/in/gonzalo-mendez-nz/)
 
 ---
 
