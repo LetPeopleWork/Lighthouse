@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -83,8 +82,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.WorkItemTypes.Clear();
             team.WorkItemTypes.Add("Bug");
 
-            team.DoingStates.Add("Development");
-
             var workItems = await subject.GetWorkItemsForTeam(team);
 
             Assert.Multiple(() =>
@@ -96,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.Name, Is.EqualTo("Bug 1"));
                 Assert.That(workItem.State, Is.EqualTo("Development"));
                 Assert.That(workItem.Type, Is.EqualTo("Bug"));
-                Assert.That(workItem.ParentReferenceId, Is.EqualTo("LIG-5"));
+                Assert.That(workItem.ParentReferenceId, Is.EqualTo("lig-5"));
                 Assert.That(workItem.Url, Is.EqualTo("https://linear.app/lighthousedemo/issue/LIG-13/bug-1"));
 
                 Assert.That(workItem.Order, Is.Not.Null);
@@ -114,14 +111,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var team = CreateTeam();
 
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.Add("Default");
-
             team.ToDoStates.Clear();
             team.DoingStates.Clear();
-
-            team.DoneStates.Clear();
-            team.DoneStates.Add("Done");
 
             var workItems = await subject.GetWorkItemsForTeam(team);
 
@@ -151,10 +142,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
 
             var team = CreateTeam();
-
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.Add("Default");
-            team.WorkItemTypes.Add("Bug");
 
             team.ToDoStates.Clear();
             team.DoingStates.Clear();
@@ -194,11 +181,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [TestCase(RelativeOrder.Above, new string[] { "-92.3", "-82.9", "-83.23" }, "-93.3")]
-        [TestCase(RelativeOrder.Below, new string[] { "-92.3", "-82.9", "-83.23" }, "-81.9")]
-        [TestCase(RelativeOrder.Above, new string[] { "92.3", "82.9", "83.23" }, "81.9")]
-        [TestCase(RelativeOrder.Below, new string[] { "92.3", "82.9", "83.23" }, "93.3")]
-        [TestCase(RelativeOrder.Below, new string[] { "13.37", "BANANA?", "188.6" }, "189.6")]
+        [TestCase(RelativeOrder.Below, new string[] { "-92.3", "-82.9", "-83.23" }, "-93.3")]
+        [TestCase(RelativeOrder.Above, new string[] { "-92.3", "-82.9", "-83.23" }, "-81.9")]
+        [TestCase(RelativeOrder.Below, new string[] { "92.3", "82.9", "83.23" }, "81.9")]
+        [TestCase(RelativeOrder.Above, new string[] { "92.3", "82.9", "83.23" }, "93.3")]
+        [TestCase(RelativeOrder.Above, new string[] { "13.37", "BANANA?", "188.6" }, "189.6")]
         public void GetAdjacentOrderIndex_ExistingItems_ReturnsCorrectOrderIndex(RelativeOrder relativeOrder, string[] existingItemsOrder, string expectedOrderIndex)
         {
             var subject = CreateSubject();
@@ -215,10 +202,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var team = CreateTeam();
 
-            team.WorkItemTypes.Clear();
-            team.WorkItemTypes.Add("Default");
-            team.WorkItemTypes.Add("Bug");
-
             var expectedItems = await subject.GetWorkItemsForTeam(team);
 
             var actualItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "SomeAdditionalQuery");
@@ -226,16 +209,169 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(actualItems, Is.EquivalentTo(expectedItems.Select(x => x.ReferenceId)));
         }
 
+        [Test]
+        public async Task ValidateProjectSettings_GivenValidProjectName_ReturnsTrue()
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject();
+
+            var isValid = await subject.ValidateProjectSettings(project);
+
+            Assert.That(isValid, Is.True);
+        }
+
+        [Test]
+        [TestCase("NonExistentProject")]
+        [TestCase("")]
+        public async Task ValidateProjectSettings_GivenInvalidProjectName_ReturnsFalse(string projectName)
+        {
+            var subject = CreateSubject();
+
+            var project = CreateProject();
+            project.WorkItemQuery = projectName;
+
+            var isValid = await subject.ValidateProjectSettings(project);
+
+            Assert.That(isValid, Is.False);
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_FilterForState_ReturnsCorrectFeature()
+        {
+            var project = CreateProject();
+            project.ToDoStates.Clear();
+            project.ToDoStates.Add("Backlog");
+
+            project.DoingStates.Clear();
+            project.DoneStates.Clear();
+
+            var subject = CreateSubject();
+
+            var features = await subject.GetFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(features.ToList(), Has.Count.EqualTo(1));
+                var feature = features.Single();
+
+                Assert.That(feature.ReferenceId, Is.EqualTo("lig-11"));
+
+                Assert.That(feature.Name, Is.EqualTo("Feature 1"));
+                Assert.That(feature.State, Is.EqualTo("Backlog"));
+                Assert.That(feature.Type, Is.EqualTo("Feature"));
+                Assert.That(feature.ParentReferenceId, Is.EqualTo(string.Empty));
+                Assert.That(feature.Url, Is.EqualTo("https://linear.app/lighthousedemo/issue/LIG-11/feature-1"));
+
+                Assert.That(feature.Order, Is.Not.Null);
+
+                Assert.That(feature.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 25, 09, 648, DateTimeKind.Utc)));
+                Assert.That(feature.StartedDate, Is.Null);
+                Assert.That(feature.ClosedDate, Is.Null);
+            });
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_FilterForType_ReturnsCorrectFeature()
+        {
+            var project = CreateProject();
+
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Feature");
+
+            var subject = CreateSubject();
+
+            var features = await subject.GetFeaturesForProject(project);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(features.ToList(), Has.Count.EqualTo(1));
+                var feature = features.Single();
+
+                Assert.That(feature.ReferenceId, Is.EqualTo("lig-11"));
+
+                Assert.That(feature.Name, Is.EqualTo("Feature 1"));
+                Assert.That(feature.State, Is.EqualTo("Backlog"));
+                Assert.That(feature.Type, Is.EqualTo("Feature"));
+                Assert.That(feature.ParentReferenceId, Is.EqualTo(string.Empty));
+                Assert.That(feature.Url, Is.EqualTo("https://linear.app/lighthousedemo/issue/LIG-11/feature-1"));
+
+                Assert.That(feature.Order, Is.Not.Null);
+
+                Assert.That(feature.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 25, 09, 648, DateTimeKind.Utc)));
+                Assert.That(feature.StartedDate, Is.Null);
+                Assert.That(feature.ClosedDate, Is.Null);
+            });
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_FiltersOutSubIssues()
+        {
+            var project = CreateProject();
+
+            var subject = CreateSubject();
+
+            var features = await subject.GetFeaturesForProject(project);
+
+            Assert.That(features.ToList(), Has.Count.EqualTo(2));
+        }
+
         private Team CreateTeam()
         {
             var connection = CreateConnection();
 
-            return new Team
+            var team = new Team
             {
                 Name = "Test Team",
                 WorkItemQuery = "LighthouseDemo",
                 WorkTrackingSystemConnection = connection
             };
+
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.Add("Default");
+            team.WorkItemTypes.Add("Bug");
+
+            team.ToDoStates.Clear();
+            team.ToDoStates.Add("Backlog");
+            team.ToDoStates.Add("Planned");
+
+            team.DoingStates.Clear();
+            team.DoingStates.Add("Development");
+            team.DoingStates.Add("Resolved");
+
+            team.DoneStates.Clear();
+            team.DoneStates.Add("Done");
+
+            return team;
+        }
+
+        private Project CreateProject()
+        {
+            var connection = CreateConnection();
+
+            var project = new Project
+            {
+                Name = "Test Project",
+                WorkItemQuery = "My Demo Project",
+                WorkTrackingSystemConnection = connection
+            };
+
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Feature");
+            project.WorkItemTypes.Add("Default");
+
+            project.ToDoStates.Clear();
+            project.ToDoStates.Add("Backlog");
+            project.ToDoStates.Add("Planned");
+
+            project.DoingStates.Clear();
+            project.DoingStates.Add("Development");
+            project.DoingStates.Add("Resolved");
+
+            project.DoneStates.Clear();
+            project.DoneStates.Add("Done");
+
+            return project;
         }
 
         private WorkTrackingSystemConnection CreateConnection()

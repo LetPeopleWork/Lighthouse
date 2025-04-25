@@ -4,6 +4,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
     {
         public static class LinearResponses
         {
+            public interface IPagedRespone
+            {
+                PageInfo GetPageInfo();
+            }
+
             public class ViewerResponse
             {
                 public Viewer Viewer { get; set; }
@@ -14,23 +19,70 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 public string Id { get; set; }
             }
 
-            public class TeamsResponse
+            public class TeamsResponse : IPagedRespone
             {
                 public Teams Teams { get; set; }
+
+                public PageInfo GetPageInfo()
+                {
+                    return Teams?.PageInfo ?? new NullPageInfo();
+                }
             }
 
-            public class TeamResponse
+            public class TeamResponse : IPagedRespone
             {
                 public TeamNode Team { get; set; }
+
+                public PageInfo GetPageInfo()
+                {
+                    return Team?.Issues?.PageInfo ?? new NullPageInfo();
+                }
             }
 
             public class Teams
             {
                 public List<TeamNode> Nodes { get; set; }
+
                 public PageInfo PageInfo { get; set; }
             }
 
             public class TeamNode
+            {
+                public string Id { get; set; }
+
+                public string Name { get; set; }
+
+                public Issues Issues { get; set; }
+            }
+
+            public class ProjectsResponse : IPagedRespone
+            {
+                public Projects Projects { get; set; }
+
+                public PageInfo GetPageInfo()
+                {
+                    return Projects?.PageInfo ?? new NullPageInfo();
+                }
+            }
+
+            public class ProjectResponse : IPagedRespone
+            {
+                public ProjectNode Project { get; set; }
+
+                public PageInfo GetPageInfo()
+                {
+                    return Project?.Issues?.PageInfo ?? new NullPageInfo();
+                }
+            }
+
+            public class Projects
+            {
+                public List<ProjectNode> Nodes { get; set; }
+
+                public PageInfo PageInfo { get; set; }
+            }
+
+            public class ProjectNode
             {
                 public string Id { get; set; }
 
@@ -42,15 +94,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             public class Issues
             {
                 public List<IssueNode> Nodes { get; set; }
+
                 public PageInfo PageInfo { get; set; }
             }
 
             public class PageInfo
             {
                 public bool HasNextPage { get; set; }
+                
                 public string EndCursor { get; set; }
+
                 public bool HasPreviousPage { get; set; }
+               
                 public string StartCursor { get; set; }
+            }
+
+            public class NullPageInfo : PageInfo
+            {
+                public NullPageInfo()
+                {
+                    HasNextPage = false;
+                    EndCursor = "0";
+                    HasPreviousPage = false;
+                    StartCursor = "0";
+                }
             }
 
             public class IssueNode
