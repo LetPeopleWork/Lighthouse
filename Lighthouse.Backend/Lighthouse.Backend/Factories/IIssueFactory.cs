@@ -6,6 +6,6 @@ namespace Lighthouse.Backend.Factories
 {
     public interface IIssueFactory
     {
-        Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null);
+        Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null, string? rankFieldName = null);
     }
 }

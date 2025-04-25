@@ -592,7 +592,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private JiraWorkTrackingConnector CreateSubject()
         {
-            return new JiraWorkTrackingConnector(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>(), Mock.Of<IConfiguration>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService());
+            return new JiraWorkTrackingConnector(lexoRankServiceMock.Object, new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService());
         }
     }
 }
