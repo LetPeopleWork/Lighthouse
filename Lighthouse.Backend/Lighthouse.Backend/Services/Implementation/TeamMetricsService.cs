@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private IEnumerable<WorkItem> GetWorkItemsClosedInDateRange(Team team, DateTime startDate, DateTime endDate)
         {
-            var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
+            var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done).ToList();
 
             var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate.Value.Date >= startDate.Date && i.ClosedDate.Value.Date <= endDate.Date);
             return closedItemsInDateRange;
