@@ -208,6 +208,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(orderIndex, Is.EqualTo(expectedOrderIndex));
         }
 
+        [Test]
+        public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_GivenQuery_IgnoresAdditionalQueryAndReturnsWorkItems()
+        {
+            var subject = CreateSubject();
+
+            var team = CreateTeam();
+
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.Add("Default");
+            team.WorkItemTypes.Add("Bug");
+
+            var expectedItems = await subject.GetWorkItemsForTeam(team);
+
+            var actualItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "SomeAdditionalQuery");
+            
+            Assert.That(actualItems, Is.EquivalentTo(expectedItems.Select(x => x.ReferenceId)));
+        }
+
         private Team CreateTeam()
         {
             var connection = CreateConnection();
