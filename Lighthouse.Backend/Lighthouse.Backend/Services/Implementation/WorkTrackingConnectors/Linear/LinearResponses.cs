@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             public class Teams
             {
                 public List<TeamNode> Nodes { get; set; }
+                public PageInfo PageInfo { get; set; }
             }
 
             public class TeamNode
@@ -41,6 +42,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             public class Issues
             {
                 public List<IssueNode> Nodes { get; set; }
+                public PageInfo PageInfo { get; set; }
+            }
+
+            public class PageInfo
+            {
+                public bool HasNextPage { get; set; }
+                public string EndCursor { get; set; }
+                public bool HasPreviousPage { get; set; }
+                public string StartCursor { get; set; }
             }
 
             public class IssueNode

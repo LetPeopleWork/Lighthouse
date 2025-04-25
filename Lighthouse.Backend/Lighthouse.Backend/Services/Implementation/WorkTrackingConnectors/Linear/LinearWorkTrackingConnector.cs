@@ -180,38 +180,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return new WorkItem(workItemBase, team);
         }
 
-        private async Task<List<IssueNode>> GetIssuesForTeam(WorkTrackingSystemConnection connection, string teamName)
+        private async Task<List<IssueNode>> GetAllIssuesForTeam(WorkTrackingSystemConnection connection, string teamId)
         {
-            var teamNode = await GetTeamByName(connection, teamName);
+            var allIssues = new List<IssueNode>();
+            string? cursor = null;
+            bool hasNextPage = true;
 
-            if (teamNode == null)
+            while (hasNextPage)
             {
-                logger.LogInformation("Team with name '{TeamName}' not found", teamName);
-                return [];
-            }
+                var cursorParam = cursor != null ? $", after: \"{cursor}\"" : string.Empty;
 
-            var teamId = teamNode.Id;
-            var teamDetails = await GetTeamDetails(connection, teamId);
-
-            var issues = teamDetails?.Team?.Issues?.Nodes ?? [];
-
-            // Items without template should be mapped to "Default"
-            foreach (var issue in issues.Where(i => i.LastAppliedTemplate == null))
-            {
-                issue.LastAppliedTemplate = new TemplateNode { Id = UnknownStateIdentifier, Name = DefaultTemplateIdentifier, Type = DefaultTemplateIdentifier };
-            }
-
-            return issues;
-        }
-
-        private async Task<TeamResponse> GetTeamDetails(WorkTrackingSystemConnection connection, string teamId)
-        {
-            var issueQuery = $@"
+                var issueQuery = $@"
                     query {{
                         team(id: ""{teamId}"") {{
                             id
                             name
-                            issues {{
+                            issues(first: 100{cursorParam}) {{
                                 nodes {{
                                     id
                                     title
@@ -236,29 +220,98 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                                         name
                                     }}
                                 }}
+                                pageInfo {{
+                                    hasNextPage
+                                    endCursor
+                                }}
                             }}
                         }}
                     }}";
 
-            return await SendQuery<TeamResponse>(connection, issueQuery);
+                var response = await SendQuery<TeamResponse>(connection, issueQuery);
+                
+                var issues = response?.Team?.Issues?.Nodes ?? [];
+                allIssues.AddRange(issues);
+
+                hasNextPage = response?.Team?.Issues?.PageInfo?.HasNextPage ?? false;
+                cursor = response?.Team?.Issues?.PageInfo?.EndCursor;
+
+                if (string.IsNullOrEmpty(cursor))
+                {
+                    hasNextPage = false;
+                }
+                
+                logger.LogDebug("Fetched {Count} issues for team {TeamId}, hasNextPage: {HasNextPage}", issues.Count, teamId, hasNextPage);
+            }
+
+            return allIssues;
+        }
+
+        private async Task<List<IssueNode>> GetIssuesForTeam(WorkTrackingSystemConnection connection, string teamName)
+        {
+            var teamNode = await GetTeamByName(connection, teamName);
+
+            if (teamNode == null)
+            {
+                logger.LogInformation("Team with name '{TeamName}' not found", teamName);
+                return [];
+            }
+
+            var teamId = teamNode.Id;
+            var issues = await GetAllIssuesForTeam(connection, teamId);
+
+            // Items without template should be mapped to "Default"
+            foreach (var issue in issues.Where(i => i.LastAppliedTemplate == null))
+            {
+                issue.LastAppliedTemplate = new TemplateNode { Id = UnknownStateIdentifier, Name = DefaultTemplateIdentifier, Type = DefaultTemplateIdentifier };
+            }
+
+            logger.LogInformation("Found a total of {Count} issues for team {TeamName}", issues.Count, teamName);
+            return issues;
         }
 
         private async Task<TeamNode?> GetTeamByName(WorkTrackingSystemConnection connection, string teamName)
         {
-            var query = @"
-                    query {
-                        teams {
-                            nodes {
+            string? cursor = null;
+            bool hasNextPage = true;
+            
+            while (hasNextPage)
+            {
+                var cursorParam = cursor != null ? $", after: \"{cursor}\"" : string.Empty;
+                
+                var query = $@"
+                    query {{
+                        teams(first: 50{cursorParam}) {{
+                            nodes {{
                                 id
                                 name
-                            }
-                        }
-                    }"
-            ;
+                            }}
+                            pageInfo {{
+                                hasNextPage
+                                endCursor
+                            }}
+                        }}
+                    }}";
 
-            var response = await SendQuery<TeamsResponse>(connection, query);
+                var response = await SendQuery<TeamsResponse>(connection, query);
+                
+                var team = response?.Teams?.Nodes.FirstOrDefault(t => t.Name == teamName);
+                if (team != null)
+                {
+                    return team;
+                }
+                
+                hasNextPage = response?.Teams?.PageInfo?.HasNextPage ?? false;
+                cursor = response?.Teams?.PageInfo?.EndCursor;
+                
+                if (string.IsNullOrEmpty(cursor))
+                {
+                    hasNextPage = false;
+                }
+            }
 
-            return response?.Teams?.Nodes.FirstOrDefault(t => t.Name == teamName);
+            logger.LogInformation("No team found with name {TeamName}", teamName);
+            return null;
         }
 
         private async Task<T> SendQuery<T>(WorkTrackingSystemConnection connection, string query) where T : class
