@@ -17,12 +17,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
             AddIfNotExists(new PreviewFeature { Id = 2, Key = PreviewFeatureKeys.McpServerKey, Name = "MCP Server", Description = "Enables MCP Server to integrate with AI Agents (requires restart)", Enabled = false });
 
+            AddIfNotExists(new PreviewFeature { Id = 3, Key = PreviewFeatureKeys.LinearIntegrationKey, Name = "Linear Integration", Description = "Enables Experimental Support for Linear.app", Enabled = false });
+
             SaveSync();
         }
 
-#pragma warning disable S1144 // Unused private types or members should be removed
         private void AddIfNotExists(PreviewFeature previewFeature)
-#pragma warning restore S1144 // Unused private types or members should be removed
         {
             PreviewFeature? existingDefault = GetFeatureByName(previewFeature);
             if (existingDefault == null)

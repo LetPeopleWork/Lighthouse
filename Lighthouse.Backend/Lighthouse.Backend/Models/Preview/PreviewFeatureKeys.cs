@@ -7,5 +7,7 @@
         public const string CycleTimeScatterPlotKey = "CycleTimeScatterPlot";
         
         public const string McpServerKey = "McpServer";
+
+        public const string LinearIntegrationKey = "LinearIntegration";
     }
 }

@@ -25,6 +25,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             });
         }
 
+        [TestCase(PreviewFeatureKeys.McpServerKey)]
+        [TestCase(PreviewFeatureKeys.LinearIntegrationKey)]
+        public void AdddPreviewSettingOnStartIfNotExisting(string key)
+        {
+            var subject = CreateSubject();
+
+            var previewFeature = subject.GetByPredicate(s => s.Key == key);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(previewFeature, Is.Not.Null);
+            });
+        }
+
         private PreviewFeatureRepository CreateSubject()
         {
             return new PreviewFeatureRepository(DatabaseContext, Mock.Of<ILogger<PreviewFeatureRepository>>());
