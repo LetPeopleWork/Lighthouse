@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.MCP
             }
         }
 
-        private Team? GetTeamByName(string name, IRepository<Team> teamRepo)
+        private static Team? GetTeamByName(string name, IRepository<Team> teamRepo)
         {
             return teamRepo.GetByPredicate(t => t.Name.Contains(name, StringComparison.InvariantCultureIgnoreCase));
         }

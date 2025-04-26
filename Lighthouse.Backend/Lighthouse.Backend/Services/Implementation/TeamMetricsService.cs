@@ -117,8 +117,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var includedWorkItems = workItemTypes.Select(workItemTypes => workItemTypes.ToLowerInvariant()).ToList();
 
-            var allItemsForTeam = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList().Where(item => includedWorkItems.Contains(item.Type.ToLowerInvariant()));
-            var creationRunChart = GenerateCreationRunChart(startDate, endDate, allItemsForTeam);
+            var allItemsForTeam = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();
+            var creationRunChart = GenerateCreationRunChart(startDate, endDate, allItemsForTeam.Where(item => includedWorkItems.Contains(item.Type.ToLowerInvariant())));
 
             var throughput = new RunChartData(creationRunChart);
 

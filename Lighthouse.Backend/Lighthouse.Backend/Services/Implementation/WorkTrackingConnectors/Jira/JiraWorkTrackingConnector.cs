@@ -251,15 +251,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var responseBody = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonDocument.Parse(responseBody);
 
-            var rankFieldName = await GetRankField(jiraClient);
-            var issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement, workitemQueryOwner, additionalRelatedField, rankFieldName);
+            var rankField = await GetRankField(jiraClient);
+            var issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement, workitemQueryOwner, additionalRelatedField, rankField);
 
             logger.LogDebug("Found Issue by Key: {Key}", issue.Key);
 
             return issue;
         }
 
-        private async Task<string> GetRankField(HttpClient jiraClient)
+        private static async Task<string> GetRankField(HttpClient jiraClient)
         {
             if (!string.IsNullOrEmpty(rankFieldName))
             {
@@ -358,7 +358,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // Properly encode the JQL query to handle special characters like ampersands
             var encodedJqlQuery = Uri.EscapeDataString(jqlQuery);
 
-            var rankFieldName = await GetRankField(client);
+            var rankField = await GetRankField(client);
 
             while (!isLast)
             {
@@ -380,7 +380,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, workItemQueryOwner, additionalRelatedField, rankFieldName);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, workItemQueryOwner, additionalRelatedField, rankField);
 
                     logger.LogDebug("Found Issue {Key}", issue.Key);
 

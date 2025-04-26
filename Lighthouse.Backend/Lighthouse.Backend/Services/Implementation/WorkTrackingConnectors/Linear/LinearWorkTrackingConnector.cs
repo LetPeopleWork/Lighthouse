@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return issues;
         }
 
-        private List<IssueNode> FilterIssuesThatAreChildrenOfProjectIssues(List<IssueNode> issues)
+        private static List<IssueNode> FilterIssuesThatAreChildrenOfProjectIssues(List<IssueNode> issues)
         {
             var issueIds = issues.Select(i => i.Identifier).ToList();
             var filteredIssues = issues.Where(i => i.Parent == null || !issueIds.Contains(i.Parent.Identifier)).ToList();
@@ -261,7 +261,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return filteredIssues;
         }
 
-        private List<IssueNode> FilterIssuesForWorkItemOwner(IWorkItemQueryOwner owner, List<IssueNode> issues)
+        private static List<IssueNode> FilterIssuesForWorkItemOwner(IWorkItemQueryOwner owner, List<IssueNode> issues)
         {
             var types = owner.WorkItemTypes;
             var states = owner.AllStates.ToList();
@@ -404,22 +404,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         private static string GetIssuesForProjectQuery(string projectId, string cursorParam)
         {
-            return string.Format(GetIssuesQueryTemplate(), "project", projectId, cursorParam);
+            return GetIssuesQueryTemplate("project", projectId, cursorParam);
         }
 
         private static string GetIssuesForTeamQuery(string teamId, string cursorParam)
         {
-            return string.Format(GetIssuesQueryTemplate(), "team", teamId, cursorParam);
+            return GetIssuesQueryTemplate("team", teamId, cursorParam);
         }
 
-        private static string GetIssuesQueryTemplate()
+        private static string GetIssuesQueryTemplate(string parameter, string id, string cursorParam)
         {
-            return @"
+            return $@"
                     query {{
-                        {0}(id: ""{1}"") {{
+                        {parameter}(id: ""{id}"") {{
                             id
                             name
-                            issues(first: 100{2}) {{
+                            issues(first: 100{cursorParam}) {{
                                 nodes {{
                                     id
                                     title
