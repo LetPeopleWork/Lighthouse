@@ -95,6 +95,3 @@ The Order of Features (usually *Epics*, but it may be any other type) is based o
 Jira is using the [LexoRank Algorithm](https://confluence.atlassian.com/adminjiraserver/managing-lexorank-938847803.html) to adjust the ranks. While it's quite interesting (you can read more about it [here](https://tmcalm.nl/blog/lexorank-jira-ranking-system-explained/)), it's not relevant that you understand it.  
 
 What you must understand is that you simply need to re-order your items in Jira and that this order will be taken into account by Lighthouse. Higher up means higher priority, further down will mean less priority.
-
-{: .note}
-If you can't or don't want to use the default field for the rank, there is an option to adjust this via the [Configuration](../installation/configuration.html#rank-field-override).

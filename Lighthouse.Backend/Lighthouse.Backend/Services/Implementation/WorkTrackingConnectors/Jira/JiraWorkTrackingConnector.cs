@@ -16,6 +16,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private readonly ILogger<JiraWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
 
+        private static string rankFieldName = string.Empty;
+
         public JiraWorkTrackingConnector(ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService)
         {
             this.lexoRankService = lexoRankService;
@@ -249,11 +251,39 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var responseBody = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonDocument.Parse(responseBody);
 
-            var issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement, workitemQueryOwner, additionalRelatedField);
+            var rankFieldName = await GetRankField(jiraClient);
+            var issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement, workitemQueryOwner, additionalRelatedField, rankFieldName);
 
             logger.LogDebug("Found Issue by Key: {Key}", issue.Key);
 
             return issue;
+        }
+
+        private async Task<string> GetRankField(HttpClient jiraClient)
+        {
+            if (!string.IsNullOrEmpty(rankFieldName))
+            {
+                return rankFieldName;
+            }
+
+            var url = "rest/api/latest/field";
+
+            var response = await jiraClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            
+            var responseBody = await response.Content.ReadAsStringAsync();
+            var jsonResponse = JsonDocument.Parse(responseBody);
+            
+            foreach (var field in jsonResponse.RootElement.EnumerateArray())
+            {
+                if (field.GetProperty(JiraFieldNames.NamePropertyName).GetString() == JiraFieldNames.RankName)
+                {
+                    rankFieldName = field.GetProperty(JiraFieldNames.IdPropertyName).GetString() ?? string.Empty;
+                    break;
+                }
+            }
+
+            return rankFieldName;
         }
 
         private WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner)
@@ -327,7 +357,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             // Properly encode the JQL query to handle special characters like ampersands
             var encodedJqlQuery = Uri.EscapeDataString(jqlQuery);
-            
+
+            var rankFieldName = await GetRankField(client);
+
             while (!isLast)
             {
                 var url = $"rest/api/latest/search?jql={encodedJqlQuery}&startAt={startAt}&maxResults={maxResults}&expand=changelog";
@@ -348,7 +380,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, workItemQueryOwner, additionalRelatedField);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, workItemQueryOwner, additionalRelatedField, rankFieldName);
 
                     logger.LogDebug("Found Issue {Key}", issue.Key);
 

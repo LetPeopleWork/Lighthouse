@@ -26,6 +26,8 @@
         
         public static string ItemsFieldName => "items";
 
+        public static string IdPropertyName => "id";
+
         public static string NamePropertyName => "name";
 
         public static string KeyPropertyName => "key";
@@ -35,5 +37,7 @@
         public static string FromStringPropertyName => "fromString";
 
         public static string UpdatedFieldName => "updated";
+
+        public static string RankName => "Rank";
     }
 }

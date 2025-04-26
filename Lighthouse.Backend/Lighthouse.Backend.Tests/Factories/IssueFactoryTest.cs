@@ -16,15 +16,12 @@ namespace Lighthouse.Backend.Tests.Factories
 
         private Mock<IWorkItemQueryOwner> workItemQueryOwnerMock;
 
-        private Mock<IConfiguration> configurationMock;
-
         private string jsonTemplate;
 
         [SetUp]
         public void SetUp()
         {
             lexoRankServiceMock = new Mock<ILexoRankService>();
-            configurationMock = new Mock<IConfiguration>();
             workItemQueryOwnerMock = new Mock<IWorkItemQueryOwner>();
 
             var toDoStates = new List<string> { "Backlog", "Analysis" };
@@ -132,11 +129,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json["fields"].AsObject().Add("customfield_1886", "0|GCZ4EVER:");
             });
 
-            configurationMock
-                .Setup(x => x[It.Is<string>(key => key == "WorkTrackingSystems:Jira:RankFieldOverride")])
-                .Returns(rankFieldOverride);
-
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object, null, rankFieldOverride);
 
             Assert.That(issue.Rank, Is.EqualTo(expectedResult));
         }
@@ -568,7 +561,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
         private IssueFactory CreateIssueFactory()
         {
-            return new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>(), configurationMock.Object);
+            return new IssueFactory(lexoRankServiceMock.Object, Mock.Of<ILogger<IssueFactory>>());
         }
     }
 }

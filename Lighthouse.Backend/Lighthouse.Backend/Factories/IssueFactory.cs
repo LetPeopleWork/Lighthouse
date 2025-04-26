@@ -11,30 +11,23 @@ namespace Lighthouse.Backend.Factories
         private readonly ILexoRankService lexoRankService;
         private readonly ILogger<IssueFactory> logger;
 
-        // customfield_10019 is how Jira stores the rank.
-        private static readonly List<string> rankCustomFieldNames = new List<string> { "customfield_10019" };
-
-        public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger, IConfiguration configuration)
+        public IssueFactory(ILexoRankService lexoRankService, ILogger<IssueFactory> logger)
         {
             this.lexoRankService = lexoRankService;
             this.logger = logger;
-
-            var rankFieldOverride = configuration["WorkTrackingSystems:Jira:RankFieldOverride"];
-            if (!string.IsNullOrEmpty(rankFieldOverride))
-            {
-                rankCustomFieldNames.Clear();
-                rankCustomFieldNames.Add(rankFieldOverride);
-            }
         }
 
-        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null)
+        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null, string? rankFieldName = null)
         {
+            // If the rank field is not set, use the default one and try our luck
+            var rankField = !string.IsNullOrEmpty(rankFieldName) ? rankFieldName : "customfield_10019";
+
             var fields = json.GetProperty(JiraFieldNames.FieldsFieldName);
             var key = GetKeyFromJson(json);
             var title = GetTitleFromFields(fields);
             var createdDate = GetCreatedDateFromFields(fields);
             var parentKey = GetParentFromFields(fields);
-            var rank = GetRankFromFields(fields);
+            var rank = GetRankFromFields(fields, rankField);
             var issueType = GetIssueTypeFromFields(fields);
             var state = GetStateFromFields(fields);
 
@@ -85,26 +78,25 @@ namespace Lighthouse.Backend.Factories
             return fields.GetProperty(JiraFieldNames.StatusFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
         }
 
-        private string GetRankFromFields(JsonElement fields)
+        private string GetRankFromFields(JsonElement fields, string rankFieldName)
         {
             // Try getting the ranks using the default field or previously used fields. It's a string, not an int. It's using the LexoGraph algorithm for this.
             var rank = string.Empty;
 
-            if (TryGetRankFromKnownFields(fields, out rank))
+            if (TryGetRankFromRankField(fields, rankFieldName, out rank))
             {
                 return rank;
             }
 
             logger.LogInformation("Could not find rank in default field, parsing all fields for LexoRank...");
+
             // It's possible that Jira is using a different custom field for the rank - try to find it via searching through the available properties.
             var rankFields = fields.EnumerateObject().Where(f => f.Value.ToString().Contains('|'));
             if (rankFields.Any())
             {
                 var field = rankFields.First();
                 rank = field.Value.ToString();
-                logger.LogInformation("Found rank in field {Name}: {Rank}. Storing for next use", field.Name, rank);
-
-                rankCustomFieldNames.Add(field.Name);
+                logger.LogInformation("Found rank in field {Name}: {Rank}", field.Name, rank);
 
                 return rank;
             }
@@ -112,20 +104,17 @@ namespace Lighthouse.Backend.Factories
             return lexoRankService.Default;
         }
 
-        private static bool TryGetRankFromKnownFields(JsonElement fields, out string rank)
+        private static bool TryGetRankFromRankField(JsonElement fields, string rankFieldName, out string rank)
         {
             rank = string.Empty;
 
-            foreach (var customField in rankCustomFieldNames)
+            if (fields.TryGetProperty(rankFieldName, out var parsedRank))
             {
-                if (fields.TryGetProperty(customField, out var parsedRank))
-                {
-                    rank = parsedRank.ToString();
+                rank = parsedRank.ToString();
 
-                    if (!string.IsNullOrEmpty(rank) && rank.Contains('|'))
-                    {
-                        return true;
-                    }
+                if (!string.IsNullOrEmpty(rank) && rank.Contains('|'))
+                {
+                    return true;
                 }
             }
 
