@@ -116,11 +116,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return Task.FromResult(new Dictionary<string, int>());
         }
 
-        public async Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
+        public Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
         {
-            var workItems = await GetWorkItemsForTeam(team);
-
-            return workItems.Select(x => x.ReferenceId).ToList();
+            return Task.FromResult(new List<string>());
         }
 
         public async Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)

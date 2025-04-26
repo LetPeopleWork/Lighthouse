@@ -202,11 +202,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var team = CreateTeam();
 
-            var expectedItems = await subject.GetWorkItemsForTeam(team);
-
             var actualItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "SomeAdditionalQuery");
             
-            Assert.That(actualItems, Is.EquivalentTo(expectedItems.Select(x => x.ReferenceId)));
+            Assert.That(actualItems, Is.EquivalentTo(Enumerable.Empty<string>()));
         }
 
         [Test]
