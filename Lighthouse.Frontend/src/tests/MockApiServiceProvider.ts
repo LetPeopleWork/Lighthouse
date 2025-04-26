@@ -1,7 +1,7 @@
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import { DemoApiService } from "../services/Api/DemoApiService";
 import type { ILogService } from "../services/Api/LogService";
-import type { IPreviewFeatureService } from "../services/Api/PreviewFeatureService";
+import type { IOptionalFeatureService } from "../services/Api/OptionalFeatureService";
 import type { IProjectMetricsService } from "../services/Api/ProjectMetricsService";
 import type { IProjectService } from "../services/Api/ProjectService";
 import type { ISettingsService } from "../services/Api/SettingsService";
@@ -24,8 +24,8 @@ export const createMockApiServiceContext = (
 		versionService: null as unknown as IApiServiceContext["versionService"],
 		workTrackingSystemService:
 			null as unknown as IApiServiceContext["workTrackingSystemService"],
-		previewFeatureService:
-			null as unknown as IApiServiceContext["previewFeatureService"],
+		optionalFeatureService:
+			null as unknown as IApiServiceContext["optionalFeatureService"],
 		updateSubscriptionService: new DemoApiService(false, false),
 		projectMetricsService:
 			null as unknown as IApiServiceContext["projectMetricsService"],
@@ -122,7 +122,7 @@ export const createMockUpdateSubscriptionService =
 		};
 	};
 
-export const createMockPreviewFeatureService = (): IPreviewFeatureService => {
+export const createMockOptionalFeatureService = (): IOptionalFeatureService => {
 	return {
 		getAllFeatures: vi.fn(),
 		getFeatureByKey: vi.fn(),

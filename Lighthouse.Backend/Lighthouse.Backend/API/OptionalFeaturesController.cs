@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Models.Preview;
+﻿using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,24 +6,24 @@ namespace Lighthouse.Backend.API
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PreviewFeaturesController : ControllerBase
+    public class OptionalFeaturesController : ControllerBase
     {
-        private readonly IRepository<PreviewFeature> repository;
+        private readonly IRepository<OptionalFeature> repository;
 
-        public PreviewFeaturesController(IRepository<PreviewFeature> repository)
+        public OptionalFeaturesController(IRepository<OptionalFeature> repository)
         {
             this.repository = repository;
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<PreviewFeature>> GetAll()
+        public ActionResult<IEnumerable<OptionalFeature>> GetAll()
         {
-            var previewFeatures = repository.GetAll();
-            return Ok(previewFeatures);
+            var optionalFeatures = repository.GetAll();
+            return Ok(optionalFeatures);
         }
 
         [HttpGet("{featureKey}")]
-        public ActionResult<PreviewFeature> GetPreviewFeatureByKey(string featureKey)
+        public ActionResult<OptionalFeature> GetOptionalFeatureByKey(string featureKey)
         {
             var feature = repository.GetByPredicate(f => f.Key == featureKey);
 
@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("{id}")]
-        public async Task<ActionResult<PreviewFeature>> UpdatePreviewFeature(int id, [FromBody] PreviewFeature updatedFeature)
+        public async Task<ActionResult<OptionalFeature>> UpdateOptionalFeature(int id, [FromBody] OptionalFeature updatedFeature)
         {
             return await this.GetEntityByIdAnExecuteAction(repository, id, async feature =>
             {

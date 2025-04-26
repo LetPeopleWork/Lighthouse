@@ -91,10 +91,10 @@ This settings allows you to define how many entries you want to keep. Older entr
 {: .note}
 Setting this to a lower number can help you save space, especially if you have many projects in one Lighthouse instance.
 
-# Preview Features
-Occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. In such a case you would find a toggle in the *Preview Features* setting which you can selectively enable.
+# Optional Features
+Some features might not make sense to be enabled in all situations. And occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. In such a case you would find a toggle in the *Optional Features* setting which you can selectively enable or disable.
 
-![Preview Features](../../assets/settings/previewfeatures.png)
+![Optional Features](../../assets/settings/optionalfeatures.png)
 
 Eventually, the Features in preview will be integrated into the regular functionality, and the preview flag will be removed. In rare cases, a preview feature might get removed.
 

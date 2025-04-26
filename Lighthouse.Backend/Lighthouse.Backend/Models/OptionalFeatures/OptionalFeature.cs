@@ -1,8 +1,8 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
 
-namespace Lighthouse.Backend.Models.Preview
+namespace Lighthouse.Backend.Models.OptionalFeatures
 {
-    public class PreviewFeature : IEntity
+    public class OptionalFeature : IEntity
     {
         public required int Id { get; set; }
 
@@ -13,5 +13,7 @@ namespace Lighthouse.Backend.Models.Preview
         public string Description { get; set; }
 
         public required bool Enabled { get; set; }
+
+        public bool IsPreview { get; set; } = false;
     }
 }

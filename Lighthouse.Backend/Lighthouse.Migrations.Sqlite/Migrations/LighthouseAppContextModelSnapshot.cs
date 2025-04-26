@@ -262,7 +262,7 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("Milestone");
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.Preview.PreviewFeature", b =>
+            modelBuilder.Entity("Lighthouse.Backend.Models.OptionalFeatures.OptionalFeature", b =>
                 {
                     b.Property<string>("Key")
                         .HasColumnType("TEXT");
@@ -277,13 +277,16 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsPreview")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Key");
 
-                    b.ToTable("PreviewFeatures");
+                    b.ToTable("OptionalFeatures");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Project", b =>

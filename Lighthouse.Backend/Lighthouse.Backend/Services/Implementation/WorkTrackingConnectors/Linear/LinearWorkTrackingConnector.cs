@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
             var existingItems = existingItemsOrder
                 .Select(x => double.TryParse(x, out var value) ? value : double.MaxValue)
-                .Where(order => order != double.MaxValue)
+                .Where(order => order < double.MaxValue * 0.999)
                 .ToList();
 
             if (existingItems.Count > 0)

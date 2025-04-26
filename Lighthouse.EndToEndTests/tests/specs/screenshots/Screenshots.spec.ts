@@ -130,10 +130,10 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 		"settings/dataretention.png",
 	);
 
-	const previewFeatureSettings = await settingsPage.goToPreviewFeatures();
+	const optionalFeatureSettings = await settingsPage.goToOptionalFeatures();
 	await takePageScreenshot(
-		previewFeatureSettings.page,
-		"settings/previewfeatures.png",
+		optionalFeatureSettings.page,
+		"settings/optionalfeatures.png",
 	);
 
 	const logs = await settingsPage.goToLogs();

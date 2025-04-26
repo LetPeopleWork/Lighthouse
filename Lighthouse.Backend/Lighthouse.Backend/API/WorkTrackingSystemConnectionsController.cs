@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Preview;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -22,14 +22,14 @@ namespace Lighthouse.Backend.API
         private readonly bool isLinearIntegrationEnabled;
 
         public WorkTrackingSystemConnectionsController(
-            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, IRepository<PreviewFeature> previewFeatureRepository)
+            IWorkTrackingSystemFactory workTrackingSystemFactory, IRepository<WorkTrackingSystemConnection> repository, IWorkTrackingConnectorFactory workTrackingConnectorFactory, ICryptoService cryptoService, IRepository<OptionalFeature> optionalFeatureRepository)
         {
             this.workTrackingSystemFactory = workTrackingSystemFactory;
             this.repository = repository;
             this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.cryptoService = cryptoService;
 
-            var linearPreviewFeature = previewFeatureRepository.GetByPredicate(f => f.Key == PreviewFeatureKeys.LinearIntegrationKey);
+            var linearPreviewFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.LinearIntegrationKey);
             isLinearIntegrationEnabled = linearPreviewFeature?.Enabled ?? false;
         }
 

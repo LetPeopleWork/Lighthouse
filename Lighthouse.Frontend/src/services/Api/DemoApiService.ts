@@ -18,8 +18,8 @@ import {
 	type ILighthouseReleaseAsset,
 	LighthouseReleaseAsset,
 } from "../../models/LighthouseRelease/LighthouseReleaseAsset";
+import type { IOptionalFeature } from "../../models/OptionalFeatures/OptionalFeature";
 import type { IPercentileValue } from "../../models/PercentileValue";
-import { PreviewFeature } from "../../models/Preview/PreviewFeature";
 import { Milestone } from "../../models/Project/Milestone";
 import { Project } from "../../models/Project/Project";
 import type { IProjectSettings } from "../../models/Project/ProjectSettings";
@@ -38,7 +38,7 @@ import type {
 } from "../UpdateSubscriptionService";
 import type { IForecastService } from "./ForecastService";
 import type { ILogService } from "./LogService";
-import type { IPreviewFeatureService } from "./PreviewFeatureService";
+import type { IOptionalFeatureService } from "./OptionalFeatureService";
 import type { IProjectMetricsService } from "./ProjectMetricsService";
 import type { IProjectService } from "./ProjectService";
 import type { ISettingsService } from "./SettingsService";
@@ -56,7 +56,7 @@ export class DemoApiService
 		ITeamService,
 		IVersionService,
 		IWorkTrackingSystemService,
-		IPreviewFeatureService,
+		IOptionalFeatureService,
 		IUpdateSubscriptionService,
 		ITeamMetricsService,
 		IProjectMetricsService
@@ -159,21 +159,23 @@ export class DemoApiService
 		},
 	];
 
-	private readonly previewFeatures = [
-		new PreviewFeature(
-			0,
-			"CycleTimeScatterPlot",
-			"Cycle Time Scatterplot",
-			"Shows Cycle Time Scatterplot for a team",
-			true,
-		),
-		new PreviewFeature(
-			1,
-			"SomeOtherFeature",
-			"Feature that is longer in Preview already",
-			"Does something else but also somewhat new",
-			false,
-		),
+	private readonly optionalFeatures = [
+		{
+			id: 0,
+			key: "CycleTimeScatterPlot",
+			enabled: true,
+			isPreview: true,
+			name: "Cycle Time Scatterplot",
+			description: "Shows Cycle Time Scatterplot for a team",
+		},
+		{
+			id: 1,
+			key: "SomeOtherFeature",
+			enabled: false,
+			isPreview: false,
+			name: "Some Other Feature",
+			description: "Feature that is longer in Preview already",
+		},
 	];
 
 	constructor(useDelay: boolean, throwError = false) {
@@ -317,29 +319,31 @@ export class DemoApiService
 		await this.unSubscribeFromUpdates(projectId, "Forecasts");
 	}
 
-	async getAllFeatures(): Promise<PreviewFeature[]> {
+	async getAllFeatures(): Promise<IOptionalFeature[]> {
 		await this.delay();
 
-		return this.previewFeatures;
+		return this.optionalFeatures;
 	}
 
-	async getFeatureByKey(key: string): Promise<PreviewFeature | null> {
+	async getFeatureByKey(key: string): Promise<IOptionalFeature | null> {
 		await this.delay();
 
-		const feature = this.previewFeatures.find((feature) => feature.key === key);
+		const feature = this.optionalFeatures.find(
+			(feature) => feature.key === key,
+		);
 		return feature || null;
 	}
 
-	async updateFeature(feature: PreviewFeature): Promise<void> {
+	async updateFeature(feature: IOptionalFeature): Promise<void> {
 		await this.delay();
 
-		const featureIndex = this.previewFeatures.findIndex(
+		const featureIndex = this.optionalFeatures.findIndex(
 			(f) => f.key === feature.key,
 		);
 
 		if (featureIndex >= 0) {
-			this.previewFeatures.splice(featureIndex, 1);
-			this.previewFeatures.splice(featureIndex, 0, feature);
+			this.optionalFeatures.splice(featureIndex, 1);
+			this.optionalFeatures.splice(featureIndex, 0, feature);
 		}
 	}
 

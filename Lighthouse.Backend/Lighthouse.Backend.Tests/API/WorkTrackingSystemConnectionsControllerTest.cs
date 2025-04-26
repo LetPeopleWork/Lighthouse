@@ -2,7 +2,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Preview;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<ICryptoService> cryptoServiceMock;
 
-        private PreviewFeature linearIntegreationPreviewFeature;
+        private OptionalFeature linearIntegreationPreviewFeature;
 
         [SetUp]
         public void Setup()
@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API
             cryptoServiceMock.Setup(x => x.Encrypt(It.IsAny<string>())).Returns((string input) => { return input; });
             cryptoServiceMock.Setup(x => x.Decrypt(It.IsAny<string>())).Returns((string input) => { return input; });
 
-            linearIntegreationPreviewFeature = new PreviewFeature { Enabled = true, Id = 12, Key = PreviewFeatureKeys.LinearIntegrationKey };
+            linearIntegreationPreviewFeature = new OptionalFeature { Enabled = true, Id = 12, Key = OptionalFeatureKeys.LinearIntegrationKey };
         }
 
         [Test]
@@ -281,10 +281,10 @@ namespace Lighthouse.Backend.Tests.API
 
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
-            var previewFeatureRepositoryMock = new Mock<IRepository<PreviewFeature>>();
-            previewFeatureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<PreviewFeature, bool>>())).Returns(linearIntegreationPreviewFeature);
+            var optionalFeatureRepositoryMock = new Mock<IRepository<OptionalFeature>>();
+            optionalFeatureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns(linearIntegreationPreviewFeature);
 
-            return new WorkTrackingSystemConnectionsController(workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, previewFeatureRepositoryMock.Object);
+            return new WorkTrackingSystemConnectionsController(workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, optionalFeatureRepositoryMock.Object);
         }
     }
 }

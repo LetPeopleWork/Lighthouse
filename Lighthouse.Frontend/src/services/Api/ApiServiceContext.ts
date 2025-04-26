@@ -7,9 +7,9 @@ import { DemoApiService } from "./DemoApiService";
 import { ForecastService, type IForecastService } from "./ForecastService";
 import { type ILogService, LogService } from "./LogService";
 import {
-	type IPreviewFeatureService,
-	PreviewFeatureService,
-} from "./PreviewFeatureService";
+	type IOptionalFeatureService,
+	OptionalFeatureService,
+} from "./OptionalFeatureService";
 import {
 	type IProjectMetricsService,
 	ProjectMetricsService,
@@ -37,7 +37,7 @@ export interface IApiServiceContext {
 	projectMetricsService: IProjectMetricsService;
 	versionService: IVersionService;
 	workTrackingSystemService: IWorkTrackingSystemService;
-	previewFeatureService: IPreviewFeatureService;
+	optionalFeatureService: IOptionalFeatureService;
 	updateSubscriptionService: IUpdateSubscriptionService;
 }
 
@@ -55,7 +55,7 @@ const defaultServices: IApiServiceContext = {
 	projectMetricsService: new ProjectMetricsService(),
 	versionService: new VersionService(),
 	workTrackingSystemService: new WorkTrackingSystemService(),
-	previewFeatureService: new PreviewFeatureService(),
+	optionalFeatureService: new OptionalFeatureService(),
 	updateSubscriptionService: new UpdateSubscriptionService(),
 };
 
@@ -72,7 +72,7 @@ const demoServices: IApiServiceContext = {
 	projectMetricsService: demoApiService,
 	versionService: demoApiService,
 	workTrackingSystemService: demoApiService,
-	previewFeatureService: demoApiService,
+	optionalFeatureService: demoApiService,
 	updateSubscriptionService: demoApiService,
 };
 

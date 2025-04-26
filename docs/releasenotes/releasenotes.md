@@ -56,7 +56,7 @@ Due to the nature of the change, it can also be that refreshing teams will take 
 ## Support for Integration with AI Clients
 While everybody on LinkedIn seems to be an AI Expert, Prompt Engineer, or Vibe Coding Coach, we stay true to ourselves and practice rather than just talk. So we've made Lighthouse an [MCP Server](https://modelcontextprotocol.io/introduction) that integrates with your AI tool of choice. You can enable the feature via the settings:
 
-![MCP Server Feature Toggle](../assets/settings/previewfeatures.png)
+![MCP Server Feature Toggle](../assets/settings/optionalfeatures.png)
 
 Once done, you can set up your tool of choice (see https://modelcontextprotocol.io/clients for supported clients) to interact with Lighthouse. We've tested the integration with:
 - VS Code Copilot

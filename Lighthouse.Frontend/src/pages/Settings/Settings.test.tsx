@@ -18,8 +18,8 @@ vi.mock("./DefaultTeamSettings/DefaultTeamSettings", () => ({
 vi.mock("./DefaultProjectSettings/DefaultProjectSettings", () => ({
 	default: () => <div>Default Project Settings</div>,
 }));
-vi.mock("./PreviewFeatures/PreviewFeaturesTab", () => ({
-	default: () => <div>Preview Features</div>,
+vi.mock("./OptionalFeatures/OptionalFeaturesTab", () => ({
+	default: () => <div>Optional Features</div>,
 }));
 vi.mock("../../components/App/LetPeopleWork/Tutorial/TutorialButton", () => ({
 	default: () => <button type="button">Tutorial Button</button>,
@@ -71,9 +71,9 @@ describe("Settings Component", () => {
 		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
 	});
 
-	it("should switch to Preview Features tab when clicked", () => {
-		fireEvent.click(screen.getByTestId("preview-features-tab"));
-		expect(screen.getByTestId("preview-features-panel")).toBeVisible();
+	it("should switch to Optional Features tab when clicked", () => {
+		fireEvent.click(screen.getByTestId("optional-features-tab"));
+		expect(screen.getByTestId("optional-features-panel")).toBeVisible();
 		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
 	});
 

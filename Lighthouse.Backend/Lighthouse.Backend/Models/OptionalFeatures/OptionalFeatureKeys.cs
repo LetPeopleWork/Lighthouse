@@ -1,6 +1,6 @@
-﻿namespace Lighthouse.Backend.Models.Preview
+﻿namespace Lighthouse.Backend.Models.OptionalFeatures
 {
-    public static class PreviewFeatureKeys
+    public static class OptionalFeatureKeys
     {
         public const string LighthouseChartKey = "LighthouseChart";
 

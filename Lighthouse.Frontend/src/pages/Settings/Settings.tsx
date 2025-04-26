@@ -22,7 +22,7 @@ import DataRetentionSettingsTab from "./DataRetention/DataRetentionSettingsTab";
 import DefaultProjectSettings from "./DefaultProjectSettings/DefaultProjectSettings";
 import DefaultTeamSettings from "./DefaultTeamSettings/DefaultTeamSettings";
 import LogSettings from "./LogSettings/LogSettings";
-import PreviewFeaturesTab from "./PreviewFeatures/PreviewFeaturesTab";
+import OptionalFeaturesTab from "./OptionalFeatures/OptionalFeaturesTab";
 import RefreshSettingsTab from "./Refresh/RefreshSettingsTab";
 
 const Settings: React.FC = () => {
@@ -82,11 +82,11 @@ const Settings: React.FC = () => {
 		},
 		{
 			value: "80",
-			label: "Preview Features",
-			testId: "preview-features-tab",
-			panelTestId: "preview-features-panel",
+			label: "Optional Features",
+			testId: "optional-features-tab",
+			panelTestId: "optional-features-panel",
 			icon: <BiotechIcon />,
-			component: <PreviewFeaturesTab />,
+			component: <OptionalFeaturesTab />,
 		},
 		{
 			value: "99",

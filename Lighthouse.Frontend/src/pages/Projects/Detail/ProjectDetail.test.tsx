@@ -6,13 +6,13 @@ import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type { IPreviewFeatureService } from "../../../services/Api/PreviewFeatureService";
+import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import type { IProjectService } from "../../../services/Api/ProjectService";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import type { IUpdateSubscriptionService } from "../../../services/UpdateSubscriptionService";
 import {
 	createMockApiServiceContext,
-	createMockPreviewFeatureService,
+	createMockOptionalFeatureService,
 	createMockProjectService,
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
@@ -80,8 +80,8 @@ vi.mock("../../../components/Common/ActionButton/ActionButton", () => ({
 
 const mockProjectService: IProjectService = createMockProjectService();
 const mockTeamService: ITeamService = createMockTeamService();
-const mockPreviewFeatureService: IPreviewFeatureService =
-	createMockPreviewFeatureService();
+const mockOptionalFeatureService: IOptionalFeatureService =
+	createMockOptionalFeatureService();
 const mockUpdateSubscriptionService: IUpdateSubscriptionService =
 	createMockUpdateSubscriptionService();
 
@@ -107,7 +107,7 @@ const MockApiServiceProvider = ({
 	const mockContext = createMockApiServiceContext({
 		projectService: mockProjectService,
 		teamService: mockTeamService,
-		previewFeatureService: mockPreviewFeatureService,
+		optionalFeatureService: mockOptionalFeatureService,
 		updateSubscriptionService: mockUpdateSubscriptionService,
 	});
 

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-export class PreviewFeaturesPage {
+export class OptionalFeaturesPage {
 	page: Page;
 
 	constructor(page: Page) {

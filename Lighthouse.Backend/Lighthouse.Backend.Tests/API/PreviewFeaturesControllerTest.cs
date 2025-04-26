@@ -1,31 +1,28 @@
 ﻿using Lighthouse.Backend.API;
-using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Preview;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Moq;
-using NuGet.Configuration;
 
 namespace Lighthouse.Backend.Tests.API
 {
-    public class PreviewFeaturesControllerTest
+    public class OptionalFeaturesControllerTest
     {
-        private Mock<IRepository<PreviewFeature>> repositoryMock;
+        private Mock<IRepository<OptionalFeature>> repositoryMock;
 
         [SetUp]
         public void Setup()
         {
-            repositoryMock = new Mock<IRepository<PreviewFeature>>();
+            repositoryMock = new Mock<IRepository<OptionalFeature>>();
         }
 
         [Test]
         public void GetAllFeatures_ReturnsFromRepository()
         {
-            var features = new List<PreviewFeature>
+            var features = new List<OptionalFeature>
             {
-                new PreviewFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false },
-                new PreviewFeature { Id = 1, Key = "Key2", Name = "Feature 2", Description = "Bar", Enabled = true },
+                new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false },
+                new OptionalFeature { Id = 1, Key = "Key2", Name = "Feature 2", Description = "Bar", Enabled = true },
             };
 
             repositoryMock.Setup(x => x.GetAll()).Returns(features);
@@ -45,13 +42,13 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPreviewFeautreByKey_KeyDoesNotExist_ReturnsNotFound()
+        public void GetOptionalFeautreByKey_KeyDoesNotExist_ReturnsNotFound()
         {
-            repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<PreviewFeature, bool>>())).Returns((PreviewFeature)null);
+            repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns((OptionalFeature)null);
 
             var subject = CreateSubject();
 
-            var response = subject.GetPreviewFeatureByKey("InexistingKey");
+            var response = subject.GetOptionalFeatureByKey("InexistingKey");
 
             Assert.Multiple(() =>
             {
@@ -61,14 +58,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetPreviewFeautreByKey_KeyExists_ReturnsFeature()
+        public void GetOptionalFeautreByKey_KeyExists_ReturnsFeature()
         {
-            var feature = new PreviewFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
-            repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<PreviewFeature, bool>>())).Returns(feature);
+            var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
+            repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns(feature);
 
             var subject = CreateSubject();
 
-            var response = subject.GetPreviewFeatureByKey("Key1");
+            var response = subject.GetOptionalFeatureByKey("Key1");
 
             Assert.Multiple(() =>
             {
@@ -81,14 +78,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdatePreviewFeature_FeatureWithIdDoesNotExist_ReturnsNotFound()
+        public async Task UpdateOptionalFeature_FeatureWithIdDoesNotExist_ReturnsNotFound()
         {
-            var feature = new PreviewFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
-            repositoryMock.Setup(x => x.GetById(1)).Returns((PreviewFeature)null);
+            var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
+            repositoryMock.Setup(x => x.GetById(1)).Returns((OptionalFeature)null);
 
             var subject = CreateSubject();
 
-            var response = await subject.UpdatePreviewFeature(1, feature);
+            var response = await subject.UpdateOptionalFeature(1, feature);
 
             Assert.Multiple(() =>
                 {
@@ -98,14 +95,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdatePreviewFeature_FeatureWithIdExists_Updates()
+        public async Task UpdateOptionalFeature_FeatureWithIdExists_Updates()
         {
-            var feature = new PreviewFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
+            var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
             repositoryMock.Setup(x => x.GetById(0)).Returns(feature);
 
             var subject = CreateSubject();
 
-            var response = await subject.UpdatePreviewFeature(0, feature);
+            var response = await subject.UpdateOptionalFeature(0, feature);
 
             Assert.Multiple(() =>
                 {
@@ -120,9 +117,9 @@ namespace Lighthouse.Backend.Tests.API
                 });
         }
 
-        private PreviewFeaturesController CreateSubject()
+        private OptionalFeaturesController CreateSubject()
         {
-            return new PreviewFeaturesController(repositoryMock.Object);
+            return new OptionalFeaturesController(repositoryMock.Object);
         }
     }
 }

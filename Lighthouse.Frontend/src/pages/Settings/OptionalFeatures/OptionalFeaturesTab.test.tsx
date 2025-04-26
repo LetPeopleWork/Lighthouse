@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type { IPreviewFeatureService } from "../../../services/Api/PreviewFeatureService";
+import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import {
 	createMockApiServiceContext,
-	createMockPreviewFeatureService,
+	createMockOptionalFeatureService,
 } from "../../../tests/MockApiServiceProvider";
-import PreviewFeaturesTab from "./PreviewFeaturesTab";
+import OptionalFeaturesTab from "./OptionalFeaturesTab";
 
 // Mocking the Loading Animation component
 vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
@@ -23,20 +23,20 @@ vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
 	),
 }));
 
-const mockPreviewFeatureService: IPreviewFeatureService =
-	createMockPreviewFeatureService();
+const mockOptionalFeatureService: IOptionalFeatureService =
+	createMockOptionalFeatureService();
 
 const mockGetAllFeatures = vi.fn();
 const mockUpdateFeature = vi.fn();
 
-mockPreviewFeatureService.getAllFeatures = mockGetAllFeatures;
-mockPreviewFeatureService.updateFeature = mockUpdateFeature;
+mockOptionalFeatureService.getAllFeatures = mockGetAllFeatures;
+mockOptionalFeatureService.updateFeature = mockUpdateFeature;
 
 const MockApiServiceProvider = ({
 	children,
 }: { children: React.ReactNode }) => {
 	const mockContext = createMockApiServiceContext({
-		previewFeatureService: mockPreviewFeatureService,
+		optionalFeatureService: mockOptionalFeatureService,
 	});
 
 	return (
@@ -49,12 +49,12 @@ const MockApiServiceProvider = ({
 const renderWithMockApiProvider = () => {
 	render(
 		<MockApiServiceProvider>
-			<PreviewFeaturesTab />
+			<OptionalFeaturesTab />
 		</MockApiServiceProvider>,
 	);
 };
 
-describe("PreviewFeaturesTab component", () => {
+describe("OptionalFeaturesTab component", () => {
 	beforeEach(() => {
 		mockGetAllFeatures.mockResolvedValue([
 			{
@@ -63,6 +63,7 @@ describe("PreviewFeaturesTab component", () => {
 				key: "feature1",
 				description: "Description 1",
 				enabled: false,
+				isPreview: true,
 			},
 			{
 				id: 2,
@@ -70,6 +71,7 @@ describe("PreviewFeaturesTab component", () => {
 				key: "feature2",
 				description: "Description 2",
 				enabled: true,
+				isPreview: false,
 			},
 		]);
 	});
@@ -78,7 +80,7 @@ describe("PreviewFeaturesTab component", () => {
 		vi.clearAllMocks();
 	});
 
-	it("should fetch and display preview features", async () => {
+	it("should fetch and display optional features", async () => {
 		renderWithMockApiProvider();
 
 		await waitFor(() => {
@@ -107,11 +109,41 @@ describe("PreviewFeaturesTab component", () => {
 			key: "feature1",
 			description: "Description 1",
 			enabled: true,
+			isPreview: true,
 		});
 
 		// Wait for the state to update and check if the switch reflects the new state
 		await waitFor(() => {
 			expect(switchElement).toBeChecked();
 		});
+	});
+
+	it("should display preview indicator for preview features", async () => {
+		renderWithMockApiProvider();
+
+		// Wait for the features to load
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeVisible();
+		});
+
+		// Check if preview indicator exists for Feature 1 (which is a preview feature)
+		const previewIndicator = screen.getByTestId("feature1-preview-indicator");
+		expect(previewIndicator).toBeInTheDocument();
+		expect(screen.getByText("Preview")).toBeInTheDocument();
+	});
+
+	it("should not display preview indicator for non-preview features", async () => {
+		renderWithMockApiProvider();
+
+		// Wait for the features to load
+		await waitFor(() => {
+			expect(screen.getByText("Feature 2")).toBeVisible();
+		});
+
+		// Check that there's no preview indicator for Feature 2
+		const previewIndicators = screen.queryByTestId(
+			"feature2-preview-indicator",
+		);
+		expect(previewIndicators).not.toBeInTheDocument();
 	});
 });

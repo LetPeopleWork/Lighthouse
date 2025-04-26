@@ -12,7 +12,7 @@ using Serilog;
 using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
 using Lighthouse.Backend.Models.History;
-using Lighthouse.Backend.Models.Preview;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Collections.Concurrent;
 using System.Security.Cryptography.X509Certificates;
@@ -156,13 +156,13 @@ namespace Lighthouse.Backend
         private static void ConfigureOptionalServices(WebApplicationBuilder builder)
         {
             var serviceProvider = builder.Services.BuildServiceProvider();
-            var previewFeatureRepository = serviceProvider.GetRequiredService<IRepository<PreviewFeature>>();
+            var optionalFeatureRepository = serviceProvider.GetRequiredService<IRepository<OptionalFeature>>();
 
-            var mcpFeature = previewFeatureRepository.GetByPredicate(f => f.Key == PreviewFeatureKeys.McpServerKey);
+            var mcpFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
             ConfigureMcpServer(builder, mcpFeature);
         }
 
-        private static void ConfigureMcpServer(WebApplicationBuilder builder, PreviewFeature? mcpFeature)
+        private static void ConfigureMcpServer(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
         {
             if (mcpFeature?.Enabled ?? false)
             {
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
             builder.Services.AddScoped<IRepository<FeatureHistoryEntry>, FeatureHistoryRepository>();
-            builder.Services.AddScoped<IRepository<PreviewFeature>, PreviewFeatureRepository>();
+            builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
 
             // Factories
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
