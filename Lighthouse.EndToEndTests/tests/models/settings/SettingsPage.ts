@@ -3,8 +3,8 @@ import { ProjectEditPage } from "../projects/ProjectEditPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
 import { DataRetentionSettingsPage } from "./DataRetentionSettings/DataRetentionSettingsPage";
 import { LogsPage } from "./Logs/LogsPage";
-import { PeriodicRefreshSettingsPage } from "./PeriodicRefreshSettings/PeriodicRefreshSettingsPage";
 import { OptionalFeaturesPage } from "./OptionalFeatures/OptionalFeaturesPage";
+import { PeriodicRefreshSettingsPage } from "./PeriodicRefreshSettings/PeriodicRefreshSettingsPage";
 import { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystems/WorkTrackingSystemsSettingsPage";
 
 export class SettingsPage {

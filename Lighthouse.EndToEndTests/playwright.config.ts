@@ -1,9 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
 export class TestConfig {
 	static readonly ADOTOKENNAME: string = "AzureDevOpsLighthouseE2ETestToken";
 	static readonly JIRATOKENNAME: string = "JiraLighthouseIntegrationTestToken";
 	static readonly LIGHTHOUSEURLNAME: string = "LIGHTHOUSEURL";
+	static readonly LINEARAPITOKENNAME: string = "LinearAPIKey";
 
 	private static getEnvVariable(name: string, defaultValue: string): string {
 		const value = process.env[name];
@@ -29,6 +31,10 @@ export class TestConfig {
 
 	public static get JiraToken(): string {
 		return TestConfig.getEnvVariable(TestConfig.JIRATOKENNAME, "");
+	}
+
+	public static get LinearApiKey(): string {
+		return TestConfig.getEnvVariable(TestConfig.LINEARAPITOKENNAME, "");
 	}
 }
 
