@@ -1,6 +1,7 @@
 ---
 title: Work Tracking Systems
 layout: home
+parent: Concepts
 nav_order: 1
 has_children: true
 ---
