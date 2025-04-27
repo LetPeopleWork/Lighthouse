@@ -2,7 +2,8 @@
 title: Jira
 layout: home
 nav_order: 2
-parent: Concepts
+parent: Work Tracking Systems
+grand_parent: Concepts
 ---
 
 This page will give you an overview of the specifics to Jira when using Lighthouse. In detail, it will cover:  

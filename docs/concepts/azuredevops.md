@@ -2,7 +2,8 @@
 title: Azure DevOps
 layout: home
 nav_order: 2
-parent: Concepts
+parent: Work Tracking Systems
+grand_parent: Concepts
 ---
 
 This page will give you an overview of the specifics to Azure DevOps when using Lighthouse. In detail, it will cover:  
