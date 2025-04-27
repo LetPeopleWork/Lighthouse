@@ -15,7 +15,7 @@ If you can't find answers to your questions neither in the documentation nor on 
     How Do I Create Queries?
   </summary>
   {: .text-delta }
-We use built-in functionality for our supported languages. If you struggle with creating queries, please check the respective documentation. We provided some examples for [Jira](../concepts/jira.html) and [Azure DevOps](../concepts/azuredevops.html). Apart from that, please rely on the official documentation.
+We use built-in functionality for our supported languages. If you struggle with creating queries, please check the respective documentation. We provided some examples for [Jira](../concepts/worktrackingsystems/jira.html) and [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html). Apart from that, please rely on the official documentation.
 
 For Jira, you may start here: [Use advanced search with Jira Query Language (JQL)](https://support.atlassian.com/jira-service-management-cloud/docs/use-advanced-search-with-jira-query-language-jql/)  
 

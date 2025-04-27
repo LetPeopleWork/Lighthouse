@@ -27,7 +27,7 @@ The general information contains the name of your project. This can be anything 
 ## Work Item Query
 The Work Item Query is the query that is executed against your [Work Tracking System](../../concepts/concepts.html#work-tracking-system) to get the features relevant for the project. The specific syntax depends on the Work Tracking System you are using.
 
-See the [Jira](../../concepts/jira.html#projects) and [Azure DevOps](../../concepts/azuredevops.html#projects) specific pages for details on the query.
+See the [Jira](../../concepts/worktrackingsystems/jira.html#projects) and [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#projects) specific pages for details on the query.
 
 # Work Item Types
 Independent of the [Work Item Query](#work-item-query), Lighthouse needs to know which item types your Features have. Thus you can define the item types that should be taken into account for this specific project.
@@ -71,7 +71,7 @@ In order for Lighthouse to get the data it needs for forecasting, it needs to co
 
 When creating or modifying both Teams or Projects, you can either choose an existing connection or create a new one.
 
-Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/jira.html#work-tracking-system-connection) and [Azure DevOps](../../concepts/azuredevops.html#work-tracking-system-connection) for details.
+Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/worktrackingsystems/jira.html#work-tracking-system-connection) and [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#work-tracking-system-connection) for details.
 
 # Milestones
 Milestones define important dates in your project. This could be special events (like a fair or a customer visit), milestones in your project like (like a deployment or code freeze date), or simply based on iterations (like your Sprint Reviews).

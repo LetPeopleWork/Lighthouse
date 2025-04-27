@@ -50,7 +50,7 @@ As mentioned above, use a *fixed* Throughput with caution, and ideally only temp
 The Work Item Query is the query that is executed against your [Work Tracking System](../../concepts/concepts.html#work-tracking-system) to get the teams backlog.
 The query should fetch all items that "belong" to this team and the specific syntax depends on the Work Tracking System you are using.
 
-See the [Jira](../../concepts/jira.html#team-backlog) and [Azure DevOps](../../concepts/azuredevops.html#team-backlog) specific pages for details on the query.
+See the [Jira](../../concepts/worktrackingsystems/jira.html#team-backlog) and [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#team-backlog) specific pages for details on the query.
 
 # Work Item Types
 In order to properly forecast, Lighthouse needs to know which items your team works on that are relevant for the forecast. Thus you can define the item types that should be taken into account for this specific team.
@@ -87,7 +87,7 @@ In order for Lighthouse to get the data it needs for forecasting, it needs to co
 
 When creating or modifying both Teams or Projects, you can either choose an existing connection or create a new one.
 
-Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/jira.html#work-tracking-system-connection) and [Azure DevOps](../../concepts/azuredevops.html#work-tracking-system-connection) for details.
+Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/worktrackingsystems/jira.html#work-tracking-system-connection) and [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#work-tracking-system-connection) for details.
 
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
