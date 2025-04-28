@@ -1,7 +1,7 @@
 import { TestConfig } from "../../../playwright.config";
 import { expect, test } from "../../fixutres/LighthouseFixture";
 
-test.skip("should be able to handle a team defined in Linear", async ({
+test("should be able to handle a team defined in Linear", async ({
 	overviewPage,
 }) => {
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
