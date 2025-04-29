@@ -4,12 +4,43 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse v25.4.25.614
+# Lighthouse v25.4.29.811
 {: .d-inline-block }
 Latest
 {: .label .label-green }
 
+## Properly read Rank Field from Jira
+The override introduced in the [previous version](#lighthouse-v25425614) was removed again and instead replaced by fetching the field from Jira via the API.
+
+## Linear Integration
+{: .d-inline-block }
+Preview
+{: .label .label-yellow }
+
+We've added support for [Linear](https://linear.app) in a preview version in Lighthouse. While the functionality is limited (see [docs](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/linear.html)), it allows pilot users to try it out and give us feedback.
+
+You can enable the Linear Integration via the *Optional Features*:
+
+![Linear Integration Feature Toggle](../assets/settings/optionalfeatures.png)
+
+If you are using Linear and try it with Lighthouse, please reach out to us via Slack so we can learn how to make this more useful.
+
+
+## Other Changes
+- Update of various third party libraries
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.4.25.614...v25.4.29.811)
+
+## Contributions ❤️ 
+Special Thanks to [Oliver Oyston](https://www.linkedin.com/in/oliveroyston/) for his contribution!
+
+# Lighthouse v25.4.25.614
+
 ## Allow to override rank field for Jira
+{: .d-inline-block }
+Deprecated
+{: .label .label-red }
+
 In some occasions, it may be needed to define a specific _rank_ field in Jira. This is now possible via the config file. See [documentation](https://docs.lighthouse.letpeople.work/Installation/configuration.html#rank-field-override) for details.
 
 ## Fixed Bugs
