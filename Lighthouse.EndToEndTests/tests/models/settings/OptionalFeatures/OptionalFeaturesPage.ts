@@ -11,6 +11,8 @@ export class OptionalFeaturesPage {
 		const featureToggle = this.page
 			.getByTestId(`${featureName}-toggle`)
 			.getByRole("checkbox");
+		
+		await featureToggle.waitFor({ state: 'visible', timeout: 10000 });
 
 		if (await featureToggle.isChecked()) {
 			return;
