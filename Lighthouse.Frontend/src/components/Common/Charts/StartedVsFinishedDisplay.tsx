@@ -9,6 +9,12 @@ import {
 	Typography,
 } from "@mui/material";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import {
+	certainColor,
+	confidentColor,
+	realisticColor,
+	riskyColor,
+} from "../../../utils/theme/colors";
 
 interface StartedVsFinishedDisplayProps {
 	startedItems: RunChartData | null;
@@ -32,6 +38,65 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	const startedAverage = calculateAverage(startedItems);
 	const closedTotal = closedItems?.total ?? 0;
 	const closedAverage = calculateAverage(closedItems);
+
+	const calculateDifference = (): number => {
+		if (startedTotal === 0 && closedTotal === 0) return 0;
+		if (startedTotal === 0) return 100;
+		if (closedTotal === 0) return 100;
+
+		const larger = Math.max(startedTotal, closedTotal);
+		const smaller = Math.min(startedTotal, closedTotal);
+		return ((larger - smaller) / larger) * 100;
+	};
+
+	const getDifferenceColor = (difference: number): string => {
+		if (difference <= 5) return certainColor;
+		if (difference <= 10) return realisticColor;
+		if (difference <= 15) return confidentColor;
+		return riskyColor;
+	};
+
+	const getDifferenceText = (): {
+		text: string;
+		tip: string;
+		color: string;
+	} => {
+		const difference = calculateDifference();
+		const color = getDifferenceColor(difference);
+		let tip = "";
+
+		if (difference <= 5) {
+			tip = "Good job!";
+		} else if (difference <= 15) {
+			tip = "Observe and take action if needed!";
+		} else {
+			tip = "Reflect on WIP control!";
+		}
+
+		if (difference <= 5) {
+			return {
+				text: "You are keeping a steady WIP",
+				tip,
+				color,
+			};
+		}
+
+		if (startedTotal > closedTotal) {
+			return {
+				text: "You are starting more items than you close",
+				tip,
+				color,
+			};
+		}
+
+		return {
+			text: "You are closing more items than you start",
+			tip,
+			color,
+		};
+	};
+
+	const differenceInfo = getDifferenceText();
 
 	return (
 		<Card sx={{ m: 2, p: 1, borderRadius: 2, cursor: "pointer" }}>
@@ -75,6 +140,23 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 						</TableRow>
 					</TableBody>
 				</Table>
+
+				<Box
+					sx={{
+						mt: 1,
+						p: 1,
+						backgroundColor: `${differenceInfo.color}20`,
+						borderLeft: `4px solid ${differenceInfo.color}`,
+						borderRadius: 1,
+					}}
+				>
+					<Typography variant="body2" sx={{ fontWeight: "medium" }}>
+						{differenceInfo.text}
+					</Typography>
+					<Typography variant="caption" sx={{ display: "block", mt: 0.5 }}>
+						{differenceInfo.tip}
+					</Typography>
+				</Box>
 			</CardContent>
 		</Card>
 	);

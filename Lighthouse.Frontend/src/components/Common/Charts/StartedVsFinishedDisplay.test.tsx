@@ -128,4 +128,99 @@ describe("FlowInformationDisplay component", () => {
 			expect(within(closedRow).getByText("0.0")).toBeInTheDocument();
 		}
 	});
+
+	describe("WIP status indicator", () => {
+		it("should show 'good' indicator when started and closed are within 5%", () => {
+			// Within 5% difference (good)
+			const startedItems = new RunChartData([9, 10, 11], 3, 30);
+			const closedItems = new RunChartData([10, 10, 9], 3, 29);
+
+			render(
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={closedItems}
+				/>,
+			);
+
+			expect(
+				screen.getByText("You are keeping a steady WIP"),
+			).toBeInTheDocument();
+			expect(screen.getByText("Good job!")).toBeInTheDocument();
+		});
+
+		it("should show 'caution' indicator when difference is between 5% and 10%", () => {
+			// ~8% difference (caution)
+			const startedItems = new RunChartData([10, 10, 10], 3, 30);
+			const closedItems = new RunChartData([9, 9, 10], 3, 28);
+
+			render(
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={closedItems}
+				/>,
+			);
+
+			// Since 30 vs 28 means started > closed
+			expect(
+				screen.getByText("You are starting more items than you close"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByText("Observe and take action if needed!"),
+			).toBeInTheDocument();
+		});
+
+		it("should show 'bad' indicator when difference is more than 15%", () => {
+			// 20% difference (bad)
+			const startedItems = new RunChartData([10, 10, 10], 3, 30);
+			const closedItems = new RunChartData([8, 8, 8], 3, 24);
+
+			render(
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={closedItems}
+				/>,
+			);
+
+			expect(
+				screen.getByText("You are starting more items than you close"),
+			).toBeInTheDocument();
+			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
+		});
+
+		it("should show appropriate message when closing more than starting", () => {
+			// 25% difference with closed > started
+			const startedItems = new RunChartData([6, 6, 6], 3, 18);
+			const closedItems = new RunChartData([8, 8, 8], 3, 24);
+
+			render(
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={closedItems}
+				/>,
+			);
+
+			expect(
+				screen.getByText("You are closing more items than you start"),
+			).toBeInTheDocument();
+			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
+		});
+
+		it("should handle zero values properly", () => {
+			// One side is zero
+			const startedItems = new RunChartData([0, 0, 0], 3, 0);
+			const closedItems = new RunChartData([5, 5, 5], 3, 15);
+
+			render(
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={closedItems}
+				/>,
+			);
+
+			expect(
+				screen.getByText("You are closing more items than you start"),
+			).toBeInTheDocument();
+			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
+		});
+	});
 });
