@@ -5,6 +5,7 @@ import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
+import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
@@ -12,6 +13,7 @@ import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { appColors } from "../../../utils/theme/colors";
 import ItemsInProgress from "./ItemsInProgress";
 
 interface TeamMetricsViewProps {
@@ -199,6 +201,30 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 						startDate={startDate}
 						chartData={wipOverTimeData}
 						displayTotal={false}
+					/>
+				)}
+			</Grid>
+
+			<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
+				{throughputRunChartData && startedItems && (
+					<StackedAreaChart
+						title="Simplified Cumulative Flow Diagram"
+						startDate={startDate}
+						areas={[
+							{
+								index: 1,
+								title: "Doing",
+								area: startedItems,
+								color: appColors.primary.light,
+								startOffset: wipOverTimeData?.getValueOnDay(0) ?? 0,
+							},
+							{
+								index: 2,
+								title: "Done",
+								area: throughputRunChartData,
+								color: appColors.secondary.light,
+							},
+						]}
 					/>
 				)}
 			</Grid>
