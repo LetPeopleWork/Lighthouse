@@ -1,6 +1,6 @@
 import { Card, CardContent, Typography } from "@mui/material";
 import type React from "react";
-import type { RunChartData } from "../../../models/Forecasts/RunChartData";
+import type { RunChartData } from "../../../models/Metrics/RunChartData";
 
 export interface ChartDataItem {
 	day: string;

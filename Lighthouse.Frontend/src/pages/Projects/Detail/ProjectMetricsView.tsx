@@ -6,7 +6,7 @@ import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePer
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
-import type { RunChartData } from "../../../models/Forecasts/RunChartData";
+import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IProject } from "../../../models/Project/Project";
 import type { IWorkItem } from "../../../models/WorkItem";

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { RunChartData } from "../../../models/Forecasts/RunChartData";
+import { RunChartData } from "../../../models/Metrics/RunChartData";
 import LineRunChart from "./LineRunChart";
 
 describe("LineRunChart component", () => {

@@ -5,8 +5,9 @@ import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
+import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
-import type { RunChartData } from "../../../models/Forecasts/RunChartData";
+import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -30,6 +31,16 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [cycleTimeData, setCycleTimeData] = useState<IWorkItem[]>([]);
 	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
 		[],
+	);
+
+	const [startedItemsData, setStartedItemsData] = useState<RunChartData | null>(
+		() => {
+			const valuePerUnitOfTime = Array(30)
+				.fill(0)
+				.map(() => Math.floor(Math.random() * 5) + 1);
+			const total = valuePerUnitOfTime.reduce((sum, value) => sum + value, 0);
+			return new RunChartData(valuePerUnitOfTime, 30, total);
+		},
 	);
 
 	const { teamMetricsService } = useContext(ApiServiceContext);
@@ -144,6 +155,12 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			</Grid>
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
 				<CycleTimePercentiles percentileValues={percentileValues} />
+			</Grid>
+			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
+				<StartedVsFinishedDisplay
+					startedItems={startedItemsData}
+					closedItems={throughputRunChartData}
+				/>
 			</Grid>
 
 			<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>

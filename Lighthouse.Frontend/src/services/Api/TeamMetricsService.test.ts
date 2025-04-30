@@ -1,6 +1,6 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RunChartData } from "../../models/Forecasts/RunChartData";
+import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../models/WorkItem";
 import { TeamMetricsService } from "./TeamMetricsService";
 

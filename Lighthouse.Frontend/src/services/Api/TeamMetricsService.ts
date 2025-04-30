@@ -1,4 +1,4 @@
-import { RunChartData } from "../../models/Forecasts/RunChartData";
+import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";

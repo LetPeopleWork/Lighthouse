@@ -8,7 +8,6 @@ import {
 import { Feature, type IFeature } from "../../models/Feature";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
-import { RunChartData } from "../../models/Forecasts/RunChartData";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
 import {
 	type ILighthouseRelease,
@@ -18,6 +17,7 @@ import {
 	type ILighthouseReleaseAsset,
 	LighthouseReleaseAsset,
 } from "../../models/LighthouseRelease/LighthouseReleaseAsset";
+import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IOptionalFeature } from "../../models/OptionalFeatures/OptionalFeature";
 import type { IPercentileValue } from "../../models/PercentileValue";
 import { Milestone } from "../../models/Project/Milestone";

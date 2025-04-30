@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RunChartData } from "./RunChartData";
+import { RunChartData } from "../Metrics/RunChartData";
 
 describe("Throughput", () => {
 	it("should create a Throughput instance with the correct properties", () => {

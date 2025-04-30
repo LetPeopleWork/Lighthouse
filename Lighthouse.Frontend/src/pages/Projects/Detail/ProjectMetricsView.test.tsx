@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { RunChartData } from "../../../models/Forecasts/RunChartData";
+import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { Project } from "../../../models/Project/Project";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";

@@ -1,7 +1,7 @@
 import { useTheme } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
 import type React from "react";
-import type { RunChartData } from "../../../models/Forecasts/RunChartData";
+import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import BaseRunChart from "./BaseRunChart";
 
 interface LineRunChartProps {

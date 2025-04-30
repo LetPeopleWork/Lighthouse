@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Feature } from "../../models/Feature";
-import { RunChartData } from "../../models/Forecasts/RunChartData";
+import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
 import { ProjectMetricsService } from "./ProjectMetricsService";
 
