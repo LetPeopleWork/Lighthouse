@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.API.DTO
             Name = team.Name;
             Id = team.Id;
             FeatureWip = team.FeatureWIP;
-            LastUpdated = team.TeamUpdateTime;
+            LastUpdated = DateTime.SpecifyKind(team.TeamUpdateTime, DateTimeKind.Utc);
             UseFixedDatesForThroughput = team.UseFixedDatesForThroughput;
 
             var throughputSettings = team.GetThroughputSettings();

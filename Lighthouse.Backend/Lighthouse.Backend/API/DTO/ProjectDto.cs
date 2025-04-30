@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             Name = project.Name;
             Id = project.Id;
-            LastUpdated = project.ProjectUpdateTime;
+            LastUpdated = DateTime.SpecifyKind(project.ProjectUpdateTime, DateTimeKind.Utc); ;
 
             InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
 

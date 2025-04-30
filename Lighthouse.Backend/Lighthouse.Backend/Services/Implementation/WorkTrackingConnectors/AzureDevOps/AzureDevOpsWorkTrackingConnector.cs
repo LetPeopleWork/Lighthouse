@@ -384,7 +384,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 return null;
             }
 
-            return lastTransitionDate.ToUniversalTime();
+            return DateTime.SpecifyKind(lastTransitionDate, DateTimeKind.Utc);
         }
 
         private static bool RevisionWasChangingState(AdoWorkItem revision, out (string state, DateTime changedDate) result)

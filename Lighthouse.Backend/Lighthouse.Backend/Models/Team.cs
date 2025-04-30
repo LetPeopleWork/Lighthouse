@@ -28,7 +28,7 @@
 
         public void ResetUpdateTime()
         {
-            TeamUpdateTime = DateTime.MinValue.ToUniversalTime();
+            TeamUpdateTime = DateTime.MinValue;
         }
 
         public void RefreshUpdateTime()

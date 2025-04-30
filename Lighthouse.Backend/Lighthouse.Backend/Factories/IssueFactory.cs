@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Factories
                 return null;
             }
 
-            return lastTransitionDate.ToUniversalTime();
+            return DateTime.SpecifyKind(lastTransitionDate, DateTimeKind.Utc);
         }
 
         private static DateTime? ExtractDateOfStateTransitionFromHistory(IEnumerable<string> targetStates, IEnumerable<string> statesToIgnoreTransitions, JsonElement history)
@@ -179,7 +179,12 @@ namespace Lighthouse.Backend.Factories
                 }
             }
 
-            return transitionDate?.ToUniversalTime();
+            if (transitionDate == null)
+            {
+                return null;
+            }
+
+            return DateTime.SpecifyKind(transitionDate.Value, DateTimeKind.Utc);
         }
 
         private static DateTime? GetCreatedDateFromFields(JsonElement fields)
@@ -192,7 +197,7 @@ namespace Lighthouse.Backend.Factories
             }
 
             var createdDate = DateTime.Parse(createdDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-            return createdDate.ToUniversalTime();
+            return DateTime.SpecifyKind(createdDate, DateTimeKind.Utc);
         }
 
         private static string GetTitleFromFields(JsonElement fields)

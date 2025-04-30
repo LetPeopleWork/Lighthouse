@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.API.DTO
     {
         public FeatureDto(Feature feature) : base(feature)
         {            
-            LastUpdated = feature.Forecast?.CreationTime ?? DateTime.MinValue;
+            LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
 
             Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(50, 70, 85, 95) ?? []);
