@@ -92,7 +92,7 @@ async function restoreDefaultTeamSettings(
 
 async function generateTestData(
 	request: APIRequestContext,
-	updateTeams: boolean,
+	teamsToUpdate: number[],
 ): Promise<TestData> {
 	const adoConnection = await createAzureDevOpsConnection(
 		request,
@@ -142,9 +142,20 @@ async function generateTestData(
 		jiraStates,
 	);
 
-	if (updateTeams) {
-		await updateTeamData(request, [team1, team2, team3]);
+	const teamsToProcess: ModelIdentifier[] = [];
+	if (teamsToUpdate.includes(0)) {
+		teamsToProcess.push(team1);
 	}
+
+	if (teamsToUpdate.includes(1)) {
+		teamsToProcess.push(team2);
+	}
+
+	if (teamsToUpdate.includes(2)) {
+		teamsToProcess.push(team3);
+	}
+
+	await updateTeamData(request, teamsToProcess);
 
 	const project1 = await createProject(
 		request,
@@ -201,19 +212,19 @@ export const testWithRestoredDefaultSettings =
 		},
 	});
 
-export const testWithUpdatedTeams = test.extend<LighthouseWithDataFixtures>({
-	testData: async ({ request }, use) => {
-		const data = await generateTestData(request, true);
-
-		await use(data);
-
-		await deleteTestData(request, data);
-	},
-});
+export function testWithUpdatedTeams(teamsToUpdate: number[] = [0, 1, 2]) {
+	return test.extend<LighthouseWithDataFixtures>({
+		testData: async ({ request }, use) => {
+			const data = await generateTestData(request, teamsToUpdate);
+			await use(data);
+			await deleteTestData(request, data);
+		},
+	});
+}
 
 export const testWithData = test.extend<LighthouseWithDataFixtures>({
 	testData: async ({ request }, use) => {
-		const data = await generateTestData(request, false);
+		const data = await generateTestData(request, []);
 
 		await use(data);
 

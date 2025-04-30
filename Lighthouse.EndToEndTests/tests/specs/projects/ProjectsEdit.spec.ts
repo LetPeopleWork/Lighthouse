@@ -10,12 +10,12 @@ import { deleteWorkTrackingSystemConnectionByName } from "../../helpers/api/work
 import { generateRandomName } from "../../helpers/names";
 
 const newProjectConfigurations = [
-	{ name: "Azure DevOps", index: 0 },
-	{ name: "Jira", index: 2 },
+	{ name: "Azure DevOps", index: 0, involvedTeams: [0, 1] },
+	{ name: "Jira", index: 2, involvedTeams: [2] },
 ];
 
-for (const { name, index } of newProjectConfigurations) {
-	testWithUpdatedTeams(
+for (const { name, involvedTeams, index } of newProjectConfigurations) {
+	testWithUpdatedTeams(involvedTeams)(
 		`should allow save after validate when editing existing ${name} project`,
 		async ({ testData, overviewPage }) => {
 			const project = testData.projects[index];
@@ -193,6 +193,7 @@ const newTeamConfigurations = [
 	{
 		name: "Jira",
 		workTrackingSystemIndex: 1,
+		involvedTeams: [2],
 		projectConfiguration: {
 			validWorkItemTypes: ["Epic"],
 			invalidWorkItemTypes: ["Feature"],
@@ -211,6 +212,7 @@ const newTeamConfigurations = [
 	{
 		name: "AzureDevOps",
 		workTrackingSystemIndex: 0,
+		involvedTeams: [0],
 		projectConfiguration: {
 			validWorkItemTypes: ["Epic"],
 			invalidWorkItemTypes: ["Feature"],
@@ -237,7 +239,7 @@ const newTeamConfigurations = [
 ];
 
 for (const teamConfiguration of newTeamConfigurations) {
-	testWithUpdatedTeams(
+	testWithUpdatedTeams(teamConfiguration.involvedTeams)(
 		`should allow to create a project team for ${teamConfiguration.name}`,
 		async ({ testData, overviewPage, request }) => {
 			let projectPage = await overviewPage.lightHousePage.goToProjects();
@@ -391,7 +393,7 @@ for (const teamConfiguration of newTeamConfigurations) {
 }
 
 for (const teamConfiguration of newTeamConfigurations) {
-	testWithUpdatedTeams(
+	testWithUpdatedTeams(teamConfiguration.involvedTeams)(
 		`should allow to create a new project with a new Work Tracking System ${teamConfiguration.name}`,
 		async ({ testData, overviewPage, request }) => {
 			test.fail(

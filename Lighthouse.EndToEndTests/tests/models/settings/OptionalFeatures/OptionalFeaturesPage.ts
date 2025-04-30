@@ -16,13 +16,14 @@ export class OptionalFeaturesPage {
 			return;
 		}
 
-		const featureToggleRequest = this.page.waitForResponse(response => 
-			response.url().includes('/api/optionalfeatures') && 
-			response.status() === 200
+		const featureToggleRequest = this.page.waitForResponse(
+			(response) =>
+				response.url().includes("/api/optionalfeatures") &&
+				response.status() === 200,
 		);
 
 		await featureToggle.click();
-		
+
 		// Make sure the request is completed
 		await featureToggleRequest;
 	}

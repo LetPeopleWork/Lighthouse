@@ -10,6 +10,7 @@ const testData = [
 	{
 		name: "Azure DevOps",
 		index: 1,
+		involvedTeams: [0, 1],
 		expectedFeatures: [
 			{
 				name: "Speedy note-taking",
@@ -40,6 +41,7 @@ const testData = [
 	{
 		name: "Jira",
 		index: 2,
+		involvedTeams: [2],
 		expectedFeatures: [
 			{
 				name: "Majestic Moments",
@@ -57,8 +59,8 @@ const testData = [
 	},
 ];
 
-for (const { index, name, expectedFeatures } of testData) {
-	testWithUpdatedTeams(
+for (const { index, name, involvedTeams, expectedFeatures } of testData) {
+	testWithUpdatedTeams(involvedTeams)(
 		`should show correct Features for ${name} project on refresh`,
 		async ({ testData, overviewPage }) => {
 			const project = testData.projects[index];
@@ -148,7 +150,7 @@ testWithData(
 	},
 );
 
-testWithUpdatedTeams(
+testWithUpdatedTeams([0, 1])(
 	"should include milestones and WIP in feature calculation",
 	async ({ testData, overviewPage }) => {
 		const project = testData.projects[1];

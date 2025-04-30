@@ -69,7 +69,7 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 			label: areaItem.title,
 			area: true,
 			showMark: false,
-			color: areaItem.color ? `${areaItem.color}80` : undefined,
+			color: areaItem.color ? `${areaItem.color}50` : undefined,
 		};
 	});
 
