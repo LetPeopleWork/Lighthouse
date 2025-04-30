@@ -9,6 +9,11 @@ export interface ITeamMetricsService {
 		startDate: Date,
 		endDate: Date,
 	): Promise<RunChartData>;
+	getStartedItems(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData>;
 	getWorkInProgressOverTime(
 		teamId: number,
 		startDate: Date,
@@ -40,6 +45,23 @@ export class TeamMetricsService
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<RunChartData>(
 				`/teams/${teamId}/metrics/throughput?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return new RunChartData(
+				response.data.valuePerUnitOfTime,
+				response.data.history,
+				response.data.total,
+			);
+		});
+	}
+	async getStartedItems(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RunChartData>(
+				`/teams/${teamId}/metrics/started?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
 			return new RunChartData(

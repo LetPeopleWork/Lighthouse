@@ -111,6 +111,18 @@ namespace Lighthouse.Backend.Services.Implementation
             return throughput;
         }
 
+        public RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Started Items for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            var startedItems = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Done || i.StateCategory == StateCategories.Doing));
+            var startedItemsByDay = GenerateStartedRunChart(startDate, endDate, startedItems);
+
+            var throughput = new RunChartData(startedItemsByDay);
+
+            return throughput;
+        }
+
         public RunChartData GetCreatedItemsForTeam(Team team, IEnumerable<string> workItemTypes, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Created Items of type {WorkItemTypes} for Team {TeamName} between {StartDate} and {EndDate}", string.Join(", ", workItemTypes), team.Name, startDate.Date, endDate.Date);

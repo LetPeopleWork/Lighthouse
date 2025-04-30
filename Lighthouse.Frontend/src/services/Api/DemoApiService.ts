@@ -973,6 +973,26 @@ export class DemoApiService
 		);
 	}
 
+	async getStartedItems(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData> {
+		console.log(
+			`Getting Started Items for Team ${teamId} and Dates ${startDate} - ${endDate}`,
+		);
+		await this.delay();
+
+		const oneDay = 24 * 60 * 60 * 1000; // milliseconds in a day
+		const daysBetween =
+			Math.floor((endDate.getTime() - startDate.getTime()) / oneDay) + 1; // +1 to include both start and end dates
+		const valuePerUnitOfTime = Array(daysBetween)
+			.fill(0)
+			.map(() => Math.floor(Math.random() * 5) + 1);
+		const total = valuePerUnitOfTime.reduce((sum, value) => sum + value, 0);
+		return new RunChartData(valuePerUnitOfTime, 30, total);
+	}
+
 	async getWorkInProgressOverTime(
 		teamId: number,
 		startDate: Date,

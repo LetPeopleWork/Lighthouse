@@ -7,7 +7,7 @@ import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTi
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
-import { RunChartData } from "../../../models/Metrics/RunChartData";
+import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -33,15 +33,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		[],
 	);
 
-	const [startedItemsData, setStartedItemsData] = useState<RunChartData | null>(
-		() => {
-			const valuePerUnitOfTime = Array(30)
-				.fill(0)
-				.map(() => Math.floor(Math.random() * 5) + 1);
-			const total = valuePerUnitOfTime.reduce((sum, value) => sum + value, 0);
-			return new RunChartData(valuePerUnitOfTime, 30, total);
-		},
-	);
+	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
 
 	const { teamMetricsService } = useContext(ApiServiceContext);
 
@@ -69,6 +61,25 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		};
 
 		fetchThroughput();
+	}, [team.id, teamMetricsService, startDate, endDate]);
+
+	useEffect(() => {
+		const fetchStartedItems = async () => {
+			try {
+				const startedItemsData = await teamMetricsService.getStartedItems(
+					team.id,
+					startDate,
+					endDate,
+				);
+				if (startedItemsData) {
+					setStartedItems(startedItemsData);
+				}
+			} catch (error) {
+				console.error("Error getting throughput:", error);
+			}
+		};
+
+		fetchStartedItems();
 	}, [team.id, teamMetricsService, startDate, endDate]);
 
 	useEffect(() => {
@@ -158,7 +169,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			</Grid>
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
 				<StartedVsFinishedDisplay
-					startedItems={startedItemsData}
+					startedItems={startedItems}
 					closedItems={throughputRunChartData}
 				/>
 			</Grid>

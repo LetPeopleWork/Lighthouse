@@ -311,6 +311,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetStartedItemsForTeam_GivenStartDate_ReturnsStartedItemsPerDayFromThisRange()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            // Before
+            AddWorkItem(StateCategories.Done, 1, string.Empty).StartedDate = new DateTime(1991, 4, 9, 0, 0, 0, DateTimeKind.Utc);
+
+            // In Range
+            AddWorkItem(StateCategories.Doing, 1, string.Empty).StartedDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).StartedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Doing, 1, string.Empty).StartedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            // After
+            AddWorkItem(StateCategories.Done, 1, string.Empty).StartedDate = new DateTime(1991, 3, 31, 0, 0, 0, DateTimeKind.Utc);
+
+            var throughput = subject.GetStartedItemsForTeam(testTeam, startDate, endDate);
+
+            Assert.That(throughput.Total, Is.EqualTo(3));
+        }
+
+        [Test]
         public void GetCreatedItemsRunChartForTeam_GivenStartAndEndDate_ReturnsCreatedItemsFromThisRange()
         {
             var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);

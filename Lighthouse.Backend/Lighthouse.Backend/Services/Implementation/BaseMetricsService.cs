@@ -24,6 +24,11 @@ namespace Lighthouse.Backend.Services.Implementation
             return GenerateRunChartByDay(startDate, endDate, items, GetCreatedIndexForItem);
         }
 
+        protected static int[] GenerateStartedRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        {
+            return GenerateRunChartByDay(startDate, endDate, items, GetStartedIndexForItem);
+        }
+
         protected static int[] GenerateRunChartByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items, Func<DateTime, WorkItemBase, int> getDayIndex)
         {
             var totalDays = (endDate - startDate).Days + 1;
@@ -64,6 +69,11 @@ namespace Lighthouse.Backend.Services.Implementation
         protected static int GetCreatedIndexForItem(DateTime startDate, WorkItemBase item)
         {
             return GetDateIndexBasedOnStartDate(startDate, item.CreatedDate);
+        }
+
+        protected static int GetStartedIndexForItem(DateTime startDate, WorkItemBase item)
+        {
+            return GetDateIndexBasedOnStartDate(startDate, item.StartedDate);
         }
 
         protected static int GetDateIndexBasedOnStartDate(DateTime startDate, DateTime? date)
