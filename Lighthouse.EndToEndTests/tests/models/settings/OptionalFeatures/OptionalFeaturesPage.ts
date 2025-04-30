@@ -11,13 +11,19 @@ export class OptionalFeaturesPage {
 		const featureToggle = this.page
 			.getByTestId(`${featureName}-toggle`)
 			.getByRole("checkbox");
-		
-		await featureToggle.waitFor({ state: 'visible', timeout: 10000 });
 
 		if (await featureToggle.isChecked()) {
 			return;
 		}
 
+		const featureToggleRequest = this.page.waitForResponse(response => 
+			response.url().includes('/api/optionalfeatures') && 
+			response.status() === 200
+		);
+
 		await featureToggle.click();
+		
+		// Make sure the request is completed
+		await featureToggleRequest;
 	}
 }
