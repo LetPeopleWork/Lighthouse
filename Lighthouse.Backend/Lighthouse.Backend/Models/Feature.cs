@@ -116,5 +116,13 @@ namespace Lighthouse.Backend.Models
                 featureWork.Clear();
             }
         }
+
+        internal void Update(Feature feature)
+        {
+            base.Update(feature);
+
+            EstimatedSize = feature.EstimatedSize;
+            OwningTeam = feature.OwningTeam;
+        }
     }
 }

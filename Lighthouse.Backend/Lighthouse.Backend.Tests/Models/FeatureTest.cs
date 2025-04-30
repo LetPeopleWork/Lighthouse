@@ -13,5 +13,35 @@ namespace Lighthouse.Backend.Tests.Models
 
             Assert.That(likelihood, Is.EqualTo(100));
         }
+
+        [Test]
+        public void Update_SetsEstimatedSize()
+        {
+            var otherItem = new Feature
+            {
+                EstimatedSize = 42
+            };
+
+            var subject = new Feature();
+
+            subject.Update(otherItem);
+            
+            Assert.That(subject.EstimatedSize, Is.EqualTo(otherItem.EstimatedSize));
+        }
+
+        [Test]
+        public void Update_SetsOwningTeam()
+        {
+            var otherItem = new Feature
+            {
+                OwningTeam = "Team B"
+            };
+            
+            var subject = new Feature();
+
+            subject.Update(otherItem);
+
+            Assert.That(subject.OwningTeam, Is.EqualTo(otherItem.OwningTeam));
+        }
     }
 }
