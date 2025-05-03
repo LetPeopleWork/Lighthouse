@@ -5,6 +5,7 @@ import type { IOptionalFeatureService } from "../services/Api/OptionalFeatureSer
 import type { IProjectMetricsService } from "../services/Api/ProjectMetricsService";
 import type { IProjectService } from "../services/Api/ProjectService";
 import type { ISettingsService } from "../services/Api/SettingsService";
+import type { ITagService } from "../services/Api/TagService";
 import type { ITeamMetricsService } from "../services/Api/TeamMetricsService";
 import type { ITeamService } from "../services/Api/TeamService";
 import type { IWorkTrackingSystemService } from "../services/Api/WorkTrackingSystemService";
@@ -29,7 +30,14 @@ export const createMockApiServiceContext = (
 		updateSubscriptionService: new DemoApiService(false, false),
 		projectMetricsService:
 			null as unknown as IApiServiceContext["projectMetricsService"],
+		tagService: null as unknown as IApiServiceContext["tagService"],
 		...overrides,
+	};
+};
+
+export const createMockTagService = (): ITagService => {
+	return {
+		getTags: vi.fn(),
 	};
 };
 

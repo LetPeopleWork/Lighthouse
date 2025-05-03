@@ -42,6 +42,7 @@ import type { IOptionalFeatureService } from "./OptionalFeatureService";
 import type { IProjectMetricsService } from "./ProjectMetricsService";
 import type { IProjectService } from "./ProjectService";
 import type { ISettingsService } from "./SettingsService";
+import type { ITagService } from "./TagService";
 import type { ITeamMetricsService } from "./TeamMetricsService";
 import type { ITeamService } from "./TeamService";
 import type { IVersionService } from "./VersionService";
@@ -59,7 +60,8 @@ export class DemoApiService
 		IOptionalFeatureService,
 		IUpdateSubscriptionService,
 		ITeamMetricsService,
-		IProjectMetricsService
+		IProjectMetricsService,
+		ITagService
 {
 	private readonly useDelay: boolean;
 	private readonly throwError: boolean;
@@ -197,46 +199,6 @@ export class DemoApiService
 				this.teams[3],
 			];
 		}
-	}
-	async getCycleTimePercentiles(
-		teamId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IPercentileValue[]> {
-		console.log(
-			`Getting Cycle Time Percentiles for Team ${teamId} between ${startDate} - ${endDate}`,
-		);
-		await this.delay();
-
-		return [
-			{ percentile: 50, value: 5 },
-			{ percentile: 70, value: 7 },
-			{ percentile: 85, value: 10 },
-			{ percentile: 95, value: 12 },
-		];
-	}
-	async getCycleTimeData(
-		teamId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<IWorkItem[]> {
-		console.log(
-			`Getting Cycle Time Data for Team ${teamId} between ${startDate} - ${endDate}`,
-		);
-
-		await this.delay();
-
-		const items: IWorkItem[] = [];
-		let counter = 0;
-
-		const numberOfItems = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
-		for (let i = 0; i < numberOfItems; i++) {
-			const workItem = this.generateWorkItem(counter++);
-			workItem.workItemReference = `WI-${counter}`;
-
-			items.push(workItem);
-		}
-		return items;
 	}
 
 	async initialize(): Promise<void> {
@@ -691,6 +653,54 @@ export class DemoApiService
 				42,
 			),
 		];
+	}
+
+	async getTags(): Promise<string[]> {
+		await this.delay();
+
+		return ["GCZ", "VfL", "Barca"];
+	}
+
+	async getCycleTimePercentiles(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPercentileValue[]> {
+		console.log(
+			`Getting Cycle Time Percentiles for Team ${teamId} between ${startDate} - ${endDate}`,
+		);
+		await this.delay();
+
+		return [
+			{ percentile: 50, value: 5 },
+			{ percentile: 70, value: 7 },
+			{ percentile: 85, value: 10 },
+			{ percentile: 95, value: 12 },
+		];
+	}
+
+	async getCycleTimeData(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IWorkItem[]> {
+		console.log(
+			`Getting Cycle Time Data for Team ${teamId} between ${startDate} - ${endDate}`,
+		);
+
+		await this.delay();
+
+		const items: IWorkItem[] = [];
+		let counter = 0;
+
+		const numberOfItems = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
+		for (let i = 0; i < numberOfItems; i++) {
+			const workItem = this.generateWorkItem(counter++);
+			workItem.workItemReference = `WI-${counter}`;
+
+			items.push(workItem);
+		}
+		return items;
 	}
 
 	async addNewWorkTrackingSystemConnection(

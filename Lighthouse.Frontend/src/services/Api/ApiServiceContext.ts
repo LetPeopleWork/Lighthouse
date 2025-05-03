@@ -16,6 +16,7 @@ import {
 } from "./ProjectMetricsService";
 import { type IProjectService, ProjectService } from "./ProjectService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
+import { type ITagService, TagService } from "./TagService";
 import {
 	type ITeamMetricsService,
 	TeamMetricsService,
@@ -39,6 +40,7 @@ export interface IApiServiceContext {
 	workTrackingSystemService: IWorkTrackingSystemService;
 	optionalFeatureService: IOptionalFeatureService;
 	updateSubscriptionService: IUpdateSubscriptionService;
+	tagService: ITagService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -57,6 +59,7 @@ const defaultServices: IApiServiceContext = {
 	workTrackingSystemService: new WorkTrackingSystemService(),
 	optionalFeatureService: new OptionalFeatureService(),
 	updateSubscriptionService: new UpdateSubscriptionService(),
+	tagService: new TagService(),
 };
 
 const useDelay: boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
@@ -74,6 +77,7 @@ const demoServices: IApiServiceContext = {
 	workTrackingSystemService: demoApiService,
 	optionalFeatureService: demoApiService,
 	updateSubscriptionService: demoApiService,
+	tagService: demoApiService,
 };
 
 export function getApiServices(): IApiServiceContext {
