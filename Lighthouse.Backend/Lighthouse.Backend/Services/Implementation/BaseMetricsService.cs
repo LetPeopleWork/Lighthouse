@@ -93,12 +93,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 return false;
             }
 
-            if (!item.ClosedDate.HasValue)
-            {
-                return true;
-            }
+            var wasStartedOnOrAfterDay = item.StartedDate.Value.Date <= day.Date;
+            var wasClosedOnOrAfterDay = !item.ClosedDate.HasValue || item.ClosedDate.Value.Date > day.Date;
 
-            return item.StartedDate?.Date <= day.Date && item.ClosedDate?.Date > day.Date;
+            return wasStartedOnOrAfterDay && wasClosedOnOrAfterDay;
         }
 
         protected TMetric GetFromCacheIfExists<TMetric, TEntity>(TEntity entity, string metricIdentifier, Func<TMetric> calculateMetric, ILogger logger) where TMetric : class where TEntity : class, IEntity

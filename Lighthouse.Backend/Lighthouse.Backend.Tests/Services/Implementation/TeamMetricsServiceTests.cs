@@ -558,6 +558,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetWorkInProgressOverTime_ItemNotClosed_StartedAfterDateRange_DoesNotAddItemToDaysBeforeItWasStarted()
+        {
+            var startDate = DateTime.UtcNow.AddDays(-2);
+            var endDate = DateTime.UtcNow;
+
+            var workItem = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            workItem.StartedDate = DateTime.UtcNow.AddDays(-1);
+            workItem.ClosedDate = null;
+
+            var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(wipData.ValuePerUnitOfTime, Has.Length.EqualTo(3));
+                Assert.That(wipData.ValuePerUnitOfTime[0], Is.EqualTo(0));
+                Assert.That(wipData.ValuePerUnitOfTime[1], Is.EqualTo(1));
+                Assert.That(wipData.ValuePerUnitOfTime[2], Is.EqualTo(1));
+            });
+        }
+
+        [Test]
         public void GetCycleTimePercentilesForTeam_GetsCycleTimeForItemsInRange()
         {
             // Set up work item cycle times (1, 2, 3, ... 10)
