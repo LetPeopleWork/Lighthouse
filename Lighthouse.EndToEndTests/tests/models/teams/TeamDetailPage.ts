@@ -89,36 +89,43 @@ export class TeamDetailPage {
 		return Number.parseInt(teamId, 10);
 	}
 
-	get getFeaturesInProgressWidget(): Locator {
-		return this.page.getByText(/Features being Worked On:(\d+)/);
-	}
-
-	get workInProgressWidget(): Locator {
-		return this.page.getByRole("heading", {
-			name: "Work Items In Progress:",
-		});
-	}
-
 	get cycleTimePercentileWidget(): Locator {
-		return this.page.getByRole("heading", { name: "Cycle Time Percentiles" });
+		return this.page
+			.locator('div').filter({ hasText: /^Cycle Time Percentiles.*$/ }).nth(1)
 	}
 
 	get cycleTimeScatterplotWidget(): Locator {
-		return this.page.getByRole("heading", {
-			name: "Cycle Time",
-			exact: true,
-		});
+		return this.page
+			.locator('div:nth-child(6) > .MuiPaper-root');
 	}
 
 	get throughputRunChartWidget(): Locator {
-		return this.page.getByRole("heading", {
-			name: "Throughput",
-		});
+		return this.page
+			.locator('div:nth-child(5) > .MuiPaper-root');
 	}
 
 	get wipOverTimeWidget(): Locator {
-		return this.page.getByRole("heading", {
-			name: "WIP Over Time",
-		});
+		return this.page
+			.locator('div:nth-child(7) > .MuiPaper-root');
+	}
+
+	get simplifiedCfdWidget(): Locator {
+		return this.page
+			.locator('div:nth-child(8) > .MuiPaper-root');
+	}
+
+	get workItemsInProgressWidget(): Locator {
+		return this.page
+			.getByText(/^Work Items In Progress:\d+$/)
+	}
+
+	get featuresInProgressWidget(): Locator {
+		return this.page
+			.locator('div').filter({ hasText: /^Features being Worked On:.*$/ }).first()
+	}
+
+	get startedVsClosedWidget(): Locator {
+		return this.page
+			.locator('div:nth-child(4) > .MuiPaper-root');
 	}
 }

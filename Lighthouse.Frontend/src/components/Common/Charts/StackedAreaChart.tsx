@@ -1,4 +1,10 @@
-import { FormControlLabel, Switch } from "@mui/material";
+import {
+	Card,
+	CardContent,
+	FormControlLabel,
+	Switch,
+	Typography,
+} from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { addDays } from "date-fns";
 import type React from "react";
@@ -103,16 +109,9 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 	const series = showTrend ? [...areaSeries, ...lineSeries] : areaSeries;
 
 	return (
-		<div>
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: "10px",
-				}}
-			>
-				{title && <h3 style={{ margin: 0 }}>{title}</h3>}
+		<Card sx={{ p: 2, borderRadius: 2 }}>
+			<CardContent>
+				<Typography variant="h6">{title}</Typography>
 				<FormControlLabel
 					control={
 						<Switch
@@ -123,31 +122,31 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 					}
 					label="Show Trend"
 				/>
-			</div>
-			<LineChart
-				xAxis={[
-					{
-						scaleType: "point",
-						data: chartData,
-						label: "Date",
-						valueFormatter: (value: number) => {
-							return new Date(value).toLocaleDateString();
+				<LineChart
+					xAxis={[
+						{
+							scaleType: "point",
+							data: chartData,
+							label: "Date",
+							valueFormatter: (value: number) => {
+								return new Date(value).toLocaleDateString();
+							},
 						},
-					},
-				]}
-				series={series}
-				height={500}
-				slotProps={{
-					legend: {
-						direction: "horizontal",
-						position: {
-							vertical: "top",
-							horizontal: "end",
+					]}
+					series={series}
+					height={500}
+					slotProps={{
+						legend: {
+							direction: "horizontal",
+							position: {
+								vertical: "top",
+								horizontal: "end",
+							},
 						},
-					},
-				}}
-			/>
-		</div>
+					}}
+				/>
+			</CardContent>
+		</Card>
 	);
 };
 export default StackedAreaChart;

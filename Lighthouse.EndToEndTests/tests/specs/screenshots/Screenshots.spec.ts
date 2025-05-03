@@ -7,7 +7,7 @@ import {
 } from "../../fixutres/LighthouseFixture";
 
 import {
-	takeDialogScreenshot,
+	takeDialogScreenshot as takeElementScreenshot,
 	takePageScreenshot,
 } from "../../helpers/screenshots";
 import type { OverviewPage } from "../../models/overview/OverviewPage";
@@ -156,7 +156,7 @@ testWithData(
 
 		// Team Deletion Dialog
 		const deleteTeamDialog = await teamsPage.deleteTeam(testData.teams[0].name);
-		await takeDialogScreenshot(
+		await takeElementScreenshot(
 			deleteTeamDialog.page.getByRole("dialog"),
 			"features/teams_delete.png",
 			0.5,
@@ -173,11 +173,37 @@ testWithData(
 		// Go to Metrics Tab
 		await teamDetailPage.goToMetrics();
 
-		await takePageScreenshot(
-			teamDetailPage.page,
-			"features/teamdetail_metrics.png",
-			15,
-		);
+		await takeElementScreenshot(
+			teamDetailPage.workItemsInProgressWidget,
+			"features/metrics/workitemsinprogress.png",)
+
+		await takeElementScreenshot(
+			teamDetailPage.featuresInProgressWidget,
+			"features/metrics/featuresinprogress.png",)
+
+		await takeElementScreenshot(
+			teamDetailPage.cycleTimePercentileWidget,
+			"features/metrics/cycletimepercentiles.png",)
+
+		await takeElementScreenshot(
+			teamDetailPage.startedVsClosedWidget,
+			"features/metrics/startedVsClosed.png",)
+
+		await takeElementScreenshot(
+			teamDetailPage.throughputRunChartWidget,
+			"features/metrics/throughputRunChart.png",)
+
+		await takeElementScreenshot(
+			teamDetailPage.cycleTimeScatterplotWidget,
+			"features/metrics/cycleTimeScatterplot.png",)
+
+		await takeElementScreenshot(
+			teamDetailPage.wipOverTimeWidget,
+			"features/metrics/wipOverTime.png",)
+
+		await takeElementScreenshot(
+			teamDetailPage.simplifiedCfdWidget,
+			"features/metrics/simplifiedCFD.png",)
 
 		// Project Overview Page
 		const projectsPage = await overviewPage.lightHousePage.goToProjects();
@@ -188,7 +214,7 @@ testWithData(
 			testData.projects[0],
 		);
 
-		await takeDialogScreenshot(
+		await takeElementScreenshot(
 			deleteProjectDialog.page.getByRole("dialog"),
 			"features/projects_delete.png",
 			0.5,
@@ -288,7 +314,7 @@ for (const {
 				);
 			}
 
-			await takeDialogScreenshot(
+			await takeElementScreenshot(
 				workTrackingSystemDialog.page.getByRole("dialog"),
 				`concepts/worktrackingsystem_${workTrackingSystemName}.png`,
 				5,

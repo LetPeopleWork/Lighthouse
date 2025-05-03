@@ -32,12 +32,12 @@ for (const { index, name, expectedFeaturesInProgress } of testData) {
 			// Add a small delay to give metrics time to load
 			await teamDetailPage.page.waitForTimeout(300);
 
-			await expect(teamDetailPage.workInProgressWidget).toBeVisible();
+			await expect(teamDetailPage.workItemsInProgressWidget).toBeVisible();
 			await expect(teamDetailPage.cycleTimeScatterplotWidget).toBeVisible();
 			await expect(teamDetailPage.throughputRunChartWidget).toBeVisible();
 			await expect(teamDetailPage.wipOverTimeWidget).toBeVisible();
 			await expect(teamDetailPage.cycleTimePercentileWidget).toBeVisible();
-			await expect(teamDetailPage.getFeaturesInProgressWidget).toBeVisible();
+			await expect(teamDetailPage.featuresInProgressWidget).toBeVisible();
 
 			const actualFeaturesInProgress =
 				await teamDetailPage.getFeaturesInProgress();
