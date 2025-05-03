@@ -61,6 +61,47 @@ describe("DataOverviewTable", () => {
 		}
 	});
 
+	it("displays items in alphabetical order by name", () => {
+		const unsortedData = [
+			{
+				id: 3,
+				name: "Zebra Item",
+				remainingWork: 30,
+				remainingFeatures: 25,
+				features: [],
+				totalWork: 33,
+			},
+			{
+				id: 1,
+				name: "Apple Item",
+				remainingWork: 10,
+				remainingFeatures: 5,
+				features: [],
+				totalWork: 20,
+			},
+			{
+				id: 2,
+				name: "Banana Item",
+				remainingWork: 20,
+				remainingFeatures: 15,
+				features: [],
+				totalWork: 20,
+			},
+		];
+
+		renderWithRouter(
+			<DataOverviewTable data={unsortedData} api="api" onDelete={vi.fn()} />,
+		);
+
+		// Get all row elements
+		const rows = screen.getAllByTestId(/^table-row-/);
+
+		// Check that they appear in alphabetical order in the DOM
+		expect(rows[0]).toHaveTextContent("Apple Item");
+		expect(rows[1]).toHaveTextContent("Banana Item");
+		expect(rows[2]).toHaveTextContent("Zebra Item");
+	});
+
 	it("filters properly", () => {
 		renderWithRouter(
 			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,

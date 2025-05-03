@@ -25,6 +25,10 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 			project.involvedTeams.some((t) => isMatchingFilterText(t.name)),
 	);
 
+	const sortedProjects = [...filteredProjects].sort((a, b) =>
+		a.name.localeCompare(b.name),
+	);
+
 	function isMatchingFilterText(textToCheck: string) {
 		if (!filterText) {
 			return true;
@@ -94,7 +98,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 				</Fade>
 			) : (
 				<Grid container spacing={3}>
-					{filteredProjects.map((project) => (
+					{sortedProjects.map((project) => (
 						<Grid
 							size={{ xs: 12, sm: 6, md: 4, lg: 4, xl: 3 }}
 							key={project.id}
@@ -104,7 +108,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 									height: "100%",
 									opacity: 0,
 									animation: "fadeIn 0.5s forwards",
-									animationDelay: `${(filteredProjects.indexOf(project) % 10) * 0.1}s`,
+									animationDelay: `${(sortedProjects.indexOf(project) % 10) * 0.1}s`,
 									"@keyframes fadeIn": {
 										"0%": { opacity: 0, transform: "translateY(10px)" },
 										"100%": { opacity: 1, transform: "translateY(0)" },

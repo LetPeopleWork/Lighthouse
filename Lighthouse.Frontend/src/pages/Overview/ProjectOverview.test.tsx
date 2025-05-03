@@ -190,4 +190,43 @@ describe("ProjectOverview component", () => {
 			expect(projectCard).not.toBeInTheDocument();
 		}
 	});
+
+	it("should display projects in alphabetical order by name", () => {
+		// Create unsorted test projects
+		const unsortedProjects = [
+			new Project("ZProject", 3, [], [], [], new Date("2024-06-01")),
+			new Project("AProject", 4, [], [], [], new Date("2024-06-01")),
+			new Project("MProject", 5, [], [], [], new Date("2024-06-01")),
+		];
+
+		const { container } = render(
+			<Router>
+				<ProjectOverview projects={unsortedProjects} filterText="" />
+			</Router>,
+		);
+
+		// Get all rendered project cards
+		const projectCards = Array.from(
+			container.querySelectorAll("[data-testid^='project-card-']"),
+		);
+
+		// Expected order after sorting
+		const expectedOrder = ["AProject", "MProject", "ZProject"];
+
+		// Verify the projects are rendered in the correct alphabetical order
+		// We need to check each card in the DOM order to verify it matches our expected order
+		expect(projectCards.length).toBe(expectedOrder.length);
+
+		// Get the sorted projects for comparison
+		const sortedProjects = [...unsortedProjects].sort((a, b) =>
+			a.name.localeCompare(b.name),
+		);
+
+		// Check that each project is in the expected position
+		for (let i = 0; i < projectCards.length; i++) {
+			expect(projectCards[i].getAttribute("data-testid")).toBe(
+				`project-card-${sortedProjects[i].id}`,
+			);
+		}
+	});
 });

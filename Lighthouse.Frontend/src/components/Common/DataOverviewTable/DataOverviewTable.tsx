@@ -48,7 +48,9 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
-	const filteredData = data.filter((item) => isMatchingFilterText(item.name));
+	const filteredData = data
+		.filter((item) => isMatchingFilterText(item.name))
+		.sort((a, b) => a.name.localeCompare(b.name));
 
 	function isMatchingFilterText(textToCheck: string) {
 		if (!filterText) {
