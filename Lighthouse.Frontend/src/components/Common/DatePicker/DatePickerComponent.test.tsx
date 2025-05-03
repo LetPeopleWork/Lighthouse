@@ -29,10 +29,12 @@ describe("DatePickerComponent", () => {
 
 	test("calls onChange when a new date is selected", async () => {
 		const user = userEvent.setup();
+		const today = dayjs();
+
 		render(
 			<DatePickerComponent
 				label="Burndown Start Date"
-				value={dayjs()}
+				value={today}
 				onChange={mockOnChange}
 			/>,
 		);
@@ -41,10 +43,13 @@ describe("DatePickerComponent", () => {
 		const calendarButton = screen.getByLabelText(/choose date/i);
 		await user.click(calendarButton);
 
-		// Find a date from the calendar popup and click it
-		// First make sure the calendar is open and accessible
-		const dateCell = await screen.findByRole("gridcell", { name: "15" });
-		await user.click(dateCell);
+		// Go to previous month to ensure we're not selecting a future date
+		const prevMonthButton = await screen.findByLabelText(/previous month/i);
+		await user.click(prevMonthButton);
+
+		// Find the date button by its text content rather than by role
+		const dateButton = await screen.findByText("15");
+		await user.click(dateButton);
 
 		expect(mockOnChange).toHaveBeenCalled();
 	});
