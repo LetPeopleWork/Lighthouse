@@ -1,9 +1,5 @@
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import {
-	fireEvent,
-	render,
-	screen,
-} from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { Feature } from "../../models/Feature";

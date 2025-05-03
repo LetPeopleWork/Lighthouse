@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import DataOverviewTable from "../../../components/Common/DataOverviewTable/DataOverviewTable";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -13,6 +14,11 @@ const TeamsOverview: React.FC = () => {
 	const [hasError, setHasError] = useState<boolean>(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
 	const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+
+	const location = useLocation();
+	const navigate = useNavigate();
+	const queryParams = new URLSearchParams(location.search);
+	const initialFilterText = queryParams.get("filter") ?? "";
 
 	const { teamService } = useContext(ApiServiceContext);
 
@@ -54,9 +60,33 @@ const TeamsOverview: React.FC = () => {
 		setSelectedTeam(null);
 	};
 
+	const handleFilterChange = (newFilterText: string) => {
+		const params = new URLSearchParams(location.search);
+
+		if (newFilterText) {
+			params.set("filter", newFilterText);
+		} else {
+			params.delete("filter");
+		}
+
+		navigate(
+			{
+				pathname: location.pathname,
+				search: params.toString(),
+			},
+			{ replace: true },
+		);
+	};
+
 	return (
 		<LoadingAnimation hasError={hasError} isLoading={isLoading}>
-			<DataOverviewTable data={teams} api="teams" onDelete={handleDelete} />
+			<DataOverviewTable
+				data={teams}
+				api="teams"
+				onDelete={handleDelete}
+				initialFilterText={initialFilterText}
+				onFilterChange={handleFilterChange}
+			/>
 
 			{selectedTeam && (
 				<DeleteConfirmationDialog

@@ -145,4 +145,41 @@ describe("DataOverviewTable", () => {
 
 		expect(navigate).toHaveBeenCalledWith("/api/new");
 	});
+
+	it("initializes with provided filter text", () => {
+		const initialFilterText = "Item";
+		renderWithRouter(
+			<DataOverviewTable
+				data={sampleData}
+				api="api"
+				onDelete={vi.fn()}
+				initialFilterText={initialFilterText}
+			/>,
+		);
+
+		const filterInput = screen.getByRole("textbox", { name: "" });
+		expect(filterInput).toHaveValue(initialFilterText);
+
+		// Verify only matching items are displayed
+		expect(screen.getByText("Item 1")).toBeInTheDocument();
+		expect(screen.getByText("Item 2")).toBeInTheDocument();
+		expect(screen.queryByText("Another Item")).toBeInTheDocument();
+	});
+
+	it("calls onFilterChange callback when filter changes", () => {
+		const onFilterChange = vi.fn();
+		renderWithRouter(
+			<DataOverviewTable
+				data={sampleData}
+				api="api"
+				onDelete={vi.fn()}
+				onFilterChange={onFilterChange}
+			/>,
+		);
+
+		const filterInput = screen.getByRole("textbox", { name: "" });
+		fireEvent.change(filterInput, { target: { value: "Test Filter" } });
+
+		expect(onFilterChange).toHaveBeenCalledWith("Test Filter");
+	});
 });

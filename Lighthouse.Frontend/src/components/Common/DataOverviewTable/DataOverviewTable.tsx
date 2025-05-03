@@ -18,7 +18,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Link, useNavigate } from "react-router-dom";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
@@ -35,18 +35,26 @@ interface DataOverviewTableProps<IFeatureOwner> {
 	data: IFeatureOwner[];
 	api: string;
 	onDelete: (item: IFeatureOwner) => void;
+	initialFilterText?: string;
+	onFilterChange?: (filterText: string) => void;
 }
 
 const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	data,
 	api,
 	onDelete,
+	initialFilterText = "",
+	onFilterChange,
 }) => {
-	const [filterText, setFilterText] = useState("");
+	const [filterText, setFilterText] = useState(initialFilterText);
 	const navigate = useNavigate();
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
+	useEffect(() => {
+		setFilterText(initialFilterText);
+	}, [initialFilterText]);
 
 	const filteredData = data
 		.filter((item) => isMatchingFilterText(item.name))
@@ -59,6 +67,13 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 
 		return textToCheck.toLowerCase().includes(filterText.toLowerCase());
 	}
+
+	const handleFilterTextChange = (newFilterText: string) => {
+		setFilterText(newFilterText);
+		if (onFilterChange) {
+			onFilterChange(newFilterText);
+		}
+	};
 
 	const handleRedirect = async () => {
 		navigate(`/${api}/new`);
@@ -97,7 +112,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 
 			<FilterBar
 				filterText={filterText}
-				onFilterTextChange={setFilterText}
+				onFilterTextChange={handleFilterTextChange}
 				data-testid="filter-bar"
 			/>
 

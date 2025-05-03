@@ -14,15 +14,23 @@ import { useEffect, useState } from "react";
 interface FilterBarProps {
 	filterText: string;
 	onFilterTextChange: (newFilterText: string) => void;
+	"data-testid"?: string;
 }
 
 const FilterBar: React.FC<FilterBarProps> = ({
 	filterText,
 	onFilterTextChange,
+	"data-testid": dataTestId,
 }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isFocused, setIsFocused] = useState(false);
+	const [localFilterText, setLocalFilterText] = useState(filterText);
+
+	// Sync with external filterText value
+	useEffect(() => {
+		setLocalFilterText(filterText);
+	}, [filterText]);
 
 	// Handle keyboard shortcut for focusing search box
 	useEffect(() => {
@@ -38,13 +46,24 @@ const FilterBar: React.FC<FilterBarProps> = ({
 				e.key === "Escape" &&
 				document.activeElement?.id === "search-filter-bar"
 			) {
-				onFilterTextChange("");
+				handleClearFilter();
 			}
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [onFilterTextChange]);
+	}, []);
+
+	const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const newFilterText = e.target.value;
+		setLocalFilterText(newFilterText);
+		onFilterTextChange(newFilterText);
+	};
+
+	const handleClearFilter = () => {
+		setLocalFilterText("");
+		onFilterTextChange("");
+	};
 
 	return (
 		<Paper
@@ -71,12 +90,13 @@ const FilterBar: React.FC<FilterBarProps> = ({
 			<Box sx={{ flexGrow: 1 }}>
 				<TextField
 					id="search-filter-bar"
+					data-testid={dataTestId}
 					placeholder={
 						isMobile ? "Search" : "Search by project or team name (Ctrl+F)"
 					}
 					variant="standard"
-					value={filterText}
-					onChange={(e) => onFilterTextChange(e.target.value)}
+					value={localFilterText}
+					onChange={handleFilterChange}
 					fullWidth
 					onFocus={() => setIsFocused(true)}
 					onBlur={() => setIsFocused(false)}
@@ -94,11 +114,11 @@ const FilterBar: React.FC<FilterBarProps> = ({
 				/>
 			</Box>
 
-			{filterText && (
+			{localFilterText && (
 				<IconButton
 					size="small"
 					aria-label="clear search"
-					onClick={() => onFilterTextChange("")}
+					onClick={handleClearFilter}
 					sx={{
 						opacity: 0.7,
 						transition: "all 0.2s",
