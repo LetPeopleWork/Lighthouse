@@ -105,7 +105,4 @@ You may use Lighthouse to make it transparent what a change in Feature WIP can m
 If a team is configured to [Automatically Adjust Feature WIP](../teams/edit.html#automatically-adjust-feature-wip), you can still change the settings manually. However, they will be overridden the next time the Team Data will be updated.
 
 # Metrics
-Similar to the Team Details, the Project contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Project. Check the [Team Page](../teams/detail.html#metrics) for details on the metrics.
-
-{: .note}
-Many metrics can only be collected on collected items. It is therefore important to make sure **not to exclude** done items if you want to see metrics on Project level.
+Similar to the Team Details, the Project contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Project. Check the [Metrics Page](../features/metrics.html) for more details.

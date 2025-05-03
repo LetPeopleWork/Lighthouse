@@ -2,7 +2,7 @@
 title: Settings
 parent: Features
 layout: home
-nav_order: 4
+nav_order: 6
 ---
 
 Lighthouse has various options to fine-tune it based on your needs. This page lists what can be configured via the Lighthouse settings page:

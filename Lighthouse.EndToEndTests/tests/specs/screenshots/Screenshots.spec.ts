@@ -177,9 +177,24 @@ testWithData(
 			teamDetailPage.workItemsInProgressWidget,
 			"features/metrics/workitemsinprogress.png",)
 
+		const workItemsInProgressDialog = await teamDetailPage.openWorkItemsInProgressDialog();
+		await takeElementScreenshot(
+			workItemsInProgressDialog.page.getByRole("dialog"),
+			"features/metrics/workitemsinprogress_dialog.png",
+		)
+
+		await workItemsInProgressDialog.close();
+
 		await takeElementScreenshot(
 			teamDetailPage.featuresInProgressWidget,
 			"features/metrics/featuresinprogress.png",)
+
+		const featuresInProgressDialog = await teamDetailPage.openFeaturesInProgressDialog();
+		await takeElementScreenshot(
+			featuresInProgressDialog.page.getByRole("dialog"),
+			"features/metrics/featuresinprogress_dialog.png",
+		)
+		await featuresInProgressDialog.close();
 
 		await takeElementScreenshot(
 			teamDetailPage.cycleTimePercentileWidget,

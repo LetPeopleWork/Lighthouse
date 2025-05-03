@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
 import { TeamEditPage } from "./TeamEditPage";
+import { WorkItemsInProgressDialog } from "./WorkItemsInProgressDialog";
 
 export class TeamDetailPage {
 	page: Page;
@@ -69,6 +70,16 @@ export class TeamDetailPage {
 		const count = match ? Number.parseInt(match[1], 10) : 0;
 
 		return count;
+	}
+
+	async openWorkItemsInProgressDialog(): Promise<WorkItemsInProgressDialog> {
+		await this.workItemsInProgressWidget.click();
+		return new WorkItemsInProgressDialog(this.page);
+	}
+
+	async openFeaturesInProgressDialog(): Promise<WorkItemsInProgressDialog> {
+		await this.featuresInProgressWidget.click();
+		return new WorkItemsInProgressDialog(this.page);
 	}
 
 	getFeatureLink(featureName: string): Locator {

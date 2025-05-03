@@ -10,6 +10,8 @@ In the [Teams](./teams/teams.html) section, you can inspect, create, and modify 
 
 For all your defined [Projects] the forecasts will continuously be re-run, so you have an up to date information *When* each [Feature](../concepts/concepts.html) of a Project will be done.
 
+For teams as well as projects Lighthouse is collecting data, which is visualized in form of various [Metrics](./metrics/metrics.html).
+
 In the [Settings](./settings/settings.html) you can fine-tune Lighthouse.
 
 ![Lighthouse Overview](../assets/features/overview.png)
