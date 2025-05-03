@@ -29,6 +29,7 @@ namespace Lighthouse.Backend.API.DTO
             ToDoStates = team.ToDoStates;
             DoingStates = team.DoingStates;
             DoneStates = team.DoneStates;
+            Tags = team.Tags;
             AutomaticallyAdjustFeatureWIP = team.AutomaticallyAdjustFeatureWIP;
         }
 
@@ -59,6 +60,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> DoingStates { get; set; } = [];
 
         public List<string> DoneStates { get; set; } = [];
+
+        public List<string> Tags { get; set; } = [];
 
         [JsonRequired]
         public int WorkTrackingSystemConnectionId { get; set; }

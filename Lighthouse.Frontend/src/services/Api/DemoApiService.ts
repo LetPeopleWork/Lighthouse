@@ -116,6 +116,7 @@ export class DemoApiService
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: ["Analysis In Progress"],
 			involvedTeams: [],
 		},
@@ -135,6 +136,7 @@ export class DemoApiService
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: ["Analysis In Progress"],
 			involvedTeams: [],
 		},
@@ -154,6 +156,7 @@ export class DemoApiService
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: ["Analysis In Progress"],
 			involvedTeams: [],
 		},
@@ -445,6 +448,7 @@ export class DemoApiService
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		};
 	}
@@ -800,6 +804,7 @@ export class DemoApiService
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		};
 	}
@@ -834,6 +839,7 @@ export class DemoApiService
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: ["Analysis In Progress"],
 			involvedTeams: [],
 		};

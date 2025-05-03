@@ -21,6 +21,7 @@ describe("InvolvedTeamsList component", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		},
 		{
@@ -33,6 +34,7 @@ describe("InvolvedTeamsList component", () => {
 			featureWIP: 1,
 			workItemQuery: "",
 			workItemTypes: [],
+			tags: [],
 			workTrackingSystemConnectionId: 5,
 			relationCustomField: "",
 			toDoStates: ["New"],

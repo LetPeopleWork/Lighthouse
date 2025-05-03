@@ -225,6 +225,7 @@ describe("ModifyProjectSettings", () => {
 		toDoStates: ["ToDo"],
 		doingStates: ["Doing"],
 		doneStates: ["Done"],
+		tags: [],
 		milestones: [],
 		involvedTeams: teams,
 		id: 1,

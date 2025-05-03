@@ -26,6 +26,7 @@ export async function createProject(
 			toDoStates: states.toDo,
 			doingStates: states.doing,
 			doneStates: states.done,
+			tags: [],
 			overrideRealChildCountStates: [],
 			workItemQuery: workItemQuery,
 			unparentedItemsQuery: "",

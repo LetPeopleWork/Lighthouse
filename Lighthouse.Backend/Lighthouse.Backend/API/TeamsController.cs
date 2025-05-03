@@ -176,6 +176,7 @@ namespace Lighthouse.Backend.API
             team.WorkItemTypes = teamSetting.WorkItemTypes;
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
             team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
+            team.Tags = teamSetting.Tags;
 
             SyncStates(team, teamSetting);
         }

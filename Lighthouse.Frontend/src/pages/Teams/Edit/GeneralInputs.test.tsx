@@ -31,6 +31,7 @@ describe("GeneralInputsComponent", () => {
 		featureWIP: 20,
 		workItemQuery: "Test Query",
 		workItemTypes: [],
+		tags: [],
 		workTrackingSystemConnectionId: 12,
 		relationCustomField: "Test Field",
 		toDoStates: ["New"],

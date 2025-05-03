@@ -79,6 +79,7 @@ describe("ProjectService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
 		};
@@ -108,6 +109,7 @@ describe("ProjectService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
 		};
@@ -140,6 +142,7 @@ describe("ProjectService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
 		};
@@ -160,6 +163,7 @@ describe("ProjectService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
 		};
@@ -227,6 +231,7 @@ describe("ProjectService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
 		};
@@ -260,6 +265,7 @@ describe("ProjectService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
 		};

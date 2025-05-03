@@ -11,6 +11,7 @@ export interface ITeamSettings {
 	toDoStates: string[];
 	doingStates: string[];
 	doneStates: string[];
+	tags: string[];
 	workTrackingSystemConnectionId: number;
 	relationCustomField: string;
 	automaticallyAdjustFeatureWIP: boolean;

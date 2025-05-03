@@ -74,6 +74,7 @@ describe("SettingsService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		};
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -102,6 +103,7 @@ describe("SettingsService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		};
 		mockedAxios.put.mockResolvedValueOnce({});
@@ -131,6 +133,7 @@ describe("SettingsService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
 		};
@@ -162,6 +165,7 @@ describe("SettingsService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
 		};

@@ -17,6 +17,7 @@ describe("GeneralInputsComponent", () => {
 		historicalFeaturesWorkItemQuery: "",
 		workTrackingSystemConnectionId: 12,
 		sizeEstimateField: "",
+		tags: [],
 		toDoStates: ["New"],
 		doingStates: ["Active"],
 		doneStates: ["Done"],

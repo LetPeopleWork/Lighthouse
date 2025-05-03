@@ -355,6 +355,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("SizeEstimateField")
                         .HasColumnType("text");
 
+                    b.PrimitiveCollection<List<string>>("Tags")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.PrimitiveCollection<List<string>>("ToDoStates")
                         .IsRequired()
                         .HasColumnType("text[]");
@@ -413,6 +417,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.PrimitiveCollection<List<string>>("Tags")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<DateTime>("TeamUpdateTime")
                         .HasColumnType("timestamp with time zone");

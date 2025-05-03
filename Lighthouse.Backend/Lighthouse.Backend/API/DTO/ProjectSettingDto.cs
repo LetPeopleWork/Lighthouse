@@ -31,6 +31,8 @@ namespace Lighthouse.Backend.API.DTO
             DoingStates = project.DoingStates;
             DoneStates = project.DoneStates;
 
+            Tags = project.Tags;
+
             InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
 
             if (project.OwningTeam != null)
@@ -55,6 +57,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> DoingStates { get; set; } = [];
 
         public List<string> DoneStates { get; set; } = [];
+
+        public List<string> Tags { get; set; } = [];
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];
 

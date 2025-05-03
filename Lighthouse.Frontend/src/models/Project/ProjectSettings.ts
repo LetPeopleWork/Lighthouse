@@ -15,6 +15,8 @@ export interface IProjectSettings {
 	doingStates: string[];
 	doneStates: string[];
 
+	tags: string[];
+
 	overrideRealChildCountStates: string[];
 
 	usePercentileToCalculateDefaultAmountOfWorkItems: boolean;

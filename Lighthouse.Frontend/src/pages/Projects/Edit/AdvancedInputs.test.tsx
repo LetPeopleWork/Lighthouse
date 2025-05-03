@@ -17,6 +17,7 @@ describe("AdvancedInputsComponent", () => {
 		historicalFeaturesWorkItemQuery: "Historical Feature Query",
 		workTrackingSystemConnectionId: 12,
 		sizeEstimateField: "",
+		tags: [],
 		toDoStates: ["New"],
 		doingStates: ["Active"],
 		doneStates: ["Done"],

@@ -154,6 +154,7 @@ describe("TeamService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		};
 
@@ -181,6 +182,7 @@ describe("TeamService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		};
 		const mockResponse: ITeamSettings = { ...newTeamSettings, id: 1 };
@@ -209,6 +211,7 @@ describe("TeamService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		};
 
@@ -255,6 +258,7 @@ describe("TeamService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: false,
 		};
 
@@ -285,6 +289,7 @@ describe("TeamService", () => {
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
+			tags: [],
 			automaticallyAdjustFeatureWIP: true,
 		};
 

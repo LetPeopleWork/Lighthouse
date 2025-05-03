@@ -142,7 +142,7 @@ namespace Lighthouse.Backend.API
             project.OverrideRealChildCountStates = projectSetting.OverrideRealChildCountStates;
 
             project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
-
+            project.Tags = projectSetting.Tags;
             project.FeatureOwnerField = projectSetting.FeatureOwnerField;
 
             SyncStates(project, projectSetting);

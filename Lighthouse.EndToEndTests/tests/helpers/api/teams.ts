@@ -19,6 +19,7 @@ export async function createTeam(
 			toDoStates: states.toDo,
 			doingStates: states.doing,
 			doneStates: states.done,
+			tags: [],
 			relationCustomField: "",
 			automaticallyAdjustFeatureWIP: false,
 			useFixedDatesForThroughput: false,
