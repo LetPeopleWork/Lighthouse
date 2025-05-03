@@ -9,7 +9,22 @@ nav_order: 95
 Preview
 {: .label .label-blue }
 
-## 
+## Simplified Cumulative Flow Diagram (CFD)
+Add a [simplified version of a CFD](https://docs.lighthouse.letpeople.work/features/metrics/metrics.html#simplified-cumulative-flow-diagram-cfd) that shows you how many items were in which state category (*Doing* or *Done*) over the selected time period.
+
+![Simplified CFD](../../assets/features/metrics/simplifiedCFD.png)
+
+If you enable the trend lines, the start and end points of both areas will be connected, allowing you to easily see how you manage WIP.
+
+## Bug Fixes
+- Dates and Times were not displayed in the proper timezone. This should be fixed now.
+- If you were using an estimation field and changed the value, it was not updated in Lighthouse. This is working properly now and updates with every Project refresh.
+
+## Other Improvements
+- Update of various third party libraries
+
+## Contributions ❤️ 
+Special Thanks to [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/), [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/) and [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/) for their contributions!
 
 # Lighthouse v25.4.29.811
 {: .d-inline-block }
@@ -83,8 +98,6 @@ The following Metrics are shown:
 - Throughput Run Chart
 - Cycle Time Scatterplot
 - WIP Run Chart
-
-![Team Metrics](../assets/features/teamdetail_metrics.png)
 
 ### Important 🚨
 To enable metrics visualization, a lot of changes had to be made on the backend side. While your configuration does not need to be changed, you have to refresh the team data once to start getting the metrics.
