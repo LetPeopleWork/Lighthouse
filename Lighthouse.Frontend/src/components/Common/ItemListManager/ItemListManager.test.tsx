@@ -142,6 +142,30 @@ describe("ItemListManager", () => {
 		// if the dropdown content actually contains or doesn't contain certain items
 	});
 
+	it("adds the suggested version of an item when typing with different casing", () => {
+		const suggestions = ["Done", "In Progress"];
+
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+				suggestions={suggestions}
+			/>,
+		);
+
+		const input = screen.getByLabelText(`New ${title}`);
+
+		// Type a lowercase version of a suggestion
+		fireEvent.change(input, { target: { value: "done" } });
+		fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+		// Should add the original cased version from suggestions
+		expect(mockOnAddItem).toHaveBeenCalledWith("Done");
+		expect(mockOnAddItem).not.toHaveBeenCalledWith("done");
+	});
+
 	it("shows loading indicator when isLoading is true", () => {
 		render(
 			<ItemListManager

@@ -37,9 +37,21 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 		(suggestion) => !items.includes(suggestion),
 	);
 
+	const findCaseInsensitiveSuggestion = (value: string): string | null => {
+		const normalizedValue = value.trim().toLowerCase();
+		const match = filteredSuggestions.find(
+			(suggestion) => suggestion.toLowerCase() === normalizedValue,
+		);
+		return match ?? null;
+	};
+
 	const addItem = (value: string) => {
 		if (value.trim()) {
-			onAddItem(value.trim());
+			// Check if there's a case-insensitive match with a suggestion
+			const suggestionMatch = findCaseInsensitiveSuggestion(value);
+
+			// If there's a match, use the original casing from suggestions
+			onAddItem(suggestionMatch ?? value.trim());
 			setInputValue("");
 			setHighlightedOption(null);
 		}
