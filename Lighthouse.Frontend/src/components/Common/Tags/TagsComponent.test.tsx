@@ -14,6 +14,7 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import type { IVersionService } from "../../../services/Api/VersionService";
 import type { IWorkTrackingSystemService } from "../../../services/Api/WorkTrackingSystemService";
 import type { IUpdateSubscriptionService } from "../../../services/UpdateSubscriptionService";
+import { createMockSuggestionService } from "../../../tests/MockApiServiceProvider";
 import TagsComponent from "./TagsComponent";
 
 // Mock ItemListManager component
@@ -53,9 +54,8 @@ vi.mock("../ItemListManager/ItemListManager", () => ({
 describe("TagsComponent", () => {
 	// Correctly type the mock tag service to support mockResolvedValue
 	const mockGetTags = vi.fn();
-	const mockSuggestionService: ISuggestionService = {
-		getTags: mockGetTags,
-	};
+	const mockSuggestionService: ISuggestionService =
+		createMockSuggestionService();
 
 	// Create a properly typed mock context without any 'any' types
 	const mockApiContext: IApiServiceContext = {

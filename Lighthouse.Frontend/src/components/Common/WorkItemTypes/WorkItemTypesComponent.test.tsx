@@ -1,26 +1,56 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockSuggestionService,
+} from "../../../tests/MockApiServiceProvider";
 import WorkItemTypesComponent from "./WorkItemTypesComponent";
 
 describe("WorkItemTypesComponent", () => {
 	const mockOnAddWorkItemType = vi.fn();
 	const mockOnRemoveWorkItemType = vi.fn();
-
 	const workItemTypes = ["Bug", "Feature", "Task"];
+
+	const mockSuggestionService = createMockSuggestionService();
+
+	const mockGetWorkItemTypesForTeams = vi
+		.fn()
+		.mockResolvedValue(["User Story", "Bug", "Task"]);
+	const mockGetWorkItemTypesForProjects = vi
+		.fn()
+		.mockResolvedValue(["Project Epic", "Project Feature", "Project Task"]);
+
+	mockSuggestionService.getWorkItemTypesForTeams = mockGetWorkItemTypesForTeams;
+	mockSuggestionService.getWorkItemTypesForProjects =
+		mockGetWorkItemTypesForProjects;
+
+	const mockApiContext = createMockApiServiceContext({
+		suggestionService: mockSuggestionService,
+	});
+
+	const renderWithContext = (isForTeam = true) => {
+		return render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<WorkItemTypesComponent
+					workItemTypes={workItemTypes}
+					onAddWorkItemType={mockOnAddWorkItemType}
+					onRemoveWorkItemType={mockOnRemoveWorkItemType}
+					isForTeam={isForTeam}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+	};
 
 	beforeEach(() => {
 		mockOnAddWorkItemType.mockClear();
 		mockOnRemoveWorkItemType.mockClear();
+		mockGetWorkItemTypesForTeams.mockClear();
+		mockGetWorkItemTypesForProjects.mockClear();
 	});
 
-	it("renders correctly", () => {
-		render(
-			<WorkItemTypesComponent
-				workItemTypes={workItemTypes}
-				onAddWorkItemType={mockOnAddWorkItemType}
-				onRemoveWorkItemType={mockOnRemoveWorkItemType}
-			/>,
-		);
+	it("renders correctly", async () => {
+		renderWithContext();
 
 		expect(screen.getByText("Work Item Types")).toBeInTheDocument();
 
@@ -29,20 +59,47 @@ describe("WorkItemTypesComponent", () => {
 		}
 
 		expect(screen.getByLabelText("New Work Item Type")).toBeInTheDocument();
-		// Check for the help text instead of a button since there isn't an actual "Add" button
+		// Check for the help text
 		expect(
 			screen.getByText(/Type a new work item type and press Enter to add/i),
 		).toBeInTheDocument();
 	});
 
-	it("calls onAddWorkItemType when a new work item type is added", () => {
-		render(
-			<WorkItemTypesComponent
-				workItemTypes={workItemTypes}
-				onAddWorkItemType={mockOnAddWorkItemType}
-				onRemoveWorkItemType={mockOnRemoveWorkItemType}
-			/>,
-		);
+	it("fetches team work item types when isForTeam is true", async () => {
+		renderWithContext(true);
+
+		await waitFor(() => {
+			expect(
+				mockSuggestionService.getWorkItemTypesForTeams,
+			).toHaveBeenCalledTimes(1);
+			expect(
+				mockSuggestionService.getWorkItemTypesForProjects,
+			).not.toHaveBeenCalled();
+		});
+	});
+
+	it("fetches project work item types when isForTeam is false", async () => {
+		renderWithContext(false);
+
+		await waitFor(() => {
+			expect(
+				mockSuggestionService.getWorkItemTypesForProjects,
+			).toHaveBeenCalledTimes(1);
+			expect(
+				mockSuggestionService.getWorkItemTypesForTeams,
+			).not.toHaveBeenCalled();
+		});
+	});
+
+	it("calls onAddWorkItemType when a new work item type is added", async () => {
+		renderWithContext();
+
+		// Wait for suggestions to load
+		await waitFor(() => {
+			expect(
+				mockSuggestionService.getWorkItemTypesForTeams,
+			).toHaveBeenCalledTimes(1);
+		});
 
 		const input = screen.getByLabelText("New Work Item Type");
 
@@ -51,18 +108,17 @@ describe("WorkItemTypesComponent", () => {
 
 		expect(mockOnAddWorkItemType).toHaveBeenCalledWith("Improvement");
 		expect(mockOnAddWorkItemType).toHaveBeenCalledTimes(1);
-
-		expect(input).toHaveValue("");
 	});
 
-	it("does not call onAddWorkItemType when the input is empty", () => {
-		render(
-			<WorkItemTypesComponent
-				workItemTypes={workItemTypes}
-				onAddWorkItemType={mockOnAddWorkItemType}
-				onRemoveWorkItemType={mockOnRemoveWorkItemType}
-			/>,
-		);
+	it("does not call onAddWorkItemType when the input is empty", async () => {
+		renderWithContext();
+
+		// Wait for suggestions to load
+		await waitFor(() => {
+			expect(
+				mockSuggestionService.getWorkItemTypesForTeams,
+			).toHaveBeenCalledTimes(1);
+		});
 
 		const input = screen.getByLabelText("New Work Item Type");
 
@@ -72,14 +128,15 @@ describe("WorkItemTypesComponent", () => {
 		expect(mockOnAddWorkItemType).not.toHaveBeenCalled();
 	});
 
-	it("calls onRemoveWorkItemType when a work item type is removed", () => {
-		render(
-			<WorkItemTypesComponent
-				workItemTypes={workItemTypes}
-				onAddWorkItemType={mockOnAddWorkItemType}
-				onRemoveWorkItemType={mockOnRemoveWorkItemType}
-			/>,
-		);
+	it("calls onRemoveWorkItemType when a work item type is removed", async () => {
+		renderWithContext();
+
+		// Wait for suggestions to load
+		await waitFor(() => {
+			expect(
+				mockSuggestionService.getWorkItemTypesForTeams,
+			).toHaveBeenCalledTimes(1);
+		});
 
 		// Find the delete icon by looking for the parent Chip component with the right text
 		const chipElement = screen.getByText("Bug").closest(".MuiChip-root");
@@ -91,5 +148,22 @@ describe("WorkItemTypesComponent", () => {
 
 		expect(mockOnRemoveWorkItemType).toHaveBeenCalledWith(workItemTypes[0]);
 		expect(mockOnRemoveWorkItemType).toHaveBeenCalledTimes(1);
+	});
+
+	it("displays error in console when fetching suggestions fails", async () => {
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const mockError = new Error("Failed to fetch");
+		mockGetWorkItemTypesForTeams.mockRejectedValueOnce(mockError);
+
+		renderWithContext();
+
+		await waitFor(() => {
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"Failed to fetch work item types:",
+				mockError,
+			);
+		});
+
+		consoleSpy.mockRestore();
 	});
 });

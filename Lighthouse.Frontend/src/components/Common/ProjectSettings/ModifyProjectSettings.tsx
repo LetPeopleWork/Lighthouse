@@ -373,6 +373,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						workItemTypes={projectSettings?.workItemTypes || []}
 						onAddWorkItemType={handleAddWorkItemType}
 						onRemoveWorkItemType={handleRemoveWorkItemType}
+						isForTeam={false}
 					/>
 
 					{!modifyDefaultSettings ? (

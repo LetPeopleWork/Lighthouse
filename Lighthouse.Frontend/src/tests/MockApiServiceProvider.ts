@@ -39,6 +39,8 @@ export const createMockApiServiceContext = (
 export const createMockSuggestionService = (): ISuggestionService => {
 	return {
 		getTags: vi.fn(),
+		getWorkItemTypesForTeams: vi.fn(),
+		getWorkItemTypesForProjects: vi.fn(),
 	};
 };
 

@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.API
         [HttpGet("tags")]
         public ActionResult<List<string>> GetTags()
         {
-            logger.LogDebug("Getting All Tags");
+            logger.LogDebug("Getting Tag Suggestions");
 
             var workItemQueryOwners = GetAllWorkItemQueryOwners();
 
@@ -31,6 +31,34 @@ namespace Lighthouse.Backend.API
                 .Distinct();
 
             return Ok(tags.ToList());
+        }
+
+        [HttpGet("workitemtypes/teams")]
+        public ActionResult<List<string>> GetWorkItemTypesForTeams()
+        {
+            logger.LogDebug("Getting Work Item Type Suggestions for Teams");
+
+            var teams = teamRepository.GetAll();
+
+            var workItemTypes = teams
+                .SelectMany(x => x.WorkItemTypes)
+                .Distinct();
+
+            return Ok(workItemTypes.ToList());
+        }
+
+        [HttpGet("workitemtypes/projects")]
+        public ActionResult<List<string>> GetWorkItemTypesForProjects()
+        {
+            logger.LogDebug("Getting Work Item Type Suggestions for Projects");
+
+            var projects = projectRepository.GetAll();
+
+            var workItemTypes = projects
+                .SelectMany(x => x.WorkItemTypes)
+                .Distinct();
+
+            return Ok(workItemTypes.ToList());
         }
 
         private IEnumerable<IWorkItemQueryOwner> GetAllWorkItemQueryOwners()

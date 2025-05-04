@@ -666,6 +666,18 @@ export class DemoApiService
 		return ["GCZ", "VfL", "Barca"];
 	}
 
+	async getWorkItemTypesForTeams(): Promise<string[]> {
+		await this.delay();
+
+		return ["User Story", "Bug"];
+	}
+
+	async getWorkItemTypesForProjects(): Promise<string[]> {
+		await this.delay();
+
+		return ["Epic"];
+	}
+
 	async getCycleTimePercentiles(
 		teamId: number,
 		startDate: Date,

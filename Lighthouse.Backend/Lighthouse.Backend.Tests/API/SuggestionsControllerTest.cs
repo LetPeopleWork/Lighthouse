@@ -4,7 +4,6 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using static Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear.LinearWorkTrackingConnector.LinearResponses;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -32,9 +31,9 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTags_NoTeams_NoProjects_ReturnsEmptyList()
         {
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
             
             Assert.Multiple(() =>
             {
@@ -52,9 +51,9 @@ namespace Lighthouse.Backend.Tests.API
             var tag = "FirstClubInTown";
             var team = CreateTeam(tag);
 
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -73,9 +72,9 @@ namespace Lighthouse.Backend.Tests.API
             var tag2 = "White";
 
             var team = CreateTeam(tag1, tag2);
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
             
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
             
             Assert.Multiple(() =>
             {
@@ -97,9 +96,9 @@ namespace Lighthouse.Backend.Tests.API
             var team1 = CreateTeam(tag1, tag2);
             var team2 = CreateTeam(tag2);
 
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -121,9 +120,9 @@ namespace Lighthouse.Backend.Tests.API
             var team1 = CreateTeam(tag1);
             var team2 = CreateTeam(tag2);
 
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -139,9 +138,9 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTags_NoProjects_ReturnsEmptyList()
         {
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -159,9 +158,9 @@ namespace Lighthouse.Backend.Tests.API
             var tag = "ProjectAlpha";
             var project = CreateProject(tag);
 
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -180,9 +179,9 @@ namespace Lighthouse.Backend.Tests.API
             var tag2 = "Green";
 
             var project = CreateProject(tag1, tag2);
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -204,9 +203,9 @@ namespace Lighthouse.Backend.Tests.API
             var project1 = CreateProject(tag1, tag2);
             var project2 = CreateProject(tag2);
 
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -228,9 +227,9 @@ namespace Lighthouse.Backend.Tests.API
             var project1 = CreateProject(tag1);
             var project2 = CreateProject(tag2);
 
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -254,9 +253,9 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(teamTag1, teamTag2);
             var project = CreateProject(projectTag1, projectTag2);
 
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -281,9 +280,9 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(teamTag1, teamTag2);
             var project = CreateProject(projectTag1, projectTag2);
 
-            var tagsController = CreateSubject();
+            var suggestionsController = CreateSubject();
 
-            var response = tagsController.GetTags();
+            var response = suggestionsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -295,6 +294,122 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(tags, Has.Member(teamTag2));
                 Assert.That(tags, Has.Member(projectTag1));
                 Assert.That(tags, Has.Member(projectTag2));
+            });
+        }
+
+        [Test]
+        public void GetWorkItemTypesForTeams_ReturnsAllWorkItemTypes()
+        {
+            var teamType1 = "User Story";
+            var teamType2 = "Bug";
+            var teamType3 = "Task";
+
+            var team1 = CreateTeam("Team1");
+            team1.WorkItemTypes.Add(teamType1);
+            team1.WorkItemTypes.Add(teamType3);
+
+            var team2 = CreateTeam("Team2");
+            team2.WorkItemTypes.Add(teamType2);
+
+            var suggestionsController = CreateSubject();
+
+            var response = suggestionsController.GetWorkItemTypesForTeams();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.Not.Null);
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var tags = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(tags, Has.Count.EqualTo(3));
+                Assert.That(tags, Has.Member(teamType1));
+                Assert.That(tags, Has.Member(teamType2));
+                Assert.That(tags, Has.Member(teamType3));
+            });
+        }
+
+        [Test]
+        public void GetWorkItemTypesForTeams_DoesNotIncludeItemsTwice_ReturnsAllWorkItemTypes()
+        {
+            var teamType1 = "User Story";
+            var teamType2 = "Bug";
+            var teamType3 = "Task";
+
+            var team1 = CreateTeam("Team1");
+            team1.WorkItemTypes.Add(teamType1);
+            team1.WorkItemTypes.Add(teamType3);
+
+            var team2 = CreateTeam("Team2");
+            team2.WorkItemTypes.Add(teamType1);
+            team2.WorkItemTypes.Add(teamType2);
+
+            var suggestionsController = CreateSubject();
+
+            var response = suggestionsController.GetWorkItemTypesForTeams();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.Not.Null);
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var tags = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(tags, Has.Count.EqualTo(3));
+                Assert.That(tags, Has.Member(teamType1));
+                Assert.That(tags, Has.Member(teamType2));
+                Assert.That(tags, Has.Member(teamType3));
+            });
+        }
+
+        [Test]
+        public void GetWorkItemTypesForProjects_ReturnsAllWorkItemTypes()
+        {
+            var projectType1 = "Epic";
+            var projectType2 = "Feature";
+
+            var project1 = CreateProject();
+            project1.WorkItemTypes.Add(projectType1);
+
+            var project2 = CreateProject();
+            project2.WorkItemTypes.Add(projectType2);
+
+            var suggestionsController = CreateSubject();
+
+            var response = suggestionsController.GetWorkItemTypesForProjects();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.Not.Null);
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var tags = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(tags, Has.Count.EqualTo(2));
+                Assert.That(tags, Has.Member(projectType1));
+                Assert.That(tags, Has.Member(projectType2));
+            });
+        }
+
+        [Test]
+        public void GetWorkItemTypesForProjects_DoesNotIncludeItemsTwice_ReturnsAllWorkItemTypes()
+        {
+            var projectType1 = "Epic";
+            var projectType2 = "Feature";
+
+            var project1 = CreateProject();
+            project1.WorkItemTypes.Add(projectType1);
+            project1.WorkItemTypes.Add(projectType2);
+
+            var project2 = CreateProject();
+            project2.WorkItemTypes.Add(projectType2);
+
+            var suggestionsController = CreateSubject();
+
+            var response = suggestionsController.GetWorkItemTypesForProjects();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.Not.Null);
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var tags = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(tags, Has.Count.EqualTo(2));
+                Assert.That(tags, Has.Member(projectType1));
+                Assert.That(tags, Has.Member(projectType2));
             });
         }
 

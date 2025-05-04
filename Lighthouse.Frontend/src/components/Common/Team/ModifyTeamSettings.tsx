@@ -292,6 +292,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						workItemTypes={teamSettings?.workItemTypes || []}
 						onAddWorkItemType={handleAddWorkItemType}
 						onRemoveWorkItemType={handleRemoveWorkItemType}
+						isForTeam={true}
 					/>
 
 					<StatesList
