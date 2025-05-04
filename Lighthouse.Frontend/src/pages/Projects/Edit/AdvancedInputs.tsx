@@ -1,9 +1,11 @@
 import { FormControlLabel, Switch, TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
+import { useContext, useEffect, useState } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import ItemListManager from "../../../components/Common/ItemListManager/ItemListManager";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface AdvancedInputsComponentProps {
 	projectSettings: IProjectSettings | null;
@@ -17,6 +19,32 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 	projectSettings,
 	onProjectSettingsChange,
 }) => {
+	const [statesSuggestions, setStatesSuggestions] = useState<string[]>([]);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const { suggestionService } = useContext(ApiServiceContext);
+
+	useEffect(() => {
+		const fetchStates = async () => {
+			setIsLoading(true);
+			try {
+				const availableStates = await suggestionService.getStatesForProjects();
+				const allStates = [
+					...(availableStates.toDoStates || []),
+					...(availableStates.doingStates || []),
+					...(availableStates.doneStates || []),
+				];
+
+				setStatesSuggestions(Array.from(new Set(allStates)));
+			} catch (error) {
+				console.error("Failed to fetch states:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchStates();
+	}, [suggestionService]);
+
 	const handleAddOverrideChildCountState = (
 		overrideChildCountState: string,
 	) => {
@@ -162,6 +190,8 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 						items={projectSettings?.overrideRealChildCountStates ?? []}
 						onAddItem={handleAddOverrideChildCountState}
 						onRemoveItem={handleRemoveOverrideChildCountState}
+						suggestions={statesSuggestions}
+						isLoading={isLoading}
 					/>
 				</Grid>
 			</InputGroup>

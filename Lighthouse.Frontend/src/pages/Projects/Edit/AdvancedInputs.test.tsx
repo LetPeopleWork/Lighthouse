@@ -1,6 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockSuggestionService,
+} from "../../../tests/MockApiServiceProvider";
 import AdvancedInputsComponent from "./AdvancedInputs";
 
 describe("AdvancedInputsComponent", () => {
@@ -26,6 +31,36 @@ describe("AdvancedInputsComponent", () => {
 	};
 
 	const mockOnProjectSettingsChange = vi.fn();
+
+	// Mock suggestion service with state data
+	const mockSuggestionService = createMockSuggestionService();
+	const mockProjectStates = {
+		toDoStates: ["New", "Ready", "Backlog"],
+		doingStates: ["Active", "In Progress", "In Review"],
+		doneStates: ["Done", "Closed", "Completed"],
+	};
+
+	const mockGetStatesForProjects = vi.fn().mockResolvedValue(mockProjectStates);
+	mockSuggestionService.getStatesForProjects = mockGetStatesForProjects;
+
+	const mockApiContext = createMockApiServiceContext({
+		suggestionService: mockSuggestionService,
+	});
+
+	const renderWithContext = () => {
+		return render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<AdvancedInputsComponent
+					projectSettings={initialSettings}
+					onProjectSettingsChange={mockOnProjectSettingsChange}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
 
 	it("renders correctly with initial settings", () => {
 		render(
@@ -161,5 +196,79 @@ describe("AdvancedInputsComponent", () => {
 			"defaultWorkItemPercentile",
 			90,
 		);
+	});
+
+	it("fetches project states for suggestions when component mounts", async () => {
+		await act(async () => {
+			renderWithContext();
+		});
+
+		expect(mockSuggestionService.getStatesForProjects).toHaveBeenCalledTimes(1);
+	});
+
+	it("adds new override state when entered", async () => {
+		await act(async () => {
+			renderWithContext();
+		});
+
+		const input = screen.getByLabelText("New Size Override State");
+		await act(async () => {
+			fireEvent.change(input, { target: { value: "In Progress" } });
+			fireEvent.keyDown(input, { key: "Enter" });
+		});
+
+		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+			"overrideRealChildCountStates",
+			["", "In Progress"],
+		);
+	});
+
+	it("removes an override state when delete is clicked", async () => {
+		const updatedSettings: IProjectSettings = {
+			...initialSettings,
+			overrideRealChildCountStates: ["Ready", "In Progress"],
+		};
+
+		await act(async () => {
+			render(
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<AdvancedInputsComponent
+						projectSettings={updatedSettings}
+						onProjectSettingsChange={mockOnProjectSettingsChange}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+		});
+
+		const chipElement = screen.getByText("Ready").closest(".MuiChip-root");
+		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
+
+		if (deleteIcon) {
+			await act(async () => {
+				fireEvent.click(deleteIcon);
+			});
+		}
+
+		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+			"overrideRealChildCountStates",
+			["In Progress"],
+		);
+	});
+
+	it("displays error in console when fetching suggestions fails", async () => {
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const mockError = new Error("Failed to fetch");
+		mockGetStatesForProjects.mockRejectedValueOnce(mockError);
+
+		await act(async () => {
+			renderWithContext();
+		});
+
+		expect(consoleSpy).toHaveBeenCalledWith(
+			"Failed to fetch states:",
+			mockError,
+		);
+
+		consoleSpy.mockRestore();
 	});
 });

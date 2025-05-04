@@ -108,7 +108,10 @@ export class ProjectEditPage extends BaseEditPage<ProjectDetailPage> {
 
 	async addSizeOverrideState(overrideState: string): Promise<void> {
 		await this.page.getByLabel("New Size Override State").fill(overrideState);
-		await this.page.getByLabel("New Size Override State").press("Enter");
+		await this.page.keyboard.press("Enter");
+
+		// Reset the input field
+		await this.page.keyboard.press("Escape");
 	}
 
 	async selectOwningTeam(teamName: string): Promise<void> {
