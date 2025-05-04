@@ -2,19 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type { IForecastService } from "../../../services/Api/ForecastService";
-import type { ILogService } from "../../../services/Api/LogService";
-import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
-import type { IProjectMetricsService } from "../../../services/Api/ProjectMetricsService";
-import type { IProjectService } from "../../../services/Api/ProjectService";
-import type { ISettingsService } from "../../../services/Api/SettingsService";
 import type { ISuggestionService } from "../../../services/Api/SuggestionService";
-import type { ITeamMetricsService } from "../../../services/Api/TeamMetricsService";
-import type { ITeamService } from "../../../services/Api/TeamService";
-import type { IVersionService } from "../../../services/Api/VersionService";
-import type { IWorkTrackingSystemService } from "../../../services/Api/WorkTrackingSystemService";
-import type { IUpdateSubscriptionService } from "../../../services/UpdateSubscriptionService";
-import { createMockSuggestionService } from "../../../tests/MockApiServiceProvider";
+import {
+	createMockApiServiceContext,
+	createMockSuggestionService,
+} from "../../../tests/MockApiServiceProvider";
 import TagsComponent from "./TagsComponent";
 
 // Mock ItemListManager component
@@ -57,21 +49,12 @@ describe("TagsComponent", () => {
 	const mockSuggestionService: ISuggestionService =
 		createMockSuggestionService();
 
-	// Create a properly typed mock context without any 'any' types
-	const mockApiContext: IApiServiceContext = {
+	// Connect the mock function to the service
+	mockSuggestionService.getTags = mockGetTags;
+
+	const mockApiContext: IApiServiceContext = createMockApiServiceContext({
 		suggestionService: mockSuggestionService,
-		forecastService: {} as IForecastService,
-		logService: {} as ILogService,
-		projectService: {} as IProjectService,
-		settingsService: {} as ISettingsService,
-		teamService: {} as ITeamService,
-		teamMetricsService: {} as ITeamMetricsService,
-		projectMetricsService: {} as IProjectMetricsService,
-		versionService: {} as IVersionService,
-		workTrackingSystemService: {} as IWorkTrackingSystemService,
-		optionalFeatureService: {} as IOptionalFeatureService,
-		updateSubscriptionService: {} as IUpdateSubscriptionService,
-	};
+	});
 
 	const mockOnAddTag = vi.fn();
 	const mockOnRemoveTag = vi.fn();
@@ -179,7 +162,7 @@ describe("TagsComponent", () => {
 			.mockImplementation(() => {});
 
 		// Make the tag service throw an error
-		mockGetTags.mockRejectedValue(new Error("Failed to fetch tags"));
+		mockGetTags.mockRejectedValueOnce(new Error("Failed to fetch tags"));
 
 		render(
 			<ApiServiceContext.Provider value={mockApiContext}>
