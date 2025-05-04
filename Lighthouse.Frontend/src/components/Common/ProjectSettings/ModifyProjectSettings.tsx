@@ -396,6 +396,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						doneStates={projectSettings?.doneStates || []}
 						onAddDoneState={handleAddDoneState}
 						onRemoveDoneState={handleRemoveDoneState}
+						isForTeam={false}
 					/>
 
 					<TagsComponent

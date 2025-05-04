@@ -305,6 +305,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						doneStates={teamSettings?.doneStates || []}
 						onAddDoneState={handleAddDoneState}
 						onRemoveDoneState={handleRemoveDoneState}
+						isForTeam={true}
 					/>
 
 					<TagsComponent

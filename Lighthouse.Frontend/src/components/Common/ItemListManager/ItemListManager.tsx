@@ -33,12 +33,10 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 	);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	// Filter out suggestions that are already in the items list
 	const filteredSuggestions = suggestions.filter(
 		(suggestion) => !items.includes(suggestion),
 	);
 
-	// This is the unified handler for adding an item, whether from input or selection
 	const addItem = (value: string) => {
 		if (value.trim()) {
 			onAddItem(value.trim());
@@ -123,7 +121,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 							)}
 						/>
 						<Typography variant="caption" color="text.secondary">
-							Type to select from existing {title.toLowerCase()}s or add a new
+							Type to select from existing {title.toLowerCase()} or add a new
 							one. Press Enter to add.
 						</Typography>
 					</>

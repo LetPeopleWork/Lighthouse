@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.API
             return Ok(workItemTypes.ToList());
         }
 
-        [HttpGet("states/team")]
+        [HttpGet("states/teams")]
         public ActionResult<StatesCollectionDto> GetStatesForTeams()
         {
             logger.LogDebug("Getting States Suggestions for Teams");

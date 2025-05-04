@@ -57,7 +57,7 @@ export abstract class BaseEditPage<T> {
 	}
 
 	async addWorkItemType(workItemType: string): Promise<void> {
-		await this.page.getByLabel("New Work Item Type").fill(workItemType);		
+		await this.page.getByLabel("New Work Item Type").fill(workItemType);
 		await this.page.keyboard.press("Enter");
 
 		// Reset the input field
@@ -78,7 +78,10 @@ export abstract class BaseEditPage<T> {
 		stateCategory: "To Do" | "Doing" | "Done",
 	): Promise<void> {
 		await this.page.getByLabel(`New ${stateCategory} States`).fill(state);
-		await this.page.getByLabel(`New ${stateCategory} States`).press("Enter");
+		await this.page.keyboard.press("Enter");
+
+		// Reset the input field
+		await this.page.keyboard.press("Escape");
 	}
 
 	async removeState(state: string): Promise<void> {
