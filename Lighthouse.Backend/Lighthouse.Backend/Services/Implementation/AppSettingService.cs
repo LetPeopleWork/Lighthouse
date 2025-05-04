@@ -63,6 +63,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
                 DoneStates = doneStates,
+                Tags = GetListByKey(AppSettingKeys.TeamSettingTags),
             };
 
             return teamSettings;
@@ -102,6 +103,10 @@ namespace Lighthouse.Backend.Services.Implementation
             doneStates.Value = string.Join(',', defaultTeamSetting.DoneStates);
             repository.Update(doneStates);
             
+            var tags = GetSettingByKey(AppSettingKeys.TeamSettingTags);
+            tags.Value = string.Join(',', defaultTeamSetting.Tags);
+            repository.Update(tags);
+            
             var relatedField = GetSettingByKey(AppSettingKeys.TeamSettingRelationCustomField);
             relatedField.Value = defaultTeamSetting.RelationCustomField;
             repository.Update(relatedField);
@@ -120,6 +125,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var toDoStates = GetListByKey(AppSettingKeys.ProjectSettingToDoStates);
             var doingStates = GetListByKey(AppSettingKeys.ProjectSettingDoingStates);
             var doneStates = GetListByKey(AppSettingKeys.ProjectSettingDoneStates);
+            var tags = GetListByKey(AppSettingKeys.ProjectSettingTags);
 
             var overrideRealChildCountStates = GetListByKey(AppSettingKeys.ProjectSettingOverrideRealChildCountStates);
 
@@ -137,6 +143,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
                 DoneStates = doneStates,
+                Tags = tags,
 
                 OverrideRealChildCountStates = overrideRealChildCountStates,
 
@@ -172,6 +179,10 @@ namespace Lighthouse.Backend.Services.Implementation
             var doneStates = GetSettingByKey(AppSettingKeys.ProjectSettingDoneStates);
             doneStates.Value = string.Join(',', defaultProjectSetting.DoneStates);
             repository.Update(doneStates);
+
+            var tags = GetSettingByKey(AppSettingKeys.ProjectSettingTags);
+            tags.Value = string.Join(',', defaultProjectSetting.Tags);
+            repository.Update(tags);
 
             var overrideRealChildCountStates = GetSettingByKey(AppSettingKeys.ProjectSettingOverrideRealChildCountStates);
             overrideRealChildCountStates.Value = string.Join(',', defaultProjectSetting.OverrideRealChildCountStates);

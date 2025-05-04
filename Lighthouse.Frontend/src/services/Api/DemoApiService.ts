@@ -42,7 +42,7 @@ import type { IOptionalFeatureService } from "./OptionalFeatureService";
 import type { IProjectMetricsService } from "./ProjectMetricsService";
 import type { IProjectService } from "./ProjectService";
 import type { ISettingsService } from "./SettingsService";
-import type { ITagService } from "./TagService";
+import type { ISuggestionService } from "./SuggestionService";
 import type { ITeamMetricsService } from "./TeamMetricsService";
 import type { ITeamService } from "./TeamService";
 import type { IVersionService } from "./VersionService";
@@ -61,7 +61,7 @@ export class DemoApiService
 		IUpdateSubscriptionService,
 		ITeamMetricsService,
 		IProjectMetricsService,
-		ITagService
+		ISuggestionService
 {
 	private readonly useDelay: boolean;
 	private readonly throwError: boolean;

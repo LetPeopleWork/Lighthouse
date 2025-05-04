@@ -109,6 +109,7 @@ testWithRestoredDefaultSettings(
 		const newSizeEstimateField = "CUSTOMSIZEFIELD";
 		const newSizeOverrideState = "OVERRIDE";
 		const newFeatureOwnerField = "labels";
+		const newTag = "tag";
 
 		await test.step("Adjust Settings and Save", async () => {
 			await projectSettingsPage.setName(newName);
@@ -135,6 +136,8 @@ testWithRestoredDefaultSettings(
 				},
 				{ toDo: [newtoDoState], doing: [newDoingState], done: [newDoneState] },
 			);
+
+			await projectSettingsPage.addTag(newTag);
 
 			await projectSettingsPage.toggleUnparentedWorkItemConfiguration();
 			await projectSettingsPage.setUnparentedWorkItemQuery(
@@ -179,6 +182,9 @@ testWithRestoredDefaultSettings(
 
 			const doneState = projectSettings.getState(newDoneState);
 			await expect(doneState).toBeVisible();
+
+			const tag = projectSettings.getTag(newTag);
+			await expect(tag).toBeVisible();
 
 			await projectSettings.toggleUnparentedWorkItemConfiguration();
 			const unparentedWorkItemQuery =

@@ -296,6 +296,11 @@ for (const teamConfiguration of newTeamConfigurations) {
 				await expect(newProjectPage.validateButton).toBeDisabled();
 			});
 
+			await test.step("Add Tags", async () => {
+				await newProjectPage.addTag("Important");
+				await newProjectPage.addTag(teamConfiguration.name);
+			});
+
 			await test.step("Select Work Tracking System", async () => {
 				const workTrackingSystem =
 					testData.connections[teamConfiguration.workTrackingSystemIndex];

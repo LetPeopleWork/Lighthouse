@@ -8,7 +8,7 @@ using static Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.L
 
 namespace Lighthouse.Backend.Tests.API
 {
-    public class TagsControllerTest
+    public class SuggestionsControllerTest
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Project>> projectRepositoryMock;
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
             
             Assert.Multiple(() =>
             {
@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(tag1, tag2);
             var tagsController = CreateSubject();
             
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
             
             Assert.Multiple(() =>
             {
@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -182,7 +182,7 @@ namespace Lighthouse.Backend.Tests.API
             var project = CreateProject(tag1, tag2);
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -230,7 +230,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -283,7 +283,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var tagsController = CreateSubject();
 
-            var response = tagsController.GetAllTags();
+            var response = tagsController.GetTags();
 
             Assert.Multiple(() =>
             {
@@ -326,10 +326,10 @@ namespace Lighthouse.Backend.Tests.API
             return team;
         }
 
-        private TagsController CreateSubject()
+        private SuggestionsController CreateSubject()
         {
-            return new TagsController(
-                Mock.Of<ILogger<TagsController>>(),
+            return new SuggestionsController(
+                Mock.Of<ILogger<SuggestionsController>>(),
                 teamRepositoryMock.Object,
                 projectRepositoryMock.Object);
         }

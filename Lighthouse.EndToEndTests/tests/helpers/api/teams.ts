@@ -7,6 +7,7 @@ export async function createTeam(
 	workItemQuery: string,
 	workItemTypes: string[],
 	states: { toDo: string[]; doing: string[]; done: string[] },
+	tags: string[],
 ): Promise<{ id: number; name: string }> {
 	const response = await api.post("/api/Teams", {
 		data: {
@@ -19,7 +20,7 @@ export async function createTeam(
 			toDoStates: states.toDo,
 			doingStates: states.doing,
 			doneStates: states.done,
-			tags: [],
+			tags: tags,
 			relationCustomField: "",
 			automaticallyAdjustFeatureWIP: false,
 			useFixedDatesForThroughput: false,

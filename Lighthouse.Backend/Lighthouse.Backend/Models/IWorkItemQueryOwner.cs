@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Models
 
         List<string> DoneStates { get; set; }
 
+        List<string> Tags { get; set; }
+
         IEnumerable<string> AllStates { get; }
 
         IEnumerable<string> OpenStates { get; }

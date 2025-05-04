@@ -111,6 +111,7 @@ testWithRestoredDefaultSettings(
 		const newDoneState = "DONE";
 		const newFeatureWIP = 3;
 		const newRelationCustomField = "RELATION!";
+		const newTag = "TAG!";
 
 		await test.step("Adjust Settings and Save", async () => {
 			await teamSettingsPage.setName(newName);
@@ -138,6 +139,8 @@ testWithRestoredDefaultSettings(
 				},
 				{ toDo: [newtoDoState], doing: [newDoingState], done: [newDoneState] },
 			);
+
+			await teamSettingsPage.addTag(newTag);
 
 			await teamSettingsPage.toggleAdvancedConfiguration();
 			await teamSettingsPage.setFeatureWip(newFeatureWIP);
@@ -171,6 +174,9 @@ testWithRestoredDefaultSettings(
 
 			const doneState = teamSettings.getState(newDoneState);
 			await expect(doneState).toBeVisible();
+
+			const tag = teamSettings.getTag(newTag);
+			await expect(tag).toBeVisible();
 
 			await teamSettings.toggleAdvancedConfiguration();
 			const featureWip = await teamSettings.getFeatureWip();

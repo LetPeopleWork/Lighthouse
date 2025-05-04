@@ -77,10 +77,9 @@ describe("StatesList", () => {
 		);
 
 		const input = screen.getByLabelText("New To Do States");
-		const addButton = screen.getByRole("button", { name: "Add To Do States" });
 
 		fireEvent.change(input, { target: { value: "Task 3" } });
-		fireEvent.click(addButton);
+		fireEvent.keyDown(input, { key: "Enter" });
 
 		expect(mockOnAddToDoState).toHaveBeenCalledWith("Task 3");
 	});
@@ -100,8 +99,13 @@ describe("StatesList", () => {
 			/>,
 		);
 
-		const deleteButtons = screen.getAllByLabelText("delete");
-		fireEvent.click(deleteButtons[0]);
+		// Find the delete icon by looking for the parent Chip component with the right text
+		const chipElement = screen.getByText("Task 1").closest(".MuiChip-root");
+		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
+
+		if (deleteIcon) {
+			fireEvent.click(deleteIcon);
+		}
 
 		expect(mockOnRemoveToDoState).toHaveBeenCalledWith("Task 1");
 	});
@@ -142,10 +146,9 @@ describe("StatesList", () => {
 		);
 
 		const input = screen.getByLabelText("New Doing States");
-		const addButton = screen.getByRole("button", { name: "Add Doing States" });
 
 		fireEvent.change(input, { target: { value: "Task 4" } });
-		fireEvent.click(addButton);
+		fireEvent.keyDown(input, { key: "Enter" });
 
 		expect(mockOnAddDoingState).toHaveBeenCalledWith("Task 4");
 	});
@@ -165,8 +168,15 @@ describe("StatesList", () => {
 			/>,
 		);
 
-		const deleteButtons = screen.getAllByLabelText("delete");
-		fireEvent.click(deleteButtons[2]);
+		// Find the delete icon by looking for the parent Chip component with the right text
+		const chipElement = screen
+			.getByText("In Progress")
+			.closest(".MuiChip-root");
+		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
+
+		if (deleteIcon) {
+			fireEvent.click(deleteIcon);
+		}
 
 		expect(mockOnRemoveDoingState).toHaveBeenCalledWith("In Progress");
 	});
@@ -207,10 +217,9 @@ describe("StatesList", () => {
 		);
 
 		const input = screen.getByLabelText("New Done States");
-		const addButton = screen.getByRole("button", { name: "Add Done States" });
 
 		fireEvent.change(input, { target: { value: "Task 5" } });
-		fireEvent.click(addButton);
+		fireEvent.keyDown(input, { key: "Enter" });
 
 		expect(mockOnAddDoneState).toHaveBeenCalledWith("Task 5");
 	});
@@ -230,8 +239,13 @@ describe("StatesList", () => {
 			/>,
 		);
 
-		const deleteButtons = screen.getAllByLabelText("delete");
-		fireEvent.click(deleteButtons[3]);
+		// Find the delete icon by looking for the parent Chip component with the right text
+		const chipElement = screen.getByText("Completed").closest(".MuiChip-root");
+		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
+
+		if (deleteIcon) {
+			fireEvent.click(deleteIcon);
+		}
 
 		expect(mockOnRemoveDoneState).toHaveBeenCalledWith("Completed");
 	});

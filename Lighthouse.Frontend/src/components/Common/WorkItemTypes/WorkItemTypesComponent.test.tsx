@@ -29,7 +29,10 @@ describe("WorkItemTypesComponent", () => {
 		}
 
 		expect(screen.getByLabelText("New Work Item Type")).toBeInTheDocument();
-		expect(screen.getByText("Add Work Item Type")).toBeInTheDocument();
+		// Check for the help text instead of a button since there isn't an actual "Add" button
+		expect(
+			screen.getByText(/Type a new work item type and press Enter to add/i),
+		).toBeInTheDocument();
 	});
 
 	it("calls onAddWorkItemType when a new work item type is added", () => {
@@ -42,10 +45,9 @@ describe("WorkItemTypesComponent", () => {
 		);
 
 		const input = screen.getByLabelText("New Work Item Type");
-		const addButton = screen.getByText("Add Work Item Type");
 
 		fireEvent.change(input, { target: { value: "Improvement" } });
-		fireEvent.click(addButton);
+		fireEvent.keyDown(input, { key: "Enter" });
 
 		expect(mockOnAddWorkItemType).toHaveBeenCalledWith("Improvement");
 		expect(mockOnAddWorkItemType).toHaveBeenCalledTimes(1);
@@ -62,9 +64,10 @@ describe("WorkItemTypesComponent", () => {
 			/>,
 		);
 
-		const addButton = screen.getByText("Add Work Item Type");
+		const input = screen.getByLabelText("New Work Item Type");
 
-		fireEvent.click(addButton);
+		fireEvent.change(input, { target: { value: "" } });
+		fireEvent.keyDown(input, { key: "Enter" });
 
 		expect(mockOnAddWorkItemType).not.toHaveBeenCalled();
 	});
@@ -78,8 +81,13 @@ describe("WorkItemTypesComponent", () => {
 			/>,
 		);
 
-		const deleteButton = screen.getAllByRole("button", { name: "delete" })[0];
-		fireEvent.click(deleteButton);
+		// Find the delete icon by looking for the parent Chip component with the right text
+		const chipElement = screen.getByText("Bug").closest(".MuiChip-root");
+		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
+
+		if (deleteIcon) {
+			fireEvent.click(deleteIcon);
+		}
 
 		expect(mockOnRemoveWorkItemType).toHaveBeenCalledWith(workItemTypes[0]);
 		expect(mockOnRemoveWorkItemType).toHaveBeenCalledTimes(1);

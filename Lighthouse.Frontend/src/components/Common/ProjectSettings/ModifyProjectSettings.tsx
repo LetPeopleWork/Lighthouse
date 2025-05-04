@@ -12,6 +12,7 @@ import OwnershipComponent from "../../../pages/Projects/Edit/Ownership";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import MilestonesComponent from "../Milestones/MilestonesComponent";
 import StatesList from "../StatesList/StatesList";
+import TagsComponent from "../Tags/TagsComponent";
 import TeamsList from "../TeamsList/TeamsList";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
@@ -181,6 +182,30 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						doneStates: (prev.doneStates || []).filter(
 							(item) => item !== doneState,
 						),
+					}
+				: prev,
+		);
+	};
+
+	const handleAddTag = (tag: string) => {
+		if (tag.trim()) {
+			setProjectSettings((prev) =>
+				prev
+					? {
+							...prev,
+							tags: [...(prev.tags || []), tag.trim()],
+						}
+					: prev,
+			);
+		}
+	};
+
+	const handleRemoveTag = (tag: string) => {
+		setProjectSettings((prev) =>
+			prev
+				? {
+						...prev,
+						tags: (prev.tags || []).filter((item) => item !== tag),
 					}
 				: prev,
 		);
@@ -370,6 +395,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						doneStates={projectSettings?.doneStates || []}
 						onAddDoneState={handleAddDoneState}
 						onRemoveDoneState={handleRemoveDoneState}
+					/>
+
+					<TagsComponent
+						tags={projectSettings?.tags || []}
+						onAddTag={handleAddTag}
+						onRemoveTag={handleRemoveTag}
 					/>
 
 					{!modifyDefaultSettings ? (

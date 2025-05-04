@@ -1,5 +1,6 @@
 import { TestConfig } from "../../../playwright.config";
 import { expect, test } from "../../fixutres/LighthouseFixture";
+import { generateRandomName } from "../../helpers/names";
 
 test("should be able to handle a team defined in Linear", async ({
 	overviewPage,
@@ -12,7 +13,9 @@ test("should be able to handle a team defined in Linear", async ({
 		await featuresTab.enableFeature("LinearIntegration");
 	});
 
-	const workTrackingSystem = { name: "Linear Connection" };
+	const workTrackingSystem = {
+		name: generateRandomName(),
+	};
 
 	await test.step("Create Linear Work Tracking System Connection", async () => {
 		const workTrackingSystemConnections =
@@ -20,12 +23,14 @@ test("should be able to handle a team defined in Linear", async ({
 		const addWorkTrackingSystemConnectionDialog =
 			await workTrackingSystemConnections.addNewWorkTrackingSystem();
 
-		await addWorkTrackingSystemConnectionDialog.setConnectionName(
-			workTrackingSystem.name,
-		);
 		await addWorkTrackingSystemConnectionDialog.selectWorkTrackingSystem(
 			"Linear",
 		);
+
+		await addWorkTrackingSystemConnectionDialog.setConnectionName(
+			workTrackingSystem.name,
+		);
+
 		await addWorkTrackingSystemConnectionDialog.setWorkTrackingSystemOption(
 			"ApiKey",
 			TestConfig.LinearApiKey,
@@ -95,7 +100,7 @@ test("should be able to handle a team defined in Linear", async ({
 			await expect(newTeamPage.saveButton).toBeEnabled();
 			const teamInfoPage = await newTeamPage.save();
 
-			await expect(teamInfoPage.updateTeamDataButton).toBeDisabled();
+			await expect(teamInfoPage.updateTeamDataButton).toBeEnabled();
 			newTeam.id = teamInfoPage.teamId;
 
 			const teamsPage = await overviewPage.lightHousePage.goToTeams();

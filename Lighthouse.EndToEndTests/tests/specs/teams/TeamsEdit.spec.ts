@@ -217,6 +217,11 @@ for (const {
 				await expect(newTeamPage.validateButton).toBeDisabled();
 			});
 
+			await test.step("Add Tags", async () => {
+				await newTeamPage.addTag("Urgent");
+				await newTeamPage.addTag(name);
+			});
+
 			await test.step("Select Work Tracking System", async () => {
 				const workTrackingSystem =
 					testData.connections[workTrackingSystemIndex];

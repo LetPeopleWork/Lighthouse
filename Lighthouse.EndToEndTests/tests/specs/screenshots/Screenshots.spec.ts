@@ -175,50 +175,60 @@ testWithData(
 
 		await takeElementScreenshot(
 			teamDetailPage.workItemsInProgressWidget,
-			"features/metrics/workitemsinprogress.png",)
+			"features/metrics/workitemsinprogress.png",
+		);
 
-		const workItemsInProgressDialog = await teamDetailPage.openWorkItemsInProgressDialog();
+		const workItemsInProgressDialog =
+			await teamDetailPage.openWorkItemsInProgressDialog();
 		await takeElementScreenshot(
 			workItemsInProgressDialog.page.getByRole("dialog"),
 			"features/metrics/workitemsinprogress_dialog.png",
-		)
+		);
 
 		await workItemsInProgressDialog.close();
 
 		await takeElementScreenshot(
 			teamDetailPage.featuresInProgressWidget,
-			"features/metrics/featuresinprogress.png",)
+			"features/metrics/featuresinprogress.png",
+		);
 
-		const featuresInProgressDialog = await teamDetailPage.openFeaturesInProgressDialog();
+		const featuresInProgressDialog =
+			await teamDetailPage.openFeaturesInProgressDialog();
 		await takeElementScreenshot(
 			featuresInProgressDialog.page.getByRole("dialog"),
 			"features/metrics/featuresinprogress_dialog.png",
-		)
+		);
 		await featuresInProgressDialog.close();
 
 		await takeElementScreenshot(
 			teamDetailPage.cycleTimePercentileWidget,
-			"features/metrics/cycletimepercentiles.png",)
+			"features/metrics/cycletimepercentiles.png",
+		);
 
 		await takeElementScreenshot(
 			teamDetailPage.startedVsClosedWidget,
-			"features/metrics/startedVsClosed.png",)
+			"features/metrics/startedVsClosed.png",
+		);
 
 		await takeElementScreenshot(
 			teamDetailPage.throughputRunChartWidget,
-			"features/metrics/throughputRunChart.png",)
+			"features/metrics/throughputRunChart.png",
+		);
 
 		await takeElementScreenshot(
 			teamDetailPage.cycleTimeScatterplotWidget,
-			"features/metrics/cycleTimeScatterplot.png",)
+			"features/metrics/cycleTimeScatterplot.png",
+		);
 
 		await takeElementScreenshot(
 			teamDetailPage.wipOverTimeWidget,
-			"features/metrics/wipOverTime.png",)
+			"features/metrics/wipOverTime.png",
+		);
 
 		await takeElementScreenshot(
 			teamDetailPage.simplifiedCfdWidget,
-			"features/metrics/simplifiedCFD.png",)
+			"features/metrics/simplifiedCFD.png",
+		);
 
 		// Project Overview Page
 		const projectsPage = await overviewPage.lightHousePage.goToProjects();

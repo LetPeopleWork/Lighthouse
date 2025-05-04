@@ -1,0 +1,49 @@
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Lighthouse.Backend.API
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class SuggestionsController : ControllerBase
+    {
+        private readonly ILogger<SuggestionsController> logger;
+        private readonly IRepository<Team> teamRepository;
+        private readonly IRepository<Project> projectRepository;
+
+        public SuggestionsController(ILogger<SuggestionsController> logger, IRepository<Team> teamRepository, IRepository<Project> projectRepository)
+        {
+            this.logger = logger;
+            this.teamRepository = teamRepository;
+            this.projectRepository = projectRepository;
+        }
+
+        [HttpGet("tags")]
+        public ActionResult<List<string>> GetTags()
+        {
+            logger.LogDebug("Getting All Tags");
+
+            var workItemQueryOwners = GetAllWorkItemQueryOwners();
+
+            var tags = workItemQueryOwners
+                .SelectMany(x => x.Tags)
+                .Distinct();
+
+            return Ok(tags.ToList());
+        }
+
+        private IEnumerable<IWorkItemQueryOwner> GetAllWorkItemQueryOwners()
+        {
+            var workItemQueryOwners = new List<IWorkItemQueryOwner>();
+
+            var teams = teamRepository.GetAll();
+            var projects = projectRepository.GetAll();
+
+            workItemQueryOwners.AddRange(teams);
+            workItemQueryOwners.AddRange(projects);
+
+            return workItemQueryOwners;
+        }
+    }
+}

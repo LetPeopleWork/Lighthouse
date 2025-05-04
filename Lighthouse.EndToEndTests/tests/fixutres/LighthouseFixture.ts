@@ -124,6 +124,7 @@ async function generateTestData(
 		`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
 		["User Story", "Bug"],
 		adoStates,
+		["Azure DevOps"],
 	);
 	const team2 = await createTeam(
 		request,
@@ -132,6 +133,7 @@ async function generateTestData(
 		`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Cyber Sultans" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
 		["User Story", "Bug"],
 		adoStates,
+		["Azure DevOps"],
 	);
 	const team3 = await createTeam(
 		request,
@@ -140,6 +142,7 @@ async function generateTestData(
 		'project = "LGHTHSDMO" AND labels = "Lagunitas"',
 		["Story", "Bug"],
 		jiraStates,
+		["Jira"],
 	);
 
 	const teamsToProcess: ModelIdentifier[] = [];
@@ -165,6 +168,7 @@ async function generateTestData(
 		'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"',
 		["Epic"],
 		adoStates,
+		["Azure DevOps"],
 	);
 	const project2 = await createProject(
 		request,
@@ -174,6 +178,7 @@ async function generateTestData(
 		'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release Codename Daniel"',
 		["Epic"],
 		adoStates,
+		["Azure DevOps"],
 	);
 	const project3 = await createProject(
 		request,
@@ -183,6 +188,7 @@ async function generateTestData(
 		'project = "LGHTHSDMO" AND fixVersion = "Oberon Initiative"',
 		["Epic"],
 		jiraStates,
+		["Jira"],
 	);
 
 	return {

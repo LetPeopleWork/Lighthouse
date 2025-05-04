@@ -162,6 +162,27 @@ vi.mock("../StatesList/StatesList", () => ({
 	),
 }));
 
+vi.mock("../Tags/TagsComponent", () => ({
+	__esModule: true,
+	default: ({
+		onAddTag,
+		onRemoveTag,
+	}: {
+		onAddTag: (tag: string) => void;
+		onRemoveTag: (tag: string) => void;
+	}) => (
+		<div>
+			<div>TagsComponent</div>
+			<button type="button" onClick={() => onAddTag("New Tag")}>
+				Add Tag
+			</button>
+			<button type="button" onClick={() => onRemoveTag("Existing Tag")}>
+				Remove Tag
+			</button>
+		</div>
+	),
+}));
+
 describe("ModifyTeamSettings", () => {
 	const mockGetWorkTrackingSystems = vi.fn();
 	const mockGetTeamSettings = vi.fn();
@@ -291,6 +312,17 @@ describe("ModifyTeamSettings", () => {
 		fireEvent.click(screen.getByText("Add New Work Tracking System"));
 
 		expect(screen.getByText("WorkTrackingSystemComponent")).toBeInTheDocument();
+	});
+
+	it("handles adding and removing tags", async () => {
+		await renderModifyTeamSettings();
+
+		// Test adding a tag
+		fireEvent.click(screen.getByText("Add Tag"));
+		// Test removing a tag
+		fireEvent.click(screen.getByText("Remove Tag"));
+
+		expect(screen.getByText("TagsComponent")).toBeInTheDocument();
 	});
 
 	it("handles save action", async () => {

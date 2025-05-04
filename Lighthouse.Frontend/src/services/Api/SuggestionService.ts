@@ -1,0 +1,18 @@
+import { BaseApiService } from "./BaseApiService";
+
+export interface ISuggestionService {
+	getTags(): Promise<string[]>;
+}
+
+export class SuggestionService
+	extends BaseApiService
+	implements ISuggestionService
+{
+	getTags(): Promise<string[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<string[]>("/suggestions/tags");
+
+			return response.data;
+		});
+	}
+}

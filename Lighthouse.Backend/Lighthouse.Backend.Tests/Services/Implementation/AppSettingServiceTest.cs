@@ -94,7 +94,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingDoingStates, "In Progress,Committed",
                 AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
                 AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID",
-                AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "true"
+                AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "true",
+                AppSettingKeys.TeamSettingTags, "tag1,tag2"
                 );
 
             var service = CreateService();
@@ -132,6 +133,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.DoneStates, Has.Count.EqualTo(2));
                 Assert.That(settings.DoneStates, Does.Contain("Done"));
                 Assert.That(settings.DoneStates, Does.Contain("Closed"));
+
+                Assert.That(settings.Tags, Has.Count.EqualTo(2));
+                Assert.That(settings.Tags, Does.Contain("tag1"));
+                Assert.That(settings.Tags, Does.Contain("tag2"));
             });
         }
 
@@ -148,7 +153,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.TeamSettingWorkItemTypes, "Product Backlog Item, Bug",
                 AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID",
-                AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "False"
+                AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "False",
+                AppSettingKeys.TeamSettingTags, "tag1,tag2"
                 );
 
             var service = CreateService();
@@ -165,6 +171,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 WorkItemTypes = ["Task", "Spike"],
                 RelationCustomField = "CUSTOM_12039213",
                 AutomaticallyAdjustFeatureWIP = true,
+                Tags = ["tag3", "tag4"]
             };
 
             await service.UpdateDefaultTeamSettings(newSettings);
@@ -179,6 +186,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemTypes, "Task,Spike");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingRelationCustomField, "CUSTOM_12039213");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "True");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingTags, "tag3,tag4");
         }
 
         [Test]
@@ -198,7 +206,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
                 AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size",
-                AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.AreaPath"
+                AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.AreaPath",
+                AppSettingKeys.ProjectSettingTags, "tag1,tag2"
                 );
 
             var service = CreateService();
@@ -235,6 +244,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.OverrideRealChildCountStates, Has.Count.EqualTo(2));
                 Assert.That(settings.OverrideRealChildCountStates, Does.Contain("New"));
                 Assert.That(settings.OverrideRealChildCountStates, Does.Contain("Proposed"));
+
+                Assert.That(settings.Tags, Has.Count.EqualTo(2));
+                Assert.That(settings.Tags, Does.Contain("tag1"));
+                Assert.That(settings.Tags, Does.Contain("tag2"));
             });
         }
 
@@ -255,7 +268,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
                 AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size",
-                AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.Tags"
+                AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.Tags",
+                AppSettingKeys.ProjectSettingTags, "tag1,tag2"
                 );
 
             var service = CreateService();
@@ -275,7 +289,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 DefaultWorkItemPercentile = 75,
                 HistoricalFeaturesWorkItemQuery = "project = MyJiraProject",
                 SizeEstimateField = "customfield_10037",
-                FeatureOwnerField = "labels"
+                FeatureOwnerField = "labels",
+                Tags = ["tag3", "tag4"]
             };
 
             await service.UpdateDefaultProjectSettings(newSettings);
@@ -294,6 +309,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingSizeEstimateField, "customfield_10037");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingsFeatureOwnerField, "labels");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingTags, "tag3,tag4");
         }
 
         [Test]

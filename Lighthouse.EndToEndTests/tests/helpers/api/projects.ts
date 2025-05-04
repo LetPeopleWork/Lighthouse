@@ -8,6 +8,7 @@ export async function createProject(
 	workItemQuery: string,
 	workItemTypes: string[],
 	states: { toDo: string[]; doing: string[]; done: string[] },
+	tags: string[],
 ): Promise<{ id: number; name: string }> {
 	const involvedTeamsData = involvedTeams.map((team) => ({
 		id: team.id,
@@ -26,7 +27,7 @@ export async function createProject(
 			toDoStates: states.toDo,
 			doingStates: states.doing,
 			doneStates: states.done,
-			tags: [],
+			tags: tags,
 			overrideRealChildCountStates: [],
 			workItemQuery: workItemQuery,
 			unparentedItemsQuery: "",

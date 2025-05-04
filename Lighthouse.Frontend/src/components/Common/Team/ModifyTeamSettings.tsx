@@ -8,6 +8,7 @@ import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
 import GeneralInputsComponent from "../../../pages/Teams/Edit/GeneralInputs";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
+import TagsComponent from "../Tags/TagsComponent";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import WorkTrackingSystemComponent from "../WorkTrackingSystems/WorkTrackingSystemComponent";
@@ -152,6 +153,30 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		);
 	};
 
+	const handleAddTag = (tag: string) => {
+		if (tag.trim()) {
+			setTeamSettings((prev) =>
+				prev
+					? {
+							...prev,
+							tags: [...(prev.tags || []), tag.trim()],
+						}
+					: prev,
+			);
+		}
+	};
+
+	const handleRemoveTag = (tag: string) => {
+		setTeamSettings((prev) =>
+			prev
+				? {
+						...prev,
+						tags: (prev.tags || []).filter((item) => item !== tag),
+					}
+				: prev,
+		);
+	};
+
 	const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
 		const selectedWorkTrackingSystemName = event.target.value;
 		const selectedWorkTrackingSystem =
@@ -279,6 +304,12 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						doneStates={teamSettings?.doneStates || []}
 						onAddDoneState={handleAddDoneState}
 						onRemoveDoneState={handleRemoveDoneState}
+					/>
+
+					<TagsComponent
+						tags={teamSettings?.tags || []}
+						onAddTag={handleAddTag}
+						onRemoveTag={handleRemoveTag}
 					/>
 
 					{!modifyDefaultSettings ? (

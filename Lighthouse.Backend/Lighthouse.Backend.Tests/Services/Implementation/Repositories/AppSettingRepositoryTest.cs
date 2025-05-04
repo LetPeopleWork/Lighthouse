@@ -33,6 +33,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.ProjectSettingSizeEstimateField, "")]
         [TestCase(AppSettingKeys.ProjectSettingsFeatureOwnerField, "")]
         [TestCase(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "False")]
+        [TestCase(AppSettingKeys.TeamSettingTags, "")]
+        [TestCase(AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "")]
+        [TestCase(AppSettingKeys.ProjectSettingTags, "")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();

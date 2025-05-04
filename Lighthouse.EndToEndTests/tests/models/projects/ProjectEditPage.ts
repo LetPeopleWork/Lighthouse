@@ -1,44 +1,12 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Locator } from "@playwright/test";
+import { BaseEditPage } from "../common/BaseEditPage";
 import { EditWorkTrackingSystemDialog } from "../settings/WorkTrackingSystems/EditWorkTrackingSystemDialog";
 import { ProjectDetailPage } from "./ProjectDetailPage";
 
-export class ProjectEditPage {
-	page: Page;
-
-	constructor(page: Page) {
-		this.page = page;
-	}
-
-	async validate(): Promise<void> {
-		await this.validateButton.click();
-		await this.validateButton.isEnabled();
-	}
-
-	async save(): Promise<ProjectDetailPage> {
+export class ProjectEditPage extends BaseEditPage<ProjectDetailPage> {
+	override async save(): Promise<ProjectDetailPage> {
 		await this.saveButton.click();
 		return new ProjectDetailPage(this.page);
-	}
-
-	async setName(newName: string): Promise<void> {
-		await this.page.getByLabel("Name", { exact: true }).fill(newName);
-	}
-
-	async getName(): Promise<string> {
-		return (
-			(await this.page.getByLabel("Name", { exact: true }).inputValue()) ?? ""
-		);
-	}
-
-	async setWorkItemQuery(workItemQuery: string): Promise<void> {
-		await this.page.getByLabel("Work Item Query").fill(workItemQuery);
-	}
-
-	async getWorkItemQuery(): Promise<string> {
-		return (
-			(await this.page
-				.getByLabel("Work Item Query", { exact: true })
-				.inputValue()) ?? ""
-		);
 	}
 
 	async toggleUnparentedWorkItemConfiguration(): Promise<void> {
@@ -135,31 +103,12 @@ export class ProjectEditPage {
 	}
 
 	async removeSizeOverrideState(overrideState: string): Promise<void> {
-		await this.page
-			.locator("li")
-			.filter({ hasText: overrideState })
-			.getByLabel("delete")
-			.click();
+		await this.removeChipItem(overrideState);
 	}
 
 	async addSizeOverrideState(overrideState: string): Promise<void> {
 		await this.page.getByLabel("New Size Override State").fill(overrideState);
-		await this.page
-			.getByRole("button", { name: "Add Size Override State" })
-			.click();
-	}
-
-	async addWorkItemType(workItemType: string): Promise<void> {
-		await this.page.getByLabel("New Work Item Type").fill(workItemType);
-		await this.page.getByRole("button", { name: "Add Work Item Type" }).click();
-	}
-
-	async removeWorkItemType(workItemType: string): Promise<void> {
-		await this.getWorkItemType(workItemType).getByLabel("delete").click();
-	}
-
-	getWorkItemType(workItemType: string): Locator {
-		return this.page.locator("li").filter({ hasText: workItemType });
+		await this.page.getByLabel("New Size Override State").press("Enter");
 	}
 
 	async selectOwningTeam(teamName: string): Promise<void> {
@@ -198,57 +147,6 @@ export class ProjectEditPage {
 		await this.page.getByLabel(teamName).check();
 	}
 
-	async addState(
-		state: string,
-		stateCategory: "To Do" | "Doing" | "Done",
-	): Promise<void> {
-		await this.page.getByLabel(`New ${stateCategory} States`).fill(state);
-		await this.page
-			.getByRole("button", { name: `Add ${stateCategory} States` })
-			.click();
-	}
-
-	async removeState(state: string): Promise<void> {
-		await this.getState(state).getByLabel("delete").click();
-	}
-
-	getState(state: string): Locator {
-		return this.page.locator("li").filter({ hasText: state });
-	}
-
-	async resetWorkItemTypes(existingTypes: string[], newTypes: string[]) {
-		for (const existingType of existingTypes) {
-			await this.removeWorkItemType(existingType);
-		}
-
-		for (const itemType of newTypes) {
-			await this.addWorkItemType(itemType);
-		}
-	}
-
-	async resetStates(
-		existingStates: { toDo: string[]; doing: string[]; done: string[] },
-		newStates: { toDo: string[]; doing: string[]; done: string[] },
-	) {
-		for (const state of existingStates.toDo
-			.concat(existingStates.doing)
-			.concat(existingStates.done)) {
-			await this.removeWorkItemType(state);
-		}
-
-		for (const state of newStates.toDo) {
-			await this.addState(state, "To Do");
-		}
-
-		for (const state of newStates.doing) {
-			await this.addState(state, "Doing");
-		}
-
-		for (const state of newStates.done) {
-			await this.addState(state, "Done");
-		}
-	}
-
 	async addNewWorkTrackingSystem(): Promise<
 		EditWorkTrackingSystemDialog<ProjectEditPage>
 	> {
@@ -260,22 +158,5 @@ export class ProjectEditPage {
 			this.page,
 			(page) => new ProjectEditPage(page),
 		);
-	}
-
-	async selectWorkTrackingSystem(
-		workTrackingSystemName: string,
-	): Promise<void> {
-		await this.page.getByRole("combobox").click();
-		await this.page
-			.getByRole("option", { name: workTrackingSystemName })
-			.click();
-	}
-
-	get saveButton(): Locator {
-		return this.page.getByRole("button", { name: "Save" });
-	}
-
-	get validateButton(): Locator {
-		return this.page.getByRole("button", { name: "Validate" });
 	}
 }

@@ -1,16 +1,16 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TagService } from "./TagService";
+import { SuggestionService } from "./SuggestionService";
 
 vi.mock("axios");
 const mockedAxios = vi.mocked(axios, true);
 
-describe("TagService", () => {
-	let tagService: TagService;
+describe("SuggestionService", () => {
+	let tagService: SuggestionService;
 
 	beforeEach(() => {
 		mockedAxios.create.mockReturnThis();
-		tagService = new TagService();
+		tagService = new SuggestionService();
 	});
 
 	afterEach(() => {
@@ -29,7 +29,7 @@ describe("TagService", () => {
 		expect(result[0]).toBe("Tag1");
 		expect(result[1]).toBe("Tag2");
 		expect(result[2]).toBe("Tag3");
-		expect(mockedAxios.get).toHaveBeenCalledWith("/tags");
+		expect(mockedAxios.get).toHaveBeenCalledWith("/suggestions/tags");
 	});
 
 	it("should handle errors when getting tags", async () => {

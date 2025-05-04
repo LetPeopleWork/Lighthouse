@@ -30,6 +30,8 @@
 
         public const string TeamSettingDoneStates = "DefaultTeamSetting:DoneStates";
 
+        public const string TeamSettingTags = "DefaultTeamSetting:Tags";
+
         public const string TeamSettingRelationCustomField = "DefaultTeamSetting:RelationCustomField";
 
         public const string TeamSettingAutomaticallyAdjustFeatureWIP = "DefaultTeamSetting:AutomaticallyAdjustFeatureWIP";
@@ -45,6 +47,8 @@
         public const string ProjectSettingDoingStates = "DefaultProjectSetting:DoingStates";
 
         public const string ProjectSettingDoneStates = "DefaultProjectSetting:DoneStates";
+
+        public const string ProjectSettingTags = "DefaultProjectSetting:Tags";
 
         public const string ProjectSettingOverrideRealChildCountStates = "DefaultProjectSetting:OverrideRealChildCountStates";
 
