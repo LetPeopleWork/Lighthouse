@@ -1,6 +1,7 @@
 import {
 	Alert,
 	Box,
+	Chip,
 	Container,
 	Fade,
 	IconButton,
@@ -200,6 +201,13 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 										Progress
 									</Typography>
 								</TableCell>
+								{!isMobile && (
+									<TableCell sx={{ width: "20%" }}>
+										<Typography variant="subtitle1" fontWeight="bold">
+											Tags
+										</Typography>
+									</TableCell>
+								)}
 								<TableCell
 									sx={{ width: isMobile ? "25%" : "15%", textAlign: "right" }}
 								/>
@@ -246,6 +254,22 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									<TableCell>
 										<ProgressIndicator progressableItem={item} title={""} />
 									</TableCell>
+									{!isMobile && (
+										<TableCell>
+											<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+												{item.tags.map((tag) => (
+													<Chip
+														key={`${item.id}-${tag}`}
+														label={tag}
+														size="small"
+														color="primary"
+														variant="outlined"
+														sx={{ fontWeight: "bold" }}
+													/>
+												))}
+											</Box>
+										</TableCell>
+									)}
 									<TableCell align="right">
 										<Box
 											sx={{

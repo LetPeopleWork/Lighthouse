@@ -24,7 +24,7 @@ const sampleData: IFeatureOwner[] = [
 		remainingFeatures: 5,
 		features: [],
 		totalWork: 20,
-		tags: [],
+		tags: ["critical", "frontend"],
 	},
 	{
 		id: 2,
@@ -33,7 +33,7 @@ const sampleData: IFeatureOwner[] = [
 		remainingFeatures: 15,
 		features: [],
 		totalWork: 20,
-		tags: [],
+		tags: ["backend"],
 	},
 	{
 		id: 3,
@@ -187,5 +187,69 @@ describe("DataOverviewTable", () => {
 		fireEvent.change(filterInput, { target: { value: "Test Filter" } });
 
 		expect(onFilterChange).toHaveBeenCalledWith("Test Filter");
+	});
+
+	it("displays tags as chips for each item", () => {
+		// Prevent mobile view to make sure tags are visible
+		vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		}));
+
+		renderWithRouter(
+			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+		);
+
+		// Check the first item with multiple tags
+		const item1Row = screen.getByTestId("table-row-1");
+		const criticalTag = screen.getByText("critical");
+		const frontendTag = screen.getByText("frontend");
+
+		expect(criticalTag).toBeInTheDocument();
+		expect(frontendTag).toBeInTheDocument();
+		expect(item1Row).toContainElement(criticalTag);
+		expect(item1Row).toContainElement(frontendTag);
+
+		// Check the second item with a single tag
+		const item2Row = screen.getByTestId("table-row-2");
+		const backendTag = screen.getByText("backend");
+
+		expect(backendTag).toBeInTheDocument();
+		expect(item2Row).toContainElement(backendTag);
+
+		// Check that tags are displayed as chips with the expected style (outlined variant)
+		const tagChips = document.querySelectorAll(".MuiChip-outlined");
+		expect(tagChips.length).toBe(3); // Total 3 tags across all items
+	});
+
+	it("displays no tags for items without tags", () => {
+		// Prevent mobile view to make sure tags column is visible
+		vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		}));
+
+		renderWithRouter(
+			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+		);
+
+		// Check the item with no tags
+		const item3Row = screen.getByTestId("table-row-3");
+
+		// No additional tags should be in this row
+		const tagsInRow3 = item3Row.querySelectorAll(".MuiChip-root");
+		expect(tagsInRow3.length).toBe(0);
 	});
 });

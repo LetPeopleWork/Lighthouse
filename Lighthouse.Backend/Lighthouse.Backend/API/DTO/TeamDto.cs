@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.API.DTO
             FeatureWip = team.FeatureWIP;
             LastUpdated = DateTime.SpecifyKind(team.TeamUpdateTime, DateTimeKind.Utc);
             UseFixedDatesForThroughput = team.UseFixedDatesForThroughput;
+            Tags = team.Tags.ToList();
 
             var throughputSettings = team.GetThroughputSettings();
             ThroughputStartDate = throughputSettings.StartDate;
@@ -36,6 +37,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<FeatureDto> Features { get; } = new List<FeatureDto>();
 
         public List<ProjectDto> Projects { get; } = new List<ProjectDto>();
+
+        public List<string> Tags { get; } = new List<string>();
 
         public bool UseFixedDatesForThroughput { get; }
 

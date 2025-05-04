@@ -11,6 +11,7 @@ namespace Lighthouse.Backend.API.DTO
             LastUpdated = DateTime.SpecifyKind(project.ProjectUpdateTime, DateTimeKind.Utc); ;
 
             InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
+            Tags = project.Tags.ToList();
 
             foreach (var feature in project.Features.OrderBy(f => f, new FeatureComparer()))
             {
@@ -32,6 +33,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<TeamDto> InvolvedTeams { get; } = new List<TeamDto>();
 
         public List<MilestoneDto> Milestones { get; } = new List<MilestoneDto>();
+
+        public List<string> Tags { get; } = new List<string>();
 
         public DateTime LastUpdated { get; }
     }
