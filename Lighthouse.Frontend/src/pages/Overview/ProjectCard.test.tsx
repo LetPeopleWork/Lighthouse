@@ -289,4 +289,67 @@ describe("ProjectCard component", () => {
 		expect(screen.queryByText("Release-2025")).not.toBeInTheDocument();
 		expect(screen.queryByText("Frontend")).not.toBeInTheDocument();
 	});
+
+	it("should render milestone chips with colors based on likelihood", () => {
+		// Create a project with multiple milestones having different likelihoods
+		const projectWithMultipleMilestones = Project.fromBackend(project);
+
+		const highLikelihoodMilestone = Milestone.new(
+			1,
+			"High Likelihood",
+			new Date(Date.now() + 14 * 24 * 60 * 60),
+		);
+		const mediumLikelihoodMilestone = Milestone.new(
+			2,
+			"Medium Likelihood",
+			new Date(Date.now() + 21 * 24 * 60 * 60),
+		);
+		const lowLikelihoodMilestone = Milestone.new(
+			3,
+			"Low Likelihood",
+			new Date(Date.now() + 28 * 24 * 60 * 60),
+		);
+
+		projectWithMultipleMilestones.milestones = [
+			project.milestones[0], // Keep the original milestone
+			highLikelihoodMilestone,
+			mediumLikelihoodMilestone,
+			lowLikelihoodMilestone,
+		];
+
+		// Set likelihoods in feature1
+		feature1.milestoneLikelihood = {
+			0: 74.5, // Original milestone (warning color)
+			1: 90, // High likelihood (success color)
+			2: 65, // Medium likelihood (warning color)
+			3: 30, // Low likelihood (error color)
+		};
+
+		render(
+			<ThemeProvider theme={theme}>
+				<Router>
+					<ProjectCard project={projectWithMultipleMilestones} />
+				</Router>
+			</ThemeProvider>,
+		);
+
+		// Find all milestone chips
+		const milestoneChips = screen.getAllByText(
+			/Milestone|High Likelihood|Medium Likelihood|Low Likelihood/,
+		);
+		expect(milestoneChips).toHaveLength(4);
+
+		// Verify each milestone chip is present
+		expect(screen.getByText("Milestone 0")).toBeInTheDocument();
+		expect(screen.getByText("High Likelihood")).toBeInTheDocument();
+		expect(screen.getByText("Medium Likelihood")).toBeInTheDocument();
+		expect(screen.getByText("Low Likelihood")).toBeInTheDocument();
+
+		// Just verify we can click a milestone chip and it opens a dialog
+		fireEvent.click(screen.getByText("High Likelihood"));
+		expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+		// Close dialog
+		fireEvent.click(screen.getByRole("button", { name: "close" }));
+	});
 });

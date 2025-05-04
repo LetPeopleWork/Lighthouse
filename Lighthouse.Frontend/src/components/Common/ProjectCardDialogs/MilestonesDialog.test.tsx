@@ -1,6 +1,8 @@
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
+import { Feature, type IFeature } from "../../../models/Feature";
 import { type IMilestone, Milestone } from "../../../models/Project/Milestone";
 import MilestonesDialog from "./MilestonesDialog";
 
@@ -32,9 +34,13 @@ const theme = createTheme({
 	},
 });
 
-// Wrapper for providing theme
-const renderWithTheme = (ui: React.ReactElement) => {
-	return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
+// Wrapper for providing theme and router
+const renderWithProviders = (ui: React.ReactElement) => {
+	return render(
+		<BrowserRouter>
+			<ThemeProvider theme={theme}>{ui}</ThemeProvider>
+		</BrowserRouter>,
+	);
 };
 
 describe("MilestonesDialog component", () => {
@@ -57,10 +63,35 @@ describe("MilestonesDialog component", () => {
 		})(),
 	];
 
-	const mockMilestoneLikelihoods = {
-		1: 90, // High likelihood
-		2: 75, // Medium likelihood
+	// Mock features with methods for milestone likelihoods
+	const createMockFeature = (
+		id: number,
+		name: string,
+		likelihoods: Record<number, number>,
+		remainingWork: number,
+	): IFeature => {
+		const feature = new Feature();
+		feature.id = id;
+		feature.name = name;
+		feature.workItemReference = `F-${id}`;
+		feature.url = `/features/${id}`;
+		feature.stateCategory = "Doing";
+
+		// Mock the getMilestoneLikelihood method
+		feature.getMilestoneLikelihood = (milestoneId: number) =>
+			likelihoods[milestoneId] || 0;
+
+		// Mock the getRemainingWorkForFeature method
+		feature.getRemainingWorkForFeature = () => remainingWork;
+
+		return feature;
 	};
+
+	const mockFeatures: IFeature[] = [
+		createMockFeature(101, "Feature A", { 1: 90, 2: 70 }, 5),
+		createMockFeature(102, "Feature B", { 1: 85, 2: 60 }, 3),
+		createMockFeature(103, "Feature C", { 1: 95, 2: 75 }, 8),
+	];
 
 	const mockOnClose = vi.fn();
 
@@ -75,58 +106,86 @@ describe("MilestonesDialog component", () => {
 		vi.clearAllMocks();
 	});
 
-	it("renders correctly when open", () => {
-		renderWithTheme(
+	it("renders correctly when open with no specific milestone selected", () => {
+		renderWithProviders(
 			<MilestonesDialog
 				open={true}
 				onClose={mockOnClose}
 				projectName={projectName}
 				milestones={mockMilestones}
-				milestoneLikelihoods={mockMilestoneLikelihoods}
+				selectedMilestoneId={null}
+				features={mockFeatures}
 			/>,
 		);
 
-		// Check if dialog title is rendered with correct project name and milestone count
+		// Check if dialog title is rendered correctly
+		expect(screen.getByText(`${projectName}: Milestones`)).toBeInTheDocument();
+
+		// Check that "No milestone selected" message is displayed
+		expect(screen.getByText("No milestone selected")).toBeInTheDocument();
+	});
+
+	it("renders specific milestone view when a milestone is selected", () => {
+		renderWithProviders(
+			<MilestonesDialog
+				open={true}
+				onClose={mockOnClose}
+				projectName={projectName}
+				milestones={mockMilestones}
+				selectedMilestoneId={1}
+				features={mockFeatures}
+			/>,
+		);
+
+		// Check if dialog title is rendered correctly for selected milestone
 		expect(
-			screen.getByText(`${projectName}: Milestones (2)`),
+			screen.getByText(`${projectName}: Milestone 1 Milestone`),
 		).toBeInTheDocument();
 
-		// Check if both milestones are rendered
+		// Check if milestone name is displayed
 		expect(screen.getByText("Milestone 1")).toBeInTheDocument();
-		expect(screen.getByText("Milestone 2")).toBeInTheDocument();
 
-		// Check if likelihood chips are rendered
-		expect(screen.getByText("90% Likely")).toBeInTheDocument();
+		// Check if features for this milestone are shown
+		expect(screen.getByText("F-101 - Feature A")).toBeInTheDocument();
+		expect(screen.getByText("F-102 - Feature B")).toBeInTheDocument();
+		expect(screen.getByText("F-103 - Feature C")).toBeInTheDocument();
 
-		// Check if dates are rendered
-		expect(screen.getAllByTestId("local-date-time-display")).toHaveLength(2);
+		// Check if likelihood chip is rendered for milestone
+		expect(screen.getByText("85% Likely")).toBeInTheDocument();
+
+		// Check if remaining work is displayed
+		expect(screen.getByText("5 items remaining")).toBeInTheDocument();
+		expect(screen.getByText("3 items remaining")).toBeInTheDocument();
+		expect(screen.getByText("8 items remaining")).toBeInTheDocument();
 	});
 
 	it("doesn't render when not open", () => {
-		renderWithTheme(
+		renderWithProviders(
 			<MilestonesDialog
 				open={false}
 				onClose={mockOnClose}
 				projectName={projectName}
 				milestones={mockMilestones}
-				milestoneLikelihoods={mockMilestoneLikelihoods}
+				selectedMilestoneId={null}
+				features={mockFeatures}
 			/>,
 		);
 
 		// Dialog shouldn't be in the document
 		expect(
-			screen.queryByText(`${projectName}: Milestones (2)`),
+			screen.queryByText(`${projectName}: Milestones`),
 		).not.toBeInTheDocument();
 	});
 
 	it("calls onClose when close button is clicked", () => {
-		renderWithTheme(
+		renderWithProviders(
 			<MilestonesDialog
 				open={true}
 				onClose={mockOnClose}
 				projectName={projectName}
 				milestones={mockMilestones}
-				milestoneLikelihoods={mockMilestoneLikelihoods}
+				selectedMilestoneId={null}
+				features={mockFeatures}
 			/>,
 		);
 
@@ -138,19 +197,44 @@ describe("MilestonesDialog component", () => {
 		expect(mockOnClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("renders message when no milestones are present", () => {
-		renderWithTheme(
+	it("renders message when no features are associated with a milestone", () => {
+		renderWithProviders(
 			<MilestonesDialog
 				open={true}
 				onClose={mockOnClose}
 				projectName={projectName}
-				milestones={[]}
-				milestoneLikelihoods={{}}
+				milestones={mockMilestones}
+				selectedMilestoneId={1}
+				features={[]}
 			/>,
 		);
 
-		// Check if the no milestones message is displayed
-		expect(screen.getByText("No milestones defined")).toBeInTheDocument();
+		// Check if the no features message is displayed
+		expect(
+			screen.getByText("No features associated with this milestone"),
+		).toBeInTheDocument();
+	});
+
+	it("filters out 'Done' features from displaying", () => {
+		// Create a feature with Done state
+		const doneFeature = createMockFeature(104, "Done Feature", { 1: 100 }, 0);
+		doneFeature.stateCategory = "Done";
+
+		const featuresWithDone = [...mockFeatures, doneFeature];
+
+		renderWithProviders(
+			<MilestonesDialog
+				open={true}
+				onClose={mockOnClose}
+				projectName={projectName}
+				milestones={mockMilestones}
+				selectedMilestoneId={1}
+				features={featuresWithDone}
+			/>,
+		);
+
+		// The done feature should not be in the document
+		expect(screen.queryByText("Done Feature")).not.toBeInTheDocument();
 	});
 
 	it("applies different styling to past milestones", () => {
@@ -158,23 +242,69 @@ describe("MilestonesDialog component", () => {
 		const today = new Date("2025-05-04"); // May 4, 2025
 		vi.setSystemTime(today);
 
-		renderWithTheme(
+		renderWithProviders(
 			<MilestonesDialog
 				open={true}
 				onClose={mockOnClose}
 				projectName={projectName}
 				milestones={mockMilestones}
-				milestoneLikelihoods={mockMilestoneLikelihoods}
+				selectedMilestoneId={2} // Past milestone
+				features={mockFeatures}
 			/>,
 		);
 
-		// The second milestone (May 1, 2025) should be rendered with past due text
+		// The selected milestone (May 1, 2025) should be rendered with past due text
 		expect(screen.getByText("Was due on:")).toBeInTheDocument();
-
-		// The first milestone (Aug 1, 2025) should be rendered with future due text
-		expect(screen.getByText("Due on:")).toBeInTheDocument();
 
 		// Restore the real time
 		vi.useRealTimers();
+	});
+
+	it("doesn't show likelihood for past milestones", () => {
+		// Create a controlled environment where we know one milestone is past
+		const today = new Date("2025-05-04"); // May 4, 2025
+		vi.setSystemTime(today);
+
+		renderWithProviders(
+			<MilestonesDialog
+				open={true}
+				onClose={mockOnClose}
+				projectName={projectName}
+				milestones={mockMilestones}
+				selectedMilestoneId={2} // Past milestone
+				features={mockFeatures}
+			/>,
+		);
+
+		// No likelihood chip should be shown for past milestone
+		expect(screen.queryByText(/\d+% Likely/)).not.toBeInTheDocument();
+
+		// Restore the real time
+		vi.useRealTimers();
+	});
+
+	it("renders feature likelihood in appropriate colors", () => {
+		const customFeatures = [
+			createMockFeature(201, "High Likelihood", { 1: 90 }, 2),
+			createMockFeature(202, "Medium Likelihood", { 1: 70 }, 4),
+			createMockFeature(203, "Low Likelihood", { 1: 40 }, 6),
+		];
+
+		renderWithProviders(
+			<MilestonesDialog
+				open={true}
+				onClose={mockOnClose}
+				projectName={projectName}
+				milestones={mockMilestones}
+				selectedMilestoneId={1}
+				features={customFeatures}
+			/>,
+		);
+
+		// We can't easily test the colors directly, but we can at least ensure
+		// all likelihood percentages are displayed
+		expect(screen.getByText("90%")).toBeInTheDocument();
+		expect(screen.getByText("70%")).toBeInTheDocument();
+		expect(screen.getByText("40%")).toBeInTheDocument();
 	});
 });

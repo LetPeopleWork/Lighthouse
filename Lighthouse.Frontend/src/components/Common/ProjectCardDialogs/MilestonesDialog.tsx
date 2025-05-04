@@ -11,6 +11,8 @@ import Typography from "@mui/material/Typography";
 import { useTheme } from "@mui/material/styles";
 import { styled } from "@mui/system";
 import type React from "react";
+import { Link } from "react-router-dom";
+import type { IFeature } from "../../../models/Feature";
 import type { IMilestone } from "../../../models/Project/Milestone";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 
@@ -27,12 +29,153 @@ const MilestoneItem = styled(Paper)(({ theme }) => ({
 	},
 }));
 
+const FeatureItem = styled("div")(({ theme }) => ({
+	padding: theme.spacing(1.5),
+	borderRadius: theme.shape.borderRadius,
+	marginBottom: theme.spacing(1),
+	backgroundColor:
+		theme.palette.mode === "light"
+			? theme.palette.grey[100]
+			: theme.palette.grey[800],
+	"&:last-child": {
+		marginBottom: 0,
+	},
+}));
+
+interface SingleMilestoneViewProps {
+	milestone: IMilestone;
+	isPast: boolean;
+	getLikelihoodColor: (likelihood: number) => "success" | "warning" | "error";
+	features?: IFeature[];
+}
+
+const SingleMilestoneView: React.FC<SingleMilestoneViewProps> = ({
+	milestone,
+	isPast,
+	getLikelihoodColor,
+	features = [],
+}) => {
+	const theme = useTheme();
+
+	const milestoneLikelihood =
+		features.length > 0
+			? Math.min(
+					...features.map((feature) =>
+						feature.getMilestoneLikelihood(milestone.id),
+					),
+				)
+			: 0;
+
+	return (
+		<Stack spacing={2}>
+			<MilestoneItem elevation={1}>
+				<Stack spacing={1}>
+					<Stack
+						direction="row"
+						justifyContent="space-between"
+						alignItems="center"
+					>
+						<Typography
+							variant="h6"
+							sx={{
+								fontWeight: "medium",
+								color: isPast ? "text.secondary" : "text.primary",
+							}}
+						>
+							{milestone.name}
+						</Typography>
+						{!isPast && milestoneLikelihood > 0 && (
+							<Chip
+								size="small"
+								label={`${Math.round(milestoneLikelihood)}% Likely`}
+								color={getLikelihoodColor(milestoneLikelihood)}
+								variant="outlined"
+							/>
+						)}
+					</Stack>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						sx={{
+							display: "flex",
+							alignItems: "center",
+							fontStyle: isPast ? "italic" : "normal",
+						}}
+					>
+						<AccessTimeIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+						{isPast ? "Was due on: " : "Due on: "}
+						<LocalDateTimeDisplay utcDate={milestone.date} showTime={false} />
+					</Typography>
+				</Stack>
+			</MilestoneItem>
+
+			{features && features.length > 0 ? (
+				<Stack spacing={1}>
+					{features
+						.filter((feature) => feature.stateCategory !== "Done")
+						.map((feature) => {
+							const likelihood = feature.getMilestoneLikelihood(milestone.id);
+
+							return (
+								<FeatureItem key={feature.id}>
+									<Stack
+										direction="row"
+										justifyContent="space-between"
+										alignItems="center"
+									>
+										<Typography
+											variant="body2"
+											component={Link}
+											to={feature.url ?? `/features/${feature.id}`}
+											sx={{
+												textDecoration: "none",
+												color: "inherit",
+												fontWeight: "medium",
+												"&:hover": {
+													textDecoration: "underline",
+													color: theme.palette.primary.main,
+												},
+											}}
+										>
+											{feature.workItemReference
+												? `${feature.workItemReference} - `
+												: ""}
+											{feature.name}
+										</Typography>
+										<Chip
+											size="small"
+											label={`${Math.round(likelihood)}%`}
+											color={getLikelihoodColor(likelihood)}
+											variant="outlined"
+										/>
+									</Stack>
+									<Typography variant="caption" color="text.secondary">
+										{feature.getRemainingWorkForFeature()} items remaining
+									</Typography>
+								</FeatureItem>
+							);
+						})}
+				</Stack>
+			) : (
+				<Typography
+					variant="body2"
+					color="text.secondary"
+					sx={{ fontStyle: "italic" }}
+				>
+					No features associated with this milestone
+				</Typography>
+			)}
+		</Stack>
+	);
+};
+
 interface MilestonesDialogProps {
 	open: boolean;
 	onClose: () => void;
 	projectName: string;
 	milestones: IMilestone[];
-	milestoneLikelihoods?: Record<number, number>;
+	selectedMilestoneId: number | null;
+	features?: IFeature[];
 }
 
 const MilestonesDialog: React.FC<MilestonesDialogProps> = ({
@@ -40,14 +183,10 @@ const MilestonesDialog: React.FC<MilestonesDialogProps> = ({
 	onClose,
 	projectName,
 	milestones,
-	milestoneLikelihoods = {},
+	selectedMilestoneId,
+	features = [],
 }) => {
 	const theme = useTheme();
-
-	// Sort milestones by date
-	const sortedMilestones = [...milestones].sort(
-		(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-	);
 
 	// Function to get an appropriate color based on likelihood
 	const getLikelihoodColor = (likelihood: number) => {
@@ -65,6 +204,17 @@ const MilestonesDialog: React.FC<MilestonesDialogProps> = ({
 		return milestoneDate < today;
 	};
 
+	// Find the selected milestone
+	const selectedMilestone =
+		selectedMilestoneId !== null
+			? milestones.find((m) => m.id === selectedMilestoneId)
+			: null;
+
+	// Dialog title for the specific milestone
+	const dialogTitle = selectedMilestone
+		? `${projectName}: ${selectedMilestone.name} Milestone`
+		: `${projectName}: Milestones`;
+
 	return (
 		<Dialog
 			open={open}
@@ -79,9 +229,7 @@ const MilestonesDialog: React.FC<MilestonesDialogProps> = ({
 					justifyContent="space-between"
 					alignItems="center"
 				>
-					<Typography variant="h6">
-						{projectName}: Milestones ({milestones.length})
-					</Typography>
+					<Typography variant="h6">{dialogTitle}</Typography>
 					<IconButton
 						aria-label="close"
 						onClick={onClose}
@@ -96,75 +244,21 @@ const MilestonesDialog: React.FC<MilestonesDialogProps> = ({
 				</Stack>
 			</DialogTitle>
 			<DialogContent dividers>
-				{sortedMilestones.length > 0 ? (
-					<Stack spacing={1}>
-						{sortedMilestones.map((milestone) => {
-							const isPast = isMilestonePast(milestone.date);
-							const likelihood = milestoneLikelihoods[milestone.id] || 0;
-
-							return (
-								<MilestoneItem
-									key={milestone.id}
-									elevation={1}
-									sx={{
-										opacity: isPast ? 0.7 : 1,
-									}}
-								>
-									<Stack spacing={1}>
-										<Stack
-											direction="row"
-											justifyContent="space-between"
-											alignItems="center"
-										>
-											<Typography
-												variant="subtitle1"
-												sx={{
-													fontWeight: "medium",
-													color: isPast ? "text.secondary" : "text.primary",
-												}}
-											>
-												{milestone.name}
-											</Typography>
-											{!isPast && likelihood > 0 && (
-												<Chip
-													size="small"
-													label={`${Math.round(likelihood)}% Likely`}
-													color={getLikelihoodColor(likelihood)}
-													variant="outlined"
-												/>
-											)}
-										</Stack>
-										<Typography
-											variant="body2"
-											color="text.secondary"
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												fontStyle: isPast ? "italic" : "normal",
-											}}
-										>
-											<AccessTimeIcon
-												fontSize="small"
-												sx={{ mr: 0.5, opacity: 0.7 }}
-											/>
-											{isPast ? "Was due on: " : "Due on: "}
-											<LocalDateTimeDisplay
-												utcDate={milestone.date}
-												showTime={false}
-											/>
-										</Typography>
-									</Stack>
-								</MilestoneItem>
-							);
-						})}
-					</Stack>
+				{selectedMilestone ? (
+					// View for the specific milestone
+					<SingleMilestoneView
+						milestone={selectedMilestone}
+						isPast={isMilestonePast(selectedMilestone.date)}
+						getLikelihoodColor={getLikelihoodColor}
+						features={features}
+					/>
 				) : (
 					<Typography
 						variant="body2"
 						color="text.secondary"
 						sx={{ fontStyle: "italic" }}
 					>
-						No milestones defined
+						No milestone selected
 					</Typography>
 				)}
 			</DialogContent>

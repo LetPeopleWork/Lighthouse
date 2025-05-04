@@ -45,6 +45,9 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const [featuresDialogOpen, setFeaturesDialogOpen] = useState(false);
 	const [milestonesDialogOpen, setMilestonesDialogOpen] = useState(false);
+	const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(
+		null,
+	);
 
 	const handleOpenFeaturesDialog = () => {
 		setFeaturesDialogOpen(true);
@@ -54,7 +57,8 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 		setFeaturesDialogOpen(false);
 	};
 
-	const handleOpenMilestonesDialog = () => {
+	const handleOpenMilestoneDialog = (milestoneId: number) => {
+		setSelectedMilestoneId(milestoneId);
 		setMilestonesDialogOpen(true);
 	};
 
@@ -106,6 +110,28 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 		milestoneDate.setHours(0, 0, 0, 0);
 		return milestoneDate >= today;
 	});
+
+	// Function to get an appropriate color based on likelihood
+	const getLikelihoodColor = (
+		likelihood: number,
+	): "success" | "warning" | "error" => {
+		if (likelihood >= 85) return "success";
+		if (likelihood >= 60) return "warning";
+		return "error";
+	};
+
+	// Get the milestone likelihood for a given milestone
+	const getMilestoneLikelihood = (milestoneId: number): number => {
+		// If there are no features, the likelihood is 0
+		if (!project.features || project.features.length === 0) return 0;
+
+		// Calculate the minimum likelihood across all features for this milestone
+		return Math.min(
+			...project.features.map((feature) =>
+				feature.getMilestoneLikelihood(milestoneId),
+			),
+		);
+	};
 
 	return (
 		<>
@@ -221,22 +247,39 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 									</Typography>
 								)}
 
-								{currentOrFutureMilestones.length > 0 && (
-									<Chip
-										label={`${currentOrFutureMilestones.length} Milestone${currentOrFutureMilestones.length !== 1 ? "s" : ""}`}
-										size="small"
-										color="info"
-										variant="outlined"
-										onClick={handleOpenMilestonesDialog}
-										sx={{
-											mt: 0.5,
-											cursor: "pointer",
-											"&:hover": {
-												backgroundColor: `${theme.palette.info.main}20`,
-											},
-										}}
-									/>
-								)}
+								<Stack
+									direction="row"
+									spacing={1}
+									sx={{
+										mt: 0.5,
+										flexWrap: "wrap",
+										gap: "8px",
+										"& > *": { mb: 0.5 },
+										justifyContent: "flex-end",
+									}}
+								>
+									{currentOrFutureMilestones.map((milestone) => {
+										const likelihood = getMilestoneLikelihood(milestone.id);
+										const colorKey = getLikelihoodColor(likelihood);
+
+										return (
+											<Chip
+												key={milestone.id}
+												label={milestone.name}
+												size="small"
+												color={colorKey}
+												variant="outlined"
+												onClick={() => handleOpenMilestoneDialog(milestone.id)}
+												sx={{
+													cursor: "pointer",
+													"&:hover": {
+														backgroundColor: `${theme.palette[colorKey].main}20`,
+													},
+												}}
+											/>
+										);
+									})}
+								</Stack>
 							</Stack>
 						</Grid>
 					</Grid>
@@ -309,7 +352,8 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 				onClose={handleCloseMilestonesDialog}
 				projectName={project.name}
 				milestones={project.milestones}
-				milestoneLikelihoods={project.features[0]?.milestoneLikelihood}
+				selectedMilestoneId={selectedMilestoneId}
+				features={project.features}
 			/>
 		</>
 	);
