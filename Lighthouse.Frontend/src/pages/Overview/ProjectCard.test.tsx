@@ -107,6 +107,7 @@ describe("ProjectCard component", () => {
 	project.milestones = [
 		Milestone.new(0, "Milestone 0", new Date(Date.now() + 7 * 24 * 60 * 60)),
 	];
+	project.tags = ["Important", "Release-2025", "Frontend"];
 
 	const renderComponent = () =>
 		render(
@@ -240,5 +241,52 @@ describe("ProjectCard component", () => {
 
 		const featureCountChip = screen.getByText("1 Feature");
 		expect(featureCountChip).toBeInTheDocument();
+	});
+
+	it("should render tags as chips when project has tags", () => {
+		renderComponent();
+
+		// Check that all tags are rendered
+		expect(screen.getByText("Important")).toBeInTheDocument();
+		expect(screen.getByText("Release-2025")).toBeInTheDocument();
+		expect(screen.getByText("Frontend")).toBeInTheDocument();
+	});
+
+	it("should not render the tags section when project has no tags", () => {
+		// Create a project without tags
+		const projectWithoutTags = Project.fromBackend(project);
+		projectWithoutTags.tags = [];
+
+		render(
+			<ThemeProvider theme={theme}>
+				<Router>
+					<ProjectCard project={projectWithoutTags} />
+				</Router>
+			</ThemeProvider>,
+		);
+
+		// None of the tags should be in the document
+		expect(screen.queryByText("Important")).not.toBeInTheDocument();
+		expect(screen.queryByText("Release-2025")).not.toBeInTheDocument();
+		expect(screen.queryByText("Frontend")).not.toBeInTheDocument();
+	});
+
+	it("should not render the tags section when project has undefined tags", () => {
+		// Create a project with undefined tags
+		const projectWithUndefinedTags = Project.fromBackend(project);
+		projectWithUndefinedTags.tags = [];
+
+		render(
+			<ThemeProvider theme={theme}>
+				<Router>
+					<ProjectCard project={projectWithUndefinedTags} />
+				</Router>
+			</ThemeProvider>,
+		);
+
+		// None of the tags should be in the document
+		expect(screen.queryByText("Important")).not.toBeInTheDocument();
+		expect(screen.queryByText("Release-2025")).not.toBeInTheDocument();
+		expect(screen.queryByText("Frontend")).not.toBeInTheDocument();
 	});
 });

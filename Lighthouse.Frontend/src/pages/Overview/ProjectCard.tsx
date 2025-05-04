@@ -248,6 +248,32 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 								showTime={true}
 							/>
 						</Typography>
+
+						{project.tags && project.tags.length > 0 && (
+							<Stack
+								direction="row"
+								spacing={0.5}
+								sx={{
+									flexWrap: "wrap",
+									gap: "4px",
+									justifyContent: "flex-end",
+								}}
+							>
+								{project.tags.map((tag) => (
+									<Chip
+										key={tag}
+										size="small"
+										label={tag}
+										variant="outlined"
+										sx={{
+											fontSize: "0.6875rem",
+											height: "20px",
+											color: theme.palette.text.secondary,
+										}}
+									/>
+								))}
+							</Stack>
+						)}
 					</Stack>
 				</CardContent>
 			</ProjectCardStyle>
