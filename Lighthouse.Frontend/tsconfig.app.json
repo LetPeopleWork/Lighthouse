@@ -6,7 +6,9 @@
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "skipLibCheck": true,
+    "skipLibCheck": true,    
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "types":[
       "vitest/globals"
     ],

@@ -83,28 +83,36 @@ const MockApiServiceProvider = ({
 };
 
 describe("ProjectFeatureList component", () => {
-	const team1: Team = new Team(
-		"Team A",
-		1,
-		[],
-		[],
-		1,
-		new Date(),
-		false,
-		new Date(new Date().setDate(new Date().getDate() - [1].length)),
-		new Date(),
-	);
-	const team2: Team = new Team(
-		"Team B",
-		2,
-		[],
-		[],
-		1,
-		new Date(),
-		false,
-		new Date(new Date().setDate(new Date().getDate() - [1].length)),
-		new Date(),
-	);
+	const team1: Team = (() => {
+		const team = new Team();
+		team.name = "Team A";
+		team.id = 1;
+		team.projects = [];
+		team.features = [];
+		team.featureWip = 1;
+		team.lastUpdated = new Date();
+		team.useFixedDatesForThroughput = false;
+		team.throughputStartDate = new Date(
+			new Date().setDate(new Date().getDate() - [1].length),
+		);
+		team.throughputEndDate = new Date();
+		return team;
+	})();
+	const team2: Team = (() => {
+		const team = new Team();
+		team.name = "Team B";
+		team.id = 2;
+		team.projects = [];
+		team.features = [];
+		team.featureWip = 1;
+		team.lastUpdated = new Date();
+		team.useFixedDatesForThroughput = false;
+		team.throughputStartDate = new Date(
+			new Date().setDate(new Date().getDate() - [1].length),
+		);
+		team.throughputEndDate = new Date();
+		return team;
+	})();
 
 	const pastDate = new Date();
 	pastDate.setDate(pastDate.getDate() - 1);
@@ -115,79 +123,114 @@ describe("ProjectFeatureList component", () => {
 	const futureDate = new Date();
 	futureDate.setDate(futureDate.getDate() + 1);
 
-	const milestone1: Milestone = new Milestone(1, "Milestone 1", pastDate);
-	const milestone2: Milestone = new Milestone(2, "Milestone 2", todayDate);
-	const milestone3: Milestone = new Milestone(3, "Milestone 3", futureDate);
+	const milestone1: Milestone = (() => {
+		const milestone = new Milestone();
+		milestone.id = 1;
+		milestone.name = "Milestone 1";
+		milestone.date = pastDate;
+		return milestone;
+	})();
+	const milestone2: Milestone = (() => {
+		const milestone = new Milestone();
+		milestone.id = 2;
+		milestone.name = "Milestone 2";
+		milestone.date = todayDate;
+		return milestone;
+	})();
+	const milestone3: Milestone = (() => {
+		const milestone = new Milestone();
+		milestone.id = 3;
+		milestone.name = "Milestone 3";
+		milestone.date = futureDate;
+		return milestone;
+	})();
 
-	const feature1: Feature = new Feature(
-		"Feature 1",
-		1,
-		"FTR-1",
-		"",
-		"Unknown",
-		new Date(),
-		false,
-		{ 10: "" },
-		{ 1: 5, 2: 5 },
-		{ 1: 5, 2: 5 },
-		{},
-		[new WhenForecast(80, new Date())],
-		null,
-		"ToDo",
-		new Date("2023-07-01"),
-		new Date("2023-07-10"),
-		9,
-		10,
-	);
-	const feature2: Feature = new Feature(
-		"Feature 2",
-		2,
-		"FTR-2",
-		"",
-		"Unknown",
-		new Date(),
-		true,
-		{ 15: "" },
-		{ 1: 10, 2: 5 },
-		{ 1: 10, 2: 5 },
-		{},
-		[new WhenForecast(60, new Date())],
-		null,
-		"Doing",
-		new Date("2023-07-01"),
-		new Date("2023-07-09"),
-		8,
-		9,
-	);
-	const feature3: Feature = new Feature(
-		"Feature 3",
-		3,
-		"FTR-3",
-		"",
-		"Unknown",
-		new Date(),
-		false,
-		{ 20: "" },
-		{ 1: 0, 2: 0 },
-		{ 1: 5, 2: 5 },
-		{},
-		[new WhenForecast(100, new Date())],
-		null,
-		"Done",
-		new Date("2023-07-01"),
-		new Date("2023-07-08"),
-		7,
-		8,
-	);
+	const feature1: Feature = (() => {
+		const feature = new Feature();
+		feature.name = "Feature 1";
+		feature.id = 1;
+		feature.workItemReference = "FTR-1";
+		feature.stateCategory = "ToDo";
+		feature.isUsingDefaultFeatureSize = false;
+		feature.lastUpdated = new Date();
+		feature.projects = { 10: "" };
+		feature.remainingWork = { 1: 5, 2: 5 };
+		feature.totalWork = { 1: 5, 2: 5 };
+		feature.forecasts = [
+			(() => {
+				const forecast = new WhenForecast();
+				forecast.probability = 80;
+				forecast.expectedDate = new Date();
+				return forecast;
+			})(),
+		];
+		feature.startedDate = new Date("2023-07-01");
+		feature.closedDate = new Date("2023-07-10");
+		feature.cycleTime = 9;
+		feature.workItemAge = 10;
+		return feature;
+	})();
+	const feature2: Feature = (() => {
+		const feature = new Feature();
+		feature.name = "Feature 2";
+		feature.id = 2;
+		feature.workItemReference = "FTR-2";
+		feature.stateCategory = "Doing";
+		feature.isUsingDefaultFeatureSize = true;
+		feature.lastUpdated = new Date();
+		feature.projects = { 15: "" };
+		feature.remainingWork = { 1: 10, 2: 5 };
+		feature.totalWork = { 1: 10, 2: 5 };
+		feature.forecasts = [
+			(() => {
+				const forecast = new WhenForecast();
+				forecast.probability = 60;
+				forecast.expectedDate = new Date();
+				return forecast;
+			})(),
+		];
+		feature.startedDate = new Date("2023-07-01");
+		feature.closedDate = new Date("2023-07-09");
+		feature.cycleTime = 8;
+		feature.workItemAge = 9;
+		return feature;
+	})();
+	const feature3: Feature = (() => {
+		const feature = new Feature();
+		feature.name = "Feature 3";
+		feature.id = 3;
+		feature.workItemReference = "FTR-3";
+		feature.stateCategory = "Done";
+		feature.isUsingDefaultFeatureSize = false;
+		feature.lastUpdated = new Date();
+		feature.projects = { 20: "" };
+		feature.remainingWork = { 1: 0, 2: 0 };
+		feature.totalWork = { 1: 5, 2: 5 };
+		feature.forecasts = [
+			(() => {
+				const forecast = new WhenForecast();
+				forecast.probability = 100;
+				forecast.expectedDate = new Date();
+				return forecast;
+			})(),
+		];
+		feature.startedDate = new Date("2023-07-01");
+		feature.closedDate = new Date("2023-07-08");
+		feature.cycleTime = 7;
+		feature.workItemAge = 8;
+		return feature;
+	})();
 
-	const project: Project = new Project(
-		"Project 1",
-		1,
-		[team1, team2],
-		[feature1, feature2, feature3],
-		[milestone1, milestone2, milestone3],
-		new Date(),
-	);
+	const project: Project = (() => {
+		const project = new Project();
+		project.name = "Project 1";
+		project.id = 1;
+		project.involvedTeams = [team1, team2];
+		project.features = [feature1, feature2, feature3];
+		project.milestones = [milestone1, milestone2, milestone3];
+		project.lastUpdated = new Date();
+		return project;
+	})();
 
 	it("should only render milestones that are today or in the future", async () => {
 		render(

@@ -1,4 +1,7 @@
-import type { IWhenForecast } from "./Forecasts/WhenForecast";
+import { Transform, Type, plainToInstance } from "class-transformer";
+import "reflect-metadata";
+
+import { type IWhenForecast, WhenForecast } from "./Forecasts/WhenForecast";
 import type { IWorkItem, StateCategory } from "./WorkItem";
 
 export interface IFeature extends IWorkItem {
@@ -17,7 +20,7 @@ export interface IFeature extends IWorkItem {
 	getMilestoneLikelihood(milestoneId: number): number;
 }
 
-export interface DictionaryObject<TValue> {
+class DictionaryObject<TValue> {
 	readonly [key: number]: TValue;
 }
 
@@ -29,57 +32,36 @@ export class Feature implements IFeature {
 	type!: string;
 	lastUpdated!: Date;
 	isUsingDefaultFeatureSize!: boolean;
-	projects: DictionaryObject<string>;
-	remainingWork: DictionaryObject<number>;
-	totalWork: { [key: number]: number };
-	milestoneLikelihood: DictionaryObject<number>;
+
+	@Type(() => DictionaryObject<string>)
+	projects: DictionaryObject<string> = {};
+
+	@Type(() => DictionaryObject<number>)
+	remainingWork: DictionaryObject<number> = {};
+
+	@Type(() => DictionaryObject<number>)
+	totalWork: { [key: number]: number } = {};
+
+	@Type(() => DictionaryObject<number>)
+	milestoneLikelihood: DictionaryObject<number> = {};
+
+	@Type(() => WhenForecast)
+	@Transform(({ value }) => value.map(WhenForecast.fromBackend), {
+		toClassOnly: true,
+	})
 	forecasts!: IWhenForecast[];
-	url: string | null;
-	stateCategory: StateCategory;
-	startedDate!: Date;
-	closedDate!: Date;
+
+	url = "";
+	stateCategory: StateCategory = "Unknown";
+
+	@Type(() => Date)
+	startedDate: Date = new Date();
+
+	@Type(() => Date)
+	closedDate: Date = new Date();
+
 	cycleTime!: number;
 	workItemAge!: number;
-
-	constructor(
-		name: string,
-		id: number,
-		workItemReference: string,
-		state: string,
-		type: string,
-		lastUpdated: Date,
-		isUsingDefaultFeatureSize: boolean,
-		projects: DictionaryObject<string>,
-		remainingWork: DictionaryObject<number>,
-		totalWork: { [key: number]: number },
-		milestoneLikelihood: DictionaryObject<number>,
-		forecasts: IWhenForecast[],
-		url: string | null,
-		stateCategory: StateCategory,
-		startedDate: Date,
-		closedDate: Date,
-		cycleTime: number,
-		workItemAge: number,
-	) {
-		this.name = name;
-		this.id = id;
-		this.workItemReference = workItemReference;
-		this.state = state;
-		this.type = type;
-		this.lastUpdated = lastUpdated;
-		this.isUsingDefaultFeatureSize = isUsingDefaultFeatureSize;
-		this.projects = projects;
-		this.remainingWork = remainingWork;
-		this.totalWork = totalWork;
-		this.milestoneLikelihood = milestoneLikelihood;
-		this.forecasts = forecasts;
-		this.url = url;
-		this.stateCategory = stateCategory;
-		this.startedDate = startedDate;
-		this.closedDate = closedDate;
-		this.cycleTime = cycleTime;
-		this.workItemAge = workItemAge;
-	}
 
 	getRemainingWorkForTeam(id: number): number {
 		return this.getWorkForTeam(id, this.remainingWork);
@@ -135,5 +117,9 @@ export class Feature implements IFeature {
 	getWorkForTeam(id: number, work: { [key: number]: number }): number {
 		if (!work) return 0;
 		return work[id] ?? 0;
+	}
+
+	static fromBackend(data: IFeature): Feature {
+		return plainToInstance(Feature, data);
 	}
 }

@@ -38,10 +38,12 @@ export class ForecastService
 	private deserializeManualForecast(
 		manualForecastData: IManualForecast,
 	): ManualForecast {
-		const whenForecasts = manualForecastData.whenForecasts.map(
-			(forecast) =>
-				new WhenForecast(forecast.probability, new Date(forecast.expectedDate)),
-		);
+		const whenForecasts = manualForecastData.whenForecasts.map((forecast) => {
+			return WhenForecast.new(
+				forecast.probability,
+				new Date(forecast.expectedDate),
+			);
+		});
 		const howManyForecasts = manualForecastData.howManyForecasts.map(
 			(forecast) =>
 				new HowManyForecast(forecast.probability, forecast.expectedItems),

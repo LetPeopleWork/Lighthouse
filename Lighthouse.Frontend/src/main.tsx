@@ -8,6 +8,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { appColors } from "./utils/theme/colors";
+import "reflect-metadata";
 
 // Light theme
 const lightTheme = createTheme({

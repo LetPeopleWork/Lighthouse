@@ -21,29 +21,19 @@ describe("Feature Class", () => {
 		totalWork = { 1: 15, 2: 20, 3: 45 };
 		milestoneLikelihood = { 0: 97.1, 1: 35.6 };
 		forecasts = [
-			new WhenForecast(0.8, new Date("2023-08-01")),
-			new WhenForecast(0.6, new Date("2023-09-01")),
+			WhenForecast.new(0.8, new Date("2023-08-01")),
+			WhenForecast.new(0.6, new Date("2023-09-01")),
 		];
-		feature = new Feature(
-			name,
-			id,
-			referenceId,
-			"",
-			"Unknown",
-			lastUpdated,
-			false,
-			{ 0: "Project" },
-			remainingWork,
-			totalWork,
-			milestoneLikelihood,
-			forecasts,
-			null,
-			"Unknown",
-			new Date(),
-			new Date(),
-			0,
-			0,
-		);
+
+		feature = new Feature();
+		feature.name = name;
+		feature.id = id;
+		feature.workItemReference = referenceId;
+		feature.lastUpdated = lastUpdated;
+		feature.remainingWork = remainingWork;
+		feature.totalWork = totalWork;
+		feature.milestoneLikelihood = milestoneLikelihood;
+		feature.forecasts = forecasts;
 	});
 
 	it("should create an instance of Feature correctly", () => {

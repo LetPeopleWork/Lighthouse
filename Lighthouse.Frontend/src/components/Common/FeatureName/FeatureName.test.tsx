@@ -79,30 +79,15 @@ describe("FeatureName", () => {
 	});
 
 	test("displays team information when teams are working on the feature", () => {
-		const teams = [
-			new Team(
-				"Team A",
-				1,
-				[],
-				[],
-				0,
-				new Date(),
-				false,
-				new Date(),
-				new Date(),
-			),
-			new Team(
-				"Team B",
-				2,
-				[],
-				[],
-				0,
-				new Date(),
-				false,
-				new Date(),
-				new Date(),
-			),
-		];
+		const team1 = new Team();
+		team1.name = "Team A";
+		team1.id = 1;
+
+		const team2 = new Team();
+		team2.name = "Team B";
+		team2.id = 2;
+
+		const teams = [team1, team2];
 
 		renderWithRouter(
 			<FeatureName {...defaultProps} teamsWorkIngOnFeature={teams} />,

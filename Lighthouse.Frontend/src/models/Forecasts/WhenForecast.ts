@@ -1,3 +1,5 @@
+import { Type, plainToInstance } from "class-transformer";
+import "reflect-metadata";
 import type { IForecast } from "./IForecast";
 
 export interface IWhenForecast extends IForecast {
@@ -6,18 +8,18 @@ export interface IWhenForecast extends IForecast {
 
 export class WhenForecast implements IWhenForecast {
 	probability!: number;
-	expectedDate!: Date;
 
-	constructor(probability: number, expectedDate: Date) {
-		if (probability < 0 || probability > 100) {
-			throw new RangeError("Probability must be between 0 and 100.");
-		}
+	@Type(() => Date)
+	expectedDate: Date = new Date();
 
-		if (Number.isNaN(expectedDate.getTime())) {
-			throw new Error("Invalid date.");
-		}
+	static fromBackend(data: IWhenForecast): WhenForecast {
+		return plainToInstance(WhenForecast, data);
+	}
 
-		this.probability = probability;
-		this.expectedDate = expectedDate;
+	static new(probability: number, expectedDate: Date): WhenForecast {
+		const forecast = new WhenForecast();
+		forecast.probability = probability;
+		forecast.expectedDate = expectedDate;
+		return forecast;
 	}
 }

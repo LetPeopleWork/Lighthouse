@@ -60,83 +60,53 @@ vi.mock(
 );
 
 describe("ProjectCard component", () => {
-	const project: Project = new Project(
-		"Project Alpha",
-		1,
-		[
-			new Team(
-				"Team A",
-				1,
-				[],
-				[],
-				1,
-				new Date(),
-				false,
-				new Date(new Date().setDate(new Date().getDate() - [1].length)),
-				new Date(),
-			),
-			new Team(
-				"Team B",
-				2,
-				[],
-				[],
-				1,
-				new Date(),
-				false,
-				new Date(new Date().setDate(new Date().getDate() - [1].length)),
-				new Date(),
-			),
-		],
-		[
-			new Feature(
-				"Feature 1",
-				0,
-				"FTR-0",
-				"In Progress",
-				"Feature",
-				new Date(),
-				false,
-				{ 1: "Project Alpha" },
-				{ 1: 7, 2: 3 },
-				{ 1: 7, 2: 3 },
-				{ 0: 74.5 },
-				[
-					new WhenForecast(50, new Date("2025-08-04")),
-					new WhenForecast(70, new Date("2025-06-25")),
-					new WhenForecast(85, new Date("2025-07-25")),
-					new WhenForecast(95, new Date("2025-08-19")),
-				],
-				null,
-				"Doing",
-				new Date("2025-06-01"),
-				new Date("2025-08-01"),
-				60,
-				60,
-			),
-			new Feature(
-				"Feature 2",
-				1,
-				"FTR-1",
-				"Done",
-				"Feature",
-				new Date(),
-				false,
-				{ 1: "Project Alpha" },
-				{ 1: 0, 2: 0 },
-				{ 1: 5, 2: 2 },
-				{ 0: 100 },
-				[],
-				null,
-				"Done",
-				new Date("2025-05-01"),
-				new Date("2025-06-01"),
-				30,
-				30,
-			),
-		],
-		[new Milestone(1, "Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60))],
-		new Date("2024-06-01"),
-	);
+	const project: Project = new Project();
+	project.name = "Project Alpha";
+	project.id = 1;
+
+	const teamA = new Team();
+	teamA.name = "Team A";
+	teamA.id = 1;
+
+	const teamB = new Team();
+	teamB.name = "Team B";
+	teamB.id = 2;
+
+	project.involvedTeams = [teamA, teamB];
+
+	const feature1 = new Feature();
+	feature1.name = "Feature 1";
+	feature1.id = 0;
+	feature1.workItemReference = "FTR-0";
+	feature1.state = "In Progress";
+	feature1.type = "Feature";
+	feature1.projects = { 1: "Project Alpha" };
+	feature1.remainingWork = { 1: 7, 2: 3 };
+	feature1.totalWork = { 1: 7, 2: 3 };
+	feature1.milestoneLikelihood = { 0: 74.5 };
+	feature1.forecasts = [
+		WhenForecast.new(50, new Date("2025-08-04")),
+		WhenForecast.new(70, new Date("2025-06-25")),
+		WhenForecast.new(85, new Date("2025-07-25")),
+		WhenForecast.new(95, new Date("2025-08-19")),
+	];
+
+	const feature2 = new Feature();
+	feature2.name = "Feature 2";
+	feature2.id = 1;
+	feature2.workItemReference = "FTR-1";
+	feature2.state = "Done";
+	feature2.type = "Feature";
+	feature2.projects = { 1: "Project Alpha" };
+	feature2.remainingWork = { 1: 0, 2: 0 };
+	feature2.totalWork = { 1: 5, 2: 2 };
+	feature2.milestoneLikelihood = { 0: 100 };
+	feature2.forecasts = [];
+
+	project.features = [feature1, feature2];
+	project.milestones = [
+		Milestone.new(0, "Milestone 0", new Date(Date.now() + 7 * 24 * 60 * 60)),
+	];
 
 	const renderComponent = () =>
 		render(
@@ -256,14 +226,9 @@ describe("ProjectCard component", () => {
 
 	it("should display singular 'Feature' text when there is only one feature", () => {
 		// Create a new project with only one feature
-		const singleFeatureProject = new Project(
-			project.name,
-			project.id,
-			project.involvedTeams,
-			[project.features[0]], // Only one feature
-			project.milestones,
-			project.lastUpdated,
-		);
+		const singleFeatureProject = Project.fromBackend(project);
+
+		singleFeatureProject.features = project.features.slice(0, 1);
 
 		render(
 			<ThemeProvider theme={theme}>

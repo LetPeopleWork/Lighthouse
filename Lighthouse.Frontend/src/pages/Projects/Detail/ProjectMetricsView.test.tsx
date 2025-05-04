@@ -114,7 +114,13 @@ vi.mock("../../Teams/Detail/ItemsInProgress", () => ({
 }));
 
 describe("ProjectMetricsView component", () => {
-	const mockProject = new Project("Test Project", 1, [], [], [], new Date());
+	const mockProject = (() => {
+		const project = new Project();
+		project.name = "Test Project";
+		project.id = 1;
+		project.lastUpdated = new Date();
+		return project;
+	})();
 
 	// Create RunChartData with correct properties
 	const mockFeaturesCompletedData: RunChartData = new RunChartData(

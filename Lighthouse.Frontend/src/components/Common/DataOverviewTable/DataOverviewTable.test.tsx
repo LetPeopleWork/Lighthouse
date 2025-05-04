@@ -24,6 +24,7 @@ const sampleData: IFeatureOwner[] = [
 		remainingFeatures: 5,
 		features: [],
 		totalWork: 20,
+		tags: [],
 	},
 	{
 		id: 2,
@@ -32,6 +33,7 @@ const sampleData: IFeatureOwner[] = [
 		remainingFeatures: 15,
 		features: [],
 		totalWork: 20,
+		tags: [],
 	},
 	{
 		id: 3,
@@ -40,6 +42,7 @@ const sampleData: IFeatureOwner[] = [
 		remainingFeatures: 25,
 		features: [],
 		totalWork: 33,
+		tags: [],
 	},
 ];
 
@@ -69,6 +72,7 @@ describe("DataOverviewTable", () => {
 				remainingWork: 30,
 				remainingFeatures: 25,
 				features: [],
+				tags: [],
 				totalWork: 33,
 			},
 			{
@@ -77,6 +81,7 @@ describe("DataOverviewTable", () => {
 				remainingWork: 10,
 				remainingFeatures: 5,
 				features: [],
+				tags: [],
 				totalWork: 20,
 			},
 			{
@@ -85,6 +90,7 @@ describe("DataOverviewTable", () => {
 				remainingWork: 20,
 				remainingFeatures: 15,
 				features: [],
+				tags: [],
 				totalWork: 20,
 			},
 		];

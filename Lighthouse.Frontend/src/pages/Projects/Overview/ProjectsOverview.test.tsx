@@ -85,15 +85,9 @@ vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
 	default: vi.fn(({ children, isLoading, hasError }) => (
 		<div>
 			{isLoading && (
-				<div
-					role="progressbar"
-					aria-valuenow={0}
-					aria-valuemin={0}
-					aria-valuemax={100}
-					tabIndex={0}
-				>
+				<progress value={0} max={100}>
 					Loading...
-				</div>
+				</progress>
 			)}
 			{hasError && <div>Error loading data</div>}
 			{!isLoading && !hasError && children}
@@ -102,10 +96,15 @@ vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
 }));
 
 describe("ProjectsOverview component", () => {
-	const mockProjects = [
-		new Project("Project Alpha", 1, [], [], [], new Date()),
-		new Project("Project Beta", 2, [], [], [], new Date()),
-	];
+	const project1 = new Project();
+	project1.name = "Project Alpha";
+	project1.id = 1;
+
+	const project2 = new Project();
+	project2.name = "Project Beta";
+	project2.id = 2;
+
+	const mockProjects = [project1, project2];
 
 	beforeEach(() => {
 		vi.clearAllMocks();

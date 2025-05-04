@@ -65,7 +65,6 @@ export class DemoApiService
 {
 	private readonly useDelay: boolean;
 	private readonly throwError: boolean;
-	private readonly lastUpdated = new Date("06/23/2024 12:41");
 	private readonly dayMultiplier: number = 24 * 60 * 60 * 1000;
 	private readonly today: number = Date.now();
 
@@ -73,21 +72,27 @@ export class DemoApiService
 		new Map();
 
 	private milestones = [
-		new Milestone(
-			0,
-			"Milestone 1",
-			new Date(this.today + 14 * this.dayMultiplier),
-		),
-		new Milestone(
-			1,
-			"Milestone 2",
-			new Date(this.today + 28 * this.dayMultiplier),
-		),
-		new Milestone(
-			2,
-			"Milestone 3",
-			new Date(this.today + 90 * this.dayMultiplier),
-		),
+		(() => {
+			const milestone = new Milestone();
+			milestone.id = 0;
+			milestone.name = "Milestone 1";
+			milestone.date = new Date(this.today + 14 * this.dayMultiplier);
+			return milestone;
+		})(),
+		(() => {
+			const milestone = new Milestone();
+			milestone.id = 1;
+			milestone.name = "Milestone 2";
+			milestone.date = new Date(this.today + 28 * this.dayMultiplier);
+			return milestone;
+		})(),
+		(() => {
+			const milestone = new Milestone();
+			milestone.id = 2;
+			milestone.name = "Milestone 3";
+			milestone.date = new Date(this.today + 90 * this.dayMultiplier);
+			return milestone;
+		})(),
 	];
 
 	private features: Feature[] = [];
@@ -353,10 +358,10 @@ export class DemoApiService
 		];
 
 		const whenForecasts = [
-			new WhenForecast(50, dayjs().add(2, "days").toDate()),
-			new WhenForecast(70, dayjs().add(5, "days").toDate()),
-			new WhenForecast(85, dayjs().add(9, "days").toDate()),
-			new WhenForecast(95, dayjs().add(12, "days").toDate()),
+			WhenForecast.new(50, dayjs().add(2, "days").toDate()),
+			WhenForecast.new(70, dayjs().add(5, "days").toDate()),
+			WhenForecast.new(85, dayjs().add(9, "days").toDate()),
+			WhenForecast.new(95, dayjs().add(12, "days").toDate()),
 		];
 
 		const likelihood = Math.round(Math.random() * 10000) / 100;
@@ -832,11 +837,13 @@ export class DemoApiService
 			name: "My Project",
 			workItemTypes: ["Feature", "Epic"],
 			milestones: [
-				new Milestone(
-					1,
-					"Target Date",
-					new Date(this.today + 14 * this.dayMultiplier),
-				),
+				(() => {
+					const milestone = new Milestone();
+					milestone.id = 1;
+					milestone.name = "Target Date";
+					milestone.date = new Date(this.today + 14 * this.dayMultiplier);
+					return milestone;
+				})(),
 			],
 			workItemQuery: '[System.TeamProject] = "My Team"',
 			unparentedItemsQuery: '[System.TeamProject] = "My Team"',
@@ -919,51 +926,35 @@ export class DemoApiService
 			3: ["FTR-4"],
 		};
 
+		const teamBinaryBlazers = new Team();
+		teamBinaryBlazers.id = 0;
+		teamBinaryBlazers.name = "Binary Blazers";
+		teamBinaryBlazers.features = [this.features[0], this.features[3]];
+		teamBinaryBlazers.featureWip = 1;
+
+		const teamMavericks = new Team();
+		teamMavericks.id = 1;
+		teamMavericks.name = "Mavericks";
+		teamMavericks.features = [this.features[1], this.features[2]];
+		teamMavericks.featureWip = 2;
+
+		const teamCyberSultans = new Team();
+		teamCyberSultans.id = 2;
+		teamCyberSultans.name = "Cyber Sultans";
+		teamCyberSultans.features = [this.features[2]];
+		teamCyberSultans.featureWip = 1;
+
+		const teamTechEagles = new Team();
+		teamTechEagles.id = 3;
+		teamTechEagles.name = "Tech Eagles";
+		teamTechEagles.features = [this.features[3]];
+		teamTechEagles.featureWip = 2;
+
 		this.teams = [
-			new Team(
-				"Binary Blazers",
-				0,
-				[],
-				[this.features[0], this.features[3]],
-				1,
-				new Date(),
-				false,
-				new Date(new Date().setDate(new Date().getDate() - throughput1.length)),
-				new Date(),
-			),
-			new Team(
-				"Mavericks",
-				1,
-				[],
-				[this.features[1], this.features[2]],
-				2,
-				new Date(),
-				false,
-				new Date(new Date().setDate(new Date().getDate() - throughput2.length)),
-				new Date(),
-			),
-			new Team(
-				"Cyber Sultans",
-				2,
-				[],
-				[this.features[2]],
-				1,
-				new Date(),
-				true,
-				new Date(new Date().setDate(new Date().getDate() - throughput3.length)),
-				new Date(),
-			),
-			new Team(
-				"Tech Eagles",
-				3,
-				[],
-				[this.features[3]],
-				2,
-				new Date(),
-				false,
-				new Date(new Date().setDate(new Date().getDate() - throughput4.length)),
-				new Date(),
-			),
+			teamBinaryBlazers,
+			teamMavericks,
+			teamCyberSultans,
+			teamTechEagles,
 		];
 	}
 
@@ -1129,137 +1120,102 @@ export class DemoApiService
 			};
 		};
 
-		this.features = [
-			new Feature(
-				"Feature 1",
-				0,
-				"FTR-1",
-				"",
-				"ToDo",
-				new Date(),
-				false,
-				{ 0: "Release 1.33.7" },
-				{ 0: 10 },
-				{ 0: 15 },
-				getMileStoneLikelihoods(),
-				[
-					new WhenForecast(50, new Date(this.today + 5 * this.dayMultiplier)),
-					new WhenForecast(70, new Date(this.today + 10 * this.dayMultiplier)),
-					new WhenForecast(85, new Date(this.today + 17 * this.dayMultiplier)),
-					new WhenForecast(95, new Date(this.today + 25 * this.dayMultiplier)),
-				],
-				"https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/1",
-				"ToDo",
-				new Date(this.today - 10 * this.dayMultiplier),
-				new Date(this.today),
-				10,
-				10,
-			),
-			new Feature(
-				"Feature 2",
-				1,
-				"FTR-2",
-				"",
-				"Doing",
-				new Date(),
-				false,
-				{ 1: "Release 42" },
-				{ 1: 5 },
-				{ 1: 5 },
-				getMileStoneLikelihoods(),
-				[
-					new WhenForecast(50, new Date(this.today + 15 * this.dayMultiplier)),
-					new WhenForecast(70, new Date(this.today + 28 * this.dayMultiplier)),
-					new WhenForecast(85, new Date(this.today + 35 * this.dayMultiplier)),
-					new WhenForecast(95, new Date(this.today + 45 * this.dayMultiplier)),
-				],
-				"https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/2",
-				"Doing",
-				new Date(this.today - 15 * this.dayMultiplier),
-				new Date(this.today),
-				15,
-				15,
-			),
-			new Feature(
-				"Feature 3",
-				2,
-				"FTR-3",
-				"",
-				"Done",
-				new Date(),
-				true,
-				{ 2: "Release Codename Daniel" },
-				{ 2: 7, 1: 15 },
-				{ 2: 10, 1: 25 },
-				getMileStoneLikelihoods(),
-				[
-					new WhenForecast(50, new Date(this.today + 7 * this.dayMultiplier)),
-					new WhenForecast(70, new Date(this.today + 12 * this.dayMultiplier)),
-					new WhenForecast(85, new Date(this.today + 14 * this.dayMultiplier)),
-					new WhenForecast(95, new Date(this.today + 16 * this.dayMultiplier)),
-				],
-				"https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/3",
-				"Done",
-				new Date(this.today - 20 * this.dayMultiplier),
-				new Date(this.today - 5 * this.dayMultiplier),
-				15,
-				20,
-			),
-			new Feature(
-				"Feature 4",
-				3,
-				"FTR-4",
-				"",
-				"Unknown",
-				new Date(),
-				false,
-				{ 2: "Release Codename Daniel", 1: "Release 1.33.7" },
-				{ 0: 3, 3: 9 },
-				{ 0: 12, 3: 10 },
-				getMileStoneLikelihoods(),
-				[
-					new WhenForecast(50, new Date(this.today + 21 * this.dayMultiplier)),
-					new WhenForecast(70, new Date(this.today + 37 * this.dayMultiplier)),
-					new WhenForecast(85, new Date(this.today + 55 * this.dayMultiplier)),
-					new WhenForecast(95, new Date(this.today + 71 * this.dayMultiplier)),
-				],
-				"https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/4",
-				"Unknown",
-				new Date(this.today - 5 * this.dayMultiplier),
-				new Date(this.today),
-				5,
-				5,
-			),
+		const feature1 = new Feature();
+		feature1.name = "Feature 1";
+		feature1.id = 0;
+		feature1.workItemReference = "FTR-1";
+		feature1.state = "ToDo";
+		feature1.projects = { 0: "Release 1.33.7" };
+		feature1.remainingWork = { 0: 10 };
+		feature1.totalWork = { 0: 15 };
+		feature1.milestoneLikelihood = getMileStoneLikelihoods();
+		feature1.forecasts = [
+			WhenForecast.new(50, new Date(this.today + 5 * this.dayMultiplier)),
+			WhenForecast.new(70, new Date(this.today + 10 * this.dayMultiplier)),
+			WhenForecast.new(85, new Date(this.today + 17 * this.dayMultiplier)),
+			WhenForecast.new(95, new Date(this.today + 25 * this.dayMultiplier)),
 		];
+		feature1.url =
+			"https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/1";
+
+		const feature2 = new Feature();
+		feature2.name = "Feature 2";
+		feature2.id = 1;
+		feature2.workItemReference = "FTR-2";
+		feature2.state = "Doing";
+		feature2.projects = { 1: "Release 42" };
+		feature2.remainingWork = { 1: 5 };
+		feature2.totalWork = { 1: 5 };
+		feature2.milestoneLikelihood = getMileStoneLikelihoods();
+		feature2.forecasts = [
+			WhenForecast.new(50, new Date(this.today + 15 * this.dayMultiplier)),
+			WhenForecast.new(70, new Date(this.today + 28 * this.dayMultiplier)),
+			WhenForecast.new(85, new Date(this.today + 35 * this.dayMultiplier)),
+			WhenForecast.new(95, new Date(this.today + 45 * this.dayMultiplier)),
+		];
+		feature2.url =
+			"https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/2";
+
+		const feature3 = new Feature();
+		feature3.name = "Feature 3";
+		feature3.id = 2;
+		feature3.workItemReference = "FTR-3";
+		feature3.state = "Done";
+		feature3.projects = { 2: "Release Codename Daniel" };
+		feature3.remainingWork = { 2: 7, 1: 15 };
+		feature3.totalWork = { 2: 10, 1: 25 };
+		feature3.milestoneLikelihood = getMileStoneLikelihoods();
+		feature3.forecasts = [
+			WhenForecast.new(50, new Date(this.today + 7 * this.dayMultiplier)),
+			WhenForecast.new(70, new Date(this.today + 12 * this.dayMultiplier)),
+			WhenForecast.new(85, new Date(this.today + 14 * this.dayMultiplier)),
+			WhenForecast.new(95, new Date(this.today + 16 * this.dayMultiplier)),
+		];
+		feature3.url =
+			"https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/3";
+
+		const feature4 = new Feature();
+		feature4.name = "Feature 4";
+		feature4.id = 3;
+		feature4.workItemReference = "FTR-4";
+		feature4.state = "Unknown";
+		feature4.projects = { 2: "Release Codename Daniel", 1: "Release 1.33.7" };
+		feature4.remainingWork = { 2: 3, 1: 5 };
+		feature4.totalWork = { 2: 5, 1: 10 };
+		feature4.milestoneLikelihood = getMileStoneLikelihoods();
+		feature4.forecasts = [
+			WhenForecast.new(50, new Date(this.today + 21 * this.dayMultiplier)),
+			WhenForecast.new(70, new Date(this.today + 37 * this.dayMultiplier)),
+			WhenForecast.new(85, new Date(this.today + 55 * this.dayMultiplier)),
+			WhenForecast.new(95, new Date(this.today + 71 * this.dayMultiplier)),
+		];
+
+		this.features = [feature1, feature2, feature3, feature4];
 	}
 
 	recreateProjects(): void {
-		this.projects = [
-			new Project(
-				"Release 1.33.7",
-				0,
-				[this.teams[0]],
-				[this.features[0]],
-				this.milestones,
-				this.lastUpdated,
-			),
-			new Project(
-				"Release 42",
-				1,
-				[this.teams[1]],
-				[this.features[1]],
-				this.milestones,
-				this.lastUpdated,
-			),
-			new Project(
-				"Release Codename Daniel",
-				2,
-				[this.teams[0], this.teams[1], this.teams[2], this.teams[3]],
-				[this.features[2], this.features[3]],
-				this.milestones,
-				this.lastUpdated,
-			),
-		];
+		const project1 = new Project();
+		project1.name = "Release 1.33.7";
+		project1.id = 0;
+		project1.involvedTeams = [this.teams[0]];
+		project1.features = [this.features[0]];
+		project1.milestones = this.milestones;
+
+		const project2 = new Project();
+		project2.name = "Release 42";
+		project2.id = 1;
+		project2.involvedTeams = [this.teams[1]];
+		project2.features = [this.features[1]];
+		project2.milestones = this.milestones;
+
+		const project3 = new Project();
+		project3.name = "Release Codename Daniel";
+		project3.id = 2;
+		project3.involvedTeams = [this.teams[2], this.teams[3]];
+		project3.features = [this.features[2], this.features[3]];
+		project3.milestones = this.milestones;
+
+		this.projects = [project1, project2, project3];
 	}
 
 	// Project Metrics Service Implementation
@@ -1408,26 +1364,22 @@ export class DemoApiService
 			const totalWork = {};
 			const milestoneLikelihood = {};
 
-			const feature = new Feature(
-				`Feature ${counter}`,
-				workItem.id,
-				`P-FTR-${counter}`,
-				workItem.state,
-				"Feature",
-				new Date(),
-				false,
-				projects,
-				remainingWork,
-				totalWork,
-				milestoneLikelihood,
-				[],
-				workItem.url,
-				workItem.stateCategory,
-				workItem.startedDate,
-				workItem.closedDate,
-				workItem.cycleTime,
-				workItem.workItemAge,
-			);
+			const feature = new Feature();
+			feature.name = `Feature ${counter}`;
+			feature.id = counter;
+			feature.workItemReference = `FTR-${counter}`;
+			feature.state = workItem.state;
+			feature.type = "Feature";
+			feature.workItemAge = workItem.workItemAge;
+			feature.startedDate = workItem.startedDate;
+			feature.closedDate = workItem.closedDate;
+			feature.cycleTime = workItem.cycleTime;
+			feature.projects = projects;
+			feature.remainingWork = remainingWork;
+			feature.totalWork = totalWork;
+			feature.milestoneLikelihood = milestoneLikelihood;
+			feature.url = workItem.url ?? "";
+			feature.stateCategory = workItem.stateCategory;
 
 			features.push(feature);
 		}

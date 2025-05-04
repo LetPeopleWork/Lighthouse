@@ -4,7 +4,9 @@ import { describe, expect, test } from "vitest";
 import { Project } from "../../models/Project/Project";
 import ProjectLink from "./ProjectLink";
 
-const project: Project = new Project("My Team", 12, [], [], [], new Date());
+const project: Project = new Project();
+project.name = "My Project";
+project.id = 12;
 
 describe("ProjectLink", () => {
 	test("renders without crashing", () => {

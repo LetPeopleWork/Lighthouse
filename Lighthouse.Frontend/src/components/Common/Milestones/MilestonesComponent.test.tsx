@@ -5,8 +5,20 @@ import MilestonesComponent from "./MilestonesComponent";
 
 describe("MilestonesComponent", () => {
 	const initialMilestones: IMilestone[] = [
-		new Milestone(1, "Milestone 1", new Date("2024-08-01")),
-		new Milestone(2, "Milestone 2", new Date("2024-09-01")),
+		(() => {
+			const milestone = new Milestone();
+			milestone.id = 1;
+			milestone.name = "Milestone 1";
+			milestone.date = new Date("2024-08-01");
+			return milestone;
+		})(),
+		(() => {
+			const milestone = new Milestone();
+			milestone.id = 2;
+			milestone.name = "Milestone 2";
+			milestone.date = new Date("2024-09-01");
+			return milestone;
+		})(),
 	];
 
 	const mockAddMilestone = vi.fn();
@@ -49,9 +61,14 @@ describe("MilestonesComponent", () => {
 		});
 		fireEvent.click(screen.getByText(/Add Milestone/i));
 
-		expect(mockAddMilestone).toHaveBeenCalledWith(
-			new Milestone(0, "New Milestone", new Date("2024-10-01")),
-		);
+		const expectedMilestone = (() => {
+			const milestone = new Milestone();
+			milestone.id = 0;
+			milestone.name = "New Milestone";
+			milestone.date = new Date("2024-10-01");
+			return milestone;
+		})();
+		expect(mockAddMilestone).toHaveBeenCalledWith(expectedMilestone);
 	});
 
 	it("updates a milestone correctly", async () => {

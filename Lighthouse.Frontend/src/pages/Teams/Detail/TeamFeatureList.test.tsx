@@ -81,78 +81,97 @@ const MockApiServiceProvider = ({
 };
 
 describe("TeamFeatureList component", () => {
-	const team: Team = new Team(
-		"Team A",
-		1,
-		[],
-		[
-			new Feature(
-				"Feature 1",
-				1,
-				"FTR-1",
-				"",
-				"Unknown",
-				new Date(),
-				false,
-				{ 0: "" },
-				{ 1: 10 },
-				{ 1: 10 },
-				{},
-				[new WhenForecast(80, new Date())],
-				null,
-				"ToDo",
-				new Date("2023-07-01"),
-				new Date("2023-07-10"),
-				9,
-				10,
-			),
-			new Feature(
-				"Feature 2",
-				2,
-				"FTR-2",
-				"",
-				"Unknown",
-				new Date(),
-				true,
-				{ 0: "" },
-				{ 1: 5 },
-				{ 1: 10 },
-				{},
-				[new WhenForecast(60, new Date())],
-				null,
-				"Doing",
-				new Date("2023-07-01"),
-				new Date("2023-07-09"),
-				8,
-				9,
-			),
-			new Feature(
-				"Feature 3",
-				3,
-				"FTR-3",
-				"",
-				"Unknown",
-				new Date(),
-				false,
-				{ 0: "" },
-				{ 1: 0 },
-				{ 1: 10 },
-				{},
-				[new WhenForecast(100, new Date())],
-				null,
-				"Done",
-				new Date("2023-07-01"),
-				new Date("2023-07-08"),
-				7,
-				8,
-			),
-		],
-		1,
-		new Date(),
-		false,
-		new Date(new Date().setDate(new Date().getDate() - [1].length)),
-		new Date(),
-	);
+	const team: Team = (() => {
+		const team = new Team();
+		team.name = "Team A";
+		team.id = 1;
+		team.projects = [];
+		team.features = [
+			(() => {
+				const feature = new Feature();
+				feature.name = "Feature 1";
+				feature.id = 1;
+				feature.workItemReference = "FTR-1";
+				feature.stateCategory = "ToDo";
+				feature.lastUpdated = new Date();
+				feature.isUsingDefaultFeatureSize = false;
+				feature.projects = { 0: "" };
+				feature.remainingWork = { 1: 10 };
+				feature.totalWork = { 1: 10 };
+				feature.forecasts = [
+					(() => {
+						const forecast = new WhenForecast();
+						forecast.probability = 80;
+						forecast.expectedDate = new Date();
+						return forecast;
+					})(),
+				];
+				feature.startedDate = new Date("2023-07-01");
+				feature.closedDate = new Date("2023-07-10");
+				feature.cycleTime = 9;
+				feature.workItemAge = 10;
+				return feature;
+			})(),
+			(() => {
+				const feature = new Feature();
+				feature.name = "Feature 2";
+				feature.id = 2;
+				feature.workItemReference = "FTR-2";
+				feature.stateCategory = "Doing";
+				feature.lastUpdated = new Date();
+				feature.isUsingDefaultFeatureSize = true;
+				feature.projects = { 0: "" };
+				feature.remainingWork = { 1: 5 };
+				feature.totalWork = { 1: 10 };
+				feature.forecasts = [
+					(() => {
+						const forecast = new WhenForecast();
+						forecast.probability = 60;
+						forecast.expectedDate = new Date();
+						return forecast;
+					})(),
+				];
+				feature.startedDate = new Date("2023-07-01");
+				feature.closedDate = new Date("2023-07-09");
+				feature.cycleTime = 8;
+				feature.workItemAge = 9;
+				return feature;
+			})(),
+			(() => {
+				const feature = new Feature();
+				feature.name = "Feature 3";
+				feature.id = 3;
+				feature.workItemReference = "FTR-3";
+				feature.stateCategory = "Done";
+				feature.lastUpdated = new Date();
+				feature.isUsingDefaultFeatureSize = false;
+				feature.projects = { 0: "" };
+				feature.remainingWork = { 1: 0 };
+				feature.totalWork = { 1: 10 };
+				feature.forecasts = [
+					(() => {
+						const forecast = new WhenForecast();
+						forecast.probability = 100;
+						forecast.expectedDate = new Date();
+						return forecast;
+					})(),
+				];
+				feature.startedDate = new Date("2023-07-01");
+				feature.closedDate = new Date("2023-07-08");
+				feature.cycleTime = 7;
+				feature.workItemAge = 8;
+				return feature;
+			})(),
+		];
+		team.featureWip = 1;
+		team.lastUpdated = new Date();
+		team.useFixedDatesForThroughput = false;
+		team.throughputStartDate = new Date(
+			new Date().setDate(new Date().getDate() - [1].length),
+		);
+		team.throughputEndDate = new Date();
+		return team;
+	})();
 
 	it("should render all features with correct data", () => {
 		render(

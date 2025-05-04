@@ -20,37 +20,33 @@ describe("ProjectService", () => {
 	});
 
 	it("should get all projects", async () => {
-		const mockResponse: IProject[] = [
-			new Project("Project 1", 1, [], [], [], new Date("2023-09-01T12:00:00Z")),
-		];
+		const project = new Project();
+		project.name = "Project 1";
+		project.id = 1;
+		project.lastUpdated = new Date("2023-09-01T12:00:00Z");
+
+		const mockResponse: IProject[] = [project];
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
 		const projects = await projectService.getProjects();
 
-		expect(projects).toEqual([
-			new Project("Project 1", 1, [], [], [], new Date("2023-09-01T12:00:00Z")),
-		]);
+		expect(projects).toEqual([project]);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/projects");
 	});
 
 	it("should get a project by id", async () => {
-		const mockProject: IProject = new Project(
-			"Project 1",
-			1,
-			[],
-			[],
-			[],
-			new Date("2023-09-01T12:00:00Z"),
-		);
+		const project = new Project();
+		project.name = "Project 1";
+		project.id = 1;
+		project.lastUpdated = new Date("2023-09-01T12:00:00Z");
 
+		const mockProject: IProject = project;
 		mockedAxios.get.mockResolvedValueOnce({ data: mockProject });
 
-		const project = await projectService.getProject(1);
+		const mockResponse = await projectService.getProject(1);
 
-		expect(project).toEqual(
-			new Project("Project 1", 1, [], [], [], new Date("2023-09-01T12:00:00Z")),
-		);
+		expect(mockResponse).toEqual(project);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/projects/1");
 	});
 
@@ -181,14 +177,10 @@ describe("ProjectService", () => {
 	});
 
 	it("should refresh features for a project by id", async () => {
-		const mockProject: IProject = new Project(
-			"Project 1",
-			1,
-			[],
-			[],
-			[],
-			new Date("2023-09-01T12:00:00Z"),
-		);
+		const mockProject: IProject = new Project();
+		mockProject.name = "Project 1";
+		mockProject.id = 1;
+		mockProject.lastUpdated = new Date("2023-09-01T12:00:00Z");
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockProject });
 
@@ -198,14 +190,12 @@ describe("ProjectService", () => {
 	});
 
 	it("should refresh forecasts for a project by id", async () => {
-		const mockProject: IProject = new Project(
-			"Project 1",
-			1,
-			[],
-			[],
-			[],
-			new Date("2023-09-01T12:00:00Z"),
-		);
+		const project = new Project();
+		project.name = "Project 1";
+		project.id = 1;
+		project.lastUpdated = new Date("2023-09-01T12:00:00Z");
+
+		const mockProject: IProject = project;
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockProject });
 

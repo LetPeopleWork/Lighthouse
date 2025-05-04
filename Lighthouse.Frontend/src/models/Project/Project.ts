@@ -1,7 +1,9 @@
-import type { Feature } from "../Feature";
+import { Transform, Type, plainToInstance } from "class-transformer";
+import "reflect-metadata";
+import { Feature, type IFeature } from "../Feature";
 import type { IFeatureOwner } from "../IFeatureOwner";
-import type { ITeam, Team } from "../Team/Team";
-import type { IMilestone } from "./Milestone";
+import { type ITeam, Team } from "../Team/Team";
+import { type IMilestone, Milestone } from "./Milestone";
 
 export interface IProject extends IFeatureOwner {
 	name: string;
@@ -19,27 +21,24 @@ export class Project implements IProject {
 	name!: string;
 	id!: number;
 
-	features!: Feature[];
-	involvedTeams!: Team[];
-	milestones!: IMilestone[];
+	@Type(() => Feature)
+	@Transform(({ value }) => value.map(Feature.fromBackend), {
+		toClassOnly: true,
+	})
+	features: IFeature[] = [];
 
-	lastUpdated!: Date;
+	@Transform(({ value }) => value.map(Team.fromBackend), { toClassOnly: true })
+	involvedTeams: ITeam[] = [];
 
-	constructor(
-		name: string,
-		id: number,
-		involvedTeams: Team[],
-		features: Feature[],
-		milestones: IMilestone[],
-		lastUpdated: Date,
-	) {
-		this.name = name;
-		this.id = id;
-		this.involvedTeams = involvedTeams;
-		this.lastUpdated = lastUpdated;
-		this.features = features || [];
-		this.milestones = milestones;
-	}
+	tags: string[] = [];
+
+	@Transform(({ value }) => value.map(Milestone.fromBackend), {
+		toClassOnly: true,
+	})
+	milestones: IMilestone[] = [];
+
+	@Type(() => Date)
+	lastUpdated: Date = new Date();
 
 	get remainingWork(): number {
 		return this.features.reduce(
@@ -57,5 +56,9 @@ export class Project implements IProject {
 
 	get remainingFeatures(): number {
 		return this.features.length;
+	}
+
+	static fromBackend(data: IProject): Project {
+		return plainToInstance(Project, data);
 	}
 }

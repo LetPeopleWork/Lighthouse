@@ -141,30 +141,15 @@ vi.mock(
 );
 
 describe("TeamsOverview component", () => {
-	const mockTeams = [
-		new Team(
-			"Team A",
-			1,
-			[],
-			[],
-			2,
-			new Date(),
-			false,
-			new Date(new Date().setDate(new Date().getDate() - 30)),
-			new Date(),
-		),
-		new Team(
-			"Team B",
-			2,
-			[],
-			[],
-			3,
-			new Date(),
-			false,
-			new Date(new Date().setDate(new Date().getDate() - 30)),
-			new Date(),
-		),
-	];
+	const team1 = new Team();
+	team1.name = "Team A";
+	team1.id = 1;
+
+	const team2 = new Team();
+	team2.name = "Team B";
+	team2.id = 2;
+
+	const mockTeams = [team1, team2];
 
 	beforeEach(() => {
 		vi.clearAllMocks();

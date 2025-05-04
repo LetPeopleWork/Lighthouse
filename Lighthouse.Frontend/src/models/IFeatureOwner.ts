@@ -6,4 +6,5 @@ export interface IFeatureOwner extends IProgressable {
 	id: number;
 	features: IFeature[];
 	remainingFeatures: number;
+	tags: string[];
 }

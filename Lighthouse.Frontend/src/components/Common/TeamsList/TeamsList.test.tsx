@@ -21,6 +21,7 @@ describe("TeamsList", () => {
 				new Date().setDate(new Date().getDate() - [1].length),
 			),
 			throughputEndDate: new Date(),
+			tags: [],
 		},
 		{
 			id: 2,
@@ -37,6 +38,7 @@ describe("TeamsList", () => {
 				new Date().setDate(new Date().getDate() - [1].length),
 			),
 			throughputEndDate: new Date(),
+			tags: [],
 		},
 		{
 			id: 3,
@@ -53,6 +55,7 @@ describe("TeamsList", () => {
 				new Date().setDate(new Date().getDate() - [1].length),
 			),
 			throughputEndDate: new Date(),
+			tags: [],
 		},
 	];
 	const selectedTeams = [1, 3];

@@ -218,6 +218,7 @@ describe("ModifyProjectSettings", () => {
 				new Date().setDate(new Date().getDate() - [1].length),
 			),
 			throughputEndDate: new Date(),
+			tags: [],
 		},
 		{
 			id: 2,
@@ -234,6 +235,7 @@ describe("ModifyProjectSettings", () => {
 				new Date().setDate(new Date().getDate() - [1].length),
 			),
 			throughputEndDate: new Date(),
+			tags: [],
 		},
 	];
 

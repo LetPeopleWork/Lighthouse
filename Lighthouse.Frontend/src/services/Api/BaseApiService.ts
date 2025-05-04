@@ -1,9 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
 import { Feature, type IFeature } from "../../models/Feature";
-import {
-	type IWhenForecast,
-	WhenForecast,
-} from "../../models/Forecasts/WhenForecast";
 import { type IMilestone, Milestone } from "../../models/Project/Milestone";
 import { type IProject, Project } from "../../models/Project/Project";
 import type { IProjectSettings } from "../../models/Project/ProjectSettings";
@@ -39,86 +35,16 @@ export class BaseApiService {
 			return null;
 		}
 
-		const projects =
-			item.projects.map((project) =>
-				BaseApiService.deserializeProject(project),
-			) ?? [];
-		const features: Feature[] = BaseApiService.deserializeFeatures(
-			item.features ?? [],
-		);
-		return new Team(
-			item.name,
-			item.id,
-			projects,
-			features,
-			item.featureWip,
-			new Date(item.lastUpdated),
-			item.useFixedDatesForThroughput,
-			new Date(item.throughputStartDate),
-			new Date(item.throughputEndDate),
-		);
+		return Team.fromBackend(item);
 	}
 
 	protected static deserializeProject(item: IProject): Project {
-		const features = BaseApiService.deserializeFeatures(item.features);
-		const teams = item.involvedTeams.map(
-			(team) =>
-				new Team(
-					team.name,
-					team.id,
-					[],
-					[],
-					team.featureWip,
-					new Date(team.lastUpdated),
-					team.useFixedDatesForThroughput,
-					new Date(team.throughputStartDate),
-					new Date(team.throughputEndDate),
-				),
-		);
-		const milestones = item.milestones.map(
-			(milestone) =>
-				new Milestone(milestone.id, milestone.name, new Date(milestone.date)),
-		);
-		return new Project(
-			item.name,
-			item.id,
-			teams,
-			features,
-			milestones,
-			new Date(item.lastUpdated),
-		);
+		return Project.fromBackend(item);
 	}
 
 	protected static deserializeFeatures(featureData: IFeature[]): Feature[] {
 		return featureData.map((feature: IFeature) => {
-			const forecasts: WhenForecast[] = feature.forecasts.map(
-				(forecast: IWhenForecast) => {
-					return new WhenForecast(
-						forecast.probability,
-						new Date(forecast.expectedDate),
-					);
-				},
-			);
-			return new Feature(
-				feature.name,
-				feature.id,
-				feature.workItemReference,
-				feature.state,
-				feature.type,
-				new Date(feature.lastUpdated),
-				feature.isUsingDefaultFeatureSize,
-				feature.projects,
-				feature.remainingWork,
-				feature.totalWork,
-				feature.milestoneLikelihood,
-				forecasts,
-				feature.url,
-				feature.stateCategory,
-				feature.startedDate ? new Date(feature.startedDate) : new Date(),
-				feature.closedDate ? new Date(feature.closedDate) : new Date(),
-				feature.cycleTime || 0,
-				feature.workItemAge || 0,
-			);
+			return Feature.fromBackend(feature);
 		});
 	}
 
@@ -126,11 +52,7 @@ export class BaseApiService {
 		item: IProjectSettings,
 	): IProjectSettings {
 		const milestones = item.milestones.map((milestone: IMilestone) => {
-			return new Milestone(
-				milestone.id,
-				milestone.name,
-				new Date(milestone.date),
-			);
+			return Milestone.fromBackend(milestone);
 		});
 
 		item.milestones = milestones;

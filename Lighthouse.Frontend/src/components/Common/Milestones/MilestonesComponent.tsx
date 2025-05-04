@@ -38,11 +38,10 @@ const MilestonesComponent: React.FC<MilestonesComponentProps> = ({
 
 	const handleAddMilestone = () => {
 		if (newMilestoneName.trim() && newMilestoneDate) {
-			const newMilestone = new Milestone(
-				0,
-				newMilestoneName.trim(),
-				new Date(newMilestoneDate),
-			);
+			const newMilestone = new Milestone();
+			newMilestone.id = 0;
+			newMilestone.name = newMilestoneName.trim();
+			newMilestone.date = new Date(newMilestoneDate);
 			onAddMilestone(newMilestone);
 			setNewMilestoneName("");
 			setNewMilestoneDate("");

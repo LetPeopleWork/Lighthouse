@@ -48,8 +48,8 @@ describe("ManualForecaster component", () => {
 		12,
 		new Date(),
 		[
-			new WhenForecast(50, dayjs().add(1, "week").toDate()),
-			new WhenForecast(70, dayjs().add(2, "weeks").toDate()),
+			WhenForecast.new(50, dayjs().add(1, "week").toDate()),
+			WhenForecast.new(70, dayjs().add(2, "weeks").toDate()),
 		],
 		[new HowManyForecast(60, 15), new HowManyForecast(80, 20)],
 		70,
@@ -100,9 +100,10 @@ describe("ManualForecaster component", () => {
 		const whenForecastList = screen.getAllByTestId((id) =>
 			id.startsWith("forecast-info-list"),
 		);
-		whenForecastList.map((element) => {
+
+		for (const element of whenForecastList) {
 			expect(element).toBeInTheDocument();
-		});
+		}
 
 		const howManyForecastList = screen.getByText(
 			`How Many Items will you get done till ${new Date().toLocaleDateString()}?`,

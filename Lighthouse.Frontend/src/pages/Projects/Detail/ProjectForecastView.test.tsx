@@ -101,41 +101,58 @@ vi.mock("./ProjectFeatureList", () => ({
 }));
 
 describe("ProjectForecastView component", () => {
-	const mockTeam1: Team = new Team(
-		"Team A",
-		1,
-		[],
-		[],
-		1,
-		new Date(),
-		false,
-		new Date(),
-		new Date(),
-	);
+	const mockTeam1: Team = (() => {
+		const team = new Team();
+		team.name = "Team A";
+		team.id = 1;
+		team.projects = [];
+		team.features = [];
+		team.featureWip = 1;
+		team.lastUpdated = new Date();
+		team.useFixedDatesForThroughput = false;
+		team.throughputStartDate = new Date();
+		team.throughputEndDate = new Date();
+		return team;
+	})();
 
-	const mockTeam2: Team = new Team(
-		"Team B",
-		2,
-		[],
-		[],
-		1,
-		new Date(),
-		false,
-		new Date(),
-		new Date(),
-	);
+	const mockTeam2: Team = (() => {
+		const team = new Team();
+		team.name = "Team B";
+		team.id = 2;
+		team.projects = [];
+		team.features = [];
+		team.featureWip = 1;
+		team.lastUpdated = new Date();
+		team.useFixedDatesForThroughput = false;
+		team.throughputStartDate = new Date();
+		team.throughputEndDate = new Date();
+		return team;
+	})();
 
-	const mockMilestone1 = new Milestone(1, "Milestone 1", new Date());
-	const mockMilestone2 = new Milestone(2, "Milestone 2", new Date());
+	const mockMilestone1 = (() => {
+		const milestone = new Milestone();
+		milestone.id = 1;
+		milestone.name = "Milestone 1";
+		milestone.date = new Date();
+		return milestone;
+	})();
+	const mockMilestone2 = (() => {
+		const milestone = new Milestone();
+		milestone.id = 2;
+		milestone.name = "Milestone 2";
+		milestone.date = new Date();
+		return milestone;
+	})();
 
-	const mockProject = new Project(
-		"Test Project",
-		1,
-		[mockTeam1, mockTeam2],
-		[],
-		[mockMilestone1, mockMilestone2],
-		new Date(),
-	);
+	const mockProject = (() => {
+		const project = new Project();
+		project.name = "Test Project";
+		project.id = 1;
+		project.involvedTeams = [mockTeam1, mockTeam2];
+		project.milestones = [mockMilestone1, mockMilestone2];
+		project.lastUpdated = new Date();
+		return project;
+	})();
 
 	const mockProjectSettings: IProjectSettings = {
 		id: 1,

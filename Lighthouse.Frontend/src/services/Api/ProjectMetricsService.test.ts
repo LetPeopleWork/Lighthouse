@@ -81,48 +81,26 @@ describe("ProjectMetricsService", () => {
 	describe("getInProgressFeaturesForProject", () => {
 		it("should call the correct API endpoint and process work items correctly", async () => {
 			// Arrange
-			const mockWorkItems = [
-				new Feature(
-					"Feature 1", // name
-					1, // id
-					"F-1", // workItemReference
-					"In Progress", // state
-					"Feature", // type
-					new Date("2023-01-17T00:00:00Z"), // lastUpdated
-					false, // isUsingDefaultFeatureSize
-					{}, // projects
-					{}, // remainingWork
-					{}, // totalWork
-					{}, // milestoneLikelihood
-					[], // forecasts
-					"https://example.com/1", // url
-					"Doing", // stateCategory
-					new Date("2023-01-10T00:00:00Z"), // startedDate
-					new Date("2023-01-20T00:00:00Z"), // closedDate
-					10, // cycleTime
-					10, // workItemAge
-				),
-				new Feature(
-					"Feature 2", // name
-					2, // id
-					"F-2", // workItemReference
-					"In Progress", // state
-					"Feature", // type
-					new Date("2023-01-17T00:00:00Z"), // lastUpdated
-					false, // isUsingDefaultFeatureSize
-					{}, // projects
-					{}, // remainingWork
-					{}, // totalWork
-					{}, // milestoneLikelihood
-					[], // forecasts
-					"https://example.com/2", // url
-					"Doing", // stateCategory
-					new Date("2023-01-15T00:00:00Z"), // startedDate
-					new Date("2023-01-30T00:00:00Z"), // closedDate
-					15, // cycleTime
-					15, // workItemAge
-				),
-			];
+
+			const feature1 = new Feature();
+			feature1.name = "Feature 1";
+			feature1.id = 1;
+			feature1.workItemReference = "F-1";
+			feature1.state = "In Progress";
+			feature1.type = "Feature";
+			feature1.startedDate = new Date("2023-01-10T00:00:00Z");
+			feature1.closedDate = new Date("2023-01-20T00:00:00Z");
+
+			const feature2 = new Feature();
+			feature2.name = "Feature 2";
+			feature2.id = 2;
+			feature2.workItemReference = "F-2";
+			feature2.state = "In Progress";
+			feature2.type = "Feature";
+			feature2.startedDate = new Date("2023-01-15T00:00:00Z");
+			feature2.closedDate = new Date("2023-01-30T00:00:00Z");
+
+			const mockWorkItems = [feature1, feature2];
 			mockGet.mockResolvedValueOnce({ data: mockWorkItems });
 
 			// Act
@@ -167,49 +145,23 @@ describe("ProjectMetricsService", () => {
 
 	describe("getCycleTimeDataForProject", () => {
 		it("should call the correct API endpoint and process features correctly", async () => {
-			// Arrange
-			const mockFeatures = [
-				new Feature(
-					"Feature 3", // name
-					3, // id
-					"F-3", // workItemReference
-					"Done", // state
-					"Feature", // type
-					new Date("2023-01-17T00:00:00Z"), // lastUpdated
-					false, // isUsingDefaultFeatureSize
-					{}, // projects
-					{}, // remainingWork
-					{}, // totalWork
-					{}, // milestoneLikelihood
-					[], // forecasts
-					"https://example.com/3", // url
-					"Done", // stateCategory
-					new Date("2023-01-10T00:00:00Z"), // startedDate
-					new Date("2023-01-17T00:00:00Z"), // closedDate
-					7, // cycleTime
-					7, // workItemAge
-				),
-				new Feature(
-					"Feature 4", // name
-					4, // id
-					"F-4", // workItemReference
-					"Done", // state
-					"Feature", // type
-					new Date("2023-01-17T00:00:00Z"), // lastUpdated
-					false, // isUsingDefaultFeatureSize
-					{}, // projects
-					{}, // remainingWork
-					{}, // totalWork
-					{}, // milestoneLikelihood
-					[], // forecasts
-					"https://example.com/4", // url
-					"Done", // stateCategory
-					new Date("2023-01-05T00:00:00Z"), // startedDate
-					new Date("2023-01-17T00:00:00Z"), // closedDate
-					12, // cycleTime
-					12, // workItemAge
-				),
-			];
+			const feature1 = new Feature();
+			feature1.name = "Feature 1";
+			feature1.id = 3;
+			feature1.workItemReference = "F-3";
+			feature1.state = "Done";
+			feature1.startedDate = new Date("2023-01-10T00:00:00Z");
+			feature1.closedDate = new Date("2023-01-20T00:00:00Z");
+
+			const feature2 = new Feature();
+			feature2.name = "Feature 2";
+			feature2.id = 4;
+			feature2.workItemReference = "F-4";
+			feature2.state = "Done";
+			feature2.startedDate = new Date("2023-01-15T00:00:00Z");
+			feature2.closedDate = new Date("2023-01-25T00:00:00Z");
+
+			const mockFeatures = [feature1, feature2];
 			mockGet.mockResolvedValueOnce({ data: mockFeatures });
 
 			// Act

@@ -1,3 +1,6 @@
+import { Type, plainToInstance } from "class-transformer";
+import "reflect-metadata";
+
 export interface IMilestone {
 	id: number;
 	name: string;
@@ -5,13 +8,22 @@ export interface IMilestone {
 }
 
 export class Milestone implements IMilestone {
-	id: number;
-	name: string;
-	date: Date;
+	id = 0;
+	name = "";
 
-	constructor(id: number, name: string, date: Date) {
-		this.id = id;
-		this.name = name;
-		this.date = date;
+	@Type(() => Date)
+	date: Date = new Date();
+
+	static fromBackend(data: IMilestone): Milestone {
+		return plainToInstance(Milestone, data);
+	}
+
+	static new(id: number, name: string, date: Date) {
+		const milestone = new Milestone();
+		milestone.id = id;
+		milestone.name = name;
+		milestone.date = date;
+
+		return milestone;
 	}
 }

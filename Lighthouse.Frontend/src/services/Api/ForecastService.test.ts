@@ -28,10 +28,14 @@ describe("ForecastService", () => {
 		const remainingItems = 10;
 		const targetDate = new Date("2023-10-01");
 
+		const whenForecast = new WhenForecast();
+		whenForecast.probability = 0.75;
+		whenForecast.expectedDate = new Date("2023-10-15T00:00:00Z");
+
 		const mockResponse: IManualForecast = new ManualForecast(
 			remainingItems,
 			targetDate,
-			[new WhenForecast(0.75, new Date("2023-10-15T00:00:00Z"))],
+			[whenForecast],
 			[new HowManyForecast(0.75, 8)],
 			0.9,
 		);
@@ -44,11 +48,15 @@ describe("ForecastService", () => {
 			targetDate,
 		);
 
+		const expectedWhenForecast = new WhenForecast();
+		expectedWhenForecast.probability = 0.75;
+		expectedWhenForecast.expectedDate = new Date("2023-10-15T00:00:00Z");
+
 		expect(result).toEqual(
 			new ManualForecast(
 				10,
 				new Date("2023-10-01T00:00:00Z"),
-				[new WhenForecast(0.75, new Date("2023-10-15T00:00:00Z"))],
+				[expectedWhenForecast],
 				[new HowManyForecast(0.75, 8)],
 				0.9,
 			),

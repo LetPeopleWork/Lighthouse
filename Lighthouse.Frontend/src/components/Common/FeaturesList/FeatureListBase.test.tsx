@@ -12,26 +12,16 @@ describe("FeatureListBase component", () => {
 		name: string,
 		stateCategory: "ToDo" | "Doing" | "Done" | "Unknown",
 	): Feature => {
-		return new Feature(
-			name,
-			id,
-			`FTR-${id}`,
-			"",
-			"Unknown",
-			new Date(),
-			false,
-			{},
-			{ 1: 5 },
-			{ 1: 10 },
-			{},
-			[new WhenForecast(80, new Date())],
-			null,
-			stateCategory,
-			new Date(),
-			new Date(),
-			9,
-			10,
-		);
+		const feature = new Feature();
+		feature.name = name;
+		feature.id = id;
+		feature.stateCategory = stateCategory;
+		feature.workItemReference = `FTR-${id}`;
+		feature.remainingWork = { 1: 5 };
+		feature.totalWork = { 1: 10 };
+		feature.forecasts = [WhenForecast.new(80, new Date())];
+
+		return feature;
 	};
 
 	const features = [
