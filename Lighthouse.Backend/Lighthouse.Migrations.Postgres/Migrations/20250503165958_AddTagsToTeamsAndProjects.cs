@@ -15,13 +15,15 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                 name: "Tags",
                 table: "Teams",
                 type: "text[]",
-                nullable: false);
+                nullable: false,
+                defaultValue: "[]");
 
             migrationBuilder.AddColumn<List<string>>(
                 name: "Tags",
                 table: "Projects",
                 type: "text[]",
-                nullable: false);
+                nullable: false,
+                defaultValue: "[]");
         }
 
         /// <inheritdoc />
