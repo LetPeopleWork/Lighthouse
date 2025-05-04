@@ -57,8 +57,11 @@ export abstract class BaseEditPage<T> {
 	}
 
 	async addWorkItemType(workItemType: string): Promise<void> {
-		await this.page.getByLabel("New Work Item Type").fill(workItemType);
-		await this.page.getByLabel("New Work Item Type").press("Enter");
+		await this.page.getByLabel("New Work Item Type").fill(workItemType);		
+		await this.page.keyboard.press("Enter");
+
+		// Reset the input field
+		await this.page.keyboard.press("Escape");
 	}
 
 	async removeChipItem(itemText: string): Promise<void> {
