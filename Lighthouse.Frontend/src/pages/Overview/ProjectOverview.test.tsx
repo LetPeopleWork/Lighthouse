@@ -36,6 +36,7 @@ describe("ProjectOverview component", () => {
 	project1.milestones = [
 		Milestone.new(0, "Milestone 1", new Date(Date.now() + 14 * 24 * 60 * 60)),
 	];
+	project1.tags = ["important", "frontend"];
 
 	const team3 = new Team();
 	team3.name = "Team C";
@@ -60,6 +61,7 @@ describe("ProjectOverview component", () => {
 	project2.milestones = [
 		Milestone.new(1, "Milestone 2", new Date(Date.now() + 14 * 24 * 60 * 60)),
 	];
+	project2.tags = ["backend", "critical"];
 
 	const projects: Project[] = [project1, project2];
 
@@ -168,5 +170,65 @@ describe("ProjectOverview component", () => {
 				`project-card-${sortedProjects[i].id}`,
 			);
 		}
+	});
+
+	it("should render filtered projects based on tag filterText", () => {
+		const { container } = render(
+			<Router>
+				<ProjectOverview projects={projects} filterText="frontend" />
+			</Router>,
+		);
+
+		// Project1 has 'frontend' tag so it should be visible
+		const project1Card = container.querySelector(
+			`[data-testid="project-card-${project1.id}"]`,
+		);
+		expect(project1Card).toBeInTheDocument();
+
+		// Project2 doesn't have 'frontend' tag so it shouldn't be visible
+		const project2Card = container.querySelector(
+			`[data-testid="project-card-${project2.id}"]`,
+		);
+		expect(project2Card).not.toBeInTheDocument();
+	});
+
+	it("should filter projects based on partial tag match", () => {
+		const { container } = render(
+			<Router>
+				<ProjectOverview projects={projects} filterText="crit" />
+			</Router>,
+		);
+
+		// Project2 has 'critical' tag which contains 'crit' so it should be visible
+		const project2Card = container.querySelector(
+			`[data-testid="project-card-${project2.id}"]`,
+		);
+		expect(project2Card).toBeInTheDocument();
+
+		// Project1 doesn't have a tag containing 'crit' so it shouldn't be visible
+		const project1Card = container.querySelector(
+			`[data-testid="project-card-${project1.id}"]`,
+		);
+		expect(project1Card).not.toBeInTheDocument();
+	});
+
+	it("should filter projects by tag when the name doesn't match", () => {
+		const { container } = render(
+			<Router>
+				<ProjectOverview projects={projects} filterText="important" />
+			</Router>,
+		);
+
+		// Neither project name contains 'important', but Project1 has an 'important' tag
+		const project1Card = container.querySelector(
+			`[data-testid="project-card-${project1.id}"]`,
+		);
+		expect(project1Card).toBeInTheDocument();
+
+		// Project2 neither has 'important' in name nor in tags
+		const project2Card = container.querySelector(
+			`[data-testid="project-card-${project2.id}"]`,
+		);
+		expect(project2Card).not.toBeInTheDocument();
 	});
 });

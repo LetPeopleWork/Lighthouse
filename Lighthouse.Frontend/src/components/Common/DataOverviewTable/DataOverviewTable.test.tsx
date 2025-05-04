@@ -252,4 +252,57 @@ describe("DataOverviewTable", () => {
 		const tagsInRow3 = item3Row.querySelectorAll(".MuiChip-root");
 		expect(tagsInRow3.length).toBe(0);
 	});
+
+	it("filters items by tag", () => {
+		renderWithRouter(
+			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+		);
+		const filterInput = screen.getByRole("textbox", { name: "" });
+
+		// Filter by "critical" tag
+		fireEvent.change(filterInput, { target: { value: "critical" } });
+		expect(screen.getByText("Item 1")).toBeInTheDocument(); // Item 1 has "critical" tag
+		expect(screen.queryByText("Item 2")).not.toBeInTheDocument(); // Item 2 doesn't have "critical" tag
+		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have "critical" tag
+	});
+
+	it("filters items by partial tag match", () => {
+		renderWithRouter(
+			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+		);
+		const filterInput = screen.getByRole("textbox", { name: "" });
+
+		// Filter by partial tag match "front"
+		fireEvent.change(filterInput, { target: { value: "front" } });
+		expect(screen.getByText("Item 1")).toBeInTheDocument(); // Item 1 has "frontend" tag
+		expect(screen.queryByText("Item 2")).not.toBeInTheDocument(); // Item 2 doesn't have a tag containing "front"
+		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have tags
+	});
+
+	it("filters by tag when name doesn't match", () => {
+		renderWithRouter(
+			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+		);
+		const filterInput = screen.getByRole("textbox", { name: "" });
+
+		// Filter by "backend" tag (none of the item names contain "backend")
+		fireEvent.change(filterInput, { target: { value: "backend" } });
+		expect(screen.queryByText("Item 1")).not.toBeInTheDocument(); // Item 1 doesn't have "backend" tag
+		expect(screen.getByText("Item 2")).toBeInTheDocument(); // Item 2 has "backend" tag
+		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have tags
+	});
+
+	it("should not show items when neither name nor tags match", () => {
+		renderWithRouter(
+			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+		);
+		const filterInput = screen.getByRole("textbox", { name: "" });
+
+		// Filter by a string that doesn't match any name or tag
+		fireEvent.change(filterInput, { target: { value: "nonexistent" } });
+		expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
+		expect(screen.queryByText("Item 2")).not.toBeInTheDocument();
+		expect(screen.queryByText("Another Item")).not.toBeInTheDocument();
+		expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
+	});
 });

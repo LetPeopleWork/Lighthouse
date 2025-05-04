@@ -58,15 +58,25 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	}, [initialFilterText]);
 
 	const filteredData = data
-		.filter((item) => isMatchingFilterText(item.name))
+		.filter((item) => isMatchingFilterText(item))
 		.sort((a, b) => a.name.localeCompare(b.name));
 
-	function isMatchingFilterText(textToCheck: string) {
+	function isMatchingFilterText(item: IFeatureOwner) {
 		if (!filterText) {
 			return true;
 		}
 
-		return textToCheck.toLowerCase().includes(filterText.toLowerCase());
+		const searchTerm = filterText.toLowerCase();
+
+		if (item.name.toLowerCase().includes(searchTerm)) {
+			return true;
+		}
+
+		if (item.tags?.some((tag) => tag.toLowerCase().includes(searchTerm))) {
+			return true;
+		}
+
+		return false;
 	}
 
 	const handleFilterTextChange = (newFilterText: string) => {

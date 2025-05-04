@@ -931,7 +931,7 @@ export class DemoApiService
 		teamBinaryBlazers.name = "Binary Blazers";
 		teamBinaryBlazers.features = [this.features[0], this.features[3]];
 		teamBinaryBlazers.featureWip = 1;
-		teamBinaryBlazers.tags = ["Task Force"]
+		teamBinaryBlazers.tags = ["Task Force"];
 
 		const teamMavericks = new Team();
 		teamMavericks.id = 1;
@@ -944,14 +944,14 @@ export class DemoApiService
 		teamCyberSultans.name = "Cyber Sultans";
 		teamCyberSultans.features = [this.features[2]];
 		teamCyberSultans.featureWip = 1;
-		teamCyberSultans.tags = ["Task Force"]
+		teamCyberSultans.tags = ["Task Force"];
 
 		const teamTechEagles = new Team();
 		teamTechEagles.id = 3;
 		teamTechEagles.name = "Tech Eagles";
 		teamTechEagles.features = [this.features[3]];
 		teamTechEagles.featureWip = 2;
-		teamTechEagles.tags = ["New"]
+		teamTechEagles.tags = ["New"];
 
 		this.teams = [
 			teamBinaryBlazers,
@@ -1203,7 +1203,7 @@ export class DemoApiService
 		project1.involvedTeams = [this.teams[0]];
 		project1.features = [this.features[0]];
 		project1.milestones = this.milestones;
-		project1.tags = ["Urgent"]
+		project1.tags = ["Urgent"];
 
 		const project2 = new Project();
 		project2.name = "Release 42";
@@ -1211,7 +1211,7 @@ export class DemoApiService
 		project2.involvedTeams = [this.teams[1]];
 		project2.features = [this.features[1]];
 		project2.milestones = this.milestones;
-		project2.tags = ["New", "Important Customer"]
+		project2.tags = ["New", "Important Customer"];
 
 		const project3 = new Project();
 		project3.name = "Release Codename Daniel";

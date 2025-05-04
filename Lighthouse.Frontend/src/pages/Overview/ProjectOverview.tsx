@@ -22,6 +22,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 	const filteredProjects = projects.filter(
 		(project) =>
 			isMatchingFilterText(project.name) ||
+			project.tags?.some((tag) => isMatchingFilterText(tag)) ||
 			project.involvedTeams.some((t) => isMatchingFilterText(t.name)),
 	);
 
