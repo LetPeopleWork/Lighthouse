@@ -1,5 +1,6 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { StatesCollection } from "../../models/StatesCollection";
 import { SuggestionService } from "./SuggestionService";
 
 vi.mock("axios");
@@ -87,6 +88,60 @@ describe("SuggestionService", () => {
 		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
 
 		await expect(tagService.getWorkItemTypesForProjects()).rejects.toThrow(
+			errorMessage,
+		);
+	});
+
+	it("should get states for teams", async () => {
+		const mockStates: StatesCollection = {
+			toDoStates: ["New", "Proposed", "To Do"],
+			doingStates: ["Active", "In Progress"],
+			doneStates: ["Done", "Closed"],
+		};
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockStates });
+
+		const result = await tagService.getStatesForTeams();
+
+		expect(result).toEqual(mockStates);
+		expect(result.toDoStates).toHaveLength(3);
+		expect(result.doingStates).toHaveLength(2);
+		expect(result.doneStates).toHaveLength(2);
+		expect(mockedAxios.get).toHaveBeenCalledWith("/suggestions/states/teams");
+	});
+
+	it("should handle errors when getting states for teams", async () => {
+		const errorMessage = "Network Error";
+		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
+
+		await expect(tagService.getStatesForTeams()).rejects.toThrow(errorMessage);
+	});
+
+	it("should get states for projects", async () => {
+		const mockStates: StatesCollection = {
+			toDoStates: ["Backlog", "Proposed", "Ready"],
+			doingStates: ["In Development", "In Testing"],
+			doneStates: ["Released", "Completed"],
+		};
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockStates });
+
+		const result = await tagService.getStatesForProjects();
+
+		expect(result).toEqual(mockStates);
+		expect(result.toDoStates).toHaveLength(3);
+		expect(result.doingStates).toHaveLength(2);
+		expect(result.doneStates).toHaveLength(2);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/suggestions/states/projects",
+		);
+	});
+
+	it("should handle errors when getting states for projects", async () => {
+		const errorMessage = "Network Error";
+		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
+
+		await expect(tagService.getStatesForProjects()).rejects.toThrow(
 			errorMessage,
 		);
 	});

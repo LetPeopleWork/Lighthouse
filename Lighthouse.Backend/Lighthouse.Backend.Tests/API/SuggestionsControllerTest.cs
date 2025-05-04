@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -288,12 +289,13 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(4));
-                Assert.That(tags, Has.Member(teamTag1));
-                Assert.That(tags, Has.Member(teamTag2));
-                Assert.That(tags, Has.Member(projectTag1));
-                Assert.That(tags, Has.Member(projectTag2));
+
+                var itemTypes = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(itemTypes, Has.Count.EqualTo(4));
+                Assert.That(itemTypes, Has.Member(teamTag1));
+                Assert.That(itemTypes, Has.Member(teamTag2));
+                Assert.That(itemTypes, Has.Member(projectTag1));
+                Assert.That(itemTypes, Has.Member(projectTag2));
             });
         }
 
@@ -319,11 +321,12 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(3));
-                Assert.That(tags, Has.Member(teamType1));
-                Assert.That(tags, Has.Member(teamType2));
-                Assert.That(tags, Has.Member(teamType3));
+
+                var itemTypes = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(itemTypes, Has.Count.EqualTo(3));
+                Assert.That(itemTypes, Has.Member(teamType1));
+                Assert.That(itemTypes, Has.Member(teamType2));
+                Assert.That(itemTypes, Has.Member(teamType3));
             });
         }
 
@@ -350,11 +353,12 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(3));
-                Assert.That(tags, Has.Member(teamType1));
-                Assert.That(tags, Has.Member(teamType2));
-                Assert.That(tags, Has.Member(teamType3));
+
+                var itemTypes = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(itemTypes, Has.Count.EqualTo(3));
+                Assert.That(itemTypes, Has.Member(teamType1));
+                Assert.That(itemTypes, Has.Member(teamType2));
+                Assert.That(itemTypes, Has.Member(teamType3));
             });
         }
 
@@ -378,10 +382,11 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(2));
-                Assert.That(tags, Has.Member(projectType1));
-                Assert.That(tags, Has.Member(projectType2));
+                
+                var itemTypes = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(itemTypes, Has.Count.EqualTo(2));
+                Assert.That(itemTypes, Has.Member(projectType1));
+                Assert.That(itemTypes, Has.Member(projectType2));
             });
         }
 
@@ -406,10 +411,165 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                var tags = (List<string>)((OkObjectResult)response.Result).Value;
-                Assert.That(tags, Has.Count.EqualTo(2));
-                Assert.That(tags, Has.Member(projectType1));
-                Assert.That(tags, Has.Member(projectType2));
+
+                var itemTypes = (List<string>)((OkObjectResult)response.Result).Value;
+                Assert.That(itemTypes, Has.Count.EqualTo(2));
+                Assert.That(itemTypes, Has.Member(projectType1));
+                Assert.That(itemTypes, Has.Member(projectType2));
+            });
+        }
+
+        [Test]
+        public void GetStatesForTeams_ReturnsStates()
+        {
+            var toDoStates = new List<string> { "New", "Planned" };
+            var doingStates = new List<string> { "Active", "Resolved" };
+            var doneStates = new List<string> { "Done", "Closed" };
+
+            var team = CreateTeam();
+            team.ToDoStates.Clear();
+            team.ToDoStates.AddRange(toDoStates);
+
+            team.DoingStates.Clear();
+            team.DoingStates.AddRange(doingStates);
+
+            team.DoneStates.Clear();
+            team.DoneStates.AddRange(doneStates);
+
+            var suggestionsController = CreateSubject();
+
+            var response = suggestionsController.GetStatesForTeams();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.Not.Null);
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var statesCollection = (StatesCollectionDto)((OkObjectResult)response.Result).Value;
+
+                Assert.That(statesCollection.ToDoStates, Is.EquivalentTo(toDoStates));
+                Assert.That(statesCollection.DoingStates, Is.EquivalentTo(doingStates));
+                Assert.That(statesCollection.DoneStates, Is.EquivalentTo(doneStates));
+            });
+        }
+
+        [Test]
+        public void GetStatesForTeams_SkipsDuplicates()
+        {
+            var toDoStates = new List<string> { "New", "Planned" };
+            var doingStates = new List<string> { "Active", "Resolved" };
+            var doneStates = new List<string> { "Done", "Closed" };
+
+            var team1 = CreateTeam();
+            team1.ToDoStates.Clear();
+            team1.ToDoStates.AddRange(toDoStates);
+
+            team1.DoingStates.Clear();
+            team1.DoingStates.AddRange(doingStates);
+
+            team1.DoneStates.Clear();
+            team1.DoneStates.AddRange(doneStates);
+
+            var team2 = CreateTeam();
+
+            team2.ToDoStates.Clear();
+            team2.ToDoStates.AddRange(toDoStates);
+
+            team2.DoingStates.Clear();
+            team2.DoingStates.AddRange(doingStates);
+
+            team2.DoneStates.Clear();
+            team2.DoneStates.AddRange(doneStates);
+
+            var suggestionsController = CreateSubject();
+
+            var response = suggestionsController.GetStatesForTeams();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.Not.Null);
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var statesCollection = (StatesCollectionDto)((OkObjectResult)response.Result).Value;
+
+                Assert.That(statesCollection.ToDoStates, Is.EquivalentTo(toDoStates));
+                Assert.That(statesCollection.DoingStates, Is.EquivalentTo(doingStates));
+                Assert.That(statesCollection.DoneStates, Is.EquivalentTo(doneStates));
+            });
+        }
+
+        [Test]
+        public void GetStatesForProjects_ReturnsStates()
+        {
+            var toDoStates = new List<string> { "New", "Planned" };
+            var doingStates = new List<string> { "Active", "Resolved" };
+            var doneStates = new List<string> { "Done", "Closed" };
+
+            var project = CreateProject();
+            project.ToDoStates.Clear();
+            project.ToDoStates.AddRange(toDoStates);
+
+            project.DoingStates.Clear();
+            project.DoingStates.AddRange(doingStates);
+
+            project.DoneStates.Clear();
+            project.DoneStates.AddRange(doneStates);
+
+            var suggestionsController = CreateSubject();
+
+            var response = suggestionsController.GetStatesForProjects();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.Not.Null);
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var statesCollection = (StatesCollectionDto)((OkObjectResult)response.Result).Value;
+
+                Assert.That(statesCollection.ToDoStates, Is.EquivalentTo(toDoStates));
+                Assert.That(statesCollection.DoingStates, Is.EquivalentTo(doingStates));
+                Assert.That(statesCollection.DoneStates, Is.EquivalentTo(doneStates));
+            });
+        }
+
+        [Test]
+        public void GetStatesForProjects_SkipsDuplicates()
+        {
+            var toDoStates = new List<string> { "New", "Planned" };
+            var doingStates = new List<string> { "Active", "Resolved" };
+            var doneStates = new List<string> { "Done", "Closed" };
+
+            var project1 = CreateProject();
+            project1.ToDoStates.Clear();
+            project1.ToDoStates.AddRange(toDoStates);
+
+            project1.DoingStates.Clear();
+            project1.DoingStates.AddRange(doingStates);
+
+            project1.DoneStates.Clear();
+            project1.DoneStates.AddRange(doneStates);
+
+            var project2 = CreateProject();
+
+            project2.ToDoStates.Clear();
+            project2.ToDoStates.AddRange(toDoStates);
+
+            project2.DoingStates.Clear();
+            project2.DoingStates.AddRange(doingStates);
+
+            project2.DoneStates.Clear();
+            project2.DoneStates.AddRange(doneStates);
+
+            var suggestionsController = CreateSubject();
+
+            var response = suggestionsController.GetStatesForProjects();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.Not.Null);
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var statesCollection = (StatesCollectionDto)((OkObjectResult)response.Result).Value;
+
+                Assert.That(statesCollection.ToDoStates, Is.EquivalentTo(toDoStates));
+                Assert.That(statesCollection.DoingStates, Is.EquivalentTo(doingStates));
+                Assert.That(statesCollection.DoneStates, Is.EquivalentTo(doneStates));
             });
         }
 

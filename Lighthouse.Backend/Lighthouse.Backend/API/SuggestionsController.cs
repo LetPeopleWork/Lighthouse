@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -61,7 +62,41 @@ namespace Lighthouse.Backend.API
             return Ok(workItemTypes.ToList());
         }
 
-        private IEnumerable<IWorkItemQueryOwner> GetAllWorkItemQueryOwners()
+        [HttpGet("states/team")]
+        public ActionResult<StatesCollectionDto> GetStatesForTeams()
+        {
+            logger.LogDebug("Getting States Suggestions for Teams");
+
+            var teams = teamRepository.GetAll();
+
+            var statesCollection = new StatesCollectionDto
+            {
+                ToDoStates = teams.SelectMany(x => x.ToDoStates).Distinct().ToList(),
+                DoingStates = teams.SelectMany(x => x.DoingStates).Distinct().ToList(),
+                DoneStates = teams.SelectMany(x => x.DoneStates).Distinct().ToList()
+            };
+
+            return Ok(statesCollection);
+        }
+
+        [HttpGet("states/projects")]
+        public ActionResult<StatesCollectionDto> GetStatesForProjects()
+        {
+            logger.LogDebug("Getting States Suggestions for Projects");
+
+            var projects = projectRepository.GetAll();
+
+            var statesCollection = new StatesCollectionDto
+            {
+                ToDoStates = projects.SelectMany(x => x.ToDoStates).Distinct().ToList(),
+                DoingStates = projects.SelectMany(x => x.DoingStates).Distinct().ToList(),
+                DoneStates = projects.SelectMany(x => x.DoneStates).Distinct().ToList()
+            };
+
+            return Ok(statesCollection);
+        }
+
+        private List<IWorkItemQueryOwner> GetAllWorkItemQueryOwners()
         {
             var workItemQueryOwners = new List<IWorkItemQueryOwner>();
 

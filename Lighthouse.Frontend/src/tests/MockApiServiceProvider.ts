@@ -41,6 +41,8 @@ export const createMockSuggestionService = (): ISuggestionService => {
 		getTags: vi.fn(),
 		getWorkItemTypesForTeams: vi.fn(),
 		getWorkItemTypesForProjects: vi.fn(),
+		getStatesForTeams: vi.fn(),
+		getStatesForProjects: vi.fn(),
 	};
 };
 

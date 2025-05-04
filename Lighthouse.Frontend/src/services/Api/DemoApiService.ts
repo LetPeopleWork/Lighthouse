@@ -23,6 +23,7 @@ import type { IPercentileValue } from "../../models/PercentileValue";
 import { Milestone } from "../../models/Project/Milestone";
 import { Project } from "../../models/Project/Project";
 import type { IProjectSettings } from "../../models/Project/ProjectSettings";
+import type { StatesCollection } from "../../models/StatesCollection";
 import { Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
 import type { IWorkItem } from "../../models/WorkItem";
@@ -676,6 +677,26 @@ export class DemoApiService
 		await this.delay();
 
 		return ["Epic"];
+	}
+
+	async getStatesForTeams(): Promise<StatesCollection> {
+		await this.delay();
+
+		return {
+			toDoStates: ["New"],
+			doingStates: ["Active"],
+			doneStates: ["Done"],
+		};
+	}
+
+	async getStatesForProjects(): Promise<StatesCollection> {
+		await this.delay();
+
+		return {
+			toDoStates: ["New"],
+			doingStates: ["Active"],
+			doneStates: ["Done"],
+		};
 	}
 
 	async getCycleTimePercentiles(
