@@ -1,16 +1,10 @@
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import CloseIcon from "@mui/icons-material/Close";
 import ViewKanban from "@mui/icons-material/ViewKanban";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
-import Dialog from "@mui/material/Dialog";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
-import IconButton from "@mui/material/IconButton";
-import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTheme } from "@mui/material/styles";
@@ -22,6 +16,8 @@ import { Link } from "react-router-dom";
 import ForecastInfoList from "../../components/Common/Forecasts/ForecastInfoList";
 import LocalDateTimeDisplay from "../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ProgressIndicator from "../../components/Common/ProgressIndicator/ProgressIndicator";
+import FeaturesDialog from "../../components/Common/ProjectCardDialogs/FeaturesDialog";
+import MilestonesDialog from "../../components/Common/ProjectCardDialogs/MilestonesDialog";
 import type { Project } from "../../models/Project/Project";
 import ProjectLink from "./ProjectLink";
 
@@ -40,19 +36,6 @@ const ProjectCardStyle = styled(Card)(({ theme }) => ({
 	borderRadius: 12,
 }));
 
-const FeatureItem = styled("div")(({ theme }) => ({
-	padding: theme.spacing(1.5),
-	borderRadius: theme.shape.borderRadius,
-	marginBottom: theme.spacing(1),
-	backgroundColor:
-		theme.palette.mode === "light"
-			? theme.palette.grey[100]
-			: theme.palette.grey[800],
-	"&:last-child": {
-		marginBottom: 0,
-	},
-}));
-
 interface ProjectOverviewRowProps {
 	project: Project;
 }
@@ -60,14 +43,23 @@ interface ProjectOverviewRowProps {
 const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-	const [dialogOpen, setDialogOpen] = useState(false);
+	const [featuresDialogOpen, setFeaturesDialogOpen] = useState(false);
+	const [milestonesDialogOpen, setMilestonesDialogOpen] = useState(false);
 
-	const handleOpenDialog = () => {
-		setDialogOpen(true);
+	const handleOpenFeaturesDialog = () => {
+		setFeaturesDialogOpen(true);
 	};
 
-	const handleCloseDialog = () => {
-		setDialogOpen(false);
+	const handleCloseFeaturesDialog = () => {
+		setFeaturesDialogOpen(false);
+	};
+
+	const handleOpenMilestonesDialog = () => {
+		setMilestonesDialogOpen(true);
+	};
+
+	const handleCloseMilestonesDialog = () => {
+		setMilestonesDialogOpen(false);
 	};
 
 	const featureWithLatestForecast = project.features.reduce(
@@ -106,12 +98,14 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 				)
 			: 0;
 
-	// Extract color logic for feature state to avoid nested ternary
-	const getFeatureStateColor = (stateCategory: string) => {
-		if (stateCategory === "Done") return "success";
-		if (stateCategory === "Doing") return "warning";
-		return "default";
-	};
+	// Filter out milestones that are in the past
+	const currentOrFutureMilestones = project.milestones.filter((milestone) => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const milestoneDate = new Date(milestone.date);
+		milestoneDate.setHours(0, 0, 0, 0);
+		return milestoneDate >= today;
+	});
 
 	return (
 		<>
@@ -175,7 +169,7 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 									size="small"
 									color="secondary"
 									variant="outlined"
-									onClick={handleOpenDialog}
+									onClick={handleOpenFeaturesDialog}
 									sx={{
 										cursor: "pointer",
 										"&:hover": {
@@ -207,20 +201,43 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 						<Grid size={{ xs: 12 }}>
 							<Divider sx={{ my: 1.5 }} />
 
-							{featureWithLatestForecast !== undefined ? (
-								<ForecastInfoList
-									title="Projected Completion"
-									forecasts={featureWithLatestForecast.forecasts}
-								/>
-							) : (
-								<Typography
-									variant="body2"
-									color="text.secondary"
-									sx={{ fontStyle: "italic" }}
-								>
-									No forecast data available
-								</Typography>
-							)}
+							<Stack
+								direction="row"
+								justifyContent="space-between"
+								alignItems="flex-start"
+							>
+								{featureWithLatestForecast !== undefined ? (
+									<ForecastInfoList
+										title="Projected Completion"
+										forecasts={featureWithLatestForecast.forecasts}
+									/>
+								) : (
+									<Typography
+										variant="body2"
+										color="text.secondary"
+										sx={{ fontStyle: "italic" }}
+									>
+										No forecast data available
+									</Typography>
+								)}
+
+								{currentOrFutureMilestones.length > 0 && (
+									<Chip
+										label={`${currentOrFutureMilestones.length} Milestone${currentOrFutureMilestones.length !== 1 ? "s" : ""}`}
+										size="small"
+										color="info"
+										variant="outlined"
+										onClick={handleOpenMilestonesDialog}
+										sx={{
+											mt: 0.5,
+											cursor: "pointer",
+											"&:hover": {
+												backgroundColor: `${theme.palette.info.main}20`,
+											},
+										}}
+									/>
+								)}
+							</Stack>
 						</Grid>
 					</Grid>
 
@@ -279,127 +296,21 @@ const ProjectCard: React.FC<ProjectOverviewRowProps> = ({ project }) => {
 			</ProjectCardStyle>
 
 			{/* Features Dialog */}
-			<Dialog
-				open={dialogOpen}
-				onClose={handleCloseDialog}
-				maxWidth="sm"
-				fullWidth
-				aria-labelledby="features-dialog-title"
-			>
-				<DialogTitle id="features-dialog-title">
-					<Stack
-						direction="row"
-						justifyContent="space-between"
-						alignItems="center"
-					>
-						<Typography variant="h6">
-							{project.name}: Features ({project.features.length})
-						</Typography>
-						<IconButton
-							aria-label="close"
-							onClick={handleCloseDialog}
-							edge="end"
-							size="small"
-							sx={{
-								color: theme.palette.grey[500],
-							}}
-						>
-							<CloseIcon />
-						</IconButton>
-					</Stack>
-				</DialogTitle>
-				<DialogContent dividers>
-					{project.features.length > 0 ? (
-						<Stack spacing={1}>
-							{project.features.map((feature) => {
-								// Calculate feature completion percentage more accurately
-								const totalWork = feature.getTotalWorkForFeature();
-								const remainingWork = feature.getRemainingWorkForFeature();
-								const featureCompletion =
-									totalWork > 0
-										? Math.round(
-												((totalWork - remainingWork) / totalWork) * 100,
-											)
-										: 0;
+			<FeaturesDialog
+				open={featuresDialogOpen}
+				onClose={handleCloseFeaturesDialog}
+				projectName={project.name}
+				features={project.features}
+			/>
 
-								return (
-									<FeatureItem key={feature.id}>
-										<Stack
-											direction="row"
-											justifyContent="space-between"
-											alignItems="center"
-										>
-											<Typography
-												variant="body2"
-												component={Link}
-												to={feature.url ?? `/features/${feature.id}`}
-												sx={{
-													textDecoration: "none",
-													color: "inherit",
-													fontWeight: "medium",
-													"&:hover": {
-														textDecoration: "underline",
-														color: theme.palette.primary.main,
-													},
-												}}
-											>
-												{feature.workItemReference} - {feature.name}
-											</Typography>
-											<Chip
-												size="small"
-												label={feature.state}
-												color={getFeatureStateColor(feature.stateCategory)}
-												variant="outlined"
-											/>
-										</Stack>
-										<LinearProgress
-											variant="determinate"
-											value={featureCompletion}
-											sx={{
-												my: 1,
-												height: 6,
-												borderRadius: 3,
-												bgcolor:
-													theme.palette.mode === "light"
-														? "rgba(0,0,0,0.1)"
-														: "rgba(255,255,255,0.1)",
-											}}
-										/>
-										<Stack
-											direction="row"
-											justifyContent="space-between"
-											alignItems="center"
-										>
-											<Typography variant="caption" color="text.secondary">
-												{remainingWork} of {totalWork} work items remaining
-											</Typography>
-											<Typography
-												variant="caption"
-												color={
-													featureCompletion > 75
-														? "success.main"
-														: "text.secondary"
-												}
-												fontWeight={featureCompletion > 75 ? "bold" : "normal"}
-											>
-												{featureCompletion}% Complete
-											</Typography>
-										</Stack>
-									</FeatureItem>
-								);
-							})}
-						</Stack>
-					) : (
-						<Typography
-							variant="body2"
-							color="text.secondary"
-							sx={{ fontStyle: "italic" }}
-						>
-							No features available
-						</Typography>
-					)}
-				</DialogContent>
-			</Dialog>
+			{/* Milestones Dialog */}
+			<MilestonesDialog
+				open={milestonesDialogOpen}
+				onClose={handleCloseMilestonesDialog}
+				projectName={project.name}
+				milestones={project.milestones}
+				milestoneLikelihoods={project.features[0]?.milestoneLikelihood}
+			/>
 		</>
 	);
 };
