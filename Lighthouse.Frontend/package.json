@@ -54,6 +54,6 @@
     "vite": "^6.3.4",
     "vite-plugin-pwa": "^1.0.0",
     "vitest": "^3.0.3",
-    "vitest-sonar-reporter": "^2.0.0"
+    "vitest-sonar-reporter": "^2.0.1"
   }
 }
