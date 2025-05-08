@@ -115,9 +115,9 @@ describe("FeaturesDialog component", () => {
 		).toBeInTheDocument();
 
 		// Check if all features are rendered
-		expect(screen.getByText(/F-123 - Feature 1/)).toBeInTheDocument();
-		expect(screen.getByText(/F-124 - Feature 2/)).toBeInTheDocument();
-		expect(screen.getByText(/F-125 - Feature 3/)).toBeInTheDocument();
+		expect(screen.getByText(/Feature 1/)).toBeInTheDocument();
+		expect(screen.getByText(/Feature 2/)).toBeInTheDocument();
+		expect(screen.getByText(/Feature 3/)).toBeInTheDocument();
 
 		// Check if state labels are present
 		expect(screen.getByText("In Progress")).toBeInTheDocument();
@@ -204,15 +204,9 @@ describe("FeaturesDialog component", () => {
 		expect(links.length).toBeGreaterThanOrEqual(3);
 
 		// Verify content of links
-		expect(
-			screen.getByRole("link", { name: /F-123 - Feature 1/ }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: /F-124 - Feature 2/ }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: /F-125 - Feature 3/ }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /Feature 1/ })).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /Feature 2/ })).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /Feature 3/ })).toBeInTheDocument();
 	});
 
 	it("displays feature completion information", () => {

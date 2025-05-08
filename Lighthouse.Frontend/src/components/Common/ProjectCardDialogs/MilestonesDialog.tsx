@@ -126,7 +126,7 @@ const SingleMilestoneView: React.FC<SingleMilestoneViewProps> = ({
 										<Typography
 											variant="body2"
 											component={Link}
-											to={feature.url ?? `/features/${feature.id}`}
+											to={feature.url ?? ""}
 											sx={{
 												textDecoration: "none",
 												color: "inherit",
@@ -137,9 +137,6 @@ const SingleMilestoneView: React.FC<SingleMilestoneViewProps> = ({
 												},
 											}}
 										>
-											{feature.workItemReference
-												? `${feature.workItemReference} - `
-												: ""}
 											{feature.name}
 										</Typography>
 										<Chip

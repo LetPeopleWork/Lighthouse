@@ -100,7 +100,7 @@ const FeaturesDialog: React.FC<FeaturesDialogProps> = ({
 										<Typography
 											variant="body2"
 											component={Link}
-											to={feature.url ?? `/features/${feature.id}`}
+											to={feature.url ?? ""}
 											sx={{
 												textDecoration: "none",
 												color: "inherit",
@@ -111,7 +111,7 @@ const FeaturesDialog: React.FC<FeaturesDialogProps> = ({
 												},
 											}}
 										>
-											{feature.workItemReference} - {feature.name}
+											{feature.name}
 										</Typography>
 										<Chip
 											size="small"

@@ -146,9 +146,9 @@ describe("MilestonesDialog component", () => {
 		expect(screen.getByText("Milestone 1")).toBeInTheDocument();
 
 		// Check if features for this milestone are shown
-		expect(screen.getByText("F-101 - Feature A")).toBeInTheDocument();
-		expect(screen.getByText("F-102 - Feature B")).toBeInTheDocument();
-		expect(screen.getByText("F-103 - Feature C")).toBeInTheDocument();
+		expect(screen.getByText("Feature A")).toBeInTheDocument();
+		expect(screen.getByText("Feature B")).toBeInTheDocument();
+		expect(screen.getByText("Feature C")).toBeInTheDocument();
 
 		// Check if likelihood chip is rendered for milestone
 		expect(screen.getByText("85% Likely")).toBeInTheDocument();

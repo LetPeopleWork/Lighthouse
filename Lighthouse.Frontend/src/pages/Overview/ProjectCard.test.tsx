@@ -191,8 +191,8 @@ describe("ProjectCard component", () => {
 		fireEvent.click(featureCountChip);
 
 		// Check if both features are displayed
-		expect(screen.getByText("FTR-0 - Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("FTR-1 - Feature 2")).toBeInTheDocument();
+		expect(screen.getByText("Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("Feature 2")).toBeInTheDocument();
 
 		// Check if feature states are displayed
 		expect(screen.getByText("In Progress")).toBeInTheDocument();
