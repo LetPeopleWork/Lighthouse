@@ -48,6 +48,36 @@ describe("ProjectMetricsService", () => {
 		});
 	});
 
+	describe("getStartedItems", () => {
+		it("should call the correct API endpoint and return RunChartData", async () => {
+			// Arrange
+			const mockResponse = {
+				data: {
+					valuePerUnitOfTime: [2, 3, 4],
+					history: 3,
+					total: 9,
+				},
+			};
+			mockGet.mockResolvedValueOnce(mockResponse);
+
+			// Act
+			const result = await service.getStartedItems(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			// Assert
+			expect(mockGet).toHaveBeenCalledWith(
+				`/projects/${projectId}/metrics/started?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result).toBeInstanceOf(RunChartData);
+			expect(result.valuePerUnitOfTime).toEqual([2, 3, 4]);
+			expect(result.history).toBe(3);
+			expect(result.total).toBe(9);
+		});
+	});
+
 	describe("getFeaturesInProgressOverTimeForProject", () => {
 		it("should call the correct API endpoint and return RunChartData", async () => {
 			// Arrange

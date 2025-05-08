@@ -113,6 +113,36 @@ vi.mock("../../Teams/Detail/ItemsInProgress", () => ({
 	),
 }));
 
+vi.mock("../../../components/Common/Charts/StartedVsFinishedDisplay", () => ({
+	default: ({
+		startedItems,
+		closedItems,
+	}: {
+		startedItems: RunChartData | null;
+		closedItems: RunChartData | null;
+	}) => (
+		<div data-testid="started-vs-finished">
+			<div data-testid="started-items">
+				{startedItems ? startedItems.valuePerUnitOfTime.length : 0}
+			</div>
+			<div data-testid="closed-items">
+				{closedItems ? closedItems.valuePerUnitOfTime.length : 0}
+			</div>
+		</div>
+	),
+}));
+
+vi.mock("../../../components/Common/Charts/StackedAreaChart", () => ({
+	default: ({
+		title,
+		areas,
+	}: { title: string; areas: Array<{ name: string; data: number[] }> }) => (
+		<div data-testid={`stacked-area-chart-${title}`}>
+			<div data-testid="areas-count">{areas.length}</div>
+		</div>
+	),
+}));
+
 describe("ProjectMetricsView component", () => {
 	const mockProject = (() => {
 		const project = new Project();
@@ -133,6 +163,13 @@ describe("ProjectMetricsView component", () => {
 		[2, 4], // valuePerUnitOfTime
 		2, // history
 		6, // total
+	);
+
+	// Create mock started items data
+	const mockStartedItemsData: RunChartData = new RunChartData(
+		[4, 6], // valuePerUnitOfTime
+		2, // history
+		10, // total
 	);
 
 	// Create mock work items with correct properties
@@ -205,6 +242,9 @@ describe("ProjectMetricsView component", () => {
 		getThroughputForProject: vi
 			.fn()
 			.mockResolvedValue(mockFeaturesCompletedData),
+
+		getStartedItems: vi.fn().mockResolvedValue(mockStartedItemsData),
+
 		getFeaturesInProgressOverTimeForProject: vi
 			.fn()
 			.mockResolvedValue(mockFeaturesInProgressData),
@@ -268,6 +308,11 @@ describe("ProjectMetricsView component", () => {
 				expect.any(Date),
 				expect.any(Date),
 			);
+			expect(mockProjectMetricsService.getStartedItems).toHaveBeenCalledWith(
+				mockProject.id,
+				expect.any(Date),
+				expect.any(Date),
+			);
 		});
 
 		// Check components are rendered with correct data
@@ -283,6 +328,13 @@ describe("ProjectMetricsView component", () => {
 			expect(screen.getByTestId("cycle-time-scatter-plot")).toBeInTheDocument();
 			expect(
 				screen.getByTestId("line-run-chart-Features In Progress Over Time"),
+			).toBeInTheDocument();
+			expect(screen.getByTestId("started-vs-finished")).toBeInTheDocument();
+			expect(screen.getByTestId("started-items")).toHaveTextContent("2");
+			expect(
+				screen.getByTestId(
+					"stacked-area-chart-Simplified Cumulative Flow Diagram",
+				),
 			).toBeInTheDocument();
 		});
 	});
@@ -325,6 +377,9 @@ describe("ProjectMetricsView component", () => {
 			expect(
 				mockProjectMetricsService.getCycleTimePercentilesForProject,
 			).toHaveBeenCalledTimes(1);
+			expect(mockProjectMetricsService.getStartedItems).toHaveBeenCalledTimes(
+				1,
+			);
 		});
 	});
 
@@ -366,6 +421,9 @@ describe("ProjectMetricsView component", () => {
 			expect(
 				mockProjectMetricsService.getCycleTimePercentilesForProject,
 			).toHaveBeenCalledTimes(1);
+			expect(mockProjectMetricsService.getStartedItems).toHaveBeenCalledTimes(
+				1,
+			);
 		});
 	});
 
@@ -374,6 +432,7 @@ describe("ProjectMetricsView component", () => {
 			getThroughputForProject: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
+			getStartedItems: vi.fn().mockRejectedValue(new Error("API error")),
 			getFeaturesInProgressOverTimeForProject: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
@@ -412,6 +471,10 @@ describe("ProjectMetricsView component", () => {
 			);
 			expect(consoleSpy).toHaveBeenCalledWith(
 				"Error fetching cycle time data:",
+				expect.any(Error),
+			);
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"Error getting throughput:",
 				expect.any(Error),
 			);
 		});
@@ -464,5 +527,46 @@ describe("ProjectMetricsView component", () => {
 		expect(endDate.getDate()).toBe(today.getDate());
 		expect(endDate.getMonth()).toBe(today.getMonth());
 		expect(endDate.getFullYear()).toBe(today.getFullYear());
+	});
+
+	it("renders StartedVsFinishedDisplay component with correct data", async () => {
+		const mockApiContext = createMockApiServiceContext({
+			projectMetricsService: mockProjectMetricsService,
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<ProjectMetricsView project={mockProject} />
+			</ApiServiceContext.Provider>,
+		);
+
+		// Check that StartedVsFinishedDisplay component is rendered with the correct data
+		await waitFor(() => {
+			expect(screen.getByTestId("started-vs-finished")).toBeInTheDocument();
+			expect(screen.getByTestId("started-items")).toHaveTextContent("2"); // From mock data length
+			expect(screen.getByTestId("closed-items")).toHaveTextContent("2"); // From mock data length
+		});
+	});
+
+	it("renders StackedAreaChart with started and completed items data", async () => {
+		const mockApiContext = createMockApiServiceContext({
+			projectMetricsService: mockProjectMetricsService,
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<ProjectMetricsView project={mockProject} />
+			</ApiServiceContext.Provider>,
+		);
+
+		// Check that StackedAreaChart component is rendered with the correct data
+		await waitFor(() => {
+			expect(
+				screen.getByTestId(
+					"stacked-area-chart-Simplified Cumulative Flow Diagram",
+				),
+			).toBeInTheDocument();
+			expect(screen.getByTestId("areas-count")).toHaveTextContent("2"); // Should have 2 areas (Doing and Done)
+		});
 	});
 });

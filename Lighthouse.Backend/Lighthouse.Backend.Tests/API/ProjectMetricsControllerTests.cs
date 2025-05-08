@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Project>> projectRepository;
         private Mock<IProjectMetricsService> projectMetricsService;
-        private ProjectMetricsController sut;
+        private ProjectMetricsController subject;
         private Project project;
 
         [SetUp]
@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             projectRepository = new Mock<IRepository<Project>>();
             projectMetricsService = new Mock<IProjectMetricsService>();
-            sut = new ProjectMetricsController(projectRepository.Object, projectMetricsService.Object);
+            subject = new ProjectMetricsController(projectRepository.Object, projectMetricsService.Object);
             
             project = new Project
             {
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService.Setup(x => x.GetThroughputForProject(project, startDate, endDate))
                 .Returns(expectedResult);
 
-            var result = sut.GetThroughput(1, startDate, endDate);
+            var result = subject.GetThroughput(1, startDate, endDate);
 
             Assert.Multiple(() =>
             {
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API
             var startDate = new DateTime(2023, 1, 10);
             var endDate = new DateTime(2023, 1, 1);  // End date before start date
 
-            var result = sut.GetThroughput(1, startDate, endDate);
+            var result = subject.GetThroughput(1, startDate, endDate);
 
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
@@ -71,9 +71,58 @@ namespace Lighthouse.Backend.Tests.API
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 10);
 
-            var result = sut.GetThroughput(999, startDate, endDate);
+            var result = subject.GetThroughput(999, startDate, endDate);
 
             Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetStartedItems_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            });
+        }
+
+        [Test]
+        public void GetStartedItems_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            });
+        }
+
+        [Test]
+        public void GetStartedItems_TeamExists_GetsStartedItemsFromTeamMetricsService()
+        {
+            var project = new Project { Id = 1 };
+            projectRepository.Setup(repo => repo.GetById(1)).Returns(project);
+
+            var expectedStartedItems = new RunChartData([1, 88, 6]);
+            projectMetricsService.Setup(service => service.GetStartedItemsForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
+
+            var response = subject.GetStartedItems(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedStartedItems));
+            });
         }
 
         [Test]
@@ -86,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService.Setup(x => x.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate))
                 .Returns(expectedResult);
 
-            var result = sut.GetFeaturesInProgressOverTime(1, startDate, endDate);
+            var result = subject.GetFeaturesInProgressOverTime(1, startDate, endDate);
 
             Assert.Multiple(() =>
             {
@@ -107,7 +156,7 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService.Setup(x => x.GetInProgressFeaturesForProject(project))
                 .Returns(features);
 
-            var result = sut.GetInProgressFeatures(1);
+            var result = subject.GetInProgressFeatures(1);
 
             using (Assert.EnterMultipleScope())
             {
@@ -137,7 +186,7 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService.Setup(x => x.GetCycleTimePercentilesForProject(project, startDate, endDate))
                 .Returns(percentiles);
 
-            var result = sut.GetCycleTimePercentiles(1, startDate, endDate);
+            var result = subject.GetCycleTimePercentiles(1, startDate, endDate);
 
             Assert.Multiple(() =>
             {
@@ -164,7 +213,7 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService.Setup(x => x.GetCycleTimeDataForProject(project, startDate, endDate))
                 .Returns(features);
 
-            var result = sut.GetCycleTimeData(1, startDate, endDate);
+            var result = subject.GetCycleTimeData(1, startDate, endDate);
 
             Assert.Multiple(() =>
             {

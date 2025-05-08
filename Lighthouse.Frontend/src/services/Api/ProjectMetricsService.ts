@@ -10,6 +10,11 @@ export interface IProjectMetricsService {
 		startDate: Date,
 		endDate: Date,
 	): Promise<RunChartData>;
+	getStartedItems(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData>;
 	getFeaturesInProgressOverTimeForProject(
 		projectId: number,
 		startDate: Date,
@@ -40,6 +45,24 @@ export class ProjectMetricsService
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<RunChartData>(
 				`/projects/${projectId}/metrics/throughput?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return new RunChartData(
+				response.data.valuePerUnitOfTime,
+				response.data.history,
+				response.data.total,
+			);
+		});
+	}
+
+	async getStartedItems(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<RunChartData> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<RunChartData>(
+				`/projects/${projectId}/metrics/started?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
 			return new RunChartData(

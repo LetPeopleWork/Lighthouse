@@ -49,7 +49,12 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 		return ((larger - smaller) / larger) * 100;
 	};
 
+	const isAverageDifferenceLessThanOne = (): boolean => {
+		return Math.abs(startedAverage - closedAverage) < 1.0;
+	};
+
 	const getDifferenceColor = (difference: number): string => {
+		if (isAverageDifferenceLessThanOne()) return confidentColor;
 		if (difference <= 5) return certainColor;
 		if (difference <= 10) return realisticColor;
 		if (difference <= 15) return confidentColor;
@@ -65,7 +70,7 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 		const color = getDifferenceColor(difference);
 		let tip = "";
 
-		if (difference <= 5) {
+		if (isAverageDifferenceLessThanOne() || difference <= 5) {
 			tip = "Good job!";
 		} else if (difference <= 15) {
 			tip = "Observe and take action if needed!";
@@ -73,7 +78,7 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 			tip = "Reflect on WIP control!";
 		}
 
-		if (difference <= 5) {
+		if (isAverageDifferenceLessThanOne() || difference <= 5) {
 			return {
 				text: "You are keeping a steady WIP",
 				tip,

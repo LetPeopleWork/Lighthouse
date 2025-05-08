@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<ILogger<ProjectMetricsService>> logger;
         private Mock<IRepository<Feature>> featureRepository;
         private Mock<IAppSettingService> appSettingService;
-        private ProjectMetricsService sut;
+        private ProjectMetricsService subject;
         private Project project;
         private List<Feature> features;
 
@@ -27,9 +27,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             appSettingService = new Mock<IAppSettingService>();
 
             appSettingService.Setup(m => m.GetFeaturRefreshSettings()).Returns(new RefreshSettings { Interval = 30 });
-            
-            sut = new ProjectMetricsService(logger.Object, featureRepository.Object, appSettingService.Object);
-            
+
+            subject = new ProjectMetricsService(logger.Object, featureRepository.Object, appSettingService.Object);
+            featureRepository.Setup(x => x.GetAllByPredicate(
+                    It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
+
             SetupTestData();
         }
 
@@ -39,14 +42,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Arrange
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 10);
-            
-            var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
+
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(closedFeatures);
+                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
             // Act
-            var result = sut.GetThroughputForProject(project, startDate, endDate);
+            var result = subject.GetThroughputForProject(project, startDate, endDate);
 
             // Assert
             Assert.Multiple(() =>
@@ -63,14 +65,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Arrange
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 5);
-            
-            var activeFeatures = features.Where(f => f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done).AsQueryable();
+
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(activeFeatures);
+                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
             // Act
-            var result = sut.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate);
+            var result = subject.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate);
 
             Assert.Multiple(() =>
             {
@@ -80,16 +81,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetInProgressFeaturesForProject_ReturnsActiveFeatures()
+        public void GetStartedItemsForProject_GivenStartDate_ReturnsStartedItemsPerDayFromThisRange()
         {
-            // Arrange
-            var activeFeatures = features.Where(f => f.StateCategory == StateCategories.Doing).AsQueryable();
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 3);
+
             featureRepository.Setup(x => x.GetAllByPredicate(
                 It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(activeFeatures);
+                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
 
+            var throughput = subject.GetStartedItemsForProject(project, startDate, endDate);
+
+            Assert.That(throughput.Total, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetInProgressFeaturesForProject_ReturnsActiveFeatures()
+        {
             // Act
-            var result = sut.GetInProgressFeaturesForProject(project).ToList();
+            var result = subject.GetInProgressFeaturesForProject(project).ToList();
 
             Assert.Multiple(() =>
             {
@@ -104,13 +114,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
-            
-            var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(closedFeatures);
 
-            var result = sut.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
 
             Assert.Multiple(() =>
             {
@@ -126,16 +131,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCycleTimePercentilesForProject_NoClosedItems_ReturnsEmpty()
         {
-            // Arrange
-            var startDate = new DateTime(2023, 1, 1);
-            var endDate = new DateTime(2023, 1, 31);
-            
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(new List<Feature>().AsQueryable());
+            var startDate = new DateTime(2077, 1, 1);
+            var endDate = new DateTime(2077, 1, 31);
 
-            // Act
-            var result = sut.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
 
             Assert.Multiple(() =>
             {
@@ -149,14 +148,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
-            
-            var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
 
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(closedFeatures);
-
-            var result = sut.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
 
             Assert.Multiple(() =>
             {
@@ -177,11 +170,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             closedFeatures.First().ClosedDate = DateTime.Now;
 
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(closedFeatures);
-
-            var result = sut.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
 
             Assert.Multiple(() =>
             {
@@ -202,11 +191,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             closedFeatures.First().ClosedDate = DateTime.Now.AddDays(-1);
 
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(closedFeatures);
-
-            var result = sut.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
+            var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
 
             Assert.Multiple(() =>
             {
@@ -220,7 +205,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void InvalidateProjectMetrics_DoesNotThrow()
         {
-            Assert.DoesNotThrow(() => sut.InvalidateProjectMetrics(project));
+            Assert.DoesNotThrow(() => subject.InvalidateProjectMetrics(project));
         }
 
         private void SetupTestData()

@@ -9,6 +9,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetFeaturesInProgressOverTimeForProject(Project project, DateTime startDate, DateTime endDate);
 
+        RunChartData GetStartedItemsForProject(Project project, DateTime startDate, DateTime endDate);
+
         IEnumerable<Feature> GetInProgressFeaturesForProject(Project project);
 
         IEnumerable<PercentileValue> GetCycleTimePercentilesForProject(Project project, DateTime startDate, DateTime endDate);

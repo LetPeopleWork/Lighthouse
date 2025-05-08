@@ -130,6 +130,43 @@ describe("FlowInformationDisplay component", () => {
 	});
 
 	describe("WIP status indicator", () => {
+		it("should show 'confident' indicator when absolute difference is less than 1.0 even if percentage difference is high", () => {
+			// 10% difference but absolute average difference is only 0.4 items
+			const startedItems = new RunChartData([2, 2, 2], 3, 6);
+			const closedItems = new RunChartData([1, 2, 2], 3, 5);
+			// Averages: 2.0 vs 1.6 = 0.4 difference
+
+			render(
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={closedItems}
+				/>,
+			);
+
+			expect(
+				screen.getByText("You are keeping a steady WIP"),
+			).toBeInTheDocument();
+			expect(screen.getByText("Good job!")).toBeInTheDocument();
+		});
+
+		it("should show 'confident' indicator when difference is less than 1.0", () => {
+			// 0.5% difference (confident)
+			const startedItems = new RunChartData([10, 10, 10], 3, 200);
+			const closedItems = new RunChartData([10, 10, 10], 3, 199);
+
+			render(
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={closedItems}
+				/>,
+			);
+
+			expect(
+				screen.getByText("You are keeping a steady WIP"),
+			).toBeInTheDocument();
+			expect(screen.getByText("Good job!")).toBeInTheDocument();
+		});
+
 		it("should show 'good' indicator when started and closed are within 5%", () => {
 			// Within 5% difference (good)
 			const startedItems = new RunChartData([9, 10, 11], 3, 30);
@@ -149,9 +186,10 @@ describe("FlowInformationDisplay component", () => {
 		});
 
 		it("should show 'caution' indicator when difference is between 5% and 10%", () => {
-			// ~8% difference (caution)
-			const startedItems = new RunChartData([10, 10, 10], 3, 30);
-			const closedItems = new RunChartData([9, 9, 10], 3, 28);
+			// ~7% difference (caution) with average difference > 1.0
+			const startedItems = new RunChartData([15, 15, 15], 3, 45);
+			const closedItems = new RunChartData([14, 14, 14], 3, 42);
+			// Averages: 15.0 vs 14.0 = 1.0 difference
 
 			render(
 				<StartedVsFinishedDisplay
@@ -160,7 +198,7 @@ describe("FlowInformationDisplay component", () => {
 				/>,
 			);
 
-			// Since 30 vs 28 means started > closed
+			// Since 45 vs 42 means started > closed
 			expect(
 				screen.getByText("You are starting more items than you close"),
 			).toBeInTheDocument();

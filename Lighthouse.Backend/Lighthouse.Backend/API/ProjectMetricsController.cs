@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +31,17 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) => 
                 projectMetricsService.GetThroughputForProject(project, startDate, endDate));
+        }
+
+        [HttpGet("started")]
+        public ActionResult<RunChartData> GetStartedItems(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest("Start date must be before end date.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) => projectMetricsService.GetStartedItemsForProject(project, startDate, endDate));
         }
 
         [HttpGet("featuresInProgressOverTime")]

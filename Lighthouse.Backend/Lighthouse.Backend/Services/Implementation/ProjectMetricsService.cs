@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
@@ -57,6 +58,18 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogDebug("Finished calculating Features In Progress Over Time for Project {ProjectName}", project.Name);
 
             return new RunChartData(wipOverTime);
+        }
+
+        public RunChartData GetStartedItemsForProject(Project project, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Started Items for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
+
+            var startedItems = featureRepository.GetAllByPredicate(f => f.Projects.Any(p => p.Id == project.Id) && (f.StateCategory == StateCategories.Done || f.StateCategory == StateCategories.Doing));
+            var startedItemsByDay = GenerateStartedRunChart(startDate, endDate, startedItems);
+
+            var throughput = new RunChartData(startedItemsByDay);
+
+            return throughput;
         }
 
         public IEnumerable<Feature> GetInProgressFeaturesForProject(Project project)

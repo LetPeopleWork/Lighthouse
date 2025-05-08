@@ -54,6 +54,7 @@ export class TeamMetricsService
 			);
 		});
 	}
+
 	async getStartedItems(
 		teamId: number,
 		startDate: Date,
