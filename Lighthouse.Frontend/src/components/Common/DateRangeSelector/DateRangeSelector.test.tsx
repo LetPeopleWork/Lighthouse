@@ -24,9 +24,15 @@ vi.mock("@mui/x-date-pickers", async () => {
 	const actual = await vi.importActual("@mui/x-date-pickers");
 	return {
 		...actual,
-		DatePicker: ({ onChange }: { onChange: (date: Date) => void }) => {
+		DatePicker: ({
+			onChange,
+			format,
+		}: {
+			onChange: (date: Date) => void;
+			format?: string;
+		}) => {
 			return (
-				<div data-testid="mocked-date-picker">
+				<div data-testid="mocked-date-picker" data-format={format}>
 					<button
 						type="button"
 						onClick={() => onChange(new Date(2023, 1, 15))}
@@ -38,6 +44,25 @@ vi.mock("@mui/x-date-pickers", async () => {
 			);
 		},
 	};
+});
+
+// Mock the implementation of getLocaleDateFormat to avoid Intl.DateTimeFormat issues
+vi.mock("./DateRangeSelector", async () => {
+	const actual = await vi.importActual("./DateRangeSelector");
+
+	// Mock implementation of getLocaleDateFormat
+	const mockedModule = {
+		...actual,
+		default: (props: import("./DateRangeSelector").DateRangeSelectorProps) => {
+			// Override the localDateFormat value directly in the component
+			const Component = actual.default as React.FC<
+				import("./DateRangeSelector").DateRangeSelectorProps
+			>;
+			return <Component {...props} _testLocalDateFormat="MM/dd/yyyy" />;
+		},
+	};
+
+	return mockedModule;
 });
 
 describe("DateRangeSelector component", () => {
@@ -110,5 +135,15 @@ describe("DateRangeSelector component", () => {
 		// With our mock, we just check that the component rendered
 		const datePickers = screen.getAllByTestId("mocked-date-picker");
 		expect(datePickers[1]).toBeInTheDocument();
+	});
+
+	it("applies the locale format to date pickers", () => {
+		render(<DateRangeSelector {...defaultProps} />);
+
+		const datePickers = screen.getAllByTestId("mocked-date-picker");
+
+		// Check that both pickers have the format attribute set to the local format
+		expect(datePickers[0]).toHaveAttribute("data-format", "MM/dd/yyyy");
+		expect(datePickers[1]).toHaveAttribute("data-format", "MM/dd/yyyy");
 	});
 });

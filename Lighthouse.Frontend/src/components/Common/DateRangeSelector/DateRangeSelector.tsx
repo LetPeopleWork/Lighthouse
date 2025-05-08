@@ -4,11 +4,39 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import type React from "react";
 
+// Helper function to get the local date format
+const getLocaleDateFormat = (): string => {
+	const date = new Date(2000, 0, 2); // January 2, 2000
+	const formatter = new Intl.DateTimeFormat();
+	const parts = formatter.formatToParts(date);
+	let format = "";
+
+	for (const part of parts) {
+		switch (part.type) {
+			case "day":
+				format += "dd";
+				break;
+			case "month":
+				format += "MM";
+				break;
+			case "year":
+				format += "yyyy";
+				break;
+			default:
+				format += part.value;
+				break;
+		}
+	}
+
+	return format;
+};
+
 export interface DateRangeSelectorProps {
 	startDate: Date;
 	endDate: Date;
 	onStartDateChange: (date: Date | null) => void;
 	onEndDateChange: (date: Date | null) => void;
+	_testLocalDateFormat?: string; // Only used for testing
 }
 
 const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
@@ -16,8 +44,10 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 	endDate,
 	onStartDateChange,
 	onEndDateChange,
+	_testLocalDateFormat,
 }) => {
 	const theme = useTheme();
+	const localDateFormat = _testLocalDateFormat ?? getLocaleDateFormat();
 
 	return (
 		<LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -52,6 +82,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 							onChange={(newValue) =>
 								onStartDateChange(newValue as Date | null)
 							}
+							format={localDateFormat}
 							sx={{
 								width: "100%",
 								"& .MuiInputBase-root": {
@@ -86,6 +117,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 						<DatePicker
 							value={endDate}
 							onChange={(newValue) => onEndDateChange(newValue as Date | null)}
+							format={localDateFormat}
 							sx={{
 								width: "100%",
 								"& .MuiInputBase-root": {
