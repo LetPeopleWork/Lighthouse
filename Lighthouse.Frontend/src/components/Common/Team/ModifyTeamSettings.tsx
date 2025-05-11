@@ -308,12 +308,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						isForTeam={true}
 					/>
 
-					<TagsComponent
-						tags={teamSettings?.tags || []}
-						onAddTag={handleAddTag}
-						onRemoveTag={handleRemoveTag}
-					/>
-
 					{!modifyDefaultSettings ? (
 						<WorkTrackingSystemComponent
 							workTrackingSystems={workTrackingSystems}
@@ -326,6 +320,12 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 					) : (
 						<></>
 					)}
+
+					<TagsComponent
+						tags={teamSettings?.tags || []}
+						onAddTag={handleAddTag}
+						onRemoveTag={handleRemoveTag}
+					/>
 
 					<AdvancedInputsComponent
 						teamSettings={teamSettings}

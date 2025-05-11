@@ -2,7 +2,6 @@ import { Container, type SelectChangeEvent, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useState } from "react";
-import type { IMilestone } from "../../../models/Project/Milestone";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -10,7 +9,6 @@ import AdvancedInputsComponent from "../../../pages/Projects/Edit/AdvancedInputs
 import GeneralInputsComponent from "../../../pages/Projects/Edit/GeneralInputs";
 import OwnershipComponent from "../../../pages/Projects/Edit/Ownership";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
-import MilestonesComponent from "../Milestones/MilestonesComponent";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
 import TeamsList from "../TeamsList/TeamsList";
@@ -218,45 +216,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		setProjectSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
 	};
 
-	const handleAddMilestone = (milestone: IMilestone) => {
-		setProjectSettings((prev) =>
-			prev
-				? { ...prev, milestones: [...(prev.milestones || []), milestone] }
-				: prev,
-		);
-	};
-
-	const handleRemoveMilestone = (name: string) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						milestones: (prev.milestones || []).filter(
-							(milestone) => milestone.name !== name,
-						),
-					}
-				: prev,
-		);
-	};
-
-	const handleUpdateMilestone = (
-		name: string,
-		updatedMilestone: Partial<IMilestone>,
-	) => {
-		setProjectSettings((prev) =>
-			prev
-				? {
-						...prev,
-						milestones: (prev.milestones || []).map((milestone) =>
-							milestone.name === name
-								? { ...milestone, ...updatedMilestone }
-								: milestone,
-						),
-					}
-				: prev,
-		);
-	};
-
 	const handleSave = async () => {
 		if (!projectSettings) {
 			return;
@@ -399,33 +358,24 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						isForTeam={false}
 					/>
 
+					{!modifyDefaultSettings ? (
+						<WorkTrackingSystemComponent
+							workTrackingSystems={workTrackingSystems}
+							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
+							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
+							onNewWorkTrackingSystemConnectionAdded={
+								handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
+							}
+						/>
+					) : (
+						<></>
+					)}
+
 					<TagsComponent
 						tags={projectSettings?.tags || []}
 						onAddTag={handleAddTag}
 						onRemoveTag={handleRemoveTag}
 					/>
-
-					{!modifyDefaultSettings ? (
-						<>
-							<WorkTrackingSystemComponent
-								workTrackingSystems={workTrackingSystems}
-								selectedWorkTrackingSystem={selectedWorkTrackingSystem}
-								onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
-								onNewWorkTrackingSystemConnectionAdded={
-									handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
-								}
-							/>
-
-							<MilestonesComponent
-								milestones={projectSettings?.milestones || []}
-								onAddMilestone={handleAddMilestone}
-								onRemoveMilestone={handleRemoveMilestone}
-								onUpdateMilestone={handleUpdateMilestone}
-							/>
-						</>
-					) : (
-						<></>
-					)}
 
 					<AdvancedInputsComponent
 						projectSettings={projectSettings}
