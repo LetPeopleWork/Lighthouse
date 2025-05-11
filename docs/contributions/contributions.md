@@ -61,6 +61,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Valentin Badea**](https://www.linkedin.com/in/valentin-g-badea/)
 - [**Gonzalo Mendez**](https://www.linkedin.com/in/gonzalo-mendez-nz/)
 - [**Oliver Oyston**](https://www.linkedin.com/in/oliveroyston/)
+- [**Iwo Hryniewicz**](https://www.linkedin.com/in/iwo-hryniewicz/)
 
 ---
 

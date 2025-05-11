@@ -4,10 +4,17 @@ layout: home
 nav_order: 95
 ---
 
+<!-- 
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
+-->
+
+# Lighthouse v25.5.11
+{: .d-inline-block }
+Latest
+{: .label .label-green }
 
 ## Simplified Cumulative Flow Diagram (CFD)
 Add a [simplified version of a CFD](https://docs.lighthouse.letpeople.work/features/metrics/metrics.html#simplified-cumulative-flow-diagram-cfd) that shows you how many items were in which state category (*Doing* or *Done*) over the selected time period.
@@ -16,20 +23,51 @@ Add a [simplified version of a CFD](https://docs.lighthouse.letpeople.work/featu
 
 If you enable the trend lines, the start and end points of both areas will be connected, allowing you to easily see how you manage WIP.
 
+## Improvement of UX Teams and Projects
+We worked on various small improvements to improve the UX of teams and projects.
+
+### Introduction of Tags
+Both Teams and Projects can now be "tagged". Tags allow you to add context specific information, for example what customer is interested in a project, or which business unit some teams belong to.
+
+The search functionality is including the tags in the search, so you can easily find all teams and projects that have the same tags.
+
+### Store Search Parameter in URL
+The search parameter will now be stored in the url (on the overview, teams, and projects page). This allows you to "save" a search, as you can simply bookmark a page after you added your search parameter.
+
+### Extend "Project Cards" in Overview Page
+The cards in the overview were extended to include additional project information:
+- The number of features
+- The milestones
+- The tags
+
+![Project Card](projectcard.png)
+
+If you click on the Features chip, you will see more details about the features in this project without having to move to the project detail page. A click on the milestone will show you more details about that specific milestones including probabilities of finishing features "on time".
+
+### Other
+- Teams and Projects are now sorted alphabetically in the Overview, Teams, and Projects page
+- Work Item Types and States include "suggestions" where existing types/states are shown when editing Teams and Projects$
+- Removed Milestone configuration from Project Edit page.
+
 ## Bug Fixes
 - Dates and Times were not displayed in the proper timezone. This should be fixed now.
+- Fixed an issue that caused the dates in the date selectors of the metrics pages to not use local date-time format.
 - If you were using an estimation field and changed the value, it was not updated in Lighthouse. This is working properly now and updates with every Project refresh.
 
 ## Other Improvements
 - Update of various third party libraries
 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.4.29.811...v25.5.11)
+
 ## Contributions ❤️ 
-Special Thanks to [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/), [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/) and [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/) for their contributions!
+Special Thanks to everyone that contributed with their feedback to this release:
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Iwo Hryniewicz](https://www.linkedin.com/in/iwo-hryniewicz/)
 
 # Lighthouse v25.4.29.811
-{: .d-inline-block }
-Latest
-{: .label .label-green }
 
 ## Properly read Rank Field from Jira
 The override introduced in the [previous version](#lighthouse-v25425614) was removed again and instead replaced by fetching the field from Jira via the API.
