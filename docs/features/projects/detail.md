@@ -77,7 +77,7 @@ If you have [Milestones](#milestones) defined, you will see the likelihood to ge
 {: .definition}
 Milestones are relevant events that have a specific date.
 
-You can define Milestones as you please when using Lighthouse. This works via the [Edit Page of a Project](./edit.html#milestones) or directly in the Project Detail. Simply give it a name and a date, and Lighthouse will automatically add it to the Feature View and display the [Milestone Probability](#milestone-probability):
+You can define Milestones as you please when using Lighthouse. Simply give it a name and a date, and Lighthouse will automatically add it to the Feature View and display the [Milestone Probability](#milestone-probability):
 
 ![Milestones](../../assets/features/projectdetail_milestones.png)
 

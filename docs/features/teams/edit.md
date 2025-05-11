@@ -89,6 +89,11 @@ When creating or modifying both Teams or Projects, you can either choose an exis
 
 Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/worktrackingsystems/jira.html#work-tracking-system-connection) and [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#work-tracking-system-connection) for details.
 
+# Tags
+Tags allow you to add any kind of additional information that may be helpful for you to identify this team. This may be a specific project or initiative, a department, business unit, or tribe, or anything else that somehow might be useful. You can add as many tags as you want. Existing tags will be shown as proposal.
+
+Tags are checked when you use the search functionality.
+
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
 

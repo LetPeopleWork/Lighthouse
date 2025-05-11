@@ -73,14 +73,10 @@ When creating or modifying both Teams or Projects, you can either choose an exis
 
 Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/worktrackingsystems/jira.html#work-tracking-system-connection) and [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#work-tracking-system-connection) for details.
 
-# Milestones
-Milestones define important dates in your project. This could be special events (like a fair or a customer visit), milestones in your project like (like a deployment or code freeze date), or simply based on iterations (like your Sprint Reviews).
-A milestone has a name and a date, and when you define it, the likelihood of getting this feature done by the milestone is showin in the overview.
+# Tags
+Tags allow you to add any kind of additional information that may be helpful for you to identify this project. This may be a specific customer, a department, business unit, or tribe, or anything else that somehow might be useful. You can add as many tags as you want. Existing tags will be shown as proposal.
 
-This is beneficial for tracking your progress and helps with transparently communicating whether we can make certain dates or not.
-
-{: .note}
-Milestones are optional. You don't need to set any, and you can always add them later on in the [Project Detail View](./detail.html#milestones).
+Tags are checked when you use the search functionality.
 
 # Unparented Work Items
 Sometimes (or shall we say "in the real world") there is work that is not belonging to a specific feature. Still it neeeds to get done.
