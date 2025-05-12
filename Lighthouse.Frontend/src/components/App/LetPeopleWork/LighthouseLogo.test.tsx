@@ -27,9 +27,10 @@ describe("LighthouseLogo component", () => {
 	it("renders the logo text and icon", () => {
 		renderWithProviders();
 
-		// Test for the CellTowerIcon
-		const cellTowerIcon = screen.getByTestId("CellTowerIcon");
-		expect(cellTowerIcon).toBeInTheDocument();
+		// Test for the logo image
+		const logoImage = screen.getByAltText("Lighthouse logo");
+		expect(logoImage).toBeInTheDocument();
+		expect(logoImage).toHaveAttribute("src", "/icons/icon-512x512.png");
 
 		// Test for the text "Light" and "house"
 		const lightText = screen.getByText("Light");

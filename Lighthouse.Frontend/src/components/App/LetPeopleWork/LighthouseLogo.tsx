@@ -1,4 +1,3 @@
-import CellTowerIcon from "@mui/icons-material/CellTower";
 import { Typography, useTheme } from "@mui/material";
 import { Box } from "@mui/system";
 import type React from "react";
@@ -10,7 +9,15 @@ const LighthouseLogo: React.FC = () => {
 	return (
 		<Link to="/" style={{ textDecoration: "none" }}>
 			<Box display="flex" alignItems="center">
-				<CellTowerIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
+				<img
+					src="/icons/icon-512x512.png"
+					alt="Lighthouse logo"
+					style={{
+						width: "48px",
+						height: "48px",
+						marginRight: theme.spacing(1),
+					}}
+				/>
 				<Typography
 					variant="h6"
 					component="div"
