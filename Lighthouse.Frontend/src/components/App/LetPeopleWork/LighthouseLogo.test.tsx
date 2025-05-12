@@ -31,6 +31,8 @@ describe("LighthouseLogo component", () => {
 		const logoImage = screen.getByAltText("Lighthouse logo");
 		expect(logoImage).toBeInTheDocument();
 		expect(logoImage).toHaveAttribute("src", "/icons/icon-512x512.png");
+		expect(logoImage).toHaveStyle("width: 48px");
+		expect(logoImage).toHaveStyle("height: 48px");
 
 		// Test for the text "Light" and "house"
 		const lightText = screen.getByText("Light");

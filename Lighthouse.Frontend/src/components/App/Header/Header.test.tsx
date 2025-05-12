@@ -10,8 +10,9 @@ describe("Header component", () => {
 				<Header />
 			</MemoryRouter>,
 		);
-		const logo = screen.getByTestId("CellTowerIcon"); // Assuming the logo has this test id
+		const logo = screen.getByAltText("Lighthouse logo");
 		expect(logo).toBeInTheDocument();
+		expect(logo).toHaveAttribute("src", "/icons/icon-512x512.png");
 	});
 
 	it("should render navigation items", () => {
