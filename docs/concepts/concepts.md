@@ -40,7 +40,7 @@ flowchart TD
 # Work Tracking System
 The Work Tracking System is the place where your backlog lives. Lighthouse is designed to onboard more systems as needed (please [create a request](https://github.com/LetPeopleWork/Lighthouse/issues/new?assignees=&labels=enhancement&projects=&template=feature-request.yml&title=%5BFeature%5D%3A+) If you'd like to see a new system supported).
 
-Currently supported are [Jira](./jira.html) and [Azure DevOps](./azuredevops.html). The general workflow is the same for any Work Tracking System, the difference is in the information required to connect to the system and how to write the [queries](#query).
+Currently supported are [Jira](./worktrackingsystems/jira.html) and [Azure DevOps](./worktrackingsystems/azuredevops.html). The general workflow is the same for any Work Tracking System, the difference is in the information required to connect to the system and how to write the [queries](#query).
 
 ## Creating a Work Tracking System Connection
 You can create a new connection to your work tracking system either during the creation of your teams and projects, or via the Settings tab.
@@ -89,4 +89,4 @@ It is therefore important that you maintain your Feature Backlog and adjust the 
 {: .recommendation}
 Predictability is not something you are, it's something you do. Lighthouse will not be valuable if the input data is not good. You may also use Lighthouse to make suboptimal backlogs or subpar backlogmanagement more transparent.
 
-Check [Jira](jira.html#feature-order) or [Azure DevOps](azuredevops.html#feature-order) for more details on how the order is defined.
+Check [Jira](./worktrackingsystems/jira.html#feature-order) or [Azure DevOps](./worktrackingsystems/azuredevops.html#feature-order) for more details on how the order is defined.
