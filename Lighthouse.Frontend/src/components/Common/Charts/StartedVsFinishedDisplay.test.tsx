@@ -130,11 +130,10 @@ describe("FlowInformationDisplay component", () => {
 	});
 
 	describe("WIP status indicator", () => {
-		it("should show 'confident' indicator when absolute difference is less than 1.0 even if percentage difference is high", () => {
-			// 10% difference but absolute average difference is only 0.4 items
+		it("should show 'confident' indicator when total difference is less than 2.0", () => {
+			// Total difference is 1 (6 - 5 = 1), which is < 2
 			const startedItems = new RunChartData([2, 2, 2], 3, 6);
 			const closedItems = new RunChartData([1, 2, 2], 3, 5);
-			// Averages: 2.0 vs 1.6 = 0.4 difference
 
 			render(
 				<StartedVsFinishedDisplay
@@ -149,10 +148,11 @@ describe("FlowInformationDisplay component", () => {
 			expect(screen.getByText("Good job!")).toBeInTheDocument();
 		});
 
-		it("should show 'confident' indicator when difference is less than 1.0", () => {
-			// 0.5% difference (confident)
-			const startedItems = new RunChartData([10, 10, 10], 3, 200);
-			const closedItems = new RunChartData([10, 10, 10], 3, 199);
+		it("should show 'confident' indicator when total difference is less than 2.0 (even if average difference is high)", () => {
+			// Total difference is 1 (7 - 6 = 1), which is < 2
+			// But average difference is 3.5 vs 3.0 = 0.5 (high if this was our criterion)
+			const startedItems = new RunChartData([3, 4], 2, 7);
+			const closedItems = new RunChartData([3, 3], 2, 6);
 
 			render(
 				<StartedVsFinishedDisplay
@@ -165,6 +165,27 @@ describe("FlowInformationDisplay component", () => {
 				screen.getByText("You are keeping a steady WIP"),
 			).toBeInTheDocument();
 			expect(screen.getByText("Good job!")).toBeInTheDocument();
+		});
+
+		it("should NOT show 'confident' indicator when total difference is more than 2.0 even if average difference is small", () => {
+			// Total difference is 3 (23 - 20 = 3), which is > 2
+			// But average difference is 7.67 vs 6.67 = 1.0 (small if this was our criterion)
+			const startedItems = new RunChartData([7, 8, 8], 3, 23);
+			const closedItems = new RunChartData([6, 7, 7], 3, 20);
+
+			render(
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={closedItems}
+				/>,
+			);
+
+			expect(
+				screen.getByText("You are starting more items than you close"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByText("Observe and take action if needed!"),
+			).toBeInTheDocument();
 		});
 
 		it("should show 'good' indicator when started and closed are within 5%", () => {
