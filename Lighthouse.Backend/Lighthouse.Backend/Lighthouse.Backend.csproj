@@ -17,6 +17,7 @@
 		<Version>$(Version)</Version>
 		<FileVersion>$(Version)</FileVersion>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -56,6 +57,11 @@
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
 			<_Parameter1>Lighthouse.Backend.Tests</_Parameter1>
 		</AssemblyAttribute>
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <Content Include="favicon.ico" />
 	</ItemGroup>
 
 
