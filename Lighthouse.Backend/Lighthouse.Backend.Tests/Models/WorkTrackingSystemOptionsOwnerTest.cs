@@ -44,6 +44,18 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(stateCategory, Is.EqualTo(expectedStateCategory));
         }
 
+        [Test]
+        public void NewWorkTrackingSystemOptionsOwner_InitializesSLE()
+        {
+            var subject = CreateSubject();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(subject.ServiceLevelExpectationProbability, Is.EqualTo(0));
+                Assert.That(subject.ServiceLevelExpectationRange, Is.EqualTo(0));
+            });
+        }
+
         private WorkTrackingSystemOptionsOwnerTestClass CreateSubject()
         {
             return new WorkTrackingSystemOptionsOwnerTestClass();

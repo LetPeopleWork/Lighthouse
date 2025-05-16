@@ -330,6 +330,12 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<DateTime>("ProjectUpdateTime")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("ServiceLevelExpectationProbability")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ServiceLevelExpectationRange")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("SizeEstimateField")
                         .HasColumnType("TEXT");
 
@@ -393,6 +399,12 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("ServiceLevelExpectationProbability")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ServiceLevelExpectationRange")
+                        .HasColumnType("INTEGER");
 
                     b.PrimitiveCollection<string>("Tags")
                         .IsRequired()
