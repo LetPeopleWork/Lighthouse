@@ -15,7 +15,7 @@ function Stop-DockerContainer {
 
 function Start-PostgresContainer {
     Write-Host "Starting PostgreSQL container..."
-    docker run --name lighthouse-postgres `
+    docker run --name lighthouse-postgres-migration `
         -e POSTGRES_DB=lighthouse `
         -e POSTGRES_USER=postgres `
         -e POSTGRES_PASSWORD=postgres `
@@ -47,7 +47,7 @@ try {
 
     # Setup PostgreSQL and create migration
     Write-Host "Creating PostgreSQL Migration..."
-    Stop-DockerContainer -ContainerName "lighthouse-postgres"
+    Stop-DockerContainer -ContainerName "lighthouse-postgres-migration"
     Start-PostgresContainer
 
     $env:Database__Provider = "postgres"
@@ -70,7 +70,7 @@ catch {
 }
 finally {
     Write-Host "Cleaning up PostgreSQL container..."
-    Stop-DockerContainer -ContainerName "lighthouse-postgres"
+    Stop-DockerContainer -ContainerName "lighthouse-postgres-migration"
 
     # Remove temporary SQLite database if it exists
     if ($Script:TempSqliteDb -and (Test-Path $Script:TempSqliteDb)) {
