@@ -53,6 +53,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 29, Key = AppSettingKeys.TeamSettingTags, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 30, Key = AppSettingKeys.ProjectSettingTags, Value = string.Empty });
 
+            AddIfNotExists(new AppSetting { Id = 31, Key = AppSettingKeys.TeamSettingSLEProbability, Value = "0" });
+            AddIfNotExists(new AppSetting { Id = 32, Key = AppSettingKeys.TeamSettingSLERange, Value = "0" });
+
+            AddIfNotExists(new AppSetting { Id = 33, Key = AppSettingKeys.ProjectSettingSLEProbability, Value = "0" });
+            AddIfNotExists(new AppSetting { Id = 34, Key = AppSettingKeys.ProjectSettingSLERange, Value = "0" });
+
             SaveSync();
         }
 

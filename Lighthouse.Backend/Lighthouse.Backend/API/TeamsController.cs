@@ -179,6 +179,7 @@ namespace Lighthouse.Backend.API
             team.Tags = teamSetting.Tags;
 
             SyncStates(team, teamSetting);
+            SyncServiceLevelExpectation(team, teamSetting);
         }
 
         private static void SyncStates(Team team, TeamSettingDto teamSetting)
@@ -186,6 +187,12 @@ namespace Lighthouse.Backend.API
             team.ToDoStates = TrimListEntries(teamSetting.ToDoStates);
             team.DoingStates = TrimListEntries(teamSetting.DoingStates);
             team.DoneStates = TrimListEntries(teamSetting.DoneStates);
+        }
+
+        private static void SyncServiceLevelExpectation(Team team, TeamSettingDto teamSetting)
+        {
+            team.ServiceLevelExpectationProbability = teamSetting.ServiceLevelExpectationProbability;
+            team.ServiceLevelExpectationRange = teamSetting.ServiceLevelExpectationRange;
         }
 
         private static List<string> TrimListEntries(List<string> list)

@@ -32,6 +32,10 @@
 
         public const string TeamSettingTags = "DefaultTeamSetting:Tags";
 
+        public const string TeamSettingSLEProbability = "DefaultTeamSetting:SLEProbability";
+
+        public const string TeamSettingSLERange = "DefaultTeamSetting:SLERange";
+
         public const string TeamSettingRelationCustomField = "DefaultTeamSetting:RelationCustomField";
 
         public const string TeamSettingAutomaticallyAdjustFeatureWIP = "DefaultTeamSetting:AutomaticallyAdjustFeatureWIP";
@@ -65,6 +69,10 @@
         public const string ProjectSettingSizeEstimateField = "DefaultProjectSetting:SizeEstimateField";
 
         public const string ProjectSettingsFeatureOwnerField = "DefaultProjectSetting:FeatureOwnerField";
+
+        public const string ProjectSettingSLEProbability = "DefaultProjectSetting:SLEProbability";
+
+        public const string ProjectSettingSLERange = "DefaultProjectSetting:SLERange";
 
         public const string CleanUpDataHistorySettingsMaxStorageTimeInDays = "CleanUpDataHistorySettings:MaxStorageTimeInDays";
     }

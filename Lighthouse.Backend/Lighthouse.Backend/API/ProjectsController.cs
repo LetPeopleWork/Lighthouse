@@ -148,6 +148,7 @@ namespace Lighthouse.Backend.API
             SyncStates(project, projectSetting);
             SyncMilestones(project, projectSetting);
             SyncTeams(project, projectSetting);
+            SyncServiceLevelExpectation(project, projectSetting);
         }
 
         private static void SyncStates(Project project, ProjectSettingDto projectSetting)
@@ -197,6 +198,12 @@ namespace Lighthouse.Backend.API
                     ProjectId = project.Id,
                 });
             }
+        }
+
+        private static void SyncServiceLevelExpectation(Project project, ProjectSettingDto projectSetting)
+        {
+            project.ServiceLevelExpectationProbability = projectSetting.ServiceLevelExpectationProbability;
+            project.ServiceLevelExpectationRange = projectSetting.ServiceLevelExpectationRange;
         }
     }
 }

@@ -245,6 +245,8 @@ namespace Lighthouse.Backend.Tests.API
             team.WorkItemQuery = "SELECT * FROM *";
             team.WorkTrackingSystemConnectionId = 37;
             team.AdditionalRelatedField = "Custom.RelatedItem";
+            team.ServiceLevelExpectationProbability = 75;
+            team.ServiceLevelExpectationRange = 10;
 
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
 
@@ -270,6 +272,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.WorkItemTypes, Is.EqualTo(team.WorkItemTypes));
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(team.WorkTrackingSystemConnectionId));
                 Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(team.AdditionalRelatedField));
+                Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(team.ServiceLevelExpectationProbability));
+                Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(team.ServiceLevelExpectationRange));
             });
         }
 
@@ -304,6 +308,8 @@ namespace Lighthouse.Backend.Tests.API
                 ToDoStates = new List<string> { " To Do" },
                 DoingStates = new List<string> { "Doing" },
                 DoneStates = new List<string> { "Done " },
+                ServiceLevelExpectationProbability = 50,
+                ServiceLevelExpectationRange = 2,
             };
 
             var subject = CreateSubject();
@@ -334,6 +340,9 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.ToDoStates, Contains.Item("To Do"));
                 Assert.That(teamSettingDto.DoingStates, Contains.Item("Doing"));
                 Assert.That(teamSettingDto.DoneStates, Contains.Item("Done"));
+
+                Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(newTeamSettings.ServiceLevelExpectationProbability));
+                Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(newTeamSettings.ServiceLevelExpectationRange));
             });
         }
 
@@ -355,6 +364,8 @@ namespace Lighthouse.Backend.Tests.API
                 WorkTrackingSystemConnectionId = 2,
                 RelationCustomField = "CUSTOM.AdditionalField",
                 AutomaticallyAdjustFeatureWIP = true,
+                ServiceLevelExpectationRange = 18,
+                ServiceLevelExpectationProbability = 86,
             };
 
             var subject = CreateSubject();
@@ -382,6 +393,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(updatedTeamSettings.WorkTrackingSystemConnectionId));
                 Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(updatedTeamSettings.RelationCustomField));
                 Assert.That(teamSettingDto.AutomaticallyAdjustFeatureWIP, Is.EqualTo(updatedTeamSettings.AutomaticallyAdjustFeatureWIP));
+                Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationProbability));
+                Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationRange));
             });
         }
 

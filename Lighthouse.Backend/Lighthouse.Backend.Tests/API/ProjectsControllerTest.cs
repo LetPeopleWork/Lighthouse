@@ -206,6 +206,8 @@ namespace Lighthouse.Backend.Tests.API
                 ToDoStates = new List<string> { "To Do " },
                 DoingStates = new List<string> { " In Progress" },
                 DoneStates = new List<string> { "Done" },
+                ServiceLevelExpectationProbability = 90,
+                ServiceLevelExpectationRange = 10,
             };
 
             var subject = CreateSubject();
@@ -243,6 +245,9 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.ToDoStates, Contains.Item("To Do"));
                 Assert.That(projectSettingDto.DoingStates, Contains.Item("In Progress"));
                 Assert.That(projectSettingDto.DoneStates, Contains.Item("Done"));
+
+                Assert.That(projectSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(newProjectSettings.ServiceLevelExpectationProbability));
+                Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(newProjectSettings.ServiceLevelExpectationRange));
             });
         }
 
@@ -276,6 +281,8 @@ namespace Lighthouse.Backend.Tests.API
                 },
                 OwningTeam = new TeamDto(existingTeam),
                 FeatureOwnerField = "OwnerField",
+                ServiceLevelExpectationProbability = 95,
+                ServiceLevelExpectationRange = 5,
             };
 
             var subject = CreateSubject();
@@ -320,6 +327,9 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.OwningTeam.Id, Is.EqualTo(existingTeam.Id));
                 Assert.That(projectSettingDto.OwningTeam.Name, Is.EqualTo(existingTeam.Name));
                 Assert.That(projectSettingDto.FeatureOwnerField, Is.EqualTo(updatedProjectSettings.FeatureOwnerField));
+
+                Assert.That(projectSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedProjectSettings.ServiceLevelExpectationProbability));
+                Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedProjectSettings.ServiceLevelExpectationRange));
             });
         }
 

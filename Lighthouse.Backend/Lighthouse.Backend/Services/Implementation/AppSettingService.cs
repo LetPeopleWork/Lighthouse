@@ -64,6 +64,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 DoingStates = doingStates,
                 DoneStates = doneStates,
                 Tags = GetListByKey(AppSettingKeys.TeamSettingTags),
+                ServiceLevelExpectationProbability = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingSLEProbability).Value),
+                ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingSLERange).Value),
             };
 
             return teamSettings;
@@ -115,6 +117,14 @@ namespace Lighthouse.Backend.Services.Implementation
             autoAdjustWIPField.Value = defaultTeamSetting.AutomaticallyAdjustFeatureWIP.ToString();
             repository.Update(autoAdjustWIPField);
 
+            var sleProbability = GetSettingByKey(AppSettingKeys.TeamSettingSLEProbability);
+            sleProbability.Value = defaultTeamSetting.ServiceLevelExpectationProbability.ToString();
+            repository.Update(sleProbability);
+
+            var sleRange = GetSettingByKey(AppSettingKeys.TeamSettingSLERange);
+            sleRange.Value = defaultTeamSetting.ServiceLevelExpectationRange.ToString();
+            repository.Update(sleRange);
+
             await repository.Save();
         }
 
@@ -149,6 +159,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 SizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField).Value,
                 FeatureOwnerField = GetSettingByKey(AppSettingKeys.ProjectSettingsFeatureOwnerField).Value,
+
+                ServiceLevelExpectationProbability = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLEProbability).Value),
+                ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLERange).Value),
             };
 
             return projectSettings;
@@ -215,6 +228,14 @@ namespace Lighthouse.Backend.Services.Implementation
             var featureOwnerField = GetSettingByKey(AppSettingKeys.ProjectSettingsFeatureOwnerField);
             featureOwnerField.Value = defaultProjectSetting.FeatureOwnerField;
             repository.Update(featureOwnerField);
+
+            var sleProbability = GetSettingByKey(AppSettingKeys.ProjectSettingSLEProbability);
+            sleProbability.Value = defaultProjectSetting.ServiceLevelExpectationProbability.ToString();
+            repository.Update(sleProbability);
+
+            var sleRange = GetSettingByKey(AppSettingKeys.ProjectSettingSLERange);
+            sleRange.Value = defaultProjectSetting.ServiceLevelExpectationRange.ToString();
+            repository.Update(sleRange);
 
             await repository.Save();
         }

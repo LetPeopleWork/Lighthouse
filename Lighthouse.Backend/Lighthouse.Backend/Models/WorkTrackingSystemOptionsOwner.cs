@@ -4,6 +4,8 @@
     {
         public int Id { get; set; }
 
+        public string Name { get; set; }
+
         public string WorkItemQuery { get; set; } = string.Empty;
 
         public abstract List<string> WorkItemTypes { get; set; }

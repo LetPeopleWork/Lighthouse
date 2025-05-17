@@ -36,6 +36,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.TeamSettingTags, "")]
         [TestCase(AppSettingKeys.ProjectSettingOverrideRealChildCountStates, "")]
         [TestCase(AppSettingKeys.ProjectSettingTags, "")]
+        [TestCase(AppSettingKeys.TeamSettingSLEProbability, "0")]
+        [TestCase(AppSettingKeys.TeamSettingSLERange, "0")]
+        [TestCase(AppSettingKeys.ProjectSettingSLEProbability, "0")]
+        [TestCase(AppSettingKeys.ProjectSettingSLERange, "0")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();

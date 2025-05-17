@@ -2,8 +2,6 @@
 {
     public class Project : WorkTrackingSystemOptionsOwner
     {
-        public string Name { get; set; }
-
         public override List<string> WorkItemTypes { get; set; } = new List<string> { "Epic" };
 
         public List<Team> Teams { get; } = new List<Team>();
