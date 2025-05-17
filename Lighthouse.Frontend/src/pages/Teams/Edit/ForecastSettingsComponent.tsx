@@ -4,7 +4,7 @@ import type React from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 
-interface GeneralInputsComponentProps {
+interface ForecastSettingsComponentProps {
 	teamSettings: ITeamSettings | null;
 	isDefaultSettings: boolean;
 	onTeamSettingsChange: (
@@ -13,7 +13,7 @@ interface GeneralInputsComponentProps {
 	) => void;
 }
 
-const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
+const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 	teamSettings,
 	isDefaultSettings,
 	onTeamSettingsChange,
@@ -23,17 +23,7 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
 	};
 
 	return (
-		<InputGroup title={"General Configuration"}>
-			<Grid size={{ xs: 12 }}>
-				<TextField
-					label="Name"
-					fullWidth
-					margin="normal"
-					value={teamSettings?.name ?? ""}
-					onChange={(e) => onTeamSettingsChange("name", e.target.value)}
-				/>
-			</Grid>
-
+		<InputGroup title={"Forecast Configuration"}>
 			{!isDefaultSettings && (
 				<Grid size={{ xs: 12 }}>
 					<FormControlLabel
@@ -115,21 +105,8 @@ const GeneralInputsComponent: React.FC<GeneralInputsComponentProps> = ({
 					/>
 				</Grid>
 			)}
-			<Grid size={{ xs: 12 }}>
-				<TextField
-					label="Work Item Query"
-					multiline
-					rows={4}
-					fullWidth
-					margin="normal"
-					value={teamSettings?.workItemQuery ?? ""}
-					onChange={(e) =>
-						onTeamSettingsChange("workItemQuery", e.target.value)
-					}
-				/>
-			</Grid>
 		</InputGroup>
 	);
 };
 
-export default GeneralInputsComponent;
+export default ForecastSettingsComponent;

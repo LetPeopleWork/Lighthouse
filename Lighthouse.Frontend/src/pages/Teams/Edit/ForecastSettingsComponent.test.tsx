@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
-import GeneralInputsComponent from "./GeneralInputs";
+import ForecastSettingsComponent from "./ForecastSettingsComponent";
 
 // Mock InputGroup component
 vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
@@ -18,7 +18,7 @@ vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
 	),
 }));
 
-describe("GeneralInputsComponent", () => {
+describe("ForecastSettingsComponent", () => {
 	const onTeamSettingsChange = vi.fn();
 
 	const teamSettings: ITeamSettings = {
@@ -44,7 +44,7 @@ describe("GeneralInputsComponent", () => {
 
 	it("renders correctly with provided teamSettings", () => {
 		render(
-			<GeneralInputsComponent
+			<ForecastSettingsComponent
 				teamSettings={teamSettings}
 				isDefaultSettings={false}
 				onTeamSettingsChange={onTeamSettingsChange}
@@ -52,30 +52,12 @@ describe("GeneralInputsComponent", () => {
 		);
 
 		// Check if the TextFields display the correct values
-		expect(screen.getByLabelText("Name")).toHaveValue("Test Name");
 		expect(screen.getByLabelText("Throughput History")).toHaveValue(10);
-		expect(screen.getByLabelText("Work Item Query")).toHaveValue("Test Query");
-	});
-
-	it("calls onTeamSettingsChange with correct parameters when the Name TextField value changes", () => {
-		render(
-			<GeneralInputsComponent
-				teamSettings={teamSettings}
-				isDefaultSettings={false}
-				onTeamSettingsChange={onTeamSettingsChange}
-			/>,
-		);
-
-		fireEvent.change(screen.getByLabelText("Name"), {
-			target: { value: "New Name" },
-		});
-
-		expect(onTeamSettingsChange).toHaveBeenCalledWith("name", "New Name");
 	});
 
 	it("calls onTeamSettingsChange with correct parameters when Throughput History TextField value changes", () => {
 		render(
-			<GeneralInputsComponent
+			<ForecastSettingsComponent
 				teamSettings={teamSettings}
 				isDefaultSettings={false}
 				onTeamSettingsChange={onTeamSettingsChange}
@@ -89,25 +71,6 @@ describe("GeneralInputsComponent", () => {
 		expect(onTeamSettingsChange).toHaveBeenCalledWith("throughputHistory", 15);
 	});
 
-	it("calls onTeamSettingsChange with correct parameters when Work Item Query TextField value changes", () => {
-		render(
-			<GeneralInputsComponent
-				teamSettings={teamSettings}
-				isDefaultSettings={false}
-				onTeamSettingsChange={onTeamSettingsChange}
-			/>,
-		);
-
-		fireEvent.change(screen.getByLabelText("Work Item Query"), {
-			target: { value: "New Query" },
-		});
-
-		expect(onTeamSettingsChange).toHaveBeenCalledWith(
-			"workItemQuery",
-			"New Query",
-		);
-	});
-
 	it("renders date inputs when useFixedDatesForThroughput is true", () => {
 		const settingsWithFixedDates = {
 			...teamSettings,
@@ -115,7 +78,7 @@ describe("GeneralInputsComponent", () => {
 		};
 
 		render(
-			<GeneralInputsComponent
+			<ForecastSettingsComponent
 				teamSettings={settingsWithFixedDates}
 				isDefaultSettings={false}
 				onTeamSettingsChange={onTeamSettingsChange}
@@ -131,7 +94,7 @@ describe("GeneralInputsComponent", () => {
 
 	it("renders throughput history input when useFixedDatesForThroughput is false", () => {
 		render(
-			<GeneralInputsComponent
+			<ForecastSettingsComponent
 				teamSettings={teamSettings}
 				isDefaultSettings={false}
 				onTeamSettingsChange={onTeamSettingsChange}
@@ -145,7 +108,7 @@ describe("GeneralInputsComponent", () => {
 
 	it("calls onTeamSettingsChange when useFixedDatesForThroughput switch is toggled", () => {
 		render(
-			<GeneralInputsComponent
+			<ForecastSettingsComponent
 				teamSettings={teamSettings}
 				isDefaultSettings={false}
 				onTeamSettingsChange={onTeamSettingsChange}
@@ -170,7 +133,7 @@ describe("GeneralInputsComponent", () => {
 		};
 
 		render(
-			<GeneralInputsComponent
+			<ForecastSettingsComponent
 				teamSettings={settingsWithFixedDates}
 				isDefaultSettings={false}
 				onTeamSettingsChange={onTeamSettingsChange}
@@ -198,7 +161,7 @@ describe("GeneralInputsComponent", () => {
 
 	it("does not render fixed dates switch when isDefaultSettings is true", () => {
 		render(
-			<GeneralInputsComponent
+			<ForecastSettingsComponent
 				teamSettings={teamSettings}
 				isDefaultSettings={true}
 				onTeamSettingsChange={onTeamSettingsChange}

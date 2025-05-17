@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
-import GeneralInputsComponent from "../../../pages/Teams/Edit/GeneralInputs";
+import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
+import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
@@ -41,7 +42,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 	const handleTeamSettingsChange = (
 		key: keyof ITeamSettings,
-		value: string | number | boolean | Date,
+		value: string | number | boolean | Date | string[],
 	) => {
 		setTeamSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
 	};
@@ -282,7 +283,12 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						<Typography variant="h4">{title}</Typography>
 					</Grid>
 
-					<GeneralInputsComponent
+					<GeneralSettingsComponent
+						settings={teamSettings}
+						onSettingsChange={handleTeamSettingsChange}
+					/>
+
+					<ForecastSettingsComponent
 						teamSettings={teamSettings}
 						onTeamSettingsChange={handleTeamSettingsChange}
 						isDefaultSettings={modifyDefaultSettings}

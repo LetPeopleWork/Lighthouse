@@ -26,7 +26,7 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 	currentInvolvedTeams,
 }) => {
 	return (
-		<InputGroup title={"Ownership Settings"} initiallyExpanded={true}>
+		<InputGroup title={"Ownership Settings"} initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
 				<FormControl fullWidth margin="normal">
 					<InputLabel id="owning-team-label">Owning Team</InputLabel>

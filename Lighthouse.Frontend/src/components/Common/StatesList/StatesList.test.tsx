@@ -108,8 +108,7 @@ describe("StatesList", () => {
 		expect(mockSuggestionService.getStatesForTeams).not.toHaveBeenCalled();
 	});
 
-	// Skip this test for now as it's difficult to test autocomplete behavior
-	it.skip("provides appropriate suggestions from the API data", async () => {
+	it("provides appropriate suggestions from the API data", async () => {
 		await act(async () => {
 			renderWithContext(true);
 		});
@@ -256,8 +255,7 @@ describe("StatesList", () => {
 		consoleSpy.mockRestore();
 	});
 
-	// Skip this test for now since testing autocomplete dropdown behavior is complex
-	it.skip("correctly filters out already selected states from suggestions", async () => {
+	it("correctly filters out already selected states from suggestions", async () => {
 		await act(async () => {
 			renderWithContext(true);
 		});

@@ -78,6 +78,9 @@ describe("OwnershipComponent", () => {
 			/>,
 		);
 
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
+
 		expect(screen.getByLabelText(/Feature Owner Field/i)).toHaveValue(
 			"custom.owner",
 		);
@@ -92,6 +95,9 @@ describe("OwnershipComponent", () => {
 				currentInvolvedTeams={mockTeams}
 			/>,
 		);
+
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
 
 		fireEvent.change(screen.getByLabelText(/Feature Owner Field/i), {
 			target: { value: "custom.newowner" },
@@ -111,6 +117,9 @@ describe("OwnershipComponent", () => {
 				currentInvolvedTeams={mockTeams}
 			/>,
 		);
+
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
 
 		fireEvent.mouseDown(
 			screen.getByLabelText("Owning Team", {
@@ -138,6 +147,9 @@ describe("OwnershipComponent", () => {
 				currentInvolvedTeams={mockTeams}
 			/>,
 		);
+
+		// Expand the collapsible section first
+		fireEvent.click(screen.getByLabelText("toggle"));
 
 		fireEvent.mouseDown(screen.getByRole("combobox", { name: /Owning Team/i }));
 		fireEvent.click(screen.getByText("None"));

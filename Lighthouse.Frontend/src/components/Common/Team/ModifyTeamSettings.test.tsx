@@ -23,18 +23,18 @@ vi.mock("../../../pages/Teams/Edit/AdvancedInputs", () => ({
 	),
 }));
 
-vi.mock("../../../pages/Teams/Edit/GeneralInputs", () => ({
+vi.mock("../../../components/Common/BaseSettings/GeneralSettingsComponent.tsx", () => ({
 	__esModule: true,
 	default: ({
-		onTeamSettingsChange,
+		onSettingsChange,
 	}: {
-		onTeamSettingsChange: (key: keyof ITeamSettings, value: string) => void;
+		onSettingsChange: (key: keyof ITeamSettings, value: string) => void;
 	}) => (
 		<div>
 			<div>GeneralInputsComponent</div>
 			<button
 				type="button"
-				onClick={() => onTeamSettingsChange("name", "value")}
+				onClick={() => onSettingsChange("name", "value")}
 			>
 				Change General
 			</button>
