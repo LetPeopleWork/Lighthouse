@@ -6,10 +6,7 @@ import { type ITeam, Team } from "../Team/Team";
 import { type IMilestone, Milestone } from "./Milestone";
 
 export interface IProject extends IFeatureOwner {
-	name: string;
-	id: number;
 	involvedTeams: ITeam[];
-	lastUpdated: Date;
 	milestones: IMilestone[];
 
 	get remainingWork(): number;

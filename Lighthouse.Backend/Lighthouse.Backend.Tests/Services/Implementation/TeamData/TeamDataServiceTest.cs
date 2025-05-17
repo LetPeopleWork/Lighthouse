@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
                 {
                     WorkTrackingSystem = WorkTrackingSystems.AzureDevOps
                 },
-                TeamUpdateTime = lastThroughputUpdateTime
+                UpdateTime = lastThroughputUpdateTime
             };
         }
 

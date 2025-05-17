@@ -5,11 +5,8 @@ import type { IFeatureOwner } from "../IFeatureOwner";
 import { type IProject, Project } from "../Project/Project";
 
 export interface ITeam extends IFeatureOwner {
-	name: string;
-	id: number;
 	projects: IProject[];
 	featureWip: number;
-	lastUpdated: Date;
 	useFixedDatesForThroughput: boolean;
 	throughputStartDate: Date;
 	throughputEndDate: Date;

@@ -40,9 +40,11 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> DoneStates { get; set; } = [];
 
         public List<string> Tags { get; set; } = [];
-
+        
+        [JsonRequired]
         public int ServiceLevelExpectationProbability { get; set; }
 
+        [JsonRequired]
         public int ServiceLevelExpectationRange { get; set; }
 
         [JsonRequired]

@@ -401,7 +401,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task UpdateTeam_GivenNewTeamSettings_ResetsLastUpdateTime()
         {
-            var existingTeam = new Team { Id = 132, TeamUpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -422,7 +422,7 @@ namespace Lighthouse.Backend.Tests.API
 
             _ = await subject.UpdateTeam(132, updatedTeamSettings);
 
-            Assert.That(existingTeam.TeamUpdateTime, Is.EqualTo(DateTime.MinValue));
+            Assert.That(existingTeam.UpdateTime, Is.EqualTo(DateTime.MinValue));
         }
 
         [Test]
@@ -430,7 +430,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase("Existing Query", false)]
         public async Task UpdateTeam_GivenNewQuery_DeletesExistingWorkItems(string workItemQuery, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -466,7 +466,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(new string[] { "User Story", "Bug", "Task" }, true)]
         public async Task UpdateTeam_GivenWorkItemTypes_DeletesExistingWorkItems(string[] workItemTypes, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -503,7 +503,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(new string[] { "To Do" }, new string[] { "Doing" }, new string[] { "Done", "Closed" }, true)]
         public async Task UpdateTeam_GivenChangedStates_DeletesExistingWorkItems(string[] toDoStates, string[] doingStates, string[] doneStates, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -535,7 +535,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(1, true)]
         public async Task UpdateTeam_GivenWorkTrackingSystemConnectionId_DeletesExistingWorkItems(int workTrackingSystemConnectionId, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, TeamUpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, WorkItemQuery = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 

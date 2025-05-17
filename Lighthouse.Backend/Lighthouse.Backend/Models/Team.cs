@@ -10,8 +10,6 @@
 
         public string? AdditionalRelatedField { get; set; } = string.Empty;
 
-        public DateTime TeamUpdateTime { get; set; } = DateTime.MinValue;
-
         public bool UseFixedDatesForThroughput { get; set; } = false;
 
         public DateTime? ThroughputHistoryStartDate { get; set; }
@@ -23,16 +21,6 @@
         public List<Project> Projects { get; } = [];
 
         public List<WorkItem> WorkItems { get; } = [];
-
-        public void ResetUpdateTime()
-        {
-            TeamUpdateTime = DateTime.MinValue;
-        }
-
-        public void RefreshUpdateTime()
-        {
-            TeamUpdateTime = DateTime.UtcNow;
-        }
 
         public ThroughputSettings GetThroughputSettings()
         {

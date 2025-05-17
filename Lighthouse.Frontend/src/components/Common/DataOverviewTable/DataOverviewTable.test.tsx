@@ -25,6 +25,7 @@ const sampleData: IFeatureOwner[] = [
 		features: [],
 		totalWork: 20,
 		tags: ["critical", "frontend"],
+		lastUpdated: new Date(),
 	},
 	{
 		id: 2,
@@ -34,6 +35,7 @@ const sampleData: IFeatureOwner[] = [
 		features: [],
 		totalWork: 20,
 		tags: ["backend"],
+		lastUpdated: new Date(),
 	},
 	{
 		id: 3,
@@ -43,6 +45,7 @@ const sampleData: IFeatureOwner[] = [
 		features: [],
 		totalWork: 33,
 		tags: [],
+		lastUpdated: new Date(),
 	},
 ];
 
@@ -74,6 +77,7 @@ describe("DataOverviewTable", () => {
 				features: [],
 				tags: [],
 				totalWork: 33,
+				lastUpdated: new Date(),
 			},
 			{
 				id: 1,
@@ -83,6 +87,7 @@ describe("DataOverviewTable", () => {
 				features: [],
 				tags: [],
 				totalWork: 20,
+				lastUpdated: new Date(),
 			},
 			{
 				id: 2,
@@ -92,6 +97,7 @@ describe("DataOverviewTable", () => {
 				features: [],
 				tags: [],
 				totalWork: 20,
+				lastUpdated: new Date(),
 			},
 		];
 

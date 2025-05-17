@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
             project.WorkTrackingSystemConnection = workTrackingConnection;
 
-            project.ProjectUpdateTime = lastUpdateTime;
+            project.UpdateTime = lastUpdateTime;
 
             return project;
         }

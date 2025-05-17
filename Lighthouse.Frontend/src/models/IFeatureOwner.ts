@@ -4,6 +4,7 @@ import type { IProgressable } from "./IProgressable";
 export interface IFeatureOwner extends IProgressable {
 	name: string;
 	id: number;
+	lastUpdated: Date;
 	features: IFeature[];
 	remainingFeatures: number;
 	tags: string[];

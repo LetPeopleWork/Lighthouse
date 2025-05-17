@@ -18,8 +18,6 @@
 
         public string? FeatureOwnerField { get; set; }
 
-        public DateTime ProjectUpdateTime { get; set; }
-
         public string? UnparentedItemsQuery { get; set; }
 
         public string? SizeEstimateField { get; set; }
@@ -37,7 +35,7 @@
             Features.Clear();
             Features.AddRange(features);
 
-            ProjectUpdateTime = DateTime.UtcNow;
+            ResetUpdateTime();
         }
 
         public void UpdateTeams(IEnumerable<Team> teams)
@@ -45,7 +43,7 @@
             Teams.Clear();
             Teams.AddRange(teams);
 
-            ProjectUpdateTime = DateTime.UtcNow;
+            ResetUpdateTime();
         }
 
         public IEnumerable<Feature> GetFeaturesToExtrapolate()

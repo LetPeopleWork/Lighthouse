@@ -2,16 +2,11 @@
 
 namespace Lighthouse.Backend.API.DTO
 {
-    public class ProjectDto
+    public class ProjectDto : WorkTrackingSystemOptionsOwnerDtoBase
     {
-        public ProjectDto(Project project)
+        public ProjectDto(Project project) : base(project)
         {
-            Name = project.Name;
-            Id = project.Id;
-            LastUpdated = DateTime.SpecifyKind(project.ProjectUpdateTime, DateTimeKind.Utc); ;
-
             InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
-            Tags = project.Tags.ToList();
 
             foreach (var feature in project.Features.OrderBy(f => f, new FeatureComparer()))
             {
@@ -24,18 +19,10 @@ namespace Lighthouse.Backend.API.DTO
             }
         }
 
-        public string Name { get; }
-
-        public int Id { get; }
-
         public List<FeatureDto> Features { get; } = new List<FeatureDto>();
 
         public List<TeamDto> InvolvedTeams { get; } = new List<TeamDto>();
 
         public List<MilestoneDto> Milestones { get; } = new List<MilestoneDto>();
-
-        public List<string> Tags { get; } = new List<string>();
-
-        public DateTime LastUpdated { get; }
     }
 }

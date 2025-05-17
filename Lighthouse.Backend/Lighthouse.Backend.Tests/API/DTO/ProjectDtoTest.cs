@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var projectUpdateTime = DateTime.Now;
             var project = new Project
             {
-                ProjectUpdateTime = projectUpdateTime
+                UpdateTime = projectUpdateTime
             };
 
             var subject = CreateSubject(project);

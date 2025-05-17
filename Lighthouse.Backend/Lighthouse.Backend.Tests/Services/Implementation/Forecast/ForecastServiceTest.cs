@@ -580,7 +580,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             {
                 Name = "Project",
                 Id = idCounter++,
-                ProjectUpdateTime = lastUpdatedTime,
+                UpdateTime = lastUpdatedTime,
             };
             project.UpdateFeatures(features);
             return project;

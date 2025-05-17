@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var teamUpdateTime = DateTime.Now;
             var team = new Team
             {
-                TeamUpdateTime = teamUpdateTime
+                UpdateTime = teamUpdateTime
             };
 
             var subject = CreateSubject(team);

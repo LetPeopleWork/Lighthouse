@@ -930,7 +930,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
             project.WorkTrackingSystemConnection = workTrackingConnection;
 
-            project.ProjectUpdateTime = lastUpdateTime;
+            project.UpdateTime = lastUpdateTime;
 
             return project;
         }

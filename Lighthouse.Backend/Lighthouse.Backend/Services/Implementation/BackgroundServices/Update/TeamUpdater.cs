@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         protected override bool ShouldUpdateEntity(Team entity, RefreshSettings refreshSettings)
         {
-            var minutesSinceLastUpdate = (DateTime.UtcNow - entity.TeamUpdateTime).TotalMinutes;
+            var minutesSinceLastUpdate = (DateTime.UtcNow - entity.UpdateTime).TotalMinutes;
 
             Logger.LogInformation("Last Refresh of team {TeamName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
 

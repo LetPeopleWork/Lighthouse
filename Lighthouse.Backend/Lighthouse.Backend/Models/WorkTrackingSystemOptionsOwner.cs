@@ -8,6 +8,8 @@
 
         public string WorkItemQuery { get; set; } = string.Empty;
 
+        public DateTime UpdateTime { get; set; }
+
         public abstract List<string> WorkItemTypes { get; set; }
 
         public List<string> ToDoStates { get; set; } = new List<string> { "New", "Proposed", "To Do" };
@@ -48,6 +50,16 @@
             }
 
             return StateCategories.Unknown;
+        }
+
+        public void ResetUpdateTime()
+        {
+            UpdateTime = DateTime.MinValue;
+        }
+
+        public void RefreshUpdateTime()
+        {
+            UpdateTime = DateTime.UtcNow;
         }
 
         private static bool IsStateInList(string state, List<string> states)

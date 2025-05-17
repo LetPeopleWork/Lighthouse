@@ -715,11 +715,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public async Task UpdateTeamMetrics_RefreshesUpdateTimeForTeam()
         {
-            testTeam.TeamUpdateTime = DateTime.Now.AddDays(-1);
+            testTeam.UpdateTime = DateTime.Now.AddDays(-1);
 
             await subject.UpdateTeamMetrics(testTeam);
 
-            Assert.That(testTeam.TeamUpdateTime, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-1)));
+            Assert.That(testTeam.UpdateTime, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-1)));
         }
 
         [Test]

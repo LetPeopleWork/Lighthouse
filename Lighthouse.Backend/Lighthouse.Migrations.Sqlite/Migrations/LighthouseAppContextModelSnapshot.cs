@@ -327,9 +327,6 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int?>("OwningTeamId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("ProjectUpdateTime")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("ServiceLevelExpectationProbability")
                         .HasColumnType("INTEGER");
 
@@ -348,6 +345,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UnparentedItemsQuery")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdateTime")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("UsePercentileToCalculateDefaultAmountOfWorkItems")
@@ -410,9 +410,6 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("TeamUpdateTime")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("ThroughputHistory")
                         .HasColumnType("INTEGER");
 
@@ -424,6 +421,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.PrimitiveCollection<string>("ToDoStates")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdateTime")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("UseFixedDatesForThroughput")

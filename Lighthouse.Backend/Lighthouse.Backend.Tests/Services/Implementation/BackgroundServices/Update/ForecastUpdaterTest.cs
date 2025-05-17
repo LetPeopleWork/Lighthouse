@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             {
                 Name = "Project",
                 Id = idCounter++,
-                ProjectUpdateTime = lastUpdatedTime,
+                UpdateTime = lastUpdatedTime,
             };
             project.UpdateFeatures(features);
             return project;
