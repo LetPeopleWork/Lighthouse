@@ -76,6 +76,8 @@ describe("SettingsService", () => {
 			doneStates: ["Done"],
 			tags: [],
 			automaticallyAdjustFeatureWIP: false,
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
@@ -105,6 +107,8 @@ describe("SettingsService", () => {
 			doneStates: ["Done"],
 			tags: [],
 			automaticallyAdjustFeatureWIP: false,
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 		mockedAxios.put.mockResolvedValueOnce({});
 
@@ -136,6 +140,8 @@ describe("SettingsService", () => {
 			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -168,6 +174,8 @@ describe("SettingsService", () => {
 			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		mockedAxios.put.mockResolvedValueOnce({});

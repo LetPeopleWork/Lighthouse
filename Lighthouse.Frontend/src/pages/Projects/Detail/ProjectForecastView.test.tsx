@@ -172,6 +172,8 @@ describe("ProjectForecastView component", () => {
 		defaultWorkItemPercentile: 85,
 		historicalFeaturesWorkItemQuery: "query",
 		workTrackingSystemConnectionId: 1,
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	};
 
 	const mockTeamSettings1: ITeamSettings = {
@@ -191,6 +193,8 @@ describe("ProjectForecastView component", () => {
 		workTrackingSystemConnectionId: 1,
 		relationCustomField: "",
 		automaticallyAdjustFeatureWIP: false,
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	};
 
 	const mockTeamSettings2: ITeamSettings = {
@@ -210,6 +214,8 @@ describe("ProjectForecastView component", () => {
 		workTrackingSystemConnectionId: 1,
 		relationCustomField: "",
 		automaticallyAdjustFeatureWIP: false,
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	};
 
 	const mockInvolvedTeams: ITeamSettings[] = [

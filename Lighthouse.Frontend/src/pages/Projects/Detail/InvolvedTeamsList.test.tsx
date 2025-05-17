@@ -23,6 +23,8 @@ describe("InvolvedTeamsList component", () => {
 			doneStates: ["Done"],
 			tags: [],
 			automaticallyAdjustFeatureWIP: false,
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 		{
 			id: 2,
@@ -41,6 +43,8 @@ describe("InvolvedTeamsList component", () => {
 			doingStates: ["Active"],
 			doneStates: ["Done"],
 			automaticallyAdjustFeatureWIP: false,
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 	];
 

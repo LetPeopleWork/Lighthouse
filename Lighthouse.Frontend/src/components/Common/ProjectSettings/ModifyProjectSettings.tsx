@@ -5,9 +5,7 @@ import { useEffect, useState } from "react";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import AdvancedInputsComponent from "../../../pages/Projects/Edit/AdvancedInputs";
-import GeneralInputsComponent from "../../../pages/Projects/Edit/GeneralInputs";
-import OwnershipComponent from "../../../pages/Projects/Edit/Ownership";
+import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
@@ -15,6 +13,9 @@ import TeamsList from "../TeamsList/TeamsList";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import WorkTrackingSystemComponent from "../WorkTrackingSystems/WorkTrackingSystemComponent";
+import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
+import OwnershipComponent from "./Advanced/OwnershipComponent";
+import UnparentedItemsComponent from "./Advanced/UnparentedItemsComponent";
 
 interface ModifyProjectSettingsProps {
 	title: string;
@@ -209,10 +210,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		);
 	};
 
-	const handleProjectSettingsChange = (
-		key: keyof IProjectSettings,
-		value: string | number | boolean | string[] | ITeam | null,
+	const handleProjectSettingsChange = <K extends keyof IProjectSettings>(
+		key: K,
+		value: IProjectSettings[K] | null,
 	) => {
+		if (value === null) {
+			return;
+		}
+
 		setProjectSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
 	};
 
@@ -323,9 +328,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<Typography variant="h4">{title}</Typography>
 					</Grid>
 
-					<GeneralInputsComponent
-						projectSettings={projectSettings}
-						onProjectSettingsChange={handleProjectSettingsChange}
+					<GeneralSettingsComponent
+						settings={projectSettings}
+						onSettingsChange={handleProjectSettingsChange}
 					/>
 
 					<WorkItemTypesComponent
@@ -377,7 +382,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						onRemoveTag={handleRemoveTag}
 					/>
 
-					<AdvancedInputsComponent
+					<UnparentedItemsComponent
+						projectSettings={projectSettings}
+						onProjectSettingsChange={handleProjectSettingsChange}
+					/>
+
+					<FeatureSizeComponent
 						projectSettings={projectSettings}
 						onProjectSettingsChange={handleProjectSettingsChange}
 					/>

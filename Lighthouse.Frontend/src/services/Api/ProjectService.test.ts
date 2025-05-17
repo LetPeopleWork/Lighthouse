@@ -78,6 +78,8 @@ describe("ProjectService", () => {
 			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
@@ -108,6 +110,8 @@ describe("ProjectService", () => {
 			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
@@ -141,6 +145,8 @@ describe("ProjectService", () => {
 			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		const mockResponse: IProjectSettings = {
@@ -162,6 +168,8 @@ describe("ProjectService", () => {
 			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
@@ -224,6 +232,8 @@ describe("ProjectService", () => {
 			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
@@ -258,6 +268,8 @@ describe("ProjectService", () => {
 			tags: [],
 			overrideRealChildCountStates: [""],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: false });

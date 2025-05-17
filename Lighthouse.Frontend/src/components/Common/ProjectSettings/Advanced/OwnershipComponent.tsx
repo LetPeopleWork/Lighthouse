@@ -7,9 +7,9 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import InputGroup from "../../../components/Common/InputGroup/InputGroup";
-import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
-import type { ITeam } from "../../../models/Team/Team";
+import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import type { ITeam } from "../../../../models/Team/Team";
+import InputGroup from "../../InputGroup/InputGroup";
 
 interface OwnershipComponentProps {
 	projectSettings: IProjectSettings | null;
@@ -26,11 +26,13 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 	currentInvolvedTeams,
 }) => {
 	return (
-		<InputGroup title={"Ownership Settings"} initiallyExpanded={false}>
+		<InputGroup title={"Ownership Settings"} initiallyExpanded={true}>
 			<Grid size={{ xs: 12 }}>
 				<FormControl fullWidth margin="normal">
-					<InputLabel>Owning Team</InputLabel>
+					<InputLabel id="owning-team-label">Owning Team</InputLabel>
 					<Select
+						labelId="owning-team-label"
+						id="owning-team-select"
 						value={projectSettings?.owningTeam?.id ?? ""}
 						label="Owning Team"
 						onChange={(e) => {
@@ -38,6 +40,7 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 							const team = currentInvolvedTeams.find((t) => t.id === teamId);
 							onProjectSettingsChange("owningTeam", team || null);
 						}}
+						aria-labelledby="owning-team-label"
 					>
 						<MenuItem value="">
 							<em>None</em>

@@ -206,6 +206,8 @@ describe("ModifyTeamSettings", () => {
 		automaticallyAdjustFeatureWIP: false,
 		id: 12,
 		relationCustomField: "",
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	};
 
 	const workTrackingSystems: IWorkTrackingSystemConnection[] = [
@@ -363,6 +365,8 @@ describe("ModifyTeamSettings", () => {
 			workTrackingSystemConnectionId: 1,
 			automaticallyAdjustFeatureWIP: false,
 			relationCustomField: "custom",
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		};
 
 		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);

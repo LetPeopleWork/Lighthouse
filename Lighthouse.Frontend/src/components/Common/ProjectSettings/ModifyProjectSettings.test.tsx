@@ -5,44 +5,16 @@ import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
-vi.mock("../../../pages/Projects/Edit/AdvancedInputs", () => ({
+vi.mock("../BaseSettings/GeneralSettingsComponent", () => ({
 	__esModule: true,
 	default: ({
-		onProjectSettingsChange,
+		onSettingsChange,
 	}: {
-		onProjectSettingsChange: (
-			key: keyof IProjectSettings,
-			value: string,
-		) => void;
+		onSettingsChange: (key: keyof IProjectSettings, value: string) => void;
 	}) => (
 		<div>
-			<div>AdvancedInputsComponent</div>
-			<button
-				type="button"
-				onClick={() => onProjectSettingsChange("name", "value")}
-			>
-				Change Advanced
-			</button>
-		</div>
-	),
-}));
-
-vi.mock("../../../pages/Projects/Edit/GeneralInputs", () => ({
-	__esModule: true,
-	default: ({
-		onProjectSettingsChange,
-	}: {
-		onProjectSettingsChange: (
-			key: keyof IProjectSettings,
-			value: string,
-		) => void;
-	}) => (
-		<div>
-			<div>GeneralInputsComponent</div>
-			<button
-				type="button"
-				onClick={() => onProjectSettingsChange("name", "value")}
-			>
+			<div>GeneralSettingsComponent</div>
+			<button type="button" onClick={() => onSettingsChange("name", "value")}>
 				Change General
 			</button>
 		</div>
@@ -260,6 +232,8 @@ describe("ModifyProjectSettings", () => {
 		overrideRealChildCountStates: [],
 		featureOwnerField: "",
 		sizeEstimateField: "",
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	};
 
 	beforeEach(() => {
@@ -306,11 +280,10 @@ describe("ModifyProjectSettings", () => {
 		);
 
 		expect(screen.getByText("Modify Project Settings")).toBeInTheDocument();
-		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
+		expect(screen.getByText("GeneralSettingsComponent")).toBeInTheDocument();
 		expect(screen.getByText("WorkItemTypesComponent")).toBeInTheDocument();
 		expect(screen.getByText("StatesList")).toBeInTheDocument();
 		expect(screen.getByText("WorkTrackingSystemComponent")).toBeInTheDocument();
-		expect(screen.getByText("AdvancedInputsComponent")).toBeInTheDocument();
 	});
 
 	it("handles project settings change", async () => {
@@ -330,10 +303,7 @@ describe("ModifyProjectSettings", () => {
 		);
 
 		fireEvent.click(screen.getByText("Change General"));
-		fireEvent.click(screen.getByText("Change Advanced"));
-
-		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
-		expect(screen.getByText("AdvancedInputsComponent")).toBeInTheDocument();
+		expect(screen.getByText("GeneralSettingsComponent")).toBeInTheDocument();
 	});
 
 	it("handles adding and removing work item types", async () => {

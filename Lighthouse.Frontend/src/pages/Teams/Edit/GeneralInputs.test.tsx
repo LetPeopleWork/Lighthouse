@@ -38,6 +38,8 @@ describe("GeneralInputsComponent", () => {
 		doingStates: ["Active"],
 		doneStates: ["Done"],
 		automaticallyAdjustFeatureWIP: false,
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	};
 
 	it("renders correctly with provided teamSettings", () => {

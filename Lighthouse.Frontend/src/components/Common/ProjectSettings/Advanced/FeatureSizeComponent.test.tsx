@@ -1,14 +1,14 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
 	createMockSuggestionService,
-} from "../../../tests/MockApiServiceProvider";
-import AdvancedInputsComponent from "./AdvancedInputs";
+} from "../../../../tests/MockApiServiceProvider";
+import FeatureSizeComponent from "./FeatureSizeComponent";
 
-describe("AdvancedInputsComponent", () => {
+describe("FeatureSizeComponent", () => {
 	const initialSettings: IProjectSettings = {
 		id: 1,
 		name: "Settings",
@@ -28,6 +28,8 @@ describe("AdvancedInputsComponent", () => {
 		doneStates: ["Done"],
 		overrideRealChildCountStates: [""],
 		involvedTeams: [],
+		serviceLevelExpectationProbability: 85,
+		serviceLevelExpectationRange: 30,
 	};
 
 	const mockOnProjectSettingsChange = vi.fn();
@@ -50,7 +52,7 @@ describe("AdvancedInputsComponent", () => {
 	const renderWithContext = () => {
 		return render(
 			<ApiServiceContext.Provider value={mockApiContext}>
-				<AdvancedInputsComponent
+				<FeatureSizeComponent
 					projectSettings={initialSettings}
 					onProjectSettingsChange={mockOnProjectSettingsChange}
 				/>
@@ -64,42 +66,21 @@ describe("AdvancedInputsComponent", () => {
 
 	it("renders correctly with initial settings", () => {
 		render(
-			<AdvancedInputsComponent
+			<FeatureSizeComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 			/>,
 		);
 
-		expect(screen.getByLabelText(/Unparented Work Items Query/i)).toHaveValue(
-			"Unparented Query",
-		);
 		expect(
 			screen.getByLabelText(/Default Number of Items per Feature/i),
 		).toHaveValue(10);
 		expect(screen.getByLabelText(/Size Estimate Field/i)).toHaveValue("");
 	});
 
-	it("calls onProjectSettingsChange with correct arguments when unparentedItemsQuery changes", () => {
-		render(
-			<AdvancedInputsComponent
-				projectSettings={initialSettings}
-				onProjectSettingsChange={mockOnProjectSettingsChange}
-			/>,
-		);
-
-		fireEvent.change(screen.getByLabelText(/Unparented Work Items Query/i), {
-			target: { value: "Updated Query" },
-		});
-
-		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
-			"unparentedItemsQuery",
-			"Updated Query",
-		);
-	});
-
 	it("calls onProjectSettingsChange with correct arguments when defaultAmountOfWorkItemsPerFeature changes", () => {
 		render(
-			<AdvancedInputsComponent
+			<FeatureSizeComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 			/>,
@@ -118,7 +99,7 @@ describe("AdvancedInputsComponent", () => {
 
 	it("calls onProjectSettingsChange with correct arguments when sizeEstimateField changes", () => {
 		render(
-			<AdvancedInputsComponent
+			<FeatureSizeComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 			/>,
@@ -136,7 +117,7 @@ describe("AdvancedInputsComponent", () => {
 
 	it("toggles the usePercentileToCalculateDefaultAmountOfWorkItems switch", () => {
 		render(
-			<AdvancedInputsComponent
+			<FeatureSizeComponent
 				projectSettings={initialSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 			/>,
@@ -161,7 +142,7 @@ describe("AdvancedInputsComponent", () => {
 		};
 
 		render(
-			<AdvancedInputsComponent
+			<FeatureSizeComponent
 				projectSettings={updatedSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 			/>,
@@ -182,7 +163,7 @@ describe("AdvancedInputsComponent", () => {
 		};
 
 		render(
-			<AdvancedInputsComponent
+			<FeatureSizeComponent
 				projectSettings={updatedSettings}
 				onProjectSettingsChange={mockOnProjectSettingsChange}
 			/>,
@@ -232,7 +213,7 @@ describe("AdvancedInputsComponent", () => {
 		await act(async () => {
 			render(
 				<ApiServiceContext.Provider value={mockApiContext}>
-					<AdvancedInputsComponent
+					<FeatureSizeComponent
 						projectSettings={updatedSettings}
 						onProjectSettingsChange={mockOnProjectSettingsChange}
 					/>

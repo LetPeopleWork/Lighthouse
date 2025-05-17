@@ -1,21 +1,12 @@
+import type { IBaseSettings } from "../Common/BaseSettings";
 import type { ITeam } from "../Team/Team";
 import type { IMilestone } from "./Milestone";
 
-export interface IProjectSettings {
-	id: number;
-	name: string;
-	workItemTypes: string[];
+export interface IProjectSettings extends IBaseSettings {
 	milestones: IMilestone[];
-	workItemQuery: string;
 	unparentedItemsQuery: string;
 	involvedTeams: ITeam[];
 	owningTeam?: ITeam;
-
-	toDoStates: string[];
-	doingStates: string[];
-	doneStates: string[];
-
-	tags: string[];
 
 	overrideRealChildCountStates: string[];
 
@@ -23,8 +14,6 @@ export interface IProjectSettings {
 	defaultAmountOfWorkItemsPerFeature: number;
 	defaultWorkItemPercentile: number;
 	historicalFeaturesWorkItemQuery: string;
-
-	workTrackingSystemConnectionId: number;
 	sizeEstimateField?: string;
 	featureOwnerField?: string;
 }

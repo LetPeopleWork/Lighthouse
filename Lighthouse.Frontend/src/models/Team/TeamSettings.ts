@@ -1,18 +1,11 @@
-export interface ITeamSettings {
-	id: number;
-	name: string;
+import type { IBaseSettings } from "../Common/BaseSettings";
+
+export interface ITeamSettings extends IBaseSettings {
 	throughputHistory: number;
 	useFixedDatesForThroughput: boolean;
 	throughputHistoryStartDate: Date;
 	throughputHistoryEndDate: Date;
 	featureWIP: number;
-	workItemQuery: string;
-	workItemTypes: string[];
-	toDoStates: string[];
-	doingStates: string[];
-	doneStates: string[];
-	tags: string[];
-	workTrackingSystemConnectionId: number;
 	relationCustomField: string;
 	automaticallyAdjustFeatureWIP: boolean;
 }

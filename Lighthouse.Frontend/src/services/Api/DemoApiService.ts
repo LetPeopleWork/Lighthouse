@@ -127,6 +127,8 @@ export class DemoApiService
 			tags: [],
 			overrideRealChildCountStates: ["Analysis In Progress"],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 75,
+			serviceLevelExpectationRange: 35,
 		},
 		{
 			id: 1,
@@ -147,6 +149,8 @@ export class DemoApiService
 			tags: [],
 			overrideRealChildCountStates: ["Analysis In Progress"],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 70,
+			serviceLevelExpectationRange: 18,
 		},
 		{
 			id: 2,
@@ -167,6 +171,8 @@ export class DemoApiService
 			tags: [],
 			overrideRealChildCountStates: ["Analysis In Progress"],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 90,
+			serviceLevelExpectationRange: 45,
 		},
 	];
 
@@ -418,6 +424,8 @@ export class DemoApiService
 			doneStates: ["Done"],
 			tags: [],
 			automaticallyAdjustFeatureWIP: false,
+			serviceLevelExpectationProbability: 75,
+			serviceLevelExpectationRange: 35,
 		};
 	}
 
@@ -854,6 +862,8 @@ export class DemoApiService
 			doneStates: ["Done"],
 			tags: [],
 			automaticallyAdjustFeatureWIP: false,
+			serviceLevelExpectationProbability: 75,
+			serviceLevelExpectationRange: 35,
 		};
 	}
 
@@ -892,6 +902,8 @@ export class DemoApiService
 			tags: [],
 			overrideRealChildCountStates: ["Analysis In Progress"],
 			involvedTeams: [],
+			serviceLevelExpectationProbability: 75,
+			serviceLevelExpectationRange: 35,
 		};
 	}
 
