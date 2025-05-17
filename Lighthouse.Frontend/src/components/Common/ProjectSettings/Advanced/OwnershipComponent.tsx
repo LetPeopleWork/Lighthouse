@@ -29,10 +29,8 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 		<InputGroup title={"Ownership Settings"} initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
 				<FormControl fullWidth margin="normal">
-					<InputLabel id="owning-team-label">Owning Team</InputLabel>
+					<InputLabel>Owning Team</InputLabel>
 					<Select
-						labelId="owning-team-label"
-						id="owning-team-select"
 						value={projectSettings?.owningTeam?.id ?? ""}
 						label="Owning Team"
 						onChange={(e) => {
@@ -40,7 +38,6 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 							const team = currentInvolvedTeams.find((t) => t.id === teamId);
 							onProjectSettingsChange("owningTeam", team || null);
 						}}
-						aria-labelledby="owning-team-label"
 					>
 						<MenuItem value="">
 							<em>None</em>

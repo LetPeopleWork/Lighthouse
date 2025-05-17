@@ -121,11 +121,7 @@ describe("OwnershipComponent", () => {
 		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		fireEvent.mouseDown(
-			screen.getByLabelText("Owning Team", {
-				selector: 'div[role="combobox"]',
-			}),
-		);
+		fireEvent.mouseDown(screen.getByRole("combobox"));
 		fireEvent.click(screen.getByText("Team A"));
 
 		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
@@ -151,7 +147,7 @@ describe("OwnershipComponent", () => {
 		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		fireEvent.mouseDown(screen.getByRole("combobox", { name: /Owning Team/i }));
+		fireEvent.mouseDown(screen.getByRole("combobox"));
 		fireEvent.click(screen.getByText("None"));
 
 		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(

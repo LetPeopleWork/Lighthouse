@@ -22,7 +22,7 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	}
 
 	async toggleAdvancedConfiguration(): Promise<void> {
-		await this.page.getByLabel("toggle").last().click();
+		await this.page.getByLabel("toggle").nth(-2).click();
 	}
 
 	async setFeatureWip(featureWIP: number): Promise<void> {
