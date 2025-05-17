@@ -23,24 +23,24 @@ vi.mock("../../../pages/Teams/Edit/AdvancedInputs", () => ({
 	),
 }));
 
-vi.mock("../../../components/Common/BaseSettings/GeneralSettingsComponent.tsx", () => ({
-	__esModule: true,
-	default: ({
-		onSettingsChange,
-	}: {
-		onSettingsChange: (key: keyof ITeamSettings, value: string) => void;
-	}) => (
-		<div>
-			<div>GeneralInputsComponent</div>
-			<button
-				type="button"
-				onClick={() => onSettingsChange("name", "value")}
-			>
-				Change General
-			</button>
-		</div>
-	),
-}));
+vi.mock(
+	"../../../components/Common/BaseSettings/GeneralSettingsComponent.tsx",
+	() => ({
+		__esModule: true,
+		default: ({
+			onSettingsChange,
+		}: {
+			onSettingsChange: (key: keyof ITeamSettings, value: string) => void;
+		}) => (
+			<div>
+				<div>GeneralInputsComponent</div>
+				<button type="button" onClick={() => onSettingsChange("name", "value")}>
+					Change General
+				</button>
+			</div>
+		),
+	}),
+);
 
 vi.mock("../LoadingAnimation/LoadingAnimation", () => ({
 	__esModule: true,

@@ -6,6 +6,7 @@ import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
+import ServiceLevelExpectationConfigurationComponent from "../BaseSettings/ServiceLevelExpectationConfigurationComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
@@ -398,6 +399,11 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						currentInvolvedTeams={teams.filter((team) =>
 							selectedTeams.includes(team.id),
 						)}
+					/>
+
+					<ServiceLevelExpectationConfigurationComponent
+						settings={projectSettings}
+						onSettingsChange={handleProjectSettingsChange}
 					/>
 
 					<Grid

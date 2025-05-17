@@ -7,6 +7,7 @@ import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking
 import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
+import ServiceLevelExpectationConfigurationComponent from "../BaseSettings/ServiceLevelExpectationConfigurationComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
@@ -336,6 +337,11 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 					<AdvancedInputsComponent
 						teamSettings={teamSettings}
 						onTeamSettingsChange={handleTeamSettingsChange}
+					/>
+
+					<ServiceLevelExpectationConfigurationComponent
+						settings={teamSettings}
+						onSettingsChange={handleTeamSettingsChange}
 					/>
 
 					<Grid
