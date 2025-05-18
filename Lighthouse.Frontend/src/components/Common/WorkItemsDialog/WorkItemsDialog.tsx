@@ -1,5 +1,6 @@
 import CloseIcon from "@mui/icons-material/Close";
 import {
+	Chip,
 	Dialog,
 	DialogContent,
 	DialogTitle,
@@ -13,6 +14,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { getStateColor } from "../../../utils/theme/colors";
 
 export type TimeMetric = "age" | "cycleTime";
 
@@ -96,7 +98,14 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 										)}
 									</TableCell>
 									<TableCell>{item.type}</TableCell>
-									<TableCell>{item.state}</TableCell>
+									<TableCell>
+										<Chip
+											size="small"
+											label={item.state}
+											color={getStateColor(item.stateCategory)}
+											variant="outlined"
+										/>
+									</TableCell>
 									<TableCell>{formatTime(getTimeValue(item))}</TableCell>
 								</TableRow>
 							))}

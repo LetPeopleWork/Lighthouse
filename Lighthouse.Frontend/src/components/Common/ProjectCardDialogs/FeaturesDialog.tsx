@@ -12,6 +12,7 @@ import { styled } from "@mui/system";
 import type React from "react";
 import { Link } from "react-router-dom";
 import type { IFeature } from "../../../models/Feature";
+import { getStateColor } from "../../../utils/theme/colors";
 
 const FeatureItem = styled("div")(({ theme }) => ({
 	padding: theme.spacing(1.5),
@@ -40,13 +41,6 @@ const FeaturesDialog: React.FC<FeaturesDialogProps> = ({
 	features,
 }) => {
 	const theme = useTheme();
-
-	// Extract color logic for feature state to avoid nested ternary
-	const getFeatureStateColor = (stateCategory: string) => {
-		if (stateCategory === "Done") return "success";
-		if (stateCategory === "Doing") return "warning";
-		return "default";
-	};
 
 	return (
 		<Dialog
@@ -116,7 +110,7 @@ const FeaturesDialog: React.FC<FeaturesDialogProps> = ({
 										<Chip
 											size="small"
 											label={feature.state}
-											color={getFeatureStateColor(feature.stateCategory)}
+											color={getStateColor(feature.stateCategory)}
 											variant="outlined"
 										/>
 									</Stack>

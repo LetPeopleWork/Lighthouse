@@ -57,3 +57,17 @@ export const certainColor = appColors.forecast.certain;
 // Legacy color formats for compatibility
 export const primaryColorRGBA = "rgba(48, 87, 78, 1)"; // #30574e in rgba
 export const secondaryColorRGBA = "rgba(70, 35, 45, 1)"; // #46232d in rgba
+
+/**
+ * Returns Material UI color for work item or feature state
+ * @param stateCategory State category of the work item or feature
+ * @returns MUI color name ('success', 'warning', 'default', etc.)
+ */
+export const getStateColor = (
+	stateCategory: string,
+): "success" | "warning" | "default" | "info" | "error" => {
+	if (stateCategory === "Done") return "success";
+	if (stateCategory === "Doing") return "warning";
+	if (stateCategory === "ToDo") return "info";
+	return "default";
+};
