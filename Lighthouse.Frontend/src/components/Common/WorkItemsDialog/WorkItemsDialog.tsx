@@ -14,7 +14,13 @@ import {
 	Typography,
 } from "@mui/material";
 import type { IWorkItem } from "../../../models/WorkItem";
-import { getStateColor } from "../../../utils/theme/colors";
+import {
+	certainColor,
+	confidentColor,
+	getStateColor,
+	realisticColor,
+	riskyColor,
+} from "../../../utils/theme/colors";
 
 export type TimeMetric = "age" | "cycleTime";
 
@@ -24,6 +30,7 @@ interface WorkItemsDialogProps {
 	open: boolean;
 	onClose: () => void;
 	timeMetric?: TimeMetric;
+	sle?: number;
 }
 
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
@@ -32,6 +39,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	open,
 	onClose,
 	timeMetric = "age",
+	sle,
 }) => {
 	// Sort items by the specified metric (oldest/longest first)
 	const sortedItems = [...items].sort((a, b) => {
@@ -51,6 +59,25 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 
 	const getTimeValue = (item: IWorkItem) => {
 		return timeMetric === "age" ? item.workItemAge : item.cycleTime;
+	};
+
+	const getTimeColor = (timeValue: number) => {
+		if (!sle) return undefined; // No SLE defined
+
+		// Calculate SLE thresholds
+		const seventyPercentSLE = sle * 0.7;
+		const fiftyPercentSLE = sle * 0.5;
+
+		if (timeValue >= sle) {
+			return riskyColor;
+		}
+		if (timeValue >= seventyPercentSLE) {
+			return realisticColor;
+		}
+		if (timeValue >= fiftyPercentSLE) {
+			return confidentColor;
+		}
+		return certainColor;
 	};
 
 	return (
@@ -106,7 +133,14 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 											variant="outlined"
 										/>
 									</TableCell>
-									<TableCell>{formatTime(getTimeValue(item))}</TableCell>
+									<TableCell
+										sx={{
+											color: getTimeColor(getTimeValue(item)),
+											fontWeight: sle ? "bold" : "normal",
+										}}
+									>
+										{formatTime(getTimeValue(item))}
+									</TableCell>
 								</TableRow>
 							))}
 						</TableBody>

@@ -7,12 +7,14 @@ interface ItemsInProgressProps {
 	title: string;
 	items: IWorkItem[];
 	idealWip?: number;
+	sle?: number;
 }
 
 const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 	title,
 	items,
 	idealWip,
+	sle,
 }) => {
 	const [open, setOpen] = useState(false);
 	const count = items.length;
@@ -54,6 +56,7 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 				open={open}
 				onClose={handleClose}
 				timeMetric="age"
+				sle={sle}
 			/>
 		</>
 	);

@@ -1,5 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
+import {
+	certainColor,
+	confidentColor,
+	realisticColor,
+	riskyColor,
+} from "../../../utils/theme/colors";
 import WorkItemsDialog from "./WorkItemsDialog";
 
 // Mock data for testing
@@ -165,5 +171,77 @@ describe("WorkItemsDialog Component", () => {
 
 		// Check that the dialog is not in the document
 		expect(screen.queryByText("Test Dialog")).not.toBeInTheDocument();
+	});
+
+	describe("Service Level Expectation (SLE) functionality", () => {
+		test("renders without styling when no SLE is provided", () => {
+			render(<WorkItemsDialog {...defaultProps} />);
+
+			const ageCells = screen.getAllByText(/\d+ days/);
+
+			// Verify no cells have bold styling or color styling
+			for (const cell of ageCells) {
+				expect(cell).not.toHaveStyle("font-weight: bold");
+				// We cannot easily test for undefined color, but we can verify it doesn't have any of the SLE colors
+				expect(cell).not.toHaveStyle(`color: ${riskyColor}`);
+				expect(cell).not.toHaveStyle(`color: ${realisticColor}`);
+				expect(cell).not.toHaveStyle(`color: ${confidentColor}`);
+				expect(cell).not.toHaveStyle(`color: ${certainColor}`);
+			}
+		});
+
+		test("applies risky color to items at or above SLE", () => {
+			// With SLE of 10, the item with age 20 should be risky
+			render(<WorkItemsDialog {...defaultProps} sle={10} />);
+
+			const ageCells = screen.getAllByText(/\d+ days/);
+
+			// First cell (20 days) should have risky color and be bold
+			expect(ageCells[0]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
+			expect(ageCells[0]).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
+		});
+
+		test("applies realistic color to items at or above 70% of SLE", () => {
+			// With SLE of 10, item with age 7 (70%) should be realistic
+			render(<WorkItemsDialog {...defaultProps} sle={10} />);
+
+			// Find the cell with '5 days' text which is between 50% and 70% of SLE=10
+			const fiveDaysCell = screen.getByText("5 days");
+
+			// Should have realistic color (5 is 50% of 10, but we're testing with a real item)
+			expect(fiveDaysCell).not.toHaveStyle("color: rgb(255, 0, 0)");
+			expect(fiveDaysCell).toHaveStyle("color: rgb(144, 238, 144)"); // RGB equivalent of lightgreen
+			expect(fiveDaysCell).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
+		});
+
+		test("applies certain color to items below 50% of SLE", () => {
+			// With SLE of 10, item with age 2 (<50%) should be certain
+			render(<WorkItemsDialog {...defaultProps} sle={10} />);
+
+			// Find the cell with '2 days' text which is below 50% of SLE=10
+			const twoDaysCell = screen.getByText("2 days");
+
+			// Should have certain color
+			expect(twoDaysCell).toHaveStyle("color: rgb(0, 128, 0)"); // RGB equivalent of green
+			expect(twoDaysCell).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
+		});
+
+		test("applies colors correctly with cycleTime metric", () => {
+			// With SLE of 10, items with cycle times of 15, 10, and 5 should have appropriate colors
+			render(
+				<WorkItemsDialog {...defaultProps} timeMetric="cycleTime" sle={10} />,
+			);
+
+			const cycleTimeCells = screen.getAllByText(/\d+ days/);
+
+			// 15 days should be risky
+			expect(cycleTimeCells[0]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
+
+			// 10 days should be risky (at SLE)
+			expect(cycleTimeCells[1]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
+
+			// 5 days should be confident (50% of SLE)
+			expect(cycleTimeCells[2]).toHaveStyle("color: rgb(144, 238, 144)"); // RGB equivalent of lightgreen
+		});
 	});
 });

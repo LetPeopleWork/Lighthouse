@@ -168,7 +168,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 							</Typography>
 
 							<Typography
-								variant="h6"
+								variant="body1"
 								fontWeight="bold"
 								sx={{ color: titleColor }}
 							>
@@ -283,15 +283,12 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 			</Card>
 
 			<WorkItemsDialog
-				title={
-					isFlipped
-						? "Service Level Expectation Items"
-						: "Cycle Time Percentiles Items"
-				}
+				title="Closed Items"
 				items={items}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
 				timeMetric="cycleTime"
+				sle={serviceLevelExpectation?.value}
 			/>
 		</>
 	);

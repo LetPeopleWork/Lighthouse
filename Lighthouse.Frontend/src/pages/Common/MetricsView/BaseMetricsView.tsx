@@ -168,6 +168,11 @@ export const BaseMetricsView = <
 				<ItemsInProgress
 					title={`${title} in Progress:`}
 					items={inProgressItems}
+					sle={
+						entity.serviceLevelExpectationRange > 0
+							? entity.serviceLevelExpectationRange
+							: undefined
+					}
 				/>
 
 				{renderAdditionalComponents?.()}
