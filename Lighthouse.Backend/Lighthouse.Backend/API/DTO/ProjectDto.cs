@@ -4,6 +4,10 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class ProjectDto : WorkTrackingSystemOptionsOwnerDtoBase
     {
+        public ProjectDto() : base()
+        {            
+        }
+
         public ProjectDto(Project project) : base(project)
         {
             InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());

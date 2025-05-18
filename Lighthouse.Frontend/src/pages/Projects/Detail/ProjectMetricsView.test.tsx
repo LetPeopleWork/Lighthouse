@@ -40,15 +40,22 @@ vi.mock("../../../components/Common/Charts/CycleTimeScatterPlotChart", () => ({
 	default: ({
 		cycleTimeDataPoints,
 		percentileValues,
+		serviceLevelExpectation,
 	}: {
 		cycleTimeDataPoints: IWorkItem[];
 		percentileValues: IPercentileValue[];
+		serviceLevelExpectation: IPercentileValue | null;
 	}) => (
 		<div data-testid="cycle-time-scatter-plot">
 			<div data-testid="cycle-time-data-points-count">
 				{cycleTimeDataPoints.length}
 			</div>
 			<div data-testid="percentile-values-count">{percentileValues.length}</div>
+			<div data-testid="service-level-expectation">
+				{serviceLevelExpectation
+					? `${serviceLevelExpectation.percentile}:${serviceLevelExpectation.value}`
+					: "none"}
+			</div>
 		</div>
 	),
 }));
@@ -567,6 +574,81 @@ describe("ProjectMetricsView component", () => {
 				),
 			).toBeInTheDocument();
 			expect(screen.getByTestId("areas-count")).toHaveTextContent("2"); // Should have 2 areas (Doing and Done)
+		});
+	});
+
+	it("sets serviceLevelExpectation when project has valid SLE values", async () => {
+		// Create a project with SLE values
+		const projectWithSLE = new Project();
+		projectWithSLE.id = 2;
+		projectWithSLE.name = "Project with SLE";
+		projectWithSLE.lastUpdated = new Date();
+		projectWithSLE.serviceLevelExpectationProbability = 85;
+		projectWithSLE.serviceLevelExpectationRange = 14;
+
+		const mockApiContext = createMockApiServiceContext({
+			projectMetricsService: mockProjectMetricsService,
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<ProjectMetricsView project={projectWithSLE} />
+			</ApiServiceContext.Provider>,
+		);
+
+		// Wait for the component to render with the SLE value
+		await waitFor(() => {
+			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent("85:14");
+		});
+	});
+
+	it("doesn't set serviceLevelExpectation when project lacks valid SLE values", async () => {
+		// Create a project with missing SLE values (both = 0)
+		const projectWithoutSLE = new Project();
+		projectWithoutSLE.id = 3;
+		projectWithoutSLE.name = "Project without SLE";
+		projectWithoutSLE.lastUpdated = new Date();
+		projectWithoutSLE.serviceLevelExpectationProbability = 0;
+		projectWithoutSLE.serviceLevelExpectationRange = 0;
+
+		const mockApiContext = createMockApiServiceContext({
+			projectMetricsService: mockProjectMetricsService,
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<ProjectMetricsView project={projectWithoutSLE} />
+			</ApiServiceContext.Provider>,
+		);
+
+		// Wait for the component to render without SLE value
+		await waitFor(() => {
+			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent("none");
+		});
+	});
+
+	it("doesn't set serviceLevelExpectation when project has partial SLE values", async () => {
+		// Create a project with only one valid SLE value
+		const projectWithPartialSLE = new Project();
+		projectWithPartialSLE.id = 4;
+		projectWithPartialSLE.name = "Project with partial SLE";
+		projectWithPartialSLE.lastUpdated = new Date();
+		projectWithPartialSLE.serviceLevelExpectationProbability = 85;
+		projectWithPartialSLE.serviceLevelExpectationRange = 0;
+
+		const mockApiContext = createMockApiServiceContext({
+			projectMetricsService: mockProjectMetricsService,
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<ProjectMetricsView project={projectWithPartialSLE} />
+			</ApiServiceContext.Provider>,
+		);
+
+		// Wait for the component to render without SLE value
+		await waitFor(() => {
+			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent("none");
 		});
 	});
 });

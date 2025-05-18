@@ -5,6 +5,10 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class TeamDto : WorkTrackingSystemOptionsOwnerDtoBase
     {
+        public TeamDto() : base()
+        {            
+        }
+
         public TeamDto(Team team) : base(team)
         {
             FeatureWip = team.FeatureWIP;

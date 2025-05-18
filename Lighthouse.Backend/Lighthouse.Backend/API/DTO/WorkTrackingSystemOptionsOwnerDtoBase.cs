@@ -1,9 +1,14 @@
 ﻿using Lighthouse.Backend.Models;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
     public class WorkTrackingSystemOptionsOwnerDtoBase
     {
+        public WorkTrackingSystemOptionsOwnerDtoBase()
+        {
+        }
+
         public WorkTrackingSystemOptionsOwnerDtoBase(WorkTrackingSystemOptionsOwner workTrackingSystemOptionsOwner)
         {
             Name = workTrackingSystemOptionsOwner.Name;
@@ -14,13 +19,15 @@ namespace Lighthouse.Backend.API.DTO
             ServiceLevelExpectationRange = workTrackingSystemOptionsOwner.ServiceLevelExpectationRange;
         }
 
-        public string Name { get; }
+        public string Name { get; set; }
 
-        public int Id { get; }
+        [JsonRequired]
+        public int Id { get; set; }
 
-        public List<string> Tags { get; }
+        public List<string> Tags { get; set; }
 
-        public DateTime LastUpdated { get; }
+        [JsonRequired]
+        public DateTime LastUpdated { get; set; }
 
         public int ServiceLevelExpectationProbability { get; }
 

@@ -31,6 +31,9 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 		[],
 	);
 
+	const [serviceLevelExpectation, setServiceLevelExpectation] =
+			useState<IPercentileValue | null>(null);
+
 	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
 
 	const { projectMetricsService } = useContext(ApiServiceContext);
@@ -58,6 +61,20 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 
 		fetchFeaturesCompleted();
 	}, [project.id, projectMetricsService, startDate, endDate]);
+
+	useEffect(() => {
+		if (
+			project.serviceLevelExpectationProbability > 0 &&
+			project.serviceLevelExpectationRange > 0
+		) {
+			const sle: IPercentileValue = {
+				value: project.serviceLevelExpectationRange,
+				percentile: project.serviceLevelExpectationProbability,
+			};
+
+			setServiceLevelExpectation(sle);
+		}
+	}, [project]);
 
 	useEffect(() => {
 		const fetchStartedItems = async () => {
@@ -148,7 +165,8 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 			</Grid>
 
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
-				<CycleTimePercentiles percentileValues={percentileValues} />
+				<CycleTimePercentiles 
+					percentileValues={percentileValues} />
 			</Grid>
 
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
@@ -173,6 +191,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 				<CycleTimeScatterPlotChart
 					cycleTimeDataPoints={cycleTimeData}
 					percentileValues={percentileValues}
+					serviceLevelExpectation={serviceLevelExpectation}
 				/>
 			</Grid>
 
