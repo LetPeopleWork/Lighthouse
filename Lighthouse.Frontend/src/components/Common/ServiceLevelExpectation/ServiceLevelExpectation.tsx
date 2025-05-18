@@ -28,13 +28,14 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 				backgroundColor: (theme) => theme.palette.primary.light,
 				borderRadius: 1,
 				maxHeight: 40,
+				minWidth: 250,
+				maxWidth: 300,
 				border: (theme) => `1px solid ${theme.palette.primary.main}`,
 			}}
 		>
 			<CardContent
 				sx={{ padding: "4px 8px", "&:last-child": { paddingBottom: "4px" } }}
 			>
-				{" "}
 				<Typography
 					variant="caption"
 					sx={{
