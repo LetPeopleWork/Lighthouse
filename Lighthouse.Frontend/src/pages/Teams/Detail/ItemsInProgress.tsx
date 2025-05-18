@@ -1,21 +1,6 @@
-import CloseIcon from "@mui/icons-material/Close";
-import {
-	Card,
-	CardContent,
-	Chip,
-	Dialog,
-	DialogContent,
-	DialogTitle,
-	IconButton,
-	Link,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Typography,
-} from "@mui/material";
+import { Card, CardContent, Chip, Typography } from "@mui/material";
 import { useState } from "react";
+import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { IWorkItem } from "../../../models/WorkItem";
 
 interface ItemsInProgressProps {
@@ -42,15 +27,6 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 	const handleOpen = () => setOpen(true);
 	const handleClose = () => setOpen(false);
 
-	// Sort items by age (oldest first)
-	const sortedItems = [...items].sort((a, b) => {
-		return b.workItemAge - a.workItemAge;
-	});
-
-	const formatAge = (days: number) => {
-		return `${days} days`;
-	};
-
 	return (
 		<>
 			<Card
@@ -72,67 +48,13 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 				</CardContent>
 			</Card>
 
-			<Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-				<DialogTitle>
-					{title}
-					<IconButton
-						onClick={handleClose}
-						sx={{ position: "absolute", right: 8, top: 8 }}
-					>
-						<CloseIcon />
-					</IconButton>
-				</DialogTitle>
-				<DialogContent>
-					{count > 0 ? (
-						<Table>
-							<TableHead>
-								<TableRow>
-									<TableCell>Name</TableCell>
-									<TableCell>Type</TableCell>
-									<TableCell>State</TableCell>
-									{sortedItems.some(
-										(item) => item.workItemAge !== undefined,
-									) && <TableCell>Age</TableCell>}
-								</TableRow>
-							</TableHead>
-							<TableBody>
-								{sortedItems.map((item) => (
-									<TableRow key={item.id}>
-										<TableCell
-											sx={{
-												whiteSpace: "normal",
-												wordBreak: "break-word",
-												maxWidth: "300px",
-											}}
-										>
-											{item.url ? (
-												<Link
-													href={item.url}
-													target="_blank"
-													rel="noopener noreferrer"
-												>
-													{item.name}
-												</Link>
-											) : (
-												item.name
-											)}
-										</TableCell>
-										<TableCell>{item.type}</TableCell>
-										<TableCell>{item.state}</TableCell>
-										{item.workItemAge !== undefined && (
-											<TableCell>{formatAge(item.workItemAge)}</TableCell>
-										)}
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					) : (
-						<Typography variant="body2" color="text.secondary">
-							No items currently in progress
-						</Typography>
-					)}
-				</DialogContent>
-			</Dialog>
+			<WorkItemsDialog
+				title={title}
+				items={items}
+				open={open}
+				onClose={handleClose}
+				timeMetric="age"
+			/>
 		</>
 	);
 };

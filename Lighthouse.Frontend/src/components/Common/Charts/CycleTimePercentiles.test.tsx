@@ -170,13 +170,15 @@ describe("CycleTimePercentiles component", () => {
 
 		// Initially showing percentiles view
 		expect(screen.getByText("Cycle Time Percentiles")).toBeInTheDocument();
-		
+
 		// Click the SLE chip
 		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
-		
+
 		// Now showing SLE view
 		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
-		expect(screen.getByText(/85% of all work items are done within 10 days or less/)).toBeInTheDocument();
+		expect(
+			screen.getByText(/85% of all work items are done within 10 days or less/),
+		).toBeInTheDocument();
 	});
 
 	it("should display correct SLE statistics based on work items", () => {
@@ -191,11 +193,13 @@ describe("CycleTimePercentiles component", () => {
 
 		// Click to view SLE details
 		fireEvent.click(screen.getByText("SLE: 75% @ 7 days"));
-		
+
 		// Check statistics - 3 out of 4 items (75%) have cycle time <= 7 days
-		expect(screen.getByText(/75\.0% of all items completed within SLE target/)).toBeInTheDocument();
+		expect(
+			screen.getByText(/75\.0% of all items completed within SLE target/),
+		).toBeInTheDocument();
 	});
-	
+
 	it("should flip back to percentile view when back button is clicked", () => {
 		const mockSLE: IPercentileValue = { percentile: 85, value: 10 };
 		render(
@@ -209,7 +213,7 @@ describe("CycleTimePercentiles component", () => {
 		// Go to SLE view
 		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
 		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
-		
+
 		// Go back to percentiles view
 		fireEvent.click(screen.getByRole("button", { name: "" })); // Back button
 		expect(screen.getByText("Cycle Time Percentiles")).toBeInTheDocument();
@@ -227,7 +231,9 @@ describe("CycleTimePercentiles component", () => {
 
 		// Go to SLE view
 		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
-		
-		expect(screen.getByText("No completed items available to analyze")).toBeInTheDocument();
+
+		expect(
+			screen.getByText("No completed items available to analyze"),
+		).toBeInTheDocument();
 	});
 });
