@@ -171,12 +171,13 @@ const TeamDetail: React.FC = () => {
 								onClickHandler={onUpdateTeamData}
 								buttonText="Update Team Data"
 								maxHeight="40px"
+								minWidth="120px"
 								externalIsWaiting={isTeamUpdating}
 							/>
 							<Button
 								variant="contained"
 								onClick={onEditTeam}
-								sx={{ maxHeight: "40px" }}
+								sx={{ maxHeight: "40px", minWidth: "120px" }}
 							>
 								Edit Team
 							</Button>

@@ -167,3 +167,8 @@ If defined, Lighthouse will get the data in this field for every feature. It wil
 This means you may have to specify your teams exactly as you do it in your work tracking system.
 
 Lighthouse will use the **Feature Owner** to assign the work to a specific team. If not defined, it will fall back to the **Owning Team** of this project. If this is neither defined, it will distribute the work across all the teams.
+
+# Service Level Expectation
+You can enable a Service Level Expectation (SLE) for your teams. If you do, you must define a *probability* and a range in days. You can use this for forecast single item delivery and to communicate with your stakeholders, as well as to inspect your delivery performance.
+
+If you enable the SLE, you will get additional information in the [Metrics View](../metrics/metrics.html).

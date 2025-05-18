@@ -10,6 +10,7 @@ interface ActionButtonProps {
 	buttonVariant?: ButtonVariant;
 	disabled?: boolean;
 	maxHeight?: string;
+	minWidth?: string;
 	externalIsWaiting?: boolean;
 	startIcon?: React.ReactNode;
 	fullWidth?: boolean;
@@ -22,6 +23,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 	buttonVariant = "contained",
 	disabled = false,
 	maxHeight,
+	minWidth,
 	externalIsWaiting = false,
 	startIcon,
 	fullWidth = false,
@@ -61,6 +63,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 				justifyContent: "center",
 				maxHeight: maxHeight,
 				minHeight: "36px",
+				minWidth: minWidth,
 				py: 1,
 				px: 2,
 				borderRadius: 2,

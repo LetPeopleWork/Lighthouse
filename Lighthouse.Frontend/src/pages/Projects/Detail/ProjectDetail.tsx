@@ -205,12 +205,13 @@ const ProjectDetail: React.FC = () => {
 								buttonText="Refresh Features"
 								onClickHandler={onRefreshFeatures}
 								maxHeight="40px"
+								minWidth="120px"
 								externalIsWaiting={isProjectUpdating}
 							/>
 							<Button
 								variant="contained"
 								onClick={onEditProject}
-								sx={{ maxHeight: "40px" }}
+								sx={{ maxHeight: "40px", minWidth: "120px" }}
 							>
 								Edit Project
 							</Button>

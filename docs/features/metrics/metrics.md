@@ -126,6 +126,14 @@ In this widget you can see the different percentiles of your Cycle Time. It's to
 
 ![Cycle Time Percentiles](../../assets/features/metrics/cycletimepercentiles.png)
 
+In case you have defined a [Service Level Expectation](../teams/edit.html#service-level-expectation), you will see the SLE on the top right. You can *click* on this to see additional details:
+
+![SLE Widget](../../assets/features/metrics/servicelevelexpectation.png)
+
+If you click anywhere on the widget (independent if you look at percentiles or the SLE), a dialog will open that will show you all the items that were closed in the respective date range. If you have defined an SLE, the Cycle Time coloring is based on how close (or above) the item got to the SLE.
+
+![Closed Items Dialog](../../assets/features/metrics/closeditemsdialog.png)
+
 ## Cycle Time Scatterplot
 
 |--------------|-------------------------|
@@ -138,6 +146,8 @@ The Scatterplot shows the individual items in a chart, where the x-axis shows th
 ![Cycle Time Scatterplot](../../assets/features/metrics/cycleTimeScatterplot.png)
 
 This visual allows you to see patterns or outliers. Hovering over a dot will give you more information about the item, and with a click you'll get to the item in your work tracking system.
+
+You can click on the percentiles on top in the legend to show/hide them. Additionally, if you have defined an SLE, you can show the line on your scatterplot as well.
 
 ## Simplified Cumulative Flow Diagram (CFD)
 

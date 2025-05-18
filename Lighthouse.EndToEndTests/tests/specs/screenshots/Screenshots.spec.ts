@@ -204,6 +204,21 @@ testWithData(
 			teamDetailPage.cycleTimePercentileWidget,
 			"features/metrics/cycletimepercentiles.png",
 		);
+		
+		await teamDetailPage.openSleWidget();
+		await takeElementScreenshot(
+			teamDetailPage.sleWidget,
+			"features/metrics/servicelevelexpectation.png",
+		);
+
+		await teamDetailPage.closeSleWidget();
+
+		const closedItemDialog = await teamDetailPage.openClosedItemsDialog();
+		await takeElementScreenshot(
+			closedItemDialog.page.getByRole("dialog"),
+			"features/metrics/closeditemsdialog.png",
+		);
+		await closedItemDialog.close();
 
 		await takeElementScreenshot(
 			teamDetailPage.startedVsClosedWidget,

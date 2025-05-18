@@ -82,6 +82,19 @@ export class TeamDetailPage {
 		return new WorkItemsInProgressDialog(this.page);
 	}
 
+	async openClosedItemsDialog() : Promise<WorkItemsInProgressDialog> {
+		await this.cycleTimePercentileWidget.click();
+		return new WorkItemsInProgressDialog(this.page);
+	}
+
+	async openSleWidget(): Promise<void> {
+		await this.sleWidgetButton.click();
+	}
+
+	async closeSleWidget(): Promise<void> {
+		await this.returnToCycleTimePercentilesButton.click();
+	}
+
 	getFeatureLink(featureName: string): Locator {
 		return this.page.getByRole("link", { name: featureName });
 	}
@@ -121,6 +134,18 @@ export class TeamDetailPage {
 
 	get simplifiedCfdWidget(): Locator {
 		return this.page.locator("div:nth-child(8) > .MuiPaper-root");
+	}
+
+	get sleWidgetButton(): Locator {
+		return this.page.getByRole('button', { name: 'SLE: 70% @ 7 days' });
+	}
+
+	get sleWidget(): Locator {
+		return this.page.getByText('Service Level ExpectationTarget:70% of all work items are done within 7 days or');
+	}
+
+	get returnToCycleTimePercentilesButton(): Locator {
+		return this.page.getByRole('button').filter({ hasText: /^$/ }).nth(3);
 	}
 
 	get workItemsInProgressWidget(): Locator {

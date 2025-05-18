@@ -11,10 +11,38 @@ Preview
 {: .label .label-blue }
 -->
 
-# Lighthouse v25.5.11
+# Lighthouse v25.5.18.xxx
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+# Service Level Expectation
+The main focus of this was the introduction of the Service Level Expectation (*SLE*). For both Teams and Projects you can now define an SLE which is made out of:
+- A probability (like 80%)
+- A date range (like 5 days)
+
+Defining this is optional (but we advise you to do so). If you have an SLE, you will:
+- See the current SLE in the header for the team or project to clearly communicate the forecast
+- Visualize the SLE in the Cycle Time Scatterplot
+- The Cycle Time Percentile Widget displays the SLE with a color indication depending on the performance of the team
+- Clicking on the SLE icon on the Cycle Time Widget will *flip* the widget give you more information about the SLE
+- Clicking anywhere on the Cycle Time Widget will bring up all closed items in the selected date range (similar to clicking on the In Progress Widget)
+- Both the in progress and the closed item dialogs will color the age/cycle time according to how close to the SLE they were
+
+![SLE Overview](https://private-user-images.githubusercontent.com/5486874/444910197-2d531722-5bd3-4272-8d69-deb446f4a2a2.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDc1OTA1NDEsIm5iZiI6MTc0NzU5MDI0MSwicGF0aCI6Ii81NDg2ODc0LzQ0NDkxMDE5Ny0yZDUzMTcyMi01YmQzLTQyNzItOGQ2OS1kZWI0NDZmNGEyYTIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MDUxOCUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTA1MThUMTc0NDAxWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9M2E5ZTA5MjNmODBiOWEyZDE3ZmQyMWU2Nzg3MGFjY2RkN2UxOTIxNjE2ZWZlZGU0ZDhlOGM2ZWU3NzA0ZDQzNSZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.NQWucbviH772OLNbdMpqgl2NXMNpzg6XPH1jS2VUm_I)
+
+# Bug Fixes
+- Started vs. Finished Widget was displaying "You are keeping a steady WIP" even if it's not steady at all. This works better now
+
+# Other Improvements
+- In the Cycle Time Scatterplot, the individual percentiles can now be hidden by clicking the respective item in the legend
+- Lighthouse has an icon now!
+- Update of various third party libraries
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.5.11...v25.5.18.1140)
+
+
+# Lighthouse v25.5.11
 
 ## Simplified Cumulative Flow Diagram (CFD)
 Add a [simplified version of a CFD](https://docs.lighthouse.letpeople.work/features/metrics/metrics.html#simplified-cumulative-flow-diagram-cfd) that shows you how many items were in which state category (*Doing* or *Done*) over the selected time period.

@@ -121,3 +121,8 @@ For example, if your customfield id is 1886, you would specify `cf[1886]` as val
 
 You may wonder "Why would use another way of specifying a parent-child relationship than the built in ones?". Well, corporations sometimes do things for reasons beyond our understanding. We're not here to judge 🤷‍♂️  
 In theory this would allow you to also *cross-link* Jira and Azure DevOps items (but please don't, we have not tested it, which is why we wrote *in theory*...).
+
+# Service Level Expectation
+You can enable a Service Level Expectation (SLE) for your teams. If you do, you must define a *probability* and a range in days. You can use this for forecast single item delivery and to communicate with your stakeholders, as well as to inspect your delivery performance.
+
+If you enable the SLE, you will get additional information in the [Metrics View](../metrics/metrics.html).
