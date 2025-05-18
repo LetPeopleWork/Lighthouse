@@ -21,6 +21,7 @@ import {
 	riskyColor,
 } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
+import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
 interface CycleTimePercentilesProps {
 	percentileValues: IPercentileValue[];
@@ -34,6 +35,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 	items,
 }) => {
 	const [isFlipped, setIsFlipped] = useState(false);
+	const [dialogOpen, setDialogOpen] = useState(false);
 
 	const formatDays = (days: number): string => {
 		return days === 1 ? `${days.toFixed(0)} day` : `${days.toFixed(0)} days`;
@@ -95,8 +97,18 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 		};
 	};
 
-	const handleFlip = () => {
+	const handleFlip = (event: React.MouseEvent) => {
+		// Prevent the dialog from opening when flipping the card
+		event.stopPropagation();
 		setIsFlipped(!isFlipped);
+	};
+
+	const handleOpenDialog = () => {
+		setDialogOpen(true);
+	};
+
+	const handleCloseDialog = () => {
+		setDialogOpen(false);
 	};
 
 	const renderSLEContent = () => {
@@ -116,7 +128,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 					mb={2}
 				>
 					<Typography variant="h6">Service Level Expectation</Typography>
-					<IconButton onClick={handleFlip} size="small">
+					<IconButton onClick={(e) => handleFlip(e)} size="small">
 						<ArrowBackIcon fontSize="small" />
 					</IconButton>
 				</Box>
@@ -192,7 +204,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 						<Chip
 							label={`SLE: ${serviceLevelExpectation.percentile}% @ ${formatDays(serviceLevelExpectation.value)}`}
 							size="small"
-							onClick={handleFlip}
+							onClick={(e) => handleFlip(e)}
 							sx={{
 								cursor: "pointer",
 								backgroundColor: getChipTitleColor(),
@@ -254,19 +266,34 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 	};
 
 	return (
-		<Card
-			sx={{
-				m: 2,
-				p: 1,
-				borderRadius: 2,
-				cursor: "pointer",
-				height: "230px",
-				display: "flex",
-				flexDirection: "column",
-			}}
-		>
-			{isFlipped ? renderSLEContent() : renderPercentileContent()}
-		</Card>
+		<>
+			<Card
+				sx={{
+					m: 2,
+					p: 1,
+					borderRadius: 2,
+					cursor: "pointer",
+					height: "230px",
+					display: "flex",
+					flexDirection: "column",
+				}}
+				onClick={handleOpenDialog}
+			>
+				{isFlipped ? renderSLEContent() : renderPercentileContent()}
+			</Card>
+
+			<WorkItemsDialog
+				title={
+					isFlipped
+						? "Service Level Expectation Items"
+						: "Cycle Time Percentiles Items"
+				}
+				items={items}
+				open={dialogOpen}
+				onClose={handleCloseDialog}
+				timeMetric="cycleTime"
+			/>
+		</>
 	);
 };
 

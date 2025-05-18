@@ -1,8 +1,19 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import CycleTimePercentiles from "./CycleTimePercentiles";
+
+// Mock the WorkItemsDialog component at the top level
+vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
+	default: vi.fn((props) =>
+		props.open ? (
+			<div data-testid="mock-dialog" data-metric={props.timeMetric}>
+				Mock Dialog
+			</div>
+		) : null,
+	),
+}));
 
 describe("CycleTimePercentiles component", () => {
 	const mockPercentiles: IPercentileValue[] = [
@@ -67,6 +78,11 @@ describe("CycleTimePercentiles component", () => {
 			workItemAge: 14,
 		},
 	];
+
+	// Clear mocks between tests
+	beforeEach(() => {
+		vi.resetAllMocks();
+	});
 
 	it("should render with title and percentile data", () => {
 		render(
@@ -235,5 +251,77 @@ describe("CycleTimePercentiles component", () => {
 		expect(
 			screen.getByText("No completed items available to analyze"),
 		).toBeInTheDocument();
+	});
+
+	// Dialog opening behavior tests
+	it("should open the dialog when clicking on the card", () => {
+		render(
+			<CycleTimePercentiles
+				percentileValues={mockPercentiles}
+				items={mockWorkItems}
+			/>,
+		);
+
+		// Click on the card (but not on any other interactive element)
+		const card = screen
+			.getByText("Cycle Time Percentiles")
+			.closest(".MuiCard-root");
+		if (card) {
+			fireEvent.click(card);
+		}
+
+		// Verify dialog is opened
+		expect(screen.getByTestId("mock-dialog")).toBeInTheDocument();
+		expect(screen.getByTestId("mock-dialog")).toHaveAttribute(
+			"data-metric",
+			"cycleTime",
+		);
+	});
+
+	it("should not open the dialog when clicking on the SLE chip", () => {
+		const mockSLE: IPercentileValue = { percentile: 85, value: 10 };
+		render(
+			<CycleTimePercentiles
+				percentileValues={mockPercentiles}
+				serviceLevelExpectation={mockSLE}
+				items={mockWorkItems}
+			/>,
+		);
+
+		// Click only on the SLE chip
+		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
+
+		// Dialog should not be opened
+		expect(screen.queryByTestId("mock-dialog")).not.toBeInTheDocument();
+
+		// But we should have flipped to SLE view
+		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
+	});
+
+	it("should not open the dialog when clicking on the back button", () => {
+		const mockSLE: IPercentileValue = { percentile: 85, value: 10 };
+		render(
+			<CycleTimePercentiles
+				percentileValues={mockPercentiles}
+				serviceLevelExpectation={mockSLE}
+				items={mockWorkItems}
+			/>,
+		);
+
+		// First go to SLE view
+		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
+		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
+
+		// Then click the back button
+		const backButton = screen.getByRole("button", { name: "" });
+		if (backButton) {
+			fireEvent.click(backButton);
+		}
+
+		// Dialog should not be opened
+		expect(screen.queryByTestId("mock-dialog")).not.toBeInTheDocument();
+
+		// And we should be back to percentiles view
+		expect(screen.getByText("Cycle Time Percentiles")).toBeInTheDocument();
 	});
 });
