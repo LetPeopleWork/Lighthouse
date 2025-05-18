@@ -15,6 +15,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
+import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
@@ -164,6 +165,8 @@ const TeamDetail: React.FC = () => {
 							size={{ xs: 4 }}
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
+							<ServiceLevelExpectation featureOwner={team} />
+
 							<ActionButton
 								onClickHandler={onUpdateTeamData}
 								buttonText="Update Team Data"

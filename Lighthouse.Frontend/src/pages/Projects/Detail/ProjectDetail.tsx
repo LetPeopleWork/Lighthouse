@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
+import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import type { IProject, Project } from "../../../models/Project/Project";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -198,6 +199,8 @@ const ProjectDetail: React.FC = () => {
 							size={{ xs: 4 }}
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
+							<ServiceLevelExpectation featureOwner={project} />
+
 							<ActionButton
 								buttonText="Refresh Features"
 								onClickHandler={onRefreshFeatures}
