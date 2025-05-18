@@ -11,7 +11,7 @@ Preview
 {: .label .label-blue }
 -->
 
-# Lighthouse v25.5.18.xxx
+# Lighthouse v25.5.18.1752
 {: .d-inline-block }
 Latest
 {: .label .label-green }
@@ -39,7 +39,7 @@ Defining this is optional (but we advise you to do so). If you have an SLE, you 
 - Lighthouse has an icon now!
 - Update of various third party libraries
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.5.11...v25.5.18.1140)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.5.11...v25.5.18.1752)
 
 
 # Lighthouse v25.5.11
