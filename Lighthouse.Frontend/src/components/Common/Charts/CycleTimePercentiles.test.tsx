@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import type { IWorkItem } from "../../../models/WorkItem";
 import CycleTimePercentiles from "./CycleTimePercentiles";
 
 describe("CycleTimePercentiles component", () => {
@@ -9,6 +10,62 @@ describe("CycleTimePercentiles component", () => {
 		{ percentile: 85, value: 7 },
 		{ percentile: 95, value: 12 },
 		{ percentile: 99, value: 20 },
+	];
+
+	// Mock work items for SLE tests
+	const mockWorkItems: IWorkItem[] = [
+		{
+			id: 1,
+			name: "Task 1",
+			state: "Done",
+			stateCategory: "Done",
+			type: "Task",
+			workItemReference: "TASK-1",
+			url: null,
+			startedDate: new Date("2025-04-01"),
+			closedDate: new Date("2025-04-03"),
+			cycleTime: 2, // 2 days
+			workItemAge: 2,
+		},
+		{
+			id: 2,
+			name: "Task 2",
+			state: "Done",
+			stateCategory: "Done",
+			type: "Task",
+			workItemReference: "TASK-2",
+			url: null,
+			startedDate: new Date("2025-04-01"),
+			closedDate: new Date("2025-04-05"),
+			cycleTime: 4, // 4 days
+			workItemAge: 4,
+		},
+		{
+			id: 3,
+			name: "Task 3",
+			state: "Done",
+			stateCategory: "Done",
+			type: "Task",
+			workItemReference: "TASK-3",
+			url: null,
+			startedDate: new Date("2025-04-01"),
+			closedDate: new Date("2025-04-08"),
+			cycleTime: 7, // 7 days
+			workItemAge: 7,
+		},
+		{
+			id: 4,
+			name: "Task 4",
+			state: "Done",
+			stateCategory: "Done",
+			type: "Task",
+			workItemReference: "TASK-4",
+			url: null,
+			startedDate: new Date("2025-04-01"),
+			closedDate: new Date("2025-04-15"),
+			cycleTime: 14, // 14 days
+			workItemAge: 14,
+		},
 	];
 
 	it("should render with title and percentile data", () => {
@@ -77,5 +134,100 @@ describe("CycleTimePercentiles component", () => {
 		expect(screen.getByText("7 days")).toBeInTheDocument();
 		expect(screen.getByText("12 days")).toBeInTheDocument();
 		expect(screen.getByText("20 days")).toBeInTheDocument();
+	});
+
+	// SLE-related tests
+	it("should display SLE chip when serviceLevelExpectation is provided", () => {
+		const mockSLE: IPercentileValue = { percentile: 85, value: 10 };
+		render(
+			<CycleTimePercentiles
+				percentileValues={mockPercentiles}
+				serviceLevelExpectation={mockSLE}
+				items={[]}
+			/>,
+		);
+
+		expect(screen.getByText("SLE: 85% @ 10 days")).toBeInTheDocument();
+	});
+
+	it("should not display SLE chip when serviceLevelExpectation is not provided", () => {
+		render(
+			<CycleTimePercentiles percentileValues={mockPercentiles} items={[]} />,
+		);
+
+		expect(screen.queryByText(/SLE:/)).not.toBeInTheDocument();
+	});
+
+	it("should flip to SLE view when SLE chip is clicked", () => {
+		const mockSLE: IPercentileValue = { percentile: 85, value: 10 };
+		render(
+			<CycleTimePercentiles
+				percentileValues={mockPercentiles}
+				serviceLevelExpectation={mockSLE}
+				items={mockWorkItems}
+			/>,
+		);
+
+		// Initially showing percentiles view
+		expect(screen.getByText("Cycle Time Percentiles")).toBeInTheDocument();
+		
+		// Click the SLE chip
+		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
+		
+		// Now showing SLE view
+		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
+		expect(screen.getByText(/85% of all work items are done within 10 days or less/)).toBeInTheDocument();
+	});
+
+	it("should display correct SLE statistics based on work items", () => {
+		const mockSLE: IPercentileValue = { percentile: 75, value: 7 };
+		render(
+			<CycleTimePercentiles
+				percentileValues={mockPercentiles}
+				serviceLevelExpectation={mockSLE}
+				items={mockWorkItems}
+			/>,
+		);
+
+		// Click to view SLE details
+		fireEvent.click(screen.getByText("SLE: 75% @ 7 days"));
+		
+		// Check statistics - 3 out of 4 items (75%) have cycle time <= 7 days
+		expect(screen.getByText(/75\.0% of all items completed within SLE target/)).toBeInTheDocument();
+	});
+	
+	it("should flip back to percentile view when back button is clicked", () => {
+		const mockSLE: IPercentileValue = { percentile: 85, value: 10 };
+		render(
+			<CycleTimePercentiles
+				percentileValues={mockPercentiles}
+				serviceLevelExpectation={mockSLE}
+				items={mockWorkItems}
+			/>,
+		);
+
+		// Go to SLE view
+		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
+		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
+		
+		// Go back to percentiles view
+		fireEvent.click(screen.getByRole("button", { name: "" })); // Back button
+		expect(screen.getByText("Cycle Time Percentiles")).toBeInTheDocument();
+	});
+
+	it("should show 'No completed items available to analyze' when no items provided", () => {
+		const mockSLE: IPercentileValue = { percentile: 85, value: 10 };
+		render(
+			<CycleTimePercentiles
+				percentileValues={mockPercentiles}
+				serviceLevelExpectation={mockSLE}
+				items={[]}
+			/>,
+		);
+
+		// Go to SLE view
+		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
+		
+		expect(screen.getByText("No completed items available to analyze")).toBeInTheDocument();
 	});
 });
