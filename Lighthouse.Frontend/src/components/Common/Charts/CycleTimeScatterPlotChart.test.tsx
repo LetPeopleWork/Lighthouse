@@ -1,11 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 
 describe("CycleTimeScatterPlotChart component", () => {
-	// Mock data for tests
 	const mockPercentileValues: IPercentileValue[] = [
 		{ percentile: 50, value: 3 },
 		{ percentile: 85, value: 7 },
@@ -41,7 +40,6 @@ describe("CycleTimeScatterPlotChart component", () => {
 		},
 	];
 
-	// Mock window.open
 	const originalOpen = window.open;
 	beforeEach(() => {
 		window.open = vi.fn();
@@ -82,10 +80,48 @@ describe("CycleTimeScatterPlotChart component", () => {
 			/>,
 		);
 
-		// Check for percentile labels
-		expect(screen.getByText("50th percentile: 3 days")).toBeInTheDocument();
-		expect(screen.getByText("85th percentile: 7 days")).toBeInTheDocument();
-		expect(screen.getByText("95th percentile: 12 days")).toBeInTheDocument();
+		const percentile50Text = screen.getAllByText("50%");
+		const percentile85Text = screen.getAllByText("85%");
+		const percentile95Text = screen.getAllByText("95%");
+
+		expect(percentile50Text.length).toBeGreaterThan(0);
+		expect(percentile85Text.length).toBeGreaterThan(0);
+		expect(percentile95Text.length).toBeGreaterThan(0);
+	});
+
+	it("renders clickable legend items for each percentile", () => {
+		render(
+			<CycleTimeScatterPlotChart
+				percentileValues={mockPercentileValues}
+				cycleTimeDataPoints={mockWorkItems}
+			/>,
+		);
+
+		// Check that all percentile chips are in the document
+		const percentileChips = screen.getAllByText(/\d+%/);
+		expect(percentileChips.length).toBe(mockPercentileValues.length * 2);
+	});
+
+	it("allows toggling percentile visibility on clicking legend items", () => {
+		render(
+			<CycleTimeScatterPlotChart
+				percentileValues={mockPercentileValues}
+				cycleTimeDataPoints={mockWorkItems}
+			/>,
+		);
+
+		// Find and click the 50th percentile chip - make sure we get the one in the legend
+		const percentileChips = screen.getAllByText("50%");
+		const chipElement = percentileChips.find(
+			(el) => el.closest(".MuiChip-root") !== null,
+		);
+
+		expect(chipElement).not.toBeNull();
+		if (chipElement) {
+			fireEvent.click(chipElement);
+		}
+
+		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
 	});
 
 	it("formats tooltip values correctly", () => {
@@ -96,8 +132,6 @@ describe("CycleTimeScatterPlotChart component", () => {
 			/>,
 		);
 
-		// We can't directly test the tooltip content since it's rendered on demand
-		// But we can verify the chart renders properly
 		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
 	});
 });

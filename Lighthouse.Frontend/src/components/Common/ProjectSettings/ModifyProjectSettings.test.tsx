@@ -191,6 +191,8 @@ describe("ModifyProjectSettings", () => {
 			),
 			throughputEndDate: new Date(),
 			tags: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 		{
 			id: 2,
@@ -208,6 +210,8 @@ describe("ModifyProjectSettings", () => {
 			),
 			throughputEndDate: new Date(),
 			tags: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 	];
 

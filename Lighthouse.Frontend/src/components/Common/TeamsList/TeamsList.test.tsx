@@ -22,6 +22,8 @@ describe("TeamsList", () => {
 			),
 			throughputEndDate: new Date(),
 			tags: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 		{
 			id: 2,
@@ -39,6 +41,8 @@ describe("TeamsList", () => {
 			),
 			throughputEndDate: new Date(),
 			tags: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 		{
 			id: 3,
@@ -56,6 +60,8 @@ describe("TeamsList", () => {
 			),
 			throughputEndDate: new Date(),
 			tags: [],
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 	];
 	const selectedTeams = [1, 3];

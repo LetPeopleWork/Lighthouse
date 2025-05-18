@@ -35,6 +35,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		[],
 	);
 
+	const [serviceLevelExpectation, setServiceLevelExpectation] =
+		useState<IPercentileValue | null>(null);
+
 	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
 
 	const { teamMetricsService } = useContext(ApiServiceContext);
@@ -64,6 +67,20 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 
 		fetchThroughput();
 	}, [team.id, teamMetricsService, startDate, endDate]);
+
+	useEffect(() => {
+		if (
+			team.serviceLevelExpectationProbability > 0 &&
+			team.serviceLevelExpectationRange > 0
+		) {
+			const sle: IPercentileValue = {
+				value: team.serviceLevelExpectationRange,
+				percentile: team.serviceLevelExpectationProbability,
+			};
+
+			setServiceLevelExpectation(sle);
+		}
+	}, [team]);
 
 	useEffect(() => {
 		const fetchStartedItems = async () => {
@@ -191,6 +208,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 				<CycleTimeScatterPlotChart
 					cycleTimeDataPoints={cycleTimeData}
 					percentileValues={percentileValues}
+					serviceLevelExpectation={serviceLevelExpectation}
 				/>
 			</Grid>
 

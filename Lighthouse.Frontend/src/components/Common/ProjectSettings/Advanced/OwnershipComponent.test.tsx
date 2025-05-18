@@ -20,6 +20,8 @@ describe("OwnershipComponent", () => {
 			tags: [],
 			remainingWork: 0,
 			totalWork: 0,
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 		{
 			id: 2,
@@ -35,6 +37,8 @@ describe("OwnershipComponent", () => {
 			tags: [],
 			remainingWork: 0,
 			totalWork: 0,
+			serviceLevelExpectationProbability: 0,
+			serviceLevelExpectationRange: 0,
 		},
 	];
 

@@ -37,6 +37,9 @@ export class Project implements IProject {
 	@Type(() => Date)
 	lastUpdated: Date = new Date();
 
+	serviceLevelExpectationProbability = 0;
+	serviceLevelExpectationRange = 0;
+
 	get remainingWork(): number {
 		return this.features.reduce(
 			(acc, feature) => acc + feature.getRemainingWorkForFeature(),

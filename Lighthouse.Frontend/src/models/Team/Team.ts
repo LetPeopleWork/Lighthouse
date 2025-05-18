@@ -34,6 +34,9 @@ export class Team implements ITeam {
 
 	useFixedDatesForThroughput = false;
 
+	serviceLevelExpectationProbability = 0;
+	serviceLevelExpectationRange = 0;
+
 	@Type(() => Date)
 	lastUpdated: Date = new Date();
 

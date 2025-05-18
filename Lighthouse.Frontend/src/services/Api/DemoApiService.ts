@@ -977,6 +977,8 @@ export class DemoApiService
 		teamBinaryBlazers.features = [this.features[0], this.features[3]];
 		teamBinaryBlazers.featureWip = 1;
 		teamBinaryBlazers.tags = ["Task Force"];
+		teamBinaryBlazers.serviceLevelExpectationProbability = 75;
+		teamBinaryBlazers.serviceLevelExpectationRange = 11;
 
 		const teamMavericks = new Team();
 		teamMavericks.id = 1;

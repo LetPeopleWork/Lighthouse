@@ -8,4 +8,6 @@ export interface IFeatureOwner extends IProgressable {
 	features: IFeature[];
 	remainingFeatures: number;
 	tags: string[];
+	serviceLevelExpectationProbability: number;
+	serviceLevelExpectationRange: number;
 }

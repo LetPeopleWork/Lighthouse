@@ -26,6 +26,8 @@ const sampleData: IFeatureOwner[] = [
 		totalWork: 20,
 		tags: ["critical", "frontend"],
 		lastUpdated: new Date(),
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	},
 	{
 		id: 2,
@@ -36,6 +38,8 @@ const sampleData: IFeatureOwner[] = [
 		totalWork: 20,
 		tags: ["backend"],
 		lastUpdated: new Date(),
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	},
 	{
 		id: 3,
@@ -46,6 +50,8 @@ const sampleData: IFeatureOwner[] = [
 		totalWork: 33,
 		tags: [],
 		lastUpdated: new Date(),
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
 	},
 ];
 
@@ -78,6 +84,8 @@ describe("DataOverviewTable", () => {
 				tags: [],
 				totalWork: 33,
 				lastUpdated: new Date(),
+				serviceLevelExpectationProbability: 0,
+				serviceLevelExpectationRange: 0,
 			},
 			{
 				id: 1,
@@ -88,6 +96,8 @@ describe("DataOverviewTable", () => {
 				tags: [],
 				totalWork: 20,
 				lastUpdated: new Date(),
+				serviceLevelExpectationProbability: 0,
+				serviceLevelExpectationRange: 0,
 			},
 			{
 				id: 2,
@@ -98,6 +108,8 @@ describe("DataOverviewTable", () => {
 				tags: [],
 				totalWork: 20,
 				lastUpdated: new Date(),
+				serviceLevelExpectationProbability: 0,
+				serviceLevelExpectationRange: 0,
 			},
 		];
 
