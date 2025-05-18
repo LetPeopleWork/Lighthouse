@@ -124,7 +124,10 @@ export class TeamDetailPage {
 	}
 
 	get workItemsInProgressWidget(): Locator {
-		return this.page.getByText(/^Work Items In Progress:\d+$/);
+		return this.page
+			.locator("div")
+			.filter({ hasText: /^Work Items in Progress:.*$/ })
+			.first();
 	}
 
 	get featuresInProgressWidget(): Locator {
