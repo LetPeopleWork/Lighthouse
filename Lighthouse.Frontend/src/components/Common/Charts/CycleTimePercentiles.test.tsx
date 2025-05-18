@@ -12,7 +12,9 @@ describe("CycleTimePercentiles component", () => {
 	];
 
 	it("should render with title and percentile data", () => {
-		render(<CycleTimePercentiles percentileValues={mockPercentiles} />);
+		render(
+			<CycleTimePercentiles percentileValues={mockPercentiles} items={[]} />,
+		);
 
 		expect(screen.getByText("Cycle Time Percentiles")).toBeInTheDocument();
 		expect(screen.getByText("50th")).toBeInTheDocument();
@@ -22,14 +24,16 @@ describe("CycleTimePercentiles component", () => {
 	});
 
 	it("should display 'No data available' when no percentiles are provided", () => {
-		render(<CycleTimePercentiles percentileValues={[]} />);
+		render(<CycleTimePercentiles percentileValues={[]} items={[]} />);
 
 		expect(screen.getByText("Cycle Time Percentiles")).toBeInTheDocument();
 		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
 
 	it("should display percentiles in descending order", () => {
-		render(<CycleTimePercentiles percentileValues={mockPercentiles} />);
+		render(
+			<CycleTimePercentiles percentileValues={mockPercentiles} items={[]} />,
+		);
 
 		const percentileElements = screen.getAllByText(/\d+th/);
 		expect(percentileElements[0].textContent).toBe("99th");
@@ -48,16 +52,23 @@ describe("CycleTimePercentiles component", () => {
 		];
 
 		const { rerender } = render(
-			<CycleTimePercentiles percentileValues={singleDayPercentile} />,
+			<CycleTimePercentiles
+				percentileValues={singleDayPercentile}
+				items={[]}
+			/>,
 		);
 		expect(screen.getByText("1 day")).toBeInTheDocument();
 
-		rerender(<CycleTimePercentiles percentileValues={multiDayPercentile} />);
+		rerender(
+			<CycleTimePercentiles percentileValues={multiDayPercentile} items={[]} />,
+		);
 		expect(screen.getByText("5 days")).toBeInTheDocument();
 	});
 
 	it("should display different colors based on percentile levels", () => {
-		render(<CycleTimePercentiles percentileValues={mockPercentiles} />);
+		render(
+			<CycleTimePercentiles percentileValues={mockPercentiles} items={[]} />,
+		);
 
 		// We can't directly test the colors in this test environment,
 		// but we can verify that the component renders without errors

@@ -174,7 +174,11 @@ export const BaseMetricsView = <
 			</Grid>
 
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
-				<CycleTimePercentiles percentileValues={percentileValues} />
+				<CycleTimePercentiles
+					percentileValues={percentileValues}
+					serviceLevelExpectation={serviceLevelExpectation}
+					items={cycleTimeData}
+				/>
 			</Grid>
 
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
