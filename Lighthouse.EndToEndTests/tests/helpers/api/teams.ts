@@ -25,6 +25,8 @@ export async function createTeam(
 			automaticallyAdjustFeatureWIP: false,
 			useFixedDatesForThroughput: false,
 			workTrackingSystemConnectionId: workTrackingSystemConnectionId,
+			serviceLevelExpectationProbability: 70,
+			serviceLevelExpectationRange: 7,
 		},
 	});
 
