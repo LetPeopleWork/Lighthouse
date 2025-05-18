@@ -1,7 +1,5 @@
-import { Grid } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -44,7 +42,6 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			entity={team}
 			metricsService={teamMetricsService}
 			title="Work Items"
-			idealWip={team.featureWip}
 			defaultDateRange={30}
 			renderAdditionalComponents={renderTeamSpecificContent}
 		/>

@@ -9,13 +9,13 @@ import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { IFeature } from "../../../models/Feature";
+import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { appColors } from "../../../utils/theme/colors";
 import ItemsInProgress from "../../Teams/Detail/ItemsInProgress";
-import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 
 export interface BaseMetricsViewProps<
 	T extends IWorkItem | IFeature,
@@ -24,7 +24,6 @@ export interface BaseMetricsViewProps<
 	entity: E;
 	metricsService: IMetricsService<T>;
 	title: string;
-	idealWip?: number;
 	defaultDateRange?: number;
 	renderAdditionalComponents?: () => React.ReactNode;
 }
@@ -36,7 +35,6 @@ export const BaseMetricsView = <
 	entity,
 	metricsService,
 	title,
-	idealWip = 0,
 	defaultDateRange = 30,
 	renderAdditionalComponents,
 }: BaseMetricsViewProps<T, E>) => {
@@ -170,7 +168,6 @@ export const BaseMetricsView = <
 				<ItemsInProgress
 					title={`${title} in Progress:`}
 					items={inProgressItems}
-					idealWip={idealWip}
 				/>
 
 				{renderAdditionalComponents?.()}
