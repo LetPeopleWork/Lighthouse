@@ -1,12 +1,14 @@
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import { DemoApiService } from "../services/Api/DemoApiService";
 import type { ILogService } from "../services/Api/LogService";
+import type {
+	IProjectMetricsService,
+	ITeamMetricsService,
+} from "../services/Api/MetricsService";
 import type { IOptionalFeatureService } from "../services/Api/OptionalFeatureService";
-import type { IProjectMetricsService } from "../services/Api/ProjectMetricsService";
 import type { IProjectService } from "../services/Api/ProjectService";
 import type { ISettingsService } from "../services/Api/SettingsService";
 import type { ISuggestionService } from "../services/Api/SuggestionService";
-import type { ITeamMetricsService } from "../services/Api/TeamMetricsService";
 import type { ITeamService } from "../services/Api/TeamService";
 import type { IWorkTrackingSystemService } from "../services/Api/WorkTrackingSystemService";
 import type { IUpdateSubscriptionService } from "../services/UpdateSubscriptionService";
@@ -100,14 +102,14 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 
 export const createMockProjectMetricsService = (): IProjectMetricsService => {
 	return {
-		getThroughputForProject: vi.fn().mockResolvedValue({ data: [], total: 0 }),
+		getThroughput: vi.fn().mockResolvedValue({ data: [], total: 0 }),
 		getStartedItems: vi.fn().mockResolvedValue({ data: [], total: 0 }),
-		getFeaturesInProgressOverTimeForProject: vi
+		getWorkInProgressOverTime: vi
 			.fn()
 			.mockResolvedValue({ data: [], total: 0 }),
-		getCycleTimeDataForProject: vi.fn().mockResolvedValue([]),
-		getCycleTimePercentilesForProject: vi.fn().mockResolvedValue([]),
-		getInProgressFeaturesForProject: vi.fn().mockResolvedValue([]),
+		getInProgressItems: vi.fn().mockResolvedValue([]),
+		getCycleTimeData: vi.fn().mockResolvedValue([]),
+		getCycleTimePercentiles: vi.fn().mockResolvedValue([]),
 	};
 };
 

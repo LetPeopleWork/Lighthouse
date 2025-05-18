@@ -5,7 +5,7 @@ import type { IPercentileValue } from "../../../models/PercentileValue";
 import { Project } from "../../../models/Project/Project";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type { IProjectMetricsService } from "../../../services/Api/ProjectMetricsService";
+import type { IProjectMetricsService } from "../../../services/Api/MetricsService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import ProjectMetricsView from "./ProjectMetricsView";
 
@@ -246,22 +246,16 @@ describe("ProjectMetricsView component", () => {
 
 	// Mock service and context
 	const mockProjectMetricsService: IProjectMetricsService = {
-		getThroughputForProject: vi
-			.fn()
-			.mockResolvedValue(mockFeaturesCompletedData),
+		getThroughput: vi.fn().mockResolvedValue(mockFeaturesCompletedData),
 
 		getStartedItems: vi.fn().mockResolvedValue(mockStartedItemsData),
 
-		getFeaturesInProgressOverTimeForProject: vi
+		getWorkInProgressOverTime: vi
 			.fn()
 			.mockResolvedValue(mockFeaturesInProgressData),
-		getInProgressFeaturesForProject: vi
-			.fn()
-			.mockResolvedValue(mockInProgressFeatures),
-		getCycleTimeDataForProject: vi.fn().mockResolvedValue(mockCycleTimeData),
-		getCycleTimePercentilesForProject: vi
-			.fn()
-			.mockResolvedValue(mockPercentileValues),
+		getInProgressItems: vi.fn().mockResolvedValue(mockInProgressFeatures),
+		getCycleTimeData: vi.fn().mockResolvedValue(mockCycleTimeData),
+		getCycleTimePercentiles: vi.fn().mockResolvedValue(mockPercentileValues),
 	};
 
 	beforeEach(() => {
@@ -284,32 +278,28 @@ describe("ProjectMetricsView component", () => {
 
 		// Check all service calls are made
 		await waitFor(() => {
+			expect(mockProjectMetricsService.getThroughput).toHaveBeenCalledWith(
+				mockProject.id,
+				expect.any(Date),
+				expect.any(Date),
+			);
+			expect(mockProjectMetricsService.getInProgressItems).toHaveBeenCalledWith(
+				mockProject.id,
+			);
 			expect(
-				mockProjectMetricsService.getThroughputForProject,
+				mockProjectMetricsService.getWorkInProgressOverTime,
 			).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
 				expect.any(Date),
 			);
-			expect(
-				mockProjectMetricsService.getInProgressFeaturesForProject,
-			).toHaveBeenCalledWith(mockProject.id);
-			expect(
-				mockProjectMetricsService.getFeaturesInProgressOverTimeForProject,
-			).toHaveBeenCalledWith(
+			expect(mockProjectMetricsService.getCycleTimeData).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
 				expect.any(Date),
 			);
 			expect(
-				mockProjectMetricsService.getCycleTimeDataForProject,
-			).toHaveBeenCalledWith(
-				mockProject.id,
-				expect.any(Date),
-				expect.any(Date),
-			);
-			expect(
-				mockProjectMetricsService.getCycleTimePercentilesForProject,
+				mockProjectMetricsService.getCycleTimePercentiles,
 			).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
@@ -372,17 +362,15 @@ describe("ProjectMetricsView component", () => {
 
 		// Verify all metrics are fetched again with new date
 		await waitFor(() => {
+			expect(mockProjectMetricsService.getThroughput).toHaveBeenCalledTimes(1);
 			expect(
-				mockProjectMetricsService.getThroughputForProject,
+				mockProjectMetricsService.getWorkInProgressOverTime,
 			).toHaveBeenCalledTimes(1);
+			expect(mockProjectMetricsService.getCycleTimeData).toHaveBeenCalledTimes(
+				1,
+			);
 			expect(
-				mockProjectMetricsService.getFeaturesInProgressOverTimeForProject,
-			).toHaveBeenCalledTimes(1);
-			expect(
-				mockProjectMetricsService.getCycleTimeDataForProject,
-			).toHaveBeenCalledTimes(1);
-			expect(
-				mockProjectMetricsService.getCycleTimePercentilesForProject,
+				mockProjectMetricsService.getCycleTimePercentiles,
 			).toHaveBeenCalledTimes(1);
 			expect(mockProjectMetricsService.getStartedItems).toHaveBeenCalledTimes(
 				1,
@@ -416,17 +404,15 @@ describe("ProjectMetricsView component", () => {
 
 		// Verify all metrics are fetched again with new date
 		await waitFor(() => {
+			expect(mockProjectMetricsService.getThroughput).toHaveBeenCalledTimes(1);
 			expect(
-				mockProjectMetricsService.getThroughputForProject,
+				mockProjectMetricsService.getWorkInProgressOverTime,
 			).toHaveBeenCalledTimes(1);
+			expect(mockProjectMetricsService.getCycleTimeData).toHaveBeenCalledTimes(
+				1,
+			);
 			expect(
-				mockProjectMetricsService.getFeaturesInProgressOverTimeForProject,
-			).toHaveBeenCalledTimes(1);
-			expect(
-				mockProjectMetricsService.getCycleTimeDataForProject,
-			).toHaveBeenCalledTimes(1);
-			expect(
-				mockProjectMetricsService.getCycleTimePercentilesForProject,
+				mockProjectMetricsService.getCycleTimePercentiles,
 			).toHaveBeenCalledTimes(1);
 			expect(mockProjectMetricsService.getStartedItems).toHaveBeenCalledTimes(
 				1,
@@ -436,20 +422,14 @@ describe("ProjectMetricsView component", () => {
 
 	it("handles API errors gracefully", async () => {
 		const errorProjectMetricsService: IProjectMetricsService = {
-			getThroughputForProject: vi
-				.fn()
-				.mockRejectedValue(new Error("API error")),
+			getThroughput: vi.fn().mockRejectedValue(new Error("API error")),
 			getStartedItems: vi.fn().mockRejectedValue(new Error("API error")),
-			getFeaturesInProgressOverTimeForProject: vi
+			getWorkInProgressOverTime: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
-			getInProgressFeaturesForProject: vi
-				.fn()
-				.mockRejectedValue(new Error("API error")),
-			getCycleTimeDataForProject: vi
-				.fn()
-				.mockRejectedValue(new Error("API error")),
-			getCycleTimePercentilesForProject: vi
+			getInProgressItems: vi.fn().mockRejectedValue(new Error("API error")),
+			getCycleTimeData: vi.fn().mockRejectedValue(new Error("API error")),
+			getCycleTimePercentiles: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
 		};
@@ -515,8 +495,8 @@ describe("ProjectMetricsView component", () => {
 		const startDateElement = screen.getByTestId("start-date");
 		const endDateElement = screen.getByTestId("end-date");
 
-		const startDate = new Date(startDateElement.textContent || "");
-		const endDate = new Date(endDateElement.textContent || "");
+		const startDate = new Date(startDateElement.textContent ?? "");
+		const endDate = new Date(endDateElement.textContent ?? "");
 		const today = new Date();
 
 		// Set both dates to midnight for comparison
@@ -598,7 +578,9 @@ describe("ProjectMetricsView component", () => {
 
 		// Wait for the component to render with the SLE value
 		await waitFor(() => {
-			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent("85:14");
+			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent(
+				"85:14",
+			);
 		});
 	});
 
@@ -623,7 +605,9 @@ describe("ProjectMetricsView component", () => {
 
 		// Wait for the component to render without SLE value
 		await waitFor(() => {
-			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent("none");
+			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent(
+				"none",
+			);
 		});
 	});
 
@@ -648,7 +632,9 @@ describe("ProjectMetricsView component", () => {
 
 		// Wait for the component to render without SLE value
 		await waitFor(() => {
-			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent("none");
+			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent(
+				"none",
+			);
 		});
 	});
 });

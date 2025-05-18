@@ -3,27 +3,29 @@ import {
 	type IUpdateSubscriptionService,
 	UpdateSubscriptionService,
 } from "../UpdateSubscriptionService";
-import { DemoApiService } from "./DemoApiService";
+import {
+	DemoApiService,
+	DemoProjectMetricsService,
+	DemoTeamMetricsService,
+} from "./DemoApiService";
 import { ForecastService, type IForecastService } from "./ForecastService";
 import { type ILogService, LogService } from "./LogService";
+import type {
+	IProjectMetricsService,
+	ITeamMetricsService,
+} from "./MetricsService";
 import {
 	type IOptionalFeatureService,
 	OptionalFeatureService,
 } from "./OptionalFeatureService";
-import {
-	type IProjectMetricsService,
-	ProjectMetricsService,
-} from "./ProjectMetricsService";
+import { ProjectMetricsService } from "./ProjectMetricsService";
 import { type IProjectService, ProjectService } from "./ProjectService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
 import {
 	type ISuggestionService,
 	SuggestionService,
 } from "./SuggestionService";
-import {
-	type ITeamMetricsService,
-	TeamMetricsService,
-} from "./TeamMetricsService";
+import { TeamMetricsService } from "./TeamMetricsService";
 import { type ITeamService, TeamService } from "./TeamService";
 import { type IVersionService, VersionService } from "./VersionService";
 import {
@@ -67,6 +69,8 @@ const defaultServices: IApiServiceContext = {
 
 const useDelay: boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
 const demoApiService = new DemoApiService(useDelay);
+const demoTeamMetricsService = new DemoTeamMetricsService();
+const demoProjectMetricsService = new DemoProjectMetricsService();
 
 const demoServices: IApiServiceContext = {
 	forecastService: demoApiService,
@@ -74,8 +78,8 @@ const demoServices: IApiServiceContext = {
 	projectService: demoApiService,
 	settingsService: demoApiService,
 	teamService: demoApiService,
-	teamMetricsService: demoApiService,
-	projectMetricsService: demoApiService,
+	teamMetricsService: demoTeamMetricsService,
+	projectMetricsService: demoProjectMetricsService,
 	versionService: demoApiService,
 	workTrackingSystemService: demoApiService,
 	optionalFeatureService: demoApiService,

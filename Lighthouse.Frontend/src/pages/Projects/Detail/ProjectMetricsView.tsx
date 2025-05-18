@@ -32,7 +32,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 	);
 
 	const [serviceLevelExpectation, setServiceLevelExpectation] =
-			useState<IPercentileValue | null>(null);
+		useState<IPercentileValue | null>(null);
 
 	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
 
@@ -48,7 +48,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 	useEffect(() => {
 		const fetchFeaturesCompleted = async () => {
 			try {
-				const data = await projectMetricsService.getThroughputForProject(
+				const data = await projectMetricsService.getThroughput(
 					project.id,
 					startDate,
 					endDate,
@@ -98,18 +98,16 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 	useEffect(() => {
 		const fetchFeaturesInProgress = async () => {
 			try {
-				const wipData =
-					await projectMetricsService.getInProgressFeaturesForProject(
-						project.id,
-					);
+				const wipData = await projectMetricsService.getInProgressItems(
+					project.id,
+				);
 				setInProgressFeatures(wipData);
 
-				const data =
-					await projectMetricsService.getFeaturesInProgressOverTimeForProject(
-						project.id,
-						startDate,
-						endDate,
-					);
+				const data = await projectMetricsService.getWorkInProgressOverTime(
+					project.id,
+					startDate,
+					endDate,
+				);
 				setFeaturesInProgressData(data);
 			} catch (error) {
 				console.error("Error getting features in progress:", error);
@@ -122,20 +120,18 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 	useEffect(() => {
 		const fetchCycleTimeData = async () => {
 			try {
-				const cycleTimeData =
-					await projectMetricsService.getCycleTimeDataForProject(
-						project.id,
-						startDate,
-						endDate,
-					);
+				const cycleTimeData = await projectMetricsService.getCycleTimeData(
+					project.id,
+					startDate,
+					endDate,
+				);
 				setCycleTimeData(cycleTimeData);
 
-				const percentiles =
-					await projectMetricsService.getCycleTimePercentilesForProject(
-						project.id,
-						startDate,
-						endDate,
-					);
+				const percentiles = await projectMetricsService.getCycleTimePercentiles(
+					project.id,
+					startDate,
+					endDate,
+				);
 				setPercentileValues(percentiles);
 			} catch (err) {
 				console.error("Error fetching cycle time data:", err);
@@ -165,8 +161,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 			</Grid>
 
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
-				<CycleTimePercentiles 
-					percentileValues={percentileValues} />
+				<CycleTimePercentiles percentileValues={percentileValues} />
 			</Grid>
 
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>

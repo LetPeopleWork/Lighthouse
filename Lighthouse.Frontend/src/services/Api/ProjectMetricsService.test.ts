@@ -31,11 +31,7 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockResolvedValueOnce(mockResponse);
 
 			// Act
-			const result = await service.getThroughputForProject(
-				projectId,
-				startDate,
-				endDate,
-			);
+			const result = await service.getThroughput(projectId, startDate, endDate);
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
@@ -91,7 +87,7 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockResolvedValueOnce(mockResponse);
 
 			// Act
-			const result = await service.getFeaturesInProgressOverTimeForProject(
+			const result = await service.getWorkInProgressOverTime(
 				projectId,
 				startDate,
 				endDate,
@@ -99,7 +95,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/featuresInProgressOverTime?startDate=2023-01-01&endDate=2023-01-31`,
+				`/projects/${projectId}/metrics/wipOverTime?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toBeInstanceOf(RunChartData);
 			expect(result.valuePerUnitOfTime).toEqual([4, 5, 6]);
@@ -134,11 +130,11 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockResolvedValueOnce({ data: mockWorkItems });
 
 			// Act
-			const result = await service.getInProgressFeaturesForProject(projectId);
+			const result = await service.getInProgressItems(projectId);
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/inProgressFeatures`,
+				`/projects/${projectId}/metrics/currentwip`,
 			);
 			expect(result.length).toBe(2);
 			expect(result[0].id).toBe(1);
@@ -159,7 +155,7 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockResolvedValueOnce({ data: mockPercentiles });
 
 			// Act
-			const result = await service.getCycleTimePercentilesForProject(
+			const result = await service.getCycleTimePercentiles(
 				projectId,
 				startDate,
 				endDate,
@@ -195,7 +191,7 @@ describe("ProjectMetricsService", () => {
 			mockGet.mockResolvedValueOnce({ data: mockFeatures });
 
 			// Act
-			const result = await service.getCycleTimeDataForProject(
+			const result = await service.getCycleTimeData(
 				projectId,
 				startDate,
 				endDate,

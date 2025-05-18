@@ -8,7 +8,7 @@ import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
 import { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type { ITeamMetricsService } from "../../../services/Api/TeamMetricsService";
+import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
 import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
