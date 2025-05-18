@@ -118,16 +118,18 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 											}
 										}
 									}}
-									InputProps={{
-										...params.InputProps,
-										endAdornment: (
-											<>
-												{isLoading ? (
-													<CircularProgress color="inherit" size={20} />
-												) : null}
-												{params.InputProps.endAdornment}
-											</>
-										),
+									slotProps={{
+										input: {
+											...params.InputProps,
+											endAdornment: (
+												<>
+													{isLoading ? (
+														<CircularProgress color="inherit" size={20} />
+													) : null}
+													{params.InputProps.endAdornment}
+												</>
+											),
+										},
 									}}
 								/>
 							)}
@@ -152,10 +154,12 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 								}
 							}}
 							inputRef={inputRef}
-							InputProps={{
-								endAdornment: isLoading ? (
-									<CircularProgress color="inherit" size={20} />
-								) : null,
+							slotProps={{
+								input: {
+									endAdornment: isLoading ? (
+										<CircularProgress color="inherit" size={20} />
+									) : null,
+								},
 							}}
 						/>
 						<Typography variant="caption" color="text.secondary">

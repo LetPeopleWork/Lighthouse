@@ -100,14 +100,16 @@ const FilterBar: React.FC<FilterBarProps> = ({
 					fullWidth
 					onFocus={() => setIsFocused(true)}
 					onBlur={() => setIsFocused(false)}
-					InputProps={{
-						disableUnderline: true,
-						sx: {
-							fontSize: "1rem",
-							px: 1,
-							"& input": {
-								py: 1.5,
-								transition: "all 0.2s",
+					slotProps={{
+						input: {
+							disableUnderline: true,
+							sx: {
+								fontSize: "1rem",
+								px: 1,
+								"& input": {
+									py: 1.5,
+									transition: "all 0.2s",
+								},
 							},
 						},
 					}}

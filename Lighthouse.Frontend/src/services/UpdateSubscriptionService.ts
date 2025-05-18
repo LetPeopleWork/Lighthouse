@@ -61,14 +61,12 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 
 		this.isConnecting = true;
 
-		if (this.connection == null) {
-			this.connection = new signalR.HubConnectionBuilder()
-				.withUrl(`${this.baseUrl}/updateNotificationHub`, {
-					withCredentials: true,
-				})
-				.configureLogging(signalR.LogLevel.Information)
-				.build();
-		}
+		this.connection ??= new signalR.HubConnectionBuilder()
+			.withUrl(`${this.baseUrl}/updateNotificationHub`, {
+				withCredentials: true,
+			})
+			.configureLogging(signalR.LogLevel.Information)
+			.build();
 
 		this.connectionPromise = this.connection
 			.start()

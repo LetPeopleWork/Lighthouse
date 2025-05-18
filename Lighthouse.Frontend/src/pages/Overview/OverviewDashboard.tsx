@@ -16,7 +16,7 @@ const OverviewDashboard: React.FC = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const queryParams = new URLSearchParams(location.search);
-	const initialFilterText = queryParams.get("filter") || "";
+	const initialFilterText = queryParams.get("filter") ?? "";
 	const [filterText, setFilterText] = useState(initialFilterText);
 
 	const { projectService } = useContext(ApiServiceContext);
