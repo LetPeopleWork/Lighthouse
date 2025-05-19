@@ -35,7 +35,7 @@
             Features.Clear();
             Features.AddRange(features);
 
-            ResetUpdateTime();
+            RefreshUpdateTime();
         }
 
         public void UpdateTeams(IEnumerable<Team> teams)
@@ -43,7 +43,7 @@
             Teams.Clear();
             Teams.AddRange(teams);
 
-            ResetUpdateTime();
+            RefreshUpdateTime();
         }
 
         public IEnumerable<Feature> GetFeaturesToExtrapolate()
