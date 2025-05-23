@@ -20,6 +20,12 @@ import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 
+const getDateOnlyTimestamp = (date: Date): number => {
+	const dateOnly = new Date(date);
+	dateOnly.setHours(0, 0, 0, 0);
+	return dateOnly.getTime();
+};
+
 interface CycleTimeScatterPlotChartProps {
 	percentileValues: IPercentileValue[];
 	cycleTimeDataPoints: IWorkItem[];
@@ -151,7 +157,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 						{
 							type: "scatter",
 							data: cycleTimeDataPoints.map((point) => ({
-								x: point.closedDate.getTime(),
+								// Use date-only timestamp for x-axis
+								x: getDateOnlyTimestamp(point.closedDate),
 								y: point.cycleTime,
 								id: point.id,
 							})),
