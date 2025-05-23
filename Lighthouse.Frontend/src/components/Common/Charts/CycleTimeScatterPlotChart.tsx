@@ -103,7 +103,7 @@ const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
 
 	for (const item of items) {
 		const closedDateTimestamp = getDateOnlyTimestamp(item.closedDate);
-		
+
 		const key = `${closedDateTimestamp}-${item.cycleTime}`;
 
 		if (!groups[key]) {
@@ -268,7 +268,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								const group = groupedDataPoints[item.id as number];
 								if (!group) return "";
 
-								const closedDateFormatted = new Date(group.closedDateTimestamp).toLocaleDateString();
+								const closedDateFormatted = new Date(
+									group.closedDateTimestamp,
+								).toLocaleDateString();
 								const header = `Cycle Time: ${group.cycleTime} days\nClosed Date: ${closedDateFormatted}\n`;
 								const itemsList = group.items.map((wi) => `• ${wi.name}`);
 
@@ -322,7 +324,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							"& .MuiChartsTooltip-valueCell": {
 								whiteSpace: "pre-line",
 							},
-							
+
 							"& .MuiPopper-root": {
 								transition: "opacity 0.2s ease-in-out",
 								transitionDelay: "150ms",

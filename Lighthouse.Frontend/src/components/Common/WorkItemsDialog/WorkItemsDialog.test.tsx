@@ -190,14 +190,24 @@ describe("WorkItemsDialog Component", () => {
 			}
 		});
 
-		test("applies risky color to items at or above SLE", () => {
-			// With SLE of 10, the item with age 20 should be risky
+		test("applies risky color to items above SLE", () => {
 			render(<WorkItemsDialog {...defaultProps} sle={10} />);
 
 			const ageCells = screen.getAllByText(/\d+ days/);
 
 			// First cell (20 days) should have risky color and be bold
 			expect(ageCells[0]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
+			expect(ageCells[0]).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
+		});
+
+		test("applies realistic color to items at SLE", () => {
+			render(<WorkItemsDialog {...defaultProps} sle={20} />);
+
+			const ageCells = screen.getAllByText(/\d+ days/);
+
+			// First cell (20 days) should have realistic color and be bold
+			expect(ageCells[0]).not.toHaveStyle("color: rgb(255, 0, 0)");
+			expect(ageCells[0]).toHaveStyle("color: rgb(255, 165, 0)");
 			expect(ageCells[0]).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
 		});
 
@@ -237,8 +247,8 @@ describe("WorkItemsDialog Component", () => {
 			// 15 days should be risky
 			expect(cycleTimeCells[0]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
 
-			// 10 days should be risky (at SLE)
-			expect(cycleTimeCells[1]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
+			// 10 days should be realistic (at SLE)
+			expect(cycleTimeCells[1]).toHaveStyle("color: rgb(255, 165, 0)"); // RGB equivalent of orange
 
 			// 5 days should be confident (50% of SLE)
 			expect(cycleTimeCells[2]).toHaveStyle("color: rgb(144, 238, 144)"); // RGB equivalent of lightgreen

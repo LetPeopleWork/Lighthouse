@@ -41,7 +41,6 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	timeMetric = "age",
 	sle,
 }) => {
-	// Sort items by the specified metric (oldest/longest first)
 	const sortedItems = [...items].sort((a, b) => {
 		if (timeMetric === "age") {
 			return b.workItemAge - a.workItemAge;
@@ -62,13 +61,12 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	};
 
 	const getTimeColor = (timeValue: number) => {
-		if (!sle) return undefined; // No SLE defined
+		if (!sle) return undefined;
 
-		// Calculate SLE thresholds
 		const seventyPercentSLE = sle * 0.7;
 		const fiftyPercentSLE = sle * 0.5;
 
-		if (timeValue >= sle) {
+		if (timeValue > sle) {
 			return riskyColor;
 		}
 		if (timeValue >= seventyPercentSLE) {
