@@ -268,9 +268,11 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								const group = groupedDataPoints[item.id as number];
 								if (!group) return "";
 
+								const closedDateFormatted = new Date(group.closedDateTimestamp).toLocaleDateString();
+								const header = `Cycle Time: ${group.cycleTime} days\nClosed Date: ${closedDateFormatted}\n`;
 								const itemsList = group.items.map((wi) => `• ${wi.name}`);
 
-								return itemsList.join("\n");
+								return `${header}\n${itemsList.join("\n")}`;
 							},
 						},
 					]}
