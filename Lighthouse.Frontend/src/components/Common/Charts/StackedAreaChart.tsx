@@ -143,6 +143,9 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 								horizontal: "end",
 							},
 						},
+						tooltip: {
+							hidden: true,
+						},
 					}}
 				/>
 			</CardContent>
