@@ -257,14 +257,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								const group = groupedDataPoints[item.id as number];
 								if (!group) return "";
 
-								if (group.items.length === 1) {
-									return `${group.items[0].name} - Cycle Time: ${group.cycleTime} days`;
-								}
-
-								const header = `${group.items.length} items - Cycle Time: ${group.cycleTime} days`;
 								const itemsList = group.items.map((wi) => `• ${wi.name}`);
 
-								return [header, ...itemsList].join("\n");
+								return itemsList.join("\n");
 							},
 						},
 					]}
