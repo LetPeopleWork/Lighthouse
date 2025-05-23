@@ -32,7 +32,6 @@ const getBubbleSize = (count: number): number => {
 	return Math.min(5 + Math.sqrt(count) * 3, 20);
 };
 
-// Extracted marker component to avoid ESLint warning
 const ScatterMarker = (
 	props: ScatterMarkerProps,
 	groupedDataPoints: IGroupedWorkItem[],
@@ -45,37 +44,51 @@ const ScatterMarker = (
 
 	const bubbleSize = getBubbleSize(group.items.length);
 
+	const handleOpenWorkItems = () => {
+		for (const item of group.items) {
+			if (item.url) {
+				window.open(item.url, "_blank");
+			}
+		}
+	};
+
 	return (
-		<circle
-			cx={props.x}
-			cy={props.y}
-			r={bubbleSize}
-			fill={props.color}
-			opacity={props.isHighlighted ? 1 : 0.8}
-			stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
-			strokeWidth={props.isHighlighted ? 2 : 0}
-			style={{ cursor: "pointer" }}
-			onClick={() => {
-				for (const item of group.items) {
-					if (item.url) {
-						window.open(item.url, "_blank");
-					}
-				}
-			}}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					for (const item of group.items) {
-						if (item.url) {
-							window.open(item.url, "_blank");
-						}
-					}
-				}
-			}}
-			tabIndex={0}
-			role="button"
-			aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}
-		/>
+		<>
+			<circle
+				cx={props.x}
+				cy={props.y}
+				r={bubbleSize}
+				fill={props.color}
+				opacity={props.isHighlighted ? 1 : 0.8}
+				stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
+				strokeWidth={props.isHighlighted ? 2 : 0}
+				pointerEvents="none" // Disable pointer events as the button will handle clicks
+			>
+				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}</title>
+			</circle>
+
+			<foreignObject
+				x={props.x - bubbleSize}
+				y={props.y - bubbleSize}
+				width={bubbleSize * 2}
+				height={bubbleSize * 2}
+			>
+				<button
+					type="button"
+					style={{
+						width: "100%",
+						height: "100%",
+						cursor: "pointer",
+						background: "transparent",
+						border: "none",
+						padding: 0,
+						borderRadius: "50%",
+					}}
+					onClick={handleOpenWorkItems}
+					aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}
+				/>
+			</foreignObject>
+		</>
 	);
 };
 
@@ -90,7 +103,7 @@ const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
 
 	for (const item of items) {
 		const closedDateTimestamp = getDateOnlyTimestamp(item.closedDate);
-		// Create a key combining date and cycle time
+		
 		const key = `${closedDateTimestamp}-${item.cycleTime}`;
 
 		if (!groups[key]) {
@@ -130,7 +143,6 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 	useEffect(() => {
 		setPercentiles(percentileValues);
-		// Initialize all percentiles as visible
 		const initialVisibility: Record<number, boolean> = {};
 		for (const p of percentileValues) {
 			initialVisibility[p.percentile] = true;
@@ -245,8 +257,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							xAxisId: "timeAxis",
 							yAxisId: "cycleTimeAxis",
 							color: theme.palette.primary.main,
-							// Use marker size to control the size of points
-							markerSize: 4, // Smaller than default to make tooltip less sensitive
+							markerSize: 4,
 							highlightScope: {
 								highlight: "item",
 								fade: "global",
@@ -309,7 +320,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							"& .MuiChartsTooltip-valueCell": {
 								whiteSpace: "pre-line",
 							},
-							// Adding a small delay to prevent accidental tooltip displays
+							
 							"& .MuiPopper-root": {
 								transition: "opacity 0.2s ease-in-out",
 								transitionDelay: "150ms",
