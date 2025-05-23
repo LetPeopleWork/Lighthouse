@@ -3,6 +3,7 @@ import {
 	CardContent,
 	Chip,
 	Stack,
+	type Theme,
 	Typography,
 	useTheme,
 } from "@mui/material";
@@ -12,6 +13,7 @@ import {
 	ChartsTooltip,
 	ChartsXAxis,
 	ChartsYAxis,
+	type ScatterMarkerProps,
 	ScatterPlot,
 } from "@mui/x-charts";
 import type React from "react";
@@ -24,6 +26,85 @@ const getDateOnlyTimestamp = (date: Date): number => {
 	const dateOnly = new Date(date);
 	dateOnly.setHours(0, 0, 0, 0);
 	return dateOnly.getTime();
+};
+
+const getBubbleSize = (count: number): number => {
+	return Math.min(5 + Math.sqrt(count) * 3, 20);
+};
+
+// Extracted marker component to avoid ESLint warning
+const ScatterMarker = (
+	props: ScatterMarkerProps,
+	groupedDataPoints: IGroupedWorkItem[],
+	theme: Theme,
+) => {
+	const dataIndex = props.dataIndex || 0;
+	const group = groupedDataPoints[dataIndex];
+
+	if (!group) return null;
+
+	const bubbleSize = getBubbleSize(group.items.length);
+
+	return (
+		<circle
+			cx={props.x}
+			cy={props.y}
+			r={bubbleSize}
+			fill={props.color}
+			opacity={props.isHighlighted ? 1 : 0.8}
+			stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
+			strokeWidth={props.isHighlighted ? 2 : 0}
+			style={{ cursor: "pointer" }}
+			onClick={() => {
+				for (const item of group.items) {
+					if (item.url) {
+						window.open(item.url, "_blank");
+					}
+				}
+			}}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					for (const item of group.items) {
+						if (item.url) {
+							window.open(item.url, "_blank");
+						}
+					}
+				}
+			}}
+			tabIndex={0}
+			role="button"
+			aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}
+		/>
+	);
+};
+
+interface IGroupedWorkItem {
+	closedDateTimestamp: number;
+	cycleTime: number;
+	items: IWorkItem[];
+}
+
+const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
+	const groups: Record<string, IGroupedWorkItem> = {};
+
+	for (const item of items) {
+		const closedDateTimestamp = getDateOnlyTimestamp(item.closedDate);
+		// Create a key combining date and cycle time
+		const key = `${closedDateTimestamp}-${item.cycleTime}`;
+
+		if (!groups[key]) {
+			groups[key] = {
+				closedDateTimestamp,
+				cycleTime: item.cycleTime,
+				items: [],
+			};
+		}
+
+		groups[key].items.push(item);
+	}
+
+	return Object.values(groups);
 };
 
 interface CycleTimeScatterPlotChartProps {
@@ -42,6 +123,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		Record<number, boolean>
 	>({});
 	const [sleVisible, setSleVisible] = useState<boolean>(false);
+	const [groupedDataPoints, setGroupedDataPoints] = useState<
+		IGroupedWorkItem[]
+	>([]);
 	const theme = useTheme();
 
 	useEffect(() => {
@@ -54,13 +138,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		setVisiblePercentiles(initialVisibility);
 	}, [percentileValues]);
 
-	const handleItemClick = (itemId: number) => {
-		const item = cycleTimeDataPoints[itemId];
-
-		if (item?.url) {
-			window.open(item.url, "_blank");
-		}
-	};
+	useEffect(() => {
+		setGroupedDataPoints(groupWorkItems(cycleTimeDataPoints));
+	}, [cycleTimeDataPoints]);
 
 	const togglePercentileVisibility = (percentile: number) => {
 		setVisiblePercentiles((prev) => ({
@@ -156,27 +236,35 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					series={[
 						{
 							type: "scatter",
-							data: cycleTimeDataPoints.map((point) => ({
-								// Use date-only timestamp for x-axis
-								x: getDateOnlyTimestamp(point.closedDate),
-								y: point.cycleTime,
-								id: point.id,
+							data: groupedDataPoints.map((group, index) => ({
+								x: group.closedDateTimestamp,
+								y: group.cycleTime,
+								id: index,
+								itemCount: group.items.length,
 							})),
 							xAxisId: "timeAxis",
 							yAxisId: "cycleTimeAxis",
 							color: theme.palette.primary.main,
-							markerSize: 6,
-							highlightScope: { highlight: "item", fade: "global" },
+							// Use marker size to control the size of points
+							markerSize: 4, // Smaller than default to make tooltip less sensitive
+							highlightScope: {
+								highlight: "item",
+								fade: "global",
+							},
 							valueFormatter: (item) => {
-								if (!item?.id) return "";
+								if (item?.id === undefined) return "";
 
-								const workItem = cycleTimeDataPoints.find(
-									(p) => p.id === item.id,
-								);
-								if (workItem) {
-									return `${workItem.name} - Cycle Time: ${workItem.cycleTime} days`;
+								const group = groupedDataPoints[item.id as number];
+								if (!group) return "";
+
+								if (group.items.length === 1) {
+									return `${group.items[0].name} - Cycle Time: ${group.cycleTime} days`;
 								}
-								return "";
+
+								const header = `${group.items.length} items - Cycle Time: ${group.cycleTime} days`;
+								const itemsList = group.items.map((wi) => `• ${wi.name}`);
+
+								return [header, ...itemsList].join("\n");
 							},
 						},
 					]}
@@ -214,13 +302,25 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					<ChartsXAxis />
 					<ChartsYAxis />
 					<ScatterPlot
-						onItemClick={(_event, itemData) => {
-							if (itemData?.dataIndex >= 0) {
-								handleItemClick(itemData.dataIndex);
-							}
+						slots={{
+							marker: (props) => ScatterMarker(props, groupedDataPoints, theme),
 						}}
 					/>
-					<ChartsTooltip trigger="item" />
+
+					<ChartsTooltip
+						trigger="item"
+						sx={{
+							zIndex: 1200,
+							"& .MuiChartsTooltip-valueCell": {
+								whiteSpace: "pre-line",
+							},
+							// Adding a small delay to prevent accidental tooltip displays
+							"& .MuiPopper-root": {
+								transition: "opacity 0.2s ease-in-out",
+								transitionDelay: "150ms",
+							},
+						}}
+					/>
 				</ChartContainer>
 			</CardContent>
 		</Card>
