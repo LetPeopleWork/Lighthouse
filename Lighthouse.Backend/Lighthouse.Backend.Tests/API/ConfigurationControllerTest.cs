@@ -299,7 +299,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             Assert.That(response, Is.InstanceOf<FileContentResult>());
             var fileResult = response as FileContentResult;
-            Assert.That(fileResult.ContentType, Is.EqualTo("text/json"));
+            Assert.That(fileResult.ContentType, Is.EqualTo("application/json"));
             var json = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
             return JsonSerializer.Deserialize<ConfigurationExport>(json) ?? throw new InvalidOperationException("Could not parse response");
         }

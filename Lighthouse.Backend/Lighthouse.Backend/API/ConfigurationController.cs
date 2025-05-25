@@ -53,7 +53,6 @@ namespace Lighthouse.Backend.API
             var fileBytes = System.Text.Encoding.UTF8.GetBytes(json);
             var fileName = $"Lighthouse_Configuration_{DateTime.Now:yyyy.MM.dd}.json";
 
-            Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
             return File(fileBytes, "application/json", fileName);
         }
 
