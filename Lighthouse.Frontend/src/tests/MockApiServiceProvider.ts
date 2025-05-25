@@ -1,4 +1,5 @@
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
+import type { IConfigurationService } from "../services/Api/ConfigurationService";
 import { DemoApiService } from "../services/Api/DemoApiService";
 import type { ILogService } from "../services/Api/LogService";
 import type {
@@ -34,6 +35,8 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["projectMetricsService"],
 		suggestionService:
 			null as unknown as IApiServiceContext["suggestionService"],
+		configurationService:
+			null as unknown as IApiServiceContext["configurationService"],
 		...overrides,
 	};
 };
@@ -124,6 +127,12 @@ export const createMockWorkTrackingSystemService =
 			validateWorkTrackingSystemConnection: vi.fn(),
 		};
 	};
+
+export const createMockConfigurationService = (): IConfigurationService => {
+	return {
+		exportConfiguration: vi.fn(),
+	};
+};
 
 export const createMockUpdateSubscriptionService =
 	(): IUpdateSubscriptionService => {

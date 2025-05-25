@@ -4,6 +4,10 @@ import {
 	UpdateSubscriptionService,
 } from "../UpdateSubscriptionService";
 import {
+	ConfigurationService,
+	type IConfigurationService,
+} from "./ConfigurationService";
+import {
 	DemoApiService,
 	DemoProjectMetricsService,
 	DemoTeamMetricsService,
@@ -46,6 +50,7 @@ export interface IApiServiceContext {
 	optionalFeatureService: IOptionalFeatureService;
 	updateSubscriptionService: IUpdateSubscriptionService;
 	suggestionService: ISuggestionService;
+	configurationService: IConfigurationService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -65,6 +70,7 @@ const defaultServices: IApiServiceContext = {
 	optionalFeatureService: new OptionalFeatureService(),
 	updateSubscriptionService: new UpdateSubscriptionService(),
 	suggestionService: new SuggestionService(),
+	configurationService: new ConfigurationService(),
 };
 
 const useDelay: boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
@@ -85,6 +91,7 @@ const demoServices: IApiServiceContext = {
 	optionalFeatureService: demoApiService,
 	updateSubscriptionService: demoApiService,
 	suggestionService: demoApiService,
+	configurationService: demoApiService,
 };
 
 export function getApiServices(): IApiServiceContext {

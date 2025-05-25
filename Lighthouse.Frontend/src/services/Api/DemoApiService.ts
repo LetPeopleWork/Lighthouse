@@ -37,6 +37,7 @@ import type {
 	UpdateProgress,
 	UpdateType,
 } from "../UpdateSubscriptionService";
+import type { IConfigurationService } from "./ConfigurationService";
 import type { IForecastService } from "./ForecastService";
 import type { ILogService } from "./LogService";
 import type {
@@ -490,7 +491,8 @@ export class DemoApiService
 		IWorkTrackingSystemService,
 		IOptionalFeatureService,
 		IUpdateSubscriptionService,
-		ISuggestionService
+		ISuggestionService,
+		IConfigurationService
 {
 	private readonly subscribers: Map<string, (status: IUpdateStatus) => void> =
 		new Map();
@@ -1168,6 +1170,11 @@ export class DemoApiService
 
 	async downloadLogs(): Promise<void> {
 		console.log("Downloading Logs");
+	}
+
+	async exportConfiguration(): Promise<void> {
+		console.log("Exporting Configuration");
+		await delay();
 	}
 
 	async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
