@@ -95,21 +95,25 @@ export class SystemSettingsPage {
 
 	async setMaximumDataRetentionTime(maxDays: number): Promise<void> {
 		await this.page
-			.getByLabel("Maximum Data Retention Time (")
+			.getByRole('spinbutton', { name: 'Maximum Data Retention Time (' })
 			.fill(`${maxDays}`);
 	}
 
 	async getMaximumDataRetentionTime(): Promise<number> {
+		const maxRetentionInput = this.page
+			.getByRole('spinbutton', { name: /Maximum Data Retention Time/ });
+
+		await maxRetentionInput.waitFor({state: 'visible'});
+
 		const value =
-			(await this.page
-				.getByLabel("Maximum Data Retention Time (")
+			(await maxRetentionInput
 				.inputValue()) ?? "0";
 		return Number(value);
 	}
 
 	async updateDataRetentionSettings(): Promise<void> {
 		await this.page
-			.getByRole("button", { name: "Update Data Retention Settings" })
+			.getByRole('button', { name: 'Update Data Retention Settings' })
 			.click();
 	}
 }
