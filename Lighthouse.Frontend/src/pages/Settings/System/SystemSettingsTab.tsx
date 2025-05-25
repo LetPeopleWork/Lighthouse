@@ -140,13 +140,11 @@ const SystemSettingsTab: React.FC = () => {
 				</TableContainer>
 			</InputGroup>
 
-			<InputGroup title="Refresh Settings" initiallyExpanded={true}>
-				<InputGroup title="Team Refresh">
-					<RefreshSettingUpdater settingName="Team" />
-				</InputGroup>
-				<InputGroup title="Feature Refresh">
-					<RefreshSettingUpdater settingName="Feature" />
-				</InputGroup>
+			<InputGroup title="Team Refresh">
+				<RefreshSettingUpdater settingName="Team" />
+			</InputGroup>
+			<InputGroup title="Feature Refresh">
+				<RefreshSettingUpdater settingName="Feature" />
 			</InputGroup>
 
 			<InputGroup title="Data Retention Settings" initiallyExpanded={true}>

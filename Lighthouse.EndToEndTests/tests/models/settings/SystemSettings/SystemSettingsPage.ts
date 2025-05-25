@@ -35,9 +35,7 @@ export class SystemSettingsPage {
 		settings: PeriodicRefreshSettingType,
 	): Promise<void> {
 		await this.page
-			.getByTestId("periodic-refresh-settings-panel")
-			.locator("div")
-			.filter({ hasText: `${settings} RefreshInterval (` })
+			.getByTestId(`refresh-interval-${settings}`)
 			.getByLabel("Interval (Minutes)")
 			.fill(`${interval}`);
 	}
@@ -45,9 +43,7 @@ export class SystemSettingsPage {
 	async getInterval(settings: PeriodicRefreshSettingType): Promise<number> {
 		const value =
 			(await this.page
-				.getByTestId("periodic-refresh-settings-panel")
-				.locator("div")
-				.filter({ hasText: `${settings} RefreshInterval (` })
+				.getByTestId(`refresh-interval-${settings}`)
 				.getByLabel("Interval (Minutes)")
 				.inputValue()) ?? "0";
 		return Number(value);
@@ -58,9 +54,7 @@ export class SystemSettingsPage {
 		settings: PeriodicRefreshSettingType,
 	): Promise<void> {
 		await this.page
-			.getByTestId("periodic-refresh-settings-panel")
-			.locator("div")
-			.filter({ hasText: `${settings} RefreshInterval (` })
+			.getByTestId(`refresh-after-${settings}`)
 			.getByLabel("Refresh After (Minutes)")
 			.fill(`${refreshAfter}`);
 	}
@@ -68,9 +62,7 @@ export class SystemSettingsPage {
 	async getRefreshAfter(settings: PeriodicRefreshSettingType): Promise<number> {
 		const value =
 			(await this.page
-				.getByTestId("periodic-refresh-settings-panel")
-				.locator("div")
-				.filter({ hasText: `${settings} RefreshInterval (` })
+				.getByTestId(`refresh-after-${settings}`)
 				.getByLabel("Refresh After (Minutes)")
 				.inputValue()) ?? "0";
 		return Number(value);
@@ -81,9 +73,7 @@ export class SystemSettingsPage {
 		settings: PeriodicRefreshSettingType,
 	): Promise<void> {
 		await this.page
-			.getByTestId("periodic-refresh-settings-panel")
-			.locator("div")
-			.filter({ hasText: `${settings} RefreshInterval (` })
+			.getByTestId(`start-delay-${settings}`)
 			.getByLabel("Start Delay (Minutes)")
 			.fill(`${startDelay}`);
 	}
@@ -91,9 +81,7 @@ export class SystemSettingsPage {
 	async getStartDelay(settings: PeriodicRefreshSettingType): Promise<number> {
 		const value =
 			(await this.page
-				.getByTestId("periodic-refresh-settings-panel")
-				.locator("div")
-				.filter({ hasText: `${settings} RefreshInterval (` })
+				.getByTestId(`start-delay-${settings}`)
 				.getByLabel("Start Delay (Minutes)")
 				.inputValue()) ?? "0";
 		return Number(value);

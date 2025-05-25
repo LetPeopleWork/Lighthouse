@@ -68,6 +68,7 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({
 						<TextField
 							label="Interval (Minutes)"
 							type="number"
+							data-testid={`refresh-interval-${settingName}`}
 							value={refreshSettings?.interval ?? ""}
 							onChange={handleInputChange("interval")}
 							fullWidth
@@ -82,6 +83,7 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({
 						<TextField
 							label="Refresh After (Minutes)"
 							type="number"
+							data-testid={`refresh-after-${settingName}`}
 							value={refreshSettings?.refreshAfter ?? ""}
 							onChange={handleInputChange("refreshAfter")}
 							fullWidth
@@ -96,6 +98,7 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({
 						<TextField
 							label="Start Delay (Minutes)"
 							type="number"
+							data-testid={`start-delay-${settingName}`}
 							value={refreshSettings?.startDelay ?? ""}
 							onChange={handleInputChange("startDelay")}
 							fullWidth
