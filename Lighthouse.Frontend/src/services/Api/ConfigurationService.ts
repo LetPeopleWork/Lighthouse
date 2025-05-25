@@ -14,15 +14,19 @@ export class ConfigurationService
 				responseType: "blob",
 			});
 
-			const contentDisposition = response.headers["content-disposition"];
+			const contentDisposition =
+				response.headers["content-disposition"] ??
+				response.headers["Content-Disposition"];
 			let filename = "Lighthouse_Configuration.json";
 
 			if (contentDisposition) {
+				console.log("Content-Disposition:", contentDisposition);
 				const filenameMatch = contentDisposition.match(
-					/filename="?(.+?)"?(?:;|$)/,
+					/filename="?([^"]+)"?(?:;|$)/,
 				);
 				if (filenameMatch?.[1]) {
 					filename = filenameMatch[1];
+					console.log("Extracted filename:", filename);
 				}
 			}
 

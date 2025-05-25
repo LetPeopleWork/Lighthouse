@@ -44,11 +44,17 @@ namespace Lighthouse.Backend.API
 
         private FileContentResult SerializeConfigurationToFile(ConfigurationExport configurationExport)
         {
-            var json = System.Text.Json.JsonSerializer.Serialize(configurationExport);
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(configurationExport, options);
             var fileBytes = System.Text.Encoding.UTF8.GetBytes(json);
             var fileName = $"Lighthouse_Configuration_{DateTime.Now:yyyy.MM.dd}.json";
 
-            return File(fileBytes, "text/json", fileName);
+            Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+            return File(fileBytes, "application/json", fileName);
         }
 
         private List<WorkTrackingSystemConnectionDto> GetWorkTrackingSystems()
