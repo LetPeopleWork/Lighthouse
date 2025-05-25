@@ -6,6 +6,7 @@ import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeat
 import type { ISettingsService } from "../../../services/Api/SettingsService";
 import {
 	createMockApiServiceContext,
+	createMockConfigurationService,
 	createMockOptionalFeatureService,
 	createMockSettingsService,
 } from "../../../tests/MockApiServiceProvider";
@@ -28,12 +29,18 @@ mockSettingsService.getDataRetentionSettings = mockGetDataRetentionSettings;
 mockSettingsService.updateDataRetentionSettings =
 	mockUpdateDataRetentionSettings;
 
+const mockExportConfiguration = vi.fn();
+
+const mockConfigurationService = createMockConfigurationService();
+mockConfigurationService.exportConfiguration = mockExportConfiguration;
+
 const MockApiServiceProvider = ({
 	children,
 }: { children: React.ReactNode }) => {
 	const mockContext = createMockApiServiceContext({
 		settingsService: mockSettingsService,
 		optionalFeatureService: mockOptionalFeatureService,
+		configurationService: mockConfigurationService,
 	});
 
 	return (
@@ -198,5 +205,34 @@ describe("SystemSettingsTab Component", () => {
 			"feature2-preview-indicator",
 		);
 		expect(previewIndicators).not.toBeInTheDocument();
+	});
+
+	it("should call exportConfiguration when Export Configuration button is clicked", async () => {
+		mockGetDataRetentionSettings.mockResolvedValue({
+			maxStorageTimeInDays: 30,
+		});
+		mockGetAllFeatures.mockResolvedValue([
+			{
+				id: 1,
+				name: "Feature 1",
+				key: "feature1",
+				description: "Description 1",
+				enabled: false,
+				isPreview: true,
+			},
+		]);
+
+		renderWithMockApiProvider();
+
+		// Wait for components to load
+		await waitFor(() => {
+			expect(screen.getByText("Export Configuration")).toBeVisible();
+		});
+
+		// Click the Export Configuration button
+		fireEvent.click(screen.getByText("Export Configuration"));
+
+		// Verify the exportConfiguration function was called
+		expect(mockExportConfiguration).toHaveBeenCalled();
 	});
 });

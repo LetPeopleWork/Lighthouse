@@ -10,12 +10,12 @@ export class ConfigurationService
 {
 	async exportConfiguration(): Promise<void> {
 		return await this.withErrorHandling(async () => {
-			const response = await this.apiService.get("/api/configuration/export", {
+			const response = await this.apiService.get("/configuration/export", {
 				responseType: "blob",
 			});
 
 			const contentDisposition = response.headers["content-disposition"];
-			let filename = "configuration.json";
+			let filename = "Lighthouse_Configuration.json";
 
 			if (contentDisposition) {
 				const filenameMatch = contentDisposition.match(

@@ -79,7 +79,7 @@ describe("ConfigurationService", () => {
 
 		await configurationService.exportConfiguration();
 
-		expect(mockedAxios.get).toHaveBeenCalledWith("/api/configuration/export", {
+		expect(mockedAxios.get).toHaveBeenCalledWith("/configuration/export", {
 			responseType: "blob",
 		});
 		expect(mockCreateObjectURL).toHaveBeenCalledWith(mockResponseData);
@@ -113,6 +113,6 @@ describe("ConfigurationService", () => {
 
 		await configurationService.exportConfiguration();
 
-		expect(downloadFileName).toBe("configuration.json");
+		expect(downloadFileName).toBe("Lighthouse_Configuration.json");
 	});
 });

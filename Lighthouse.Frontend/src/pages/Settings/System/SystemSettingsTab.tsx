@@ -31,7 +31,7 @@ const SystemSettingsTab: React.FC = () => {
 		[],
 	);
 
-	const { settingsService, optionalFeatureService } =
+	const { settingsService, optionalFeatureService, configurationService } =
 		useContext(ApiServiceContext);
 
 	// Data Retention functions
@@ -65,6 +65,10 @@ const SystemSettingsTab: React.FC = () => {
 		}
 	}, [optionalFeatureService]);
 
+	const onExportConfiguration = async () => {
+		await configurationService.exportConfiguration();
+	};
+
 	const onToggleOptionalFeature = async (toggledFeature: IOptionalFeature) => {
 		const updatedFeatures = optionalFeatures.map((feature) =>
 			feature.id === toggledFeature.id
@@ -91,6 +95,14 @@ const SystemSettingsTab: React.FC = () => {
 
 	return (
 		<Box sx={{ mb: 4 }}>
+			<InputGroup title="Lighthouse Configuration" initiallyExpanded={true}>
+				<ActionButton
+					buttonVariant="contained"
+					onClickHandler={onExportConfiguration}
+					buttonText="Export Configuration"
+				/>
+			</InputGroup>
+
 			<InputGroup title="Optional Features" initiallyExpanded={true}>
 				<TableContainer>
 					<Table data-testid="optional-features-table">
