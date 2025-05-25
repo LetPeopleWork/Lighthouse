@@ -1,10 +1,8 @@
 import type { Page } from "@playwright/test";
 import { ProjectEditPage } from "../projects/ProjectEditPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
-import { DataRetentionSettingsPage } from "./DataRetentionSettings/DataRetentionSettingsPage";
 import { LogsPage } from "./Logs/LogsPage";
-import { OptionalFeaturesPage } from "./OptionalFeatures/OptionalFeaturesPage";
-import { PeriodicRefreshSettingsPage } from "./PeriodicRefreshSettings/PeriodicRefreshSettingsPage";
+import { SystemSettingsPage } from "./SystemSettings/SystemSettingsPage";
 import { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystems/WorkTrackingSystemsSettingsPage";
 
 export class SettingsPage {
@@ -32,22 +30,10 @@ export class SettingsPage {
 		return new ProjectEditPage(this.page);
 	}
 
-	async goToPeriodicRefreshSettings(): Promise<PeriodicRefreshSettingsPage> {
-		await this.page.getByTestId("periodic-refresh-settings-tab").click();
+	async goToSystemSettings(): Promise<SystemSettingsPage> {
+		await this.page.getByTestId("system-settings-tab").click();
 
-		return new PeriodicRefreshSettingsPage(this.page);
-	}
-
-	async goToDataRetentionSettings(): Promise<DataRetentionSettingsPage> {
-		await this.page.getByTestId("data-retention-settings-tab").click();
-
-		return new DataRetentionSettingsPage(this.page);
-	}
-
-	async goToOptionalFeatures(): Promise<OptionalFeaturesPage> {
-		await this.page.getByTestId("optional-features-tab").click();
-
-		return new OptionalFeaturesPage(this.page);
+		return new SystemSettingsPage(this.page);
 	}
 
 	async goToLogs(): Promise<LogsPage> {

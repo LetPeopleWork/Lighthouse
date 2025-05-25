@@ -1,27 +1,15 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import type React from "react";
+import { describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
+import type { ISettingsService } from "../../../services/Api/SettingsService";
 import {
 	createMockApiServiceContext,
 	createMockOptionalFeatureService,
+	createMockSettingsService,
 } from "../../../tests/MockApiServiceProvider";
-import OptionalFeaturesTab from "./OptionalFeaturesTab";
-
-// Mocking the Loading Animation component
-vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
-	default: ({
-		hasError,
-		isLoading,
-		children,
-	}: { hasError: boolean; isLoading: boolean; children: React.ReactNode }) => (
-		<>
-			{isLoading && <div>Loading...</div>}
-			{hasError && <div>Error loading data</div>}
-			{!isLoading && !hasError && children}
-		</>
-	),
-}));
+import SystemSettingsTab from "./SystemSettingsTab";
 
 const mockOptionalFeatureService: IOptionalFeatureService =
 	createMockOptionalFeatureService();
@@ -32,10 +20,19 @@ const mockUpdateFeature = vi.fn();
 mockOptionalFeatureService.getAllFeatures = mockGetAllFeatures;
 mockOptionalFeatureService.updateFeature = mockUpdateFeature;
 
+const mockGetDataRetentionSettings = vi.fn();
+const mockUpdateDataRetentionSettings = vi.fn();
+
+const mockSettingsService: ISettingsService = createMockSettingsService();
+mockSettingsService.getDataRetentionSettings = mockGetDataRetentionSettings;
+mockSettingsService.updateDataRetentionSettings =
+	mockUpdateDataRetentionSettings;
+
 const MockApiServiceProvider = ({
 	children,
 }: { children: React.ReactNode }) => {
 	const mockContext = createMockApiServiceContext({
+		settingsService: mockSettingsService,
 		optionalFeatureService: mockOptionalFeatureService,
 	});
 
@@ -49,13 +46,15 @@ const MockApiServiceProvider = ({
 const renderWithMockApiProvider = () => {
 	render(
 		<MockApiServiceProvider>
-			<OptionalFeaturesTab />
+			<SystemSettingsTab />
 		</MockApiServiceProvider>,
 	);
 };
 
-describe("OptionalFeaturesTab component", () => {
+describe("SystemSettingsTab Component", () => {
 	beforeEach(() => {
+		vi.resetAllMocks();
+
 		mockGetAllFeatures.mockResolvedValue([
 			{
 				id: 1,
@@ -78,6 +77,60 @@ describe("OptionalFeaturesTab component", () => {
 
 	afterEach(() => {
 		vi.clearAllMocks();
+		vi.restoreAllMocks();
+	});
+
+	it("should fetch and display the data retention settings", async () => {
+		const mockData = { maxStorageTimeInDays: 30 };
+		mockGetDataRetentionSettings.mockResolvedValue(Promise.resolve(mockData));
+
+		renderWithMockApiProvider();
+
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+
+		expect(screen.getByDisplayValue("30")).toBeInTheDocument();
+	});
+
+	it("should handle input changes", async () => {
+		const mockData = { maxStorageTimeInDays: 30 };
+		mockGetDataRetentionSettings.mockResolvedValue(Promise.resolve(mockData));
+
+		renderWithMockApiProvider();
+
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+
+		fireEvent.change(
+			await screen.findByLabelText("Maximum Data Retention Time (Days)"),
+			{ target: { value: "60" } },
+		);
+
+		expect(screen.getByDisplayValue("60")).toBeInTheDocument();
+	});
+
+	it("should call updateSettings with new values when button is clicked", async () => {
+		const mockData = { maxStorageTimeInDays: 30 };
+		const updatedData = { maxStorageTimeInDays: 60 };
+		mockGetDataRetentionSettings.mockResolvedValue(Promise.resolve(mockData));
+		mockUpdateDataRetentionSettings.mockResolvedValue(Promise.resolve());
+
+		renderWithMockApiProvider();
+
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+
+		fireEvent.change(
+			await screen.findByLabelText("Maximum Data Retention Time (Days)"),
+			{ target: { value: updatedData.maxStorageTimeInDays.toString() } },
+		);
+
+		fireEvent.click(screen.getByText(/Update Data Retention Settings/));
+
+		expect(mockUpdateDataRetentionSettings).toHaveBeenCalledWith(updatedData);
 	});
 
 	it("should fetch and display optional features", async () => {

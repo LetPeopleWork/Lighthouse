@@ -1,10 +1,8 @@
 import ArticleIcon from "@mui/icons-material/Article";
-import BiotechIcon from "@mui/icons-material/Biotech";
 import FolderIcon from "@mui/icons-material/Folder";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
-import RefreshIcon from "@mui/icons-material/Refresh";
 import SettingsIcon from "@mui/icons-material/Settings";
-import StorageIcon from "@mui/icons-material/Storage";
+import SettingsSystemDaydreamIcon from "@mui/icons-material/SettingsSystemDaydream";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
@@ -18,15 +16,13 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useEffect, useState } from "react";
 import WorkTrackingSystemConnectionSettings from "./Connections/WorkTrackingSystemConnectionSettings";
-import DataRetentionSettingsTab from "./DataRetention/DataRetentionSettingsTab";
 import DefaultProjectSettings from "./DefaultProjectSettings/DefaultProjectSettings";
 import DefaultTeamSettings from "./DefaultTeamSettings/DefaultTeamSettings";
 import LogSettings from "./LogSettings/LogSettings";
-import OptionalFeaturesTab from "./OptionalFeatures/OptionalFeaturesTab";
-import RefreshSettingsTab from "./Refresh/RefreshSettingsTab";
+import SystemSettingsTab from "./System/SystemSettingsTab";
 
 const Settings: React.FC = () => {
-	const [value, setValue] = useState("1");
+	const [value, setValue] = useState("10");
 	const [mounted, setMounted] = useState(false);
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -41,7 +37,7 @@ const Settings: React.FC = () => {
 
 	const tabConfig = [
 		{
-			value: "1",
+			value: "10",
 			label: "Work Tracking",
 			testId: "work-tracking-tab",
 			panelTestId: "work-tracking-panel",
@@ -49,7 +45,15 @@ const Settings: React.FC = () => {
 			component: <WorkTrackingSystemConnectionSettings />,
 		},
 		{
-			value: "2",
+			value: "20",
+			label: "System Settings",
+			testId: "system-settings-tab",
+			panelTestId: "system-settings-panel",
+			icon: <SettingsSystemDaydreamIcon />,
+			component: <SystemSettingsTab />,
+		},
+		{
+			value: "30",
 			label: "Default Teams",
 			testId: "default-team-settings-tab",
 			panelTestId: "default-team-settings-panel",
@@ -57,36 +61,12 @@ const Settings: React.FC = () => {
 			component: <DefaultTeamSettings />,
 		},
 		{
-			value: "3",
+			value: "40",
 			label: "Default Projects",
 			testId: "default-project-settings-tab",
 			panelTestId: "default-project-settings-panel",
 			icon: <FolderIcon />,
 			component: <DefaultProjectSettings />,
-		},
-		{
-			value: "4",
-			label: "Refresh Settings",
-			testId: "periodic-refresh-settings-tab",
-			panelTestId: "periodic-refresh-settings-panel",
-			icon: <RefreshIcon />,
-			component: <RefreshSettingsTab />,
-		},
-		{
-			value: "5",
-			label: "Data Retention",
-			testId: "data-retention-settings-tab",
-			panelTestId: "data-retention-settings-panel",
-			icon: <StorageIcon />,
-			component: <DataRetentionSettingsTab />,
-		},
-		{
-			value: "80",
-			label: "Optional Features",
-			testId: "optional-features-tab",
-			panelTestId: "optional-features-panel",
-			icon: <BiotechIcon />,
-			component: <OptionalFeaturesTab />,
 		},
 		{
 			value: "99",

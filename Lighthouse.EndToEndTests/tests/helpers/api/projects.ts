@@ -40,7 +40,7 @@ export async function createProject(
 			owningTeam: null,
 			featureOwnerField: "",
 			involvedTeams: involvedTeamsData,
-			workTrackingSystemConnectionId: workTrackingSystemConnectionId,			
+			workTrackingSystemConnectionId: workTrackingSystemConnectionId,
 			serviceLevelExpectationProbability: 80,
 			serviceLevelExpectationRange: 25,
 		},

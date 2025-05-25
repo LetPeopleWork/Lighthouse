@@ -8,7 +8,7 @@ test("should be able to handle a team defined in Linear", async ({
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 
 	await test.step("Enable Linear Integration", async () => {
-		const featuresTab = await settingsPage.goToOptionalFeatures();
+		const featuresTab = await settingsPage.goToSystemSettings();
 
 		await featuresTab.enableFeature("LinearIntegration");
 	});

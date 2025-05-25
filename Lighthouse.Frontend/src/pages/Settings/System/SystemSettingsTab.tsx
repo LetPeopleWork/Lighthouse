@@ -1,0 +1,186 @@
+import BiotechIcon from "@mui/icons-material/Biotech";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Container from "@mui/material/Container";
+import Grid from "@mui/material/Grid";
+import Switch from "@mui/material/Switch";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import type React from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
+import ActionButton from "../../../components/Common/ActionButton/ActionButton";
+import InputGroup from "../../../components/Common/InputGroup/InputGroup";
+import type { IDataRetentionSettings } from "../../../models/AppSettings/DataRetentionSettings";
+import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
+
+const SystemSettingsTab: React.FC = () => {
+	// Data Retention state
+	const [dataRetentionSettings, setDataRetentionSettings] =
+		useState<IDataRetentionSettings | null>(null);
+
+	// Optional Features state
+	const [optionalFeatures, setOptionalFeatures] = useState<IOptionalFeature[]>(
+		[],
+	);
+
+	const { settingsService, optionalFeatureService } =
+		useContext(ApiServiceContext);
+
+	// Data Retention functions
+	const fetchDataRetentionSettings = useCallback(async () => {
+		const loadedSettings = await settingsService.getDataRetentionSettings();
+		setDataRetentionSettings(loadedSettings);
+	}, [settingsService]);
+
+	const updateDataRetentionSettings = async () => {
+		if (dataRetentionSettings == null) {
+			return;
+		}
+
+		await settingsService.updateDataRetentionSettings(dataRetentionSettings);
+	};
+
+	const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		if (dataRetentionSettings) {
+			setDataRetentionSettings({
+				...dataRetentionSettings,
+				maxStorageTimeInDays: Number.parseInt(event.target.value, 10),
+			});
+		}
+	};
+
+	// Optional Features functions
+	const fetchOptionalFeatures = useCallback(async () => {
+		const optionalFeatureData = await optionalFeatureService.getAllFeatures();
+		if (optionalFeatureData) {
+			setOptionalFeatures(optionalFeatureData);
+		}
+	}, [optionalFeatureService]);
+
+	const onToggleOptionalFeature = async (toggledFeature: IOptionalFeature) => {
+		const updatedFeatures = optionalFeatures.map((feature) =>
+			feature.id === toggledFeature.id
+				? { ...feature, enabled: !feature.enabled }
+				: feature,
+		);
+		setOptionalFeatures(updatedFeatures);
+
+		try {
+			await optionalFeatureService.updateFeature({
+				...toggledFeature,
+				enabled: !toggledFeature.enabled,
+			});
+		} catch {
+			// Revert the local state in case of error
+			await fetchOptionalFeatures();
+		}
+	};
+
+	useEffect(() => {
+		fetchDataRetentionSettings();
+		fetchOptionalFeatures();
+	}, [fetchDataRetentionSettings, fetchOptionalFeatures]);
+
+	return (
+		<Box sx={{ mb: 4 }}>
+			<InputGroup title="Optional Features" initiallyExpanded={true}>
+				<TableContainer>
+					<Table data-testid="optional-features-table">
+						<TableHead>
+							<TableRow>
+								<TableCell>Name</TableCell>
+								<TableCell>Description</TableCell>
+								<TableCell>Enabled</TableCell>
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{optionalFeatures.map((feature) => (
+								<TableRow
+									key={feature.id}
+									data-testid={`feature-row-${feature.key}`}
+								>
+									<TableCell>
+										<Box sx={{ display: "flex", alignItems: "center" }}>
+											{feature.name}
+											{feature.isPreview && (
+												<Tooltip title="This feature is in preview and may change or be removed in future versions">
+													<Chip
+														icon={<BiotechIcon />}
+														label="Preview"
+														size="small"
+														color="warning"
+														sx={{ ml: 1 }}
+														data-testid={`${feature.key}-preview-indicator`}
+													/>
+												</Tooltip>
+											)}
+										</Box>
+									</TableCell>
+									<TableCell>{feature.description}</TableCell>
+									<TableCell>
+										<Switch
+											checked={feature.enabled}
+											data-testid={`${feature.key}-toggle`}
+											onChange={() => onToggleOptionalFeature(feature)}
+											color="primary"
+										/>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</TableContainer>
+			</InputGroup>
+
+			<InputGroup title="Refresh Settings" initiallyExpanded={true}>
+				<InputGroup title="Team Refresh">
+					<RefreshSettingUpdater settingName="Team" />
+				</InputGroup>
+				<InputGroup title="Feature Refresh">
+					<RefreshSettingUpdater settingName="Feature" />
+				</InputGroup>
+			</InputGroup>
+
+			<InputGroup title="Data Retention Settings" initiallyExpanded={true}>
+				<Container maxWidth={false}>
+					<Grid container spacing={3}>
+						<Grid size={{ xs: 12 }}>
+							<TextField
+								label="Maximum Data Retention Time (Days)"
+								type="number"
+								value={dataRetentionSettings?.maxStorageTimeInDays ?? ""}
+								onChange={handleInputChange}
+								fullWidth
+								slotProps={{
+									htmlInput: {
+										min: 30,
+									},
+								}}
+								helperText="After this many days the archived data for Features is removed."
+								data-testid="data-retention-days-input"
+							/>
+						</Grid>
+						<Grid size={{ xs: 12 }}>
+							<ActionButton
+								buttonVariant="contained"
+								onClickHandler={updateDataRetentionSettings}
+								buttonText="Update Data Retention Settings"
+								data-testid="update-data-retention-button"
+							/>
+						</Grid>
+					</Grid>
+				</Container>
+			</InputGroup>
+		</Box>
+	);
+};
+
+export default SystemSettingsTab;

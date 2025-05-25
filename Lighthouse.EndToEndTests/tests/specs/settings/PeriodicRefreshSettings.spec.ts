@@ -1,5 +1,5 @@
 import { expect, test } from "../../fixutres/LighthouseFixture";
-import type { PeriodicRefreshSettingType } from "../../models/settings/PeriodicRefreshSettings/PeriodicRefreshSettingsPage";
+import type { PeriodicRefreshSettingType } from "../../models/settings/SystemSettings/SystemSettingsPage";
 
 const settings: PeriodicRefreshSettingType[] = ["Team", "Feature"];
 
@@ -8,33 +8,28 @@ for (const settingName of settings) {
 		overviewPage,
 	}) => {
 		const settingsPage = await overviewPage.lighthousePage.goToSettings();
-		let periodicRefreshSettingsPage =
-			await settingsPage.goToPeriodicRefreshSettings();
+		let systemSettings = await settingsPage.goToSystemSettings();
 
 		await test.step("Save New Settings", async () => {
-			await periodicRefreshSettingsPage.setInterval(13, settingName);
-			await periodicRefreshSettingsPage.setRefreshAfter(37, settingName);
-			await periodicRefreshSettingsPage.setStartDelay(1886, settingName);
+			await systemSettings.setInterval(13, settingName);
+			await systemSettings.setRefreshAfter(37, settingName);
+			await systemSettings.setStartDelay(1886, settingName);
 
-			await periodicRefreshSettingsPage.updateSettings(settingName);
+			await systemSettings.updateSettings(settingName);
 		});
 
 		await test.step("Verify Changes were saved", async () => {
 			await overviewPage.lightHousePage.goToOverview();
 			const settingsPage = await overviewPage.lighthousePage.goToSettings();
-			periodicRefreshSettingsPage =
-				await settingsPage.goToPeriodicRefreshSettings();
+			systemSettings = await settingsPage.goToSystemSettings();
 
-			const interval =
-				await periodicRefreshSettingsPage.getInterval(settingName);
+			const interval = await systemSettings.getInterval(settingName);
 			expect(interval).toBe(13);
 
-			const refreshAfter =
-				await periodicRefreshSettingsPage.getRefreshAfter(settingName);
+			const refreshAfter = await systemSettings.getRefreshAfter(settingName);
 			expect(refreshAfter).toBe(37);
 
-			const startDelay =
-				await periodicRefreshSettingsPage.getStartDelay(settingName);
+			const startDelay = await systemSettings.getStartDelay(settingName);
 			expect(startDelay).toBe(1886);
 		});
 	});

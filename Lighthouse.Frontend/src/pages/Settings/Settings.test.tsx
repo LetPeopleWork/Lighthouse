@@ -9,17 +9,14 @@ vi.mock("./Connections/WorkTrackingSystemConnectionSettings", () => ({
 vi.mock("./LogSettings/LogSettings", () => ({
 	default: () => <div>Log Settings</div>,
 }));
-vi.mock("./Refresh/RefreshSettingsTab", () => ({
-	default: () => <div>Refresh Settings</div>,
-}));
 vi.mock("./DefaultTeamSettings/DefaultTeamSettings", () => ({
 	default: () => <div>Default Team Settings</div>,
 }));
 vi.mock("./DefaultProjectSettings/DefaultProjectSettings", () => ({
 	default: () => <div>Default Project Settings</div>,
 }));
-vi.mock("./OptionalFeatures/OptionalFeaturesTab", () => ({
-	default: () => <div>Optional Features</div>,
+vi.mock("./System/SystemSettingsTab", () => ({
+	default: () => <div>System Settings</div>,
 }));
 vi.mock("../../components/App/LetPeopleWork/Tutorial/TutorialButton", () => ({
 	default: () => <button type="button">Tutorial Button</button>,
@@ -59,21 +56,9 @@ describe("Settings Component", () => {
 		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
 	});
 
-	it("should switch to Periodic Refresh Settings tab when clicked", () => {
-		fireEvent.click(screen.getByTestId("periodic-refresh-settings-tab"));
-		expect(screen.getByTestId("periodic-refresh-settings-panel")).toBeVisible();
-		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
-	});
-
-	it("should switch to Data Retention Settings tab when clicked", () => {
-		fireEvent.click(screen.getByTestId("data-retention-settings-tab"));
-		expect(screen.getByTestId("data-retention-settings-panel")).toBeVisible();
-		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
-	});
-
-	it("should switch to Optional Features tab when clicked", () => {
-		fireEvent.click(screen.getByTestId("optional-features-tab"));
-		expect(screen.getByTestId("optional-features-panel")).toBeVisible();
+	it("should switch to System Settings tab when clicked", () => {
+		fireEvent.click(screen.getByTestId("system-settings-tab"));
+		expect(screen.getByTestId("system-settings-panel")).toBeVisible();
 		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
 	});
 

@@ -117,20 +117,20 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 		"settings/defaultprojectsettings.png",
 	);
 
-	const periodicRefreshSettings =
-		await settingsPage.goToPeriodicRefreshSettings();
+	/* TODO: Update this to capture specific elements */
+	const systemSettings = await settingsPage.goToSystemSettings();
 	await takePageScreenshot(
-		periodicRefreshSettings.page,
+		systemSettings.page,
 		"settings/periodicrefreshsettings.png",
 	);
 
-	const dataRetentionSettings = await settingsPage.goToDataRetentionSettings();
+	const dataRetentionSettings = await settingsPage.goToSystemSettings();
 	await takePageScreenshot(
 		dataRetentionSettings.page,
 		"settings/dataretention.png",
 	);
 
-	const optionalFeatureSettings = await settingsPage.goToOptionalFeatures();
+	const optionalFeatureSettings = await settingsPage.goToSystemSettings();
 	await takePageScreenshot(
 		optionalFeatureSettings.page,
 		"settings/optionalfeatures.png",
@@ -204,7 +204,7 @@ testWithData(
 			teamDetailPage.cycleTimePercentileWidget,
 			"features/metrics/cycletimepercentiles.png",
 		);
-		
+
 		await teamDetailPage.openSleWidget();
 		await takeElementScreenshot(
 			teamDetailPage.sleWidget,

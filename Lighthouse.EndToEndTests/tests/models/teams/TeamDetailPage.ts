@@ -82,7 +82,7 @@ export class TeamDetailPage {
 		return new WorkItemsInProgressDialog(this.page);
 	}
 
-	async openClosedItemsDialog() : Promise<WorkItemsInProgressDialog> {
+	async openClosedItemsDialog(): Promise<WorkItemsInProgressDialog> {
 		await this.cycleTimePercentileWidget.click();
 		return new WorkItemsInProgressDialog(this.page);
 	}
@@ -137,15 +137,17 @@ export class TeamDetailPage {
 	}
 
 	get sleWidgetButton(): Locator {
-		return this.page.getByRole('button', { name: 'SLE: 70% @ 7 days' });
+		return this.page.getByRole("button", { name: "SLE: 70% @ 7 days" });
 	}
 
 	get sleWidget(): Locator {
-		return this.page.getByText('Service Level ExpectationTarget:70% of all work items are done within 7 days or');
+		return this.page.getByText(
+			"Service Level ExpectationTarget:70% of all work items are done within 7 days or",
+		);
 	}
 
 	get returnToCycleTimePercentilesButton(): Locator {
-		return this.page.getByRole('button').filter({ hasText: /^$/ }).nth(3);
+		return this.page.getByRole("button").filter({ hasText: /^$/ }).nth(3);
 	}
 
 	get workItemsInProgressWidget(): Locator {
