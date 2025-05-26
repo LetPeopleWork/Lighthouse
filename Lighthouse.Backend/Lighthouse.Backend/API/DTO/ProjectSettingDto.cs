@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.API.DTO
 
             if (project.OwningTeam != null)
             {
-                OwningTeam = new TeamDto(project.OwningTeam);
+                OwningTeam = new EntityReferenceDto(project.OwningTeam);
             }
 
             FeatureOwnerField = project.FeatureOwnerField;
@@ -50,9 +50,9 @@ namespace Lighthouse.Backend.API.DTO
 
         public string? SizeEstimateField { get; set; } = string.Empty;
 
-        public List<TeamDto> InvolvedTeams { get; set; } = new List<TeamDto>();
+        public List<EntityReferenceDto> InvolvedTeams { get; set; } = new List<EntityReferenceDto>();
 
-        public TeamDto? OwningTeam { get; set; }
+        public EntityReferenceDto? OwningTeam { get; set; }
 
         public string? FeatureOwnerField { get; set; }
     }

@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<FeatureDto> Features { get; } = new List<FeatureDto>();
 
-        public List<TeamDto> InvolvedTeams { get; } = new List<TeamDto>();
+        public List<EntityReferenceDto> InvolvedTeams { get; } = new List<EntityReferenceDto>();
 
         public List<MilestoneDto> Milestones { get; } = new List<MilestoneDto>();
     }

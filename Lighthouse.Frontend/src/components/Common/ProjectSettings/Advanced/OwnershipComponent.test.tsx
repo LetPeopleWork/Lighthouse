@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { IEntityReference } from "../../../../models/EntityReference";
 import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
-import { type ITeam, Team } from "../../../../models/Team/Team";
+import type { ITeam } from "../../../../models/Team/Team";
 import OwnershipComponent from "./OwnershipComponent";
 
 describe("OwnershipComponent", () => {
@@ -64,7 +65,7 @@ describe("OwnershipComponent", () => {
 		serviceLevelExpectationProbability: 85,
 		serviceLevelExpectationRange: 30,
 		featureOwnerField: "custom.owner",
-		owningTeam: new Team(),
+		owningTeam: undefined,
 	};
 
 	const mockOnProjectSettingsChange = vi.fn();
@@ -135,9 +136,14 @@ describe("OwnershipComponent", () => {
 	});
 
 	it("sets owningTeam to null when 'None' is selected", () => {
+		const owningTeam: IEntityReference = {
+			id: mockTeams[0].id,
+			name: mockTeams[0].name,
+		};
+
 		const settingsWithTeam: IProjectSettings = {
 			...initialSettings,
-			owningTeam: mockTeams[0],
+			owningTeam: owningTeam,
 		};
 
 		render(

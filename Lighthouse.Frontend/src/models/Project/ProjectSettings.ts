@@ -1,12 +1,12 @@
 import type { IBaseSettings } from "../Common/BaseSettings";
-import type { ITeam } from "../Team/Team";
+import type { IEntityReference } from "../EntityReference";
 import type { IMilestone } from "./Milestone";
 
 export interface IProjectSettings extends IBaseSettings {
 	milestones: IMilestone[];
 	unparentedItemsQuery: string;
-	involvedTeams: ITeam[];
-	owningTeam?: ITeam;
+	involvedTeams: IEntityReference[];
+	owningTeam?: IEntityReference;
 
 	overrideRealChildCountStates: string[];
 

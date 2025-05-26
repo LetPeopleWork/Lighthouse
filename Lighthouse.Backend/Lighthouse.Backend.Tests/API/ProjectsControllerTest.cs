@@ -275,11 +275,11 @@ namespace Lighthouse.Backend.Tests.API
                 DefaultAmountOfWorkItemsPerFeature = 10,
                 WorkTrackingSystemConnectionId = 202,
                 SizeEstimateField = "NewField",
-                InvolvedTeams = new List<TeamDto>
+                InvolvedTeams = new List<EntityReferenceDto>
                 {
-                    new TeamDto(existingTeam)
+                    new EntityReferenceDto(existingTeam)
                 },
-                OwningTeam = new TeamDto(existingTeam),
+                OwningTeam = new EntityReferenceDto(existingTeam),
                 FeatureOwnerField = "OwnerField",
                 ServiceLevelExpectationProbability = 95,
                 ServiceLevelExpectationRange = 5,

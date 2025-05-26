@@ -30,11 +30,11 @@ namespace Lighthouse.Backend.API.DTO
             return forecastDtos;
         }
 
-        public static IEnumerable<TeamDto> CreateInvolvedTeamDtos(this Project project)
+        public static IEnumerable<EntityReferenceDto> CreateInvolvedTeamDtos(this Project project)
         {
             foreach (var team in project.Teams)
             {
-                yield return new TeamDto(team);
+                yield return new EntityReferenceDto(team);
             }
         }
     }

@@ -6,7 +6,7 @@ import PlayCircleFilledWhiteOutlinedIcon from "@mui/icons-material/PlayCircleFil
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import { IconButton, Link, Tooltip } from "@mui/material";
 import React from "react";
-import type { ITeam } from "../../../models/Team/Team";
+import type { IEntityReference } from "../../../models/EntityReference";
 import type { StateCategory } from "../../../models/WorkItem";
 import StyledLink from "../StyledLink/StyledLink";
 
@@ -15,7 +15,7 @@ interface FeatureNameProps {
 	url: string;
 	stateCategory: StateCategory;
 	isUsingDefaultFeatureSize: boolean;
-	teamsWorkIngOnFeature: ITeam[];
+	teamsWorkIngOnFeature: IEntityReference[];
 }
 
 const FeatureName: React.FC<FeatureNameProps> = ({

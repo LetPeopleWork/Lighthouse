@@ -1,12 +1,13 @@
 import { Transform, Type, plainToInstance } from "class-transformer";
 import "reflect-metadata";
+import type { IEntityReference } from "../EntityReference";
 import { Feature, type IFeature } from "../Feature";
 import type { IFeatureOwner } from "../IFeatureOwner";
-import { type ITeam, Team } from "../Team/Team";
+import { Team } from "../Team/Team";
 import { type IMilestone, Milestone } from "./Milestone";
 
 export interface IProject extends IFeatureOwner {
-	involvedTeams: ITeam[];
+	involvedTeams: IEntityReference[];
 	milestones: IMilestone[];
 
 	get remainingWork(): number;
@@ -25,7 +26,7 @@ export class Project implements IProject {
 	features: IFeature[] = [];
 
 	@Transform(({ value }) => value.map(Team.fromBackend), { toClassOnly: true })
-	involvedTeams: ITeam[] = [];
+	involvedTeams: IEntityReference[] = [];
 
 	tags: string[] = [];
 
