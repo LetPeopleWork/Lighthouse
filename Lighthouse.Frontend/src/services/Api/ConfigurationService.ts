@@ -6,7 +6,8 @@ export interface IConfigurationService {
 
 export class ConfigurationService
 	extends BaseApiService
-	implements IConfigurationService {
+	implements IConfigurationService
+{
 	async exportConfiguration(): Promise<void> {
 		return await this.withErrorHandling(async () => {
 			const response = await this.apiService.get("/configuration/export", {
@@ -19,7 +20,9 @@ export class ConfigurationService
 			let filename = "Lighthouse_Configuration.json";
 
 			if (contentDisposition) {
-				const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+				const filenameMatch = contentDisposition.match(
+					/filename="?([^";]+)"?/i,
+				);
 				if (filenameMatch && filenameMatch.length > 1) {
 					filename = filenameMatch[1];
 				}
