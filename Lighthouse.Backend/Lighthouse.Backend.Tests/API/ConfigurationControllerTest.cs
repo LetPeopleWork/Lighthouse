@@ -41,9 +41,9 @@ namespace Lighthouse.Backend.Tests.API
         public void ExportConfiguration_NoWorkTrackingSystems_ReturnsEmptyConfigurationExport()
         {
             var subject = CreateSubject();
-            
+
             var response = subject.ExportConfiguration();
-            
+
             Assert.Multiple(() =>
             {
                 var configuration = ParseExportResponse(response);
@@ -60,9 +60,9 @@ namespace Lighthouse.Backend.Tests.API
             var workTrackingSystem = AddWorkTrackingSystemConnection();
 
             var subject = CreateSubject();
-            
+
             var response = subject.ExportConfiguration();
-            
+
             Assert.Multiple(() =>
             {
                 var configuration = ParseExportResponse(response);
@@ -132,7 +132,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void ExportConfiguration_WithTeam_IncludesInExport()
         {
-            var team = new Team { 
+            var team = new Team
+            {
                 Id = 1,
                 Name = "Test Team",
                 WorkItemQuery = "SELECT * FROM WorkItems WHERE TeamId = 1",
@@ -158,7 +159,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 var configuration = ParseExportResponse(response);
                 Assert.That(configuration.Teams, Has.Count.EqualTo(1));
-                
+
                 var exportedTeam = configuration.Teams[0];
 
                 Assert.That(exportedTeam.Id, Is.EqualTo(1));
@@ -234,7 +235,7 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
 
             var response = subject.ExportConfiguration();
-            
+
             Assert.Multiple(() =>
             {
                 var configuration = ParseExportResponse(response);
@@ -279,6 +280,29 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(project.Milestones[0].Name, Is.EqualTo("Milestone 1"));
                 Assert.That(project.Milestones[0].Date.Date, Is.EqualTo(DateTime.UtcNow.AddDays(30).Date));
             });
+        }
+
+        [Test]
+        public async Task ClearConfiguration_RemovesExistingConfiguration()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            teams.Add(team);
+
+            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            projects.Add(project);
+
+            await subject.ClearConfigurationAsync();
+
+            projectRepositoryMock.Verify(x => x.Remove(project.Id), Times.Once);
+            projectRepositoryMock.Verify(x => x.Save(), Times.Once);
+
+            teamRepositoryMock.Verify(x => x.Remove(team.Id), Times.Once);
+            teamRepositoryMock.Verify(x => x.Save(), Times.Once);
+
+            workTrackingSystemRepositoryMock.Verify(x => x.Remove(workTrackingSystem.Id), Times.Once);
+            workTrackingSystemRepositoryMock.Verify(x => x.Save(), Times.Once);
         }
 
         private WorkTrackingSystemConnection AddWorkTrackingSystemConnection()
