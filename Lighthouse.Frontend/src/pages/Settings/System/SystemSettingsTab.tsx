@@ -20,6 +20,7 @@ import type { IDataRetentionSettings } from "../../../models/AppSettings/DataRet
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
+import ImportConfigurationDialog from "./ImportConfiguration/ImportConfigurationDialog";
 
 const SystemSettingsTab: React.FC = () => {
 	// Data Retention state
@@ -30,6 +31,9 @@ const SystemSettingsTab: React.FC = () => {
 	const [optionalFeatures, setOptionalFeatures] = useState<IOptionalFeature[]>(
 		[],
 	);
+
+	// Import Configuration Dialog state
+	const [importDialogOpen, setImportDialogOpen] = useState(false);
 
 	const { settingsService, optionalFeatureService, configurationService } =
 		useContext(ApiServiceContext);
@@ -69,6 +73,14 @@ const SystemSettingsTab: React.FC = () => {
 		await configurationService.exportConfiguration();
 	};
 
+	const onOpenImportDialog = () => {
+		setImportDialogOpen(true);
+	};
+
+	const onCloseImportDialog = () => {
+		setImportDialogOpen(false);
+	};
+
 	const onToggleOptionalFeature = async (toggledFeature: IOptionalFeature) => {
 		const updatedFeatures = optionalFeatures.map((feature) =>
 			feature.id === toggledFeature.id
@@ -95,12 +107,27 @@ const SystemSettingsTab: React.FC = () => {
 
 	return (
 		<Box sx={{ mb: 4 }}>
+			<ImportConfigurationDialog
+				open={importDialogOpen}
+				onClose={onCloseImportDialog}
+			/>
 			<InputGroup title="Lighthouse Configuration" initiallyExpanded={true}>
-				<ActionButton
-					buttonVariant="contained"
-					onClickHandler={onExportConfiguration}
-					buttonText="Export Configuration"
-				/>
+				<Box sx={{ display: "flex", gap: 2 }}>
+					<ActionButton
+						buttonVariant="contained"
+						onClickHandler={onExportConfiguration}
+						buttonText="Export Configuration"
+					/>
+					<ActionButton
+						buttonVariant="contained"
+						onClickHandler={() => {
+							onOpenImportDialog();
+							return Promise.resolve();
+						}}
+						buttonText="Import Configuration"
+						data-testid="import-configuration-button"
+					/>
+				</Box>
 			</InputGroup>
 
 			<InputGroup title="Optional Features" initiallyExpanded={true}>

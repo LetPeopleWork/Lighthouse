@@ -235,4 +235,50 @@ describe("SystemSettingsTab Component", () => {
 		// Verify the exportConfiguration function was called
 		expect(mockExportConfiguration).toHaveBeenCalled();
 	});
+
+	it("should open the ImportConfigurationDialog when Import Configuration button is clicked", async () => {
+		mockGetDataRetentionSettings.mockResolvedValue({
+			maxStorageTimeInDays: 30,
+		});
+		mockGetAllFeatures.mockResolvedValue([
+			{
+				id: 1,
+				name: "Feature 1",
+				key: "feature1",
+				description: "Description 1",
+				enabled: false,
+				isPreview: true,
+			},
+		]);
+
+		renderWithMockApiProvider();
+
+		// Wait for components to load
+		await waitFor(() => {
+			expect(screen.getByText("Import Configuration")).toBeVisible();
+		});
+
+		// Import dialog should initially be closed
+		expect(
+			screen.queryByTestId("import-configuration-dialog"),
+		).not.toBeInTheDocument();
+
+		// Click the Import Configuration button
+		fireEvent.click(screen.getByText("Import Configuration"));
+
+		// The import dialog should now be visible
+		expect(
+			screen.getByTestId("import-configuration-dialog"),
+		).toBeInTheDocument();
+
+		// Close the dialog by clicking Cancel
+		fireEvent.click(screen.getByText("Cancel"));
+
+		// Dialog should be closed again
+		await waitFor(() => {
+			expect(
+				screen.queryByTestId("import-configuration-dialog"),
+			).not.toBeInTheDocument();
+		});
+	});
 });

@@ -110,10 +110,27 @@ export class SystemSettingsPage {
 				.inputValue()) ?? "0";
 		return Number(value);
 	}
-
 	async updateDataRetentionSettings(): Promise<void> {
 		await this.page
 			.getByRole('button', { name: 'Update Data Retention Settings' })
+			.click();
+	}
+	
+	async clickImportConfigurationButton(): Promise<void> {
+		await this.page
+			.getByTestId('import-configuration-button')
+			.click();
+	}
+	
+	async isImportConfigurationDialogOpen(): Promise<boolean> {
+		return await this.page
+			.getByTestId('import-configuration-dialog')
+			.isVisible();
+	}
+	
+	async closeImportConfigurationDialog(): Promise<void> {
+		await this.page
+			.getByRole('button', { name: 'Cancel' })
 			.click();
 	}
 }
