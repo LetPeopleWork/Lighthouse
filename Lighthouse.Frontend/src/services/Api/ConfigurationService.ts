@@ -1,7 +1,10 @@
+import type { ConfigurationValidation } from "../../models/Configuration/ConfigurationValidation";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IConfigurationService {
 	exportConfiguration(): Promise<void>;
+	clearConfiguration(): Promise<void>;
+	validateConfiguration(): Promise<ConfigurationValidation>;
 }
 
 export class ConfigurationService
@@ -36,6 +39,22 @@ export class ConfigurationService
 			link.click();
 			document.body.removeChild(link);
 			window.URL.revokeObjectURL(url);
+		});
+	}
+
+	async clearConfiguration(): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.delete("/configuration/clear");
+		});
+	}
+
+	async validateConfiguration(): Promise<ConfigurationValidation> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<ConfigurationValidation>(
+				"/configuration/validate",
+			);
+
+			return response.data;
 		});
 	}
 }

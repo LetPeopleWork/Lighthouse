@@ -131,6 +131,8 @@ export const createMockWorkTrackingSystemService =
 export const createMockConfigurationService = (): IConfigurationService => {
 	return {
 		exportConfiguration: vi.fn(),
+		clearConfiguration: vi.fn(),
+		validateConfiguration: vi.fn(),
 	};
 };
 

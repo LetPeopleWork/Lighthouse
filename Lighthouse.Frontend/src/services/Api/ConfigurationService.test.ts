@@ -115,4 +115,41 @@ describe("ConfigurationService", () => {
 
 		expect(downloadFileName).toBe("Lighthouse_Configuration.json");
 	});
+
+	it("should clear configuration", async () => {
+		mockedAxios.delete.mockResolvedValueOnce({});
+
+		await configurationService.clearConfiguration();
+
+		expect(mockedAxios.delete).toHaveBeenCalledWith("/configuration/clear");
+	});
+
+	it("should validate configuration and return validation data", async () => {
+		// Mock validation response data
+		const mockValidationResponse = {
+			data: {
+				workTrackingSystems: [
+					{ id: 1, name: "AzureDevOps", status: "New", errorMessage: "" },
+				],
+				teams: [{ id: 2, name: "Team A", status: "New", errorMessage: "" }],
+				projects: [
+					{ id: 3, name: "Project X", status: "New", errorMessage: "" },
+				],
+			},
+		};
+
+		mockedAxios.post.mockResolvedValueOnce(mockValidationResponse);
+
+		const result = await configurationService.validateConfiguration();
+
+		expect(mockedAxios.post).toHaveBeenCalledWith("/configuration/validate");
+
+		expect(result).toEqual(mockValidationResponse.data);
+		expect(result.workTrackingSystems).toHaveLength(1);
+		expect(result.workTrackingSystems[0].name).toBe("AzureDevOps");
+		expect(result.teams).toHaveLength(1);
+		expect(result.teams[0].name).toBe("Team A");
+		expect(result.projects).toHaveLength(1);
+		expect(result.projects[0].name).toBe("Project X");
+	});
 });

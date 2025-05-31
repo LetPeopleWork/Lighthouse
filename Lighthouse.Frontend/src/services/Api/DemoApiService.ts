@@ -5,6 +5,7 @@ import {
 	type IRefreshSettings,
 	RefreshSettings,
 } from "../../models/AppSettings/RefreshSettings";
+import type { ConfigurationValidation } from "../../models/Configuration/ConfigurationValidation";
 import { Feature, type IFeature } from "../../models/Feature";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
@@ -1175,6 +1176,25 @@ export class DemoApiService
 	async exportConfiguration(): Promise<void> {
 		console.log("Exporting Configuration");
 		await delay();
+	}
+
+	async clearConfiguration(): Promise<void> {
+		console.log("Clearing Configuration");
+		await delay();
+	}
+	async validateConfiguration(): Promise<ConfigurationValidation> {
+		console.log("Validating Configuration");
+		await delay();
+
+		const validation: ConfigurationValidation = {
+			workTrackingSystems: [
+				{ name: "ADO Connection", id: 1, status: "New", errorMessage: "" },
+			],
+			teams: [{ name: "Team 1", id: 1, status: "New", errorMessage: "" }],
+			projects: [{ name: "Project 1", id: 1, status: "New", errorMessage: "" }],
+		};
+
+		return validation;
 	}
 
 	async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
