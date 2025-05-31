@@ -53,7 +53,7 @@ const Footer: React.FC = () => {
 								tooltip="Send an Email"
 							/>
 							<ExternalLinkButton
-								link="https://calendly.com/letpeoplework/"
+								link="https://calendly.com/let-people-work"
 								icon={CallIcon}
 								tooltip="Schedule a Call"
 							/>

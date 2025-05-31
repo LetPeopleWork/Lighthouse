@@ -94,7 +94,7 @@ export class LighthousePage {
 	async contactViaCall(): Promise<Page> {
 		return this.OpenInNewTab(async () => {
 			const callButton = this.page.getByTestId(
-				"https://calendly.com/letpeoplework/",
+				"https://calendly.com/let-people-work",
 			);
 			await callButton.click();
 		});
