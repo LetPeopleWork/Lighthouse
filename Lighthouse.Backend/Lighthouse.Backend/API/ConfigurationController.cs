@@ -1,9 +1,9 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Lighthouse.Backend.API
 {
@@ -50,13 +50,116 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete("clear")]
-        public async Task<IActionResult> ClearConfigurationAsync()
+        public async Task<IActionResult> DeleteConfiguration()
         {
             await RemoveAllProjects();
             await RemoveAllTeamsAsync();
             await RemoveAllWorkTrackingSystems();
 
             return Ok();
+        }
+
+        [HttpPost("validate")]
+        public ActionResult<ConfigurationValidationDto> ValidateConfiguration([FromBody] ConfigurationExport configurationExport)
+        {
+            logger.LogInformation("Validating Configuration.");
+
+            var validationResult = new ConfigurationValidationDto(configurationExport);
+            ValidateWorkTrackingSystems(validationResult);
+            ValidateTeams(configurationExport, validationResult);
+            ValidateProjects(configurationExport, validationResult);
+
+            logger.LogInformation("Configuration validation completed successfully.");
+            return Ok(validationResult);
+        }
+
+        private void ValidateProjects(ConfigurationExport configurationExport, ConfigurationValidationDto validationResult)
+        {
+            foreach (var project in configurationExport.Projects)
+            {
+                var status = GetStatusForItem(projectRepo, project.Name);
+
+                var errorMessage = string.Empty;
+                var workTrackingSystemExists = IsUsingValidWorkTrackingSystem(configurationExport, project.WorkTrackingSystemConnectionId);
+
+                if (!workTrackingSystemExists)
+                {
+                    errorMessage = "Work Tracking System Not Found";
+                    status = ValidationStatus.Error;
+                }
+                else
+                {
+                    var linkedTeams = project.InvolvedTeams.Select(t => t.Id).ToList();
+                    if (project.OwningTeam != null && !linkedTeams.Contains(project.OwningTeam.Id))
+                    {
+                        errorMessage = "Owning Team must be involved in the project";
+                        status = ValidationStatus.Error;
+                    }
+                    else
+                    {
+                        var isValid = ValidateLinkedTeams(configurationExport.Teams, linkedTeams);
+                        if (!isValid)
+                        {
+                            errorMessage = "Involved Team Not Found";
+                            status = ValidationStatus.Error;
+                        }
+                    }
+                }
+
+                validationResult.UpdateProject(project.Id, status, errorMessage);
+            }
+        }
+
+        private static bool ValidateLinkedTeams(IEnumerable<TeamSettingDto> teams, List<int> linkedTeams)
+        {
+            return teams.Any(t => linkedTeams.Contains(t.Id));
+        }
+
+        private void ValidateTeams(ConfigurationExport configurationExport, ConfigurationValidationDto validationResult)
+        {
+            foreach (var team in configurationExport.Teams)
+            {
+                var status = GetStatusForItem(teamRepo, team.Name);
+                var errorMessage = string.Empty;
+
+                var workTrackingSystemExists = IsUsingValidWorkTrackingSystem(configurationExport, team.WorkTrackingSystemConnectionId);
+                if (!workTrackingSystemExists)
+                {
+                    errorMessage = "Work Tracking System Not Found";
+                    status = ValidationStatus.Error;
+                }
+
+                validationResult.UpdateTeam(team.Id, status, errorMessage);
+            }
+        }
+
+        private static bool IsUsingValidWorkTrackingSystem(ConfigurationExport configurationExport, int workTrackingSystemConnectionId)
+        {
+            return configurationExport.WorkTrackingSystems.Any(wts => wts.Id == workTrackingSystemConnectionId);
+        }
+
+        private ValidationStatus GetStatusForItem<TEntity>(IRepository<TEntity> repository, string name) where TEntity : WorkTrackingSystemOptionsOwner
+        {
+            var itemCount = repository.GetAllByPredicate(item => item.Name == name).ToList();
+
+            logger.LogDebug("Checking item: {Name}, Existing Count: {Count}", name, itemCount.Count);
+
+            var exists = itemCount.Count == 1;
+            var status = exists ? ValidationStatus.Update : ValidationStatus.New;
+            return status;
+        }
+
+        private void ValidateWorkTrackingSystems(ConfigurationValidationDto validationResult)
+        {
+            foreach (var workTrackingSystem in validationResult.WorkTrackingSystems)
+            {
+                var existingWorkTrackingSystem = workTrackingSystemConnectionRepo.GetAllByPredicate(wts => wts.Name == workTrackingSystem.Name).ToList();
+
+                logger.LogDebug("Checking Work Tracking System: {Name}, Existing Count: {Count}", workTrackingSystem.Name, existingWorkTrackingSystem.Count);
+
+                var exists = existingWorkTrackingSystem.Count == 1;
+                workTrackingSystem.Status = exists ? ValidationStatus.Update : ValidationStatus.New;
+            }
         }
 
         private async Task RemoveAllWorkTrackingSystems()

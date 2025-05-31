@@ -1,11 +1,15 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API
@@ -29,12 +33,20 @@ namespace Lighthouse.Backend.Tests.API
 
             workTrackingSystems.Clear();
             workTrackingSystemRepositoryMock.Setup(x => x.GetAll()).Returns(workTrackingSystems);
+            workTrackingSystemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkTrackingSystemConnection, bool>>>()))
+                .Returns((Expression<Func<WorkTrackingSystemConnection, bool>> predicate) => workTrackingSystems.Where(predicate.Compile()).AsQueryable());
+
+            workTrackingSystemRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns((int id) => workTrackingSystems.SingleOrDefault(wts => wts.Id == id));
 
             teams.Clear();
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
+            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
+                .Returns((Expression<Func<Team, bool>> predicate) => teams.Where(predicate.Compile()).AsQueryable());
 
             projects.Clear();
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
+            projectRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Project, bool>>>()))
+                .Returns((Expression<Func<Project, bool>> predicate) => projects.Where(predicate.Compile()).AsQueryable());
         }
 
         [Test]
@@ -283,7 +295,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task ClearConfiguration_RemovesExistingConfiguration()
+        public async Task DeleteConfiguration_RemovesExistingConfiguration()
         {
             var subject = CreateSubject();
             var workTrackingSystem = AddWorkTrackingSystemConnection();
@@ -293,7 +305,7 @@ namespace Lighthouse.Backend.Tests.API
             var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
             projects.Add(project);
 
-            await subject.ClearConfigurationAsync();
+            await subject.DeleteConfiguration();
 
             projectRepositoryMock.Verify(x => x.Remove(project.Id), Times.Once);
             projectRepositoryMock.Verify(x => x.Save(), Times.Once);
@@ -303,6 +315,289 @@ namespace Lighthouse.Backend.Tests.API
 
             workTrackingSystemRepositoryMock.Verify(x => x.Remove(workTrackingSystem.Id), Times.Once);
             workTrackingSystemRepositoryMock.Verify(x => x.Save(), Times.Once);
+        }
+
+        [Test]
+        public void ValidateConfiguration_GivenNoConfig_ReturnsAllItemsAreNew()
+        {
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+            workTrackingSystems.Clear();
+            
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+
+            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            project.Teams.Add(team);
+
+            var subject = CreateSubject();
+
+            var configuration = new ConfigurationExport
+            {
+                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
+                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
+                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+            };
+
+            var response = subject.ValidateConfiguration(configuration);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = response.Result as OkObjectResult;
+                Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
+
+                var validationResult = okResult.Value as ConfigurationValidationDto;
+                Assert.That(validationResult.WorkTrackingSystems, Has.Count.EqualTo(1));
+                Assert.That(validationResult.WorkTrackingSystems[0].Id, Is.EqualTo(workTrackingSystem.Id));
+                Assert.That(validationResult.WorkTrackingSystems[0].Status, Is.EqualTo(ValidationStatus.New));
+                Assert.That(validationResult.WorkTrackingSystems[0].ErrorMessage, Is.Empty);
+
+                Assert.That(validationResult.Teams, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
+                Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.New));
+                Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
+
+                Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.New));
+                Assert.That(validationResult.Projects[0].ErrorMessage, Is.Empty);
+            });
+        }
+
+        [Test]
+        public void ValidateConfiguration_GivenExistingConfig_ReturnsAllNeedUpdate()
+        {
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            teams.Add(team);
+
+            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            project.Teams.Add(team);
+            projects.Add(project);
+
+            var subject = CreateSubject();
+
+            var configuration = new ConfigurationExport
+            {
+                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
+                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
+                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+            };
+
+            var response = subject.ValidateConfiguration(configuration);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = response.Result as OkObjectResult;
+
+                Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
+                var validationResult = okResult.Value as ConfigurationValidationDto;
+
+                Assert.That(validationResult.WorkTrackingSystems, Has.Count.EqualTo(1));
+                Assert.That(validationResult.WorkTrackingSystems[0].Id, Is.EqualTo(workTrackingSystem.Id));
+                Assert.That(validationResult.WorkTrackingSystems[0].Status, Is.EqualTo(ValidationStatus.Update));
+                Assert.That(validationResult.WorkTrackingSystems[0].ErrorMessage, Is.Empty);
+
+                Assert.That(validationResult.Teams, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
+                Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.Update));
+                Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
+
+                Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Update));
+                Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
+            });
+        }
+
+        [Test]
+        public void ValidateConfiguration_TeamLinksToNotYetExistingWorkTrackingSystem_ReturnsValid()
+        {
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+            workTrackingSystems.Clear();
+
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            teams.Add(team);
+            
+            var subject = CreateSubject();
+            
+            var configuration = new ConfigurationExport
+            {
+                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
+                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
+                Projects = new List<ProjectSettingDto>(),
+            };
+
+            var response = subject.ValidateConfiguration(configuration);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = response.Result as OkObjectResult;
+                
+                Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
+                var validationResult = okResult.Value as ConfigurationValidationDto;
+                
+                Assert.That(validationResult.WorkTrackingSystems, Has.Count.EqualTo(1));
+                Assert.That(validationResult.WorkTrackingSystems[0].Id, Is.EqualTo(workTrackingSystem.Id));
+                Assert.That(validationResult.WorkTrackingSystems[0].Status, Is.EqualTo(ValidationStatus.New));
+                Assert.That(validationResult.WorkTrackingSystems[0].ErrorMessage, Is.Empty);
+
+                Assert.That(validationResult.Teams, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
+                Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.Update));
+                Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
+            });
+        }
+
+        [Test]
+        public void ValidateConfiguration_TeamLinksToWorkTrackingSystemNotInConfiguration_ReturnsError()
+        {
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = 1886 };
+            teams.Add(team);
+            
+            var subject = CreateSubject();
+            
+            var configuration = new ConfigurationExport
+            {
+                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
+                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
+                Projects = new List<ProjectSettingDto>(),
+            };
+
+            var response = subject.ValidateConfiguration(configuration);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = response.Result as OkObjectResult;
+                
+                Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
+                var validationResult = okResult.Value as ConfigurationValidationDto;
+                
+                Assert.That(validationResult.Teams, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
+                Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.Error));
+                Assert.That(validationResult.Teams[0].ErrorMessage, Is.EqualTo("Work Tracking System Not Found"));
+            });
+        }
+
+        [Test]
+        public void ValidateConfiguration_ProjectLinksToWorkTrackingSystemNotInConfiguration_ReturnsError()
+        {
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+            workTrackingSystems.Clear();
+
+            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 1337 };
+            projects.Add(project);
+
+            var subject = CreateSubject();
+            
+            var configuration = new ConfigurationExport
+            {
+                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
+                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+            };
+
+            var response = subject.ValidateConfiguration(configuration);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = response.Result as OkObjectResult;
+                
+                Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
+                var validationResult = okResult.Value as ConfigurationValidationDto;
+                
+                Assert.That(validationResult.WorkTrackingSystems, Has.Count.EqualTo(1));
+                Assert.That(validationResult.WorkTrackingSystems[0].Id, Is.EqualTo(workTrackingSystem.Id));
+                Assert.That(validationResult.WorkTrackingSystems[0].Status, Is.EqualTo(ValidationStatus.New));
+                Assert.That(validationResult.WorkTrackingSystems[0].ErrorMessage, Is.Empty);
+
+                Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
+                Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Work Tracking System Not Found"));
+            });
+        }
+
+        [Test]
+        public void ValidateConfiguration_ProjectLinksToTeamNotInConfiguration_ReturnsError()
+        {
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+
+            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            project.Teams.Add(team);
+            projects.Add(project);
+
+            var subject = CreateSubject();
+            
+            var configuration = new ConfigurationExport
+            {
+                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
+                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+            };
+
+            var response = subject.ValidateConfiguration(configuration);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = response.Result as OkObjectResult;
+                
+                Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
+                var validationResult = okResult.Value as ConfigurationValidationDto;
+
+                Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
+                Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Involved Team Not Found"));
+            });
+        }
+
+        [Test]
+        public void ValidateConfiguration_ProjectLinksToOwningTeamNotInConfiguration_ReturnsError()
+        {
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            teams.Add(team);
+
+            var team2 = new Team { Id = 2, Name = "Another Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+
+            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            project.Teams.Add(team);
+            project.OwningTeam = team2;
+
+            projects.Add(project);
+
+            var subject = CreateSubject();
+            
+            var configuration = new ConfigurationExport
+            {
+                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
+                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+            };
+
+            var response = subject.ValidateConfiguration(configuration);
+            
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = response.Result as OkObjectResult;
+                
+                Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
+                var validationResult = okResult.Value as ConfigurationValidationDto;
+
+                Assert.That(validationResult.Projects, Has.Count.EqualTo(1));
+                Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
+                Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
+                Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Owning Team must be involved in the project"));
+            });
         }
 
         private WorkTrackingSystemConnection AddWorkTrackingSystemConnection()
