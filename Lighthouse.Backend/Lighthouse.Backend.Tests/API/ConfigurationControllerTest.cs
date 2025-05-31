@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -620,7 +621,14 @@ namespace Lighthouse.Backend.Tests.API
             var fileResult = response as FileContentResult;
             Assert.That(fileResult.ContentType, Is.EqualTo("application/json"));
             var json = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
-            return JsonSerializer.Deserialize<ConfigurationExport>(json) ?? throw new InvalidOperationException("Could not parse response");
+            var deserializeOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                WriteIndented = true,
+                Converters = { new JsonStringEnumConverter() }
+            };
+
+            return JsonSerializer.Deserialize<ConfigurationExport>(json, deserializeOptions) ?? throw new InvalidOperationException("Could not parse response");
         }
 
         private ConfigurationController CreateSubject()

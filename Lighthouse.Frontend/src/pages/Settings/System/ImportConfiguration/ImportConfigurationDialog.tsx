@@ -13,6 +13,7 @@ import {
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
+import camelcaseKeys from "camelcase-keys";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import LoadingAnimation from "../../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -21,7 +22,10 @@ import type {
 	ConfigurationValidation,
 	ConfigurationValidationItem,
 } from "../../../../models/Configuration/ConfigurationValidation";
+import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { WorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
+import ModifyTrackingSystemConnectionDialog from "../../Connections/ModifyTrackingSystemConnectionDialog";
 
 interface ImportConfigurationDialogProps {
 	open: boolean;
@@ -44,7 +48,21 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 	const [isImporting, setIsImporting] = useState<boolean>(false);
 	const [clearConfiguration] = useState<boolean>(true);
 
-	const { configurationService } = useContext(ApiServiceContext);
+	// Work tracking system import states
+	const [currentWorkTrackingSystem, setCurrentWorkTrackingSystem] =
+		useState<IWorkTrackingSystemConnection | null>(null);
+	const [openWorkTrackingSystemDialog, setOpenWorkTrackingSystemDialog] =
+		useState<boolean>(false);
+	const [workTrackingSystemsToImport, setWorkTrackingSystemsToImport] =
+		useState<IWorkTrackingSystemConnection[]>([]);
+	const [currentWorkTrackingSystemIndex, setCurrentWorkTrackingSystemIndex] =
+		useState<number>(0);
+	const [workTrackingSystemsMapping, setWorkTrackingSystemsMapping] = useState<
+		Map<number | null, number | null>
+	>(new Map());
+
+	const { configurationService, workTrackingSystemService } =
+		useContext(ApiServiceContext);
 
 	const resetDialogState = () => {
 		setFile(null);
@@ -54,6 +72,11 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		setHasError(false);
 		setErrorMessage("");
 		setIsImporting(false);
+		setCurrentWorkTrackingSystem(null);
+		setOpenWorkTrackingSystemDialog(false);
+		setWorkTrackingSystemsToImport([]);
+		setCurrentWorkTrackingSystemIndex(0);
+		setWorkTrackingSystemsMapping(new Map());
 	};
 
 	const handleCloseDialog = () => {
@@ -95,12 +118,13 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 			setErrorMessage("");
 
 			try {
-				// Read the file content as text
 				const fileContent = await file.text();
 
 				try {
-					// Parse the file content as JSON
-					const configData = JSON.parse(fileContent) as ConfigurationExport;
+					const rawData = JSON.parse(fileContent);
+					const configData = camelcaseKeys(rawData, {
+						deep: true,
+					}) as ConfigurationExport;
 					setParsedConfig(configData);
 
 					// Validate the configuration
@@ -150,10 +174,59 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 
 		setIsImporting(true);
 		try {
-			// In a real implementation, we would call configurationService.importConfiguration(parsedConfig)
-			// For now, let's simulate a successful import with a delay
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-			handleCloseDialog();
+			// Clear configuration if needed
+			if (clearConfiguration) {
+				await configurationService.clearConfiguration();
+			}
+
+			// First prepare the work tracking systems to be imported
+			const systemsToImport: IWorkTrackingSystemConnection[] = [];
+
+			for (const workTrackingSystem of validationResults?.workTrackingSystems ||
+				[]) {
+				if (workTrackingSystem.status === "New") {
+					const config = parsedConfig.workTrackingSystems.find(
+						(wts) => wts.id === workTrackingSystem.id,
+					);
+					if (config) {
+						// Create a work tracking system connection object from the config
+						const connection = new WorkTrackingSystemConnection(
+							config.name,
+							config.workTrackingSystem,
+							config.options.map((opt) => ({
+								key: opt.key,
+								value: opt.isSecret ? "" : opt.value, // Clear secret values that need to be re-entered
+								isSecret: opt.isSecret,
+								isOptional: opt.isOptional,
+							})),
+							config.id,
+						);
+						systemsToImport.push(connection);
+					}
+				}
+			}
+
+			// Set the work tracking systems to be imported and start the process
+			if (systemsToImport.length > 0) {
+				if (systemsToImport.length > 0) {
+					setWorkTrackingSystemsToImport(systemsToImport);
+					setCurrentWorkTrackingSystemIndex(0);
+					setCurrentWorkTrackingSystem(systemsToImport[0]);
+					setOpenWorkTrackingSystemDialog(true);
+				} else {
+					console.log("No valid work tracking systems to import");
+					handleCloseDialog();
+				}
+			} else {
+				// No work tracking systems to import, proceed with other imports
+				console.log("No work tracking systems to import");
+
+				// Import Teams
+
+				// Import Projects
+
+				handleCloseDialog();
+			}
 		} catch (error: unknown) {
 			setHasError(true);
 			const errorMessage =
@@ -161,7 +234,6 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 					? error.message
 					: "Error importing configuration. Please try again.";
 			setErrorMessage(errorMessage);
-		} finally {
 			setIsImporting(false);
 		}
 	};
@@ -222,6 +294,98 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 				)}
 			</>
 		);
+	};
+
+	const onValidateConnection = async (
+		settings: IWorkTrackingSystemConnection,
+	) => {
+		try {
+			return await workTrackingSystemService.validateWorkTrackingSystemConnection(
+				settings,
+			);
+		} catch (error) {
+			console.error("Failed to validate connection:", error);
+			return false;
+		}
+	};
+
+	const handleWorkTrackingSystemDialogClose = async (
+		connection: IWorkTrackingSystemConnection | null,
+	) => {
+		setOpenWorkTrackingSystemDialog(false);
+
+		if (connection) {
+			try {
+				// Add the connection to the system
+				const addedConnection =
+					await workTrackingSystemService.addNewWorkTrackingSystemConnection(
+						connection,
+					);
+
+				console.log(
+					`Added work tracking system: ${addedConnection.name} with ID ${addedConnection.id}`,
+				);
+
+				// Update the mapping with the new ID
+				if (
+					currentWorkTrackingSystem &&
+					currentWorkTrackingSystem.id !== null &&
+					addedConnection.id !== null
+				) {
+					setWorkTrackingSystemsMapping((prevMapping) => {
+						const newMapping = new Map(prevMapping);
+						newMapping.set(currentWorkTrackingSystem.id, addedConnection.id);
+						return newMapping;
+					});
+				}
+
+				// Continue with the next work tracking system if any
+				processNextWorkTrackingSystem();
+			} catch (error) {
+				setHasError(true);
+				setErrorMessage(
+					error instanceof Error
+						? `Failed to add work tracking system: ${error.message}`
+						: "Failed to add work tracking system. Please try again.",
+				);
+				setIsImporting(false);
+			}
+		} else {
+			// User canceled - stop the import process
+			setIsImporting(false);
+			setHasError(true);
+			setErrorMessage(
+				"Import canceled by user during work tracking system configuration.",
+			);
+		}
+	};
+
+	// Update the mapping when adding a new connection
+
+	const processNextWorkTrackingSystem = () => {
+		// Move to the next work tracking system
+		const nextIndex = currentWorkTrackingSystemIndex + 1;
+		setCurrentWorkTrackingSystemIndex(nextIndex);
+
+		// Check if there are more work tracking systems to process
+		if (nextIndex < workTrackingSystemsToImport.length) {
+			const nextWorkTrackingSystem = workTrackingSystemsToImport[nextIndex];
+			setCurrentWorkTrackingSystem(nextWorkTrackingSystem);
+			setOpenWorkTrackingSystemDialog(true);
+		} else {
+			// All work tracking systems have been processed
+			console.log("All work tracking systems imported successfully.");
+			console.log(
+				"Work tracking systems ID mapping:",
+				workTrackingSystemsMapping,
+			);
+
+			// Now we would continue with teams and projects import using the mapping
+			// TODO: Implement team and project imports
+
+			// For now, let's just complete the import
+			handleCloseDialog();
+		}
 	};
 
 	return (
@@ -344,6 +508,16 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 					</Button>
 				)}
 			</DialogActions>
+
+			{/* Dialog for adding work tracking system connections */}
+			{currentWorkTrackingSystem && (
+				<ModifyTrackingSystemConnectionDialog
+					open={openWorkTrackingSystemDialog}
+					onClose={handleWorkTrackingSystemDialogClose}
+					workTrackingSystems={[currentWorkTrackingSystem]}
+					validateSettings={onValidateConnection}
+				/>
+			)}
 		</Dialog>
 	);
 };

@@ -26,7 +26,7 @@ describe("WorkTrackingSystemService", () => {
 			{
 				id: 2,
 				name: "Jira",
-				workTrackingSystem: "JIRA",
+				workTrackingSystem: "Jira",
 				options: [
 					{
 						key: "apiToken",
@@ -46,7 +46,7 @@ describe("WorkTrackingSystemService", () => {
 		expect(workTrackingSystems).toEqual([
 			new WorkTrackingSystemConnection(
 				"Jira",
-				"JIRA",
+				"Jira",
 				[
 					{
 						key: "apiToken",
@@ -67,7 +67,7 @@ describe("WorkTrackingSystemService", () => {
 		const mockConnection: IWorkTrackingSystemConnection = {
 			id: 1,
 			name: "Jira",
-			workTrackingSystem: "JIRA",
+			workTrackingSystem: "Jira",
 			options: [
 				{
 					key: "apiToken",
@@ -96,7 +96,7 @@ describe("WorkTrackingSystemService", () => {
 			{
 				id: 2,
 				name: "Azure DevOps",
-				workTrackingSystem: "ADO",
+				workTrackingSystem: "AzureDevOps",
 				options: [
 					{
 						key: "apiToken",
@@ -116,7 +116,7 @@ describe("WorkTrackingSystemService", () => {
 		expect(configuredSystems).toEqual([
 			new WorkTrackingSystemConnection(
 				"Azure DevOps",
-				"ADO",
+				"AzureDevOps",
 				[
 					{
 						key: "apiToken",
@@ -137,7 +137,7 @@ describe("WorkTrackingSystemService", () => {
 		const newConnection: IWorkTrackingSystemConnection = {
 			id: 0,
 			name: "Jira",
-			workTrackingSystem: "JIRA",
+			workTrackingSystem: "Jira",
 			options: [
 				{
 					key: "apiToken",
@@ -163,7 +163,7 @@ describe("WorkTrackingSystemService", () => {
 		expect(createdConnection).toEqual(
 			new WorkTrackingSystemConnection(
 				"Jira",
-				"JIRA",
+				"Jira",
 				[
 					{
 						key: "apiToken",
@@ -185,7 +185,7 @@ describe("WorkTrackingSystemService", () => {
 		const updatedConnection: IWorkTrackingSystemConnection = {
 			id: 1,
 			name: "Jira",
-			workTrackingSystem: "JIRA",
+			workTrackingSystem: "Jira",
 			options: [
 				{
 					key: "apiToken",
@@ -206,7 +206,7 @@ describe("WorkTrackingSystemService", () => {
 		expect(result).toEqual(
 			new WorkTrackingSystemConnection(
 				"Jira",
-				"JIRA",
+				"Jira",
 				[
 					{
 						key: "apiToken",

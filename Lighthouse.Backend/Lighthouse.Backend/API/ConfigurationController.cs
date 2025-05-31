@@ -1,9 +1,9 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API
 {
@@ -18,7 +18,8 @@ namespace Lighthouse.Backend.API
 
         private static readonly JsonSerializerOptions CachedJsonSerializerOptions = new JsonSerializerOptions
         {
-            WriteIndented = true
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter() }
         };
 
         public ConfigurationController(
@@ -52,6 +53,8 @@ namespace Lighthouse.Backend.API
         [HttpDelete("clear")]
         public async Task<IActionResult> DeleteConfiguration()
         {
+            logger.LogInformation("Clearing configuration");
+
             await RemoveAllProjects();
             await RemoveAllTeamsAsync();
             await RemoveAllWorkTrackingSystems();

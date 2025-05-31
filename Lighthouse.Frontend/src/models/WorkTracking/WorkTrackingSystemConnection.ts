@@ -1,9 +1,11 @@
 import type { IWorkTrackingSystemOption } from "./WorkTrackingSystemOption";
 
+export type WorkTrackingSystemType = "Jira" | "AzureDevOps" | "Linear";
+
 export interface IWorkTrackingSystemConnection {
 	id: number | null;
 	name: string;
-	workTrackingSystem: string;
+	workTrackingSystem: WorkTrackingSystemType;
 	options: IWorkTrackingSystemOption[];
 }
 
@@ -12,12 +14,12 @@ export class WorkTrackingSystemConnection
 {
 	id: number | null;
 	name: string;
-	workTrackingSystem: string;
+	workTrackingSystem: WorkTrackingSystemType;
 	options: IWorkTrackingSystemOption[];
 
 	constructor(
 		name: string,
-		workTrackingSystem: string,
+		workTrackingSystem: WorkTrackingSystemType,
 		options: IWorkTrackingSystemOption[],
 		id: number | null = null,
 	) {

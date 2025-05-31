@@ -53,7 +53,7 @@ const sampleConfigExport: ConfigurationExport = {
 		{
 			id: 1,
 			name: "System 1",
-			workTrackingSystem: "Azure DevOps",
+			workTrackingSystem: "AzureDevOps",
 			options: [],
 		},
 	],
