@@ -1,10 +1,13 @@
+import type { ConfigurationExport } from "../../models/Configuration/ConfigurationExport";
 import type { ConfigurationValidation } from "../../models/Configuration/ConfigurationValidation";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IConfigurationService {
 	exportConfiguration(): Promise<void>;
 	clearConfiguration(): Promise<void>;
-	validateConfiguration(): Promise<ConfigurationValidation>;
+	validateConfiguration(
+		configurationExport: ConfigurationExport,
+	): Promise<ConfigurationValidation>;
 }
 
 export class ConfigurationService
@@ -48,10 +51,13 @@ export class ConfigurationService
 		});
 	}
 
-	async validateConfiguration(): Promise<ConfigurationValidation> {
+	async validateConfiguration(
+		configurationExport: ConfigurationExport,
+	): Promise<ConfigurationValidation> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<ConfigurationValidation>(
 				"/configuration/validate",
+				configurationExport,
 			);
 
 			return response.data;

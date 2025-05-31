@@ -1190,8 +1190,15 @@ export class DemoApiService
 			workTrackingSystems: [
 				{ name: "ADO Connection", id: 1, status: "New", errorMessage: "" },
 			],
-			teams: [{ name: "Team 1", id: 1, status: "New", errorMessage: "" }],
-			projects: [{ name: "Project 1", id: 1, status: "New", errorMessage: "" }],
+			teams: [{ name: "Team 1", id: 1, status: "Update", errorMessage: "" }],
+			projects: [
+				{
+					name: "Project 1",
+					id: 1,
+					status: "Error",
+					errorMessage: "Team Not Found",
+				},
+			],
 		};
 
 		return validation;

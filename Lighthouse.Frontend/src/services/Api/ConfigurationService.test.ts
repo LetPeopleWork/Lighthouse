@@ -1,5 +1,6 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ConfigurationExport } from "../../models/Configuration/ConfigurationExport";
 import { ConfigurationService } from "./ConfigurationService";
 
 vi.mock("axios");
@@ -140,9 +141,70 @@ describe("ConfigurationService", () => {
 
 		mockedAxios.post.mockResolvedValueOnce(mockValidationResponse);
 
-		const result = await configurationService.validateConfiguration();
+		const mockConfigurationExport: ConfigurationExport = {
+			workTrackingSystems: [
+				{
+					id: 1,
+					name: "AzureDevOps",
+					workTrackingSystem: "AzureDevOps",
+					options: [],
+				},
+			],
+			teams: [
+				{
+					id: 2,
+					name: "Team A",
+					throughputHistory: 0,
+					useFixedDatesForThroughput: false,
+					throughputHistoryStartDate: new Date(),
+					throughputHistoryEndDate: new Date(),
+					featureWIP: 0,
+					relationCustomField: "",
+					automaticallyAdjustFeatureWIP: false,
+					workItemQuery: "",
+					workItemTypes: [],
+					toDoStates: [],
+					doingStates: [],
+					doneStates: [],
+					tags: [],
+					workTrackingSystemConnectionId: 0,
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+				},
+			],
+			projects: [
+				{
+					id: 3,
+					name: "Project X",
+					milestones: [],
+					unparentedItemsQuery: "",
+					involvedTeams: [],
+					overrideRealChildCountStates: [],
+					usePercentileToCalculateDefaultAmountOfWorkItems: false,
+					defaultAmountOfWorkItemsPerFeature: 0,
+					defaultWorkItemPercentile: 0,
+					historicalFeaturesWorkItemQuery: "",
+					workItemQuery: "",
+					workItemTypes: [],
+					toDoStates: [],
+					doingStates: [],
+					doneStates: [],
+					tags: [],
+					workTrackingSystemConnectionId: 0,
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+				},
+			],
+		};
 
-		expect(mockedAxios.post).toHaveBeenCalledWith("/configuration/validate");
+		const result = await configurationService.validateConfiguration(
+			mockConfigurationExport,
+		);
+
+		expect(mockedAxios.post).toHaveBeenCalledWith(
+			"/configuration/validate",
+			mockConfigurationExport,
+		);
 
 		expect(result).toEqual(mockValidationResponse.data);
 		expect(result.workTrackingSystems).toHaveLength(1);
