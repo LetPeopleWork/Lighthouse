@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.API
         {
             foreach (var project in configurationExport.Projects)
             {
-                var status = GetStatusForItem(projectRepo, project.Name);
+                var (status, id) = GetStatusAndIdForItem(projectRepo, project);
 
                 var errorMessage = string.Empty;
                 var workTrackingSystemExists = IsUsingValidWorkTrackingSystem(configurationExport, project.WorkTrackingSystemConnectionId);
@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.API
                     }
                 }
 
-                validationResult.UpdateProject(project.Id, status, errorMessage);
+                validationResult.UpdateProject(project.Id, status, errorMessage, id);
             }
         }
 
@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.API
         {
             foreach (var team in configurationExport.Teams)
             {
-                var status = GetStatusForItem(teamRepo, team.Name);
+                var (status, id) = GetStatusAndIdForItem(teamRepo, team);
                 var errorMessage = string.Empty;
 
                 var workTrackingSystemExists = IsUsingValidWorkTrackingSystem(configurationExport, team.WorkTrackingSystemConnectionId);
@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.API
                     status = ValidationStatus.Error;
                 }
 
-                validationResult.UpdateTeam(team.Id, status, errorMessage);
+                validationResult.UpdateTeam(team.Id, status, errorMessage, id);
             }
         }
 
@@ -141,15 +141,17 @@ namespace Lighthouse.Backend.API
             return configurationExport.WorkTrackingSystems.Any(wts => wts.Id == workTrackingSystemConnectionId);
         }
 
-        private ValidationStatus GetStatusForItem<TEntity>(IRepository<TEntity> repository, string name) where TEntity : WorkTrackingSystemOptionsOwner
+        private (ValidationStatus status, int id) GetStatusAndIdForItem<TEntity>(IRepository<TEntity> repository, SettingsOwnerDtoBase item) where TEntity : WorkTrackingSystemOptionsOwner
         {
-            var itemCount = repository.GetAllByPredicate(item => item.Name == name).ToList();
+            var itemCount = repository.GetAllByPredicate(item => item.Name == item.Name).ToList();
 
-            logger.LogDebug("Checking item: {Name}, Existing Count: {Count}", name, itemCount.Count);
+            logger.LogDebug("Checking item: {Name}, Existing Count: {Count}", item.Name, itemCount.Count);
 
             var exists = itemCount.Count == 1;
             var status = exists ? ValidationStatus.Update : ValidationStatus.New;
-            return status;
+            var id = exists ? itemCount.Single().Id : item.Id;
+
+            return (status, id);
         }
 
         private void ValidateWorkTrackingSystems(ConfigurationValidationDto validationResult)
@@ -162,6 +164,7 @@ namespace Lighthouse.Backend.API
 
                 var exists = existingWorkTrackingSystem.Count == 1;
                 workTrackingSystem.Status = exists ? ValidationStatus.Update : ValidationStatus.New;
+                workTrackingSystem.Id = exists ? existingWorkTrackingSystem.Single().Id : workTrackingSystem.Id;
             }
         }
 

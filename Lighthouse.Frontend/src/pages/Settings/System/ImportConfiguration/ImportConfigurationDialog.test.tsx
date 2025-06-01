@@ -279,13 +279,11 @@ describe("ImportConfigurationDialog Component", () => {
 			expect(screen.getByTestId("validation-results")).toBeInTheDocument();
 		});
 
-		// Since clearConfiguration is true by default, "Update" should be transformed to "New"
-		// The first item in workTrackingSystems has status "Update" in the original mock data
-		expect(screen.queryByText("Update")).not.toBeInTheDocument();
+		expect(screen.queryByText("Update")).toBeInTheDocument();
 
-		// All statuses should be either "New" or "Error"
-		const statusChips = screen.getAllByText(/(New|Error)/);
-		expect(statusChips.length).toBeGreaterThanOrEqual(2); // At least New and Error
+		// All statuses should be either "New", "Update", or "Error"
+		const statusChips = screen.getAllByText(/(New|Update|Error)/);
+		expect(statusChips.length).toBeGreaterThanOrEqual(3);
 	});
 
 	it("should enable the Import button if there are no validation errors", async () => {
@@ -417,9 +415,7 @@ describe("ImportConfigurationDialog Component", () => {
 
 		// Find the actual input element inside the checkbox container
 		const inputElement = checkbox.querySelector('input[type="checkbox"]');
-		expect(inputElement).toBeChecked(); // Checked by default
-
-		// Check that the input is disabled (not the container)
-		expect(inputElement).toBeDisabled(); // Read-only for now
+		expect(inputElement).not.toBeChecked(); // Unchecked by default
+		expect(inputElement).toBeEnabled();
 	});
 });

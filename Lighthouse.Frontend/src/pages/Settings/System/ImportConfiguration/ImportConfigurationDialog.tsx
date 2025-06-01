@@ -23,7 +23,7 @@ import type {
 	ConfigurationValidationItem,
 } from "../../../../models/Configuration/ConfigurationValidation";
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
-import { WorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
+import type { IWorkTrackingSystemOption } from "../../../../models/WorkTracking/WorkTrackingSystemOption";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import ModifyTrackingSystemConnectionDialog from "../../Connections/ModifyTrackingSystemConnectionDialog";
 
@@ -46,9 +46,8 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 	const [hasError, setHasError] = useState<boolean>(false);
 	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [isImporting, setIsImporting] = useState<boolean>(false);
-	const [clearConfiguration] = useState<boolean>(true);
+	const [clearConfiguration, setClearConfiguration] = useState<boolean>(false);
 
-	// Work tracking system import states
 	const [currentWorkTrackingSystem, setCurrentWorkTrackingSystem] =
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [openWorkTrackingSystemDialog, setOpenWorkTrackingSystemDialog] =
@@ -57,9 +56,8 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		useState<IWorkTrackingSystemConnection[]>([]);
 	const [currentWorkTrackingSystemIndex, setCurrentWorkTrackingSystemIndex] =
 		useState<number>(0);
-	const [workTrackingSystemsMapping, setWorkTrackingSystemsMapping] = useState<
-		Map<number | null, number | null>
-	>(new Map());
+
+	const workTrackingSystemsMapping = new Map<number, number>();
 
 	const { configurationService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
@@ -76,7 +74,7 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		setOpenWorkTrackingSystemDialog(false);
 		setWorkTrackingSystemsToImport([]);
 		setCurrentWorkTrackingSystemIndex(0);
-		setWorkTrackingSystemsMapping(new Map());
+		workTrackingSystemsMapping.clear();
 	};
 
 	const handleCloseDialog = () => {
@@ -95,7 +93,6 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		}
 	};
 
-	// Transform status from "Update" to "New" if clearConfiguration is checked
 	const transformStatus = useCallback(
 		(items: ConfigurationValidationItem[]): ConfigurationValidationItem[] => {
 			return items.map((item) => ({
@@ -184,25 +181,39 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 
 			for (const workTrackingSystem of validationResults?.workTrackingSystems ||
 				[]) {
-				if (workTrackingSystem.status === "New") {
-					const config = parsedConfig.workTrackingSystems.find(
-						(wts) => wts.id === workTrackingSystem.id,
+				const config = parsedConfig.workTrackingSystems.find(
+					(wts) => wts.name === workTrackingSystem.name,
+				);
+
+				if (!config) {
+					console.warn(
+						`No configuration found for work tracking system: ${workTrackingSystem.name}`,
 					);
-					if (config) {
-						// Create a work tracking system connection object from the config
-						const connection = new WorkTrackingSystemConnection(
-							config.name,
-							config.workTrackingSystem,
-							config.options.map((opt) => ({
-								key: opt.key,
-								value: opt.isSecret ? "" : opt.value, // Clear secret values that need to be re-entered
-								isSecret: opt.isSecret,
-								isOptional: opt.isOptional,
-							})),
-							config.id,
-						);
-						systemsToImport.push(connection);
+					continue;
+				}
+
+				if (workTrackingSystem.status === "New") {
+					systemsToImport.push(config);
+				} else if (workTrackingSystem.status === "Update") {
+					workTrackingSystemsMapping.set(config.id ?? 0, workTrackingSystem.id);
+
+					const nonSecretOptions: IWorkTrackingSystemOption[] = [];
+					for (const option of config.options) {
+						if (!option.isSecret) {
+							nonSecretOptions.push(option);
+						}
 					}
+
+					config.options = nonSecretOptions;
+
+					// Update the connection using the cleaned config
+					await workTrackingSystemService.updateWorkTrackingSystemConnection(
+						config,
+					);
+				} else {
+					console.log(
+						`Skipping work tracking system ${workTrackingSystem.name} with status ${workTrackingSystem.status}`,
+					);
 				}
 			}
 
@@ -218,13 +229,7 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 					handleCloseDialog();
 				}
 			} else {
-				// No work tracking systems to import, proceed with other imports
-				console.log("No work tracking systems to import");
-
-				// Import Teams
-
-				// Import Projects
-
+				// Import Teams and Projects *after* importing the work tracking systems
 				handleCloseDialog();
 			}
 		} catch (error: unknown) {
@@ -332,11 +337,10 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 					currentWorkTrackingSystem.id !== null &&
 					addedConnection.id !== null
 				) {
-					setWorkTrackingSystemsMapping((prevMapping) => {
-						const newMapping = new Map(prevMapping);
-						newMapping.set(currentWorkTrackingSystem.id, addedConnection.id);
-						return newMapping;
-					});
+					workTrackingSystemsMapping.set(
+						currentWorkTrackingSystem.id,
+						addedConnection.id,
+					);
 				}
 
 				// Continue with the next work tracking system if any
@@ -425,7 +429,7 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 							control={
 								<Checkbox
 									checked={clearConfiguration}
-									disabled={true} // Read-only for now
+									onChange={(e) => setClearConfiguration(e.target.checked)}
 									data-testid="clear-configuration-checkbox"
 								/>
 							}

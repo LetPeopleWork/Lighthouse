@@ -369,10 +369,10 @@ namespace Lighthouse.Backend.Tests.API
         {
             var workTrackingSystem = AddWorkTrackingSystemConnection();
 
-            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = 0 };
             teams.Add(team);
 
-            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 0 };
             project.Teams.Add(team);
             projects.Add(project);
 
@@ -380,9 +380,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var configuration = new ConfigurationExport
             {
-                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
-                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) },
-                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) },
+                WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) { Id = 0 } },
+                Teams = new List<TeamSettingDto> { new TeamSettingDto(team) { Id = 1 } },
+                Projects = new List<ProjectSettingDto> { new ProjectSettingDto(project) { Id = 0 } },
             };
 
             var response = subject.ValidateConfiguration(configuration);

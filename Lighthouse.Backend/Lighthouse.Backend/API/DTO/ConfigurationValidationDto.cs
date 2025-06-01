@@ -19,23 +19,24 @@
 
         public List<ConfigurationValidationItem> Projects { get; } = [];
 
-        public void UpdateTeam(int teamId, ValidationStatus status, string errorMessage = "")
+        public void UpdateTeam(int teamId, ValidationStatus status, string errorMessage = "", int? updatedId = null)
         {
-            Update(Teams, teamId, status, errorMessage);
+            Update(Teams, teamId, status, errorMessage, updatedId);
         }
 
-        public void UpdateProject(int projectId, ValidationStatus status, string errorMessage = "")
+        public void UpdateProject(int projectId, ValidationStatus status, string errorMessage = "", int? updatedId = null)
         {
-            Update(Projects, projectId, status, errorMessage);
+            Update(Projects, projectId, status, errorMessage, updatedId);
         }
 
-        private void Update(List<ConfigurationValidationItem> items, int id, ValidationStatus status, string errorMessage = "")
+        private void Update(List<ConfigurationValidationItem> items, int id, ValidationStatus status, string errorMessage = "", int? updatedId = null)
         {
             var item = items.FirstOrDefault(i => i.Id == id);
             if (item != null)
             {
                 item.Status = status;
                 item.ErrorMessage = errorMessage;
+                item.Id = updatedId ?? item.Id;
             }
         }
 
