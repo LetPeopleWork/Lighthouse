@@ -38,7 +38,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
                 Context.Projects.Remove(itemToRemove);
             }
-
         }
 
         private void RemoveOrphanedFeatures(int id, Project? itemToRemove)

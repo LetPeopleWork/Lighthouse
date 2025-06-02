@@ -63,6 +63,7 @@ namespace Lighthouse.Backend.API
         [HttpPost]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> CreateNewWorkTrackingSystemConnectionAsync([FromBody] WorkTrackingSystemConnectionDto newConnection)
         {
+            newConnection.Id = 0;
             var connection = CreateConnectionFromDto(newConnection);
 
             repository.Add(connection);

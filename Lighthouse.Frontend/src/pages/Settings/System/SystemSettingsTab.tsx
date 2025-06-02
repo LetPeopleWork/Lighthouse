@@ -125,7 +125,6 @@ const SystemSettingsTab: React.FC = () => {
 							return Promise.resolve();
 						}}
 						buttonText="Import Configuration"
-						data-testid="import-configuration-button"
 					/>
 				</Box>
 			</InputGroup>

@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.API
 
         private (ValidationStatus status, int id) GetStatusAndIdForItem<TEntity>(IRepository<TEntity> repository, SettingsOwnerDtoBase item) where TEntity : WorkTrackingSystemOptionsOwner
         {
-            var itemCount = repository.GetAllByPredicate(item => item.Name == item.Name).ToList();
+            var itemCount = repository.GetAllByPredicate(i => i.Name == item.Name).ToList();
 
             logger.LogDebug("Checking item: {Name}, Existing Count: {Count}", item.Name, itemCount.Count);
 

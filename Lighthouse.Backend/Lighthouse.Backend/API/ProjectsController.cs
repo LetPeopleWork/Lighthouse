@@ -101,6 +101,12 @@ namespace Lighthouse.Backend.API
         [HttpPost]
         public async Task<ActionResult<ProjectSettingDto>> CreateProject(ProjectSettingDto projectSetting)
         {
+            projectSetting.Id = 0;
+            foreach (var milestone in projectSetting.Milestones)
+            {
+                milestone.Id = 0;
+            }
+
             var newProject = new Project();
             SyncProjectWithProjectSettings(newProject, projectSetting);
 

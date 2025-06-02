@@ -94,6 +94,7 @@ namespace Lighthouse.Backend.API
         [HttpPost]
         public async Task<ActionResult<TeamSettingDto>> CreateTeam(TeamSettingDto teamSetting)
         {
+            teamSetting.Id = 0;
             var newTeam = new Team();
             SyncTeamWithTeamSettings(newTeam, teamSetting);
 
