@@ -29,7 +29,7 @@
             Update(Projects, projectId, status, errorMessage, updatedId);
         }
 
-        private void Update(List<ConfigurationValidationItem> items, int id, ValidationStatus status, string errorMessage = "", int? updatedId = null)
+        private static void Update(List<ConfigurationValidationItem> items, int id, ValidationStatus status, string errorMessage = "", int? updatedId = null)
         {
             var item = items.FirstOrDefault(i => i.Id == id);
             if (item != null)

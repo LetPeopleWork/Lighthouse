@@ -211,8 +211,6 @@ namespace Lighthouse.Backend.API
 
         private List<WorkTrackingSystemConnectionDto> GetWorkTrackingSystems()
         {
-            var workTrackingSystemDtos = new List<WorkTrackingSystemConnectionDto>();
-
             var workTrackingSystems = workTrackingSystemConnectionRepo.GetAll();
 
             return workTrackingSystems.Select(wts => new WorkTrackingSystemConnectionDto(wts)).ToList();

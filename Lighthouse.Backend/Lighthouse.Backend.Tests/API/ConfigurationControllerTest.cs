@@ -25,6 +25,13 @@ namespace Lighthouse.Backend.Tests.API
         private readonly List<Team> teams = new List<Team>();
         private readonly List<Project> projects = new List<Project>();
 
+        private readonly JsonSerializerOptions deserializeOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter() }
+        };
+
         [SetUp]
         public void Setup()
         {
@@ -323,7 +330,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var workTrackingSystem = AddWorkTrackingSystemConnection();
             workTrackingSystems.Clear();
-            
+
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
 
             var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
@@ -419,9 +426,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
             teams.Add(team);
-            
+
             var subject = CreateSubject();
-            
+
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
@@ -430,15 +437,15 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var response = subject.ValidateConfiguration(configuration);
-            
+
             Assert.Multiple(() =>
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
-                
+
                 Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
                 var validationResult = okResult.Value as ConfigurationValidationDto;
-                
+
                 Assert.That(validationResult.WorkTrackingSystems, Has.Count.EqualTo(1));
                 Assert.That(validationResult.WorkTrackingSystems[0].Id, Is.EqualTo(workTrackingSystem.Id));
                 Assert.That(validationResult.WorkTrackingSystems[0].Status, Is.EqualTo(ValidationStatus.New));
@@ -458,9 +465,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = 1886 };
             teams.Add(team);
-            
+
             var subject = CreateSubject();
-            
+
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
@@ -469,15 +476,15 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var response = subject.ValidateConfiguration(configuration);
-            
+
             Assert.Multiple(() =>
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
-                
+
                 Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
                 var validationResult = okResult.Value as ConfigurationValidationDto;
-                
+
                 Assert.That(validationResult.Teams, Has.Count.EqualTo(1));
                 Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
                 Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.Error));
@@ -495,7 +502,7 @@ namespace Lighthouse.Backend.Tests.API
             projects.Add(project);
 
             var subject = CreateSubject();
-            
+
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
@@ -503,15 +510,15 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var response = subject.ValidateConfiguration(configuration);
-            
+
             Assert.Multiple(() =>
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
-                
+
                 Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
                 var validationResult = okResult.Value as ConfigurationValidationDto;
-                
+
                 Assert.That(validationResult.WorkTrackingSystems, Has.Count.EqualTo(1));
                 Assert.That(validationResult.WorkTrackingSystems[0].Id, Is.EqualTo(workTrackingSystem.Id));
                 Assert.That(validationResult.WorkTrackingSystems[0].Status, Is.EqualTo(ValidationStatus.New));
@@ -536,7 +543,7 @@ namespace Lighthouse.Backend.Tests.API
             projects.Add(project);
 
             var subject = CreateSubject();
-            
+
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
@@ -544,12 +551,12 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var response = subject.ValidateConfiguration(configuration);
-            
+
             Assert.Multiple(() =>
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
-                
+
                 Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
                 var validationResult = okResult.Value as ConfigurationValidationDto;
 
@@ -577,7 +584,7 @@ namespace Lighthouse.Backend.Tests.API
             projects.Add(project);
 
             var subject = CreateSubject();
-            
+
             var configuration = new ConfigurationExport
             {
                 WorkTrackingSystems = new List<WorkTrackingSystemConnectionDto> { new WorkTrackingSystemConnectionDto(workTrackingSystem) },
@@ -585,12 +592,12 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var response = subject.ValidateConfiguration(configuration);
-            
+
             Assert.Multiple(() =>
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
-                
+
                 Assert.That(okResult.Value, Is.InstanceOf<ConfigurationValidationDto>());
                 var validationResult = okResult.Value as ConfigurationValidationDto;
 
@@ -621,12 +628,6 @@ namespace Lighthouse.Backend.Tests.API
             var fileResult = response as FileContentResult;
             Assert.That(fileResult.ContentType, Is.EqualTo("application/json"));
             var json = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
-            var deserializeOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                WriteIndented = true,
-                Converters = { new JsonStringEnumConverter() }
-            };
 
             return JsonSerializer.Deserialize<ConfigurationExport>(json, deserializeOptions) ?? throw new InvalidOperationException("Could not parse response");
         }
