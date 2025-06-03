@@ -262,6 +262,8 @@ describe("SystemSettingsTab Component", () => {
 		fireEvent.click(screen.getByText("Import Configuration"));
 
 		// Verify the dialog was opened
-		expect(screen.getByTestId("import-configuration-dialog")).toBeInTheDocument();
+		expect(
+			screen.getByTestId("import-configuration-dialog"),
+		).toBeInTheDocument();
 	});
 });
