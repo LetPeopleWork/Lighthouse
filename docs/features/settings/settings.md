@@ -40,6 +40,8 @@ The System Settings Page shows some generally applicable settings that affect th
 ## Lighthouse Configuration
 This section allows you to export your configuration to a file, as well as import it back into your Lighthouse instance.
 
+![Lighthouse Configuration](../../assets/settings/lighthouseConfiguration.png)
+
 ### Export
 The export can be useful for various reasons:
 - As a backup of your configuration
