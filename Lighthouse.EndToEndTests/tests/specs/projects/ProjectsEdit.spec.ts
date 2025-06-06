@@ -5,7 +5,6 @@ import {
 	testWithData,
 	testWithUpdatedTeams,
 } from "../../fixutres/LighthouseFixture";
-import { deleteProject } from "../../helpers/api/projects";
 import { deleteWorkTrackingSystemConnectionByName } from "../../helpers/api/workTrackingSystemConnections";
 import { generateRandomName } from "../../helpers/names";
 
@@ -391,8 +390,6 @@ for (const teamConfiguration of newTeamConfigurations) {
 				const projectLink = await projectPage.getProjectLink(newProject);
 				await expect(projectLink).toBeVisible();
 			});
-
-			await deleteProject(request, newProject.id);
 		},
 	);
 }

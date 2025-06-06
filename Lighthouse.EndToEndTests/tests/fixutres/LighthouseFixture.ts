@@ -1,10 +1,9 @@
 import { type APIRequestContext, test as base } from "@playwright/test";
-import { createProject, deleteProject } from "../helpers/api/projects";
-import { createTeam, deleteTeam, updateTeam } from "../helpers/api/teams";
+import { createProject } from "../helpers/api/projects";
+import { createTeam, updateTeam } from "../helpers/api/teams";
 import {
 	createAzureDevOpsConnection,
 	createJiraConnection,
-	deleteWorkTrackingSystemConnection,
 } from "../helpers/api/workTrackingSystemConnections";
 import { generateRandomName } from "../helpers/names";
 import { LighthousePage } from "../models/app/LighthousePage";
@@ -46,21 +45,8 @@ export type ModelIdentifier = {
 	name: string;
 };
 
-async function deleteTestData(
-	request: APIRequestContext,
-	testData: TestData,
-): Promise<void> {
-	for (const project of testData.projects) {
-		await deleteProject(request, project.id);
-	}
-
-	for (const team of testData.teams) {
-		await deleteTeam(request, team.id);
-	}
-
-	for (const connection of testData.connections) {
-		await deleteWorkTrackingSystemConnection(request, connection.id);
-	}
+async function clearConfiguration(request: APIRequestContext): Promise<void> {
+	await request.delete("/api/configuration/clear");
 }
 
 async function getDefaultSettings(
@@ -199,11 +185,13 @@ async function generateTestData(
 }
 
 export const test = base.extend<LighthouseFixtures>({
-	overviewPage: async ({ page }, use) => {
+	overviewPage: async ({ page, request }, use) => {
 		const lighthousePage = new LighthousePage(page);
 		const overviewPage = await lighthousePage.open();
 
 		await use(overviewPage);
+
+		await clearConfiguration(request);
 	},
 });
 
@@ -223,7 +211,7 @@ export function testWithUpdatedTeams(teamsToUpdate: number[] = [0, 1, 2]) {
 		testData: async ({ request }, use) => {
 			const data = await generateTestData(request, teamsToUpdate);
 			await use(data);
-			await deleteTestData(request, data);
+			await clearConfiguration(request);
 		},
 	});
 }
@@ -234,7 +222,7 @@ export const testWithData = test.extend<LighthouseWithDataFixtures>({
 
 		await use(data);
 
-		await deleteTestData(request, data);
+		await clearConfiguration(request);
 	},
 });
 

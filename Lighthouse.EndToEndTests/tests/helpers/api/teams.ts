@@ -36,10 +36,3 @@ export async function createTeam(
 export async function updateTeam(api: APIRequestContext, teamId: number) {
 	await api.post(`/api/Teams/${teamId}`);
 }
-
-export async function deleteTeam(
-	api: APIRequestContext,
-	teamId: number,
-): Promise<void> {
-	await api.delete(`/api/Teams/${teamId}`);
-}

@@ -57,7 +57,7 @@ testWithData(
 
 			expect(await importDialog.hasError()).toBeTruthy();
 			await importDialog.close();
-		});		
+		});
 
 		await test.step("Import should create new configuration", async () => {
 			const importDialog = await systemSettings.importConfiguration();

@@ -1,6 +1,6 @@
 import { TestConfig } from "../../../playwright.config";
 import { expect, test, testWithData } from "../../fixutres/LighthouseFixture";
-import { deleteTeam } from "../../helpers/api/teams";
+
 import { deleteWorkTrackingSystemConnectionByName } from "../../helpers/api/workTrackingSystemConnections";
 import { generateRandomName } from "../../helpers/names";
 
@@ -289,8 +289,6 @@ for (const {
 				const teamLink = await teamsPage.getTeamLink(newTeam.name);
 				await expect(teamLink).toBeVisible();
 			});
-
-			await deleteTeam(request, newTeam.id);
 		},
 	);
 }

@@ -47,10 +47,3 @@ export async function createProject(
 	});
 	return response.json();
 }
-
-export async function deleteProject(
-	api: APIRequestContext,
-	projectId: number,
-): Promise<void> {
-	await api.delete(`/api/Projects/${projectId}`);
-}
