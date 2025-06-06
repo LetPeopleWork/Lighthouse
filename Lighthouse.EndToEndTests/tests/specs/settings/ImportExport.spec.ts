@@ -57,39 +57,7 @@ testWithData(
 
 			expect(await importDialog.hasError()).toBeTruthy();
 			await importDialog.close();
-		});
-
-		await test.step("Import should update existing settings", async () => {
-			const importDialog = await systemSettings.importConfiguration();
-			await importDialog.selectFile(exportedConfigFileName);
-
-			for (const system of workTrackingSystems) {
-				expect(await importDialog.getImportElementStatus(system.name)).toBe(
-					"Update",
-				);
-			}
-
-			for (const team of teams) {
-				expect(await importDialog.getImportElementStatus(team.name)).toBe(
-					"Update",
-				);
-			}
-
-			for (const project of projects) {
-				expect(await importDialog.getImportElementStatus(project.name)).toBe(
-					"Update",
-				);
-			}
-
-			await importDialog.goToNextStep();
-
-			await importDialog.import();
-			await importDialog.waitForImportToFinish();
-
-			expect(await importDialog.wasSuccess()).toBeTruthy();
-
-			await importDialog.close();
-		});
+		});		
 
 		await test.step("Import should create new configuration", async () => {
 			const importDialog = await systemSettings.importConfiguration();
@@ -130,6 +98,38 @@ testWithData(
 
 			await importDialog.waitForImportToFinish();
 			expect(await importDialog.wasSuccess()).toBeTruthy();
+			await importDialog.close();
+		});
+
+		await test.step("Import should update existing settings", async () => {
+			const importDialog = await systemSettings.importConfiguration();
+			await importDialog.selectFile(exportedConfigFileName);
+
+			for (const system of workTrackingSystems) {
+				expect(await importDialog.getImportElementStatus(system.name)).toBe(
+					"Update",
+				);
+			}
+
+			for (const team of teams) {
+				expect(await importDialog.getImportElementStatus(team.name)).toBe(
+					"Update",
+				);
+			}
+
+			for (const project of projects) {
+				expect(await importDialog.getImportElementStatus(project.name)).toBe(
+					"Update",
+				);
+			}
+
+			await importDialog.goToNextStep();
+
+			await importDialog.import();
+			await importDialog.waitForImportToFinish();
+
+			expect(await importDialog.wasSuccess()).toBeTruthy();
+
 			await importDialog.close();
 		});
 	},

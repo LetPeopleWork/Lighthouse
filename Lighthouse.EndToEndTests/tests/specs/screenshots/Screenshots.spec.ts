@@ -107,93 +107,6 @@ test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
 	await takePageScreenshot(overviewPage.page, "installation/landingpage.png");
 });
 
-test("Take @screenshot of setting pages", async ({ overviewPage }) => {
-	const settingsPage = await overviewPage.lightHousePage.goToSettings();
-	const workTrackingSystemsPage = await settingsPage.goToWorkTrackingSystems();
-
-	// Add new Work Tracking System
-	const workTrackingSystemDialog =
-		await workTrackingSystemsPage.addNewWorkTrackingSystem();
-
-	const jiraUrl = "https://letpeoplework.atlassian.net";
-	const username = "benjhuser@gmail.com";
-	const wtsName = "My Jira Connection";
-
-	await workTrackingSystemDialog.selectWorkTrackingSystem("Jira");
-	await workTrackingSystemDialog.setWorkTrackingSystemOption(
-		"Jira Url",
-		jiraUrl,
-	);
-	await workTrackingSystemDialog.setWorkTrackingSystemOption(
-		"Username",
-		username,
-	);
-	await workTrackingSystemDialog.setWorkTrackingSystemOption(
-		"Api Token",
-		TestConfig.JiraToken,
-	);
-
-	await workTrackingSystemDialog.setConnectionName(wtsName);
-
-	await workTrackingSystemDialog.validate();
-	await expect(workTrackingSystemDialog.validateButton).toBeEnabled();
-	await expect(workTrackingSystemDialog.createButton).toBeEnabled();
-	await workTrackingSystemDialog.create();
-
-	const savedWorkTrackingSystem =
-		workTrackingSystemsPage.getWorkTrackingSystem(wtsName);
-	await expect(savedWorkTrackingSystem).toBeVisible();
-
-	await takePageScreenshot(
-		workTrackingSystemsPage.page,
-		"settings/worktrackingsystems.png",
-	);
-
-	const defaultTeamSettingsPage = await settingsPage.goToDefaultTeamSettings();
-	await takePageScreenshot(
-		defaultTeamSettingsPage.page,
-		"settings/defaultteamsettings.png",
-	);
-
-	const defaultprojectSettingsPage =
-		await settingsPage.goToDefaultProjectSettings();
-	await takePageScreenshot(
-		defaultprojectSettingsPage.page,
-		"settings/defaultprojectsettings.png",
-	);
-
-	const systemSettings = await settingsPage.goToSystemSettings();
-
-	await takePageScreenshot(systemSettings.page, "settings/systemsettings.png");
-
-	await takeElementScreenshot(
-		systemSettings.lighthouseConfiguration,
-		"settings/lighthouseConfiguration.png",
-	);
-
-	await takeElementScreenshot(
-		systemSettings.teamRefreshSettings,
-		"settings/teamrefreshsettings.png",
-	);
-	await takeElementScreenshot(
-		systemSettings.featureRefreshSettings,
-		"settings/featurerefreshsettings.png",
-	);
-
-	await takeElementScreenshot(
-		systemSettings.dataRetentionSettings,
-		"settings/dataretention.png",
-	);
-
-	await takeElementScreenshot(
-		systemSettings.optionalFeatures,
-		"settings/optionalfeatures.png",
-	);
-
-	const logs = await settingsPage.goToLogs();
-	await takePageScreenshot(logs.page, "settings/logs.png");
-});
-
 testWithData(
 	"Take @screenshot of import dialog",
 	async ({ overviewPage, testData }) => {
@@ -289,6 +202,93 @@ testWithData(
 		);
 	},
 );
+
+test("Take @screenshot of setting pages", async ({ overviewPage }) => {
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
+	const workTrackingSystemsPage = await settingsPage.goToWorkTrackingSystems();
+
+	// Add new Work Tracking System
+	const workTrackingSystemDialog =
+		await workTrackingSystemsPage.addNewWorkTrackingSystem();
+
+	const jiraUrl = "https://letpeoplework.atlassian.net";
+	const username = "benjhuser@gmail.com";
+	const wtsName = "My Jira Connection";
+
+	await workTrackingSystemDialog.selectWorkTrackingSystem("Jira");
+	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+		"Jira Url",
+		jiraUrl,
+	);
+	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+		"Username",
+		username,
+	);
+	await workTrackingSystemDialog.setWorkTrackingSystemOption(
+		"Api Token",
+		TestConfig.JiraToken,
+	);
+
+	await workTrackingSystemDialog.setConnectionName(wtsName);
+
+	await workTrackingSystemDialog.validate();
+	await expect(workTrackingSystemDialog.validateButton).toBeEnabled();
+	await expect(workTrackingSystemDialog.createButton).toBeEnabled();
+	await workTrackingSystemDialog.create();
+
+	const savedWorkTrackingSystem =
+		workTrackingSystemsPage.getWorkTrackingSystem(wtsName);
+	await expect(savedWorkTrackingSystem).toBeVisible();
+
+	await takePageScreenshot(
+		workTrackingSystemsPage.page,
+		"settings/worktrackingsystems.png",
+	);
+
+	const defaultTeamSettingsPage = await settingsPage.goToDefaultTeamSettings();
+	await takePageScreenshot(
+		defaultTeamSettingsPage.page,
+		"settings/defaultteamsettings.png",
+	);
+
+	const defaultprojectSettingsPage =
+		await settingsPage.goToDefaultProjectSettings();
+	await takePageScreenshot(
+		defaultprojectSettingsPage.page,
+		"settings/defaultprojectsettings.png",
+	);
+
+	const systemSettings = await settingsPage.goToSystemSettings();
+
+	await takePageScreenshot(systemSettings.page, "settings/systemsettings.png");
+
+	await takeElementScreenshot(
+		systemSettings.lighthouseConfiguration,
+		"settings/lighthouseConfiguration.png",
+	);
+
+	await takeElementScreenshot(
+		systemSettings.teamRefreshSettings,
+		"settings/teamrefreshsettings.png",
+	);
+	await takeElementScreenshot(
+		systemSettings.featureRefreshSettings,
+		"settings/featurerefreshsettings.png",
+	);
+
+	await takeElementScreenshot(
+		systemSettings.dataRetentionSettings,
+		"settings/dataretention.png",
+	);
+
+	await takeElementScreenshot(
+		systemSettings.optionalFeatures,
+		"settings/optionalfeatures.png",
+	);
+
+	const logs = await settingsPage.goToLogs();
+	await takePageScreenshot(logs.page, "settings/logs.png");
+});
 
 testWithData(
 	"Take @screenshot of populated overview, teams overview, team detail, projects overview, and project detail pages",
