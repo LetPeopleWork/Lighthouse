@@ -7,10 +7,55 @@ import {
 } from "../../fixutres/LighthouseFixture";
 
 import {
+	takeDialogScreenshot,
 	takeDialogScreenshot as takeElementScreenshot,
 	takePageScreenshot,
 } from "../../helpers/screenshots";
 import type { OverviewPage } from "../../models/overview/OverviewPage";
+
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+const updateWorkTrackingSystems = async (
+	overviewPage: OverviewPage,
+	workTrackingSystems: ModelIdentifier[],
+) => {
+	const workTrackingSystemNames = [
+		{
+			name: "My Azure DevOps Connection",
+			optionName: "Personal Access Token",
+			optionValue: TestConfig.AzureDevOpsToken,
+		},
+		{
+			name: "My Jira Connection",
+			optionName: "Api Token",
+			optionValue: TestConfig.JiraToken,
+		},
+	];
+
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
+	const workTrackingSystemsPage = await settingsPage.goToWorkTrackingSystems();
+
+	for (const workTrackingSystem of workTrackingSystems) {
+		const editWorkTrackingSystem =
+			await workTrackingSystemsPage.modifyWorkTryckingSystem(
+				workTrackingSystem.name,
+			);
+
+		const wtsDetails =
+			workTrackingSystemNames[workTrackingSystems.indexOf(workTrackingSystem)];
+		await editWorkTrackingSystem.setConnectionName(wtsDetails.name);
+		await editWorkTrackingSystem.setWorkTrackingSystemOption(
+			wtsDetails.optionName,
+			wtsDetails.optionValue,
+		);
+
+		await editWorkTrackingSystem.validate();
+		await expect(editWorkTrackingSystem.createButton).toBeEnabled();
+		await editWorkTrackingSystem.create();
+	}
+};
 
 const updateTeams = async (
 	overviewPage: OverviewPage,
@@ -117,28 +162,128 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 		"settings/defaultprojectsettings.png",
 	);
 
-	/* TODO: Update this to capture specific elements */
 	const systemSettings = await settingsPage.goToSystemSettings();
-	await takePageScreenshot(
-		systemSettings.page,
-		"settings/periodicrefreshsettings.png",
+
+	await takePageScreenshot(systemSettings.page, "settings/systemsettings.png");
+
+	await takeElementScreenshot(
+		systemSettings.teamRefreshSettings,
+		"settings/teamrefreshsettings.png",
+	);
+	await takeElementScreenshot(
+		systemSettings.featureRefreshSettings,
+		"settings/featurerefreshsettings.png",
 	);
 
-	const dataRetentionSettings = await settingsPage.goToSystemSettings();
-	await takePageScreenshot(
-		dataRetentionSettings.page,
+	await takeElementScreenshot(
+		systemSettings.dataRetentionSettings,
 		"settings/dataretention.png",
 	);
 
-	const optionalFeatureSettings = await settingsPage.goToSystemSettings();
-	await takePageScreenshot(
-		optionalFeatureSettings.page,
+	await takeElementScreenshot(
+		systemSettings.optionalFeatures,
 		"settings/optionalfeatures.png",
 	);
 
 	const logs = await settingsPage.goToLogs();
 	await takePageScreenshot(logs.page, "settings/logs.png");
 });
+
+testWithData(
+	"Take @screenshot of import dialog",
+	async ({ overviewPage, testData }) => {
+		await updateWorkTrackingSystems(overviewPage, testData.connections);
+		await updateTeams(overviewPage, testData.teams);
+		await updateProjects(overviewPage, testData.projects);
+
+		const settingsPage = await overviewPage.lightHousePage.goToSettings();
+		const systemSettings = await settingsPage.goToSystemSettings();
+
+		const exportedConfigFileName = await systemSettings.exportConfiguration();
+
+		const tempDir = os.tmpdir();
+		const invalidJsonPath = path.join(
+			tempDir,
+			`invalid-import-${Date.now()}.json`,
+		);
+		fs.writeFileSync(
+			invalidJsonPath,
+			`
+			Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+			This is definitely not valid JSON!
+			{
+				"unclosed": "object"
+				"missing": "comma"
+			}
+		`,
+		);
+
+		let importDialog = await systemSettings.importConfiguration();
+		await importDialog.selectFile(invalidJsonPath);
+
+		takeDialogScreenshot(
+			importDialog.page.getByRole("dialog"),
+			"settings/import/invalid_file.png",
+			5,
+			1000,
+		);
+
+		importDialog.close();
+
+		importDialog = await systemSettings.importConfiguration();
+		await importDialog.selectFile(exportedConfigFileName);
+		await takeDialogScreenshot(
+			importDialog.page.getByRole("dialog"),
+			"settings/import/update.png",
+			5,
+			1000,
+		);
+
+		await importDialog.toggleClearConfiguration();
+		await takeDialogScreenshot(
+			importDialog.page.getByRole("dialog"),
+			"settings/import/new.png",
+			5,
+			1000,
+		);
+
+		await importDialog.goToNextStep();
+		await importDialog.addSecretParameter(
+			"Personal Access Token",
+			TestConfig.AzureDevOpsToken,
+		);
+		await importDialog.addSecretParameter("Api Token", TestConfig.JiraToken);
+
+		await takeDialogScreenshot(
+			importDialog.page.getByRole("dialog"),
+			"settings/import/secret_parameters.png",
+			5,
+			1000,
+		);
+
+		await importDialog.validate();
+		await expect(importDialog.nextButton).toBeEnabled();
+		await importDialog.goToNextStep();
+
+		await importDialog.import();
+
+		await takeDialogScreenshot(
+			importDialog.page.getByRole("dialog"),
+			"settings/import/importing.png",
+			5,
+			1000,
+		);
+
+		await importDialog.waitForImportToFinish();
+
+		await takeDialogScreenshot(
+			importDialog.page.getByRole("dialog"),
+			"settings/import/summary.png",
+			5,
+			1000,
+		);
+	},
+);
 
 testWithData(
 	"Take @screenshot of populated overview, teams overview, team detail, projects overview, and project detail pages",

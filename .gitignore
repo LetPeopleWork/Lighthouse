@@ -413,3 +413,4 @@ Lighthouse.Frontend/coverage/*
 examples/postgres/data/*
 !/examples/postgres/certs/LighthouseCert.pfx
 .DS_Store
+Lighthouse.EndToEndTests/temp-downloads/*

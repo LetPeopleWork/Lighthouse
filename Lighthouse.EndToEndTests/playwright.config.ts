@@ -21,7 +21,7 @@ export class TestConfig {
 	public static get LighthouseUrl(): string {
 		return TestConfig.getEnvVariable(
 			TestConfig.LIGHTHOUSEURLNAME,
-			"http://localhost:5169/",
+			"https://localhost:8888",
 		);
 	}
 

@@ -32,6 +32,114 @@ You can also delete Work Tracking Systems if they are not needed anymore. To do 
 {: .note}
 You can only delete a Work Tracking System if no team and project is using this. Either remove those teams and projects, or change them to use a different work tracking system.
 
+# System Settings
+The System Settings Page shows some generally applicable settings that affect the overall Lighthouse behaviour.
+
+![System Settings](../../assets/settings/systemsettings.png)
+
+## Lighthouse Configuration
+This section allows you to export your configuration to a file, as well as import it back into your Lighthouse instance.
+
+### Export
+The export can be useful for various reasons:
+- As a backup of your configuration
+- To share a configuration with colleagues
+
+When you click export, Lighthouse will create a *.json* file that includes the full configuration of your Lighthouse instance. The configuration includes:
+- Work Tracking Systems
+- Teams
+- Projects
+
+The export does *not* include any data (work items, features, metrics, etc.) for any team or project. It's just the settings itself. If you fetch the data from your work tracking system, you should then see the same information.
+
+As the config is stored as a file, you can easily share it, as well as store it in a version control system.
+
+{: .important}
+The exported file does **not** include any secrets. Your work tracking systems api keys will not be exported. They will have to be entered on import.
+
+### Import
+
+#### File Selection
+To start the import, you got to select a *.json* file. Lighthouse will then guide you through the configuration.
+
+As a first step, Lighthouse will check if the file is valid. If it can't read it for whatever reason, it will not allow an import and display an error message.
+
+![Invalid File](../../assets/settings/import/invalid_file.png)
+
+If it can be read, it will check whether the the Work Tracking Systems, Teams, and Projects are new or exist already. An update of an existing item will mean that the data is kept, and the settings like *work item query*, *states configuration*, etc. will be updated.
+
+![Updated Items](../../assets/settings/import/update.png)
+
+{: .note}
+The detection whether something exists already is done via checking the name. The name has to match exactly.
+
+You can also chose to *Clear* the existing configuration. This means, all Work Tracking Systems, Teams, and Projects that you may have configured will be removed as part of the import process.
+
+![New Items](../../assets/settings/import/new.png)
+
+#### Secrets Configuration
+If a new work tracking system is added, you'll have to specify all options that are secret on import (for example API Tokens). This makes sure that, while we can share the configuration, you will not share access tokens and reuse the token from another person.
+
+![Secret Parameter Configuration](../../assets/settings/import/secret_parameters.png)
+
+#### Import
+Once you've validated the secrets, you can start the import. Please note that this might take a while, depending on the size of your configuration.
+
+![Importing](../../assets/settings/import/importing.png)
+
+{: .important}
+Once you have started the import, you can't undo the changes!
+
+#### Import Summary
+After you've imported, you'll see a summary and potential errors or problems. For every imported item, a validation is run to check whether it worked. If the validation failed, it means the import worked but some setting may need to be adjusted.
+
+At the end, you can choose whether you want to update all imported Teams and Projects or just close the dialog. If you decide to not update, you will not have any data for some time, until the period update kicks in. This may be desired if you want to double check the settings first (for example in case of validation errors).
+
+![Import Summary](../../assets/settings/import/success.png)
+
+## Optional Features
+Some features might not make sense to be enabled in all situations. And occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. In such a case you would find a toggle in the *Optional Features* setting which you can selectively enable or disable.
+
+![Optional Features](../../assets/settings/optionalfeatures.png)
+
+Eventually, the Features in preview will be integrated into the regular functionality, and the preview flag will be removed. In rare cases, a preview feature might get removed.
+
+{: .recommendation}
+While preview features should be relatively stable, it can be that they will not work perfectly yet. If you enable them and encounter issues, please let us know about it. We're looking forward to your feedback!
+
+## Periodic Refresh Settings
+One of the main advantages of Lighthouse is the fact that it's not only offering to run the forecasts on demand, but also **continuously**. To fine-tune this, you can adjust the several settings:
+
+![Team Refresh Settings](../../assets/settings/teamrefreshsettings.png)
+
+### Refresh Types
+There are two types of refreshes:
+- Team
+- Feature
+
+The Team refresh fetches all items related to your team, and is doing what can manually be done via the [Update Team Data Button](../teams/detail.html#update-team-data), while the Features relate to the different projects and is doing what can be manually trigger via the [Refresh Feature Button](../projects/detail.html#refresh-features).
+
+![Feature Refresh Settings](../../assets/settings/featurerefreshsettings.png)
+
+### Setting Details
+Each refresh type contains three different settings. All settings are specified in minutes. After adjusting the setting, the *Update Settings* button must be pressed for the changes to become effective.
+
+| Name | Description |
+|------|-------------|
+| Interval (Minutes) | The time between checks if the data should be updated. This means, after *x minutes* Lighthouse will check if the last update was older than what was defined in *Refresh After*. |
+| Refresh After (Minutes) | The time after which a refresh will be triggered if the last one was more than this time ago. |
+| Start Delay (Minutes) | The delay before the background task is started when the application starts. This can be useful as you may not want to trigger updates just after startup. |
+
+## Data Retention
+Lighthouse stores Feature data in order to process/visualize it later on. The data includes the forecast for this feature, how many items were pending and how many were done, and which teams were involved.
+
+This settings allows you to define how many entries you want to keep. Older entries will be deleted from Lighthouse permanently.
+
+![Data Retention](../../assets/settings/dataretention.png)
+
+{: .note}
+Setting this to a lower number can help you save space, especially if you have many projects in one Lighthouse instance.
+
 # Default Team Settings
 To simplify [Team Creation](../teams/edit.html), you can adjust the default values that are used when you create a new team. While not all settings can be changed, you preconfigure many different settings to make the creation process smoother.
 
@@ -59,47 +167,6 @@ You must hit the *Save* button at the bottom of the page for the changes to beco
 
 {: .recommendation}
 We recommend to create one project, as you can validate all the settings. After this, we suggest to go and adjust the default settings accordingly, to make future project creation more effective.
-
-# Periodic Refresh Settings
-One of the main advantages of Lighthouse is the fact that it's not only offering to run the forecasts on demand, but also **continuously**. To fine-tune this, you can adjust the several settings:
-
-![Periodic Refresh Settings](../../assets/settings/periodicrefreshsettings.png)
-
-## Refresh Types
-There are two types of refreshes:
-- Team
-- Feature
-
-The Team refresh fetches all items related to your team, and is doing what can manually be done via the [Update Team Data Button](../teams/detail.html#update-team-data), while the Features relate to the different projects and is doing what can be manually trigger via the [Refresh Feature Button](../projects/detail.html#refresh-features).
-
-## Setting Details
-Each refresh type contains three different settings. All settings are specified in minutes. After adjusting the setting, the *Update Settings* button must be pressed for the changes to become effective.
-
-| Name | Description |
-|------|-------------|
-| Interval (Minutes) | The time between checks if the data should be updated. This means, after *x minutes* Lighthouse will check if the last update was older than what was defined in *Refresh After*. |
-| Refresh After (Minutes) | The time after which a refresh will be triggered if the last one was more than this time ago. |
-| Start Delay (Minutes) | The delay before the background task is started when the application starts. This can be useful as you may not want to trigger updates just after startup. |
-
-# Data Retention
-Lighthouse stores Feature data in order to process/visualize it later on. The data includes the forecast for this feature, how many items were pending and how many were done, and which teams were involved.
-
-This settings allows you to define how many entries you want to keep. Older entries will be deleted from Lighthouse permanently.
-
-![Data Retention](../../assets/settings/dataretention.png)
-
-{: .note}
-Setting this to a lower number can help you save space, especially if you have many projects in one Lighthouse instance.
-
-# Optional Features
-Some features might not make sense to be enabled in all situations. And occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. In such a case you would find a toggle in the *Optional Features* setting which you can selectively enable or disable.
-
-![Optional Features](../../assets/settings/optionalfeatures.png)
-
-Eventually, the Features in preview will be integrated into the regular functionality, and the preview flag will be removed. In rare cases, a preview feature might get removed.
-
-{: .recommendation}
-While preview features should be relatively stable, it can be that they will not work perfectly yet. If you enable them and encounter issues, please let us know about it. We're looking forward to your feedback!
 
 # Logs
 We really hope you don't need this...but then again, Software is complex and it's very possible that once you run into a problem and need some more details on what was going on (or we ask for this info to better find the problem).  
