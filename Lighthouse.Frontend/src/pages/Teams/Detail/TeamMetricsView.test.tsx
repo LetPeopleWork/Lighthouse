@@ -88,6 +88,7 @@ describe("TeamMetricsView component", () => {
 		team.id = 1;
 		team.name = "Test Team";
 		team.featureWip = 3;
+		team.useFixedDatesForThroughput = true;
 
 		// Act
 		setupTest(team);
@@ -170,5 +171,43 @@ describe("TeamMetricsView component", () => {
 		});
 
 		consoleSpy.mockRestore();
+	});
+
+	it("should use a fixed 30 day date range when team has useFixedDatesForThroughput set to true", async () => {
+		// Arrange
+		const team = new Team();
+		team.id = 1;
+		team.name = "Test Team";
+		team.useFixedDatesForThroughput = true;
+
+		// Set throughput dates that would result in a different date range if used
+		const startDate = new Date();
+		startDate.setDate(startDate.getDate() - 60); // 60 days ago
+		team.throughputStartDate = startDate;
+
+		// Act
+		setupTest(team);
+
+		// Assert
+		expect(screen.getByTestId("default-date-range")).toHaveTextContent("30");
+	});
+
+	it("should use days since throughputStartDate as date range when team is not using fixed dates", async () => {
+		// Arrange
+		const team = new Team();
+		team.id = 1;
+		team.name = "Test Team";
+		team.useFixedDatesForThroughput = false;
+
+		// Set throughput start date to 45 days ago
+		const startDate = new Date();
+		startDate.setDate(startDate.getDate() - 45);
+		team.throughputStartDate = startDate;
+
+		// Act
+		setupTest(team);
+
+		// Assert
+		expect(screen.getByTestId("default-date-range")).toHaveTextContent("45");
 	});
 });

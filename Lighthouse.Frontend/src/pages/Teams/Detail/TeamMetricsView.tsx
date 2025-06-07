@@ -13,6 +13,7 @@ interface TeamMetricsViewProps {
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
 	const { teamMetricsService } = useContext(ApiServiceContext);
+	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
 
 	useEffect(() => {
 		const fetchFeatures = async () => {
@@ -29,6 +30,20 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		fetchFeatures();
 	}, [team.id, teamMetricsService]);
 
+	useEffect(() => {
+		if (team.useFixedDatesForThroughput) {
+			setDateRange(30);
+		} else {
+			const range = Math.floor(
+				(team.throughputEndDate.valueOf() -
+					team.throughputStartDate.valueOf()) /
+					(1000 * 60 * 60 * 24),
+			);
+
+			setDateRange(range);
+		}
+	}, [team]);
+
 	const renderTeamSpecificContent = () => (
 		<ItemsInProgress
 			title="Features being Worked On:"
@@ -42,7 +57,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			entity={team}
 			metricsService={teamMetricsService}
 			title="Work Items"
-			defaultDateRange={30}
+			defaultDateRange={dateRange}
 			renderAdditionalComponents={renderTeamSpecificContent}
 		/>
 	);
