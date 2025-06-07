@@ -11,10 +11,45 @@ Preview
 {: .label .label-blue }
 -->
 
-# Lighthouse v25.5.18.1752
+# Lighthouse v25.6.6.1614
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+# Export and Import of Configuration
+The main focus of this release was the introduction of the functionality to export and import your Lighthouse Configuration.
+
+![Summary](../assets/settings/import/summary.png)
+
+In *Settings* --> *System Settings* you will see two new buttons:
+- Export Configuration
+- Import Configuration
+
+Export will download a *.json* file that contains all the settings from your Work Tracking Systems, Teams, and Projects, **excluding** any secret information to connect to your Work Tracking System.
+
+If you click on Import, you'll get an import dialog that will lead you through the process step by step.
+
+You can find the full documentation for the features in the [docs](https://docs.lighthouse.letpeople.work/features/settings/settings.html#lighthouse-configuration).
+ 
+# Bug Fixes
+- Items that haved an Age/Cycle Time exactly at SLE are displayed red instead of orange
+- Last Updated Date was wrong (or not updated anymore) for Projects
+
+# Other Improvements
+- Restructured the Settings Page, grouping various settings under the "System Settings" Tab
+- Scatterplot is now showing bigger bubbles if multiple items were closed at the same day with the same age
+- The CFD has no tooltip anymore (as it was not useful)
+- Update of various third-party libraries
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.5.18.1752...v25.6.6.1614)
+
+# Lighthouse v25.5.18.1752
 
 # Service Level Expectation
 The main focus of this was the introduction of the Service Level Expectation (*SLE*). For both Teams and Projects you can now define an SLE which is made out of:

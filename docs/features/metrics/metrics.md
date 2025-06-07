@@ -142,10 +142,11 @@ If you click anywhere on the widget (independent if you look at percentiles or t
 | **Affected by Filtering** | Yes |
 
 The Scatterplot shows the individual items in a chart, where the x-axis shows the dates the items were closed, and the y-axis how long they were in progress.
+If there are items that were closed on the same day with the same cycle time, they are represented in a single bubble. The more items a bubble is representing, the bigger it is.
 
 ![Cycle Time Scatterplot](../../assets/features/metrics/cycleTimeScatterplot.png)
 
-This visual allows you to see patterns or outliers. Hovering over a dot will give you more information about the item, and with a click you'll get to the item in your work tracking system.
+This visual allows you to see patterns or outliers. Hovering over a dot will give you more information about the items, and with a click you'll get to the item in your work tracking system.
 
 You can click on the percentiles on top in the legend to show/hide them. Additionally, if you have defined an SLE, you can show the line on your scatterplot as well.
 
