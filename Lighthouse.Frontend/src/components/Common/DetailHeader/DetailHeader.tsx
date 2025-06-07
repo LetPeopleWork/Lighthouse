@@ -18,7 +18,7 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
 	spacing = 3,
 }) => {
 	return (
-		<Grid container spacing={spacing} alignItems="center" >
+		<Grid container spacing={spacing} alignItems="center">
 			<Grid size={{ xs: 12, md: 4 }}>
 				<Box
 					sx={{

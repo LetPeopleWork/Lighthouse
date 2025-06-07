@@ -1,13 +1,13 @@
-import { Button, Container, Stack, Tab, Tabs, Typography } from "@mui/material";
+import { Button, Container, Stack, Tab, Tabs } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
+import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import ForecastConfiguration from "../../../components/Common/ForecastConfiguration/ForecastConfiguration";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
-import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -118,17 +118,7 @@ const TeamDetail: React.FC = () => {
 							<DetailHeader
 								leftContent={
 									<>
-										<Typography variant="h3">
-											{team.name}
-
-											<Typography variant="h6">
-												Last Updated on{" "}
-												<LocalDateTimeDisplay
-													utcDate={team.lastUpdated}
-													showTime={true}
-												/>
-											</Typography>
-										</Typography>
+										<FeatureOwnerHeader featureOwner={team} />
 										<Stack spacing={1}>
 											<ForecastConfiguration team={team} />
 											<ServiceLevelExpectation featureOwner={team} />
