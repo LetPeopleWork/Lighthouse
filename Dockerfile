@@ -45,7 +45,7 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 
 # Use environment variables that directly override Kestrel configuration
-ENV Kestrel__Endpoints__Http__Url="https://+:80"
+ENV Kestrel__Endpoints__Http__Url="http://+:80"
 ENV Kestrel__Endpoints__Https__Url="https://+:443"
 ENV ASPNETCORE_HTTPS_ONLY="true"
 ENTRYPOINT ["dotnet", "Lighthouse.dll"]
