@@ -142,7 +142,7 @@ testWithData(
 		takeDialogScreenshot(
 			importDialog.page.getByRole("dialog"),
 			"settings/import/invalid_file.png",
-			5,
+			0.5,
 			1000,
 		);
 
@@ -150,10 +150,11 @@ testWithData(
 
 		importDialog = await systemSettings.importConfiguration();
 		await importDialog.selectFile(exportedConfigFileName);
+
 		await takeDialogScreenshot(
 			importDialog.page.getByRole("dialog"),
 			"settings/import/update.png",
-			5,
+			0.5,
 			1000,
 		);
 
@@ -161,7 +162,7 @@ testWithData(
 		await takeDialogScreenshot(
 			importDialog.page.getByRole("dialog"),
 			"settings/import/new.png",
-			5,
+			0.5,
 			1000,
 		);
 
@@ -175,7 +176,7 @@ testWithData(
 		await takeDialogScreenshot(
 			importDialog.page.getByRole("dialog"),
 			"settings/import/secret_parameters.png",
-			5,
+			0.5,
 			1000,
 		);
 
@@ -188,7 +189,7 @@ testWithData(
 		await takeDialogScreenshot(
 			importDialog.page.getByRole("dialog"),
 			"settings/import/importing.png",
-			5,
+			0.5,
 			1000,
 		);
 
@@ -197,7 +198,7 @@ testWithData(
 		await takeDialogScreenshot(
 			importDialog.page.getByRole("dialog"),
 			"settings/import/summary.png",
-			5,
+			0.5,
 			1000,
 		);
 	},
