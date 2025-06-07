@@ -271,6 +271,49 @@ describe("DataOverviewTable", () => {
 		expect(tagsInRow3.length).toBe(0);
 	});
 
+	it("should not display empty tags", () => {
+		// Prevent mobile view to make sure tags column is visible
+		vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		}));
+
+		const dataWithEmptyTag: IFeatureOwner[] = [
+			{
+				id: 1,
+				name: "Item with empty tag",
+				remainingWork: 10,
+				remainingFeatures: 5,
+				features: [],
+				totalWork: 20,
+				tags: ["valid-tag", "", "  ", "another-valid-tag"],
+				lastUpdated: new Date(),
+				serviceLevelExpectationProbability: 0,
+				serviceLevelExpectationRange: 0,
+			},
+		];
+
+		renderWithRouter(
+			<DataOverviewTable
+				data={dataWithEmptyTag}
+				api="api"
+				onDelete={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("valid-tag")).toBeInTheDocument();
+		expect(screen.getByText("another-valid-tag")).toBeInTheDocument();
+
+		const tagChips = document.querySelectorAll(".MuiChip-outlined");
+		expect(tagChips.length).toEqual(2);
+	});
+
 	it("filters items by tag", () => {
 		renderWithRouter(
 			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,

@@ -267,16 +267,18 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									{!isMobile && (
 										<TableCell>
 											<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-												{item.tags.map((tag) => (
-													<Chip
-														key={`${item.id}-${tag}`}
-														label={tag}
-														size="small"
-														color="primary"
-														variant="outlined"
-														sx={{ fontWeight: "bold" }}
-													/>
-												))}
+												{item.tags
+													.filter((t) => t.trim() !== "")
+													.map((tag) => (
+														<Chip
+															key={`${item.id}-${tag}`}
+															label={tag}
+															size="small"
+															color="primary"
+															variant="outlined"
+															sx={{ fontWeight: "bold" }}
+														/>
+													))}
 											</Box>
 										</TableCell>
 									)}

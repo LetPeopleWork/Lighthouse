@@ -1351,6 +1351,7 @@ export class DemoApiService
 		teamMavericks.name = "Mavericks";
 		teamMavericks.features = [features[1], features[2]];
 		teamMavericks.featureWip = 2;
+		teamMavericks.tags = [""];
 
 		const teamCyberSultans = new Team();
 		teamCyberSultans.id = 2;
@@ -1484,6 +1485,7 @@ export class DemoApiService
 		project3.involvedTeams = [teams[2], teams[3]];
 		project3.features = [features[2], features[3]];
 		project3.milestones = milestones;
+		project2.tags = [];
 
 		projects = [project1, project2, project3];
 	}
