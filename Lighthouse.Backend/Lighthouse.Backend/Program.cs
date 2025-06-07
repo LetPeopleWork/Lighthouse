@@ -30,9 +30,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.MCP;
-using ModelContextProtocol.Server;
 using ModelContextProtocol.Protocol.Types;
-using NuGet.Protocol.Core.Types;
 
 namespace Lighthouse.Backend
 {
@@ -96,7 +94,8 @@ namespace Lighthouse.Backend
                 c.RoutePrefix = "api/swagger";
             });
 
-            if (!app.Environment.IsDevelopment())
+            var httpsOnly = app.Configuration.GetValue("ASPNETCORE_HTTPS_ONLY", false);
+            if (!app.Environment.IsDevelopment() && !httpsOnly)
             {
                 app.UseHttpsRedirection();
             }

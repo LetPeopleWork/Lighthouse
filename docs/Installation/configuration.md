@@ -50,10 +50,19 @@ By default, Lighthouse will listen on Ports 5000 (http) and 5001 (https). You mi
   - `Kestrel__Endpoints__Https__Url`
 
 ### Docker
-If you're using docker, you can simply adjust the port bindings instead of overriding this value:
+When running in Docker, Lighthouse internally uses only port 443 (HTTPS) to enforce secure connections. You can map this port to any external port you want:
 ```bash
-docker run -p 80:5000 -p 443:5001 ghcr.io/letpeoplework/lighthouse:latest
+docker run -p 443:443 ghcr.io/letpeoplework/lighthouse:latest
 ```
+
+This mapping means: `-p [host-port]:[container-port]`
+
+For example, to map container port 443 to host port 8081:
+```bash
+docker run -p 8081:443 ghcr.io/letpeoplework/lighthouse:latest
+```
+
+Note that when running Lighthouse outside of Docker, it will use the default ports 5000/5001 unless overridden.
 
 ## Database
 Lighthouse can work with different databases. Currently it supports [SQLite](https://www.sqlite.org/) and [postgresql](https://www.postgresql.org/) databases to store the data.

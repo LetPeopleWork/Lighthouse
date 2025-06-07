@@ -31,7 +31,13 @@ docker pull ghcr.io/letpeoplework/lighthouse:latest
 You can run Lighthouse in docker using the following command:
 
 ```bash
-docker run -d -P -v ".:/app/Data" -v "./logs:/app/logs" -e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
+docker run -d -p 8081:443 -v ".:/app/Data" -v "./logs:/app/logs" -e "ConnectionStrings__LighthouseAppContext=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
 ```
 
-This will use the directory you run the command from as storage for your database and logs. You can find more information on the configuration options under [Configuration](./configuration.html).
+This will:
+- Map host port 8081 to container port 443 (HTTPS)
+- Use the directory you run the command from as storage for your database and logs
+
+Inside the Docker container, Lighthouse runs on HTTPS port 443 only, enforcing secure connections. HTTP traffic is not permitted to enhance security. When running outside Docker, it uses ports 5000/5001 by default.
+
+You can find more information on the configuration options under [Configuration](./configuration.html).

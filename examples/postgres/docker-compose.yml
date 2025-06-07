@@ -17,7 +17,6 @@ services:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       retries: 5
-
   lighthouse:
     image: ghcr.io/letpeoplework/lighthouse:dev-latest
     container_name: lighthouse-app
@@ -28,8 +27,7 @@ services:
       Database__Provider: postgres
       Database__ConnectionString: Host=postgres;Database=lighthouse;Username=postgres;Password=postgres
     ports:
-      - "8080:5000"
-      - "8081:5001"
+      - "8081:443"
     volumes:
       - ./logs:/app/logs
     restart: always

@@ -1,7 +1,7 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 USER app
 WORKDIR /app
-EXPOSE 5001
+EXPOSE 443
 
 # Copy the default certificate
 COPY ["Lighthouse.Backend/Lighthouse.Backend/certs/LighthouseCert.pfx", "/app/certs/LighthouseCert.pfx"]
@@ -21,7 +21,7 @@ RUN dotnet build "Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.cspr
 	-c "$BUILD_CONFIGURATION" \
 	-o /app/build/
 
-FROM node:22 AS node-builder
+FROM node:22-alpine AS node-builder
 WORKDIR /node
 COPY Lighthouse.Frontend /node
 RUN npm install --ignore-scripts \
@@ -43,4 +43,7 @@ RUN dotnet publish "./Lighthouse.Backend/Lighthouse.Backend.csproj" \
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+# Set environment variables for Docker port configuration
+ENV ASPNETCORE_URLS="https://+:443"
+ENV ASPNETCORE_HTTPS_ONLY="true"
 ENTRYPOINT ["dotnet", "Lighthouse.dll"]
