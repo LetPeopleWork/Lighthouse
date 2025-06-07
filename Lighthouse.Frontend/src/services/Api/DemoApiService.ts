@@ -1488,6 +1488,8 @@ export class DemoApiService
 		project2.features = [features[1]];
 		project2.milestones = milestones;
 		project2.tags = ["New", "Important Customer"];
+		project2.serviceLevelExpectationProbability = 75;
+		project2.serviceLevelExpectationRange = 11;
 
 		const project3 = new Project();
 		project3.name = "Release Codename Daniel";
@@ -1495,7 +1497,7 @@ export class DemoApiService
 		project3.involvedTeams = [teams[2], teams[3]];
 		project3.features = [features[2], features[3]];
 		project3.milestones = milestones;
-		project2.tags = [];
+		project3.tags = [];
 
 		projects = [project1, project2, project3];
 	}

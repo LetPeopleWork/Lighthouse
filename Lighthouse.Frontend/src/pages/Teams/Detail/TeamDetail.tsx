@@ -136,7 +136,7 @@ const TeamDetail: React.FC = () => {
 									</Tabs>
 								}
 								rightContent={
-									<Stack spacing={1}>
+									<>
 										<ActionButton
 											onClickHandler={onUpdateTeamData}
 											buttonText="Update Team Data"
@@ -151,7 +151,7 @@ const TeamDetail: React.FC = () => {
 										>
 											Edit Team
 										</Button>
-									</Stack>
+									</>
 								}
 							/>
 						</Grid>

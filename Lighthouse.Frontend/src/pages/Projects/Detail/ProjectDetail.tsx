@@ -1,11 +1,12 @@
-import { Button, Container, Tab, Tabs, Typography } from "@mui/material";
+import { Button, Container, Tab, Tabs } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
+import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
+import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
-import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import type { IProject, Project } from "../../../models/Project/Project";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
@@ -166,55 +167,44 @@ const ProjectDetail: React.FC = () => {
 					<></>
 				) : (
 					<Grid container spacing={3}>
-						<Grid size={{ xs: 4 }}>
-							<Typography variant="h3">{project.name}</Typography>
-							<Typography variant="h6">
-								Last Updated on{" "}
-								<LocalDateTimeDisplay
-									utcDate={project.lastUpdated}
-									showTime={true}
-								/>
-							</Typography>
-						</Grid>
+						<Grid size={{ xs: 12 }}>
+							<DetailHeader
+								leftContent={
+									<>
+										<FeatureOwnerHeader featureOwner={project} />
 
-						<Grid
-							size={{ xs: 4 }}
-							sx={{
-								display: "flex",
-								justifyContent: "center",
-								alignItems: "center",
-							}}
-						>
-							<Tabs
-								value={activeView}
-								onChange={handleViewChange}
-								aria-label="project view tabs"
-							>
-								<Tab label="Forecasts" value="forecast" />
-								<Tab label="Metrics" value="metrics" />
-							</Tabs>
-						</Grid>
-
-						<Grid
-							size={{ xs: 4 }}
-							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
-						>
-							<ServiceLevelExpectation featureOwner={project} />
-
-							<ActionButton
-								buttonText="Refresh Features"
-								onClickHandler={onRefreshFeatures}
-								maxHeight="40px"
-								minWidth="120px"
-								externalIsWaiting={isProjectUpdating}
+										<ServiceLevelExpectation featureOwner={project} />
+									</>
+								}
+								centerContent={
+									<Tabs
+										value={activeView}
+										onChange={handleViewChange}
+										aria-label="project view tabs"
+									>
+										<Tab label="Forecasts" value="forecast" />
+										<Tab label="Metrics" value="metrics" />
+									</Tabs>
+								}
+								rightContent={
+									<>
+										<ActionButton
+											buttonText="Refresh Features"
+											onClickHandler={onRefreshFeatures}
+											maxHeight="40px"
+											minWidth="120px"
+											externalIsWaiting={isProjectUpdating}
+										/>
+										<Button
+											variant="contained"
+											onClick={onEditProject}
+											sx={{ maxHeight: "40px", minWidth: "120px" }}
+										>
+											Edit Project
+										</Button>
+									</>
+								}
 							/>
-							<Button
-								variant="contained"
-								onClick={onEditProject}
-								sx={{ maxHeight: "40px", minWidth: "120px" }}
-							>
-								Edit Project
-							</Button>
 						</Grid>
 
 						<Grid size={{ xs: 12 }}>
