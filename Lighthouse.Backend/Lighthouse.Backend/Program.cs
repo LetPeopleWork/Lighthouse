@@ -94,8 +94,7 @@ namespace Lighthouse.Backend
                 c.RoutePrefix = "api/swagger";
             });
 
-            var httpsOnly = app.Configuration.GetValue("ASPNETCORE_HTTPS_ONLY", false);
-            if (!app.Environment.IsDevelopment() && !httpsOnly)
+            if (!app.Environment.IsDevelopment())
             {
                 app.UseHttpsRedirection();
             }

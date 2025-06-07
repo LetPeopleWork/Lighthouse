@@ -1,7 +1,7 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 USER app
 WORKDIR /app
-EXPOSE 443
+EXPOSE 443 80
 
 # Copy the default certificate
 COPY ["Lighthouse.Backend/Lighthouse.Backend/certs/LighthouseCert.pfx", "/app/certs/LighthouseCert.pfx"]
@@ -44,8 +44,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Use environment variables that directly override Kestrel configuration
 ENV Kestrel__Endpoints__Http__Url="http://+:80"
 ENV Kestrel__Endpoints__Https__Url="https://+:443"
-ENV ASPNETCORE_HTTPS_ONLY="true"
 ENTRYPOINT ["dotnet", "Lighthouse.dll"]
