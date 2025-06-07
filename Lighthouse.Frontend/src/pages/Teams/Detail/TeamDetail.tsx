@@ -1,9 +1,10 @@
-import { Button, Container, Tab, Tabs, Typography } from "@mui/material";
+import { Button, Container, Stack, Tab, Tabs, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
+import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import ForecastConfiguration from "../../../components/Common/ForecastConfiguration/ForecastConfiguration";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
@@ -113,57 +114,56 @@ const TeamDetail: React.FC = () => {
 					<></>
 				) : (
 					<Grid container spacing={3}>
-						<Grid size={{ xs: 4 }}>
-							<Typography variant="h3">{team.name}</Typography>
+						<Grid size={{ xs: 12 }}>
+							<DetailHeader
+								leftContent={
+									<>
+										<Typography variant="h3">
+											{team.name}
 
-							<Typography variant="h6">
-								Last Updated on{" "}
-								<LocalDateTimeDisplay
-									utcDate={team.lastUpdated}
-									showTime={true}
-								/>
-							</Typography>
-						</Grid>
-
-						<Grid
-							size={{ xs: 4 }}
-							sx={{
-								display: "flex",
-								justifyContent: "center",
-								alignItems: "center",
-							}}
-						>
-							<Tabs
-								value={activeView}
-								onChange={handleViewChange}
-								aria-label="team view tabs"
-							>
-								<Tab label="Forecasts" value="forecast" />
-								<Tab label="Metrics" value="metrics" />
-							</Tabs>
-						</Grid>
-
-						<Grid
-							size={{ xs: 4 }}
-							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
-						>
-							<ForecastConfiguration team={team} />
-							<ServiceLevelExpectation featureOwner={team} />
-
-							<ActionButton
-								onClickHandler={onUpdateTeamData}
-								buttonText="Update Team Data"
-								maxHeight="40px"
-								minWidth="120px"
-								externalIsWaiting={isTeamUpdating}
+											<Typography variant="h6">
+												Last Updated on{" "}
+												<LocalDateTimeDisplay
+													utcDate={team.lastUpdated}
+													showTime={true}
+												/>
+											</Typography>
+										</Typography>
+										<Stack spacing={1}>
+											<ForecastConfiguration team={team} />
+											<ServiceLevelExpectation featureOwner={team} />
+										</Stack>
+									</>
+								}
+								centerContent={
+									<Tabs
+										value={activeView}
+										onChange={handleViewChange}
+										aria-label="team view tabs"
+									>
+										<Tab label="Forecasts" value="forecast" />
+										<Tab label="Metrics" value="metrics" />
+									</Tabs>
+								}
+								rightContent={
+									<Stack spacing={1}>
+										<ActionButton
+											onClickHandler={onUpdateTeamData}
+											buttonText="Update Team Data"
+											maxHeight="40px"
+											minWidth="120px"
+											externalIsWaiting={isTeamUpdating}
+										/>
+										<Button
+											variant="contained"
+											onClick={onEditTeam}
+											sx={{ maxHeight: "40px", minWidth: "120px" }}
+										>
+											Edit Team
+										</Button>
+									</Stack>
+								}
 							/>
-							<Button
-								variant="contained"
-								onClick={onEditTeam}
-								sx={{ maxHeight: "40px", minWidth: "120px" }}
-							>
-								Edit Team
-							</Button>
 						</Grid>
 
 						<Grid size={{ xs: 12 }}>
