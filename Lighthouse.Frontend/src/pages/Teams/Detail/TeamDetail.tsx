@@ -1,18 +1,10 @@
-import GppMaybeOutlinedIcon from "@mui/icons-material/GppMaybeOutlined";
-import {
-	Button,
-	Container,
-	IconButton,
-	Tab,
-	Tabs,
-	Tooltip,
-	Typography,
-} from "@mui/material";
+import { Button, Container, Tab, Tabs, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
+import ForecastConfiguration from "../../../components/Common/ForecastConfiguration/ForecastConfiguration";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
@@ -122,17 +114,7 @@ const TeamDetail: React.FC = () => {
 				) : (
 					<Grid container spacing={3}>
 						<Grid size={{ xs: 4 }}>
-							<Typography variant="h3">
-								{team.name}
-
-								{team.useFixedDatesForThroughput && (
-									<Tooltip title="This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts">
-										<IconButton size="small" sx={{ ml: 1 }}>
-											<GppMaybeOutlinedIcon sx={{ color: "warning.main" }} />
-										</IconButton>
-									</Tooltip>
-								)}
-							</Typography>
+							<Typography variant="h3">{team.name}</Typography>
 
 							<Typography variant="h6">
 								Last Updated on{" "}
@@ -165,6 +147,7 @@ const TeamDetail: React.FC = () => {
 							size={{ xs: 4 }}
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
+							<ForecastConfiguration team={team} />
 							<ServiceLevelExpectation featureOwner={team} />
 
 							<ActionButton

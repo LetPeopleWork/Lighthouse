@@ -1346,12 +1346,22 @@ export class DemoApiService
 		teamBinaryBlazers.serviceLevelExpectationProbability = 75;
 		teamBinaryBlazers.serviceLevelExpectationRange = 11;
 
+		teamBinaryBlazers.useFixedDatesForThroughput = true;
+		teamBinaryBlazers.throughputStartDate = new Date(
+			today - 60 * dayMultiplier,
+		);
+		teamBinaryBlazers.throughputEndDate = new Date(today - 30 * dayMultiplier);
+
 		const teamMavericks = new Team();
 		teamMavericks.id = 1;
 		teamMavericks.name = "Mavericks";
 		teamMavericks.features = [features[1], features[2]];
 		teamMavericks.featureWip = 2;
 		teamMavericks.tags = [""];
+
+		teamMavericks.useFixedDatesForThroughput = false;
+		teamMavericks.throughputStartDate = new Date(today - 30 * dayMultiplier);
+		teamMavericks.throughputEndDate = new Date(today);
 
 		const teamCyberSultans = new Team();
 		teamCyberSultans.id = 2;

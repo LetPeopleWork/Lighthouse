@@ -30,7 +30,6 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 				maxHeight: 40,
 				minWidth: 250,
 				maxWidth: 300,
-				border: (theme) => `1px solid ${theme.palette.primary.main}`,
 			}}
 		>
 			<CardContent
