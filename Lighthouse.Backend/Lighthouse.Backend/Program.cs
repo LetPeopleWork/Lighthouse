@@ -31,6 +31,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.MCP;
 using ModelContextProtocol.Protocol.Types;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Lighthouse.Backend
 {
@@ -83,7 +84,7 @@ namespace Lighthouse.Backend
             }
 
             app.UseCors("AllowAll");
-
+            
             app.UseSwagger(c =>
             {
                 c.RouteTemplate = "api/swagger/{documentName}/swagger.json";
@@ -93,11 +94,6 @@ namespace Lighthouse.Backend
                 c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "Lighthouse API V1");
                 c.RoutePrefix = "api/swagger";
             });
-
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseHttpsRedirection();
-            }
 
             app.UseDefaultFiles();
             app.UseStaticFiles();

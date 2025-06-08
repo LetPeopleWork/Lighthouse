@@ -1,7 +1,7 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 USER app
 WORKDIR /app
-EXPOSE 443 80
+EXPOSE 80 443
 
 # Copy the default certificate
 COPY ["Lighthouse.Backend/Lighthouse.Backend/certs/LighthouseCert.pfx", "/app/certs/LighthouseCert.pfx"]

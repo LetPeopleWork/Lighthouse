@@ -50,9 +50,9 @@ By default, Lighthouse will listen on Ports 5000 (http) and 5001 (https). You mi
   - `Kestrel__Endpoints__Https__Url`
 
 ### Docker
-When running in Docker, Lighthouse internally uses only port 443 (HTTPS) to enforce secure connections. You can map this port to any external port you want:
+When running in Docker, Lighthouse internally uses port 443 (HTTPS) and port 80 (HTTP). You can map these ports to any external port you want:
 ```bash
-docker run -p 443:443 ghcr.io/letpeoplework/lighthouse:latest
+docker run -p 443:443 -p 80:80 ghcr.io/letpeoplework/lighthouse:latest
 ```
 
 This mapping means: `-p [host-port]:[container-port]`
