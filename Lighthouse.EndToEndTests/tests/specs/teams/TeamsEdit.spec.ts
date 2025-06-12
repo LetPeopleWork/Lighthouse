@@ -141,7 +141,7 @@ const newTeamConfigurations = [
 		},
 		workTrackingSystemOptions: [
 			{ field: "Jira Url", value: "https://letpeoplework.atlassian.net" },
-			{ field: "Username", value: "benjhuser@gmail.com" },
+			{ field: "Username", value: "atlassian.pushchair@huser-berta.com" },
 			{ field: "Api Token", value: TestConfig.JiraToken },
 		],
 	},

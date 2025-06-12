@@ -8,7 +8,7 @@ parser.add_argument("api_token", type=str, help="API Token for Jira")
 args = parser.parse_args()
 
 API_TOKEN = args.api_token
-USERNAME = 'benjhuser@gmail.com'
+USERNAME = 'atlassian.pushchair@huser-berta.com'
 JIRA_BASE_URL = 'https://letpeoplework.atlassian.net/rest/api/latest'
 
 # Target throughput for each team including "Epics"

@@ -213,7 +213,7 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 		await workTrackingSystemsPage.addNewWorkTrackingSystem();
 
 	const jiraUrl = "https://letpeoplework.atlassian.net";
-	const username = "benjhuser@gmail.com";
+	const username = "atlassian.pushchair@huser-berta.com";
 	const wtsName = "My Jira Connection";
 
 	await workTrackingSystemDialog.selectWorkTrackingSystem("Jira");

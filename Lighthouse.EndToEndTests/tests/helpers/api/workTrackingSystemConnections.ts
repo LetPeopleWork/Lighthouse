@@ -42,7 +42,7 @@ export async function createJiraConnection(
 	});
 	options.push({
 		key: "Username",
-		value: "benjhuser@gmail.com",
+		value: "atlassian.pushchair@huser-berta.com",
 		isSecret: false,
 	});
 	options.push({

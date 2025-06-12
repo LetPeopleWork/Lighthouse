@@ -393,7 +393,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
 
             var organizationUrl = "https://letpeoplework.atlassian.net";
-            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "benjhuser@gmail.com";
+            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
             var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
 
             var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
@@ -409,12 +409,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [TestCase("https://letpeoplework.atlassian.net", "Yah-yah-yah, Coco Jamboo, yah-yah-yeh", "benjhuser@gmail.com")]
-        [TestCase("https://letpeoplework.atlassian.net", "", "benjhuser@gmail.com")]
+        [TestCase("https://letpeoplework.atlassian.net", "Yah-yah-yah, Coco Jamboo, yah-yah-yeh", "atlassian.pushchair@huser-berta.com")]
+        [TestCase("https://letpeoplework.atlassian.net", "", "atlassian.pushchair@huser-berta.com")]
         [TestCase("https://letpeoplework.atlassian.net", "PATPATPAT", "")]
-        [TestCase("", "PATPATPAT", "benjhuser@gmail.com")]
-        [TestCase("https://not.valid", "PATPATPAT", "benjhuser@gmail.com")]
-        [TestCase("asdfasdfasdfasdf", "PATPATPAT", "benjhuser@gmail.com")]
+        [TestCase("", "PATPATPAT", "atlassian.pushchair@huser-berta.com")]
+        [TestCase("https://not.valid", "PATPATPAT", "atlassian.pushchair@huser-berta.com")]
+        [TestCase("asdfasdfasdfasdf", "PATPATPAT", "atlassian.pushchair@huser-berta.com")]
         public async Task ValidateConnection_GivenInvalidSettings_ReturnsFalse(string organizationUrl, string apiToken, string username)
         {
             var subject = CreateSubject();
@@ -577,7 +577,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private WorkTrackingSystemConnection CreateWorkTrackingSystemConnection()
         {
             var organizationUrl = "https://letpeoplework.atlassian.net";
-            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "benjhuser@gmail.com";
+            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
             var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
 
             var connectionSetting = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira, Name = "Test Setting" };
