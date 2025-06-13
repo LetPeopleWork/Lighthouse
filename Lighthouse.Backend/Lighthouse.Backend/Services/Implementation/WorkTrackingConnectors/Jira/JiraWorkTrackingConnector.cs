@@ -432,7 +432,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var client = new HttpClient
             {
-                BaseAddress = new Uri(url.TrimEnd('/'))
+                BaseAddress = new Uri(url.TrimEnd('/')),
+                Timeout = TimeSpan.FromMinutes(5)
             };
 
             if (!string.IsNullOrEmpty(username))
