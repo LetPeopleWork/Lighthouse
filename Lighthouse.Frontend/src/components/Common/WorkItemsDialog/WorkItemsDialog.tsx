@@ -22,7 +22,7 @@ import {
 	riskyColor,
 } from "../../../utils/theme/colors";
 
-export type TimeMetric = "age" | "cycleTime";
+export type TimeMetric = "age" | "cycleTime" | "ageCycleTime";
 
 interface WorkItemsDialogProps {
 	title: string;
@@ -42,6 +42,21 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	sle,
 }) => {
 	const sortedItems = [...items].sort((a, b) => {
+		if (timeMetric === "ageCycleTime") {
+			// For combined mode, sort by state category first (active items before done)
+			if (a.stateCategory !== b.stateCategory) {
+				if (a.stateCategory === "Done") return 1;
+				if (b.stateCategory === "Done") return -1;
+			}
+
+			// Then sort by the appropriate time metric for each category
+			if (a.stateCategory === "Done" && b.stateCategory === "Done") {
+				return b.cycleTime - a.cycleTime;
+			}
+			return b.workItemAge - a.workItemAge;
+		}
+
+		// Original sorting for non-combined modes
 		if (timeMetric === "age") {
 			return b.workItemAge - a.workItemAge;
 		}
@@ -53,11 +68,16 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	};
 
 	const getTimeColumnName = () => {
-		return timeMetric === "age" ? "Age" : "Cycle Time";
+		if (timeMetric === "age") return "Age";
+		if (timeMetric === "cycleTime") return "Cycle Time";
+		return "Age/Cycle Time";
 	};
 
 	const getTimeValue = (item: IWorkItem) => {
-		return timeMetric === "age" ? item.workItemAge : item.cycleTime;
+		if (timeMetric === "age") return item.workItemAge;
+		if (timeMetric === "cycleTime") return item.cycleTime;
+		// For combined mode, use cycle time for "Done" items and age for others
+		return item.stateCategory === "Done" ? item.cycleTime : item.workItemAge;
 	};
 
 	const getTimeColor = (timeValue: number) => {
@@ -138,6 +158,16 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 										}}
 									>
 										{formatTime(getTimeValue(item))}
+										{timeMetric === "ageCycleTime" && (
+											<Typography
+												variant="caption"
+												sx={{ ml: 1, fontStyle: "italic" }}
+											>
+												{item.stateCategory === "Done"
+													? "(Cycle Time)"
+													: "(Age)"}
+											</Typography>
+										)}
 									</TableCell>
 								</TableRow>
 							))}

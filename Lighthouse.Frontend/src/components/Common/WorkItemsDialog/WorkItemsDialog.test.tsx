@@ -49,6 +49,32 @@ const mockWorkItems: IWorkItem[] = [
 		cycleTime: 15,
 		workItemAge: 2,
 	},
+	{
+		id: 4,
+		name: "Completed Task",
+		state: "Closed",
+		stateCategory: "Done" as StateCategory,
+		type: "Task",
+		workItemReference: "TASK-101",
+		url: "https://example.com/work-item/4",
+		startedDate: new Date("2023-04-01"),
+		closedDate: new Date("2023-04-08"),
+		cycleTime: 7,
+		workItemAge: 0, // Age is 0 for closed items
+	},
+	{
+		id: 5,
+		name: "Another Closed Item",
+		state: "Done",
+		stateCategory: "Done" as StateCategory,
+		type: "User Story",
+		workItemReference: "US-202",
+		url: null,
+		startedDate: new Date("2023-05-01"),
+		closedDate: new Date("2023-05-13"),
+		cycleTime: 12,
+		workItemAge: 0, // Age is 0 for closed items
+	},
 ];
 
 // Test scenarios
@@ -119,8 +145,10 @@ describe("WorkItemsDialog Component", () => {
 
 		// Check if they're in descending order (15, 10, 5)
 		expect(cells[0]).toHaveTextContent("15 days");
-		expect(cells[1]).toHaveTextContent("10 days");
-		expect(cells[2]).toHaveTextContent("5 days");
+		expect(cells[1]).toHaveTextContent("12 days");
+		expect(cells[2]).toHaveTextContent("10 days");
+		expect(cells[3]).toHaveTextContent("7 days");
+		expect(cells[4]).toHaveTextContent("5 days");
 	});
 
 	test("calls onClose when close button is clicked", () => {
@@ -141,7 +169,7 @@ describe("WorkItemsDialog Component", () => {
 
 		// Check if links are rendered for items with URLs
 		const links = screen.getAllByRole("link");
-		expect(links).toHaveLength(2); // Should find 2 items with URLs
+		expect(links).toHaveLength(3);
 
 		// Check if the link content is correct
 		expect(links[0]).toHaveTextContent("Implement feature X");
@@ -171,6 +199,73 @@ describe("WorkItemsDialog Component", () => {
 
 		// Check that the dialog is not in the document
 		expect(screen.queryByText("Test Dialog")).not.toBeInTheDocument();
+	});
+
+	test("renders with ageCycleTime metric column header", () => {
+		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />);
+
+		// Check if column header is displayed correctly
+		expect(screen.getByText("Age/Cycle Time")).toBeInTheDocument();
+	});
+
+	test("displays appropriate time values based on item state", () => {
+		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />); // Verify time values exist for both active and done items
+		expect(screen.getByText("5 days")).toBeInTheDocument();
+		expect(screen.getByText("20 days")).toBeInTheDocument();
+		expect(screen.getByText("2 days")).toBeInTheDocument();
+		expect(screen.getByText("7 days")).toBeInTheDocument();
+		expect(screen.getByText("12 days")).toBeInTheDocument();
+
+		// Check if labels are added for each type
+		expect(screen.getAllByText("(Age)")).toHaveLength(3);
+		expect(screen.getAllByText("(Cycle Time)")).toHaveLength(2);
+	});
+
+	test("sorts items with Done state after active items", () => {
+		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />);
+
+		// Analyze state ordering in the table
+
+		// Get all state cells with Chip components
+		const stateCells = screen.getAllByRole("cell");
+		const stateChips = Array.from(stateCells).filter((cell) => {
+			const text = cell.textContent;
+			return (
+				text === "In Progress" ||
+				text === "Active" ||
+				text === "New" ||
+				text === "Closed" ||
+				text === "Done"
+			);
+		});
+
+		// First 3 should be active states
+		expect(stateChips[0].textContent).not.toBe("Closed");
+		expect(stateChips[0].textContent).not.toBe("Done");
+		expect(stateChips[1].textContent).not.toBe("Closed");
+		expect(stateChips[1].textContent).not.toBe("Done");
+		expect(stateChips[2].textContent).not.toBe("Closed");
+		expect(stateChips[2].textContent).not.toBe("Done");
+
+		// Last 2 should be done states
+		expect(["Closed", "Done"]).toContain(stateChips[3].textContent);
+		expect(["Closed", "Done"]).toContain(stateChips[4].textContent);
+	});
+
+	test("sorts active items by workItemAge and Done items by cycleTime", () => {
+		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />);
+
+		// Get all time cells
+		const timeCells = screen.getAllByText(/\d+ days/);
+
+		// First 3 cells should be sorted by age in descending order (active items)
+		expect(timeCells[0]).toHaveTextContent("20 days");
+		expect(timeCells[1]).toHaveTextContent("5 days");
+		expect(timeCells[2]).toHaveTextContent("2 days");
+
+		// Last 2 cells should be sorted by cycle time in descending order (Done items)
+		expect(timeCells[3]).toHaveTextContent("12 days");
+		expect(timeCells[4]).toHaveTextContent("7 days");
 	});
 
 	describe("Service Level Expectation (SLE) functionality", () => {
@@ -248,10 +343,10 @@ describe("WorkItemsDialog Component", () => {
 			expect(cycleTimeCells[0]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
 
 			// 10 days should be realistic (at SLE)
-			expect(cycleTimeCells[1]).toHaveStyle("color: rgb(255, 165, 0)"); // RGB equivalent of orange
+			expect(cycleTimeCells[2]).toHaveStyle("color: rgb(255, 165, 0)"); // RGB equivalent of orange
 
 			// 5 days should be confident (50% of SLE)
-			expect(cycleTimeCells[2]).toHaveStyle("color: rgb(144, 238, 144)"); // RGB equivalent of lightgreen
+			expect(cycleTimeCells[4]).toHaveStyle("color: rgb(144, 238, 144)"); // RGB equivalent of lightgreen
 		});
 	});
 });

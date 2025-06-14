@@ -8,13 +8,16 @@ import {
 	TableRow,
 	Typography,
 } from "@mui/material";
+import { useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import type { IWorkItem } from "../../../models/WorkItem";
 import {
 	certainColor,
 	confidentColor,
 	realisticColor,
 	riskyColor,
 } from "../../../utils/theme/colors";
+import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
 interface StartedVsFinishedDisplayProps {
 	startedItems: RunChartData | null;
@@ -25,6 +28,40 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	startedItems,
 	closedItems,
 }) => {
+	const [dialogOpen, setDialogOpen] = useState(false);
+
+	const handleOpenDialog = () => {
+		setDialogOpen(true);
+	};
+
+	const handleCloseDialog = () => {
+		setDialogOpen(false);
+	};
+
+	const getAllWorkItems = () => {
+		const items: IWorkItem[] = [];
+
+		if (startedItems) {
+			const startedWorkItems = Object.values(
+				startedItems.workItemsPerUnitOfTime,
+			).flat();
+			const notClosedStartedItems = startedWorkItems.filter((startedItem) => {
+				return startedItem.closedDate === null;
+			});
+
+			items.push(...notClosedStartedItems);
+		}
+
+		if (closedItems) {
+			const closedWorkItems = Object.values(
+				closedItems.workItemsPerUnitOfTime,
+			).flat();
+			items.push(...closedWorkItems);
+		}
+
+		return items;
+	};
+
 	const calculateAverage = (data: RunChartData | null): number => {
 		if (!data?.history) return 0;
 		return data.total / data.history;
@@ -104,66 +141,101 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	const differenceInfo = getDifferenceText();
 
 	return (
-		<Card sx={{ m: 2, p: 1, borderRadius: 2, cursor: "pointer" }}>
-			<CardContent>
-				<Typography variant="h6" gutterBottom>
-					Started vs. Closed Items
-				</Typography>
-				<Table size="small">
-					<TableBody>
-						<TableRow>
-							<TableCell sx={{ border: 0, padding: "4px 0", width: "20%" }}>
-								<Typography variant="body2">Started:</Typography>
-							</TableCell>
-							<TableCell sx={{ border: 0, padding: "4px 0" }}>
-								<Box sx={{ display: "flex", justifyContent: "space-between" }}>
-									<Typography variant="body1">
-										<strong>{startedTotal}</strong> items (total)
+		<>
+			<Card
+				sx={{ m: 2, p: 1, borderRadius: 2, cursor: "pointer" }}
+				onClick={handleOpenDialog}
+			>
+				<CardContent>
+					<Typography variant="h6" gutterBottom>
+						Started vs. Closed Items
+					</Typography>
+					<Table size="small">
+						<TableBody>
+							<TableRow>
+								<TableCell sx={{ border: 0, padding: "4px 0", width: "20%" }}>
+									<Typography
+										variant="body2"
+										sx={{ cursor: "pointer" }}
+										onClick={(e) => {
+											e.stopPropagation();
+											handleOpenDialog();
+										}}
+									>
+										Started:
 									</Typography>
-									<Typography variant="body1">
-										<strong>{formatNumber(startedAverage)}</strong> items (per
-										day)
+								</TableCell>
+								<TableCell sx={{ border: 0, padding: "4px 0" }}>
+									<Box
+										sx={{ display: "flex", justifyContent: "space-between" }}
+									>
+										<Typography variant="body1">
+											<strong>{startedTotal}</strong> items (total)
+										</Typography>
+										<Typography variant="body1">
+											<strong>{formatNumber(startedAverage)}</strong> items (per
+											day)
+										</Typography>
+									</Box>
+								</TableCell>
+							</TableRow>
+							<TableRow>
+								<TableCell sx={{ border: 0, padding: "4px 0", width: "20%" }}>
+									<Typography
+										variant="body2"
+										sx={{ cursor: "pointer" }}
+										onClick={(e) => {
+											e.stopPropagation();
+											handleOpenDialog();
+										}}
+									>
+										Closed:
 									</Typography>
-								</Box>
-							</TableCell>
-						</TableRow>
-						<TableRow>
-							<TableCell sx={{ border: 0, padding: "4px 0", width: "20%" }}>
-								<Typography variant="body2">Closed:</Typography>
-							</TableCell>
-							<TableCell sx={{ border: 0, padding: "4px 0" }}>
-								<Box sx={{ display: "flex", justifyContent: "space-between" }}>
-									<Typography variant="body1">
-										<strong>{closedTotal}</strong> items (total)
-									</Typography>
-									<Typography variant="body1">
-										<strong>{formatNumber(closedAverage)}</strong> items (per
-										day)
-									</Typography>
-								</Box>
-							</TableCell>
-						</TableRow>
-					</TableBody>
-				</Table>
+								</TableCell>
+								<TableCell sx={{ border: 0, padding: "4px 0" }}>
+									<Box
+										sx={{ display: "flex", justifyContent: "space-between" }}
+									>
+										<Typography variant="body1">
+											<strong>{closedTotal}</strong> items (total)
+										</Typography>
+										<Typography variant="body1">
+											<strong>{formatNumber(closedAverage)}</strong> items (per
+											day)
+										</Typography>
+									</Box>
+								</TableCell>
+							</TableRow>
+						</TableBody>
+					</Table>
 
-				<Box
-					sx={{
-						mt: 1,
-						p: 1,
-						backgroundColor: `${differenceInfo.color}20`,
-						borderLeft: `4px solid ${differenceInfo.color}`,
-						borderRadius: 1,
-					}}
-				>
-					<Typography variant="body2" sx={{ fontWeight: "medium" }}>
-						{differenceInfo.text}
-					</Typography>
-					<Typography variant="caption" sx={{ display: "block", mt: 0.5 }}>
-						{differenceInfo.tip}
-					</Typography>
-				</Box>
-			</CardContent>
-		</Card>
+					<Box
+						sx={{
+							mt: 1,
+							p: 1,
+							backgroundColor: `${differenceInfo.color}20`,
+							borderLeft: `4px solid ${differenceInfo.color}`,
+							borderRadius: 1,
+						}}
+					>
+						<Typography variant="body2" sx={{ fontWeight: "medium" }}>
+							{differenceInfo.text}
+						</Typography>
+						<Typography variant="caption" sx={{ display: "block", mt: 0.5 }}>
+							{differenceInfo.tip}
+						</Typography>
+					</Box>
+				</CardContent>
+			</Card>
+
+			<WorkItemsDialog
+				title="Started and Closed Items"
+				items={getAllWorkItems()}
+				open={dialogOpen}
+				onClose={handleCloseDialog}
+				timeMetric="ageCycleTime"
+			/>
+		</>
 	);
 };
 
