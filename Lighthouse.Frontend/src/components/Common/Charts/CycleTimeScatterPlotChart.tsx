@@ -272,6 +272,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 									group.closedDateTimestamp,
 								).toLocaleDateString();
 								const header = `Cycle Time: ${group.cycleTime} days\nClosed Date: ${closedDateFormatted}\n`;
+
 								const itemsList = group.items.map((wi) => `• ${wi.name}`);
 
 								return `${header}\n${itemsList.join("\n")}`;
@@ -321,10 +322,16 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 						trigger="item"
 						sx={{
 							zIndex: 1200,
+							maxWidth: "400px",
+							"& .MuiChartsTooltip-table": {
+								maxWidth: "100%",
+								wordBreak: "break-word",
+							},
 							"& .MuiChartsTooltip-valueCell": {
 								whiteSpace: "pre-line",
+								maxWidth: "300px",
+								overflowWrap: "break-word",
 							},
-
 							"& .MuiPopper-root": {
 								transition: "opacity 0.2s ease-in-out",
 								transitionDelay: "150ms",
