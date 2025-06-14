@@ -11,8 +11,8 @@ const FeatureOwnerHeader: React.FC<FeatureOwnerHeaderProps> = ({
 	featureOwner,
 }) => {
 	return (
-		<Typography variant="h3">
-			{featureOwner.name}
+		<div>
+			<Typography variant="h3">{featureOwner.name}</Typography>
 
 			<Typography variant="h6">
 				Last Updated on{" "}
@@ -21,7 +21,7 @@ const FeatureOwnerHeader: React.FC<FeatureOwnerHeaderProps> = ({
 					showTime={true}
 				/>
 			</Typography>
-		</Typography>
+		</div>
 	);
 };
 
