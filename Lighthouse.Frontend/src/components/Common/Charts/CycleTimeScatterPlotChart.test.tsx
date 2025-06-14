@@ -1,16 +1,83 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 
+// Mock WorkItemsDialog component
+vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
+	default: vi.fn(({ title, items, open, onClose }) => {
+		if (!open) return null;
+		return (
+			<div data-testid="work-items-dialog">
+				<h2>{title}</h2>
+				<button type="button" onClick={onClose}>
+					Close
+				</button>
+				<table>
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Type</th>
+							<th>State</th>
+							<th>Cycle Time</th>
+						</tr>
+					</thead>
+					<tbody>
+						{items?.map((item: IWorkItem) => (
+							<tr key={item.id}>
+								<td>{item.name}</td>
+								<td>{item.type}</td>
+								<td>{item.state}</td>
+								<td>{item.cycleTime} days</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		);
+	}),
+}));
+
+// Mock the MUI-X Charts
+vi.mock("@mui/x-charts", async () => {
+	const actual = await vi.importActual("@mui/x-charts");
+	return {
+		...actual,
+		ChartContainer: vi.fn(({ children }) => (
+			<div data-testid="mock-chart-container">{children}</div>
+		)),
+		ScatterPlot: vi.fn(() => {
+			return (
+				<div data-testid="mock-scatter-plot">
+					{/* We don't use slots here as we'll test handleShowItems differently */}
+					<div>Scatter Plot Content</div>
+				</div>
+			);
+		}),
+		ChartsXAxis: vi.fn(() => <div>X Axis</div>),
+		ChartsYAxis: vi.fn(() => <div>Y Axis</div>),
+		ChartsTooltip: vi.fn(() => <div>Tooltip</div>),
+		ChartsReferenceLine: vi.fn(({ label }) => (
+			<div data-testid={`reference-line-${label}`}>{label}</div>
+		)),
+	};
+});
+
 describe("CycleTimeScatterPlotChart component", () => {
+	// Mock data for tests
 	const mockPercentileValues: IPercentileValue[] = [
 		{ percentile: 50, value: 3 },
 		{ percentile: 85, value: 7 },
 		{ percentile: 95, value: 12 },
 	];
 
+	const mockSLE: IPercentileValue = {
+		percentile: 85,
+		value: 7,
+	};
+
+	// Create mock work items with proper date objects
 	const mockWorkItems: IWorkItem[] = [
 		{
 			id: 1,
@@ -18,8 +85,8 @@ describe("CycleTimeScatterPlotChart component", () => {
 			name: "Test Item 1",
 			url: "https://example.com/item1",
 			cycleTime: 5,
-			startedDate: new Date("2023-01-10"),
-			closedDate: new Date("2023-01-15"),
+			startedDate: new Date(2023, 0, 10),
+			closedDate: new Date(2023, 0, 15),
 			workItemAge: 5,
 			state: "Done",
 			stateCategory: "Done",
@@ -31,8 +98,8 @@ describe("CycleTimeScatterPlotChart component", () => {
 			name: "Test Item 2",
 			url: "https://example.com/item2",
 			cycleTime: 10,
-			startedDate: new Date("2023-01-15"),
-			closedDate: new Date("2023-01-25"),
+			startedDate: new Date(2023, 0, 15),
+			closedDate: new Date(2023, 0, 25),
 			workItemAge: 10,
 			state: "Done",
 			stateCategory: "Done",
@@ -40,17 +107,11 @@ describe("CycleTimeScatterPlotChart component", () => {
 		},
 	];
 
-	const originalOpen = window.open;
 	beforeEach(() => {
-		window.open = vi.fn();
+		vi.clearAllMocks();
 	});
 
-	afterEach(() => {
-		window.open = originalOpen;
-		vi.resetAllMocks();
-	});
-
-	it("should display 'No data available' when no percentiles are provided", () => {
+	it("should display 'No data available' when no work items are provided", () => {
 		render(
 			<CycleTimeScatterPlotChart
 				percentileValues={mockPercentileValues}
@@ -61,7 +122,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
 
-	it("renders the chart with correct title when data is provided", () => {
+	it("should render the chart with correct title when data is provided", () => {
 		render(
 			<CycleTimeScatterPlotChart
 				percentileValues={mockPercentileValues}
@@ -70,9 +131,10 @@ describe("CycleTimeScatterPlotChart component", () => {
 		);
 
 		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
+		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
 	});
 
-	it("renders the correct number of percentile reference lines", () => {
+	it("should render percentile chips for each percentile", () => {
 		render(
 			<CycleTimeScatterPlotChart
 				percentileValues={mockPercentileValues}
@@ -80,58 +142,23 @@ describe("CycleTimeScatterPlotChart component", () => {
 			/>,
 		);
 
-		const percentile50Text = screen.getAllByText("50%");
-		const percentile85Text = screen.getAllByText("85%");
-		const percentile95Text = screen.getAllByText("95%");
-
-		expect(percentile50Text.length).toBeGreaterThan(0);
-		expect(percentile85Text.length).toBeGreaterThan(0);
-		expect(percentile95Text.length).toBeGreaterThan(0);
-	});
-
-	it("renders clickable legend items for each percentile", () => {
-		render(
-			<CycleTimeScatterPlotChart
-				percentileValues={mockPercentileValues}
-				cycleTimeDataPoints={mockWorkItems}
-			/>,
-		);
-
-		// Check that all percentile chips are in the document
-		const percentileChips = screen.getAllByText(/\d+%/);
-		expect(percentileChips.length).toBe(mockPercentileValues.length * 2);
-	});
-
-	it("allows toggling percentile visibility on clicking legend items", () => {
-		render(
-			<CycleTimeScatterPlotChart
-				percentileValues={mockPercentileValues}
-				cycleTimeDataPoints={mockWorkItems}
-			/>,
-		);
-
-		// Find and click the 50th percentile chip - make sure we get the one in the legend
-		const percentileChips = screen.getAllByText("50%");
-		const chipElement = percentileChips.find(
-			(el) => el.closest(".MuiChip-root") !== null,
-		);
-
-		expect(chipElement).not.toBeNull();
-		if (chipElement) {
-			fireEvent.click(chipElement);
+		// All percentiles should be represented by reference lines
+		for (const p of mockPercentileValues) {
+			expect(
+				screen.getByTestId(`reference-line-${p.percentile}%`),
+			).toBeInTheDocument();
 		}
-
-		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
 	});
 
-	it("formats tooltip values correctly", () => {
+	it("should render SLE reference line when serviceLevelExpectation is provided", () => {
 		render(
 			<CycleTimeScatterPlotChart
 				percentileValues={mockPercentileValues}
 				cycleTimeDataPoints={mockWorkItems}
+				serviceLevelExpectation={mockSLE}
 			/>,
 		);
 
-		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
+		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
 	});
 });

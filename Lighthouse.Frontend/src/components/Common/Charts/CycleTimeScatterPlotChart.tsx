@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
+import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
 const getDateOnlyTimestamp = (date: Date): number => {
 	const dateOnly = new Date(date);
@@ -36,6 +37,7 @@ const ScatterMarker = (
 	props: ScatterMarkerProps,
 	groupedDataPoints: IGroupedWorkItem[],
 	theme: Theme,
+	onShowItems: (items: IWorkItem[]) => void,
 ) => {
 	const dataIndex = props.dataIndex || 0;
 	const group = groupedDataPoints[dataIndex];
@@ -45,10 +47,8 @@ const ScatterMarker = (
 	const bubbleSize = getBubbleSize(group.items.length);
 
 	const handleOpenWorkItems = () => {
-		for (const item of group.items) {
-			if (item.url) {
-				window.open(item.url, "_blank");
-			}
+		if (group.items.length > 0) {
+			onShowItems(group.items);
 		}
 	};
 
@@ -139,6 +139,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const [groupedDataPoints, setGroupedDataPoints] = useState<
 		IGroupedWorkItem[]
 	>([]);
+	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const theme = useTheme();
 
 	useEffect(() => {
@@ -165,182 +167,201 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		setSleVisible((prev) => !prev);
 	};
 
-	return cycleTimeDataPoints.length > 0 ? (
-		<Card sx={{ p: 2, borderRadius: 2 }}>
-			<CardContent>
-				<Typography variant="h6">Cycle Time</Typography>
+	const handleShowItems = (items: IWorkItem[]) => {
+		setSelectedItems(items);
+		setDialogOpen(true);
+	};
 
-				<Stack
-					direction="row"
-					spacing={1}
-					sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}
-				>
-					{percentiles.map((p) => {
-						const forecastLevel = new ForecastLevel(p.percentile);
-						return (
+	return cycleTimeDataPoints.length > 0 ? (
+		<>
+			<Card sx={{ p: 2, borderRadius: 2 }}>
+				<CardContent>
+					<Typography variant="h6">Cycle Time</Typography>
+
+					<Stack
+						direction="row"
+						spacing={1}
+						sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}
+					>
+						{percentiles.map((p) => {
+							const forecastLevel = new ForecastLevel(p.percentile);
+							return (
+								<Chip
+									key={`legend-${p.percentile}`}
+									label={`${p.percentile}%`}
+									sx={{
+										borderColor: forecastLevel.color,
+										color: visiblePercentiles[p.percentile]
+											? forecastLevel.color
+											: theme.palette.text.disabled,
+										borderWidth: 1,
+										borderStyle: "dashed",
+										opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
+										"&:hover": {
+											borderColor: forecastLevel.color,
+										},
+									}}
+									variant={
+										visiblePercentiles[p.percentile] ? "filled" : "outlined"
+									}
+									onClick={() => togglePercentileVisibility(p.percentile)}
+								/>
+							);
+						})}
+						{serviceLevelExpectation && (
 							<Chip
-								key={`legend-${p.percentile}`}
-								label={`${p.percentile}%`}
+								key="legend-sle"
+								label="Service Level Expectation"
 								sx={{
-									borderColor: forecastLevel.color,
-									color: visiblePercentiles[p.percentile]
-										? forecastLevel.color
+									borderColor: theme.palette.primary.main,
+									color: sleVisible
+										? theme.palette.primary.main
 										: theme.palette.text.disabled,
 									borderWidth: 1,
 									borderStyle: "dashed",
-									opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
+									opacity: sleVisible ? 1 : 0.7,
 									"&:hover": {
-										borderColor: forecastLevel.color,
+										borderColor: theme.palette.primary.main,
 									},
 								}}
-								variant={
-									visiblePercentiles[p.percentile] ? "filled" : "outlined"
-								}
-								onClick={() => togglePercentileVisibility(p.percentile)}
+								variant={sleVisible ? "filled" : "outlined"}
+								onClick={toggleSleVisibility}
 							/>
-						);
-					})}
-					{serviceLevelExpectation && (
-						<Chip
-							key="legend-sle"
-							label="Service Level Expectation"
-							sx={{
-								borderColor: theme.palette.primary.main,
-								color: sleVisible
-									? theme.palette.primary.main
-									: theme.palette.text.disabled,
-								borderWidth: 1,
-								borderStyle: "dashed",
-								opacity: sleVisible ? 1 : 0.7,
-								"&:hover": {
-									borderColor: theme.palette.primary.main,
+						)}
+					</Stack>
+
+					<ChartContainer
+						height={500}
+						xAxis={[
+							{
+								id: "timeAxis",
+								scaleType: "time",
+								label: "Date",
+								valueFormatter: (value: number) => {
+									return new Date(value).toLocaleDateString();
 								},
-							}}
-							variant={sleVisible ? "filled" : "outlined"}
-							onClick={toggleSleVisibility}
-						/>
-					)}
-				</Stack>
-
-				<ChartContainer
-					height={500}
-					xAxis={[
-						{
-							id: "timeAxis",
-							scaleType: "time",
-							label: "Date",
-							valueFormatter: (value: number) => {
-								return new Date(value).toLocaleDateString();
 							},
-						},
-					]}
-					yAxis={[
-						{
-							id: "cycleTimeAxis",
-							scaleType: "linear",
-							label: "Cycle Time (days)",
-							min: 0,
-							valueFormatter: (value: number) => {
-								return Number.isInteger(value) ? value.toString() : "";
+						]}
+						yAxis={[
+							{
+								id: "cycleTimeAxis",
+								scaleType: "linear",
+								label: "Cycle Time (days)",
+								min: 0,
+								valueFormatter: (value: number) => {
+									return Number.isInteger(value) ? value.toString() : "";
+								},
 							},
-						},
-					]}
-					series={[
-						{
-							type: "scatter",
-							data: groupedDataPoints.map((group, index) => ({
-								x: group.closedDateTimestamp,
-								y: group.cycleTime,
-								id: index,
-								itemCount: group.items.length,
-							})),
-							xAxisId: "timeAxis",
-							yAxisId: "cycleTimeAxis",
-							color: theme.palette.primary.main,
-							markerSize: 4,
-							highlightScope: {
-								highlight: "item",
-								fade: "global",
+						]}
+						series={[
+							{
+								type: "scatter",
+								data: groupedDataPoints.map((group, index) => ({
+									x: group.closedDateTimestamp,
+									y: group.cycleTime,
+									id: index,
+									itemCount: group.items.length,
+								})),
+								xAxisId: "timeAxis",
+								yAxisId: "cycleTimeAxis",
+								color: theme.palette.primary.main,
+								markerSize: 4,
+								highlightScope: {
+									highlight: "item",
+									fade: "global",
+								},
+								valueFormatter: (item) => {
+									if (item?.id === undefined) return "";
+
+									const group = groupedDataPoints[item.id as number];
+									if (!group) return "";
+
+									const numberOfClosedItems = group.items.length ?? 0;
+
+									if (numberOfClosedItems === 1) {
+										return `${group.items[0].name} (Click for details)`;
+									}
+
+									return `${numberOfClosedItems} Closed Items (Click for details)`;
+								},
 							},
-							valueFormatter: (item) => {
-								if (item?.id === undefined) return "";
-
-								const group = groupedDataPoints[item.id as number];
-								if (!group) return "";
-
-								const closedDateFormatted = new Date(
-									group.closedDateTimestamp,
-								).toLocaleDateString();
-								const header = `Cycle Time: ${group.cycleTime} days\nClosed Date: ${closedDateFormatted}\n`;
-
-								const itemsList = group.items.map((wi) => `• ${wi.name}`);
-
-								return `${header}\n${itemsList.join("\n")}`;
-							},
-						},
-					]}
-				>
-					{percentiles.map((p) => {
-						const forecastLevel = new ForecastLevel(p.percentile);
-						return visiblePercentiles[p.percentile] ? (
+						]}
+					>
+						{percentiles.map((p) => {
+							const forecastLevel = new ForecastLevel(p.percentile);
+							return visiblePercentiles[p.percentile] ? (
+								<ChartsReferenceLine
+									key={`percentile-${p.percentile}`}
+									y={p.value}
+									label={`${p.percentile}%`}
+									labelAlign="end"
+									lineStyle={{
+										stroke: forecastLevel.color,
+										strokeWidth: 1,
+										strokeDasharray: "5 5",
+									}}
+								/>
+							) : null;
+						})}
+						{sleVisible && serviceLevelExpectation && (
 							<ChartsReferenceLine
-								key={`percentile-${p.percentile}`}
-								y={p.value}
-								label={`${p.percentile}%`}
-								labelAlign="end"
+								key="sle-reference-line"
+								y={serviceLevelExpectation.value}
+								label={`SLE: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
+								labelAlign="start"
 								lineStyle={{
-									stroke: forecastLevel.color,
-									strokeWidth: 1,
-									strokeDasharray: "5 5",
+									stroke: theme.palette.primary.main,
+									strokeWidth: 2,
+									strokeDasharray: "3 3",
 								}}
 							/>
-						) : null;
-					})}
-					{sleVisible && serviceLevelExpectation && (
-						<ChartsReferenceLine
-							key="sle-reference-line"
-							y={serviceLevelExpectation.value}
-							label={`SLE: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
-							labelAlign="start"
-							lineStyle={{
-								stroke: theme.palette.primary.main,
-								strokeWidth: 2,
-								strokeDasharray: "3 3",
+						)}
+
+						<ChartsXAxis />
+						<ChartsYAxis />
+						<ScatterPlot
+							slots={{
+								marker: (props) =>
+									ScatterMarker(
+										props,
+										groupedDataPoints,
+										theme,
+										handleShowItems,
+									),
 							}}
 						/>
-					)}
 
-					<ChartsXAxis />
-					<ChartsYAxis />
-					<ScatterPlot
-						slots={{
-							marker: (props) => ScatterMarker(props, groupedDataPoints, theme),
-						}}
-					/>
-
-					<ChartsTooltip
-						trigger="item"
-						sx={{
-							zIndex: 1200,
-							maxWidth: "400px",
-							"& .MuiChartsTooltip-table": {
-								maxWidth: "100%",
-								wordBreak: "break-word",
-							},
-							"& .MuiChartsTooltip-valueCell": {
-								whiteSpace: "pre-line",
-								maxWidth: "300px",
-								overflowWrap: "break-word",
-							},
-							"& .MuiPopper-root": {
-								transition: "opacity 0.2s ease-in-out",
-								transitionDelay: "150ms",
-							},
-						}}
-					/>
-				</ChartContainer>
-			</CardContent>
-		</Card>
+						<ChartsTooltip
+							trigger="item"
+							sx={{
+								zIndex: 1200,
+								maxWidth: "400px",
+								"& .MuiChartsTooltip-table": {
+									maxWidth: "100%",
+									wordBreak: "break-word",
+								},
+								"& .MuiChartsTooltip-valueCell": {
+									whiteSpace: "pre-line",
+									maxWidth: "300px",
+									overflowWrap: "break-word",
+								},
+								"& .MuiPopper-root": {
+									transition: "opacity 0.2s ease-in-out",
+									transitionDelay: "150ms",
+								},
+							}}
+						/>
+					</ChartContainer>
+				</CardContent>
+			</Card>
+			<WorkItemsDialog
+				title={`Items closed on ${selectedItems[0]?.closedDate.toLocaleDateString()} with Cycle Time of ${selectedItems[0]?.cycleTime} days`}
+				items={selectedItems}
+				open={dialogOpen}
+				onClose={() => setDialogOpen(false)}
+				timeMetric="cycleTime"
+			/>
+		</>
 	) : (
 		<Typography variant="body2" color="text.secondary">
 			No data available
