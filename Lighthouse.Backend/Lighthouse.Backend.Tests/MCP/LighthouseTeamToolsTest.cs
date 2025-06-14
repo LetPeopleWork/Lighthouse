@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.API;
 using Moq;
 using Newtonsoft.Json;
 using NuGet.Protocol;
@@ -178,10 +179,10 @@ namespace Lighthouse.Backend.Tests.MCP
             var closedItems = new List<WorkItem> { new WorkItem { StartedDate = DateTime.Today.AddDays(-1), ClosedDate = DateTime.Today, StateCategory = StateCategories.Done } };
             teamMetricsServiceMock.Setup(x => x.GetClosedItemsForTeam(team, startDate, endDate)).Returns(closedItems);
 
-            var wipOverTime = new RunChartData([1, 2, 3, 4, 5]);
+            var wipOverTime = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 3, 4, 5]));
             teamMetricsServiceMock.Setup(x => x.GetWorkInProgressOverTimeForTeam(team, startDate, endDate)).Returns(wipOverTime);
 
-            var throughput = new RunChartData([10, 11, 12, 13, 14]);
+            var throughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([10, 11, 12, 13, 14]));
             teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(team, startDate, endDate)).Returns(throughput);
 
             var subject = CreateSubject();
@@ -210,13 +211,11 @@ namespace Lighthouse.Backend.Tests.MCP
                 Assert.That(actualWip, Is.Not.Null);
                 Assert.That(actualWip.History, Is.EqualTo(wipOverTime.History));
                 Assert.That(actualWip.Total, Is.EqualTo(wipOverTime.Total));
-                Assert.That(actualWip.ValuePerUnitOfTime, Is.EqualTo(wipOverTime.ValuePerUnitOfTime));
 
                 var actualThroughput = JsonConvert.DeserializeObject<RunChartData>(metrics.throughput.ToString());
                 Assert.That(actualThroughput, Is.Not.Null);
                 Assert.That(actualThroughput.History, Is.EqualTo(throughput.History));
                 Assert.That(actualThroughput.Total, Is.EqualTo(throughput.Total));
-                Assert.That(actualThroughput.ValuePerUnitOfTime, Is.EqualTo(throughput.ValuePerUnitOfTime));
             });
         }
 

@@ -2,24 +2,26 @@
 {
     public class RunChartData
     {
-        public RunChartData() : this([])
+        public RunChartData() : this(new Dictionary<int, List<WorkItemBase>>())
         {
         }
 
-        public RunChartData(int[] valuePerUnitOfTime)
+        public RunChartData(Dictionary<int, List<WorkItemBase>> workItemsPerUnitOfTime)
         {
-            ValuePerUnitOfTime = valuePerUnitOfTime;
+            WorkItemsPerUnitOfTime = workItemsPerUnitOfTime;
         }
 
-        public int[] ValuePerUnitOfTime { get; set; }
+        private int[] ValuePerUnitOfTime => WorkItemsPerUnitOfTime.Keys.Select(k => WorkItemsPerUnitOfTime[k].Count).ToArray();
 
-        public int History => ValuePerUnitOfTime.Length;
+        public Dictionary<int, List<WorkItemBase>> WorkItemsPerUnitOfTime { get; }
+
+        public int History => WorkItemsPerUnitOfTime.Count;
 
         public int Total => ValuePerUnitOfTime.Sum();
 
-        public int GetValueOnDay(int day)
+        public int GetCountOnDay(int day)
         {
-            return ValuePerUnitOfTime[day];
+            return WorkItemsPerUnitOfTime[day].Count;
         }
     }
 }

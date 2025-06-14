@@ -1,11 +1,20 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
+import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import StartedVsFinishedDisplay from "./StartedVsFinishedDisplay";
 
 describe("FlowInformationDisplay component", () => {
-	const mockStartedItems = new RunChartData([3, 2, 5], 3, 10);
-	const mockClosedItems = new RunChartData([2, 4, 1], 3, 7);
+	const mockStartedItems = new RunChartData(
+		generateWorkItemMapForRunChart([3, 2, 5]),
+		3,
+		10,
+	);
+	const mockClosedItems = new RunChartData(
+		generateWorkItemMapForRunChart([2, 4, 1]),
+		3,
+		7,
+	);
 
 	it("should render with title and flow information", () => {
 		render(
@@ -47,8 +56,16 @@ describe("FlowInformationDisplay component", () => {
 	});
 
 	it("should calculate averages correctly", () => {
-		const startedItems = new RunChartData([5, 10, 15], 3, 30);
-		const closedItems = new RunChartData([2, 3, 4, 5], 4, 14);
+		const startedItems = new RunChartData(
+			generateWorkItemMapForRunChart([5, 10, 15]),
+			3,
+			30,
+		);
+		const closedItems = new RunChartData(
+			generateWorkItemMapForRunChart([2, 3, 4, 5]),
+			4,
+			14,
+		);
 
 		render(
 			<StartedVsFinishedDisplay
@@ -92,7 +109,11 @@ describe("FlowInformationDisplay component", () => {
 	});
 
 	it("should format numbers with one decimal place", () => {
-		const startedItems = new RunChartData([1, 2, 3], 3, 6);
+		const startedItems = new RunChartData(
+			generateWorkItemMapForRunChart([1, 2, 3]),
+			3,
+			6,
+		);
 
 		render(
 			<StartedVsFinishedDisplay
@@ -106,7 +127,11 @@ describe("FlowInformationDisplay component", () => {
 	});
 
 	it("should handle mixed data cases", () => {
-		const startedItems = new RunChartData([1, 2, 3], 3, 6);
+		const startedItems = new RunChartData(
+			generateWorkItemMapForRunChart([1, 2, 3]),
+			3,
+			6,
+		);
 
 		render(
 			<StartedVsFinishedDisplay
@@ -132,8 +157,16 @@ describe("FlowInformationDisplay component", () => {
 	describe("WIP status indicator", () => {
 		it("should show 'confident' indicator when total difference is less than 2.0", () => {
 			// Total difference is 1 (6 - 5 = 1), which is < 2
-			const startedItems = new RunChartData([2, 2, 2], 3, 6);
-			const closedItems = new RunChartData([1, 2, 2], 3, 5);
+			const startedItems = new RunChartData(
+				generateWorkItemMapForRunChart([2, 2, 2]),
+				3,
+				6,
+			);
+			const closedItems = new RunChartData(
+				generateWorkItemMapForRunChart([1, 2, 2]),
+				3,
+				5,
+			);
 
 			render(
 				<StartedVsFinishedDisplay
@@ -151,8 +184,16 @@ describe("FlowInformationDisplay component", () => {
 		it("should show 'confident' indicator when total difference is less than 2.0 (even if average difference is high)", () => {
 			// Total difference is 1 (7 - 6 = 1), which is < 2
 			// But average difference is 3.5 vs 3.0 = 0.5 (high if this was our criterion)
-			const startedItems = new RunChartData([3, 4], 2, 7);
-			const closedItems = new RunChartData([3, 3], 2, 6);
+			const startedItems = new RunChartData(
+				generateWorkItemMapForRunChart([3, 4]),
+				2,
+				7,
+			);
+			const closedItems = new RunChartData(
+				generateWorkItemMapForRunChart([3, 3]),
+				2,
+				6,
+			);
 
 			render(
 				<StartedVsFinishedDisplay
@@ -170,8 +211,16 @@ describe("FlowInformationDisplay component", () => {
 		it("should NOT show 'confident' indicator when total difference is more than 2.0 even if average difference is small", () => {
 			// Total difference is 3 (23 - 20 = 3), which is > 2
 			// But average difference is 7.67 vs 6.67 = 1.0 (small if this was our criterion)
-			const startedItems = new RunChartData([7, 8, 8], 3, 23);
-			const closedItems = new RunChartData([6, 7, 7], 3, 20);
+			const startedItems = new RunChartData(
+				generateWorkItemMapForRunChart([7, 8, 8]),
+				3,
+				23,
+			);
+			const closedItems = new RunChartData(
+				generateWorkItemMapForRunChart([6, 7, 7]),
+				3,
+				20,
+			);
 
 			render(
 				<StartedVsFinishedDisplay
@@ -190,8 +239,16 @@ describe("FlowInformationDisplay component", () => {
 
 		it("should show 'good' indicator when started and closed are within 5%", () => {
 			// Within 5% difference (good)
-			const startedItems = new RunChartData([9, 10, 11], 3, 30);
-			const closedItems = new RunChartData([10, 10, 9], 3, 29);
+			const startedItems = new RunChartData(
+				generateWorkItemMapForRunChart([9, 10, 11]),
+				3,
+				30,
+			);
+			const closedItems = new RunChartData(
+				generateWorkItemMapForRunChart([10, 10, 9]),
+				3,
+				29,
+			);
 
 			render(
 				<StartedVsFinishedDisplay
@@ -208,8 +265,16 @@ describe("FlowInformationDisplay component", () => {
 
 		it("should show 'caution' indicator when difference is between 5% and 10%", () => {
 			// ~7% difference (caution) with average difference > 1.0
-			const startedItems = new RunChartData([15, 15, 15], 3, 45);
-			const closedItems = new RunChartData([14, 14, 14], 3, 42);
+			const startedItems = new RunChartData(
+				generateWorkItemMapForRunChart([15, 15, 15]),
+				3,
+				45,
+			);
+			const closedItems = new RunChartData(
+				generateWorkItemMapForRunChart([14, 14, 14]),
+				3,
+				42,
+			);
 			// Averages: 15.0 vs 14.0 = 1.0 difference
 
 			render(
@@ -230,8 +295,16 @@ describe("FlowInformationDisplay component", () => {
 
 		it("should show 'bad' indicator when difference is more than 15%", () => {
 			// 20% difference (bad)
-			const startedItems = new RunChartData([10, 10, 10], 3, 30);
-			const closedItems = new RunChartData([8, 8, 8], 3, 24);
+			const startedItems = new RunChartData(
+				generateWorkItemMapForRunChart([10, 10, 10]),
+				3,
+				30,
+			);
+			const closedItems = new RunChartData(
+				generateWorkItemMapForRunChart([8, 8, 8]),
+				3,
+				24,
+			);
 
 			render(
 				<StartedVsFinishedDisplay
@@ -248,8 +321,16 @@ describe("FlowInformationDisplay component", () => {
 
 		it("should show appropriate message when closing more than starting", () => {
 			// 25% difference with closed > started
-			const startedItems = new RunChartData([6, 6, 6], 3, 18);
-			const closedItems = new RunChartData([8, 8, 8], 3, 24);
+			const startedItems = new RunChartData(
+				generateWorkItemMapForRunChart([6, 6, 6]),
+				3,
+				18,
+			);
+			const closedItems = new RunChartData(
+				generateWorkItemMapForRunChart([8, 8, 8]),
+				3,
+				24,
+			);
 
 			render(
 				<StartedVsFinishedDisplay
@@ -265,9 +346,16 @@ describe("FlowInformationDisplay component", () => {
 		});
 
 		it("should handle zero values properly", () => {
-			// One side is zero
-			const startedItems = new RunChartData([0, 0, 0], 3, 0);
-			const closedItems = new RunChartData([5, 5, 5], 3, 15);
+			const startedItems = new RunChartData(
+				generateWorkItemMapForRunChart([0, 0, 0]),
+				3,
+				0,
+			);
+			const closedItems = new RunChartData(
+				generateWorkItemMapForRunChart([5, 5, 5]),
+				3,
+				15,
+			);
 
 			render(
 				<StartedVsFinishedDisplay

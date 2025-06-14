@@ -62,7 +62,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			);
 
 			return new RunChartData(
-				response.data.valuePerUnitOfTime,
+				response.data.workItemsPerUnitOfTime,
 				response.data.history,
 				response.data.total,
 			);
@@ -80,7 +80,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			);
 
 			return new RunChartData(
-				response.data.valuePerUnitOfTime,
+				response.data.workItemsPerUnitOfTime,
 				response.data.history,
 				response.data.total,
 			);
@@ -98,7 +98,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			);
 
 			return new RunChartData(
-				response.data.valuePerUnitOfTime,
+				response.data.workItemsPerUnitOfTime,
 				response.data.history,
 				response.data.total,
 			);

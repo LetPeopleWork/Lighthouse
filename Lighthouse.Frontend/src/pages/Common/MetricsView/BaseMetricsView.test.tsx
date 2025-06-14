@@ -6,6 +6,7 @@ import { Project } from "../../../models/Project/Project";
 import { Team } from "../../../models/Team/Team";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import { BaseMetricsView } from "./BaseMetricsView";
 
 // Mock the components used in BaseMetricsView
@@ -15,9 +16,7 @@ vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
 		chartData,
 	}: { title: string; chartData: RunChartData }) => (
 		<div data-testid={`bar-run-chart-${title}`}>
-			<div data-testid="chart-data-count">
-				{chartData.valuePerUnitOfTime.length}
-			</div>
+			<div data-testid="chart-data-count">{chartData.history}</div>
 		</div>
 	),
 }));
@@ -28,9 +27,7 @@ vi.mock("../../../components/Common/Charts/LineRunChart", () => ({
 		chartData,
 	}: { title: string; chartData: RunChartData }) => (
 		<div data-testid={`line-run-chart-${title}`}>
-			<div data-testid="chart-data-count">
-				{chartData.valuePerUnitOfTime.length}
-			</div>
+			<div data-testid="chart-data-count">{chartData.history}</div>
 		</div>
 	),
 }));
@@ -134,10 +131,10 @@ vi.mock("../../../components/Common/Charts/StartedVsFinishedDisplay", () => ({
 	}) => (
 		<div data-testid="started-vs-finished">
 			<div data-testid="started-items">
-				{startedItems ? startedItems.valuePerUnitOfTime.length : 0}
+				{startedItems ? startedItems.history : 0}
 			</div>
 			<div data-testid="closed-items">
-				{closedItems ? closedItems.valuePerUnitOfTime.length : 0}
+				{closedItems ? closedItems.history : 0}
 			</div>
 		</div>
 	),
@@ -157,20 +154,20 @@ vi.mock("../../../components/Common/Charts/StackedAreaChart", () => ({
 describe("BaseMetricsView component", () => {
 	// Create RunChartData with correct properties
 	const mockItemsCompletedData: RunChartData = new RunChartData(
-		[3, 5], // valuePerUnitOfTime
+		generateWorkItemMapForRunChart([3, 5]),
 		2, // history
 		8, // total
 	);
 
 	const mockItemsInProgressData: RunChartData = new RunChartData(
-		[2, 4], // valuePerUnitOfTime
+		generateWorkItemMapForRunChart([2, 4]),
 		2, // history
 		6, // total
 	);
 
 	// Create mock started items data
 	const mockStartedItemsData: RunChartData = new RunChartData(
-		[4, 6], // valuePerUnitOfTime
+		generateWorkItemMapForRunChart([4, 6]),
 		2, // history
 		10, // total
 	);

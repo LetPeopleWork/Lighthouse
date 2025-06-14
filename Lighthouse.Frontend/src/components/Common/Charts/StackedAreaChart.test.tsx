@@ -1,12 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
+import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import StackedAreaChart, { type AreaChartItem } from "./StackedAreaChart";
 
 describe("StackedAreaChart component", () => {
 	const createTestArea = (values: number[]): RunChartData => {
 		return new RunChartData(
-			values,
+			generateWorkItemMapForRunChart(values),
 			values.length,
 			values.reduce((sum, val) => sum + val, 0),
 		);

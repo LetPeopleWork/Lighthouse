@@ -14,48 +14,50 @@ namespace Lighthouse.Backend.Services.Implementation
             this.refreshRateInMinutes = refreshRateInMinutes;
         }
 
-        protected static int[] GenerateThroughputRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected static Dictionary<int, List<WorkItemBase>> GenerateThroughputRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             return GenerateRunChartByDay(startDate, endDate, items, GetClosedIndexForItem);
         }
 
-        protected static int[] GenerateCreationRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected static Dictionary<int, List<WorkItemBase>> GenerateCreationRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             return GenerateRunChartByDay(startDate, endDate, items, GetCreatedIndexForItem);
         }
 
-        protected static int[] GenerateStartedRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected static Dictionary<int, List<WorkItemBase>> GenerateStartedRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             return GenerateRunChartByDay(startDate, endDate, items, GetStartedIndexForItem);
         }
 
-        protected static int[] GenerateRunChartByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items, Func<DateTime, WorkItemBase, int> getDayIndex)
+        protected static Dictionary<int, List<WorkItemBase>> GenerateRunChartByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items, Func<DateTime, WorkItemBase, int> getDayIndex)
         {
             var totalDays = (endDate - startDate).Days + 1;
-            var runChartData = new int[totalDays];
 
-            foreach (var index in items.Select(i => getDayIndex(startDate, i)))
+            var runChartData = InitializeRunChartDictionary(totalDays);
+
+            foreach (var item in items)
             {
-                if (index >= 0 && index < totalDays)
+                var dayIndex = getDayIndex(startDate, item);
+                if (dayIndex >= 0 && dayIndex < totalDays)
                 {
-                    runChartData[index]++;
+                    runChartData[dayIndex].Add(item);
                 }
             }
 
             return runChartData;
         }
 
-        protected static int[] GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected static Dictionary<int, List<WorkItemBase>> GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             var totalDays = (endDate - startDate).Days + 1;
-            var runChartData = new int[totalDays];
+            var runChartData = InitializeRunChartDictionary(totalDays);
 
-            for (var index = 0; index < runChartData.Length; index++)
+            for (var index = 0; index < totalDays; index++)
             {
                 var currentDate = startDate.AddDays(index);
-                var itemsInProgressOnDay = items.Count(i => WasItemProgressOnDay(currentDate, i));
+                var itemsInProgressOnDay = items.Where(i => WasItemProgressOnDay(currentDate, i));
 
-                runChartData[index] = itemsInProgressOnDay;
+                runChartData[index].AddRange(itemsInProgressOnDay);
             }
 
             return runChartData;
@@ -127,6 +129,18 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 metricsCache.Remove(entry);
             }
+        }
+
+        private static Dictionary<int, List<WorkItemBase>> InitializeRunChartDictionary(int totalDays)
+        {
+            var runChartData = new Dictionary<int, List<WorkItemBase>>();
+
+            for (var index = 0; index < totalDays; index++)
+            {
+                runChartData[index] = new List<WorkItemBase>();
+            }
+
+            return runChartData;
         }
 
         private void StoreMetricInCache<TMetric>(string key, TMetric metric) where TMetric : class

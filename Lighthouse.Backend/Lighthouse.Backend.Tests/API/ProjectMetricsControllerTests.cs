@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 10);
-            var expectedResult = new RunChartData([1, 0, 0, 1, 0, 0, 0, 0, 0, 0]);
+            var expectedResult = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 0, 0, 1, 0, 0, 0, 0, 0, 0]));
             
             projectMetricsService.Setup(x => x.GetThroughputForProject(project, startDate, endDate))
                 .Returns(expectedResult);
@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Tests.API
             var project = new Project { Id = 1 };
             projectRepository.Setup(repo => repo.GetById(1)).Returns(project);
 
-            var expectedStartedItems = new RunChartData([1, 88, 6]);
+            var expectedStartedItems = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
             projectMetricsService.Setup(service => service.GetStartedItemsForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
 
             var response = subject.GetStartedItems(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 5);
-            var expectedResult = new RunChartData([1, 2, 2, 1, 1]);
+            var expectedResult = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 2, 1, 1]));
             
             projectMetricsService.Setup(x => x.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate))
                 .Returns(expectedResult);

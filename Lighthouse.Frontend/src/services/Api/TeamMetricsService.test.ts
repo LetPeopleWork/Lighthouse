@@ -2,6 +2,7 @@ import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../models/WorkItem";
+import { generateWorkItemMapForRunChart } from "../../tests/TestDataProvider";
 import { TeamMetricsService } from "./TeamMetricsService";
 
 vi.mock("axios");
@@ -20,8 +21,10 @@ describe("TeamMetricsService", () => {
 	});
 
 	it("should get throughput for a team", async () => {
+		const workItems = generateWorkItemMapForRunChart([3, 4, 5, 6, 7]);
+
 		const mockThroughputData = {
-			valuePerUnitOfTime: [3, 4, 5, 6, 7],
+			workItemsPerUnitOfTime: workItems,
 			history: 5,
 			total: 25,
 		};
@@ -37,7 +40,7 @@ describe("TeamMetricsService", () => {
 		);
 
 		expect(result).toBeInstanceOf(RunChartData);
-		expect(result.valuePerUnitOfTime).toEqual([3, 4, 5, 6, 7]);
+		expect(result.workItemsPerUnitOfTime).toEqual(workItems);
 		expect(result.history).toBe(5);
 		expect(result.total).toBe(25);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
@@ -46,8 +49,10 @@ describe("TeamMetricsService", () => {
 	});
 
 	it("should get started items for a team", async () => {
+		const workItems = generateWorkItemMapForRunChart([3, 4, 5, 6, 7]);
+
 		const mockStartedData = {
-			valuePerUnitOfTime: [3, 4, 5, 6, 7],
+			workItemsPerUnitOfTime: workItems,
 			history: 5,
 			total: 25,
 		};
@@ -63,7 +68,7 @@ describe("TeamMetricsService", () => {
 		);
 
 		expect(result).toBeInstanceOf(RunChartData);
-		expect(result.valuePerUnitOfTime).toEqual([3, 4, 5, 6, 7]);
+		expect(result.workItemsPerUnitOfTime).toEqual(workItems);
 		expect(result.history).toBe(5);
 		expect(result.total).toBe(25);
 		expect(mockedAxios.get).toHaveBeenCalledWith(

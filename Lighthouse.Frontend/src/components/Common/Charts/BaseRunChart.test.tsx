@@ -1,11 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
+import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import BaseRunChart from "./BaseRunChart";
 
 describe("BaseRunChart component", () => {
 	it("should render children when chartData.history > 0", () => {
 		const rawData = [10, 20, 30];
-		const mockChartData = new RunChartData(rawData, rawData.length, 60);
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 		const childContent = "Test Chart Content";
 
 		render(
@@ -21,7 +26,11 @@ describe("BaseRunChart component", () => {
 
 	it("should pass correctly formatted data to children", () => {
 		const rawData = [10, 20, 30];
-		const mockChartData = new RunChartData(rawData, rawData.length, 60);
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 		const startDate = new Date("2023-01-01");
 		let passedData: { value: number; day: string }[] = [];
 
@@ -51,7 +60,11 @@ describe("BaseRunChart component", () => {
 
 	it("should display the title correctly", () => {
 		const rawData = [10, 20, 30];
-		const mockChartData = new RunChartData(rawData, rawData.length, 60);
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 		const customTitle = "Custom Base Chart";
 
 		render(
@@ -70,7 +83,11 @@ describe("BaseRunChart component", () => {
 
 	it("should display total when displayTotal is true", () => {
 		const rawData = [10, 20, 30];
-		const mockChartData = new RunChartData(rawData, rawData.length, 60);
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 
 		render(
 			<BaseRunChart

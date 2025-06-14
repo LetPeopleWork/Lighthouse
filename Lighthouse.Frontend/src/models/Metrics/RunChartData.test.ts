@@ -1,22 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { generateWorkItemMapForRunChart } from "../../tests/TestDataProvider";
 import { RunChartData } from "../Metrics/RunChartData";
 
 describe("Throughput", () => {
 	it("should create a Throughput instance with the correct properties", () => {
 		const throughputData = [10, 20, 30, 40, 50];
-		const throughput = new RunChartData(
-			throughputData,
-			throughputData.length,
-			150,
-		);
+		const workItems = generateWorkItemMapForRunChart(throughputData);
 
-		expect(throughput.valuePerUnitOfTime).toBe(throughputData);
+		const throughput = new RunChartData(workItems, throughputData.length, 150);
+
+		expect(throughput.workItemsPerUnitOfTime).toBe(workItems);
 	});
 
 	it("should return the correct history length", () => {
 		const throughputData = [10, 20, 30, 40, 50];
 		const throughput = new RunChartData(
-			throughputData,
+			generateWorkItemMapForRunChart(throughputData),
 			throughputData.length,
 			150,
 		);
@@ -27,7 +26,7 @@ describe("Throughput", () => {
 	it("should return the correct throughput on a given day", () => {
 		const throughputData = [10, 20, 30, 40, 50];
 		const throughput = new RunChartData(
-			throughputData,
+			generateWorkItemMapForRunChart(throughputData),
 			throughputData.length,
 			150,
 		);
@@ -42,7 +41,7 @@ describe("Throughput", () => {
 	it("should handle requests for throughput on an invalid day gracefully", () => {
 		const throughputData = [10, 20, 30, 40, 50];
 		const throughput = new RunChartData(
-			throughputData,
+			generateWorkItemMapForRunChart(throughputData),
 			throughputData.length,
 			150,
 		);

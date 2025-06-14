@@ -224,9 +224,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(throughput.Total, Is.EqualTo(10));
                 Assert.That(throughput.History, Is.EqualTo(10));
 
-                foreach (var day in throughput.ValuePerUnitOfTime)
+                foreach (var kvp in throughput.WorkItemsPerUnitOfTime)
                 {
-                    Assert.That(day, Is.EqualTo(1));
+                    Assert.That(kvp.Value, Has.Count.EqualTo(1));
                 }
             });
         }
@@ -359,7 +359,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(createdItems.Total, Is.EqualTo(3));
                 Assert.That(createdItems.History, Is.EqualTo(8));
-                Assert.That(createdItems.ValuePerUnitOfTime, Is.EqualTo([1, 0, 0, 0, 1, 0, 0, 1]));
+
+                var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
+                Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([1, 0, 0, 0, 1, 0, 0, 1]));
             });
         }
 
@@ -394,7 +396,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(createdItems.Total, Is.EqualTo(2));
                 Assert.That(createdItems.History, Is.EqualTo(8));
-                Assert.That(createdItems.ValuePerUnitOfTime, Is.EqualTo([1, 0, 0, 0, 0, 0, 0, 1]));
+
+                var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
+                Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([1, 0, 0, 0, 0, 0, 0, 1]));
             });
         }
 
@@ -418,7 +422,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(createdItems.Total, Is.EqualTo(0));
                 Assert.That(createdItems.History, Is.EqualTo(8));
-                Assert.That(createdItems.ValuePerUnitOfTime, Is.EqualTo([0, 0, 0, 0, 0, 0, 0, 0]));
+
+                var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
+                Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([0, 0, 0, 0, 0, 0, 0, 0]));
             });
         }
 
@@ -490,7 +496,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 for (var index = 0; index < 10; index++)
                 {
-                    Assert.That(wipData.ValuePerUnitOfTime[index], Is.EqualTo(9 - index));
+                    Assert.That(wipData.WorkItemsPerUnitOfTime[index], Has.Count.EqualTo(9 - index));
                 }
             });
         }
@@ -507,7 +513,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.That(wipData.ValuePerUnitOfTime.Sum(), Is.EqualTo(0));
+            Assert.That(wipData.Total, Is.EqualTo(0));
         }
 
         [Test]
@@ -521,7 +527,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.That(wipData.ValuePerUnitOfTime.Sum(), Is.EqualTo(0));
+            Assert.That(wipData.Total, Is.EqualTo(0));
         }
 
         [Test]
@@ -534,7 +540,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.That(wipData.ValuePerUnitOfTime.Sum(), Is.EqualTo(0));
+            Assert.That(wipData.Total, Is.EqualTo(0));
         }
 
         [Test]
@@ -551,9 +557,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.Multiple(() =>
             {
-                Assert.That(wipData.ValuePerUnitOfTime, Has.Length.EqualTo(2));
-                Assert.That(wipData.ValuePerUnitOfTime[0], Is.EqualTo(1));
-                Assert.That(wipData.ValuePerUnitOfTime[1], Is.EqualTo(0));
+                Assert.That(wipData.WorkItemsPerUnitOfTime, Has.Count.EqualTo(2));
+                Assert.That(wipData.WorkItemsPerUnitOfTime[0], Has.Count.EqualTo(1));
+                Assert.That(wipData.WorkItemsPerUnitOfTime[1], Is.Empty);
             });
         }
 
@@ -571,10 +577,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.Multiple(() =>
             {
-                Assert.That(wipData.ValuePerUnitOfTime, Has.Length.EqualTo(3));
-                Assert.That(wipData.ValuePerUnitOfTime[0], Is.EqualTo(0));
-                Assert.That(wipData.ValuePerUnitOfTime[1], Is.EqualTo(1));
-                Assert.That(wipData.ValuePerUnitOfTime[2], Is.EqualTo(1));
+                Assert.That(wipData.WorkItemsPerUnitOfTime, Has.Count.EqualTo(3));
+                Assert.That(wipData.WorkItemsPerUnitOfTime[0], Has.Count.EqualTo(0));
+                Assert.That(wipData.WorkItemsPerUnitOfTime[1], Has.Count.EqualTo(1));
+                Assert.That(wipData.WorkItemsPerUnitOfTime[2], Has.Count.EqualTo(1));
             });
         }
 

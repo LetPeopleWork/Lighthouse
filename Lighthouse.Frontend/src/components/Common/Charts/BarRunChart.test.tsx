@@ -1,11 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
+import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import BarRunChart from "./BarRunChart";
 
 describe("ThroughputBarChart component", () => {
 	it("should render BarChart when throughputData.history > 0", () => {
 		const rawData = [10, 20, 30];
-		const mockThroughputData = new RunChartData(rawData, rawData.length, 60);
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 
 		render(
 			<BarRunChart chartData={mockThroughputData} startDate={new Date()} />,
@@ -18,7 +23,11 @@ describe("ThroughputBarChart component", () => {
 
 	it("should display the correct total throughput value", () => {
 		const rawData = [10, 20, 30];
-		const mockThroughputData = new RunChartData(rawData, rawData.length, 60);
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 
 		render(
 			<BarRunChart

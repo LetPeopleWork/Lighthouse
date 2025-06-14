@@ -26,8 +26,8 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	closedItems,
 }) => {
 	const calculateAverage = (data: RunChartData | null): number => {
-		if (!data?.valuePerUnitOfTime?.length) return 0;
-		return data.total / data.valuePerUnitOfTime.length;
+		if (!data?.history) return 0;
+		return data.total / data.history;
 	};
 
 	const formatNumber = (value: number): string => {

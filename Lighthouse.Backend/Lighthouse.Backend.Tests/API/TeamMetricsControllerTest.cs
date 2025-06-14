@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var expectedThroughput = new RunChartData([1, 88, 6]);
+            var expectedThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
             teamMetricsServiceMock.Setup(service => service.GetThroughputForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedThroughput);
 
             var subject = CreateSubject();
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var expectedStartedItems = new RunChartData([1, 88, 6]);
+            var expectedStartedItems = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
             teamMetricsServiceMock.Setup(service => service.GetStartedItemsForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
 
             var subject = CreateSubject();
@@ -406,7 +406,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var expectedData = new RunChartData([1, 2, 3]);
+            var expectedData = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 3]));
             teamMetricsServiceMock.Setup(service => service.GetWorkInProgressOverTimeForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedData);
 
             var subject = CreateSubject();

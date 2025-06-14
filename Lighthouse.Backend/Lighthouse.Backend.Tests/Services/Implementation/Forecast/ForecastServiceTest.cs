@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -46,7 +47,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             var subject = CreateSubjectWithPersistentThroughput();
 
-            var forecast = subject.HowMany(new RunChartData([1]), TimeSpan.FromDays(timespan).Days);
+            var forecast = subject.HowMany(new RunChartData(RunChartDataGenerator.GenerateRunChartData([1])), TimeSpan.FromDays(timespan).Days);
 
             Assert.Multiple(() =>
             {
@@ -91,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         public void HowMany_FixedThroughputAndSimulatedDays_ReturnsCorrectForecast()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var throughput = new RunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var throughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]));
 
             var forecast = subject.HowMany(throughput, 10);
 
@@ -113,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var daysToForecast = 10;
             var workItemTypes = new string[] { "User Story" };
 
-            var itemCreationRunChart = new RunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var itemCreationRunChart = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]));
             var team = CreateTeam(1, [1]);
 
             teamMetricsServiceMock.Setup(x => x.GetCreatedItemsForTeam(team, workItemTypes, startDate, endDate)).Returns(itemCreationRunChart);
@@ -152,7 +153,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         public void HowMany_RealData_RunRealForecast_ExpectCorrectResults()
         {
             var subject = CreateSubjectWithRealThroughput();
-            var throughput = new RunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]);
+            var throughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]));
 
             var forecast = subject.HowMany(throughput, 30);
 
@@ -561,7 +562,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Id = idCounter++,
             };
 
-            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeam(team)).Returns(new RunChartData(throughput));
+            teamMetricsServiceMock.Setup(x => x.GetCurrentThroughputForTeam(team)).Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData(throughput)));
 
             return team;
         }

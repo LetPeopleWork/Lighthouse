@@ -249,7 +249,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private int GetSimulatedThroughput(RunChartData throughput)
         {
             var randomDay = randomNumberService.GetRandomNumber(throughput.History);
-            return throughput.GetValueOnDay(randomDay);
+            return throughput.GetCountOnDay(randomDay);
         }
 
         private async Task ArchiveFeatures(IEnumerable<Feature> features)

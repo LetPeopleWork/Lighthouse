@@ -1,11 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
+import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import LineRunChart from "./LineRunChart";
 
 describe("LineRunChart component", () => {
 	it("should render LineChart when chartData.history > 0", () => {
 		const rawData = [10, 20, 30];
-		const mockChartData = new RunChartData(rawData, rawData.length, 60);
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 
 		render(<LineRunChart chartData={mockChartData} startDate={new Date()} />);
 
@@ -16,7 +21,11 @@ describe("LineRunChart component", () => {
 
 	it("should display the correct total value", () => {
 		const rawData = [10, 20, 30];
-		const mockChartData = new RunChartData(rawData, rawData.length, 60);
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 
 		render(
 			<LineRunChart
@@ -40,7 +49,11 @@ describe("LineRunChart component", () => {
 
 	it("should render with custom title", () => {
 		const rawData = [10, 20, 30];
-		const mockChartData = new RunChartData(rawData, rawData.length, 60);
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
 		const customTitle = "Custom Line Chart";
 
 		render(

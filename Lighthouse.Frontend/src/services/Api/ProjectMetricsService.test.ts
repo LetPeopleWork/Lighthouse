@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Feature } from "../../models/Feature";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
+import { generateWorkItemMapForRunChart } from "../../tests/TestDataProvider";
 import { ProjectMetricsService } from "./ProjectMetricsService";
 
 describe("ProjectMetricsService", () => {
@@ -20,10 +21,11 @@ describe("ProjectMetricsService", () => {
 
 	describe("getThroughputForProject", () => {
 		it("should call the correct API endpoint and return RunChartData", async () => {
-			// Arrange
+			const workItems = generateWorkItemMapForRunChart([1, 2, 3]);
+
 			const mockResponse = {
 				data: {
-					valuePerUnitOfTime: [1, 2, 3],
+					workItemsPerUnitOfTime: workItems,
 					history: 3,
 					total: 6,
 				},
@@ -38,7 +40,7 @@ describe("ProjectMetricsService", () => {
 				`/projects/${projectId}/metrics/throughput?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toBeInstanceOf(RunChartData);
-			expect(result.valuePerUnitOfTime).toEqual([1, 2, 3]);
+			expect(result.workItemsPerUnitOfTime).toEqual(workItems);
 			expect(result.history).toBe(3);
 			expect(result.total).toBe(6);
 		});
@@ -46,10 +48,11 @@ describe("ProjectMetricsService", () => {
 
 	describe("getStartedItems", () => {
 		it("should call the correct API endpoint and return RunChartData", async () => {
-			// Arrange
+			const workItems = generateWorkItemMapForRunChart([2, 3, 4]);
+
 			const mockResponse = {
 				data: {
-					valuePerUnitOfTime: [2, 3, 4],
+					workItemsPerUnitOfTime: workItems,
 					history: 3,
 					total: 9,
 				},
@@ -68,7 +71,7 @@ describe("ProjectMetricsService", () => {
 				`/projects/${projectId}/metrics/started?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toBeInstanceOf(RunChartData);
-			expect(result.valuePerUnitOfTime).toEqual([2, 3, 4]);
+			expect(result.workItemsPerUnitOfTime).toEqual(workItems);
 			expect(result.history).toBe(3);
 			expect(result.total).toBe(9);
 		});
@@ -76,10 +79,11 @@ describe("ProjectMetricsService", () => {
 
 	describe("getFeaturesInProgressOverTimeForProject", () => {
 		it("should call the correct API endpoint and return RunChartData", async () => {
-			// Arrange
+			const workItems = generateWorkItemMapForRunChart([4, 5, 6]);
+
 			const mockResponse = {
 				data: {
-					valuePerUnitOfTime: [4, 5, 6],
+					workItemsPerUnitOfTime: workItems,
 					history: 3,
 					total: 15,
 				},
@@ -98,7 +102,7 @@ describe("ProjectMetricsService", () => {
 				`/projects/${projectId}/metrics/wipOverTime?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toBeInstanceOf(RunChartData);
-			expect(result.valuePerUnitOfTime).toEqual([4, 5, 6]);
+			expect(result.workItemsPerUnitOfTime).toEqual(workItems);
 			expect(result.history).toBe(3);
 			expect(result.total).toBe(15);
 		});

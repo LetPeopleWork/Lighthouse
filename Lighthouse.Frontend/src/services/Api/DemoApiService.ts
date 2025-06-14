@@ -32,6 +32,10 @@ import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
 } from "../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	generateWorkItem,
+	generateWorkItemMapForRunChart,
+} from "../../tests/TestDataProvider";
 import type {
 	IUpdateStatus,
 	IUpdateSubscriptionService,
@@ -88,41 +92,6 @@ let teams: Team[] = [];
 
 let teamThroughputs: Record<number, number[]> = {};
 let teamFeaturesInProgress: Record<number, string[]> = {};
-
-function generateWorkItem(id: number): IWorkItem {
-	// Random date between now and 30 days ago
-	const getRandomDate = (maxDaysAgo: number) => {
-		const today = new Date();
-		const daysAgo = Math.floor(Math.random() * (maxDaysAgo + 1));
-		const date = new Date(today);
-		date.setDate(today.getDate() - daysAgo);
-		return date;
-	};
-
-	// Generate random work item
-	const startedDate = getRandomDate(30);
-	// Closed date must be after start date (or same day)
-	const daysAfterStart = Math.floor(
-		Math.random() * (30 - (30 - startedDate.getDate()) + 1),
-	);
-
-	const closedDate = new Date(startedDate);
-	closedDate.setDate(startedDate.getDate() + daysAfterStart);
-
-	return {
-		name: `Work Item that has a very long name so I can test whether the text wrapping works so I'm just adding more text and see whenever it's getting too big. I wonder what people think, don't they know titles should be short - put all that other stuff in the description...anyway, is this wrapped? - ${id}`,
-		id: id,
-		workItemReference: `WI-${id}`,
-		url: `https://example.com/work-items/${id}`,
-		state: "In Progress",
-		stateCategory: "Doing",
-		type: "Feature",
-		workItemAge: Math.floor(Math.random() * (19 - 3 + 1)) + 3,
-		startedDate,
-		closedDate,
-		cycleTime: daysAfterStart + 1,
-	};
-}
 
 function delay() {
 	if (throwError) {
@@ -191,12 +160,16 @@ export class DemoTeamMetricsService implements ITeamMetricsService {
 		await delay();
 
 		const rawThroughput = teamThroughputs[teamId];
+
+		const workItemsPerUnitOfTime: { [key: number]: IWorkItem[] } =
+			generateWorkItemMapForRunChart(rawThroughput);
+
 		const totalThroughput = rawThroughput.reduce(
 			(sum, items) => sum + items,
 			0,
 		);
 		return new RunChartData(
-			rawThroughput,
+			workItemsPerUnitOfTime,
 			rawThroughput.length,
 			totalThroughput,
 		);
@@ -219,7 +192,11 @@ export class DemoTeamMetricsService implements ITeamMetricsService {
 			.fill(0)
 			.map(() => Math.floor(Math.random() * 5) + 1);
 		const total = valuePerUnitOfTime.reduce((sum, value) => sum + value, 0);
-		return new RunChartData(valuePerUnitOfTime, 30, total);
+
+		const workItemsPerUnitOfTime: { [key: number]: IWorkItem[] } =
+			generateWorkItemMapForRunChart(valuePerUnitOfTime);
+
+		return new RunChartData(workItemsPerUnitOfTime, 30, total);
 	}
 
 	async getWorkInProgressOverTime(
@@ -250,7 +227,10 @@ export class DemoTeamMetricsService implements ITeamMetricsService {
 			rawWIP.push(wip);
 		}
 
-		return new RunChartData(rawWIP, rawWIP.length, 0);
+		const workItemsPerUnitOfTime: { [key: number]: IWorkItem[] } =
+			generateWorkItemMapForRunChart(rawWIP);
+
+		return new RunChartData(workItemsPerUnitOfTime, rawWIP.length, 0);
 	}
 
 	async getFeaturesInProgress(teamId: number): Promise<IWorkItem[]> {
@@ -341,7 +321,9 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 			}
 		}
 
-		return new RunChartData(combinedThroughput, totalHistory, totalSum);
+		const workItemsPerUnitOfTime: { [key: number]: IWorkItem[] } =
+			generateWorkItemMapForRunChart(combinedThroughput);
+		return new RunChartData(workItemsPerUnitOfTime, totalHistory, totalSum);
 	}
 
 	async getStartedItems(
@@ -361,7 +343,10 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 			.fill(0)
 			.map(() => Math.floor(Math.random() * 5) + 1);
 		const total = valuePerUnitOfTime.reduce((sum, value) => sum + value, 0);
-		return new RunChartData(valuePerUnitOfTime, 30, total);
+
+		const workItemsPerUnitOfTime: { [key: number]: IWorkItem[] } =
+			generateWorkItemMapForRunChart(valuePerUnitOfTime);
+		return new RunChartData(workItemsPerUnitOfTime, 30, total);
 	}
 
 	async getWorkInProgressOverTime(
@@ -395,7 +380,9 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 		// Calculate total features in progress (sum of the daily values)
 		const total = rawWIP.reduce((sum, val) => sum + val, 0);
 
-		return new RunChartData(rawWIP, rawWIP.length, total);
+		const workItemsPerUnitOfTime: { [key: number]: IWorkItem[] } =
+			generateWorkItemMapForRunChart(rawWIP);
+		return new RunChartData(workItemsPerUnitOfTime, rawWIP.length, total);
 	}
 
 	async getInProgressItems(id: number): Promise<IFeature[]> {

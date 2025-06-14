@@ -54,8 +54,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.Multiple(() =>
             {
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result.ValuePerUnitOfTime, Has.Length.EqualTo(10));
-                Assert.That(result.ValuePerUnitOfTime.Sum(), Is.EqualTo(2));
+                Assert.That(result.WorkItemsPerUnitOfTime, Has.Count.EqualTo(10));
+                Assert.That(result.Total, Is.EqualTo(2));
             });
         }
 
@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.Multiple(() =>
             {
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result.ValuePerUnitOfTime, Has.Length.EqualTo(5));
+                Assert.That(result.WorkItemsPerUnitOfTime, Has.Count.EqualTo(5));
             });
         }
 
