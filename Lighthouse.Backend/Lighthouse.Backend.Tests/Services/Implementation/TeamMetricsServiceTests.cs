@@ -759,14 +759,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task UpdateTeamMetrics_TeamHasAutomaticallyAdjustFeatureWIPSetting_NewFeatureWIPIsInvalid_DoesNotChangeFeatureWIP()
+        public async Task UpdateTeamMetrics_TeamHasAutomaticallyAdjustFeatureWIPSetting_NewFeatureWIPIsZero_ChangesFeatureWIP()
         {
             testTeam.FeatureWIP = 2;
             testTeam.AutomaticallyAdjustFeatureWIP = true;
 
             await subject.UpdateTeamMetrics(testTeam);
 
-            Assert.That(testTeam.FeatureWIP, Is.EqualTo(2));
+            Assert.That(testTeam.FeatureWIP, Is.EqualTo(0));
         }
 
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)
