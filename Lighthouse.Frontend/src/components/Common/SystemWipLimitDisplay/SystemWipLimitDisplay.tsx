@@ -2,28 +2,21 @@ import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import type React from "react";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 
-interface ServiceLevelExpectationProps {
+interface SystemWipLimitDisplayProps {
 	featureOwner: IFeatureOwner;
-	hide?: boolean;
+    hide?: boolean;
 }
 
-const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
+const SystemWipLimitDisplay: React.FC<SystemWipLimitDisplayProps> = ({
 	featureOwner,
-	hide = false,
+    hide = false,
 }) => {
 	const theme = useTheme();
-	if (
-		hide ||
-		!featureOwner.serviceLevelExpectationProbability ||
-		!featureOwner.serviceLevelExpectationRange ||
-		featureOwner.serviceLevelExpectationProbability <= 0 ||
-		featureOwner.serviceLevelExpectationRange <= 0
-	) {
+	if (hide || !featureOwner.systemWIPLimit || featureOwner.systemWIPLimit < 1) {
 		return null;
 	}
 
-	const probability = featureOwner.serviceLevelExpectationProbability;
-	const range = featureOwner.serviceLevelExpectationRange;
+	const wipLimit = featureOwner.systemWIPLimit;
 
 	return (
 		<Card
@@ -33,7 +26,7 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 				borderRadius: 2,
 				minWidth: 250,
 				maxWidth: 300,
-				border: `2px dashed ${theme.palette.primary.main}`,
+				border: `2px dashed ${theme.palette.secondary.main}`,
 				boxShadow: "none",
 				p: 0,
 			}}
@@ -47,11 +40,11 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 						display: "block",
 						fontWeight: theme.emphasis.high,
 						lineHeight: 1,
-						color: theme.palette.primary.main,
+						color: theme.palette.secondary.main,
 						mb: 0.5,
 					}}
 				>
-					Service Level Expectation
+					System WIP Limit
 				</Typography>
 				<Typography
 					variant="body2"
@@ -60,11 +53,11 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 						fontWeight: theme.emphasis.medium,
 					}}
 				>
-					{Math.round(probability)}% of items within {range} days or less
+					{wipLimit} Work {wipLimit === 1 ? "Item" : "Items"}
 				</Typography>
 			</CardContent>
 		</Card>
 	);
 };
 
-export default ServiceLevelExpectation;
+export default SystemWipLimitDisplay;

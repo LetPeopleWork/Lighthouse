@@ -107,4 +107,14 @@ describe("ServiceLevelExpectation component", () => {
 		// Container should be empty as component returns null
 		expect(container).toBeEmptyDOMElement();
 	});
+
+	it("returns null when hide prop is true, regardless of valid SLE values", () => {
+		const mockOwner = createMockFeatureOwner(85, 14);
+		const { container } = render(
+			<ServiceLevelExpectation featureOwner={mockOwner} hide={true} />,
+		);
+
+		// Container should be empty as component returns null when hide is true
+		expect(container).toBeEmptyDOMElement();
+	});
 });

@@ -1,4 +1,4 @@
-import { Button, Container, Tab, Tabs } from "@mui/material";
+import { Button, Container, Stack, Tab, Tabs } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -8,6 +8,7 @@ import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
+import SystemWipLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import type { IProject, Project } from "../../../models/Project/Project";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -170,11 +171,23 @@ const ProjectDetail: React.FC = () => {
 						<Grid size={{ xs: 12 }}>
 							<DetailHeader
 								leftContent={
-									<>
+									<Stack spacing={1} direction="row">
 										<FeatureOwnerHeader featureOwner={project} />
-
-										<ServiceLevelExpectation featureOwner={project} />
-									</>
+										<Stack
+											direction={{ xs: "column", sm: "row" }}
+											spacing={1}
+											alignItems={{ xs: "flex-start", sm: "center" }}
+										>
+											<ServiceLevelExpectation
+												featureOwner={project}
+												hide={activeView !== "forecast"}
+											/>
+											<SystemWipLimitDisplay
+												featureOwner={project}
+												hide={activeView !== "forecast"}
+											/>
+										</Stack>
+									</Stack>
 								}
 								centerContent={
 									<Tabs

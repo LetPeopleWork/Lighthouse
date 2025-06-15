@@ -9,6 +9,7 @@ import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/Fe
 import ForecastConfiguration from "../../../components/Common/ForecastConfiguration/ForecastConfiguration";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
+import SystemWipLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
@@ -117,13 +118,25 @@ const TeamDetail: React.FC = () => {
 						<Grid size={{ xs: 12 }}>
 							<DetailHeader
 								leftContent={
-									<>
+									<Stack spacing={1} direction="row">
 										<FeatureOwnerHeader featureOwner={team} />
-										<Stack spacing={1}>
+
+										<Stack
+											direction={{ xs: "column", sm: "row" }}
+											spacing={1}
+											alignItems={{ xs: "flex-start", sm: "center" }}
+										>
 											<ForecastConfiguration team={team} />
-											<ServiceLevelExpectation featureOwner={team} />
+											<ServiceLevelExpectation
+												featureOwner={team}
+												hide={activeView !== "forecast"}
+											/>
+											<SystemWipLimitDisplay
+												featureOwner={team}
+												hide={activeView !== "forecast"}
+											/>
 										</Stack>
-									</>
+									</Stack>
 								}
 								centerContent={
 									<Tabs
