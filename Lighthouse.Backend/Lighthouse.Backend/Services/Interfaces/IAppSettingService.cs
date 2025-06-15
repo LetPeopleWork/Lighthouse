@@ -24,5 +24,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         DataRetentionSettings GetDataRetentionSettings();
 
         Task UpdateDataRetentionSettings(DataRetentionSettings cleanUpDataHistorySettings);
+
+        WorkTrackingSystemSettings GetWorkTrackingSystemSettings();
+
+        Task UpdateWorkTrackingSystemSettings(WorkTrackingSystemSettings workTrackingSystemSettings);
     }
 }

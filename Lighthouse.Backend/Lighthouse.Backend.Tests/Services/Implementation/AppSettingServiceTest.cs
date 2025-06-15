@@ -369,6 +369,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, "42");
         }
 
+        [Test]
+        public void GetWorkTrackingSystemSettings_ReturnsCorrectSettings()
+        {
+            SetupRepositoryForKeys(
+                AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout, "True",
+                AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds, "300");
+
+            var service = CreateService();
+
+            var settings = service.GetWorkTrackingSystemSettings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(settings.OverrideRequestTimeout, Is.True);
+                Assert.That(settings.RequestTimeoutInSeconds, Is.EqualTo(300));
+            });
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemSettings_UpdatesCorrectlyAsync()
+        {
+            SetupRepositoryForKeys(
+                AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout, "False",
+                AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds, "120");
+
+            var service = CreateService();
+
+            var workTrackingSystemSettings = new WorkTrackingSystemSettings { OverrideRequestTimeout = true, RequestTimeoutInSeconds = 300 };
+            await service.UpdateWorkTrackingSystemSettings(workTrackingSystemSettings);
+
+            VerifyUpdateCalled(AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout, "True");
+            VerifyUpdateCalled(AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds, "300");
+        }
+
         private AppSettingService CreateService()
         {
             return new AppSettingService(repositoryMock.Object);

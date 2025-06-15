@@ -85,5 +85,19 @@ namespace Lighthouse.Backend.API
             await appSettingService.UpdateDataRetentionSettings(dataRetentionSettings);
             return Ok();
         }
+
+        [HttpGet("WorkTrackingSystemSettings")]
+        public ActionResult<WorkTrackingSystemSettings> GetWorkTrackingSystemSettings()
+        {
+            var settings = appSettingService.GetWorkTrackingSystemSettings();
+            return Ok(settings);
+        }
+
+        [HttpPut("WorkTrackingSystemSettings")]
+        public async Task<ActionResult> UpdateWorkTrackingSystemSettings(WorkTrackingSystemSettings workTrackingSystemSettings)
+        {
+            await appSettingService.UpdateWorkTrackingSystemSettings(workTrackingSystemSettings);
+            return Ok();
+        }
     }
 }

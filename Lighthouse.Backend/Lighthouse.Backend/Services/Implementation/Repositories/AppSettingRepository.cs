@@ -59,6 +59,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 33, Key = AppSettingKeys.ProjectSettingSLEProbability, Value = "0" });
             AddIfNotExists(new AppSetting { Id = 34, Key = AppSettingKeys.ProjectSettingSLERange, Value = "0" });
 
+            AddIfNotExists(new AppSetting { Id = 35, Key = AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout, Value = "False" });
+            AddIfNotExists(new AppSetting { Id = 36, Key = AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds, Value = "100" });
+
             SaveSync();
         }
 

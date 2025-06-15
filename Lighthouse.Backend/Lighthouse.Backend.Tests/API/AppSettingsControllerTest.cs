@@ -197,6 +197,42 @@ namespace Lighthouse.Backend.Tests.API
             });
         }
 
+        [Test]
+        public void GetWorkTrackingSystemSettings_ReturnsSettings()
+        {
+            var settings = new WorkTrackingSystemSettings { OverrideRequestTimeout = true, RequestTimeoutInSeconds = 300 };
+            appSettingServiceMock.Setup(x => x.GetWorkTrackingSystemSettings()).Returns(settings);
+
+            var subject = CreateSubject();
+
+            var result = subject.GetWorkTrackingSystemSettings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                Assert.That(okResult.Value, Is.EqualTo(settings));
+            });
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemSettings_UpdatesSettings()
+        {
+            var settings = new WorkTrackingSystemSettings { OverrideRequestTimeout = true, RequestTimeoutInSeconds = 300 };
+
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateWorkTrackingSystemSettings(settings);
+
+            Assert.Multiple(() =>
+            {
+                appSettingServiceMock.Verify(x => x.UpdateWorkTrackingSystemSettings(settings), Times.Once);
+                Assert.That(result, Is.InstanceOf<OkResult>());
+            });
+        }
+
         private AppSettingsController CreateSubject()
         {
             return new AppSettingsController(appSettingServiceMock.Object);
