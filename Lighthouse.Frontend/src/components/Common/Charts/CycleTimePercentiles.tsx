@@ -10,6 +10,7 @@ import {
 	TableCell,
 	TableRow,
 	Typography,
+	useTheme,
 } from "@mui/material";
 import { useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -34,6 +35,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 	serviceLevelExpectation = null,
 	items,
 }) => {
+	const theme = useTheme();
 	const [isFlipped, setIsFlipped] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -208,9 +210,12 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 							sx={{
 								cursor: "pointer",
 								backgroundColor: getChipTitleColor(),
+								// Always use white for SLE chip to ensure high contrast
 								color: "#ffffff",
 								fontWeight: "bold",
 								"&:hover": { opacity: 0.9 },
+								// Add a subtle elevation for better visibility in dark mode
+								boxShadow: theme.customShadows.subtle,
 							}}
 						/>
 					)}

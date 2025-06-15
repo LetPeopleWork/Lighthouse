@@ -10,27 +10,27 @@ describe("ForecastLevel class", () => {
 		const forecastLevel = new ForecastLevel(50);
 		expect(forecastLevel.level).toBe("Risky");
 		expect(forecastLevel.IconComponent).toBe(RiskyIcon);
-		expect(forecastLevel.color).toBe("red");
+		expect(forecastLevel.color).toBe("#f44336");
 	});
 
 	it("should set the level, IconComponent, and color for 50 < probability <= 70", () => {
 		const forecastLevel = new ForecastLevel(70);
 		expect(forecastLevel.level).toBe("Realistic");
 		expect(forecastLevel.IconComponent).toBe(RealisticIcon);
-		expect(forecastLevel.color).toBe("orange");
+		expect(forecastLevel.color).toBe("#ff9800");
 	});
 
 	it("should set the level, IconComponent, and color for 70 < probability <= 85", () => {
 		const forecastLevel = new ForecastLevel(85);
 		expect(forecastLevel.level).toBe("Confident");
 		expect(forecastLevel.IconComponent).toBe(ConfidentIcon);
-		expect(forecastLevel.color).toBe("lightgreen");
+		expect(forecastLevel.color).toBe("#4caf50");
 	});
 
 	it("should set the level, IconComponent, and color for probability > 85", () => {
 		const forecastLevel = new ForecastLevel(90);
 		expect(forecastLevel.level).toBe("Certain");
 		expect(forecastLevel.IconComponent).toBe(CertainIcon);
-		expect(forecastLevel.color).toBe("green");
+		expect(forecastLevel.color).toBe("#388e3c");
 	});
 });

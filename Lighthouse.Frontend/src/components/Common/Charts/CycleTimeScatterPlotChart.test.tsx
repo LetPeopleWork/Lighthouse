@@ -2,7 +2,17 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { testTheme } from "../../../tests/testTheme";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
+
+// Mock the Material-UI theme
+vi.mock("@mui/material", async () => {
+	const actual = await vi.importActual("@mui/material");
+	return {
+		...actual,
+		useTheme: () => testTheme,
+	};
+});
 
 // Mock WorkItemsDialog component
 vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({

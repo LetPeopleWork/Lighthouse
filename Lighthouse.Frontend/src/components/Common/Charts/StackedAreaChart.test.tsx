@@ -1,7 +1,18 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
+import { testTheme } from "../../../tests/testTheme";
+
+// Mock the Material-UI theme
+vi.mock("@mui/material", async () => {
+	const actual = await vi.importActual("@mui/material");
+	return {
+		...actual,
+		useTheme: () => testTheme,
+	};
+});
 import StackedAreaChart, { type AreaChartItem } from "./StackedAreaChart";
 
 describe("StackedAreaChart component", () => {

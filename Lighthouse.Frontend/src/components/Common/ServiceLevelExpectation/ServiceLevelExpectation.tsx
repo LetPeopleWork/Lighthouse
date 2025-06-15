@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography } from "@mui/material";
+import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import type React from "react";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 
@@ -9,6 +9,7 @@ interface ServiceLevelExpectationProps {
 const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 	featureOwner,
 }) => {
+	const theme = useTheme();
 	if (
 		!featureOwner.serviceLevelExpectationProbability ||
 		!featureOwner.serviceLevelExpectationRange ||
@@ -23,25 +24,28 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 
 	return (
 		<Card
-			elevation={1}
+			elevation={0}
 			sx={{
-				backgroundColor: (theme) => theme.palette.primary.light,
-				borderRadius: 1,
-				maxHeight: 40,
+				backgroundColor: "transparent",
+				borderRadius: 2,
 				minWidth: 250,
 				maxWidth: 300,
+				border: `2px dashed ${theme.palette.primary.main}`,
+				boxShadow: "none",
+				p: 0,
 			}}
 		>
 			<CardContent
-				sx={{ padding: "4px 8px", "&:last-child": { paddingBottom: "4px" } }}
+				sx={{ padding: "8px 12px", "&:last-child": { paddingBottom: "8px" } }}
 			>
 				<Typography
 					variant="caption"
 					sx={{
 						display: "block",
-						fontWeight: 500,
+						fontWeight: theme.emphasis.high,
 						lineHeight: 1,
-						color: "primary.contrastText",
+						color: theme.palette.primary.main,
+						mb: 0.5,
 					}}
 				>
 					Service Level Expectation
@@ -49,7 +53,8 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 				<Typography
 					variant="body2"
 					sx={{
-						color: "primary.contrastText",
+						color: theme.palette.text.primary,
+						fontWeight: theme.emphasis.medium,
 					}}
 				>
 					{Math.round(probability)}% of items within {range} days or less

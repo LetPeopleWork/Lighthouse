@@ -6,7 +6,8 @@ import darkLogo from "../../../assets/logo_black.png";
 
 const LetPeopleWorkLogo: React.FC = () => {
 	const theme = useTheme();
-	const logo = theme.palette.mode === "dark" ? darkLogo : lightLogo;
+	// Use theme.assets.logoVariant to determine which logo to use
+	const logo = theme.assets?.logoVariant === "dark" ? darkLogo : lightLogo;
 
 	return (
 		<Button

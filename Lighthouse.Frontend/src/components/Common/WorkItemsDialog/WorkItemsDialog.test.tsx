@@ -291,7 +291,7 @@ describe("WorkItemsDialog Component", () => {
 			const ageCells = screen.getAllByText(/\d+ days/);
 
 			// First cell (20 days) should have risky color and be bold
-			expect(ageCells[0]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
+			expect(ageCells[0]).toHaveStyle("color: rgb(244, 67, 54)"); // RGB equivalent of red
 			expect(ageCells[0]).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
 		});
 
@@ -302,7 +302,7 @@ describe("WorkItemsDialog Component", () => {
 
 			// First cell (20 days) should have realistic color and be bold
 			expect(ageCells[0]).not.toHaveStyle("color: rgb(255, 0, 0)");
-			expect(ageCells[0]).toHaveStyle("color: rgb(255, 165, 0)");
+			expect(ageCells[0]).toHaveStyle("color: rgb(255, 152, 0)");
 			expect(ageCells[0]).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
 		});
 
@@ -315,7 +315,7 @@ describe("WorkItemsDialog Component", () => {
 
 			// Should have realistic color (5 is 50% of 10, but we're testing with a real item)
 			expect(fiveDaysCell).not.toHaveStyle("color: rgb(255, 0, 0)");
-			expect(fiveDaysCell).toHaveStyle("color: rgb(144, 238, 144)"); // RGB equivalent of lightgreen
+			expect(fiveDaysCell).toHaveStyle("color: rgb(76, 175, 80)"); // RGB equivalent of lightgreen
 			expect(fiveDaysCell).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
 		});
 
@@ -327,7 +327,7 @@ describe("WorkItemsDialog Component", () => {
 			const twoDaysCell = screen.getByText("2 days");
 
 			// Should have certain color
-			expect(twoDaysCell).toHaveStyle("color: rgb(0, 128, 0)"); // RGB equivalent of green
+			expect(twoDaysCell).toHaveStyle("color: rgb(56, 142, 60)"); // RGB equivalent of green
 			expect(twoDaysCell).toHaveStyle("font-weight: 700"); // 700 is equivalent to bold
 		});
 
@@ -340,13 +340,13 @@ describe("WorkItemsDialog Component", () => {
 			const cycleTimeCells = screen.getAllByText(/\d+ days/);
 
 			// 15 days should be risky
-			expect(cycleTimeCells[0]).toHaveStyle("color: rgb(255, 0, 0)"); // RGB equivalent of red
+			expect(cycleTimeCells[0]).toHaveStyle("color: rgb(244, 67, 54)"); // RGB equivalent of red
 
 			// 10 days should be realistic (at SLE)
-			expect(cycleTimeCells[2]).toHaveStyle("color: rgb(255, 165, 0)"); // RGB equivalent of orange
+			expect(cycleTimeCells[2]).toHaveStyle("color: rgb(255, 152, 0)"); // RGB equivalent of orange
 
 			// 5 days should be confident (50% of SLE)
-			expect(cycleTimeCells[4]).toHaveStyle("color: rgb(144, 238, 144)"); // RGB equivalent of lightgreen
+			expect(cycleTimeCells[4]).toHaveStyle("color: rgb(76, 175, 80)"); // RGB equivalent of lightgreen
 		});
 	});
 });

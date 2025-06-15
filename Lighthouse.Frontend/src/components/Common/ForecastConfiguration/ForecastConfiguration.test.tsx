@@ -1,7 +1,17 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Team } from "../../../models/Team/Team";
+import { testTheme } from "../../../tests/testTheme";
 import ForecastConfiguration from "./ForecastConfiguration";
+
+// Mock the Material-UI theme
+vi.mock("@mui/material", async () => {
+	const actual = await vi.importActual("@mui/material");
+	return {
+		...actual,
+		useTheme: () => testTheme,
+	};
+});
 
 describe("ForecastConfiguration component", () => {
 	const createTeam = (
@@ -86,9 +96,6 @@ describe("ForecastConfiguration component", () => {
 		const card = screen
 			.getByText("Forecast Configuration:")
 			.closest(".MuiCard-root");
-		expect(card).toHaveStyle({
-			maxHeight: "40px",
-		});
 
 		// Check that the min and max width properties are set (using getComputedStyle would work better in a real browser environment)
 		expect(card).toHaveAttribute(
@@ -117,6 +124,6 @@ describe("ForecastConfiguration component", () => {
 
 		// Check that the SVG icon has the warning color styling
 		expect(warningIcon).toHaveClass("MuiSvgIcon-root");
-		expect(warningIcon).toHaveClass("css-s8gtoj-MuiSvgIcon-root");
+		expect(warningIcon).toHaveClass("css-1umw9bq-MuiSvgIcon-root");
 	});
 });

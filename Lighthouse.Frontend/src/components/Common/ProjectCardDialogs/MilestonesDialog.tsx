@@ -21,10 +21,7 @@ const MilestoneItem = styled(Paper)(({ theme }) => ({
 	padding: theme.spacing(1.5),
 	borderRadius: theme.shape.borderRadius,
 	marginBottom: theme.spacing(1),
-	backgroundColor:
-		theme.palette.mode === "light"
-			? theme.palette.grey[100]
-			: theme.palette.grey[800],
+	backgroundColor: theme.palette.action.hover,
 	"&:last-child": {
 		marginBottom: 0,
 	},
@@ -34,10 +31,7 @@ const FeatureItem = styled("div")(({ theme }) => ({
 	padding: theme.spacing(1.5),
 	borderRadius: theme.shape.borderRadius,
 	marginBottom: theme.spacing(1),
-	backgroundColor:
-		theme.palette.mode === "light"
-			? theme.palette.grey[100]
-			: theme.palette.grey[800],
+	backgroundColor: theme.palette.action.hover,
 	"&:last-child": {
 		marginBottom: 0,
 	},

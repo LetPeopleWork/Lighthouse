@@ -1,12 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import {
-	certainColor,
-	confidentColor,
-	realisticColor,
-	riskyColor,
-} from "../../../utils/theme/colors";
-import { ForecastLevel } from "./ForecastLevel";
 import ForecastLikelihood from "./ForecastLikelihood";
 
 vi.mock("../LocalDateTimeDisplay/LocalDateTimeDisplay", () => ({
@@ -14,16 +7,6 @@ vi.mock("../LocalDateTimeDisplay/LocalDateTimeDisplay", () => ({
 		<span data-testid="local-date-time-display">{utcDate.toISOString()}</span>
 	),
 }));
-
-const colorToRGB = (colorName: string) => {
-	const colors: { [key: string]: string } = {
-		[riskyColor]: "rgb(255, 0, 0)",
-		[realisticColor]: "rgb(255, 165, 0)",
-		[confidentColor]: "rgb(144, 238, 144)",
-		[certainColor]: "rgb(0, 128, 0)",
-	};
-	return colors[colorName];
-};
 
 describe("ForecastLikelihood component", () => {
 	const howMany = 10;
@@ -44,7 +27,6 @@ describe("ForecastLikelihood component", () => {
 	});
 
 	it("should render the correct icon and color based on the likelihood", () => {
-		const forecastLevel = new ForecastLevel(likelihood);
 		render(
 			<ForecastLikelihood
 				remainingItems={howMany}
@@ -55,8 +37,6 @@ describe("ForecastLikelihood component", () => {
 
 		const iconElement = screen.getByTestId("forecast-level-icon");
 		expect(iconElement).toBeInTheDocument();
-		expect(iconElement).toHaveStyle(
-			`color: ${colorToRGB(forecastLevel.color)}`,
-		);
+		expect(iconElement).toHaveStyle("color: rgb(76, 175, 80)");
 	});
 });

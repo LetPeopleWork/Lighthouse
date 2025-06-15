@@ -1,6 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IProgressable } from "../../../models/IProgressable";
+import { testTheme } from "../../../tests/testTheme";
 import ProgressIndicator from "./ProgressIndicator";
 
 // Mock the Material-UI theme
@@ -9,6 +10,7 @@ vi.mock("@mui/material", async () => {
 	return {
 		...actual,
 		useTheme: () => ({
+			...testTheme,
 			palette: {
 				primary: {
 					main: "#1976d2",
@@ -21,6 +23,10 @@ vi.mock("@mui/material", async () => {
 				},
 				action: {
 					disabledBackground: "#e0e0e0",
+				},
+				common: {
+					black: "#000000",
+					white: "#ffffff",
 				},
 			},
 		}),

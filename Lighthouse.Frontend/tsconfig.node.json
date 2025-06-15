@@ -11,5 +11,5 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "src/utils/config.ts"]
 }

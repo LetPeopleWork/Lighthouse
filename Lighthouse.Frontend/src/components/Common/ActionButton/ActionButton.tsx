@@ -30,7 +30,6 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 	color = "primary",
 }) => {
 	const [internalIsWaiting, setInternalIsWaiting] = useState<boolean>(false);
-	const [isHovering, setIsHovering] = useState<boolean>(false);
 	const theme = useTheme();
 
 	const handleClick = async () => {
@@ -54,8 +53,6 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 			startIcon={!isWaiting && startIcon}
 			fullWidth={fullWidth}
 			color={color}
-			onMouseEnter={() => setIsHovering(true)}
-			onMouseLeave={() => setIsHovering(false)}
 			sx={{
 				position: "relative",
 				display: "flex",
@@ -69,14 +66,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 				borderRadius: 2,
 				textTransform: "none",
 				fontWeight: 500,
-				transition: "all 0.2s ease",
-				boxShadow:
-					isHovering && buttonVariant === "contained"
-						? theme.shadows[4]
-						: undefined,
-				"&:hover": {
-					transform: "translateY(-2px)",
-				},
+				boxShadow: theme.shadows[4],
 				"&:active": {
 					transform: "translateY(0px)",
 				},
@@ -94,7 +84,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 						sx={{
 							color:
 								buttonVariant === "contained"
-									? "#fff"
+									? theme.palette.common.white
 									: `${theme.palette[color].main}`,
 							marginRight: 1,
 						}}

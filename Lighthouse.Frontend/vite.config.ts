@@ -3,6 +3,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { PRIMARY_BRAND_COLOR } from './src/utils/config';
 
 export default defineConfig({
     plugins: [
@@ -14,7 +15,7 @@ export default defineConfig({
                 name: 'Lighthouse',
                 short_name: 'Lighthouse',
                 description: 'Lighthouse Frontend Application',
-                theme_color: '#30574e',
+                theme_color: PRIMARY_BRAND_COLOR,
                 icons: [
                     {
                         src: '/icons/icon-192x192.png',

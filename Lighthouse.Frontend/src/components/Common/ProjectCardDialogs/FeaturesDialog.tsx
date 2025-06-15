@@ -13,16 +13,13 @@ import type React from "react";
 import { Link } from "react-router-dom";
 import type { IFeature } from "../../../models/Feature";
 import { getWorkItemName } from "../../../utils/featureName";
-import { getStateColor } from "../../../utils/theme/colors";
+import { getStateColor, hexToRgba } from "../../../utils/theme/colors";
 
 const FeatureItem = styled("div")(({ theme }) => ({
 	padding: theme.spacing(1.5),
 	borderRadius: theme.shape.borderRadius,
 	marginBottom: theme.spacing(1),
-	backgroundColor:
-		theme.palette.mode === "light"
-			? theme.palette.grey[100]
-			: theme.palette.grey[800],
+	backgroundColor: theme.palette.action.hover,
 	"&:last-child": {
 		marginBottom: 0,
 	},
@@ -122,10 +119,7 @@ const FeaturesDialog: React.FC<FeaturesDialogProps> = ({
 											my: 1,
 											height: 6,
 											borderRadius: 3,
-											bgcolor:
-												theme.palette.mode === "light"
-													? "rgba(0,0,0,0.1)"
-													: "rgba(255,255,255,0.1)",
+											bgcolor: hexToRgba(theme.palette.text.primary, 0.08),
 										}}
 									/>
 									<Stack

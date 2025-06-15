@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { getWorkItemName } from "../../../utils/featureName";
+import { hexToRgba } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
@@ -192,14 +193,19 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 									label={`${p.percentile}%`}
 									sx={{
 										borderColor: forecastLevel.color,
-										color: visiblePercentiles[p.percentile]
-											? forecastLevel.color
-											: theme.palette.text.disabled,
-										borderWidth: 1,
+										borderWidth: visiblePercentiles[p.percentile] ? 2 : 1,
 										borderStyle: "dashed",
 										opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
+										backgroundColor: !visiblePercentiles[p.percentile]
+											? "transparent"
+											: hexToRgba(forecastLevel.color, theme.opacity.high),
 										"&:hover": {
 											borderColor: forecastLevel.color,
+											borderWidth: 2,
+											backgroundColor: hexToRgba(
+												forecastLevel.color,
+												theme.opacity.high + 0.1,
+											),
 										},
 									}}
 									variant={
@@ -215,14 +221,22 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								label="Service Level Expectation"
 								sx={{
 									borderColor: theme.palette.primary.main,
-									color: sleVisible
-										? theme.palette.primary.main
-										: theme.palette.text.disabled,
-									borderWidth: 1,
+									borderWidth: sleVisible ? 2 : 1,
 									borderStyle: "dashed",
 									opacity: sleVisible ? 1 : 0.7,
+									backgroundColor: !sleVisible
+										? "transparent"
+										: hexToRgba(
+												theme.palette.primary.main,
+												theme.opacity.medium,
+											),
 									"&:hover": {
 										borderColor: theme.palette.primary.main,
+										borderWidth: 2,
+										backgroundColor: hexToRgba(
+											theme.palette.primary.main,
+											theme.opacity.high,
+										),
 									},
 								}}
 								variant={sleVisible ? "filled" : "outlined"}

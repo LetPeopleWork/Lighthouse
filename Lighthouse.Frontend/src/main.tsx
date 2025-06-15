@@ -8,10 +8,11 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { appColors } from "./utils/theme/colors";
+import { extendTheme } from "./utils/theme/themeExtensions";
 import "reflect-metadata";
 
-// Light theme
-const lightTheme = createTheme({
+// Light theme base
+const lightThemeBase = createTheme({
 	palette: {
 		mode: "light",
 		primary: {
@@ -26,6 +27,18 @@ const lightTheme = createTheme({
 			dark: appColors.secondary.dark,
 			contrastText: appColors.secondary.contrastText,
 		},
+		success: {
+			main: appColors.status.success,
+		},
+		warning: {
+			main: appColors.status.warning,
+		},
+		error: {
+			main: appColors.status.error,
+		},
+		info: {
+			main: appColors.status.info,
+		},
 		background: {
 			default: appColors.light.background,
 			paper: appColors.light.paper,
@@ -34,6 +47,7 @@ const lightTheme = createTheme({
 			primary: appColors.light.text.primary,
 			secondary: appColors.light.text.secondary,
 		},
+		divider: appColors.light.divider,
 	},
 	typography: {
 		fontFamily: "'Quicksand', 'Roboto', 'Arial', sans-serif",
@@ -67,21 +81,36 @@ const lightTheme = createTheme({
 	},
 });
 
-// Dark theme
-const darkTheme = createTheme({
+// Apply extensions to light theme
+const lightTheme = extendTheme(lightThemeBase);
+
+// Dark theme base with optimized contrast
+const darkThemeBase = createTheme({
 	palette: {
 		mode: "dark",
 		primary: {
-			main: appColors.primary.light, // Using lighter shade for dark mode
-			light: appColors.primary.main,
-			dark: appColors.primary.dark,
+			main: appColors.primary.light, // Using enhanced lighter shade for dark mode for better contrast
+			light: appColors.primary.light,
+			dark: appColors.primary.main, // Using standard color as dark in dark mode
 			contrastText: appColors.primary.contrastText,
 		},
 		secondary: {
-			main: appColors.secondary.light, // Using lighter shade for dark mode
-			light: appColors.secondary.main,
-			dark: appColors.secondary.dark,
+			main: appColors.secondary.light, // Using enhanced lighter shade for dark mode for better contrast
+			light: appColors.secondary.light,
+			dark: appColors.secondary.main, // Using standard color as dark in dark mode
 			contrastText: appColors.secondary.contrastText,
+		},
+		success: {
+			main: appColors.status.success,
+		},
+		warning: {
+			main: appColors.status.warning,
+		},
+		error: {
+			main: appColors.status.error,
+		},
+		info: {
+			main: appColors.status.info,
 		},
 		background: {
 			default: appColors.dark.background,
@@ -91,6 +120,7 @@ const darkTheme = createTheme({
 			primary: appColors.dark.text.primary,
 			secondary: appColors.dark.text.secondary,
 		},
+		divider: appColors.dark.divider,
 	},
 	typography: {
 		fontFamily: "'Quicksand', 'Roboto', 'Arial', sans-serif",
@@ -109,7 +139,8 @@ const darkTheme = createTheme({
 			styleOverrides: {
 				root: {
 					borderRadius: 12,
-					boxShadow: "0 4px 12px 0 rgba(0,0,0,0.15)",
+					boxShadow: "0 4px 12px 0 rgba(0,0,0,0.3)",
+					border: "1px solid rgba(255,255,255,0.12)", // Adds subtle border for better card visibility
 				},
 			},
 		},
@@ -119,10 +150,32 @@ const darkTheme = createTheme({
 					borderRadius: 8,
 					textTransform: "none",
 				},
+				outlined: {
+					borderWidth: "2px", // Thicker borders for better visibility in dark mode
+				},
+			},
+		},
+		MuiDivider: {
+			styleOverrides: {
+				root: {
+					opacity: 0.6, // Make dividers more visible
+				},
+			},
+		},
+		MuiTableRow: {
+			styleOverrides: {
+				root: {
+					"&:hover": {
+						backgroundColor: "rgba(255,255,255,0.08)", // More visible hover effect
+					},
+				},
 			},
 		},
 	},
 });
+
+// Apply extensions to dark theme
+const darkTheme = extendTheme(darkThemeBase);
 
 // This component will use the ThemeContext and apply the appropriate MUI theme
 const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({

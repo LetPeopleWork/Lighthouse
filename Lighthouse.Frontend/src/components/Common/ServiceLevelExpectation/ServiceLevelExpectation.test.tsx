@@ -4,20 +4,13 @@ import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import ServiceLevelExpectation from "./ServiceLevelExpectation";
 
 // Mock the Material-UI theme
+import { testTheme } from "../../../tests/testTheme";
+
 vi.mock("@mui/material", async () => {
 	const actual = await vi.importActual("@mui/material");
 	return {
 		...actual,
-		useTheme: () => ({
-			palette: {
-				primary: {
-					main: "#1976d2",
-					light: "#42a5f5",
-					contrastText: "#ffffff",
-				},
-				mode: "light",
-			},
-		}),
+		useTheme: () => testTheme,
 	};
 });
 

@@ -10,6 +10,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { IProgressable } from "../../../models/IProgressable";
+import { hexToRgba } from "../../../utils/theme/colors";
 
 interface ProgressIndicatorProps {
 	title: React.ReactNode;
@@ -93,7 +94,7 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 							fontSize: `${Math.min(height * 0.6, 12)}px`,
 							textShadow:
 								completionPercentage > 50
-									? "0px 0px 2px rgba(0,0,0,0.7)"
+									? `0px 0px 2px ${hexToRgba(theme.palette.common.black, 0.7)}`
 									: "none",
 						}}
 					>

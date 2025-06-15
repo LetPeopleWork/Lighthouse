@@ -12,12 +12,14 @@ import {
 	TableHead,
 	TableRow,
 	Typography,
+	useTheme,
 } from "@mui/material";
 import type { IWorkItem } from "../../../models/WorkItem";
 import {
 	certainColor,
 	confidentColor,
 	getStateColor,
+	hexToRgba,
 	realisticColor,
 	riskyColor,
 } from "../../../utils/theme/colors";
@@ -41,6 +43,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	timeMetric = "age",
 	sle,
 }) => {
+	const theme = useTheme();
 	const sortedItems = [...items].sort((a, b) => {
 		if (timeMetric === "ageCycleTime") {
 			// For combined mode, sort by state category first (active items before done)
@@ -86,16 +89,17 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		const seventyPercentSLE = sle * 0.7;
 		const fiftyPercentSLE = sle * 0.5;
 
+		// Using updated forecast colors with better contrast
 		if (timeValue > sle) {
-			return riskyColor;
+			return riskyColor; // Enhanced red
 		}
 		if (timeValue >= seventyPercentSLE) {
-			return realisticColor;
+			return realisticColor; // Enhanced orange
 		}
 		if (timeValue >= fiftyPercentSLE) {
-			return confidentColor;
+			return confidentColor; // Enhanced light green
 		}
-		return certainColor;
+		return certainColor; // Enhanced green
 	};
 
 	return (
@@ -157,23 +161,37 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 											variant="outlined"
 										/>
 									</TableCell>
-									<TableCell
-										sx={{
-											color: getTimeColor(getTimeValue(item)),
-											fontWeight: sle ? "bold" : "normal",
-										}}
-									>
-										{formatTime(getTimeValue(item))}
-										{timeMetric === "ageCycleTime" && (
-											<Typography
-												variant="caption"
-												sx={{ ml: 1, fontStyle: "italic" }}
-											>
-												{item.stateCategory === "Done"
-													? "(Cycle Time)"
-													: "(Age)"}
-											</Typography>
-										)}
+									<TableCell>
+										<Typography
+											variant="body2"
+											sx={{
+												color: getTimeColor(getTimeValue(item)),
+												fontWeight: sle ? "bold" : "normal",
+												padding: "4px 8px",
+												borderRadius: 1,
+												display: "inline-flex",
+												alignItems: "center",
+												backgroundColor: getTimeColor(getTimeValue(item))
+													? hexToRgba(
+															getTimeColor(getTimeValue(item)) ??
+																theme.palette.text.primary,
+															0.1,
+														)
+													: "transparent",
+											}}
+										>
+											{formatTime(getTimeValue(item))}
+											{timeMetric === "ageCycleTime" && (
+												<Typography
+													variant="caption"
+													sx={{ ml: 1, fontStyle: "italic" }}
+												>
+													{item.stateCategory === "Done"
+														? "(Cycle Time)"
+														: "(Age)"}
+												</Typography>
+											)}
+										</Typography>
 									</TableCell>
 								</TableRow>
 							))}

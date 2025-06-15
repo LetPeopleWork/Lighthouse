@@ -4,12 +4,14 @@ import {
 	FormControlLabel,
 	Switch,
 	Typography,
+	useTheme,
 } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { addDays } from "date-fns";
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import { hexToRgba } from "../../../utils/theme/colors";
 
 export interface AreaChartItem {
 	index: number;
@@ -30,6 +32,7 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 	startDate,
 	title = "Stacked Area Chart",
 }) => {
+	const theme = useTheme();
 	const [chartData, setChartData] = useState<Date[]>([]);
 	const [showTrend, setShowTrend] = useState<boolean>(true);
 
@@ -70,12 +73,16 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 	});
 
 	const areaSeries = sortedAreas.map((areaItem, idx) => {
+		// Calculate appropriate color (use theme.opacity for consistent appearance)
+		const areaColor = areaItem.color ?? theme.palette.primary.main;
+
 		return {
 			data: areaDataArrays[idx],
 			label: areaItem.title,
 			area: true,
 			showMark: false,
-			color: areaItem.color ? `${areaItem.color}50` : undefined,
+			// Use hexToRgba for better control of area opacity with theme-specific opacity
+			color: hexToRgba(areaColor, theme.opacity.high),
 		};
 	});
 
@@ -88,14 +95,19 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 			lineData[0] = areaData[0];
 			lineData[areaData.length - 1] = areaData[areaData.length - 1];
 
+			// Enhanced visibility for trend lines
+			const lineColor = areaItem.color ?? theme.palette.primary.main;
+			// Use emphasis to determine line width based on theme
+			const lineWidth = theme.emphasis.high / 200 + 2;
+
 			return {
 				data: lineData,
 				label: `${areaItem.title} Trend`,
 				area: false,
 				showMark: false,
-				color: areaItem.color,
-				curve: "linear",
-				lineWidth: 2,
+				color: lineColor,
+				curve: "linear" as const, // Type assertion to fix the error
+				lineWidth,
 				connectNulls: true,
 				id: `trend-${idx}`,
 				showInLegend: false,

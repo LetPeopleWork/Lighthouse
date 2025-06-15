@@ -7,6 +7,7 @@ import {
 	Stack,
 	Tooltip,
 	Typography,
+	useTheme,
 } from "@mui/material";
 import type React from "react";
 import type { Team } from "../../../models/Team/Team";
@@ -18,19 +19,22 @@ interface ForecastConfigurationProps {
 const ForecastConfiguration: React.FC<ForecastConfigurationProps> = ({
 	team,
 }) => {
+	const theme = useTheme();
 	return (
 		<Card
-			elevation={1}
+			elevation={0}
 			sx={{
-				backgroundColor: (theme) => theme.palette.primary.light,
-				borderRadius: 1,
-				maxHeight: 40,
+				backgroundColor: "transparent",
+				borderRadius: 2,
 				minWidth: 250,
 				maxWidth: 300,
+				border: `2px dashed ${theme.palette.primary.main}`,
+				boxShadow: "none",
+				p: 0,
 			}}
 		>
 			<CardContent
-				sx={{ padding: "4px 8px", "&:last-child": { paddingBottom: "4px" } }}
+				sx={{ padding: "8px 12px", "&:last-child": { paddingBottom: "8px" } }}
 			>
 				{" "}
 				<Stack
@@ -42,13 +46,15 @@ const ForecastConfiguration: React.FC<ForecastConfigurationProps> = ({
 					}}
 				>
 					<Grid>
+						{" "}
 						<Typography
 							variant="caption"
 							sx={{
 								display: "block",
-								fontWeight: 500,
+								fontWeight: theme.emphasis.high,
 								lineHeight: 1,
-								color: "primary.contrastText",
+								color: theme.palette.primary.main,
+								mb: 0.5,
 							}}
 						>
 							Forecast Configuration:
@@ -56,7 +62,8 @@ const ForecastConfiguration: React.FC<ForecastConfigurationProps> = ({
 						<Typography
 							variant="body2"
 							sx={{
-								color: "primary.contrastText",
+								color: theme.palette.text.primary,
+								fontWeight: theme.emphasis.medium,
 							}}
 						>
 							{`${team.throughputStartDate.toLocaleDateString()} - ${team.throughputEndDate.toLocaleDateString()}`}
@@ -64,8 +71,17 @@ const ForecastConfiguration: React.FC<ForecastConfigurationProps> = ({
 					</Grid>
 					{team.useFixedDatesForThroughput && (
 						<Tooltip title="This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts">
-							<IconButton size="small" sx={{ ml: "auto" }}>
-								<GppMaybeOutlinedIcon sx={{ color: "warning.main" }} />
+							<IconButton
+								size="small"
+								sx={{
+									ml: "auto",
+									color: theme.palette.warning.main,
+									"&:hover": {
+										backgroundColor: theme.effects.hover.background,
+									},
+								}}
+							>
+								<GppMaybeOutlinedIcon />
 							</IconButton>
 						</Tooltip>
 					)}
