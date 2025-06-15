@@ -58,14 +58,14 @@ describe("ItemsInProgress component", () => {
 		expect(chip.closest(".MuiChip-colorSuccess")).not.toBeNull();
 	});
 
-	it("should apply info color to chip when count is less than idealWip", () => {
+	it("should apply warning color to chip when count is less than idealWip", () => {
 		render(
 			<ItemsInProgress title="Work Items" items={mockItems} idealWip={3} />,
 		);
 
 		const chip = screen.getByText("Goal: 3");
 		expect(chip).toBeInTheDocument();
-		expect(chip.closest(".MuiChip-colorInfo")).not.toBeNull();
+		expect(chip.closest(".MuiChip-colorWarning")).not.toBeNull();
 	});
 
 	it("should apply error color to chip when count is greater than idealWip", () => {

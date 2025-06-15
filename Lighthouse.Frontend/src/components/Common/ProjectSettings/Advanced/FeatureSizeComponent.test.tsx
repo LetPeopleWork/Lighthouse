@@ -30,7 +30,7 @@ describe("FeatureSizeComponent", () => {
 		involvedTeams: [],
 		serviceLevelExpectationProbability: 85,
 		serviceLevelExpectationRange: 30,
-		systemWipLimit: 0,
+		systemWIPLimit: 0,
 	};
 
 	const mockOnProjectSettingsChange = vi.fn();

@@ -111,7 +111,7 @@ describe("TeamService", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -142,7 +142,7 @@ describe("TeamService", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 		const mockResponse: ITeamSettings = { ...newTeamSettings, id: 1 };
 
@@ -174,7 +174,7 @@ describe("TeamService", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 
 		mockedAxios.put.mockResolvedValueOnce({ data: updatedTeamSettings });
@@ -224,7 +224,7 @@ describe("TeamService", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
@@ -258,7 +258,7 @@ describe("TeamService", () => {
 			automaticallyAdjustFeatureWIP: true,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: false });

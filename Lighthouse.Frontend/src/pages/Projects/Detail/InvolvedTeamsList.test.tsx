@@ -25,7 +25,7 @@ describe("InvolvedTeamsList component", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		},
 		{
 			id: 2,
@@ -46,7 +46,7 @@ describe("InvolvedTeamsList component", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		},
 	];
 

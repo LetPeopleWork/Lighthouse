@@ -22,7 +22,7 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 	const getChipColor = () => {
 		if (idealWip == null) return "default";
 		if (count === idealWip) return "success";
-		if (count < idealWip) return "info";
+		if (count < idealWip) return "warning";
 		return "error";
 	};
 

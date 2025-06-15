@@ -240,7 +240,7 @@ describe("ModifyProjectSettings", () => {
 		sizeEstimateField: "",
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
-		systemWipLimit: 0,
+		systemWIPLimit: 0,
 	};
 
 	beforeEach(() => {

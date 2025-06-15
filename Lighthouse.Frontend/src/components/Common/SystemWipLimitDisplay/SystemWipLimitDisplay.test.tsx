@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import SystemWipLimitDisplay from "./SystemWipLimitDisplay";
+import SystemWIPLimitDisplay from "./SystemWipLimitDisplay";
 
 // Mock Material UI theme hook
 vi.mock("@mui/material", async () => {
@@ -25,7 +25,7 @@ vi.mock("@mui/material", async () => {
 	};
 });
 
-describe("SystemWipLimitDisplay", () => {
+describe("SystemWIPLimitDisplay", () => {
 	const createMockFeatureOwner = (systemWIPLimit: number): IFeatureOwner => ({
 		name: "Test Owner",
 		id: 1,
@@ -43,7 +43,7 @@ describe("SystemWipLimitDisplay", () => {
 	it("should not render when hide prop is true", () => {
 		const featureOwner = createMockFeatureOwner(5);
 		const { container } = render(
-			<SystemWipLimitDisplay featureOwner={featureOwner} hide={true} />,
+			<SystemWIPLimitDisplay featureOwner={featureOwner} hide={true} />,
 		);
 
 		expect(container.firstChild).toBeNull();
@@ -52,7 +52,7 @@ describe("SystemWipLimitDisplay", () => {
 	it("should not render when systemWIPLimit is 0", () => {
 		const featureOwner = createMockFeatureOwner(0);
 		const { container } = render(
-			<SystemWipLimitDisplay featureOwner={featureOwner} />,
+			<SystemWIPLimitDisplay featureOwner={featureOwner} />,
 		);
 
 		expect(container.firstChild).toBeNull();
@@ -61,7 +61,7 @@ describe("SystemWipLimitDisplay", () => {
 	it("should not render when systemWIPLimit is negative", () => {
 		const featureOwner = createMockFeatureOwner(-1);
 		const { container } = render(
-			<SystemWipLimitDisplay featureOwner={featureOwner} />,
+			<SystemWIPLimitDisplay featureOwner={featureOwner} />,
 		);
 
 		expect(container.firstChild).toBeNull();
@@ -69,7 +69,7 @@ describe("SystemWipLimitDisplay", () => {
 
 	it("should render with correct WIP limit when systemWIPLimit is 1", () => {
 		const featureOwner = createMockFeatureOwner(1);
-		render(<SystemWipLimitDisplay featureOwner={featureOwner} />);
+		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
 		expect(screen.getByText("System WIP Limit")).toBeInTheDocument();
 		expect(screen.getByText("1 Work Item")).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe("SystemWipLimitDisplay", () => {
 
 	it("should render with correct WIP limit when systemWIPLimit is greater than 1", () => {
 		const featureOwner = createMockFeatureOwner(5);
-		render(<SystemWipLimitDisplay featureOwner={featureOwner} />);
+		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
 		expect(screen.getByText("System WIP Limit")).toBeInTheDocument();
 		expect(screen.getByText("5 Work Items")).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe("SystemWipLimitDisplay", () => {
 
 	it("should use default hide value when not provided", () => {
 		const featureOwner = createMockFeatureOwner(5);
-		render(<SystemWipLimitDisplay featureOwner={featureOwner} />);
+		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
 		expect(screen.getByText("System WIP Limit")).toBeInTheDocument();
 	});

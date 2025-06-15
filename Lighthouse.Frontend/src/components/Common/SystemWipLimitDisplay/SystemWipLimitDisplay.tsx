@@ -2,12 +2,12 @@ import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import type React from "react";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 
-interface SystemWipLimitDisplayProps {
+interface SystemWIPLimitDisplayProps {
 	featureOwner: IFeatureOwner;
 	hide?: boolean;
 }
 
-const SystemWipLimitDisplay: React.FC<SystemWipLimitDisplayProps> = ({
+const SystemWIPLimitDisplay: React.FC<SystemWIPLimitDisplayProps> = ({
 	featureOwner,
 	hide = false,
 }) => {
@@ -60,4 +60,4 @@ const SystemWipLimitDisplay: React.FC<SystemWipLimitDisplayProps> = ({
 	);
 };
 
-export default SystemWipLimitDisplay;
+export default SystemWIPLimitDisplay;

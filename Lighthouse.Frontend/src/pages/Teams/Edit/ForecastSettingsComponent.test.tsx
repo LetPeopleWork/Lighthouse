@@ -40,7 +40,7 @@ describe("ForecastSettingsComponent", () => {
 		automaticallyAdjustFeatureWIP: false,
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
-		systemWipLimit: 0,
+		systemWIPLimit: 0,
 	};
 
 	it("renders correctly with provided teamSettings", () => {

@@ -1,12 +1,12 @@
 import { Checkbox, FormControlLabel, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import InputGroup from "../InputGroup/InputGroup";
 
 interface FlowMetricsConfigurationComponentProps<T extends IBaseSettings> {
-	settings: T | null;
-	onSettingsChange: <K extends keyof T>(key: K, value: T[K]) => void;
+	settings: T;
+	onSettingsChange: (key: keyof T, value: number | boolean) => void;
 	showFeatureWip?: boolean;
 }
 
@@ -15,245 +15,80 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	onSettingsChange,
 	showFeatureWip = false,
 }: FlowMetricsConfigurationComponentProps<T>) => {
-	// SLE states
 	const [isSleEnabled, setIsSleEnabled] = useState(false);
-	const [inputProbability, setInputProbability] = useState<string>("");
-	const [inputRange, setInputRange] = useState<string>("");
-
-	// WIP Limit states
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
-	const [inputWipLimit, setInputWipLimit] = useState<string>("");
-
-	// Feature WIP states
 	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
-	const [inputFeatureWip, setInputFeatureWip] = useState<string>("");
-	const [isAutomaticallyAdjustFeatureWip, setIsAutomaticallyAdjustFeatureWip] =
-		useState(false);
 
-	// Initialize WIP Limit state
 	useEffect(() => {
-		const isCurrentlyEnabled = Boolean((settings?.systemWipLimit ?? 0) > 0);
-		setIsWipLimitEnabled(isCurrentlyEnabled);
-		setInputWipLimit(String(settings?.systemWipLimit ?? 0));
-	}, [settings?.systemWipLimit]);
-
-	// Initialize Feature WIP state
-	useEffect(() => {
-		if (showFeatureWip && settings) {
-			const featureWip =
-				"featureWIP" in settings
-					? (settings.featureWIP as number | undefined)
-					: undefined;
-			const isCurrentlyEnabled = Boolean((featureWip ?? 0) > 0);
-			setIsFeatureWipEnabled(isCurrentlyEnabled);
-			setInputFeatureWip(String(featureWip ?? 0));
-
-			// Initialize automatically adjust feature WIP
-			if ("automaticallyAdjustFeatureWIP" in settings) {
-				setIsAutomaticallyAdjustFeatureWip(
-					settings.automaticallyAdjustFeatureWIP as boolean,
-				);
-			}
-		}
+		setIsSleEnabled(
+			settings.serviceLevelExpectationProbability > 50 &&
+				settings.serviceLevelExpectationRange >= 0,
+		);
+		setIsWipLimitEnabled(settings.systemWIPLimit > 0);
+		setIsFeatureWipEnabled(
+			showFeatureWip &&
+				"featureWIP" in settings &&
+				Number(settings.featureWIP) > 0,
+		);
 	}, [settings, showFeatureWip]);
 
-	// Initialize SLE states
-	useEffect(() => {
-		const isCurrentlyEnabled = Boolean(
-			(settings?.serviceLevelExpectationProbability ?? 0) > 0 &&
-				(settings?.serviceLevelExpectationRange ?? 0) > 0,
-		);
-		setIsSleEnabled(isCurrentlyEnabled);
-		setInputProbability(
-			String(settings?.serviceLevelExpectationProbability ?? 0),
-		);
-		setInputRange(String(settings?.serviceLevelExpectationRange ?? 0));
-	}, [
-		settings?.serviceLevelExpectationProbability,
-		settings?.serviceLevelExpectationRange,
-	]);
-
-	// WIP Limit handlers
 	const handleWipLimitEnableChange = (checked: boolean) => {
 		setIsWipLimitEnabled(checked);
 
-		if (checked) {
-			setInputWipLimit("5");
-			onSettingsChange("systemWipLimit" as keyof T, 5 as T[keyof T]);
+		if (!checked) {
+			onSettingsChange("systemWIPLimit", 0);
 		} else {
-			setInputWipLimit("0");
-			onSettingsChange("systemWipLimit" as keyof T, 0 as T[keyof T]);
+			onSettingsChange("systemWIPLimit", 1);
 		}
 	};
 
 	const handleWipLimitChange = (value: string) => {
-		setInputWipLimit(value);
+		const newLimit = Number.parseInt(value, 10);
+		onSettingsChange("systemWIPLimit", newLimit);
 	};
 
-	const debouncedValidateWipLimit = useCallback(
-		(value: string) => {
-			const numValue = Number.parseInt(value, 10);
-
-			if (!Number.isNaN(numValue)) {
-				let validValue = numValue;
-
-				if (isWipLimitEnabled && numValue < 1) validValue = 1;
-
-				onSettingsChange("systemWipLimit" as keyof T, validValue as T[keyof T]);
-			}
-		},
-		[onSettingsChange, isWipLimitEnabled],
-	);
-
-	// Feature WIP handlers
 	const handleFeatureWipEnableChange = (checked: boolean) => {
 		setIsFeatureWipEnabled(checked);
 
-		if (checked) {
-			setInputFeatureWip("5");
-			onSettingsChange("featureWIP" as keyof T, 5 as T[keyof T]);
-		} else {
-			setInputFeatureWip("0");
-			onSettingsChange("featureWIP" as keyof T, 0 as T[keyof T]);
+		if ("featureWIP" in settings) {
+			if (!checked) {
+				onSettingsChange("featureWIP" as keyof T, 0);
+				onSettingsChange("automaticallyAdjustFeatureWIP" as keyof T, false);
+			} else {
+				onSettingsChange("featureWIP" as keyof T, 1);
+			}
 		}
 	};
 
 	const handleFeatureWipChange = (value: string) => {
-		setInputFeatureWip(value);
+		const newFeatureWip = Number.parseInt(value, 10);
+
+		if ("featureWIP" in settings) {
+			onSettingsChange("featureWIP" as keyof T, newFeatureWip);
+		}
 	};
 
-	const debouncedValidateFeatureWip = useCallback(
-		(value: string) => {
-			const numValue = Number.parseInt(value, 10);
-
-			if (!Number.isNaN(numValue)) {
-				let validValue = numValue;
-
-				if (isFeatureWipEnabled && numValue < 1) validValue = 1;
-
-				onSettingsChange("featureWIP" as keyof T, validValue as T[keyof T]);
-			}
-		},
-		[onSettingsChange, isFeatureWipEnabled],
-	);
-
-	// SLE handlers
 	const handleSleEnableChange = (checked: boolean) => {
 		setIsSleEnabled(checked);
 
 		if (checked) {
-			setInputProbability("80");
-			setInputRange("10");
-			onSettingsChange(
-				"serviceLevelExpectationProbability" as keyof T,
-				80 as T[keyof T],
-			);
-			onSettingsChange(
-				"serviceLevelExpectationRange" as keyof T,
-				10 as T[keyof T],
-			);
+			onSettingsChange("serviceLevelExpectationProbability", 70);
+			onSettingsChange("serviceLevelExpectationRange", 10);
 		} else {
-			setInputProbability("0");
-			setInputRange("0");
-			onSettingsChange(
-				"serviceLevelExpectationProbability" as keyof T,
-				0 as T[keyof T],
-			);
-			onSettingsChange(
-				"serviceLevelExpectationRange" as keyof T,
-				0 as T[keyof T],
-			);
+			onSettingsChange("serviceLevelExpectationProbability", 0);
+			onSettingsChange("serviceLevelExpectationRange", 0);
 		}
 	};
 
 	const handleProbabilityChange = (value: string) => {
-		setInputProbability(value);
+		const numValue = Number.parseInt(value, 10);
+		onSettingsChange("serviceLevelExpectationProbability", numValue);
 	};
 
 	const handleRangeChange = (value: string) => {
-		setInputRange(value);
+		const numValue = Number.parseInt(value, 10);
+		onSettingsChange("serviceLevelExpectationRange", numValue);
 	};
-
-	const debouncedValidateProbability = useCallback(
-		(value: string) => {
-			const numValue = Number.parseInt(value, 10);
-
-			if (!Number.isNaN(numValue)) {
-				let validValue = numValue;
-
-				if (isSleEnabled) {
-					// Validate only if enabled
-					if (numValue < 50) validValue = 50;
-					if (numValue > 95) validValue = 95;
-				}
-
-				onSettingsChange(
-					"serviceLevelExpectationProbability" as keyof T,
-					validValue as T[keyof T],
-				);
-			}
-		},
-		[onSettingsChange, isSleEnabled],
-	);
-
-	const debouncedValidateRange = useCallback(
-		(value: string) => {
-			const numValue = Number.parseInt(value, 10);
-
-			if (!Number.isNaN(numValue)) {
-				let validValue = numValue;
-
-				if (isSleEnabled && numValue < 1) validValue = 1;
-
-				onSettingsChange(
-					"serviceLevelExpectationRange" as keyof T,
-					validValue as T[keyof T],
-				);
-			}
-		},
-		[onSettingsChange, isSleEnabled],
-	);
-
-	// Debounced validation effects
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (inputWipLimit) {
-				debouncedValidateWipLimit(inputWipLimit);
-			}
-		}, 1000); // 1-second delay
-
-		return () => clearTimeout(timer);
-	}, [inputWipLimit, debouncedValidateWipLimit]);
-
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (inputFeatureWip) {
-				debouncedValidateFeatureWip(inputFeatureWip);
-			}
-		}, 1000); // 1-second delay
-
-		return () => clearTimeout(timer);
-	}, [inputFeatureWip, debouncedValidateFeatureWip]);
-
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (inputProbability) {
-				debouncedValidateProbability(inputProbability);
-			}
-		}, 1000); // 1-second delay
-
-		return () => clearTimeout(timer);
-	}, [inputProbability, debouncedValidateProbability]);
-
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (inputRange) {
-				debouncedValidateRange(inputRange);
-			}
-		}, 1000); // 1-second delay
-
-		return () => clearTimeout(timer);
-	}, [inputRange, debouncedValidateRange]);
 
 	return (
 		<InputGroup title={"Flow Metrics Configuration"} initiallyExpanded={false}>
@@ -276,7 +111,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 						type="number"
 						fullWidth
 						margin="normal"
-						value={inputWipLimit}
+						value={settings.systemWIPLimit}
 						slotProps={{
 							htmlInput: {
 								min: 1,
@@ -313,7 +148,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 									type="number"
 									fullWidth
 									margin="normal"
-									value={inputFeatureWip}
+									value={"featureWIP" in settings ? settings.featureWIP : 0}
 									slotProps={{
 										htmlInput: {
 											min: 1,
@@ -328,18 +163,16 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 								<FormControlLabel
 									control={
 										<Checkbox
-											checked={isAutomaticallyAdjustFeatureWip}
+											checked={
+												"automaticallyAdjustFeatureWIP" in settings
+													? Boolean(settings.automaticallyAdjustFeatureWIP)
+													: false
+											}
 											onChange={(e) => {
-												setIsAutomaticallyAdjustFeatureWip(e.target.checked);
-												if (
-													settings &&
-													"automaticallyAdjustFeatureWIP" in settings
-												) {
-													onSettingsChange(
-														"automaticallyAdjustFeatureWIP" as keyof T,
-														e.target.checked as T[keyof T],
-													);
-												}
+												onSettingsChange(
+													"automaticallyAdjustFeatureWIP" as keyof T,
+													e.target.checked,
+												);
 											}}
 										/>
 									}
@@ -371,7 +204,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							type="number"
 							fullWidth
 							margin="normal"
-							value={inputProbability}
+							value={settings.serviceLevelExpectationProbability}
 							slotProps={{
 								htmlInput: {
 									min: 50,
@@ -389,7 +222,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							type="number"
 							fullWidth
 							margin="normal"
-							value={inputRange}
+							value={settings.serviceLevelExpectationRange}
 							slotProps={{
 								htmlInput: {
 									min: 1,

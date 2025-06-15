@@ -110,7 +110,7 @@ describe("SettingsService", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
@@ -142,7 +142,7 @@ describe("SettingsService", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 		mockedAxios.put.mockResolvedValueOnce({});
 
@@ -176,7 +176,7 @@ describe("SettingsService", () => {
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -211,7 +211,7 @@ describe("SettingsService", () => {
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 
 		mockedAxios.put.mockResolvedValueOnce({});

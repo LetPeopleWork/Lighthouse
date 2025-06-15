@@ -324,100 +324,101 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
 			<Container maxWidth={false}>
-				<Grid container spacing={3}>
-					<Grid size={{ xs: 12 }}>
-						<Typography variant="h4">{title}</Typography>
-					</Grid>
-
-					<GeneralSettingsComponent
-						settings={projectSettings}
-						onSettingsChange={handleProjectSettingsChange}
-					/>
-
-					<WorkItemTypesComponent
-						workItemTypes={projectSettings?.workItemTypes || []}
-						onAddWorkItemType={handleAddWorkItemType}
-						onRemoveWorkItemType={handleRemoveWorkItemType}
-						isForTeam={false}
-					/>
-
-					{!modifyDefaultSettings ? (
-						<TeamsList
-							allTeams={teams}
-							selectedTeams={selectedTeams}
-							onSelectionChange={handleTeamSelectionChange}
+				{projectSettings && (
+					<Grid container spacing={3}>
+						<Grid size={{ xs: 12 }}>
+							<Typography variant="h4">{title}</Typography>
+						</Grid>
+						<GeneralSettingsComponent
+							settings={projectSettings}
+							onSettingsChange={handleProjectSettingsChange}
 						/>
-					) : (
-						<></>
-					)}
 
-					<StatesList
-						toDoStates={projectSettings?.toDoStates || []}
-						onAddToDoState={handleAddToDoState}
-						onRemoveToDoState={handleRemoveToDoState}
-						doingStates={projectSettings?.doingStates || []}
-						onAddDoingState={handleAddDoingState}
-						onRemoveDoingState={handleRemoveDoingState}
-						doneStates={projectSettings?.doneStates || []}
-						onAddDoneState={handleAddDoneState}
-						onRemoveDoneState={handleRemoveDoneState}
-						isForTeam={false}
-					/>
-
-					{!modifyDefaultSettings ? (
-						<WorkTrackingSystemComponent
-							workTrackingSystems={workTrackingSystems}
-							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
-							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
-							}
+						<WorkItemTypesComponent
+							workItemTypes={projectSettings?.workItemTypes || []}
+							onAddWorkItemType={handleAddWorkItemType}
+							onRemoveWorkItemType={handleRemoveWorkItemType}
+							isForTeam={false}
 						/>
-					) : (
-						<></>
-					)}
 
-					<TagsComponent
-						tags={projectSettings?.tags || []}
-						onAddTag={handleAddTag}
-						onRemoveTag={handleRemoveTag}
-					/>
-
-					<UnparentedItemsComponent
-						projectSettings={projectSettings}
-						onProjectSettingsChange={handleProjectSettingsChange}
-					/>
-
-					<FeatureSizeComponent
-						projectSettings={projectSettings}
-						onProjectSettingsChange={handleProjectSettingsChange}
-					/>
-
-					<OwnershipComponent
-						projectSettings={projectSettings}
-						onProjectSettingsChange={handleProjectSettingsChange}
-						currentInvolvedTeams={teams.filter((team) =>
-							selectedTeams.includes(team.id),
+						{!modifyDefaultSettings ? (
+							<TeamsList
+								allTeams={teams}
+								selectedTeams={selectedTeams}
+								onSelectionChange={handleTeamSelectionChange}
+							/>
+						) : (
+							<></>
 						)}
-					/>
 
-					<FlowMetricsConfigurationComponent
-						settings={projectSettings}
-						onSettingsChange={handleProjectSettingsChange}
-					/>
-
-					<Grid
-						size={{ xs: 12 }}
-						sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
-					>
-						<ValidationActions
-							onValidate={modifyDefaultSettings ? undefined : handleValidate}
-							onSave={handleSave}
-							inputsValid={formValid}
-							validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no Features could be found. Check the logs for additional details."
+						<StatesList
+							toDoStates={projectSettings?.toDoStates || []}
+							onAddToDoState={handleAddToDoState}
+							onRemoveToDoState={handleRemoveToDoState}
+							doingStates={projectSettings?.doingStates || []}
+							onAddDoingState={handleAddDoingState}
+							onRemoveDoingState={handleRemoveDoingState}
+							doneStates={projectSettings?.doneStates || []}
+							onAddDoneState={handleAddDoneState}
+							onRemoveDoneState={handleRemoveDoneState}
+							isForTeam={false}
 						/>
+
+						{!modifyDefaultSettings ? (
+							<WorkTrackingSystemComponent
+								workTrackingSystems={workTrackingSystems}
+								selectedWorkTrackingSystem={selectedWorkTrackingSystem}
+								onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
+								onNewWorkTrackingSystemConnectionAdded={
+									handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
+								}
+							/>
+						) : (
+							<></>
+						)}
+
+						<TagsComponent
+							tags={projectSettings?.tags || []}
+							onAddTag={handleAddTag}
+							onRemoveTag={handleRemoveTag}
+						/>
+
+						<UnparentedItemsComponent
+							projectSettings={projectSettings}
+							onProjectSettingsChange={handleProjectSettingsChange}
+						/>
+
+						<FeatureSizeComponent
+							projectSettings={projectSettings}
+							onProjectSettingsChange={handleProjectSettingsChange}
+						/>
+
+						<OwnershipComponent
+							projectSettings={projectSettings}
+							onProjectSettingsChange={handleProjectSettingsChange}
+							currentInvolvedTeams={teams.filter((team) =>
+								selectedTeams.includes(team.id),
+							)}
+						/>
+
+						<FlowMetricsConfigurationComponent
+							settings={projectSettings}
+							onSettingsChange={handleProjectSettingsChange}
+						/>
+
+						<Grid
+							size={{ xs: 12 }}
+							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
+						>
+							<ValidationActions
+								onValidate={modifyDefaultSettings ? undefined : handleValidate}
+								onSave={handleSave}
+								inputsValid={formValid}
+								validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no Features could be found. Check the logs for additional details."
+							/>
+						</Grid>
 					</Grid>
-				</Grid>
+				)}
 			</Container>
 		</LoadingAnimation>
 	);

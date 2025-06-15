@@ -279,84 +279,86 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
 			<Container maxWidth={false}>
-				<Grid container spacing={3}>
-					<Grid size={{ xs: 12 }}>
-						<Typography variant="h4">{title}</Typography>
-					</Grid>
+				{teamSettings && (
+					<Grid container spacing={3}>
+						<Grid size={{ xs: 12 }}>
+							<Typography variant="h4">{title}</Typography>
+						</Grid>
 
-					<GeneralSettingsComponent
-						settings={teamSettings}
-						onSettingsChange={handleTeamSettingsChange}
-					/>
-
-					<ForecastSettingsComponent
-						teamSettings={teamSettings}
-						onTeamSettingsChange={handleTeamSettingsChange}
-						isDefaultSettings={modifyDefaultSettings}
-					/>
-
-					<WorkItemTypesComponent
-						workItemTypes={teamSettings?.workItemTypes || []}
-						onAddWorkItemType={handleAddWorkItemType}
-						onRemoveWorkItemType={handleRemoveWorkItemType}
-						isForTeam={true}
-					/>
-
-					<StatesList
-						toDoStates={teamSettings?.toDoStates || []}
-						onAddToDoState={handleAddToDoState}
-						onRemoveToDoState={handleRemoveToDoState}
-						doingStates={teamSettings?.doingStates || []}
-						onAddDoingState={handleAddDoingState}
-						onRemoveDoingState={handleRemoveDoingState}
-						doneStates={teamSettings?.doneStates || []}
-						onAddDoneState={handleAddDoneState}
-						onRemoveDoneState={handleRemoveDoneState}
-						isForTeam={true}
-					/>
-
-					{!modifyDefaultSettings ? (
-						<WorkTrackingSystemComponent
-							workTrackingSystems={workTrackingSystems}
-							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
-							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
-							onNewWorkTrackingSystemConnectionAdded={
-								handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
-							}
+						<GeneralSettingsComponent
+							settings={teamSettings}
+							onSettingsChange={handleTeamSettingsChange}
 						/>
-					) : (
-						<></>
-					)}
 
-					<TagsComponent
-						tags={teamSettings?.tags || []}
-						onAddTag={handleAddTag}
-						onRemoveTag={handleRemoveTag}
-					/>
-
-					<FlowMetricsConfigurationComponent
-						settings={teamSettings}
-						onSettingsChange={handleTeamSettingsChange}
-						showFeatureWip={true}
-					/>
-
-					<AdvancedInputsComponent
-						teamSettings={teamSettings}
-						onTeamSettingsChange={handleTeamSettingsChange}
-					/>
-
-					<Grid
-						size={{ xs: 12 }}
-						sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
-					>
-						<ValidationActions
-							onValidate={modifyDefaultSettings ? undefined : handleValidate}
-							onSave={handleSave}
-							inputsValid={inputsValid}
-							validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no closed items in the specified history could be found. Check the logs for additional details."
+						<ForecastSettingsComponent
+							teamSettings={teamSettings}
+							onTeamSettingsChange={handleTeamSettingsChange}
+							isDefaultSettings={modifyDefaultSettings}
 						/>
+
+						<WorkItemTypesComponent
+							workItemTypes={teamSettings?.workItemTypes || []}
+							onAddWorkItemType={handleAddWorkItemType}
+							onRemoveWorkItemType={handleRemoveWorkItemType}
+							isForTeam={true}
+						/>
+
+						<StatesList
+							toDoStates={teamSettings?.toDoStates || []}
+							onAddToDoState={handleAddToDoState}
+							onRemoveToDoState={handleRemoveToDoState}
+							doingStates={teamSettings?.doingStates || []}
+							onAddDoingState={handleAddDoingState}
+							onRemoveDoingState={handleRemoveDoingState}
+							doneStates={teamSettings?.doneStates || []}
+							onAddDoneState={handleAddDoneState}
+							onRemoveDoneState={handleRemoveDoneState}
+							isForTeam={true}
+						/>
+
+						{!modifyDefaultSettings ? (
+							<WorkTrackingSystemComponent
+								workTrackingSystems={workTrackingSystems}
+								selectedWorkTrackingSystem={selectedWorkTrackingSystem}
+								onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
+								onNewWorkTrackingSystemConnectionAdded={
+									handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
+								}
+							/>
+						) : (
+							<></>
+						)}
+
+						<TagsComponent
+							tags={teamSettings?.tags || []}
+							onAddTag={handleAddTag}
+							onRemoveTag={handleRemoveTag}
+						/>
+
+						<FlowMetricsConfigurationComponent
+							settings={teamSettings}
+							onSettingsChange={handleTeamSettingsChange}
+							showFeatureWip={true}
+						/>
+
+						<AdvancedInputsComponent
+							teamSettings={teamSettings}
+							onTeamSettingsChange={handleTeamSettingsChange}
+						/>
+
+						<Grid
+							size={{ xs: 12 }}
+							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
+						>
+							<ValidationActions
+								onValidate={modifyDefaultSettings ? undefined : handleValidate}
+								onSave={handleSave}
+								inputsValid={inputsValid}
+								validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no closed items in the specified history could be found. Check the logs for additional details."
+							/>
+						</Grid>
 					</Grid>
-				</Grid>
+				)}
 			</Container>
 		</LoadingAnimation>
 	);

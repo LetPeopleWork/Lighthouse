@@ -8,7 +8,7 @@ import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
-import SystemWipLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
+import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import type { IProject, Project } from "../../../models/Project/Project";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -182,7 +182,7 @@ const ProjectDetail: React.FC = () => {
 												featureOwner={project}
 												hide={activeView !== "forecast"}
 											/>
-											<SystemWipLimitDisplay
+											<SystemWIPLimitDisplay
 												featureOwner={project}
 												hide={activeView !== "forecast"}
 											/>

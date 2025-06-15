@@ -210,7 +210,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private SimulationResult GetSimulationResultsOfFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults)
         {
             var featuresRemaining = simulationResults.Where(x => x.HasWorkRemaining);
-            var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP, featuresRemaining.Count());
+            var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP > 0 ? team.FeatureWIP : 1, featuresRemaining.Count());
             var featureWorkedOn = randomNumberService.GetRandomNumber(featureWorkedOnIndex);
 
             var itemToUpdate = featuresRemaining.ElementAt(featureWorkedOn);

@@ -24,7 +24,7 @@ describe("AdvancedInputsComponent", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 
 		render(
@@ -61,7 +61,7 @@ describe("AdvancedInputsComponent", () => {
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
+			systemWIPLimit: 0,
 		};
 
 		render(

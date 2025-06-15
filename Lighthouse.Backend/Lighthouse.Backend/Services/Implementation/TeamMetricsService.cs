@@ -195,11 +195,7 @@ namespace Lighthouse.Backend.Services.Implementation
             if (team.AutomaticallyAdjustFeatureWIP)
             {
                 var featureWip = GetCurrentFeaturesInProgressForTeam(team).Count();
-
-                if (featureWip > 0)
-                {
-                    team.FeatureWIP = featureWip;
-                }
+                team.FeatureWIP = featureWip;
             }
         }
 

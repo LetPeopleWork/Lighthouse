@@ -9,7 +9,7 @@ import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/Fe
 import ForecastConfiguration from "../../../components/Common/ForecastConfiguration/ForecastConfiguration";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
-import SystemWipLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
+import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
@@ -131,7 +131,7 @@ const TeamDetail: React.FC = () => {
 												featureOwner={team}
 												hide={activeView !== "forecast"}
 											/>
-											<SystemWipLimitDisplay
+											<SystemWIPLimitDisplay
 												featureOwner={team}
 												hide={activeView !== "forecast"}
 											/>

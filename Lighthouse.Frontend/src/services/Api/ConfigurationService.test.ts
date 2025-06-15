@@ -170,7 +170,7 @@ describe("ConfigurationService", () => {
 					workTrackingSystemConnectionId: 0,
 					serviceLevelExpectationProbability: 0,
 					serviceLevelExpectationRange: 0,
-					systemWipLimit: 0,
+					systemWIPLimit: 0,
 				},
 			],
 			projects: [
@@ -194,7 +194,7 @@ describe("ConfigurationService", () => {
 					workTrackingSystemConnectionId: 0,
 					serviceLevelExpectationProbability: 0,
 					serviceLevelExpectationRange: 0,
-					systemWipLimit: 0,
+					systemWIPLimit: 0,
 				},
 			],
 		};
