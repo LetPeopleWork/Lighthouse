@@ -334,14 +334,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						onRemoveTag={handleRemoveTag}
 					/>
 
-					<AdvancedInputsComponent
-						teamSettings={teamSettings}
-						onTeamSettingsChange={handleTeamSettingsChange}
-					/>
-
 					<FlowMetricsConfigurationComponent
 						settings={teamSettings}
 						onSettingsChange={handleTeamSettingsChange}
+						showFeatureWip={true}
+					/>
+
+					<AdvancedInputsComponent
+						teamSettings={teamSettings}
+						onTeamSettingsChange={handleTeamSettingsChange}
 					/>
 
 					<Grid

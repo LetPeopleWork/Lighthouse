@@ -6,7 +6,10 @@ import FlowMetricsConfigurationComponent from "./FlowMetricsConfigurationCompone
 describe("FlowMetricsConfigurationComponent", () => {
 	const mockOnSettingsChange = vi.fn();
 
-	const fullTestSettings: IBaseSettings = {
+	const fullTestSettings: IBaseSettings & {
+		featureWIP?: number;
+		automaticallyAdjustFeatureWIP?: boolean;
+	} = {
 		id: 1,
 		name: "Test Settings",
 		workItemQuery: "Test Query",
@@ -19,13 +22,20 @@ describe("FlowMetricsConfigurationComponent", () => {
 		serviceLevelExpectationProbability: 85,
 		serviceLevelExpectationRange: 30,
 		systemWipLimit: 5,
+		featureWIP: 3,
+		automaticallyAdjustFeatureWIP: true,
 	};
 
-	const disabledSettings: IBaseSettings = {
+	const disabledSettings: IBaseSettings & {
+		featureWIP?: number;
+		automaticallyAdjustFeatureWIP?: boolean;
+	} = {
 		...fullTestSettings,
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
 		systemWipLimit: 0,
+		featureWIP: 0,
+		automaticallyAdjustFeatureWIP: false,
 	};
 
 	beforeEach(() => {
@@ -275,6 +285,130 @@ describe("FlowMetricsConfigurationComponent", () => {
 		expect(mockOnSettingsChange).toHaveBeenCalledWith(
 			"serviceLevelExpectationRange",
 			1,
+		);
+	});
+
+	it("renders feature WIP section when showFeatureWip is true", () => {
+		render(
+			<FlowMetricsConfigurationComponent
+				settings={fullTestSettings}
+				onSettingsChange={mockOnSettingsChange}
+				showFeatureWip={true}
+			/>,
+		);
+
+		// Feature WIP checkbox should be shown and checked
+		expect(screen.getByLabelText("Set Feature WIP")).toBeChecked();
+		expect(screen.getByLabelText("Feature WIP")).toHaveValue(3);
+		expect(
+			screen.getByLabelText(
+				"Automatically Adjust Feature WIP based on actual WIP",
+			),
+		).toBeChecked();
+	});
+
+	it("doesn't render feature WIP section when showFeatureWip is false", () => {
+		render(
+			<FlowMetricsConfigurationComponent
+				settings={fullTestSettings}
+				onSettingsChange={mockOnSettingsChange}
+				showFeatureWip={false}
+			/>,
+		);
+
+		// Feature WIP checkbox should not be shown
+		expect(screen.queryByLabelText("Set Feature WIP")).not.toBeInTheDocument();
+		expect(screen.queryByLabelText("Feature WIP")).not.toBeInTheDocument();
+		expect(
+			screen.queryByLabelText(
+				"Automatically Adjust Feature WIP based on actual WIP",
+			),
+		).not.toBeInTheDocument();
+	});
+
+	it("enables Feature WIP when checkbox is clicked", () => {
+		render(
+			<FlowMetricsConfigurationComponent
+				settings={disabledSettings}
+				onSettingsChange={mockOnSettingsChange}
+				showFeatureWip={true}
+			/>,
+		);
+
+		const checkbox = screen.getByLabelText("Set Feature WIP");
+		fireEvent.click(checkbox);
+
+		expect(mockOnSettingsChange).toHaveBeenCalledWith("featureWIP", 5);
+		expect(checkbox).toBeChecked();
+	});
+
+	it("disables Feature WIP when checkbox is unchecked", () => {
+		render(
+			<FlowMetricsConfigurationComponent
+				settings={fullTestSettings}
+				onSettingsChange={mockOnSettingsChange}
+				showFeatureWip={true}
+			/>,
+		);
+
+		const checkbox = screen.getByLabelText("Set Feature WIP");
+		fireEvent.click(checkbox);
+
+		expect(mockOnSettingsChange).toHaveBeenCalledWith("featureWIP", 0);
+		expect(checkbox).not.toBeChecked();
+	});
+
+	it("updates Feature WIP when input changes", () => {
+		render(
+			<FlowMetricsConfigurationComponent
+				settings={fullTestSettings}
+				onSettingsChange={mockOnSettingsChange}
+				showFeatureWip={true}
+			/>,
+		);
+
+		const featureWipInput = screen.getByLabelText("Feature WIP");
+		fireEvent.change(featureWipInput, { target: { value: "10" } });
+
+		vi.advanceTimersByTime(1100); // Wait for debounce
+
+		expect(mockOnSettingsChange).toHaveBeenCalledWith("featureWIP", 10);
+	});
+
+	it("enforces minimum Feature WIP value of 1", () => {
+		render(
+			<FlowMetricsConfigurationComponent
+				settings={fullTestSettings}
+				onSettingsChange={mockOnSettingsChange}
+				showFeatureWip={true}
+			/>,
+		);
+
+		const featureWipInput = screen.getByLabelText("Feature WIP");
+		fireEvent.change(featureWipInput, { target: { value: "-5" } });
+
+		vi.advanceTimersByTime(1100); // Wait for debounce
+
+		expect(mockOnSettingsChange).toHaveBeenCalledWith("featureWIP", 1);
+	});
+
+	it("toggles automaticallyAdjustFeatureWIP when checkbox is clicked", () => {
+		render(
+			<FlowMetricsConfigurationComponent
+				settings={fullTestSettings}
+				onSettingsChange={mockOnSettingsChange}
+				showFeatureWip={true}
+			/>,
+		);
+
+		const checkbox = screen.getByLabelText(
+			"Automatically Adjust Feature WIP based on actual WIP",
+		);
+		fireEvent.click(checkbox);
+
+		expect(mockOnSettingsChange).toHaveBeenCalledWith(
+			"automaticallyAdjustFeatureWIP",
+			false,
 		);
 	});
 });

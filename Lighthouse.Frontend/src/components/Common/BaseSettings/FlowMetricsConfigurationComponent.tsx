@@ -7,11 +7,13 @@ import InputGroup from "../InputGroup/InputGroup";
 interface FlowMetricsConfigurationComponentProps<T extends IBaseSettings> {
 	settings: T | null;
 	onSettingsChange: <K extends keyof T>(key: K, value: T[K]) => void;
+	showFeatureWip?: boolean;
 }
 
 const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	settings,
 	onSettingsChange,
+	showFeatureWip = false,
 }: FlowMetricsConfigurationComponentProps<T>) => {
 	// SLE states
 	const [isSleEnabled, setIsSleEnabled] = useState(false);
@@ -22,12 +24,38 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
 	const [inputWipLimit, setInputWipLimit] = useState<string>("");
 
+	// Feature WIP states
+	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
+	const [inputFeatureWip, setInputFeatureWip] = useState<string>("");
+	const [isAutomaticallyAdjustFeatureWip, setIsAutomaticallyAdjustFeatureWip] =
+		useState(false);
+
 	// Initialize WIP Limit state
 	useEffect(() => {
 		const isCurrentlyEnabled = Boolean((settings?.systemWipLimit ?? 0) > 0);
 		setIsWipLimitEnabled(isCurrentlyEnabled);
 		setInputWipLimit(String(settings?.systemWipLimit ?? 0));
 	}, [settings?.systemWipLimit]);
+
+	// Initialize Feature WIP state
+	useEffect(() => {
+		if (showFeatureWip && settings) {
+			const featureWip =
+				"featureWIP" in settings
+					? (settings.featureWIP as number | undefined)
+					: undefined;
+			const isCurrentlyEnabled = Boolean((featureWip ?? 0) > 0);
+			setIsFeatureWipEnabled(isCurrentlyEnabled);
+			setInputFeatureWip(String(featureWip ?? 0));
+
+			// Initialize automatically adjust feature WIP
+			if ("automaticallyAdjustFeatureWIP" in settings) {
+				setIsAutomaticallyAdjustFeatureWip(
+					settings.automaticallyAdjustFeatureWIP as boolean,
+				);
+			}
+		}
+	}, [settings, showFeatureWip]);
 
 	// Initialize SLE states
 	useEffect(() => {
@@ -75,6 +103,38 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			}
 		},
 		[onSettingsChange, isWipLimitEnabled],
+	);
+
+	// Feature WIP handlers
+	const handleFeatureWipEnableChange = (checked: boolean) => {
+		setIsFeatureWipEnabled(checked);
+
+		if (checked) {
+			setInputFeatureWip("5");
+			onSettingsChange("featureWIP" as keyof T, 5 as T[keyof T]);
+		} else {
+			setInputFeatureWip("0");
+			onSettingsChange("featureWIP" as keyof T, 0 as T[keyof T]);
+		}
+	};
+
+	const handleFeatureWipChange = (value: string) => {
+		setInputFeatureWip(value);
+	};
+
+	const debouncedValidateFeatureWip = useCallback(
+		(value: string) => {
+			const numValue = Number.parseInt(value, 10);
+
+			if (!Number.isNaN(numValue)) {
+				let validValue = numValue;
+
+				if (isFeatureWipEnabled && numValue < 1) validValue = 1;
+
+				onSettingsChange("featureWIP" as keyof T, validValue as T[keyof T]);
+			}
+		},
+		[onSettingsChange, isFeatureWipEnabled],
 	);
 
 	// SLE handlers
@@ -167,6 +227,16 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
+			if (inputFeatureWip) {
+				debouncedValidateFeatureWip(inputFeatureWip);
+			}
+		}, 1000); // 1-second delay
+
+		return () => clearTimeout(timer);
+	}, [inputFeatureWip, debouncedValidateFeatureWip]);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
 			if (inputProbability) {
 				debouncedValidateProbability(inputProbability);
 			}
@@ -217,6 +287,68 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 						onChange={(e) => handleWipLimitChange(e.target.value)}
 					/>
 				</Grid>
+			)}
+
+			{/* Feature WIP Configuration */}
+			{showFeatureWip && (
+				<>
+					<Grid size={{ xs: 12 }}>
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={isFeatureWipEnabled}
+									onChange={(e) =>
+										handleFeatureWipEnableChange(e.target.checked)
+									}
+								/>
+							}
+							label="Set Feature WIP"
+						/>
+					</Grid>
+					{isFeatureWipEnabled && (
+						<>
+							<Grid size={{ xs: 12 }}>
+								<TextField
+									label="Feature WIP"
+									type="number"
+									fullWidth
+									margin="normal"
+									value={inputFeatureWip}
+									slotProps={{
+										htmlInput: {
+											min: 1,
+											step: 1,
+										},
+									}}
+									helperText="Must be at least 1"
+									onChange={(e) => handleFeatureWipChange(e.target.value)}
+								/>
+							</Grid>
+							<Grid size={{ xs: 12 }}>
+								<FormControlLabel
+									control={
+										<Checkbox
+											checked={isAutomaticallyAdjustFeatureWip}
+											onChange={(e) => {
+												setIsAutomaticallyAdjustFeatureWip(e.target.checked);
+												if (
+													settings &&
+													"automaticallyAdjustFeatureWIP" in settings
+												) {
+													onSettingsChange(
+														"automaticallyAdjustFeatureWIP" as keyof T,
+														e.target.checked as T[keyof T],
+													);
+												}
+											}}
+										/>
+									}
+									label="Automatically Adjust Feature WIP based on actual WIP"
+								/>
+							</Grid>
+						</>
+					)}
+				</>
 			)}
 
 			{/* Service Level Expectation Configuration */}

@@ -38,7 +38,6 @@ describe("AdvancedInputsComponent", () => {
 		expect(screen.getByLabelText("Relation Custom Field")).toHaveValue(
 			"Test Field",
 		);
-		expect(screen.getByLabelText("Feature WIP")).toHaveValue(20);
 	});
 
 	it("calls onTeamSettingsChange with the correct parameters when the TextField value changes", () => {
@@ -81,87 +80,6 @@ describe("AdvancedInputsComponent", () => {
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
 			"relationCustomField",
 			"New Value",
-		);
-	});
-
-	it("calls onTeamSettingsChange with correct parameters when Feature WIP TextField value changes", () => {
-		const onTeamSettingsChange = vi.fn();
-		const teamSettings: ITeamSettings = {
-			id: 0,
-			name: "setting",
-			throughputHistory: 2,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 2,
-			workItemQuery: "",
-			workItemTypes: [],
-			tags: [],
-			workTrackingSystemConnectionId: 12,
-			relationCustomField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
-		};
-
-		render(
-			<AdvancedInputsComponent
-				teamSettings={teamSettings}
-				onTeamSettingsChange={onTeamSettingsChange}
-			/>,
-		);
-
-		fireEvent.change(screen.getByLabelText("Feature WIP"), {
-			target: { value: "25" },
-		});
-
-		expect(onTeamSettingsChange).toHaveBeenCalledWith("featureWIP", 25);
-	});
-
-	it("calls onTeamSettingsChange with correct parameters when automaticallyAdjustFeatureWIP checkbox is toggled", () => {
-		const onTeamSettingsChange = vi.fn();
-		const teamSettings: ITeamSettings = {
-			id: 0,
-			name: "setting",
-			throughputHistory: 2,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 2,
-			workItemQuery: "",
-			workItemTypes: [],
-			tags: [],
-			workTrackingSystemConnectionId: 12,
-			relationCustomField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWipLimit: 0,
-		};
-
-		render(
-			<AdvancedInputsComponent
-				teamSettings={teamSettings}
-				onTeamSettingsChange={onTeamSettingsChange}
-			/>,
-		);
-
-		fireEvent.click(
-			screen.getByLabelText(
-				"Automatically Adjust Feature WIP based on actual WIP",
-			),
-		);
-
-		expect(onTeamSettingsChange).toHaveBeenCalledWith(
-			"automaticallyAdjustFeatureWIP",
-			true,
 		);
 	});
 });
