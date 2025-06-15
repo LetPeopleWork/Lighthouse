@@ -4,12 +4,12 @@ import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 
 interface SystemWipLimitDisplayProps {
 	featureOwner: IFeatureOwner;
-    hide?: boolean;
+	hide?: boolean;
 }
 
 const SystemWipLimitDisplay: React.FC<SystemWipLimitDisplayProps> = ({
 	featureOwner,
-    hide = false,
+	hide = false,
 }) => {
 	const theme = useTheme();
 	if (hide || !featureOwner.systemWIPLimit || featureOwner.systemWIPLimit < 1) {

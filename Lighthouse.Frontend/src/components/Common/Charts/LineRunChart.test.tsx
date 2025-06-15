@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
+import { testTheme } from "../../../tests/testTheme";
 import LineRunChart from "./LineRunChart";
 
 // Mock the WorkItemsDialog component
@@ -40,9 +41,31 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
 	}),
 }));
 
-// Mock the MUI-X LineChart component
-vi.mock("@mui/x-charts/LineChart", () => ({
-	LineChart: vi.fn(({ onLineClick, xAxis, series }) => (
+// Mock Material UI
+vi.mock("@mui/material", async () => {
+	const actual = await vi.importActual("@mui/material");
+	return {
+		...actual,
+		useTheme: () => testTheme,
+	};
+});
+
+// Helper function for regular rendering
+const renderWithTheme = (ui: React.ReactElement) => {
+	return render(ui);
+};
+
+// Mock Material UI theme - no need to mock the theme since we'll use ThemeProvider
+vi.mock("../../../utils/theme/colors", () => ({
+	hexToRgba: vi.fn((color, opacity) => `rgba(${color}, ${opacity})`),
+}));
+
+// Mock MUI X Charts properly
+vi.mock("@mui/x-charts", () => ({
+	ChartsReferenceLine: vi.fn(({ y, label }) => (
+		<div data-testid={`reference-line-${y}`}>{label}</div>
+	)),
+	LineChart: vi.fn(({ onLineClick, xAxis, series, children }) => (
 		<div data-testid="mock-line-chart">
 			{xAxis?.[0]?.data?.map((label: string, index: number) => (
 				<button
@@ -57,6 +80,29 @@ vi.mock("@mui/x-charts/LineChart", () => ({
 			<div data-testid="chartProps">
 				{JSON.stringify({ seriesLength: series?.length })}
 			</div>
+			{children}
+		</div>
+	)),
+}));
+
+// Also mock the specific import path for LineChart
+vi.mock("@mui/x-charts/LineChart", () => ({
+	LineChart: vi.fn(({ onLineClick, xAxis, series, children }) => (
+		<div data-testid="mock-line-chart">
+			{xAxis?.[0]?.data?.map((label: string, index: number) => (
+				<button
+					type="button"
+					key={`line-point-${label}-${String(index)}`}
+					data-testid={`line-point-${index}`}
+					onClick={(e) => onLineClick?.(e, { dataIndex: index })}
+				>
+					Point {index} - {label}: {series?.[0]?.data?.[index]}
+				</button>
+			))}
+			<div data-testid="chartProps">
+				{JSON.stringify({ seriesLength: series?.length })}
+			</div>
+			{children}
 		</div>
 	)),
 }));
@@ -91,7 +137,9 @@ describe("LineRunChart component", () => {
 			60,
 		);
 
-		render(<LineRunChart chartData={mockChartData} startDate={new Date()} />);
+		renderWithTheme(
+			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+		);
 
 		expect(screen.getByTestId("mock-line-chart")).toBeInTheDocument();
 	});
@@ -104,7 +152,7 @@ describe("LineRunChart component", () => {
 			60,
 		);
 
-		render(
+		renderWithTheme(
 			<LineRunChart
 				chartData={mockChartData}
 				startDate={new Date()}
@@ -119,7 +167,9 @@ describe("LineRunChart component", () => {
 	it("should display 'No data available' when no percentiles are provided", () => {
 		const mockChartData: RunChartData = new RunChartData([], 0, 0);
 
-		render(<LineRunChart chartData={mockChartData} startDate={new Date()} />);
+		renderWithTheme(
+			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+		);
 
 		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
@@ -133,7 +183,7 @@ describe("LineRunChart component", () => {
 		);
 		const customTitle = "Custom Line Chart";
 
-		render(
+		renderWithTheme(
 			<LineRunChart
 				chartData={mockChartData}
 				startDate={new Date()}
@@ -159,7 +209,9 @@ describe("LineRunChart component", () => {
 
 		const mockChartData = new RunChartData(workItemsMap, rawData.length, 30);
 
-		render(<LineRunChart chartData={mockChartData} startDate={new Date()} />);
+		renderWithTheme(
+			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+		);
 
 		// Simulate clicking on the second point (index 1)
 		fireEvent.click(screen.getByTestId("line-point-1"));
@@ -187,7 +239,9 @@ describe("LineRunChart component", () => {
 
 		const mockChartData = new RunChartData(workItemsMap, rawData.length, 30);
 
-		render(<LineRunChart chartData={mockChartData} startDate={new Date()} />);
+		renderWithTheme(
+			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+		);
 
 		// Simulate clicking on the second point (index 1)
 		fireEvent.click(screen.getByTestId("line-point-1"));
@@ -209,7 +263,9 @@ describe("LineRunChart component", () => {
 
 		const mockChartData = new RunChartData(workItemsMap, rawData.length, 30);
 
-		render(<LineRunChart chartData={mockChartData} startDate={new Date()} />);
+		renderWithTheme(
+			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+		);
 
 		// Simulate clicking on the second point (index 1)
 		fireEvent.click(screen.getByTestId("line-point-1"));
@@ -223,5 +279,61 @@ describe("LineRunChart component", () => {
 
 		// Dialog should be closed
 		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
+	});
+
+	it("should not display WIP limit when not provided", () => {
+		const rawData = [5, 10, 15];
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			30,
+		);
+
+		renderWithTheme(
+			<LineRunChart chartData={mockChartData} startDate={new Date()} />,
+		);
+
+		// WIP limit chip should not be in the document
+		expect(screen.queryByText("System WIP Limit")).not.toBeInTheDocument();
+	});
+
+	it("should display WIP limit when provided", () => {
+		const rawData = [5, 10, 15];
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			30,
+		);
+
+		renderWithTheme(
+			<LineRunChart
+				chartData={mockChartData}
+				startDate={new Date()}
+				wipLimit={10}
+			/>,
+		);
+
+		// WIP limit chip should be in the document
+		expect(screen.getByText("System WIP Limit")).toBeInTheDocument();
+	});
+
+	it("should not display WIP limit when value is less than 1", () => {
+		const rawData = [5, 10, 15];
+		const mockChartData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			30,
+		);
+
+		renderWithTheme(
+			<LineRunChart
+				chartData={mockChartData}
+				startDate={new Date()}
+				wipLimit={0}
+			/>,
+		);
+
+		// WIP limit chip should not be in the document
+		expect(screen.queryByText("System WIP Limit")).not.toBeInTheDocument();
 	});
 });

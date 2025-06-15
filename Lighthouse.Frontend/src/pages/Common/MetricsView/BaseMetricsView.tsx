@@ -173,6 +173,9 @@ export const BaseMetricsView = <
 							? entity.serviceLevelExpectationRange
 							: undefined
 					}
+					idealWip={
+						entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined
+					}
 				/>
 
 				{renderAdditionalComponents?.()}
@@ -219,6 +222,7 @@ export const BaseMetricsView = <
 						startDate={startDate}
 						chartData={wipOverTimeData}
 						displayTotal={false}
+						wipLimit={entity.systemWIPLimit}
 					/>
 				)}
 			</Grid>

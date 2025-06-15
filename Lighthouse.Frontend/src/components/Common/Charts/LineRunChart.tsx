@@ -1,10 +1,11 @@
-import { Box, useTheme } from "@mui/material";
-import { LineChart } from "@mui/x-charts/LineChart";
+import { Box, Chip, Stack, useTheme } from "@mui/material";
+import { ChartsReferenceLine, LineChart } from "@mui/x-charts";
 import type React from "react";
 import { useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { getWorkItemName } from "../../../utils/featureName";
+import { hexToRgba } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import BaseRunChart from "./BaseRunChart";
 
@@ -13,6 +14,7 @@ interface LineRunChartProps {
 	startDate: Date;
 	title?: string;
 	displayTotal?: boolean;
+	wipLimit?: number;
 }
 
 const LineRunChart: React.FC<LineRunChartProps> = ({
@@ -20,11 +22,15 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 	startDate,
 	title = "Run Chart",
 	displayTotal = false,
+	wipLimit,
 }) => {
 	const theme = useTheme();
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogTitle, setDialogTitle] = useState<string>("");
+	const [wipLimitVisible, setWipLimitVisible] = useState<boolean>(
+		!!wipLimit && wipLimit >= 1,
+	);
 
 	const handleLineClick = (dataIndex: number) => {
 		const items = chartData.workItemsPerUnitOfTime[dataIndex] || [];
@@ -40,6 +46,10 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 
 	const handleCloseDialog = () => {
 		setDialogOpen(false);
+	};
+
+	const toggleWipLimitVisibility = () => {
+		setWipLimitVisible((prev) => !prev);
 	};
 
 	return (
@@ -103,7 +113,54 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 									},
 								]}
 								height={500}
-							/>
+							>
+								{wipLimitVisible && wipLimit !== undefined && wipLimit >= 1 && (
+									<ChartsReferenceLine
+										y={wipLimit}
+										labelAlign="start"
+										lineStyle={{
+											stroke: theme.palette.secondary.main,
+											strokeWidth: 2,
+											strokeDasharray: "3 3",
+										}}
+									/>
+								)}
+							</LineChart>
+
+							{wipLimit !== undefined && wipLimit >= 1 && (
+								<Stack
+									direction="row"
+									justifyContent="flex-end"
+									sx={{ position: "absolute", top: 16, right: 16 }}
+								>
+									<Chip
+										label="System WIP Limit"
+										onClick={toggleWipLimitVisibility}
+										sx={{
+											borderColor: theme.palette.secondary.main,
+											borderWidth: wipLimitVisible ? 2 : 1,
+											borderStyle: "dashed",
+											opacity: wipLimitVisible ? 1 : 0.7,
+											backgroundColor: !wipLimitVisible
+												? "transparent"
+												: hexToRgba(
+														theme.palette.secondary.main,
+														theme.opacity.medium,
+													),
+											"&:hover": {
+												borderColor: theme.palette.secondary.main,
+												borderWidth: 2,
+												backgroundColor: hexToRgba(
+													theme.palette.secondary.main,
+													theme.opacity.high,
+												),
+											},
+											cursor: "pointer",
+										}}
+										variant={wipLimitVisible ? "filled" : "outlined"}
+									/>
+								</Stack>
+							)}
 						</Box>
 					);
 				}}

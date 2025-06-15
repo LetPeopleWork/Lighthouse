@@ -23,7 +23,7 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 		if (idealWip == null) return "default";
 		if (count === idealWip) return "success";
 		if (count < idealWip) return "info";
-		return "warning";
+		return "error";
 	};
 
 	const handleOpen = () => setOpen(true);

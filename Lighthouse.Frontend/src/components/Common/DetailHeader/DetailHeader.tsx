@@ -57,7 +57,7 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
 							justifyContent: "center",
 							alignItems: "center",
 							width: "100%",
-							mt: { xs: 1, md: 2 }
+							mt: { xs: 1, md: 2 },
 						}}
 					>
 						{centerContent}
