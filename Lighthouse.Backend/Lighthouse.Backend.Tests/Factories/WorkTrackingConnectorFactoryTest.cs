@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
@@ -19,13 +21,16 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             serviceProviderMock = new Mock<IServiceProvider>();
 
+            var appSettingsServiceMock = new Mock<IAppSettingService>();
+            appSettingsServiceMock.Setup(x => x.GetWorkTrackingSystemSettings()).Returns(new WorkTrackingSystemSettings());
+
             serviceProviderMock
             .Setup(x => x.GetService(typeof(AzureDevOpsWorkTrackingConnector)))
-            .Returns(new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), new FakeCryptoService()));
+            .Returns(new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object));
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(JiraWorkTrackingConnector)))
-            .Returns(new JiraWorkTrackingConnector(Mock.Of<ILexoRankService>(), Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService()));
+            .Returns(new JiraWorkTrackingConnector(Mock.Of<ILexoRankService>(), Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object));
         }
 
         [Test]

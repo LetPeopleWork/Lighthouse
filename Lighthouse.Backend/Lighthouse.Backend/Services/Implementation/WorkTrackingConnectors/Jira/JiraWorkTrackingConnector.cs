@@ -16,14 +16,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private readonly ILogger<JiraWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
 
+        private readonly int requestTimeoutInSeconds = 100;
+        
         private static string rankFieldName = string.Empty;
 
-        public JiraWorkTrackingConnector(ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService)
+        public JiraWorkTrackingConnector(
+            ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
         {
             this.lexoRankService = lexoRankService;
             this.issueFactory = issueFactory;
             this.logger = logger;
             this.cryptoService = cryptoService;
+
+            var workTrackingSystemSettings = appSettingService.GetWorkTrackingSystemSettings();
+            if (workTrackingSystemSettings.OverrideRequestTimeout)
+            {
+                requestTimeoutInSeconds = workTrackingSystemSettings.RequestTimeoutInSeconds;
+            }
         }
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
@@ -433,7 +442,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var client = new HttpClient
             {
                 BaseAddress = new Uri(url.TrimEnd('/')),
-                Timeout = TimeSpan.FromMinutes(5)
+                Timeout = TimeSpan.FromSeconds(requestTimeoutInSeconds),
             };
 
             if (!string.IsNullOrEmpty(username))

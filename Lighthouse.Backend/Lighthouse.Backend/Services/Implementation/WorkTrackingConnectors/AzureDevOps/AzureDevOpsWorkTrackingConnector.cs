@@ -14,14 +14,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
     public class AzureDevOpsWorkTrackingConnector : IWorkTrackingConnector
     {
         private const int maxChunkSize = 200;
+        private readonly int requestTimeoutInSeconds = 100;
 
         private readonly ILogger<AzureDevOpsWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
 
-        public AzureDevOpsWorkTrackingConnector(ILogger<AzureDevOpsWorkTrackingConnector> logger, ICryptoService cryptoService)
+        public AzureDevOpsWorkTrackingConnector(ILogger<AzureDevOpsWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
         {
             this.logger = logger;
             this.cryptoService = cryptoService;
+
+            var workTrackingSystemSettings = appSettingService.GetWorkTrackingSystemSettings();
+            if (workTrackingSystemSettings.OverrideRequestTimeout)
+            {
+                requestTimeoutInSeconds = workTrackingSystemSettings.RequestTimeoutInSeconds;
+            }
         }
 
         public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team)
@@ -577,7 +584,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var personalAccessToken = cryptoService.Decrypt(encryptedPersonalAccessToken);
 
             var connection = CreateConnection(url, personalAccessToken);
-            return connection.GetClient<WorkItemTrackingHttpClient>();
+            var witClient = connection.GetClient<WorkItemTrackingHttpClient>();
+
+            connection.Settings.SendTimeout = TimeSpan.FromSeconds(requestTimeoutInSeconds);
+
+            return witClient;
         }
 
         private static VssConnection CreateConnection(string azureDevOpsUrl, string personalAccessToken)
