@@ -10,4 +10,5 @@ export interface IBaseSettings {
 	workTrackingSystemConnectionId: number;
 	serviceLevelExpectationProbability: number;
 	serviceLevelExpectationRange: number;
+	systemWipLimit: number;
 }

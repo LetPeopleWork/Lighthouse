@@ -6,8 +6,8 @@ import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
+import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
-import ServiceLevelExpectationConfigurationComponent from "../BaseSettings/ServiceLevelExpectationConfigurationComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
@@ -339,7 +339,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						onTeamSettingsChange={handleTeamSettingsChange}
 					/>
 
-					<ServiceLevelExpectationConfigurationComponent
+					<FlowMetricsConfigurationComponent
 						settings={teamSettings}
 						onSettingsChange={handleTeamSettingsChange}
 					/>

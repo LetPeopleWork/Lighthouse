@@ -68,6 +68,7 @@ describe("OwnershipComponent", () => {
 		serviceLevelExpectationRange: 30,
 		featureOwnerField: "custom.owner",
 		owningTeam: undefined,
+		systemWipLimit: 0,
 	};
 
 	const mockOnProjectSettingsChange = vi.fn();

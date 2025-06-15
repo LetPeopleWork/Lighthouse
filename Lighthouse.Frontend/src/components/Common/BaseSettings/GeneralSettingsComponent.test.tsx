@@ -18,6 +18,7 @@ describe("GeneralSettingsComponent", () => {
 		workTrackingSystemConnectionId: 1,
 		serviceLevelExpectationProbability: 85,
 		serviceLevelExpectationRange: 30,
+		systemWipLimit: 0,
 	};
 
 	beforeEach(() => {

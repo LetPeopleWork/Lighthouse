@@ -513,6 +513,7 @@ export class DemoApiService
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 75,
 			serviceLevelExpectationRange: 35,
+			systemWipLimit: 0,
 		},
 		{
 			id: 1,
@@ -535,6 +536,7 @@ export class DemoApiService
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 70,
 			serviceLevelExpectationRange: 18,
+			systemWipLimit: 0,
 		},
 		{
 			id: 2,
@@ -557,6 +559,7 @@ export class DemoApiService
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 90,
 			serviceLevelExpectationRange: 45,
+			systemWipLimit: 0,
 		},
 	];
 
@@ -805,6 +808,7 @@ export class DemoApiService
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 75,
 			serviceLevelExpectationRange: 35,
+			systemWipLimit: 0,
 		};
 	}
 
@@ -1251,6 +1255,7 @@ export class DemoApiService
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 75,
 			serviceLevelExpectationRange: 35,
+			systemWipLimit: 0,
 		};
 	}
 
@@ -1291,6 +1296,7 @@ export class DemoApiService
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 75,
 			serviceLevelExpectationRange: 35,
+			systemWipLimit: 0,
 		};
 	}
 

@@ -80,6 +80,7 @@ describe("ProjectService", () => {
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWipLimit: 0,
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
@@ -112,6 +113,7 @@ describe("ProjectService", () => {
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWipLimit: 0,
 		};
 
 		mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
@@ -147,6 +149,7 @@ describe("ProjectService", () => {
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWipLimit: 0,
 		};
 
 		const mockResponse: IProjectSettings = {
@@ -170,6 +173,7 @@ describe("ProjectService", () => {
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWipLimit: 0,
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
@@ -234,6 +238,7 @@ describe("ProjectService", () => {
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWipLimit: 0,
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
@@ -270,6 +275,7 @@ describe("ProjectService", () => {
 			involvedTeams: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWipLimit: 0,
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: false });
