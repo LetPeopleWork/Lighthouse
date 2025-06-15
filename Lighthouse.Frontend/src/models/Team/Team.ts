@@ -37,6 +37,8 @@ export class Team implements ITeam {
 	serviceLevelExpectationProbability = 0;
 	serviceLevelExpectationRange = 0;
 
+	systemWIPLimit = 0;
+
 	@Type(() => Date)
 	lastUpdated: Date = new Date();
 

@@ -22,6 +22,7 @@ describe("FeatureOwnerHeader", () => {
 		serviceLevelExpectationRange: 30,
 		remainingWork: 0,
 		totalWork: 0,
+		systemWIPLimit: 0,
 	};
 
 	it("renders the feature owner name", () => {

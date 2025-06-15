@@ -1353,6 +1353,7 @@ export class DemoApiService
 		teamBinaryBlazers.tags = ["Task Force"];
 		teamBinaryBlazers.serviceLevelExpectationProbability = 75;
 		teamBinaryBlazers.serviceLevelExpectationRange = 11;
+		teamBinaryBlazers.systemWIPLimit = 3;
 
 		teamBinaryBlazers.useFixedDatesForThroughput = true;
 		teamBinaryBlazers.throughputStartDate = new Date(

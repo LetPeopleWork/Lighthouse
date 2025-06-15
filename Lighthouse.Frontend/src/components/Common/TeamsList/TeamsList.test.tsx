@@ -24,6 +24,7 @@ describe("TeamsList", () => {
 			tags: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWIPLimit: 0,
 		},
 		{
 			id: 2,
@@ -43,6 +44,7 @@ describe("TeamsList", () => {
 			tags: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWIPLimit: 0,
 		},
 		{
 			id: 3,
@@ -62,6 +64,7 @@ describe("TeamsList", () => {
 			tags: [],
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWIPLimit: 0,
 		},
 	];
 	const selectedTeams = [1, 3];

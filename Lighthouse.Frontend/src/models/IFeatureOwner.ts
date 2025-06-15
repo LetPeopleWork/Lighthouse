@@ -10,4 +10,5 @@ export interface IFeatureOwner extends IProgressable {
 	tags: string[];
 	serviceLevelExpectationProbability: number;
 	serviceLevelExpectationRange: number;
+	systemWIPLimit: number;
 }

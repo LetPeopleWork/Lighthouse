@@ -30,6 +30,7 @@ describe("ServiceLevelExpectation component", () => {
 		serviceLevelExpectationRange: range,
 		remainingWork: 0,
 		totalWork: 0,
+		systemWIPLimit: 0,
 	});
 
 	it("renders service level expectation with correct values", () => {

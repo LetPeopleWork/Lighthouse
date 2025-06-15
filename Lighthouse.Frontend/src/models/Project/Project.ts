@@ -41,6 +41,8 @@ export class Project implements IProject {
 	serviceLevelExpectationProbability = 0;
 	serviceLevelExpectationRange = 0;
 
+	systemWIPLimit = 0;
+
 	get remainingWork(): number {
 		return this.features.reduce(
 			(acc, feature) => acc + feature.getRemainingWorkForFeature(),

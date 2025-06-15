@@ -28,6 +28,7 @@ const sampleData: IFeatureOwner[] = [
 		lastUpdated: new Date(),
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
 	},
 	{
 		id: 2,
@@ -40,6 +41,7 @@ const sampleData: IFeatureOwner[] = [
 		lastUpdated: new Date(),
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
 	},
 	{
 		id: 3,
@@ -52,6 +54,7 @@ const sampleData: IFeatureOwner[] = [
 		lastUpdated: new Date(),
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
 	},
 ];
 
@@ -86,6 +89,7 @@ describe("DataOverviewTable", () => {
 				lastUpdated: new Date(),
 				serviceLevelExpectationProbability: 0,
 				serviceLevelExpectationRange: 0,
+				systemWIPLimit: 0,
 			},
 			{
 				id: 1,
@@ -98,6 +102,7 @@ describe("DataOverviewTable", () => {
 				lastUpdated: new Date(),
 				serviceLevelExpectationProbability: 0,
 				serviceLevelExpectationRange: 0,
+				systemWIPLimit: 0,
 			},
 			{
 				id: 2,
@@ -110,6 +115,7 @@ describe("DataOverviewTable", () => {
 				lastUpdated: new Date(),
 				serviceLevelExpectationProbability: 0,
 				serviceLevelExpectationRange: 0,
+				systemWIPLimit: 0,
 			},
 		];
 
@@ -296,6 +302,7 @@ describe("DataOverviewTable", () => {
 				lastUpdated: new Date(),
 				serviceLevelExpectationProbability: 0,
 				serviceLevelExpectationRange: 0,
+				systemWIPLimit: 0,
 			},
 		];
 

@@ -23,6 +23,7 @@ describe("OwnershipComponent", () => {
 			totalWork: 0,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWIPLimit: 0,
 		},
 		{
 			id: 2,
@@ -40,6 +41,7 @@ describe("OwnershipComponent", () => {
 			totalWork: 0,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
+			systemWIPLimit: 0,
 		},
 	];
 
