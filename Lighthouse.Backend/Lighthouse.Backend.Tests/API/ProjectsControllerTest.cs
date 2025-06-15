@@ -208,6 +208,7 @@ namespace Lighthouse.Backend.Tests.API
                 DoneStates = new List<string> { "Done" },
                 ServiceLevelExpectationProbability = 90,
                 ServiceLevelExpectationRange = 10,
+                SystemWIPLimit = 7,
             };
 
             var subject = CreateSubject();
@@ -248,6 +249,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(projectSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(newProjectSettings.ServiceLevelExpectationProbability));
                 Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(newProjectSettings.ServiceLevelExpectationRange));
+
+                Assert.That(projectSettingDto.SystemWIPLimit, Is.EqualTo(newProjectSettings.SystemWIPLimit));
             });
         }
 
@@ -283,6 +286,7 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureOwnerField = "OwnerField",
                 ServiceLevelExpectationProbability = 95,
                 ServiceLevelExpectationRange = 5,
+                SystemWIPLimit = 12,
             };
 
             var subject = CreateSubject();
@@ -330,6 +334,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(projectSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedProjectSettings.ServiceLevelExpectationProbability));
                 Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedProjectSettings.ServiceLevelExpectationRange));
+
+                Assert.That(projectSettingDto.SystemWIPLimit, Is.EqualTo(updatedProjectSettings.SystemWIPLimit));
             });
         }
 

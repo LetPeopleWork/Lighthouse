@@ -169,6 +169,7 @@ namespace Lighthouse.Backend.Tests.API
                 AutomaticallyAdjustFeatureWIP = true,
                 ServiceLevelExpectationProbability = 73,
                 ServiceLevelExpectationRange = 14,
+                SystemWIPLimit = 5,
             };
             teams.Add(team);
 
@@ -208,6 +209,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedTeam.AutomaticallyAdjustFeatureWIP, Is.True);
                 Assert.That(exportedTeam.ServiceLevelExpectationProbability, Is.EqualTo(73));
                 Assert.That(exportedTeam.ServiceLevelExpectationRange, Is.EqualTo(14));
+                Assert.That(exportedTeam.SystemWIPLimit, Is.EqualTo(5));
             });
         }
 
@@ -243,7 +245,8 @@ namespace Lighthouse.Backend.Tests.API
                 OwningTeam = team,
                 FeatureOwnerField = "FeatureOwner",
                 ServiceLevelExpectationProbability = 85,
-                ServiceLevelExpectationRange = 21
+                ServiceLevelExpectationRange = 21,
+                SystemWIPLimit = 1,
             };
 
             project.Milestones.Add(new Milestone { Id = 1, Name = "Milestone 1", Date = DateTime.UtcNow.AddDays(30) });
@@ -294,6 +297,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(project.FeatureOwnerField, Is.EqualTo("FeatureOwner"));
                 Assert.That(project.ServiceLevelExpectationProbability, Is.EqualTo(85));
                 Assert.That(project.ServiceLevelExpectationRange, Is.EqualTo(21));
+                Assert.That(project.SystemWIPLimit, Is.EqualTo(1));
 
                 Assert.That(project.Milestones, Has.Count.EqualTo(1));
                 Assert.That(project.Milestones[0].Id, Is.EqualTo(1));

@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.API.DTO
             Tags = workTrackingSystemOptionsOwner.Tags.ToList();
             ServiceLevelExpectationProbability = workTrackingSystemOptionsOwner.ServiceLevelExpectationProbability;
             ServiceLevelExpectationRange = workTrackingSystemOptionsOwner.ServiceLevelExpectationRange;
+            SystemWIPLimit = workTrackingSystemOptionsOwner.SystemWIPLimit;
         }
 
         public string Name { get; set; }
@@ -32,6 +33,8 @@ namespace Lighthouse.Backend.API.DTO
         public int ServiceLevelExpectationProbability { get; }
 
         public int ServiceLevelExpectationRange { get; }
+
+        public int SystemWIPLimit { get; }
 
     }
 }

@@ -336,6 +336,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<string>("SizeEstimateField")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("SystemWIPLimit")
+                        .HasColumnType("INTEGER");
+
                     b.PrimitiveCollection<string>("Tags")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -404,6 +407,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ServiceLevelExpectationRange")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SystemWIPLimit")
                         .HasColumnType("INTEGER");
 
                     b.PrimitiveCollection<string>("Tags")

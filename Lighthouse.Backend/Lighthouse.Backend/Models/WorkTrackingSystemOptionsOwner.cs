@@ -28,6 +28,8 @@
 
         public int ServiceLevelExpectationRange { get; set; } = 0;
 
+        public int SystemWIPLimit { get; set; } = 0;
+
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }

@@ -247,6 +247,7 @@ namespace Lighthouse.Backend.Tests.API
             team.AdditionalRelatedField = "Custom.RelatedItem";
             team.ServiceLevelExpectationProbability = 75;
             team.ServiceLevelExpectationRange = 10;
+            team.SystemWIPLimit = 5;
 
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
 
@@ -274,6 +275,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.RelationCustomField, Is.EqualTo(team.AdditionalRelatedField));
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(team.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(team.ServiceLevelExpectationRange));
+                Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(team.SystemWIPLimit));
             });
         }
 
@@ -310,6 +312,7 @@ namespace Lighthouse.Backend.Tests.API
                 DoneStates = new List<string> { "Done " },
                 ServiceLevelExpectationProbability = 50,
                 ServiceLevelExpectationRange = 2,
+                SystemWIPLimit = 3,
             };
 
             var subject = CreateSubject();
@@ -343,6 +346,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(newTeamSettings.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(newTeamSettings.ServiceLevelExpectationRange));
+
+                Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(newTeamSettings.SystemWIPLimit));
             });
         }
 

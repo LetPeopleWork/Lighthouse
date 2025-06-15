@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.API.DTO
             WorkTrackingSystemConnectionId = workTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId;
             ServiceLevelExpectationProbability = workTrackingSystemOptionsOwner.ServiceLevelExpectationProbability;
             ServiceLevelExpectationRange = workTrackingSystemOptionsOwner.ServiceLevelExpectationRange;
+            SystemWIPLimit = workTrackingSystemOptionsOwner.SystemWIPLimit;
         }
 
         [JsonRequired]
@@ -49,5 +50,8 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public int WorkTrackingSystemConnectionId { get; set; }
+
+        [JsonRequired]
+        public int SystemWIPLimit { get; set; }
     }
 }

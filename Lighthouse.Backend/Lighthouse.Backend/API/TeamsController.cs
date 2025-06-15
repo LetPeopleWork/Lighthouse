@@ -178,6 +178,7 @@ namespace Lighthouse.Backend.API
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
             team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
             team.Tags = teamSetting.Tags;
+            team.SystemWIPLimit = teamSetting.SystemWIPLimit;
 
             SyncStates(team, teamSetting);
             SyncServiceLevelExpectation(team, teamSetting);

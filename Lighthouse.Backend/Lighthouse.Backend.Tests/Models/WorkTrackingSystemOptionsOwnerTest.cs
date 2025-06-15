@@ -56,6 +56,13 @@ namespace Lighthouse.Backend.Tests.Models
             });
         }
 
+        [Test]
+        public void NewWorkTrackingSystemOptionsOwner_InitializesWIPLimit()
+        {
+            var subject = CreateSubject();
+            Assert.That(subject.SystemWIPLimit, Is.EqualTo(0));
+        }
+
         private WorkTrackingSystemOptionsOwnerTestClass CreateSubject()
         {
             return new WorkTrackingSystemOptionsOwnerTestClass();

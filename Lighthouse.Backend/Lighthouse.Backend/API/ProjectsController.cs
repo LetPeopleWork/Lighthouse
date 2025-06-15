@@ -150,6 +150,7 @@ namespace Lighthouse.Backend.API
             project.WorkTrackingSystemConnectionId = projectSetting.WorkTrackingSystemConnectionId;
             project.Tags = projectSetting.Tags;
             project.FeatureOwnerField = projectSetting.FeatureOwnerField;
+            project.SystemWIPLimit = projectSetting.SystemWIPLimit;
 
             SyncStates(project, projectSetting);
             SyncMilestones(project, projectSetting);
