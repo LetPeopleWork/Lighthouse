@@ -5,6 +5,7 @@ import {
 	type IRefreshSettings,
 	RefreshSettings,
 } from "../../models/AppSettings/RefreshSettings";
+import type { IWorkTrackingSystemSettings } from "../../models/AppSettings/WorkTrackingSystemSettings";
 import type { ConfigurationValidation } from "../../models/Configuration/ConfigurationValidation";
 import { Feature, type IFeature } from "../../models/Feature";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
@@ -1205,6 +1206,25 @@ export class DemoApiService
 		refreshSettings: IRefreshSettings,
 	): Promise<void> {
 		console.log(`Update ${settingName} refresh settings: ${refreshSettings}`);
+
+		await delay();
+	}
+
+	async getWorkTrackingSystemSettings(): Promise<IWorkTrackingSystemSettings> {
+		await delay();
+
+		return {
+			overrideRequestTimeout: true,
+			requestTimeoutInSeconds: 3000,
+		};
+	}
+
+	async updateWorkTrackingSystemSettings(
+		workTrackingSystemSettings: IWorkTrackingSystemSettings,
+	): Promise<void> {
+		console.log(
+			`Updating Work Tracking System Settings: ${workTrackingSystemSettings}`,
+		);
 
 		await delay();
 	}

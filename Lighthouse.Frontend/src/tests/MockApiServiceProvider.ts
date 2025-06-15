@@ -61,6 +61,8 @@ export const createMockSettingsService = (): ISettingsService => {
 		updateDefaultProjectSettings: vi.fn(),
 		getDataRetentionSettings: vi.fn(),
 		updateDataRetentionSettings: vi.fn(),
+		getWorkTrackingSystemSettings: vi.fn(),
+		updateWorkTrackingSystemSettings: vi.fn(),
 	};
 };
 

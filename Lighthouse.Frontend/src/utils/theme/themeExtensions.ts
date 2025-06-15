@@ -123,7 +123,7 @@ export const getThemeExtensions = (theme: MuiTheme): Partial<MuiTheme> => {
 		},
 		// Asset selection based on theme
 		assets: {
-			logoVariant: (isDark ? "dark" : "light") as "dark" | "light",
+			logoVariant: isDark ? "dark" : "light",
 			isDark,
 		},
 	};
