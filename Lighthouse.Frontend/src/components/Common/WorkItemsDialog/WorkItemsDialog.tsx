@@ -114,6 +114,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 					<Table>
 						<TableHead>
 							<TableRow>
+								<TableCell>ID</TableCell>
 								<TableCell>Name</TableCell>
 								<TableCell>Type</TableCell>
 								<TableCell>State</TableCell>
@@ -123,6 +124,11 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 						<TableBody>
 							{sortedItems.map((item) => (
 								<TableRow key={item.id}>
+									<TableCell>
+										{!item.name?.toLowerCase().includes("unparented")
+											? item.referenceId
+											: ""}
+									</TableCell>
 									<TableCell
 										sx={{
 											whiteSpace: "normal",

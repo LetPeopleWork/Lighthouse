@@ -91,7 +91,7 @@ describe("TeamFeatureList component", () => {
 				const feature = new Feature();
 				feature.name = "Feature 1";
 				feature.id = 1;
-				feature.workItemReference = "FTR-1";
+				feature.referenceId = "FTR-1";
 				feature.stateCategory = "ToDo";
 				feature.lastUpdated = new Date();
 				feature.isUsingDefaultFeatureSize = false;
@@ -116,7 +116,7 @@ describe("TeamFeatureList component", () => {
 				const feature = new Feature();
 				feature.name = "Feature 2";
 				feature.id = 2;
-				feature.workItemReference = "FTR-2";
+				feature.referenceId = "FTR-2";
 				feature.stateCategory = "Doing";
 				feature.lastUpdated = new Date();
 				feature.isUsingDefaultFeatureSize = true;
@@ -141,7 +141,7 @@ describe("TeamFeatureList component", () => {
 				const feature = new Feature();
 				feature.name = "Feature 3";
 				feature.id = 3;
-				feature.workItemReference = "FTR-3";
+				feature.referenceId = "FTR-3";
 				feature.stateCategory = "Done";
 				feature.lastUpdated = new Date();
 				feature.isUsingDefaultFeatureSize = false;
@@ -186,7 +186,9 @@ describe("TeamFeatureList component", () => {
 		expect(screen.getByTestId("feature-list-base")).toBeInTheDocument();
 
 		for (const feature of team.features) {
-			const featureNameElement = screen.getByText(feature.name);
+			const featureNameElement = screen.getByText(
+				`${feature.referenceId}: ${feature.name}`,
+			);
 			expect(featureNameElement).toBeInTheDocument();
 		}
 
@@ -214,9 +216,9 @@ describe("TeamFeatureList component", () => {
 		expect(screen.getByTestId("feature-list-base")).toBeInTheDocument();
 
 		// Check for feature names
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
-		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		expect(screen.getByText("FTR-1: Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("FTR-2: Feature 2")).toBeInTheDocument();
+		expect(screen.getByText("FTR-3: Feature 3")).toBeInTheDocument();
 	});
 
 	it("should render appropriate table headers", () => {

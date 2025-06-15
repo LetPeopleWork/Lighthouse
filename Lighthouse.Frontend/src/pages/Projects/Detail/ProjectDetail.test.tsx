@@ -139,12 +139,12 @@ describe("ProjectDetail component", () => {
 		const feature1 = new Feature();
 		feature1.id = 0;
 		feature1.name = "Feature 1";
-		feature1.workItemReference = "FTR-1";
+		feature1.referenceId = "FTR-1";
 
 		const feature2 = new Feature();
 		feature2.id = 1;
 		feature2.name = "Feature 2";
-		feature2.workItemReference = "FTR-2";
+		feature2.referenceId = "FTR-2";
 
 		project.features = [feature1, feature2];
 		project.milestones = [Milestone.new(1, "Milestone", new Date())];

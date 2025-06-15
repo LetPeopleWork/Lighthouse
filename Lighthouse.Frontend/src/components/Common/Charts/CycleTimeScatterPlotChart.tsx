@@ -20,6 +20,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { getWorkItemName } from "../../../utils/featureName";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
@@ -279,7 +280,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 									const numberOfClosedItems = group.items.length ?? 0;
 
 									if (numberOfClosedItems === 1) {
-										return `${group.items[0].name} (Click for details)`;
+										const item = group.items[0];
+										return `${getWorkItemName(item)} (Click for details)`;
 									}
 
 									return `${numberOfClosedItems} Closed Items (Click for details)`;

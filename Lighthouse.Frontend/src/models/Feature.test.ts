@@ -28,7 +28,7 @@ describe("Feature Class", () => {
 		feature = new Feature();
 		feature.name = name;
 		feature.id = id;
-		feature.workItemReference = referenceId;
+		feature.referenceId = referenceId;
 		feature.lastUpdated = lastUpdated;
 		feature.remainingWork = remainingWork;
 		feature.totalWork = totalWork;
@@ -39,7 +39,7 @@ describe("Feature Class", () => {
 	it("should create an instance of Feature correctly", () => {
 		expect(feature.name).toBe(name);
 		expect(feature.id).toBe(id);
-		expect(feature.workItemReference).toBe(referenceId);
+		expect(feature.referenceId).toBe(referenceId);
 		expect(feature.lastUpdated).toBe(lastUpdated);
 		expect(feature.remainingWork).toEqual(remainingWork);
 		expect(feature.forecasts).toEqual(forecasts);

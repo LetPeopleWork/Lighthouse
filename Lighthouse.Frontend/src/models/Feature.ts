@@ -27,7 +27,7 @@ class DictionaryObject<TValue> {
 export class Feature implements IFeature {
 	name!: string;
 	id!: number;
-	workItemReference!: string;
+	referenceId!: string;
 	state!: string;
 	type!: string;
 	lastUpdated!: Date;

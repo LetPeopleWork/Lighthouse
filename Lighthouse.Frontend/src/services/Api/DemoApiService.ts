@@ -142,7 +142,7 @@ export class DemoTeamMetricsService implements ITeamMetricsService {
 		const numberOfItems = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
 		for (let i = 0; i < numberOfItems; i++) {
 			const workItem = generateWorkItem(counter++);
-			workItem.workItemReference = `WI-${counter}`;
+			workItem.referenceId = `WI-${counter}`;
 
 			items.push(workItem);
 		}
@@ -242,7 +242,7 @@ export class DemoTeamMetricsService implements ITeamMetricsService {
 
 		for (const item in teamFeaturesInProgress[teamId]) {
 			const workItem = generateWorkItem(counter++);
-			workItem.workItemReference = item;
+			workItem.referenceId = item;
 
 			featuresInProgress.push(workItem);
 		}
@@ -266,7 +266,7 @@ export class DemoTeamMetricsService implements ITeamMetricsService {
 				},
 			});
 			const nameLength = Math.floor(Math.random() * 9) + 1; // 1-4 words
-			workItem.workItemReference = `WI-${counter}`;
+			workItem.referenceId = `WI-${counter}`;
 			workItem.name = lorem.generateWords(nameLength);
 
 			items.push(workItem);
@@ -449,7 +449,7 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 			const feature = new Feature();
 			feature.name = `Feature ${counter}`;
 			feature.id = counter;
-			feature.workItemReference = `FTR-${counter}`;
+			feature.referenceId = `FTR-${counter}`;
 			feature.state = workItem.state;
 			feature.type = "Feature";
 			feature.workItemAge = workItem.workItemAge;
@@ -1390,7 +1390,7 @@ export class DemoApiService
 		const feature1 = new Feature();
 		feature1.name = "Feature 1";
 		feature1.id = 0;
-		feature1.workItemReference = "FTR-1";
+		feature1.referenceId = "FTR-1";
 		feature1.state = "ToDo";
 		feature1.projects = { 0: "Release 1.33.7" };
 		feature1.remainingWork = { 0: 10 };
@@ -1408,7 +1408,7 @@ export class DemoApiService
 		const feature2 = new Feature();
 		feature2.name = "Feature 2";
 		feature2.id = 1;
-		feature2.workItemReference = "FTR-2";
+		feature2.referenceId = "FTR-2";
 		feature2.state = "Doing";
 		feature2.projects = { 1: "Release 42" };
 		feature2.remainingWork = { 1: 5 };
@@ -1426,7 +1426,7 @@ export class DemoApiService
 		const feature3 = new Feature();
 		feature3.name = "Feature 3";
 		feature3.id = 2;
-		feature3.workItemReference = "FTR-3";
+		feature3.referenceId = "FTR-3";
 		feature3.state = "Done";
 		feature3.projects = { 2: "Release Codename Daniel" };
 		feature3.remainingWork = { 2: 7, 1: 15 };
@@ -1444,7 +1444,7 @@ export class DemoApiService
 		const feature4 = new Feature();
 		feature4.name = "Feature 4";
 		feature4.id = 3;
-		feature4.workItemReference = "FTR-4";
+		feature4.referenceId = "FTR-4";
 		feature4.state = "Unknown";
 		feature4.projects = { 2: "Release Codename Daniel", 1: "Release 1.33.7" };
 		feature4.remainingWork = { 2: 3, 1: 5 };

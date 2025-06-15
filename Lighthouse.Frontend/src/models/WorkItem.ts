@@ -6,7 +6,7 @@ export interface IWorkItem {
 	state: string;
 	stateCategory: StateCategory;
 	type: string;
-	workItemReference: string;
+	referenceId: string;
 	url: string | null;
 	startedDate: Date;
 	closedDate: Date;

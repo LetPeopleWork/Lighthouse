@@ -77,7 +77,7 @@ describe("ProjectCard component", () => {
 	const feature1 = new Feature();
 	feature1.name = "Feature 1";
 	feature1.id = 0;
-	feature1.workItemReference = "FTR-0";
+	feature1.referenceId = "FTR-0";
 	feature1.state = "In Progress";
 	feature1.type = "Feature";
 	feature1.projects = { 1: "Project Alpha" };
@@ -94,7 +94,7 @@ describe("ProjectCard component", () => {
 	const feature2 = new Feature();
 	feature2.name = "Feature 2";
 	feature2.id = 1;
-	feature2.workItemReference = "FTR-1";
+	feature2.referenceId = "FTR-1";
 	feature2.state = "Done";
 	feature2.type = "Feature";
 	feature2.projects = { 1: "Project Alpha" };
@@ -191,8 +191,8 @@ describe("ProjectCard component", () => {
 		fireEvent.click(featureCountChip);
 
 		// Check if both features are displayed
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
+		expect(screen.getByText("FTR-0: Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("FTR-1: Feature 2")).toBeInTheDocument();
 
 		// Check if feature states are displayed
 		expect(screen.getByText("In Progress")).toBeInTheDocument();

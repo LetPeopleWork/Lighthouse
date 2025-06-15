@@ -11,6 +11,7 @@ import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type { IFeature } from "../../../models/Feature";
 import type { IProject } from "../../../models/Project/Project";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { getWorkItemName } from "../../../utils/featureName";
 
 interface ProjectFeatureListProps {
 	project: IProject;
@@ -33,7 +34,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 						team.id,
 					);
 					featuresByTeam[team.id] = features.map(
-						(feature) => feature.workItemReference,
+						(feature) => feature.referenceId,
 					);
 				} catch (error) {
 					console.error(`Failed to fetch features for team ${team.id}:`, error);
@@ -94,12 +95,12 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 		<TableRow key={feature.id}>
 			<TableCell>
 				<FeatureName
-					name={feature.name}
+					name={getWorkItemName(feature)}
 					url={feature.url ?? ""}
 					stateCategory={feature.stateCategory}
 					isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
 					teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
-						featuresInProgress[team.id]?.includes(feature.workItemReference),
+						featuresInProgress[team.id]?.includes(feature.referenceId),
 					)}
 				/>
 			</TableCell>

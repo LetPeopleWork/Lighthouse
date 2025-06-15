@@ -12,6 +12,7 @@ import { styled } from "@mui/system";
 import type React from "react";
 import { Link } from "react-router-dom";
 import type { IFeature } from "../../../models/Feature";
+import { getWorkItemName } from "../../../utils/featureName";
 import { getStateColor } from "../../../utils/theme/colors";
 
 const FeatureItem = styled("div")(({ theme }) => ({
@@ -105,7 +106,7 @@ const FeaturesDialog: React.FC<FeaturesDialogProps> = ({
 												},
 											}}
 										>
-											{feature.name}
+											{getWorkItemName(feature)}
 										</Typography>
 										<Chip
 											size="small"

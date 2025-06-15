@@ -142,7 +142,7 @@ describe("TeamMetricsService", () => {
 
 	const createMockWorkItem = (name: string): IWorkItem => ({
 		id: Math.floor(Math.random() * 1000),
-		workItemReference: Math.floor(Math.random() * 1000).toString(),
+		referenceId: Math.floor(Math.random() * 1000).toString(),
 		url: "",
 		name,
 		workItemAge: 7,

@@ -47,8 +47,9 @@ describe("DatePickerComponent", () => {
 		const prevMonthButton = await screen.findByLabelText(/previous month/i);
 		await user.click(prevMonthButton);
 
-		// Find the date button by its text content rather than by role
-		const dateButton = await screen.findByText("15");
+		const dayOfMonth = today.date();
+		const dayToSelect = dayOfMonth === 15 ? 14 : 15; // Ensure we select a valid day
+		const dateButton = await screen.findByText(dayToSelect);
 		await user.click(dateButton);
 
 		expect(mockOnChange).toHaveBeenCalled();

@@ -6,7 +6,7 @@ import ItemsInProgress from "./ItemsInProgress";
 describe("ItemsInProgress component", () => {
 	const createMockWorkItem = (name: string): IWorkItem => ({
 		id: Math.floor(Math.random() * 1000),
-		workItemReference: Math.floor(Math.random() * 1000).toString(),
+		referenceId: Math.floor(Math.random() * 1000).toString(),
 		url: "https://example.com/item1",
 		name,
 		startedDate: new Date("2023-01-15"),

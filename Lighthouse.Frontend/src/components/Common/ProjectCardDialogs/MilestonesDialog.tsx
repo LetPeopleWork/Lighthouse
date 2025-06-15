@@ -14,6 +14,7 @@ import type React from "react";
 import { Link } from "react-router-dom";
 import type { IFeature } from "../../../models/Feature";
 import type { IMilestone } from "../../../models/Project/Milestone";
+import { getWorkItemName } from "../../../utils/featureName";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 
 const MilestoneItem = styled(Paper)(({ theme }) => ({
@@ -137,7 +138,7 @@ const SingleMilestoneView: React.FC<SingleMilestoneViewProps> = ({
 												},
 											}}
 										>
-											{feature.name}
+											{getWorkItemName(feature)}
 										</Typography>
 										<Chip
 											size="small"

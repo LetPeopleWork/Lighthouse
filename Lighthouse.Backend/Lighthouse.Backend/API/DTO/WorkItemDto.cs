@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             Name = workItem.Name;
             Id = workItem.Id;
-            WorkItemReference = workItem.ReferenceId;
+            ReferenceId = workItem.ReferenceId;
             ParentWorkItemReference = workItem.ParentReferenceId;
             Url = workItem.Url;
             Type = workItem.Type;
@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public int Id { get; }
 
-        public string WorkItemReference { get; }
+        public string ReferenceId { get; }
 
         public string ParentWorkItemReference { get; }
 

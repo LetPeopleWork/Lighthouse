@@ -4,6 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { getWorkItemName } from "../../../utils/featureName";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import BaseRunChart from "./BaseRunChart";
 
@@ -87,7 +88,8 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 											chartData.workItemsPerUnitOfTime[index]?.length ?? 0;
 
 										if (numberOfClosedItems === 1) {
-											return `${chartData.workItemsPerUnitOfTime[index][0].name} (Click for details)`;
+											const item = chartData.workItemsPerUnitOfTime[index][0];
+											return `${getWorkItemName(item)} (Click for details)`;
 										}
 
 										if (numberOfClosedItems > 0) {

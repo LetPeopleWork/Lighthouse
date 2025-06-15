@@ -10,6 +10,7 @@ import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type { IFeature } from "../../../models/Feature";
 import type { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { getWorkItemName } from "../../../utils/featureName";
 
 interface FeatureListProps {
 	team: Team;
@@ -23,9 +24,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	useEffect(() => {
 		const fetchFeaturesInProgress = async () => {
 			const features = await teamMetricsService.getFeaturesInProgress(team.id);
-			setFeaturesInProgress(
-				features.map((feature) => feature.workItemReference),
-			);
+			setFeaturesInProgress(features.map((feature) => feature.referenceId));
 		};
 
 		fetchFeaturesInProgress();
@@ -65,12 +64,12 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 		<TableRow key={feature.id}>
 			<TableCell>
 				<FeatureName
-					name={feature.name}
+					name={getWorkItemName(feature)}
 					url={feature.url ?? ""}
 					stateCategory={feature.stateCategory}
 					isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
 					teamsWorkIngOnFeature={
-						featuresInProgress.includes(feature.workItemReference) ? [team] : []
+						featuresInProgress.includes(feature.referenceId) ? [team] : []
 					}
 				/>
 			</TableCell>

@@ -81,7 +81,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 	const mockWorkItems: IWorkItem[] = [
 		{
 			id: 1,
-			workItemReference: "ITEM-1",
+			referenceId: "ITEM-1",
 			name: "Test Item 1",
 			url: "https://example.com/item1",
 			cycleTime: 5,
@@ -94,7 +94,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		},
 		{
 			id: 2,
-			workItemReference: "ITEM-2",
+			referenceId: "ITEM-2",
 			name: "Test Item 2",
 			url: "https://example.com/item2",
 			cycleTime: 10,

@@ -66,7 +66,7 @@ function generateMockWorkItems(count: number): IWorkItem[] {
 	return Array.from({ length: count }, (_, i) => ({
 		id: i,
 		name: `Work Item ${i}`,
-		workItemReference: `WI-${i}`,
+		referenceId: `WI-${i}`,
 		url: `https://example.com/work-item/${i}`,
 		state: "In Progress",
 		stateCategory: "Doing",
