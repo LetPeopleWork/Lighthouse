@@ -142,9 +142,11 @@ testWithRestoredDefaultSettings(
 
 			await teamSettingsPage.addTag(newTag);
 
-			await teamSettingsPage.toggleAdvancedConfiguration();
+			await teamSettingsPage.toggleFlowMetricsConfiguration();
 			await teamSettingsPage.setFeatureWip(newFeatureWIP);
 			await teamSettingsPage.enableAutomaticallyAdjustFeatureWIP();
+
+			await teamSettingsPage.toggleAdvancedConfiguration();
 			await teamSettingsPage.setRelationCustomField(newRelationCustomField);
 
 			await expect(teamSettingsPage.saveButton).toBeEnabled();

@@ -104,18 +104,6 @@ testWithData(
 		await test.step("Advanced Configuration should not be mandatory", async () => {
 			await teamEditPage.toggleAdvancedConfiguration();
 
-			await teamEditPage.setFeatureWip(0);
-			await expect(teamEditPage.validateButton).toBeEnabled();
-
-			await teamEditPage.setFeatureWip(-1);
-			await expect(teamEditPage.validateButton).toBeEnabled();
-
-			await teamEditPage.enableAutomaticallyAdjustFeatureWIP();
-			await expect(teamEditPage.validateButton).toBeEnabled();
-
-			await teamEditPage.disableAutomaticallyAdjustFeatureWIP();
-			await expect(teamEditPage.validateButton).toBeEnabled();
-
 			await teamEditPage.setRelationCustomField("CUSTOMFIELD");
 			await expect(teamEditPage.validateButton).toBeEnabled();
 			await teamEditPage.setRelationCustomField("");

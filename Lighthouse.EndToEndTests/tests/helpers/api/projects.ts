@@ -43,6 +43,7 @@ export async function createProject(
 			workTrackingSystemConnectionId: workTrackingSystemConnectionId,
 			serviceLevelExpectationProbability: 80,
 			serviceLevelExpectationRange: 25,
+			systemWIPLImit: 2,
 		},
 	});
 	return response.json();

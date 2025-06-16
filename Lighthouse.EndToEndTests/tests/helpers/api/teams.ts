@@ -27,6 +27,7 @@ export async function createTeam(
 			workTrackingSystemConnectionId: workTrackingSystemConnectionId,
 			serviceLevelExpectationProbability: 70,
 			serviceLevelExpectationRange: 7,
+			systemWIPLimit: 6,
 		},
 	});
 
