@@ -94,8 +94,19 @@ Tags allow you to add any kind of additional information that may be helpful for
 
 Tags are checked when you use the search functionality.
 
-# Advanced Configuration
-There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
+# Flow Metrics Configuration
+Under this section, you'll find all configuration options related to Flow Metrics.
+
+## System WIP Limit
+If you want to work with WIP limits, Lighthouse allows you to specify one for the overall system you are working in. This configuration has **no** impact on any forecasting, but it will show up in your metrics section and helps you identify if you are above or below your limit. If set, the limit will show up:
+- In the header of a team
+- In the Work In Progress Widget as a *Goal*
+- In the WIP Run Chart as a horizontal line
+
+Lighthouse is not allowing you to set state specific limits, it will check everything that is in progress, independent of the states (but based on your [state configuration](#states)).
+
+{: .note}
+A WIP limit is not just a maximum you should not exceed. It is what we think is our optimum capacity. Meaning that, while we should not exceed it, we should also not be below it, as this means, we're not running at our optimum. While we should take natural variability into account, we should aim to be **at** the limit we set, and neither below nor above.
 
 ## Feature WIP
 If your team is working on multiple Features at the same time, you want to adjust the Feature WIP to this number. This will impact your forecasts for projects, and will lead to different predicted delivery times.
@@ -111,6 +122,14 @@ You can set your Feature WIP to anything you like, there does not need to be a c
 {: .recommendation}
 Tick this box if you want to increase transparency. A higher Feature WIP will lead to *late delivery* of many features. Not everyone will like this. It may be a good way to show why we should use focus (and Lighthouse might give you the underlying data for that). Keep fighting the good fight!
 
+## Service Level Expectation
+You can enable a Service Level Expectation (SLE) for your teams. If you do, you must define a *probability* and a range in days. You can use this for forecast single item delivery and to communicate with your stakeholders, as well as to inspect your delivery performance.
+
+If you enable the SLE, you will get additional information in the [Metrics View](../metrics/metrics.html).
+
+# Advanced Configuration
+There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
+
 ## Relation Custom Field
 In order to establish a relation between a Feature and a team, Lighthouse assumes that the Feature is set as a parent for the work item.
 If this is not the case, you can specify an additional field that is containing the ID of the Feature in the Teams Work Items. That way, you can let Lighthouse know how the relation between Feature and Work Items are established.
@@ -121,8 +140,3 @@ For example, if your customfield id is 1886, you would specify `cf[1886]` as val
 
 You may wonder "Why would use another way of specifying a parent-child relationship than the built in ones?". Well, corporations sometimes do things for reasons beyond our understanding. We're not here to judge 🤷‍♂️  
 In theory this would allow you to also *cross-link* Jira and Azure DevOps items (but please don't, we have not tested it, which is why we wrote *in theory*...).
-
-# Service Level Expectation
-You can enable a Service Level Expectation (SLE) for your teams. If you do, you must define a *probability* and a range in days. You can use this for forecast single item delivery and to communicate with your stakeholders, as well as to inspect your delivery performance.
-
-If you enable the SLE, you will get additional information in the [Metrics View](../metrics/metrics.html).

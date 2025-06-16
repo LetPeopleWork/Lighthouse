@@ -168,7 +168,22 @@ This means you may have to specify your teams exactly as you do it in your work 
 
 Lighthouse will use the **Feature Owner** to assign the work to a specific team. If not defined, it will fall back to the **Owning Team** of this project. If this is neither defined, it will distribute the work across all the teams.
 
-# Service Level Expectation
+# Flow Metrics Configuration
+Under this section, you'll find all configuration options related to Flow Metrics.
+
+## System WIP Limit
+If you want to work with WIP limits, Lighthouse allows you to specify one for the overall system you are working in. This configuration has **no** impact on any forecasting, but it will show up in your metrics section and helps you identify if you are above or below your limit. If set, the limit will show up:
+- In the header of a team
+- In the Work In Progress Widget as a *Goal*
+- In the WIP Run Chart as a horizontal line
+
+Lighthouse is not allowing you to set state specific limits, it will check everything that is in progress, independent of the states (but based on your [state configuration](#states)).
+
+{: .note}
+A WIP limit is not just a maximum you should not exceed. It is what we think is our optimum capacity. Meaning that, while we should not exceed it, we should also not be below it, as this means, we're not running at our optimum. While we should take natural variability into account, we should aim to be **at** the limit we set, and neither below nor above.
+
+
+## Service Level Expectation
 You can enable a Service Level Expectation (SLE) for your teams. If you do, you must define a *probability* and a range in days. You can use this for forecast single item delivery and to communicate with your stakeholders, as well as to inspect your delivery performance.
 
 If you enable the SLE, you will get additional information in the [Metrics View](../metrics/metrics.html).

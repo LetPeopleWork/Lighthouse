@@ -32,6 +32,16 @@ You can also delete Work Tracking Systems if they are not needed anymore. To do 
 {: .note}
 You can only delete a Work Tracking System if no team and project is using this. Either remove those teams and projects, or change them to use a different work tracking system.
 
+## Work Tracking System Settings
+There are settings that apply to any configured Work Tracking System setting. These you can find below the available and configured systems. Those settings are *advanced* settings, and in general, you ideally never need to adjust them. However, there are situations where this may be coming in handy.
+
+### Request Timeout
+You can override the default timeout for the requests that are made to your Work Tracking System. If you do so, it means that it Lighthouse will wait potentially longer for an answer from your system.
+
+This can be useful if you're using a query that returns many items, and your system is not very fast in responding. This is more likely to happen if you're using an internally hosted system (for example Jira Data Center) which may not run on the fastest hardware.
+
+To override, simply toggle on the override button, and specify the desired timeout in seconds. The default timeout when no override is active is 100 seconds. So if you override, you most likely want to be above that.
+
 # System Settings
 The System Settings Page shows some generally applicable settings that affect the overall Lighthouse behaviour.
 

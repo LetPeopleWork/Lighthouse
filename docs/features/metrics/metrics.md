@@ -30,6 +30,9 @@ Each widget will focus on one or more of those Flow Metrics.
 # Filtering
 You can filter for a time range of your choice when you look at metrics. By default, you'll see the last 30 days (for teams) or last 90 days (for projects). Just change start and/or end date via the date pickers, and Lighthouse will update most metrics. Some metric widgets are not affected by the time filter - read on to see which ones.
 
+# Details
+Many Charts and Widgets are clickable and will provide you more details about the work items they visualize. You will see the mouse changing to a "hand" icon - in such a case you can click and a dialog with more details will pop up.
+
 # Metrics
 Following a brief overview over the various metric widgets that are available in Lighthouse.
 
@@ -40,7 +43,7 @@ Following a brief overview over the various metric widgets that are available in
 | **Flow Metric** | WIP, Work Item Age |
 | **Affected by Filtering** | No |
 
-This widget shows the total number of items in progress **right now**, based on the Work Items that are in a *Doing* state as per your configuration.
+This widget shows the total number of items in progress **right now**, based on the Work Items that are in a *Doing* state as per your configuration. If a *System WIP Limit* is specified for the Team or Project, this is visualized as well on the Widget and colored accordingly.
 
 ![Work Items In Progress](../../assets/features/metrics/workitemsinprogress.png)
 
@@ -80,6 +83,10 @@ The WIP Over Time chart shows you how the WIP evolved over the selected time ran
 
 ![WIP Run Chart](../../assets/features/metrics/wipOverTime.png)
 
+If you click on a specific day, it will show you the details of which items were in progress on that specific day.
+
+If you have defined a *System WIP Limit*, you can show this as a horizontal line on your chart.
+
 ## Started vs. Closed
 
 |--------------|-------------------------|
@@ -100,6 +107,8 @@ As a rule of thumb, you should try to match your started items with how many ite
 
 This can help you to prepare just enough items for your team(s). Whether you do it daily or in bigger batches (for example having a refinement session per week), using this information helps you make sure you are neither under- nor over-prepared.
 
+If you want to know more details, you can click on the widget, and it will show you the specific items that were closed and opened in the selected time range.
+
 ## Throughput
 
 |--------------|-------------------------|
@@ -113,7 +122,7 @@ You can see how many items were closed each day over the last several days. The 
 
 ![Throughput Run Chart](../../assets/features/metrics/throughputRunChart.png)
 
-This widget will adjust based on the selected time range.
+This widget will adjust based on the selected time range. If you want to know which exact items were closed, you can click on a specific day and get more details.
 
 ## Cycle Time Percentiles
 
@@ -146,7 +155,7 @@ If there are items that were closed on the same day with the same cycle time, th
 
 ![Cycle Time Scatterplot](../../assets/features/metrics/cycleTimeScatterplot.png)
 
-This visual allows you to see patterns or outliers. Hovering over a dot will give you more information about the items, and with a click you'll get to the item in your work tracking system.
+This visual allows you to see patterns or outliers. Hovering over a dot will give you additional information, and with a click you'll get a more detailed view about the item(s) represented by the specific dot.
 
 You can click on the percentiles on top in the legend to show/hide them. Additionally, if you have defined an SLE, you can show the line on your scatterplot as well.
 
