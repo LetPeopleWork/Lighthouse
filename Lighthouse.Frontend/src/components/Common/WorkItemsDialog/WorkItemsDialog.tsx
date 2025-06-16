@@ -12,7 +12,6 @@ import {
 	TableHead,
 	TableRow,
 	Typography,
-	useTheme,
 } from "@mui/material";
 import type { IWorkItem } from "../../../models/WorkItem";
 import {
@@ -43,7 +42,6 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	timeMetric = "age",
 	sle,
 }) => {
-	const theme = useTheme();
 	const sortedItems = [...items].sort((a, b) => {
 		if (timeMetric === "ageCycleTime") {
 			// For combined mode, sort by state category first (active items before done)
@@ -127,7 +125,17 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 						</TableHead>
 						<TableBody>
 							{sortedItems.map((item) => (
-								<TableRow key={item.id}>
+								<TableRow
+									key={item.id}
+									sx={{
+										"&:hover": {
+											backgroundColor: (theme) =>
+												theme.palette.mode === "dark"
+													? "rgba(255, 255, 255, 0.08)"
+													: "rgba(0, 0, 0, 0.04)",
+										},
+									}}
+								>
 									<TableCell>
 										{!item.name?.toLowerCase().includes("unparented")
 											? item.referenceId
@@ -171,13 +179,21 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 												borderRadius: 1,
 												display: "inline-flex",
 												alignItems: "center",
-												backgroundColor: getTimeColor(getTimeValue(item))
-													? hexToRgba(
-															getTimeColor(getTimeValue(item)) ??
-																theme.palette.text.primary,
-															0.1,
-														)
-													: "transparent",
+												backgroundColor: (theme) => {
+													const timeColor = getTimeColor(getTimeValue(item));
+													return timeColor
+														? hexToRgba(
+																timeColor ?? theme.palette.text.primary,
+																0.1,
+															)
+														: "transparent";
+												},
+												// Ensure text remains readable on hover by increasing contrast
+												"tr:hover &": {
+													boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.05)",
+													position: "relative",
+													zIndex: 1,
+												},
 											}}
 										>
 											{formatTime(getTimeValue(item))}
