@@ -62,6 +62,10 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Gonzalo Mendez**](https://www.linkedin.com/in/gonzalo-mendez-nz/)
 - [**Oliver Oyston**](https://www.linkedin.com/in/oliveroyston/)
 - [**Iwo Hryniewicz**](https://www.linkedin.com/in/iwo-hryniewicz/)
+- [**Gabor Bittera**](https://www.linkedin.com/in/gaborbittera/)
+- [**Frank Barner**](https://www.linkedin.com/in/frankbarner/)
+- [**Nina Wagen**](https://www.linkedin.com/in/nina-wagen-04a9756a/)
+- [**Becky Tedds**](https://www.linkedin.com/in/beckytedds/)
 
 ---
 

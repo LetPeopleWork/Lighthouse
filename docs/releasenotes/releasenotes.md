@@ -11,10 +11,64 @@ Preview
 {: .label .label-blue }
 -->
 
-# Lighthouse v25.6.6.1614
+# Lighthouse v25.6.16.1514
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+This release focused on many smaller improvements and bug fixes, many of which came in through our Slack community.
+
+# Context For Charts and Widgets
+Visualization of our data is very useful, but at times it's also great to see the underlying data in a simple, table-like format. In this release, we added more context for many widgets and charts, so that you can see the individual items that make up the values Lighthouse is visualizing:
+
+- Started vs. Closed Widget: Click on the widget to see which items were started and/or closed in the specific time range
+- Throughput Run Chart: Click on a specific day to see which item(s) were closed
+- WIP Run Chart: Click on a specific day to see which items were open
+
+Clicking will always open a dialog with more detailed information. We also aligned this behaviour on the Cycle Time Scatterplot. Instead of opening the link directly, a click on a bubble will now open the dialog as well. This makes it a lot easier if you have a single bubble that represents more than one item.
+
+![Closed Items Dialog](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/assets/features/metrics/closeditemsdialog.png?raw=true)
+
+The tooltip for all the charts will mention how many items are affected. If it's just a single one, you'll also see more details directly in the tooltip, like the name, and the reference/ID/key for all the teams and organizations that are operating like Rain Man and talk in numbers instead of meaningful words.
+
+# System WIP Limits
+For teams and projects, you can now define a *System WIP Limit*. If done, the value shows up:
+- In the header of the team/project details, similar to the Service Level Expectation
+- As a *Goal* in the Work In Progress widget
+- As an optional, horizontal line, in the WIP Run Chart
+
+![WIP Goal](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/assets/features/metrics/workitemsinprogress.png?raw=true)
+
+# Contrast
+We got feedback from several people that not everything is easy to read. We tried to improve this with this release, increasing the contrast and trying to implement the [WCAG guidelines](https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Understanding_WCAG/Perceivable/Color_contrast) for contrast ratios. This has an effect mainly (but not only) on dark mode, and especially within the metrics section.
+
+# Docker
+The docker container uses internally now the default ports 80 (http) and 443 (https) instead of 5000/5001. Also the http port is now exposed, so if you want to bind directly to this one, you are free to do so.
+
+## ⚠️ Breaking Changes ⚠️
+Be aware that this may break your existing scripts/commands to startup the docker container. Please adjust the ports accordingly in case you are updating.
+
+# Other Improvements
+- In the header of the team, it's now showing which timespan is used for forecasting (*Forecast Configuration*)
+- The default time range preselected when looking at their metrics is now based on the *Forecast Configuration* (unless they use a fixed date Throughput)
+- You can now override the default *request timeout* to cope with slow endpoints and/or large queries that time out
+- The System WIP, Feature WIP (for teams only), and Service Level Expectation configuration are now grouped under *Flow Metrics Configuration* in the Create/Edit page
+
+# Bug Fixes
+- If a tag for a project or team is empty, it will not be shown
+- Tooltip for the Cycle Time Scatterplot should not expand endlessly in width now
+- Update of various third-party libraries
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+- [Frank Barner](https://www.linkedin.com/in/frankbarner/)
+- [Nina Wagen](https://www.linkedin.com/in/nina-wagen-04a9756a/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.6.6.1614...v25.6.16.1514)
+
+# Lighthouse v25.6.6.1614
 
 # Export and Import of Configuration
 The main focus of this release was the introduction of the functionality to export and import your Lighthouse Configuration.
