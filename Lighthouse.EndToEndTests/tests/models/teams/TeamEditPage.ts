@@ -22,7 +22,11 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	}
 
 	async toggleFlowMetricsConfiguration(): Promise<void> {
-		await this.page.locator('div:nth-child(7) > .MuiCardHeader-root > .MuiCardHeader-action > .MuiButtonBase-root').click();
+		await this.page
+			.locator(
+				"div:nth-child(7) > .MuiCardHeader-root > .MuiCardHeader-action > .MuiButtonBase-root",
+			)
+			.click();
 	}
 
 	async setFeatureWip(featureWIP: number): Promise<void> {
@@ -52,7 +56,14 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	}
 
 	async toggleAdvancedConfiguration(): Promise<void> {
-		await this.page.locator('div').filter({ hasText: /^Advanced ConfigurationRelation Custom FieldRelation Custom Field$/ }).getByLabel('toggle').click();
+		await this.page
+			.locator("div")
+			.filter({
+				hasText:
+					/^Advanced ConfigurationRelation Custom FieldRelation Custom Field$/,
+			})
+			.getByLabel("toggle")
+			.click();
 	}
 
 	async setRelationCustomField(customField: string): Promise<void> {
