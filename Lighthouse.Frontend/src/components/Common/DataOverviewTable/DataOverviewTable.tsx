@@ -1,3 +1,7 @@
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import InfoIcon from "@mui/icons-material/Info";
 import {
 	Alert,
 	Box,
@@ -20,14 +24,8 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useEffect, useState } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import InfoIcon from "@mui/icons-material/Info";
 import ActionButton from "../ActionButton/ActionButton";
 import FilterBar from "../FilterBar/FilterBar";
 import ProgressIndicator from "../ProgressIndicator/ProgressIndicator";

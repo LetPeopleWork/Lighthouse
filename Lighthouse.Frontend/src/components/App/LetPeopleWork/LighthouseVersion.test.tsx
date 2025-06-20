@@ -44,7 +44,9 @@ vi.mock("./LatestReleaseInformationDialog", () => ({
 
 const MockApiServiceProvider = ({
 	children,
-}: { children: React.ReactNode }) => {
+}: {
+	children: React.ReactNode;
+}) => {
 	const mockContext = createMockApiServiceContext({
 		versionService: mockVersionService,
 	});

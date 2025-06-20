@@ -111,9 +111,7 @@ const TeamDetail: React.FC = () => {
 	return (
 		<LoadingAnimation hasError={false} isLoading={isLoading}>
 			<Container maxWidth={false}>
-				{team == null ? (
-					<></>
-				) : (
+				{team && (
 					<Grid container spacing={3}>
 						<Grid size={{ xs: 12 }}>
 							<DetailHeader

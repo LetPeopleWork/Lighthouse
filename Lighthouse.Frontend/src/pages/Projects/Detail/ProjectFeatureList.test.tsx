@@ -19,7 +19,10 @@ vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
 	default: ({
 		title,
 		forecasts,
-	}: { title: string; forecasts: IForecast[] }) => (
+	}: {
+		title: string;
+		forecasts: IForecast[];
+	}) => (
 		<div data-testid={`forecast-info-list-${title}`}>
 			{forecasts.map((forecast: IForecast) => (
 				<div key={forecast.probability}>{forecast.probability}%</div>
@@ -70,7 +73,9 @@ const mockTeamMetricsService: ITeamMetricsService =
 
 const MockApiServiceProvider = ({
 	children,
-}: { children: React.ReactNode }) => {
+}: {
+	children: React.ReactNode;
+}) => {
 	const mockContext = createMockApiServiceContext({
 		teamMetricsService: mockTeamMetricsService,
 	});

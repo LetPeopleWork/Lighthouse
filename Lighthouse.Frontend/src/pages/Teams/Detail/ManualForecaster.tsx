@@ -85,7 +85,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 				</Grid>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
-				{manualForecastResult != null ? (
+				{manualForecastResult && (
 					<Grid container spacing={2}>
 						<Grid size={{ xs: 4 }}>
 							<ForecastInfoList
@@ -109,8 +109,6 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 							</Grid>
 						)}
 					</Grid>
-				) : (
-					<></>
 				)}
 			</Grid>
 		</Grid>

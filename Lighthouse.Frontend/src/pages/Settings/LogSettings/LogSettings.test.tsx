@@ -21,7 +21,9 @@ mockLogService.setLogLevel = mockSetLogLevel;
 
 const MockApiServiceProvider = ({
 	children,
-}: { children: React.ReactNode }) => {
+}: {
+	children: React.ReactNode;
+}) => {
 	const mockContext = createMockApiServiceContext({
 		logService: mockLogService,
 	});

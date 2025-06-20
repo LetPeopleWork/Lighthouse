@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { useTheme as mockedUseTheme } from "../../../context/ThemeContext";
 import ThemeToggler from "./ThemeToggler";
+
 const useThemeMock = vi.mocked(mockedUseTheme);
 
 // Mock the ThemeContext hook

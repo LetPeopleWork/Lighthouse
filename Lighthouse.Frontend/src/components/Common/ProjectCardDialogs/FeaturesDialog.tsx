@@ -6,10 +6,11 @@ import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
 import { styled } from "@mui/system";
 import type React from "react";
+import { useId } from "react";
 import { Link } from "react-router-dom";
 import type { IFeature } from "../../../models/Feature";
 import { getWorkItemName } from "../../../utils/featureName";
@@ -40,15 +41,17 @@ const FeaturesDialog: React.FC<FeaturesDialogProps> = ({
 }) => {
 	const theme = useTheme();
 
+	const featuresDialogTitleId = useId();
+
 	return (
 		<Dialog
 			open={open}
 			onClose={onClose}
 			maxWidth="sm"
 			fullWidth
-			aria-labelledby="features-dialog-title"
+			aria-labelledby={featuresDialogTitleId}
 		>
-			<DialogTitle id="features-dialog-title">
+			<DialogTitle id={featuresDialogTitleId}>
 				<Stack
 					direction="row"
 					justifyContent="space-between"

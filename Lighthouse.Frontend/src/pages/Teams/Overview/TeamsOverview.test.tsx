@@ -38,7 +38,9 @@ const DeleteButton = ({ item }: { item: IFeatureOwner }) => {
 
 const ConfirmButton = ({
 	onClose,
-}: { onClose: (confirmed: boolean) => void }) => {
+}: {
+	onClose: (confirmed: boolean) => void;
+}) => {
 	const handleClick = React.useCallback(() => {
 		onClose(true);
 	}, [onClose]);
@@ -52,7 +54,9 @@ const ConfirmButton = ({
 
 const CancelButton = ({
 	onClose,
-}: { onClose: (confirmed: boolean) => void }) => {
+}: {
+	onClose: (confirmed: boolean) => void;
+}) => {
 	const handleClick = React.useCallback(() => {
 		onClose(false);
 	}, [onClose]);

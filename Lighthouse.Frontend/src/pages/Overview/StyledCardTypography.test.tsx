@@ -1,6 +1,6 @@
 import type { SvgIconComponent } from "@mui/icons-material";
 import SvgIcon from "@mui/material/SvgIcon";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import StyledCardTypography from "./StyledCardTypography";

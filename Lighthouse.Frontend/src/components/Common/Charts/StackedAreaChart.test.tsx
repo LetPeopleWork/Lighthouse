@@ -13,6 +13,7 @@ vi.mock("@mui/material", async () => {
 		useTheme: () => testTheme,
 	};
 });
+
 import StackedAreaChart, { type AreaChartItem } from "./StackedAreaChart";
 
 describe("StackedAreaChart component", () => {

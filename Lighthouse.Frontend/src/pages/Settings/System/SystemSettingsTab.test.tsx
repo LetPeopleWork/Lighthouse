@@ -36,7 +36,9 @@ mockConfigurationService.exportConfiguration = mockExportConfiguration;
 
 const MockApiServiceProvider = ({
 	children,
-}: { children: React.ReactNode }) => {
+}: {
+	children: React.ReactNode;
+}) => {
 	const mockContext = createMockApiServiceContext({
 		settingsService: mockSettingsService,
 		optionalFeatureService: mockOptionalFeatureService,

@@ -316,7 +316,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							isForTeam={true}
 						/>
 
-						{!modifyDefaultSettings ? (
+						{!modifyDefaultSettings && (
 							<WorkTrackingSystemComponent
 								workTrackingSystems={workTrackingSystems}
 								selectedWorkTrackingSystem={selectedWorkTrackingSystem}
@@ -325,8 +325,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 									handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
 								}
 							/>
-						) : (
-							<></>
 						)}
 
 						<TagsComponent

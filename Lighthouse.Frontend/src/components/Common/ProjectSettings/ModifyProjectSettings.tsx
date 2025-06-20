@@ -341,14 +341,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							isForTeam={false}
 						/>
 
-						{!modifyDefaultSettings ? (
+						{!modifyDefaultSettings && (
 							<TeamsList
 								allTeams={teams}
 								selectedTeams={selectedTeams}
 								onSelectionChange={handleTeamSelectionChange}
 							/>
-						) : (
-							<></>
 						)}
 
 						<StatesList
@@ -364,7 +362,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							isForTeam={false}
 						/>
 
-						{!modifyDefaultSettings ? (
+						{!modifyDefaultSettings && (
 							<WorkTrackingSystemComponent
 								workTrackingSystems={workTrackingSystems}
 								selectedWorkTrackingSystem={selectedWorkTrackingSystem}
@@ -373,8 +371,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 									handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
 								}
 							/>
-						) : (
-							<></>
 						)}
 
 						<TagsComponent

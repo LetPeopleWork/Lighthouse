@@ -1,6 +1,5 @@
-import type React from "react";
-
 import { LazyLog } from "@melloware/react-logviewer";
+import type React from "react";
 
 interface LogViewerProps {
 	data: string;

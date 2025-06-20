@@ -18,8 +18,8 @@ import TeamDetail from "./pages/Teams/Detail/TeamDetail";
 import EditTeam from "./pages/Teams/Edit/EditTeam";
 import {
 	ApiServiceContext,
-	type IApiServiceContext,
 	getApiServices,
+	type IApiServiceContext,
 } from "./services/Api/ApiServiceContext";
 
 const App: React.FC = () => {
