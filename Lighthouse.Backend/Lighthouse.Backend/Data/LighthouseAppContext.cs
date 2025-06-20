@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Data
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            logger.LogInformation("Saving Changes Async");
+            logger.LogDebug("Saving Changes Async");
             PreprocessDataBeforeSave();
             return await SaveWithRetry(cancellationToken);
         }
