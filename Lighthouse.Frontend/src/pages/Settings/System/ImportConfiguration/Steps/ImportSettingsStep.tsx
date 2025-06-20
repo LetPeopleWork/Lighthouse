@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import camelcaseKeys from "camelcase-keys";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import LoadingAnimation from "../../../../../components/Common/LoadingAnimation/LoadingAnimation";
 import type { ConfigurationExport } from "../../../../../models/Configuration/ConfigurationExport";
 import type {
@@ -290,19 +290,21 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 		}
 	};
 
+	const configFileId = useId();
+
 	return (
 		<>
 			<Grid container spacing={2} sx={{ mb: 2 }}>
 				<Grid size={{ xs: 12 }}>
 					<input
 						type="file"
-						id="configuration-file"
+						id={configFileId}
 						accept=".json"
 						onChange={handleFileChange}
 						style={{ display: "none" }}
 						data-testid="file-input"
 					/>
-					<label htmlFor="configuration-file">
+					<label htmlFor={configFileId}>
 						<Button
 							variant="contained"
 							component="span"

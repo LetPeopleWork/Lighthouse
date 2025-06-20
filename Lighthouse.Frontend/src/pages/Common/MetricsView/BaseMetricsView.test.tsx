@@ -14,7 +14,10 @@ vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
 	default: ({
 		title,
 		chartData,
-	}: { title: string; chartData: RunChartData }) => (
+	}: {
+		title: string;
+		chartData: RunChartData;
+	}) => (
 		<div data-testid={`bar-run-chart-${title}`}>
 			<div data-testid="chart-data-count">{chartData.history}</div>
 		</div>
@@ -25,7 +28,10 @@ vi.mock("../../../components/Common/Charts/LineRunChart", () => ({
 	default: ({
 		title,
 		chartData,
-	}: { title: string; chartData: RunChartData }) => (
+	}: {
+		title: string;
+		chartData: RunChartData;
+	}) => (
 		<div data-testid={`line-run-chart-${title}`}>
 			<div data-testid="chart-data-count">{chartData.history}</div>
 		</div>
@@ -113,7 +119,11 @@ vi.mock("../../Teams/Detail/ItemsInProgress", () => ({
 		title,
 		items,
 		idealWip,
-	}: { title: string; items: IWorkItem[]; idealWip: number }) => (
+	}: {
+		title: string;
+		items: IWorkItem[];
+		idealWip: number;
+	}) => (
 		<div data-testid={`items-in-progress-${title}`}>
 			<div data-testid="items-count">{items.length}</div>
 			<div data-testid="ideal-wip">{idealWip}</div>
@@ -144,7 +154,10 @@ vi.mock("../../../components/Common/Charts/StackedAreaChart", () => ({
 	default: ({
 		title,
 		areas,
-	}: { title: string; areas: Array<{ name: string; data: number[] }> }) => (
+	}: {
+		title: string;
+		areas: Array<{ name: string; data: number[] }>;
+	}) => (
 		<div data-testid={`stacked-area-chart-${title}`}>
 			<div data-testid="areas-count">{areas.length}</div>
 		</div>

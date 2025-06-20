@@ -1,4 +1,4 @@
-import { Transform, Type, plainToInstance } from "class-transformer";
+import { plainToInstance, Transform, Type } from "class-transformer";
 import "reflect-metadata";
 import { Feature } from "../Feature";
 import type { IFeatureOwner } from "../IFeatureOwner";

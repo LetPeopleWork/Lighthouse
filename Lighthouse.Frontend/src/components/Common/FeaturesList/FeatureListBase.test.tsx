@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Feature } from "../../../models/Feature";
 import type { IFeature } from "../../../models/Feature";
+import { Feature } from "../../../models/Feature";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import FeatureListBase from "./FeatureListBase";
 

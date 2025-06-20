@@ -47,9 +47,10 @@ vi.mock("../LoadingAnimation/LoadingAnimation", () => ({
 	default: ({
 		isLoading,
 		children,
-	}: { isLoading: boolean; children: React.ReactNode }) => (
-		<div>{isLoading ? "Loading..." : children}</div>
-	),
+	}: {
+		isLoading: boolean;
+		children: React.ReactNode;
+	}) => <div>{isLoading ? "Loading..." : children}</div>,
 }));
 
 vi.mock("../WorkItemTypes/WorkItemTypesComponent", () => ({

@@ -8,7 +8,7 @@ import {
 	Stepper,
 } from "@mui/material";
 import type React from "react";
-import { useContext, useState } from "react";
+import { useContext, useId, useState } from "react";
 import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -131,6 +131,8 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		"Summary",
 	];
 
+	const importConfigurationDialogTitleId = useId();
+
 	const renderStepContent = () => {
 		switch (activeStep) {
 			case 0:
@@ -190,12 +192,12 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		<Dialog
 			open={open}
 			onClose={handleCloseDialog}
-			aria-labelledby="import-configuration-title"
+			aria-labelledby={importConfigurationDialogTitleId}
 			data-testid="import-configuration-dialog"
 			maxWidth="md"
 			fullWidth
 		>
-			<DialogTitle id="import-configuration-title">
+			<DialogTitle id={importConfigurationDialogTitleId}>
 				Import Configuration
 			</DialogTitle>
 			<DialogContent>

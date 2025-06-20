@@ -7,10 +7,11 @@ import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
 import { styled } from "@mui/system";
 import type React from "react";
+import { useId } from "react";
 import { Link } from "react-router-dom";
 import type { IFeature } from "../../../models/Feature";
 import type { IMilestone } from "../../../models/Project/Milestone";
@@ -207,15 +208,17 @@ const MilestonesDialog: React.FC<MilestonesDialogProps> = ({
 		? `${projectName}: ${selectedMilestone.name} Milestone`
 		: `${projectName}: Milestones`;
 
+	const milestoneDialogTitleId = useId();
+
 	return (
 		<Dialog
 			open={open}
 			onClose={onClose}
 			maxWidth="sm"
 			fullWidth
-			aria-labelledby="milestones-dialog-title"
+			aria-labelledby={milestoneDialogTitleId}
 		>
-			<DialogTitle id="milestones-dialog-title">
+			<DialogTitle id={milestoneDialogTitleId}>
 				<Stack
 					direction="row"
 					justifyContent="space-between"

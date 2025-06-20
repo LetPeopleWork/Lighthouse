@@ -7,6 +7,7 @@ import {
 	DialogTitle,
 } from "@mui/material";
 import type React from "react";
+import { useId } from "react";
 
 interface DeleteConfirmationDialogProps {
 	open: boolean;
@@ -23,16 +24,19 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
 		onClose(confirmed);
 	};
 
+	const alertDialogTitleId = useId();
+	const alertDialogDescriptionId = useId();
+
 	return (
 		<Dialog
 			open={open}
 			onClose={() => handleClose(false)}
-			aria-labelledby="alert-dialog-title"
-			aria-describedby="alert-dialog-description"
+			aria-labelledby={alertDialogTitleId}
+			aria-describedby={alertDialogDescriptionId}
 		>
-			<DialogTitle id="alert-dialog-title">Confirm Delete</DialogTitle>
+			<DialogTitle id={alertDialogTitleId}>Confirm Delete</DialogTitle>
 			<DialogContent>
-				<DialogContentText id="alert-dialog-description">
+				<DialogContentText id={alertDialogDescriptionId}>
 					Do you really want to delete {itemName}?
 				</DialogContentText>
 			</DialogContent>

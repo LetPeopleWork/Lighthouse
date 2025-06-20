@@ -1,4 +1,4 @@
-import { Transform, Type, plainToInstance } from "class-transformer";
+import { plainToInstance, Transform, Type } from "class-transformer";
 import "reflect-metadata";
 import type { IEntityReference } from "../EntityReference";
 import { Feature, type IFeature } from "../Feature";

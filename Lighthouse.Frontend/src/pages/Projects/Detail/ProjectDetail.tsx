@@ -164,9 +164,7 @@ const ProjectDetail: React.FC = () => {
 	return (
 		<LoadingAnimation hasError={false} isLoading={isLoading}>
 			<Container maxWidth={false}>
-				{project == null ? (
-					<></>
-				) : (
+				{project && (
 					<Grid container spacing={3}>
 						<Grid size={{ xs: 12 }}>
 							<DetailHeader

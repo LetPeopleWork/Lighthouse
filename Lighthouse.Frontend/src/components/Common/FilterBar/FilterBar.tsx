@@ -9,7 +9,7 @@ import {
 	useMediaQuery,
 	useTheme,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 
 interface FilterBarProps {
 	filterText: string;
@@ -27,6 +27,13 @@ const FilterBar: React.FC<FilterBarProps> = ({
 	const [isFocused, setIsFocused] = useState(false);
 	const [localFilterText, setLocalFilterText] = useState(filterText);
 
+	const searchFilterBarId = useId();
+
+	const handleClearFilter = useCallback(() => {
+		setLocalFilterText("");
+		onFilterTextChange("");
+	}, [onFilterTextChange]);
+
 	// Sync with external filterText value
 	useEffect(() => {
 		setLocalFilterText(filterText);
@@ -38,13 +45,13 @@ const FilterBar: React.FC<FilterBarProps> = ({
 			// Focus on search when Ctrl+F or Cmd+F (Mac) is pressed
 			if ((e.ctrlKey || e.metaKey) && e.key === "f") {
 				e.preventDefault();
-				document.getElementById("search-filter-bar")?.focus();
+				document.getElementById(searchFilterBarId)?.focus();
 			}
 
 			// Clear search with Escape key if focused
 			if (
 				e.key === "Escape" &&
-				document.activeElement?.id === "search-filter-bar"
+				document.activeElement?.id === searchFilterBarId
 			) {
 				handleClearFilter();
 			}
@@ -52,17 +59,12 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, []);
+	}, [handleClearFilter, searchFilterBarId]);
 
 	const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const newFilterText = e.target.value;
 		setLocalFilterText(newFilterText);
 		onFilterTextChange(newFilterText);
-	};
-
-	const handleClearFilter = () => {
-		setLocalFilterText("");
-		onFilterTextChange("");
 	};
 
 	return (
@@ -89,7 +91,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
 			<Box sx={{ flexGrow: 1 }}>
 				<TextField
-					id="search-filter-bar"
+					id={searchFilterBarId}
 					data-testid={dataTestId}
 					placeholder={
 						isMobile ? "Search" : "Search by project or team name (Ctrl+F)"

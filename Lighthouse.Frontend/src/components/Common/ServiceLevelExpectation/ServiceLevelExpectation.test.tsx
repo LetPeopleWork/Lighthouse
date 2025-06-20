@@ -1,10 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import ServiceLevelExpectation from "./ServiceLevelExpectation";
-
 // Mock the Material-UI theme
 import { testTheme } from "../../../tests/testTheme";
+import ServiceLevelExpectation from "./ServiceLevelExpectation";
 
 vi.mock("@mui/material", async () => {
 	const actual = await vi.importActual("@mui/material");

@@ -17,7 +17,9 @@ mockSettingsService.getRefreshSettings = mockGetRefreshSettings;
 
 const MockApiServiceProvider = ({
 	children,
-}: { children: React.ReactNode }) => {
+}: {
+	children: React.ReactNode;
+}) => {
 	const mockContext = createMockApiServiceContext({
 		settingsService: mockSettingsService,
 	});

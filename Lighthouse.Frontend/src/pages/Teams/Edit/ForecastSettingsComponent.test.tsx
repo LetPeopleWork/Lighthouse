@@ -10,7 +10,10 @@ vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
 	default: ({
 		title,
 		children,
-	}: { title: string; children: React.ReactNode }) => (
+	}: {
+		title: string;
+		children: React.ReactNode;
+	}) => (
 		<div>
 			<h2>{title}</h2>
 			{children}

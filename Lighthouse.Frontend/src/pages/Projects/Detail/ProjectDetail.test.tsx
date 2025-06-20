@@ -24,7 +24,11 @@ vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
 		children,
 		hasError,
 		isLoading,
-	}: { children: React.ReactNode; hasError: boolean; isLoading: boolean }) => (
+	}: {
+		children: React.ReactNode;
+		hasError: boolean;
+		isLoading: boolean;
+	}) => (
 		<>
 			{isLoading && <div>Loading...</div>}
 			{hasError && <div>Error loading data</div>}
@@ -103,7 +107,9 @@ mockUpdateSubscriptionService.getUpdateStatus = mockGetUpdateStatus;
 
 const MockApiServiceProvider = ({
 	children,
-}: { children: React.ReactNode }) => {
+}: {
+	children: React.ReactNode;
+}) => {
 	const mockContext = createMockApiServiceContext({
 		projectService: mockProjectService,
 		teamService: mockTeamService,

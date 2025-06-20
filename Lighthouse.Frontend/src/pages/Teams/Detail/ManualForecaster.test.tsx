@@ -38,7 +38,11 @@ vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
 vi.mock("../../../components/Common/Forecasts/ForecastLikelihood", () => ({
 	default: ({
 		likelihood,
-	}: { howMany: number; when: Date; likelihood: number }) => (
+	}: {
+		howMany: number;
+		when: Date;
+		likelihood: number;
+	}) => (
 		<div data-testid="forecast-likelihood">{`Likelihood: ${likelihood}%`}</div>
 	),
 }));

@@ -1,4 +1,4 @@
-import { Type, plainToInstance } from "class-transformer";
+import { plainToInstance, Type } from "class-transformer";
 import "reflect-metadata";
 
 export interface IMilestone {
