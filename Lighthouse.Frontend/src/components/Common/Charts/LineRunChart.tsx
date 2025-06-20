@@ -1,4 +1,4 @@
-import { Box, Chip, Stack, useTheme } from "@mui/material";
+import { Box, Chip, useTheme } from "@mui/material";
 import { ChartsReferenceLine, LineChart } from "@mui/x-charts";
 import type React from "react";
 import { useState } from "react";
@@ -65,73 +65,11 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 					const yValues = data.map((item) => item.value);
 
 					return (
-						<Box sx={{ position: "relative" }}>
-							<LineChart
-								onAxisClick={(_event, params) =>
-									handleLineClick(params?.dataIndex ?? -1)
-								}
-								onLineClick={(_event, params) =>
-									handleLineClick(params?.dataIndex ?? -1)
-								}
-								yAxis={[
-									{
-										min: 0,
-										valueFormatter: (value: number) => {
-											return Number.isInteger(value) ? value.toString() : "";
-										},
-									},
-								]}
-								xAxis={[
-									{
-										data: xLabels,
-										scaleType: "point",
-									},
-								]}
-								series={[
-									{
-										data: yValues,
-										color: theme.palette.primary.main,
-										valueFormatter: (
-											_value: number | null,
-											params: { dataIndex: number },
-										) => {
-											const index = params?.dataIndex ?? 0;
-											const numberOfItems =
-												chartData.workItemsPerUnitOfTime[index]?.length ?? 0;
-
-											if (numberOfItems === 1) {
-												const item = chartData.workItemsPerUnitOfTime[index][0];
-												return `${getWorkItemName(item)} (Click for details)`;
-											}
-
-											if (numberOfItems > 0) {
-												return `${numberOfItems} Items in Progress (Click for details)`;
-											}
-
-											return "No Items in Progress";
-										},
-									},
-								]}
-								height={500}
-							>
-								{wipLimitVisible && wipLimit !== undefined && wipLimit >= 1 && (
-									<ChartsReferenceLine
-										y={wipLimit}
-										labelAlign="start"
-										lineStyle={{
-											stroke: theme.palette.secondary.main,
-											strokeWidth: 2,
-											strokeDasharray: "3 3",
-										}}
-									/>
-								)}
-							</LineChart>
-
+						<>
+							{/* Legend below title, above chart, right-aligned */}
 							{wipLimit !== undefined && wipLimit >= 1 && (
-								<Stack
-									direction="row"
-									justifyContent="flex-end"
-									sx={{ position: "absolute", top: 16, right: 16 }}
+								<Box
+									sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}
 								>
 									<Chip
 										label="System WIP Limit"
@@ -159,9 +97,74 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 										}}
 										variant={wipLimitVisible ? "filled" : "outlined"}
 									/>
-								</Stack>
+								</Box>
 							)}
-						</Box>
+							<Box sx={{ position: "relative" }}>
+								<LineChart
+									onAxisClick={(_event, params) =>
+										handleLineClick(params?.dataIndex ?? -1)
+									}
+									onLineClick={(_event, params) =>
+										handleLineClick(params?.dataIndex ?? -1)
+									}
+									yAxis={[
+										{
+											min: 0,
+											valueFormatter: (value: number) => {
+												return Number.isInteger(value) ? value.toString() : "";
+											},
+										},
+									]}
+									xAxis={[
+										{
+											data: xLabels,
+											scaleType: "point",
+										},
+									]}
+									series={[
+										{
+											data: yValues,
+											color: theme.palette.primary.main,
+											valueFormatter: (
+												_value: number | null,
+												params: { dataIndex: number },
+											) => {
+												const index = params?.dataIndex ?? 0;
+												const numberOfItems =
+													chartData.workItemsPerUnitOfTime[index]?.length ?? 0;
+
+												if (numberOfItems === 1) {
+													const item =
+														chartData.workItemsPerUnitOfTime[index][0];
+													return `${getWorkItemName(item)} (Click for details)`;
+												}
+
+												if (numberOfItems > 0) {
+													return `${numberOfItems} Items in Progress (Click for details)`;
+												}
+
+												return "No Items in Progress";
+											},
+										},
+									]}
+									height={500}
+								>
+									{wipLimitVisible &&
+										wipLimit !== undefined &&
+										wipLimit >= 1 && (
+											<ChartsReferenceLine
+												y={wipLimit}
+												labelAlign="start"
+												lineStyle={{
+													stroke: theme.palette.secondary.main,
+													strokeWidth: 2,
+													strokeDasharray: "3 3",
+												}}
+											/>
+										)}
+								</LineChart>
+							</Box>
+						</>
 					);
 				}}
 			</BaseRunChart>
