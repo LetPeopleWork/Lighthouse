@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
@@ -191,8 +192,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", project.Name, project.WorkItemQuery);
 
-                var features = await GetFeaturesForProject(project);
-                var totalFeatures = features.Count;
+                var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
+                var issues = await GetIssuesByQuery(project, query, null, 10);
+                var totalFeatures = issues.Count();
 
                 logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);
 
