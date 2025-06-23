@@ -7,7 +7,6 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -186,6 +185,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.StateCategory, Is.EqualTo(StateCategories.Doing));
                 Assert.That(feature.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
             });
+        }
+
+        [Test]
+        public async Task WorkTrackingSystemContainsTrailingSlash_IgnoresInUrl()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"project = PROJ AND issueKey = PROJ-18");
+
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Story");
+
+            project.WorkTrackingSystemConnection.Options[0].Value = "https://letpeoplework.atlassian.net/";
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-18");
+
+            Assert.That(feature.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
         }
 
         [Test]

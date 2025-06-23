@@ -298,7 +298,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner)
         {
             var baseAddress = workItemQueryOwner.WorkTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
-            var url = $"{baseAddress}/browse/{issue.Key}";
+            var url = $"{baseAddress.TrimEnd('/')}/browse/{issue.Key}";
 
             var workItem = new WorkItemBase
             {
