@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.API.DTO
             ThroughputHistoryEndDate = throughputSettings.EndDate;
 
             FeatureWIP = team.FeatureWIP;
-            RelationCustomField = team.AdditionalRelatedField;
             AutomaticallyAdjustFeatureWIP = team.AutomaticallyAdjustFeatureWIP;
         }
 
@@ -35,8 +34,6 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public int FeatureWIP { get; set; }
-
-        public string RelationCustomField { get; set; }
 
         [JsonRequired]
         public bool AutomaticallyAdjustFeatureWIP { get; set; }

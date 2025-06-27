@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.TeamSettingFeatureWIP, "1")]
         [TestCase(AppSettingKeys.TeamSettingWorkItemQuery, "")]
         [TestCase(AppSettingKeys.TeamSettingWorkItemTypes, "User Story,Bug")]
-        [TestCase(AppSettingKeys.TeamSettingRelationCustomField, "")]
+        [TestCase(AppSettingKeys.TeamSettingParentOverrideField, "")]
         [TestCase(AppSettingKeys.ProjectSettingName, "New Project")]
         [TestCase(AppSettingKeys.ProjectSettingWorkItemQuery, "")]
         [TestCase(AppSettingKeys.ProjectSettingWorkItemTypes, "Epic")]
@@ -42,6 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.ProjectSettingSLERange, "0")]
         [TestCase(AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout, "False")]
         [TestCase(AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds, "100")]
+        [TestCase(AppSettingKeys.ProjectSettingParentOverrideField, "")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();

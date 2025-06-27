@@ -6,7 +6,6 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
@@ -43,7 +42,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
             
             var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)}";
-            var issues = await GetIssuesByQuery(team, query, team.AdditionalRelatedField);
+            var issues = await GetIssuesByQuery(team, query, team.ParentOverrideField);
 
             foreach (var issue in issues)
             {
@@ -59,7 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
             var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
-            var issues = await GetIssuesByQuery(project, query);
+            var issues = await GetIssuesByQuery(project, query, project.ParentOverrideField);
 
             var features = new List<Feature>();
             foreach (var issue in issues)
@@ -112,7 +111,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", team.WorkItemTypes), additionalQuery);
 
             var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, additionalQuery)} AND ({team.WorkItemQuery})";
-            var issues = await GetIssuesByQuery(team, query, team.AdditionalRelatedField);
+            var issues = await GetIssuesByQuery(team, query, team.ParentOverrideField);
 
             var issueKeys = issues.Select(x => x.Key).ToList();
 
@@ -171,7 +170,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
                 
                 var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
-                var issues = await GetIssuesByQuery(team, workItemsQuery, team.AdditionalRelatedField, 10);
+                var issues = await GetIssuesByQuery(team, workItemsQuery, team.ParentOverrideField, 10);
 
                 var totalItems = issues.Count();
 
@@ -326,9 +325,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var parentFieldName = "parent";
             var operators = new[] { "=" };
 
-            if (!string.IsNullOrEmpty(team.AdditionalRelatedField))
+            if (!string.IsNullOrEmpty(team.ParentOverrideField))
             {
-                parentFieldName = team.AdditionalRelatedField;
+                parentFieldName = team.ParentOverrideField;
                 operators = ["=", "~"];
             }
 

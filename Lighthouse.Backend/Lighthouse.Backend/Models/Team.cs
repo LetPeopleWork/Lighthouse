@@ -8,8 +8,6 @@
 
         public bool AutomaticallyAdjustFeatureWIP { get; set; }
 
-        public string? AdditionalRelatedField { get; set; } = string.Empty;
-
         public bool UseFixedDatesForThroughput { get; set; } = false;
 
         public DateTime? ThroughputHistoryStartDate { get; set; }

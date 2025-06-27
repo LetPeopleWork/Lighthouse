@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingToDoStates, "New,Planned",
                 AppSettingKeys.TeamSettingDoingStates, "In Progress,Committed",
                 AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
-                AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID",
+                AppSettingKeys.TeamSettingParentOverrideField, "Custom.RemoteParentID",
                 AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "true",
                 AppSettingKeys.TeamSettingTags, "tag1,tag2",
                 AppSettingKeys.TeamSettingSLEProbability, "88",
@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 
                 Assert.That(settings.FeatureWIP, Is.EqualTo(2));
                 Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
-                Assert.That(settings.RelationCustomField, Is.EqualTo("Custom.RemoteParentID"));
+                Assert.That(settings.ParentOverrideField, Is.EqualTo("Custom.RemoteParentID"));
                 Assert.That(settings.AutomaticallyAdjustFeatureWIP, Is.True);
 
                 Assert.That(settings.WorkItemTypes, Has.Count.EqualTo(2));
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingDoneStates, "Closed,Done",
                 AppSettingKeys.TeamSettingWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
                 AppSettingKeys.TeamSettingWorkItemTypes, "Product Backlog Item, Bug",
-                AppSettingKeys.TeamSettingRelationCustomField, "Custom.RemoteParentID",
+                AppSettingKeys.TeamSettingParentOverrideField, "Custom.RemoteParentID",
                 AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "False",
                 AppSettingKeys.TeamSettingTags, "tag1,tag2",
                 AppSettingKeys.TeamSettingSLEProbability, "88",
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 DoneStates = ["Over"],
                 WorkItemQuery = "project = MyJiraProject",
                 WorkItemTypes = ["Task", "Spike"],
-                RelationCustomField = "CUSTOM_12039213",
+                ParentOverrideField = "CUSTOM_12039213",
                 AutomaticallyAdjustFeatureWIP = true,
                 Tags = ["tag3", "tag4"],
                 ServiceLevelExpectationProbability = 80,
@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.TeamSettingDoneStates, "Over");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemQuery, "project = MyJiraProject");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingWorkItemTypes, "Task,Spike");
-            VerifyUpdateCalled(AppSettingKeys.TeamSettingRelationCustomField, "CUSTOM_12039213");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingParentOverrideField, "CUSTOM_12039213");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "True");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingTags, "tag3,tag4");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingSLEProbability, "80");
@@ -220,7 +220,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.AreaPath",
                 AppSettingKeys.ProjectSettingTags, "tag1,tag2",
                 AppSettingKeys.ProjectSettingSLEProbability, "88",
-                AppSettingKeys.ProjectSettingSLERange, "10"
+                AppSettingKeys.ProjectSettingSLERange, "10",
+                AppSettingKeys.ProjectSettingParentOverrideField, "customfield_10923123"
                 );
 
             var service = CreateService();
@@ -264,6 +265,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(settings.ServiceLevelExpectationProbability, Is.EqualTo(88));
                 Assert.That(settings.ServiceLevelExpectationRange, Is.EqualTo(10));
+
+                Assert.That(settings.ParentOverrideField, Is.EqualTo("customfield_10923123"));
             });
         }
 
@@ -287,7 +290,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.Tags",
                 AppSettingKeys.ProjectSettingTags, "tag1,tag2",
                 AppSettingKeys.ProjectSettingSLEProbability, "88",
-                AppSettingKeys.ProjectSettingSLERange, "10"
+                AppSettingKeys.ProjectSettingSLERange, "10",
+                AppSettingKeys.ProjectSettingParentOverrideField, "customfield_10923123"
                 );
 
             var service = CreateService();
@@ -311,6 +315,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Tags = ["tag3", "tag4"],
                 ServiceLevelExpectationProbability = 70,
                 ServiceLevelExpectationRange = 35,
+                ParentOverrideField = "customfield_1886",
             };
 
             await service.UpdateDefaultProjectSettings(newSettings);
@@ -332,6 +337,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingTags, "tag3,tag4");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingSLEProbability, "70");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingSLERange, "35");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingParentOverrideField, "customfield_1886");
         }
 
         [Test]

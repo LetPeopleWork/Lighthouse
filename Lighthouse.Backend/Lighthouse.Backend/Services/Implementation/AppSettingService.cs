@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 FeatureWIP = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingFeatureWIP).Value),
                 WorkItemQuery = GetSettingByKey(AppSettingKeys.TeamSettingWorkItemQuery).Value,
                 WorkItemTypes = workItemTypes,
-                RelationCustomField = GetSettingByKey(AppSettingKeys.TeamSettingRelationCustomField).Value,
+                ParentOverrideField = GetSettingByKey(AppSettingKeys.TeamSettingParentOverrideField).Value,
                 AutomaticallyAdjustFeatureWIP = bool.Parse(GetSettingByKey(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP).Value),
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
@@ -109,8 +109,8 @@ namespace Lighthouse.Backend.Services.Implementation
             tags.Value = string.Join(',', defaultTeamSetting.Tags);
             repository.Update(tags);
             
-            var relatedField = GetSettingByKey(AppSettingKeys.TeamSettingRelationCustomField);
-            relatedField.Value = defaultTeamSetting.RelationCustomField;
+            var relatedField = GetSettingByKey(AppSettingKeys.TeamSettingParentOverrideField);
+            relatedField.Value = defaultTeamSetting.ParentOverrideField;
             repository.Update(relatedField);
             
             var autoAdjustWIPField = GetSettingByKey(AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP);
@@ -162,6 +162,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 ServiceLevelExpectationProbability = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLEProbability).Value),
                 ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLERange).Value),
+
+                ParentOverrideField = GetSettingByKey(AppSettingKeys.ProjectSettingParentOverrideField).Value,
             };
 
             return projectSettings;
@@ -236,6 +238,10 @@ namespace Lighthouse.Backend.Services.Implementation
             var sleRange = GetSettingByKey(AppSettingKeys.ProjectSettingSLERange);
             sleRange.Value = defaultProjectSetting.ServiceLevelExpectationRange.ToString();
             repository.Update(sleRange);
+
+            var parentOverrideField = GetSettingByKey(AppSettingKeys.ProjectSettingParentOverrideField);
+            parentOverrideField.Value = defaultProjectSetting.ParentOverrideField;
+            repository.Update(parentOverrideField);
 
             await repository.Save();
         }

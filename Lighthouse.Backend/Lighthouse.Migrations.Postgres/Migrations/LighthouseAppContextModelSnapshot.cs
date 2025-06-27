@@ -349,6 +349,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("OwningTeamId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ParentOverrideField")
+                        .HasColumnType("text");
+
                     b.Property<int>("ServiceLevelExpectationProbability")
                         .HasColumnType("integer");
 
@@ -406,9 +409,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AdditionalRelatedField")
-                        .HasColumnType("text");
-
                     b.Property<bool>("AutomaticallyAdjustFeatureWIP")
                         .HasColumnType("boolean");
 
@@ -425,6 +425,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ParentOverrideField")
                         .HasColumnType("text");
 
                     b.Property<int>("ServiceLevelExpectationProbability")

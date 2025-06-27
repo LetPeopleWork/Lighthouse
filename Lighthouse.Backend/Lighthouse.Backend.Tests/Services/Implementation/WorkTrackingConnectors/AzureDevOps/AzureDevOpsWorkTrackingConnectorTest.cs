@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
-            team.AdditionalRelatedField = parentOverrideField;
+            team.ParentOverrideField = parentOverrideField;
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);

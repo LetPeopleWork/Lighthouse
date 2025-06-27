@@ -36,7 +36,7 @@
 
         public const string TeamSettingSLERange = "DefaultTeamSetting:SLERange";
 
-        public const string TeamSettingRelationCustomField = "DefaultTeamSetting:RelationCustomField";
+        public const string TeamSettingParentOverrideField = "DefaultTeamSetting:RelationCustomField";
 
         public const string TeamSettingAutomaticallyAdjustFeatureWIP = "DefaultTeamSetting:AutomaticallyAdjustFeatureWIP";
 
@@ -73,6 +73,8 @@
         public const string ProjectSettingSLEProbability = "DefaultProjectSetting:SLEProbability";
 
         public const string ProjectSettingSLERange = "DefaultProjectSetting:SLERange";
+
+        public const string ProjectSettingParentOverrideField = "DefaultProjectSetting:ParentOverrideField";
 
         public const string CleanUpDataHistorySettingsMaxStorageTimeInDays = "CleanUpDataHistorySettings:MaxStorageTimeInDays";
 

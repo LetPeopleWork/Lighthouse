@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
             var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
-            team.AdditionalRelatedField = "cf[10038]";
+            team.ParentOverrideField = "cf[10038]";
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");

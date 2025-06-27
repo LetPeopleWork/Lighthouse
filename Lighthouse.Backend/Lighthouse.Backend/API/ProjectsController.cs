@@ -152,6 +152,8 @@ namespace Lighthouse.Backend.API
             project.FeatureOwnerField = projectSetting.FeatureOwnerField;
             project.SystemWIPLimit = projectSetting.SystemWIPLimit;
 
+            project.ParentOverrideField = projectSetting.ParentOverrideField;
+
             SyncStates(project, projectSetting);
             SyncMilestones(project, projectSetting);
             SyncTeams(project, projectSetting);

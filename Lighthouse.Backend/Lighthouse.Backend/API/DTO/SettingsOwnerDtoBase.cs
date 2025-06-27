@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.API.DTO
             ServiceLevelExpectationProbability = workTrackingSystemOptionsOwner.ServiceLevelExpectationProbability;
             ServiceLevelExpectationRange = workTrackingSystemOptionsOwner.ServiceLevelExpectationRange;
             SystemWIPLimit = workTrackingSystemOptionsOwner.SystemWIPLimit;
+            ParentOverrideField = workTrackingSystemOptionsOwner.ParentOverrideField;
         }
 
         [JsonRequired]
@@ -53,5 +54,7 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public int SystemWIPLimit { get; set; }
+
+        public string ParentOverrideField { get; set; }
     }
 }

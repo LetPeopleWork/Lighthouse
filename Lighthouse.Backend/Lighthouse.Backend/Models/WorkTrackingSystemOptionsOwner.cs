@@ -30,6 +30,8 @@
 
         public int SystemWIPLimit { get; set; } = 0;
 
+        public string? ParentOverrideField { get; set; } = string.Empty;
+
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }

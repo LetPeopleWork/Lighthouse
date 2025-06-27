@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.Tests.MCP
                 Assert.That(teamDetails.Name, Is.EqualTo("Test Team"));
                 Assert.That(teamDetails.FeatureWIP, Is.EqualTo(3));
                 Assert.That(teamDetails.AutomaticallyAdjustFeatureWIP, Is.True);
-                Assert.That(teamDetails.AdditionalRelatedField, Is.EqualTo("SomeField"));
+                Assert.That(teamDetails.ParentOverrideField, Is.EqualTo("SomeField"));
             });
         }
 
@@ -227,7 +227,7 @@ namespace Lighthouse.Backend.Tests.MCP
                 Name = "Test Team",
                 FeatureWIP = 3,
                 AutomaticallyAdjustFeatureWIP = true,
-                AdditionalRelatedField = "SomeField",
+                ParentOverrideField = "SomeField",
             };
         }
 
