@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
@@ -398,6 +399,11 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						/>
 
 						<FlowMetricsConfigurationComponent
+							settings={projectSettings}
+							onSettingsChange={handleProjectSettingsChange}
+						/>
+
+						<AdvancedInputsComponent
 							settings={projectSettings}
 							onSettingsChange={handleProjectSettingsChange}
 						/>

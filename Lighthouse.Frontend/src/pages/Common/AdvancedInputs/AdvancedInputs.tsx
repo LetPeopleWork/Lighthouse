@@ -6,10 +6,7 @@ import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 
 interface AdvancedInputsComponentProps {
 	settings: IBaseSettings | null;
-	onSettingsChange: (
-		key: keyof IBaseSettings,
-		value: string | number | boolean,
-	) => void;
+	onSettingsChange: (key: keyof IBaseSettings, value: string) => void;
 }
 
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
