@@ -27,9 +27,7 @@ namespace Lighthouse.Backend.Factories
             newConnection.Options.AddRange(defaultOptions);
 
             return newConnection;
-        }
-
-        private List<WorkTrackingSystemConnectionOption> CreateOptionsForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
+        }        private List<WorkTrackingSystemConnectionOption> CreateOptionsForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
             logger.LogDebug("Getting Default WorkTrackingSystemConnectionOption for {WorkTrackingSystem}", workTrackingSystem);
 
@@ -39,6 +37,8 @@ namespace Lighthouse.Backend.Factories
                     return GetOptionsForAzureDevOps();
                 case WorkTrackingSystems.Jira:
                     return GetOptionsForJira();
+                case WorkTrackingSystems.JiraOAuth:
+                    return GetOptionsForJiraOAuth();
                 case WorkTrackingSystems.Linear:
                     return GetOptionsForLinear();
                 default:
@@ -105,6 +105,55 @@ namespace Lighthouse.Backend.Factories
                     Key = LinearWorkTrackingOptionNames.ApiKey,
                     Value = string.Empty,
                     IsSecret = true,
+                    IsOptional = false,
+                }
+            };
+        }
+
+        private List<WorkTrackingSystemConnectionOption> GetOptionsForJiraOAuth()
+        {
+            return new List<WorkTrackingSystemConnectionOption>
+            {
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = JiraOAuthWorkTrackingOptionNames.Url,
+                    Value = string.Empty,
+                    IsSecret = false,
+                    IsOptional = false,
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = JiraOAuthWorkTrackingOptionNames.ClientId,
+                    Value = string.Empty,
+                    IsSecret = false,
+                    IsOptional = false,
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = JiraOAuthWorkTrackingOptionNames.ClientSecret,
+                    Value = string.Empty,
+                    IsSecret = true,
+                    IsOptional = false,
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = JiraOAuthWorkTrackingOptionNames.AccessToken,
+                    Value = string.Empty,
+                    IsSecret = true,
+                    IsOptional = true,
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = JiraOAuthWorkTrackingOptionNames.RefreshToken,
+                    Value = string.Empty,
+                    IsSecret = true,
+                    IsOptional = true,
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = JiraOAuthWorkTrackingOptionNames.RedirectUri,
+                    Value = string.Empty,
+                    IsSecret = false,
                     IsOptional = false,
                 }
             };

@@ -28,14 +28,16 @@ namespace Lighthouse.Backend.Services.Factories
 
             if (workItemSerivce == null)
             {
-                logger.LogDebug("Work Item Service for {WorkTrackingSystem} not found in the cache - creating", workTrackingSystem);
-                switch (workTrackingSystem)
+                logger.LogDebug("Work Item Service for {WorkTrackingSystem} not found in the cache - creating", workTrackingSystem);                switch (workTrackingSystem)
                 {
                     case WorkTrackingSystems.AzureDevOps:
                         workItemSerivce = serviceProvider.GetRequiredService<AzureDevOpsWorkTrackingConnector>();
                         break;
                     case WorkTrackingSystems.Jira:
                         workItemSerivce = serviceProvider.GetRequiredService<JiraWorkTrackingConnector>();
+                        break;
+                    case WorkTrackingSystems.JiraOAuth:
+                        workItemSerivce = serviceProvider.GetRequiredService<JiraOAuthWorkTrackingConnector>();
                         break;
                     case WorkTrackingSystems.Linear:
                         workItemSerivce = serviceProvider.GetRequiredService<LinearWorkTrackingConnector>();

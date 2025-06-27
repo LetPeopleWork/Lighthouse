@@ -1001,6 +1001,18 @@ export class DemoApiService
 				],
 				null,
 			),
+			new WorkTrackingSystemConnection(
+				"New Jira OAuth Connection",
+				"JiraOAuth",
+				[
+					{ key: "Url", value: "", isSecret: false, isOptional: false },
+					{ key: "AccessToken", value: "", isSecret: true, isOptional: false },
+					{ key: "RefreshToken", value: "", isSecret: true, isOptional: false },
+					{ key: "ClientId", value: "", isSecret: false, isOptional: false },
+					{ key: "ClientSecret", value: "", isSecret: true, isOptional: false },
+				],
+				null,
+			),
 		];
 	}
 

@@ -12,6 +12,7 @@ import Settings from "./pages/Settings/Settings";
 import TeamsOverview from "./pages/Teams/Overview/TeamsOverview";
 import "./App.css";
 import DemoDialog from "./components/App/Demo/DemoDialog";
+import OAuthCallback from "./pages/Common/OAuthCallback";
 import ProjectDetail from "./pages/Projects/Detail/ProjectDetail";
 import EditProject from "./pages/Projects/Edit/EditProject";
 import TeamDetail from "./pages/Teams/Detail/TeamDetail";
@@ -69,6 +70,7 @@ const App: React.FC = () => {
 					>
 						<Routes>
 							<Route path="/" element={<OverviewDashboard />} />
+							<Route path="/oauth/callback" element={<OAuthCallback />} />
 							<Route path="/teams">
 								<Route index element={<TeamsOverview />} />
 								<Route path=":id" element={<TeamDetail />} />

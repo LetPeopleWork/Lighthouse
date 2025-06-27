@@ -6,6 +6,8 @@
 
         Jira,
         
+        JiraOAuth,
+        
         Linear,
     }
 }

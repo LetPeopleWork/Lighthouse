@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import ValidationActions from "../../../components/Common/ValidationActions/ValidationActions";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
+import JiraOAuthConnectionDialog from "./JiraOAuthConnectionDialog";
 
 interface ModifyWorkTrackingSystemConnectionDialogProps {
 	open: boolean;
@@ -35,6 +36,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		IWorkTrackingSystemOption[]
 	>([]);
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
+	const [showOAuthDialog, setShowOAuthDialog] = useState<boolean>(false);
 
 	useEffect(() => {
 		if (open && workTrackingSystems.length > 0) {
@@ -68,6 +70,13 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		if (system) {
 			setSelectedWorkTrackingSystem(system);
 			setName(system.name);
+
+			// For JiraOAuth, show the OAuth dialog instead of the regular options
+			if (system.workTrackingSystem === "JiraOAuth") {
+				setShowOAuthDialog(true);
+				return;
+			}
+
 			setSelectedOptions(
 				system.options.map((option) => ({
 					key: option.key,
@@ -129,63 +138,85 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		onClose(null);
 	};
 
+	const handleOAuthDialogClose = (
+		connection: IWorkTrackingSystemConnection | null,
+	) => {
+		setShowOAuthDialog(false);
+		if (connection) {
+			onClose(connection);
+		}
+	};
+
 	return (
-		<Dialog onClose={handleClose} open={open} fullWidth>
-			<DialogTitle>
-				{workTrackingSystems.length === 1
-					? "Edit Connection"
-					: "Create New Connection"}
-			</DialogTitle>
-			<DialogContent>
-				<TextField
-					label="Connection Name"
-					fullWidth
-					margin="normal"
-					value={name}
-					onChange={handleNameChange}
-				/>
-
-				<FormControl fullWidth margin="normal">
-					<InputLabel>Select Work Tracking System</InputLabel>
-					<Select
-						value={selectedWorkTrackingSystem?.workTrackingSystem ?? ""}
-						onChange={handleSystemChange}
-						label="Select Work Tracking System"
-					>
-						{workTrackingSystems.map((system) => (
-							<MenuItem
-								key={system.workTrackingSystem}
-								value={system.workTrackingSystem}
-							>
-								{system.workTrackingSystem}
-							</MenuItem>
-						))}
-					</Select>
-				</FormControl>
-
-				{selectedOptions.map((option) => (
+		<>
+			<Dialog onClose={handleClose} open={open} fullWidth>
+				<DialogTitle>
+					{workTrackingSystems.length === 1
+						? "Edit Connection"
+						: "Create New Connection"}
+				</DialogTitle>
+				<DialogContent>
 					<TextField
-						key={option.key}
-						label={option.key}
-						type={option.isSecret ? "password" : "text"}
+						label="Connection Name"
 						fullWidth
 						margin="normal"
-						value={option.value}
-						onChange={(e) => handleOptionChange(option, e.target.value)}
+						value={name}
+						onChange={handleNameChange}
 					/>
-				))}
-			</DialogContent>
-			<DialogActions>
-				<ValidationActions
-					onCancel={handleClose}
-					onValidate={handleValidate}
-					onSave={handleSubmit}
-					inputsValid={inputsValid}
-					validationFailedMessage="Could not connect to the work tracking system with the provided settings. Please review and try again."
-					saveButtonText={workTrackingSystems.length === 1 ? "Save" : "Create"}
+
+					<FormControl fullWidth margin="normal">
+						<InputLabel>Select Work Tracking System</InputLabel>
+						<Select
+							value={selectedWorkTrackingSystem?.workTrackingSystem ?? ""}
+							onChange={handleSystemChange}
+							label="Select Work Tracking System"
+						>
+							{workTrackingSystems.map((system) => (
+								<MenuItem
+									key={system.workTrackingSystem}
+									value={system.workTrackingSystem}
+								>
+									{system.workTrackingSystem}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+
+					{selectedOptions.map((option) => (
+						<TextField
+							key={option.key}
+							label={option.key}
+							type={option.isSecret ? "password" : "text"}
+							fullWidth
+							margin="normal"
+							value={option.value}
+							onChange={(e) => handleOptionChange(option, e.target.value)}
+						/>
+					))}
+				</DialogContent>
+				<DialogActions>
+					<ValidationActions
+						onCancel={handleClose}
+						onValidate={handleValidate}
+						onSave={handleSubmit}
+						inputsValid={inputsValid}
+						validationFailedMessage="Could not connect to the work tracking system with the provided settings. Please review and try again."
+						saveButtonText={
+							workTrackingSystems.length === 1 ? "Save" : "Create"
+						}
+					/>
+				</DialogActions>
+			</Dialog>
+
+			{/* OAuth Dialog for Jira OAuth connections */}
+			{showOAuthDialog && selectedWorkTrackingSystem && (
+				<JiraOAuthConnectionDialog
+					open={showOAuthDialog}
+					onClose={handleOAuthDialogClose}
+					workTrackingSystem={selectedWorkTrackingSystem}
 				/>
-			</DialogActions>
-		</Dialog>
+			)}
+		</>
 	);
 };
 

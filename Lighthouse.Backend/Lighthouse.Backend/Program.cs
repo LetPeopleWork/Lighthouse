@@ -198,11 +198,11 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IProjectMetricsService, ProjectMetricsService>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
-            builder.Services.AddScoped<IWorkItemService, WorkItemService>();
-
-            builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
+            builder.Services.AddScoped<IWorkItemService, WorkItemService>();            builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<JiraWorkTrackingConnector>();
+            builder.Services.AddScoped<JiraOAuthWorkTrackingConnector>();
             builder.Services.AddScoped<LinearWorkTrackingConnector>();
+            builder.Services.AddScoped<IOAuthService, OAuthService>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdater>();
