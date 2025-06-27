@@ -2,30 +2,30 @@ import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
-import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 
 interface AdvancedInputsComponentProps {
-	teamSettings: ITeamSettings | null;
-	onTeamSettingsChange: (
-		key: keyof ITeamSettings,
+	settings: IBaseSettings | null;
+	onSettingsChange: (
+		key: keyof IBaseSettings,
 		value: string | number | boolean,
 	) => void;
 }
 
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
-	teamSettings,
-	onTeamSettingsChange,
+	settings: teamSettings,
+	onSettingsChange: onTeamSettingsChange,
 }) => {
 	return (
 		<InputGroup title={"Advanced Configuration"} initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
 				<TextField
-					label="Relation Custom Field"
+					label="Parent Override Field"
 					fullWidth
 					margin="normal"
-					value={teamSettings?.relationCustomField ?? ""}
+					value={teamSettings?.parentOverrideField ?? ""}
 					onChange={(e) =>
-						onTeamSettingsChange("relationCustomField", e.target.value)
+						onTeamSettingsChange("parentOverrideField", e.target.value)
 					}
 				/>
 			</Grid>

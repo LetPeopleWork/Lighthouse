@@ -104,9 +104,9 @@ testWithData(
 		await test.step("Advanced Configuration should not be mandatory", async () => {
 			await teamEditPage.toggleAdvancedConfiguration();
 
-			await teamEditPage.setRelationCustomField("CUSTOMFIELD");
+			await teamEditPage.setParentOverrideField("CUSTOMFIELD");
 			await expect(teamEditPage.validateButton).toBeEnabled();
-			await teamEditPage.setRelationCustomField("");
+			await teamEditPage.setParentOverrideField("");
 			await expect(teamEditPage.validateButton).toBeEnabled();
 		});
 	},

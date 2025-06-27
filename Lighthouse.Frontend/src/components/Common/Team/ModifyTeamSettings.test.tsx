@@ -1,22 +1,20 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
-vi.mock("../../../pages/Teams/Edit/AdvancedInputs", () => ({
+vi.mock("../../../pages/Common/AdvancedInputs/AdvancedInputs.tsx", () => ({
 	__esModule: true,
 	default: ({
-		onTeamSettingsChange,
+		onSettingsChange,
 	}: {
-		onTeamSettingsChange: (key: keyof ITeamSettings, value: string) => void;
+		onSettingsChange: (key: keyof IBaseSettings, value: string) => void;
 	}) => (
 		<div>
 			<div>AdvancedInputsComponent</div>
-			<button
-				type="button"
-				onClick={() => onTeamSettingsChange("name", "value")}
-			>
+			<button type="button" onClick={() => onSettingsChange("name", "value")}>
 				Change Advanced
 			</button>
 		</div>
@@ -206,7 +204,7 @@ describe("ModifyTeamSettings", () => {
 		workTrackingSystemConnectionId: 1,
 		automaticallyAdjustFeatureWIP: false,
 		id: 12,
-		relationCustomField: "",
+		parentOverrideField: "",
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
@@ -366,7 +364,7 @@ describe("ModifyTeamSettings", () => {
 			workItemQuery: "Query",
 			workTrackingSystemConnectionId: 1,
 			automaticallyAdjustFeatureWIP: false,
-			relationCustomField: "custom",
+			parentOverrideField: "custom",
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,

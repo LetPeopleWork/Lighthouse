@@ -110,7 +110,7 @@ testWithRestoredDefaultSettings(
 		const newDoingState = "DOING";
 		const newDoneState = "DONE";
 		const newFeatureWIP = 3;
-		const newRelationCustomField = "RELATION!";
+		const newParentOverrideField = "RELATION!";
 		const newTag = "TAG!";
 
 		await test.step("Adjust Settings and Save", async () => {
@@ -147,7 +147,7 @@ testWithRestoredDefaultSettings(
 			await teamSettingsPage.enableAutomaticallyAdjustFeatureWIP();
 
 			await teamSettingsPage.toggleAdvancedConfiguration();
-			await teamSettingsPage.setRelationCustomField(newRelationCustomField);
+			await teamSettingsPage.setParentOverrideField(newParentOverrideField);
 
 			await expect(teamSettingsPage.saveButton).toBeEnabled();
 			await teamSettingsPage.save();
@@ -188,8 +188,8 @@ testWithRestoredDefaultSettings(
 				teamSettings.automaticallyAdjustFeatureWIPCheckBox,
 			).toBeChecked();
 
-			const relationField = await teamSettings.getRelationCustomField();
-			expect(relationField).toBe(newRelationCustomField);
+			const parentOverrideField = await teamSettings.getParentOverrideField();
+			expect(parentOverrideField).toBe(newParentOverrideField);
 		}
 
 		await test.step("Make sure settings are updated", async () => {

@@ -55,27 +55,6 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 		await this.automaticallyAdjustFeatureWIPCheckBox.uncheck();
 	}
 
-	async toggleAdvancedConfiguration(): Promise<void> {
-		await this.page
-			.locator("div")
-			.filter({
-				hasText:
-					/^Advanced ConfigurationRelation Custom FieldRelation Custom Field$/,
-			})
-			.getByLabel("toggle")
-			.click();
-	}
-
-	async setRelationCustomField(customField: string): Promise<void> {
-		await this.page.getByLabel("Relation Custom Field").fill(customField);
-	}
-
-	async getRelationCustomField(): Promise<string> {
-		return (
-			(await this.page.getByLabel("Relation Custom Field").inputValue()) ?? ""
-		);
-	}
-
 	async addNewWorkTrackingSystem(): Promise<
 		EditWorkTrackingSystemDialog<TeamEditPage>
 	> {

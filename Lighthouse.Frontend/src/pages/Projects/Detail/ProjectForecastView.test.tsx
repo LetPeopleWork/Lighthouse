@@ -175,6 +175,7 @@ describe("ProjectForecastView component", () => {
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
+		parentOverrideField: "",
 	};
 
 	const mockTeamSettings1: ITeamSettings = {
@@ -192,7 +193,7 @@ describe("ProjectForecastView component", () => {
 		doneStates: ["Closed"],
 		tags: [],
 		workTrackingSystemConnectionId: 1,
-		relationCustomField: "",
+		parentOverrideField: "",
 		automaticallyAdjustFeatureWIP: false,
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
@@ -214,7 +215,7 @@ describe("ProjectForecastView component", () => {
 		doneStates: ["Closed"],
 		tags: [],
 		workTrackingSystemConnectionId: 1,
-		relationCustomField: "",
+		parentOverrideField: "",
 		automaticallyAdjustFeatureWIP: false,
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,

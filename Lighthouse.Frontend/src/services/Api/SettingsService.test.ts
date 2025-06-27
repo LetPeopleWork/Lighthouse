@@ -102,7 +102,7 @@ describe("SettingsService", () => {
 			workItemQuery: "Query",
 			workItemTypes: ["Epic"],
 			workTrackingSystemConnectionId: 12,
-			relationCustomField: "",
+			parentOverrideField: "",
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
@@ -134,7 +134,7 @@ describe("SettingsService", () => {
 			workItemQuery: "Query",
 			workItemTypes: ["User Story", "Bug"],
 			workTrackingSystemConnectionId: 12,
-			relationCustomField: "",
+			parentOverrideField: "",
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
@@ -177,6 +177,7 @@ describe("SettingsService", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -212,6 +213,7 @@ describe("SettingsService", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 
 		mockedAxios.put.mockResolvedValueOnce({});

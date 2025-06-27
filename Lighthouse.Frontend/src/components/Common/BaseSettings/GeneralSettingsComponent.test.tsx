@@ -19,6 +19,7 @@ describe("GeneralSettingsComponent", () => {
 		serviceLevelExpectationProbability: 85,
 		serviceLevelExpectationRange: 30,
 		systemWIPLimit: 0,
+		parentOverrideField: "",
 	};
 
 	beforeEach(() => {

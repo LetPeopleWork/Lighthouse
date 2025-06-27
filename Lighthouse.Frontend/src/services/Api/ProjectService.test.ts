@@ -81,6 +81,7 @@ describe("ProjectService", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
@@ -114,6 +115,7 @@ describe("ProjectService", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 
 		mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
@@ -150,6 +152,7 @@ describe("ProjectService", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 
 		const mockResponse: IProjectSettings = {
@@ -174,6 +177,7 @@ describe("ProjectService", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
@@ -239,6 +243,7 @@ describe("ProjectService", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
@@ -276,6 +281,7 @@ describe("ProjectService", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 
 		mockedAxios.post.mockResolvedValueOnce({ data: false });

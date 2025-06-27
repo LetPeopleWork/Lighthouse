@@ -69,6 +69,7 @@ describe("OwnershipComponent", () => {
 		featureOwnerField: "custom.owner",
 		owningTeam: undefined,
 		systemWIPLimit: 0,
+		parentOverrideField: "",
 	};
 
 	const mockOnProjectSettingsChange = vi.fn();

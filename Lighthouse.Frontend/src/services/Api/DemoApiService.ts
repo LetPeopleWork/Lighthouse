@@ -514,6 +514,7 @@ export class DemoApiService
 			serviceLevelExpectationProbability: 75,
 			serviceLevelExpectationRange: 35,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		},
 		{
 			id: 1,
@@ -537,6 +538,7 @@ export class DemoApiService
 			serviceLevelExpectationProbability: 70,
 			serviceLevelExpectationRange: 18,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		},
 		{
 			id: 2,
@@ -560,6 +562,7 @@ export class DemoApiService
 			serviceLevelExpectationProbability: 90,
 			serviceLevelExpectationRange: 45,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		},
 	];
 
@@ -800,7 +803,7 @@ export class DemoApiService
 			workItemQuery: '[System.TeamProject] = "My Team"',
 			workItemTypes: ["User Story", "Bug"],
 			workTrackingSystemConnectionId: 12,
-			relationCustomField: "",
+			parentOverrideField: "",
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
@@ -1247,7 +1250,7 @@ export class DemoApiService
 			workItemQuery: '[System.TeamProject] = "My Team"',
 			workItemTypes: ["User Story", "Bug"],
 			workTrackingSystemConnectionId: 12,
-			relationCustomField: "",
+			parentOverrideField: "",
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
@@ -1297,6 +1300,7 @@ export class DemoApiService
 			serviceLevelExpectationProbability: 75,
 			serviceLevelExpectationRange: 35,
 			systemWIPLimit: 0,
+			parentOverrideField: "",
 		};
 	}
 

@@ -21,7 +21,7 @@ export async function createTeam(
 			doingStates: states.doing,
 			doneStates: states.done,
 			tags: tags,
-			relationCustomField: "",
+			parentOverrideField: "",
 			automaticallyAdjustFeatureWIP: false,
 			useFixedDatesForThroughput: false,
 			workTrackingSystemConnectionId: workTrackingSystemConnectionId,

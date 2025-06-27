@@ -6,6 +6,5 @@ export interface ITeamSettings extends IBaseSettings {
 	throughputHistoryStartDate: Date;
 	throughputHistoryEndDate: Date;
 	featureWIP: number;
-	relationCustomField: string;
 	automaticallyAdjustFeatureWIP: boolean;
 }

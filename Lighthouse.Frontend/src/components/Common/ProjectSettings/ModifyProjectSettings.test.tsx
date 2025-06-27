@@ -242,6 +242,7 @@ describe("ModifyProjectSettings", () => {
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
+		parentOverrideField: "",
 	};
 
 	beforeEach(() => {

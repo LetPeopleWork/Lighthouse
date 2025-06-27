@@ -141,6 +141,26 @@ export abstract class BaseEditPage<T> {
 		}
 	}
 
+	async toggleAdvancedConfiguration(): Promise<void> {
+		await this.page
+			.locator("div")
+			.filter({
+				hasText: /^Advanced Configuration.$/,
+			})
+			.getByLabel("toggle")
+			.click();
+	}
+
+	async setParentOverrideField(customField: string): Promise<void> {
+		await this.page.getByLabel("Parent Override Field").fill(customField);
+	}
+
+	async getParentOverrideField(): Promise<string> {
+		return (
+			(await this.page.getByLabel("Parent Override Field").inputValue()) ?? ""
+		);
+	}
+
 	get saveButton(): Locator {
 		return this.page.getByRole("button", { name: "Save" });
 	}

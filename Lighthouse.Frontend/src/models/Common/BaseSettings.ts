@@ -11,4 +11,5 @@ export interface IBaseSettings {
 	serviceLevelExpectationProbability: number;
 	serviceLevelExpectationRange: number;
 	systemWIPLimit: number;
+	parentOverrideField: string;
 }

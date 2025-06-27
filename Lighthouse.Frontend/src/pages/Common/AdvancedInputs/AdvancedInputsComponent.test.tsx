@@ -17,7 +17,7 @@ describe("AdvancedInputsComponent", () => {
 			workItemTypes: [],
 			tags: [],
 			workTrackingSystemConnectionId: 12,
-			relationCustomField: "Test Field",
+			parentOverrideField: "Test Field",
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
@@ -29,13 +29,13 @@ describe("AdvancedInputsComponent", () => {
 
 		render(
 			<AdvancedInputsComponent
-				teamSettings={teamSettings}
-				onTeamSettingsChange={vi.fn()}
+				settings={teamSettings}
+				onSettingsChange={vi.fn()}
 			/>,
 		);
 
 		// Check if the TextField displays the correct value
-		expect(screen.getByLabelText("Relation Custom Field")).toHaveValue(
+		expect(screen.getByLabelText("Parent Override Field")).toHaveValue(
 			"Test Field",
 		);
 	});
@@ -54,7 +54,7 @@ describe("AdvancedInputsComponent", () => {
 			workItemTypes: [],
 			tags: [],
 			workTrackingSystemConnectionId: 12,
-			relationCustomField: "",
+			parentOverrideField: "",
 			toDoStates: ["New"],
 			doingStates: ["Active"],
 			doneStates: ["Done"],
@@ -66,19 +66,19 @@ describe("AdvancedInputsComponent", () => {
 
 		render(
 			<AdvancedInputsComponent
-				teamSettings={teamSettings}
-				onTeamSettingsChange={onTeamSettingsChange}
+				settings={teamSettings}
+				onSettingsChange={onTeamSettingsChange}
 			/>,
 		);
 
 		// Simulate typing in the TextField
-		fireEvent.change(screen.getByLabelText("Relation Custom Field"), {
+		fireEvent.change(screen.getByLabelText("Parent Override Field"), {
 			target: { value: "New Value" },
 		});
 
 		// Check if the callback was called with the correct parameters
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
-			"relationCustomField",
+			"parentOverrideField",
 			"New Value",
 		);
 	});

@@ -36,7 +36,7 @@ describe("ForecastSettingsComponent", () => {
 		workItemTypes: [],
 		tags: [],
 		workTrackingSystemConnectionId: 12,
-		relationCustomField: "Test Field",
+		parentOverrideField: "Test Field",
 		toDoStates: ["New"],
 		doingStates: ["Active"],
 		doneStates: ["Done"],

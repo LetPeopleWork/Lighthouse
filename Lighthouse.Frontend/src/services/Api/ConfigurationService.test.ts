@@ -159,7 +159,7 @@ describe("ConfigurationService", () => {
 					throughputHistoryStartDate: new Date(),
 					throughputHistoryEndDate: new Date(),
 					featureWIP: 0,
-					relationCustomField: "",
+					parentOverrideField: "",
 					automaticallyAdjustFeatureWIP: false,
 					workItemQuery: "",
 					workItemTypes: [],
@@ -195,6 +195,7 @@ describe("ConfigurationService", () => {
 					serviceLevelExpectationProbability: 0,
 					serviceLevelExpectationRange: 0,
 					systemWIPLimit: 0,
+					parentOverrideField: "",
 				},
 			],
 		};

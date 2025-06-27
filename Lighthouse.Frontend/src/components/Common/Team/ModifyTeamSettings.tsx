@@ -4,7 +4,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import AdvancedInputsComponent from "../../../pages/Teams/Edit/AdvancedInputs";
+import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -340,8 +340,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						/>
 
 						<AdvancedInputsComponent
-							teamSettings={teamSettings}
-							onTeamSettingsChange={handleTeamSettingsChange}
+							settings={teamSettings}
+							onSettingsChange={handleTeamSettingsChange}
 						/>
 
 						<Grid

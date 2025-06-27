@@ -26,6 +26,7 @@ describe("UnparentedItemsComponent", () => {
 		serviceLevelExpectationProbability: 85,
 		serviceLevelExpectationRange: 30,
 		systemWIPLimit: 0,
+		parentOverrideField: "",
 	};
 
 	const mockOnProjectSettingsChange = vi.fn();

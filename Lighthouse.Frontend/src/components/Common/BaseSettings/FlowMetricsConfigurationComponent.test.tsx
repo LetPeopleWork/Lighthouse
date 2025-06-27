@@ -53,6 +53,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
+		parentOverrideField: "",
 	};
 
 	const mockSettingsWithFeatureWIP = {
