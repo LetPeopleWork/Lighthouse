@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@melloware/react-logviewer": "^6.3.0",
     "@microsoft/signalr": "^8.0.7",
     "@mui/icons-material": "^7.1.2",
