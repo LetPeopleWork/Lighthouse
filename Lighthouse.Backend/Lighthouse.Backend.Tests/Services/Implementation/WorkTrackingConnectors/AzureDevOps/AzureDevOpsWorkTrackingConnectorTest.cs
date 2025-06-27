@@ -43,6 +43,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        [TestCase("377", "", null)]
+        [TestCase("365", "371", null)]
+        [TestCase("375", "279", "Custom.RemoteFeatureID")]
+        public async Task GetFeaturesForProject_SetsParentRelationCorrect(string workItemId, string expectedParentReference, string? parentOverrideField)
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("User Story");
+            project.ParentOverrideField = parentOverrideField;
+
+            var workItems = await subject.GetFeaturesForProject(project);
+            var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo(expectedParentReference));
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
         {
             var subject = CreateSubject();

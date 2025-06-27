@@ -79,6 +79,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetFeaturesForProject_UseParentOverride_SetsParentRelationCorrect()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
+            project.WorkItemTypes.Clear();
+            project.WorkItemTypes.Add("Story");
+            project.ParentOverrideField = "cf[10038]";
+
+            var workItems = await subject.GetFeaturesForProject(project);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"));
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_QueryContainsAmpersand_EscapesCorrectly()
         {
             var subject = CreateSubject();
