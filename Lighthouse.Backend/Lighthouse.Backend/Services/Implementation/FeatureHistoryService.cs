@@ -19,22 +19,26 @@ namespace Lighthouse.Backend.Services.Implementation
             this.logger = logger;
         }
 
-        public async Task ArchiveFeature(Feature feature)
+        public async Task ArchiveFeatures(IEnumerable<Feature> features)
         {
-            logger.LogInformation("Archiving Feature {Feature} ({ID})", feature.Name, feature.Id);
+            logger.LogInformation("Archiving Features {Features}", string.Join(",", features.Select(f => $"{f.Name} ({f.Id})")));
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
-            var historyEntry = repository.GetByPredicate(fh => fh.FeatureId == feature.Id && fh.Snapshot == today);
 
-            if (historyEntry == null)
+            foreach (var feature in features)
             {
-                logger.LogDebug("Adding New Feature History Entry for Feature {Feature} ({ID})", feature.Name, feature.Id);
-                AddNewFeatureHistoryEntry(feature);
-            }
-            else
-            {
-                logger.LogDebug("Update Existing Feature History Entry for Feature {Feature} ({ID})", feature.Name, feature.Id);
-                UpdateExistingFeatureHistoryEntry(feature, historyEntry);
+                var historyEntry = repository.GetByPredicate(fh => fh.FeatureId == feature.Id && fh.Snapshot == today);
+
+                if (historyEntry == null)
+                {
+                    logger.LogDebug("Adding New Feature History Entry for Feature {Feature} ({ID})", feature.Name, feature.Id);
+                    AddNewFeatureHistoryEntry(feature);
+                }
+                else
+                {
+                    logger.LogDebug("Update Existing Feature History Entry for Feature {Feature} ({ID})", feature.Name, feature.Id);
+                    UpdateExistingFeatureHistoryEntry(feature, historyEntry);
+                }
             }
 
             await repository.Save();

@@ -254,10 +254,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private async Task ArchiveFeatures(IEnumerable<Feature> features)
         {
-            foreach (var feature in features)
-            {
-                await featureHistoryService.ArchiveFeature(feature);
-            }
+            await featureHistoryService.ArchiveFeatures(features);
         }
     }
 }

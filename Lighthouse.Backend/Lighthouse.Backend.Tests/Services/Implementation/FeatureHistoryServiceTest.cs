@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.ArchiveFeature(feature);
+            await subject.ArchiveFeatures([feature]);
 
             repositoryMock.Verify(x => x.Add(It.IsAny<FeatureHistoryEntry>()));
             repositoryMock.Verify(x => x.Save());
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.ArchiveFeature(feature);
+            await subject.ArchiveFeatures([feature]);
 
             repositoryMock.Verify(x => x.Add(It.IsAny<FeatureHistoryEntry>()));
             repositoryMock.Verify(x => x.Save());
@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.ArchiveFeature(feature);
+            await subject.ArchiveFeatures([feature]);
 
             repositoryMock.Verify(x => x.Add(It.IsAny<FeatureHistoryEntry>()));
             repositoryMock.Verify(x => x.Save());
@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.ArchiveFeature(feature);
+            await subject.ArchiveFeatures([feature]);
 
             repositoryMock.Verify(x => x.Update(featureHistoryEntry));
             repositoryMock.Verify(x => x.Save());

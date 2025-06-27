@@ -518,8 +518,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature1));
-            featureHistoryServiceMock.Verify(x => x.ArchiveFeature(feature2));
+            featureHistoryServiceMock.Verify(x => x.ArchiveFeatures(It.Is<IEnumerable<Feature>>(features => features.Contains(feature1) && features.Contains(feature2))));
         }
 
         private Feature SetupFeature(Team team, int remainingItems)
