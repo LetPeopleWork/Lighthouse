@@ -130,8 +130,8 @@ If you enable the SLE, you will get additional information in the [Metrics View]
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
 
-## Relation Custom Field
-In order to establish a relation between a Feature and a team, Lighthouse assumes that the Feature is set as a parent for the work item.
+## Parent Override Field
+In order to establish a relation between two work items, Lighthouse assumes that the Feature is set as a parent for the work item.
 If this is not the case, you can specify an additional field that is containing the ID of the Feature in the Teams Work Items. That way, you can let Lighthouse know how the relation between Feature and Work Items are established.
 
 {: .note}
@@ -140,3 +140,4 @@ For example, if your customfield id is 1886, you would specify `cf[1886]` as val
 
 You may wonder "Why would use another way of specifying a parent-child relationship than the built in ones?". Well, corporations sometimes do things for reasons beyond our understanding. We're not here to judge 🤷‍♂️  
 In theory this would allow you to also *cross-link* Jira and Azure DevOps items (but please don't, we have not tested it, which is why we wrote *in theory*...).
+It also turns out that on Jira Data Center versions you must have a link through a custom field (*Epic Link*).

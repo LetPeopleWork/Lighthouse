@@ -187,3 +187,14 @@ A WIP limit is not just a maximum you should not exceed. It is what we think is 
 You can enable a Service Level Expectation (SLE) for your teams. If you do, you must define a *probability* and a range in days. You can use this for forecast single item delivery and to communicate with your stakeholders, as well as to inspect your delivery performance.
 
 If you enable the SLE, you will get additional information in the [Metrics View](../metrics/metrics.html).
+
+# Advanced Configuration
+There are a few options that are optional. This means that they have an impact, but you can save a project without bothering.
+
+## Parent Override Field
+In order to establish a relation between two work items, Lighthouse assumes that the Feature is set as a parent for the work item.
+If this is not the case, you can specify an additional field that is containing the ID of the Feature in the Featuzres. That way, you can let Lighthouse know how the relation between Feature and it's parent can be established. On Project level, this is used if you want to *group* features under a parent (for example if you have something like *Objectives*, *Initiatives*, etc., "above" your Features).
+
+{: .note}
+For Jira, you need to figure out the [ID] of your customfield, check the [Atlassian Documentation](https://confluence.atlassian.com/jirakb/find-my-custom-field-id-number-in-jira-744522503.html) to understand how to do this. Once you know the id, you must specify the customfield like this: `cf[id]`.
+For example, if your customfield id is 1886, you would specify `cf[1886]` as value.
