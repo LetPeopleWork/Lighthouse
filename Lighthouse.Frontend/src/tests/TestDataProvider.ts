@@ -50,5 +50,6 @@ export function generateWorkItem(id: number): IWorkItem {
 		startedDate,
 		closedDate,
 		cycleTime: daysAfterStart + 1,
+		parentWorkItemReference: "",
 	};
 }

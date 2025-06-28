@@ -22,6 +22,7 @@ const mockWorkItems: IWorkItem[] = [
 		closedDate: new Date("2023-01-10"),
 		cycleTime: 10,
 		workItemAge: 5,
+		parentWorkItemReference: "",
 	},
 	{
 		id: 2,
@@ -35,6 +36,7 @@ const mockWorkItems: IWorkItem[] = [
 		closedDate: new Date("2023-02-05"),
 		cycleTime: 5,
 		workItemAge: 20,
+		parentWorkItemReference: "",
 	},
 	{
 		id: 3,
@@ -48,6 +50,7 @@ const mockWorkItems: IWorkItem[] = [
 		closedDate: new Date("2023-03-15"),
 		cycleTime: 15,
 		workItemAge: 2,
+		parentWorkItemReference: "",
 	},
 	{
 		id: 4,
@@ -61,6 +64,7 @@ const mockWorkItems: IWorkItem[] = [
 		closedDate: new Date("2023-04-08"),
 		cycleTime: 7,
 		workItemAge: 0, // Age is 0 for closed items
+		parentWorkItemReference: "",
 	},
 	{
 		id: 5,
@@ -74,6 +78,7 @@ const mockWorkItems: IWorkItem[] = [
 		closedDate: new Date("2023-05-13"),
 		cycleTime: 12,
 		workItemAge: 0, // Age is 0 for closed items
+		parentWorkItemReference: "",
 	},
 ];
 

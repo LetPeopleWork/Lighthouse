@@ -156,5 +156,6 @@ describe("TeamMetricsService", () => {
 		state: "In Progress",
 		stateCategory: "Doing",
 		type: "Task",
+		parentWorkItemReference: "",
 	});
 });

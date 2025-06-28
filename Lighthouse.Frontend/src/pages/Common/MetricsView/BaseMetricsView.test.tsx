@@ -199,6 +199,7 @@ describe("BaseMetricsView component", () => {
 			closedDate: new Date(),
 			cycleTime: 0,
 			workItemAge: 10,
+			parentWorkItemReference: "",
 		},
 		{
 			id: 2,
@@ -212,6 +213,7 @@ describe("BaseMetricsView component", () => {
 			closedDate: new Date(),
 			cycleTime: 0,
 			workItemAge: 8,
+			parentWorkItemReference: "",
 		},
 	];
 
@@ -228,6 +230,7 @@ describe("BaseMetricsView component", () => {
 			closedDate: new Date("2023-01-10"),
 			cycleTime: 9,
 			workItemAge: 9,
+			parentWorkItemReference: "",
 		},
 		{
 			id: 4,
@@ -241,6 +244,7 @@ describe("BaseMetricsView component", () => {
 			closedDate: new Date("2023-01-15"),
 			cycleTime: 10,
 			workItemAge: 10,
+			parentWorkItemReference: "",
 		},
 	];
 

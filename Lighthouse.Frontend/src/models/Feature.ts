@@ -32,6 +32,7 @@ export class Feature implements IFeature {
 	type!: string;
 	lastUpdated!: Date;
 	isUsingDefaultFeatureSize!: boolean;
+	parentWorkItemReference!: string;
 
 	@Type(() => DictionaryObject<string>)
 	projects: DictionaryObject<string> = {};

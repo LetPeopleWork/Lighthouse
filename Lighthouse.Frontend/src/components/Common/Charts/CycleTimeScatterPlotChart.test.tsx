@@ -101,6 +101,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 			state: "Done",
 			stateCategory: "Done",
 			type: "Task",
+			parentWorkItemReference: "",
 		},
 		{
 			id: 2,
@@ -114,6 +115,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 			state: "Done",
 			stateCategory: "Done",
 			type: "Task",
+			parentWorkItemReference: "",
 		},
 	];
 

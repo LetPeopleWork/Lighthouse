@@ -45,8 +45,9 @@ describe("CycleTimePercentiles component", () => {
 			url: null,
 			startedDate: new Date("2025-04-01"),
 			closedDate: new Date("2025-04-03"),
-			cycleTime: 2, // 2 days
+			cycleTime: 2,
 			workItemAge: 2,
+			parentWorkItemReference: "",
 		},
 		{
 			id: 2,
@@ -58,8 +59,9 @@ describe("CycleTimePercentiles component", () => {
 			url: null,
 			startedDate: new Date("2025-04-01"),
 			closedDate: new Date("2025-04-05"),
-			cycleTime: 4, // 4 days
+			cycleTime: 4,
 			workItemAge: 4,
+			parentWorkItemReference: "",
 		},
 		{
 			id: 3,
@@ -71,8 +73,9 @@ describe("CycleTimePercentiles component", () => {
 			url: null,
 			startedDate: new Date("2025-04-01"),
 			closedDate: new Date("2025-04-08"),
-			cycleTime: 7, // 7 days
+			cycleTime: 7,
 			workItemAge: 7,
+			parentWorkItemReference: "",
 		},
 		{
 			id: 4,
@@ -84,8 +87,9 @@ describe("CycleTimePercentiles component", () => {
 			url: null,
 			startedDate: new Date("2025-04-01"),
 			closedDate: new Date("2025-04-15"),
-			cycleTime: 14, // 14 days
+			cycleTime: 14,
 			workItemAge: 14,
+			parentWorkItemReference: "",
 		},
 	];
 

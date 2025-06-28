@@ -281,4 +281,178 @@ describe("FeatureListBase component", () => {
 		expect(screen.getByText("Feature 2")).toBeInTheDocument();
 		expect(screen.getByText("Feature 3")).toBeInTheDocument();
 	});
+
+	it("should have the group features by parent toggle unchecked by default", () => {
+		render(
+			<FeatureListBase
+				features={features}
+				contextId={1}
+				contextType="project"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		const groupingToggle = screen.getByTestId(
+			"group-features-by-parent-toggle",
+		);
+		const input = groupingToggle.querySelector('input[type="checkbox"]');
+		expect(input).not.toBeChecked();
+	});
+
+	it("should update localStorage when group features by parent toggle is changed", async () => {
+		const user = userEvent.setup();
+		render(
+			<FeatureListBase
+				features={features}
+				contextId={1}
+				contextType="project"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		// Find and activate the toggle
+		const groupingToggle = screen.getByTestId(
+			"group-features-by-parent-toggle",
+		);
+		await user.click(groupingToggle);
+
+		// Verify localStorage was updated
+		expect(mockLocalStorage.lighthouse_group_features_by_parent_project_1).toBe(
+			"true",
+		);
+
+		// Toggle it off
+		await user.click(groupingToggle);
+
+		// Verify localStorage was updated
+		expect(mockLocalStorage.lighthouse_group_features_by_parent_project_1).toBe(
+			"false",
+		);
+	});
+
+	it("should load the saved grouping preference from localStorage on mount", async () => {
+		mockLocalStorage.lighthouse_group_features_by_parent_project_1 = "true";
+
+		render(
+			<FeatureListBase
+				features={features}
+				contextId={1}
+				contextType="project"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		// Verify the toggle is checked based on localStorage value
+		const groupingToggle = screen.getByTestId(
+			"group-features-by-parent-toggle",
+		);
+		const input = groupingToggle.querySelector('input[type="checkbox"]');
+		expect(input).toBeChecked();
+	});
+
+	it("should use different storage keys for different contexts for grouping feature", async () => {
+		const user = userEvent.setup();
+
+		// Render with project context
+		const { unmount } = render(
+			<FeatureListBase
+				features={features}
+				contextId={1}
+				contextType="project"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		// Activate grouping toggle for project context
+		const projectGroupingToggle = screen.getByTestId(
+			"group-features-by-parent-toggle",
+		);
+		await user.click(projectGroupingToggle);
+
+		// Verify localStorage was set for project context
+		expect(mockLocalStorage.lighthouse_group_features_by_parent_project_1).toBe(
+			"true",
+		);
+
+		// Unmount the component
+		unmount();
+
+		// Render with team context
+		render(
+			<FeatureListBase
+				features={features}
+				contextId={1}
+				contextType="team"
+				renderTableHeader={() => (
+					<tr>
+						<th>Name</th>
+					</tr>
+				)}
+				renderTableRow={(feature: IFeature) => (
+					<tr key={feature.id}>
+						<td>{feature.name}</td>
+					</tr>
+				)}
+			/>,
+		);
+
+		// Verify the team context toggle starts unchecked (not affected by project setting)
+		const teamGroupingToggle = screen.getByTestId(
+			"group-features-by-parent-toggle",
+		);
+		const input = teamGroupingToggle.querySelector('input[type="checkbox"]');
+		expect(input).not.toBeChecked();
+
+		// Activate toggle for team context
+		await user.click(teamGroupingToggle);
+
+		// Verify localStorage was set for team context
+		expect(mockLocalStorage.lighthouse_group_features_by_parent_team_1).toBe(
+			"true",
+		);
+
+		// Verify both settings exist independently in localStorage
+		expect(mockLocalStorage.lighthouse_group_features_by_parent_project_1).toBe(
+			"true",
+		);
+		expect(mockLocalStorage.lighthouse_group_features_by_parent_team_1).toBe(
+			"true",
+		);
+	});
 });

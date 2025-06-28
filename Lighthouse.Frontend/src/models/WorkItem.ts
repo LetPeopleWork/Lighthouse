@@ -12,4 +12,5 @@ export interface IWorkItem {
 	closedDate: Date;
 	cycleTime: number;
 	workItemAge: number;
+	parentWorkItemReference: string;
 }

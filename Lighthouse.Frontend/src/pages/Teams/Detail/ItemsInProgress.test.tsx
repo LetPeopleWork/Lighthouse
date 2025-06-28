@@ -20,6 +20,7 @@ describe("ItemsInProgress component", () => {
 		state: "In Progress",
 		stateCategory: "Doing",
 		type: "Task",
+		parentWorkItemReference: "",
 	});
 
 	const mockItems: IWorkItem[] = [
