@@ -12,7 +12,7 @@ There are various ways on how you can support Lighthouse:
 {:toc}
 
 # Join our Slack Community
-We do have a [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg){:target="_blank"} where you can ask questions about the tools and get support from us as well as other people that use the tool. As the usage of Lighthouse grows, this is our preferred way to support, as others may be able to support you. So by joining this community, you are supporting us in handling the growth of the tool!
+We do have a [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A){:target="_blank"} where you can ask questions about the tools and get support from us as well as other people that use the tool. As the usage of Lighthouse grows, this is our preferred way to support, as others may be able to support you. So by joining this community, you are supporting us in handling the growth of the tool!
 
 We use our Slack Community also to look for feedback, asking for support where we may lack some skills, or identify pilot users for preview features we want to get an early feedback on.
 

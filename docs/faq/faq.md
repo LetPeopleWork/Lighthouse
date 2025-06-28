@@ -6,7 +6,7 @@ nav_order: 90
 
 This section covers frequently asked questions and tries to answer them as good as possible. It's something we try to extend continuously to cover questions from the users.  
 
-If you can't find answers to your questions neither in the documentation nor on this page, please check the [Contributions page](../contributions/contributions.html) to see how you can contribute by reaching out to us so we can improve Lighthouse! If you need support, also consider joining [our Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg) where other users may be able to help you.
+If you can't find answers to your questions neither in the documentation nor on this page, please check the [Contributions page](../contributions/contributions.html) to see how you can contribute by reaching out to us so we can improve Lighthouse! If you need support, also consider joining [our Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A) where other users may be able to help you.
 
 ## FAQ
 

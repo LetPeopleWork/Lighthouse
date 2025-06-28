@@ -14,7 +14,7 @@ Lighthouse is provided free of charge as open-source software by [LetPeopleWork]
 You can find the documentation including how to download and get started in the dedicated documentation page: [https://docs.lighthouse.letpeople.work](https://docs.lighthouse.letpeople.work)
 
 # Questions & Problems
-If the [Documentation](#documentation) is not answering your question, you can get support in our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg).
+If the [Documentation](#documentation) is not answering your question, you can get support in our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
 
 # Contribution
 See our [Contributions Page](https://docs.lighthouse.letpeople.work/contributions/contributions.html) for more details on how you can contribute.

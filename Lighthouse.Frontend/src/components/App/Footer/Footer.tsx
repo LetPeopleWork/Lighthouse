@@ -64,7 +64,7 @@ const Footer: React.FC = () => {
 								tooltip="View our LinkedIn Page"
 							/>
 							<ExternalLinkButton
-								link="https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg"
+								link="https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A"
 								icon={ForumIcon}
 								tooltip="Join our Slack Community"
 							/>

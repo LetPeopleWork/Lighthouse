@@ -102,7 +102,7 @@ If you follow the instructions, but Lighthouse is not available on the above por
 In such a case, please inspect the logs in the terminal and try to spot an `Error`. They often tell already what the issue may be.
 
 {: .note}
-Now we don't expect you to understand that gibberish, but if you can provide us those logs (for example through our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg)), the chances are we can support you quite well and try to resolve the issue.
+Now we don't expect you to understand that gibberish, but if you can provide us those logs (for example through our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)), the chances are we can support you quite well and try to resolve the issue.
 
 Following is a list of observed problems together with some potential solutions.
 

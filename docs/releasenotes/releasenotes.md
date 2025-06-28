@@ -307,7 +307,7 @@ Furthermore, Lighthouse now properly calcualtes both the Unparented Items and Fe
 - [**Hendra Gunawan**](https://www.linkedin.com/in/hendragunawan823/)
 - [**Valentin Badea**](https://www.linkedin.com/in/valentin-g-badea/)
 
-If you want to contribute too, please join our [Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg)
+If you want to contribute too, please join our [Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)
 
 ## Full Changelog
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.2.8.1238...v25.2.23.1248)
@@ -325,7 +325,7 @@ If you want to contribute too, please join our [Slack Community](https://join.sl
 - General improvements and streamline of documentation - updated ReadMe on Github and point to official documentation instead
  
 ## Removed Features
-- Removed Lighthouse Chart Preview Feature and related code as it was not used and could cause issues with loading. If you want such a chart back, please raise it via our [Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-2y0zfim85-qhbgt8N0yw90G1P~JWXvlg)
+- Removed Lighthouse Chart Preview Feature and related code as it was not used and could cause issues with loading. If you want such a chart back, please raise it via our [Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)
 
 ## Contributors
 - [**Agnieszka Reginek**](https://www.linkedin.com/in/agnieszka-reginek/)
