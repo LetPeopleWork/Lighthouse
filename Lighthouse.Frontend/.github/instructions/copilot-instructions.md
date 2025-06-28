@@ -69,6 +69,7 @@ The plan's structure is defined by the following template. Adhere to all formatt
 *   **Error Handling:** Use `try/catch` or `try/except` for operations that can fail.
 *   **Security:** Sanitize inputs. Never hardcode secrets.
 *   **Documentation:** Comment only complex, non-obvious logic.
+*   **Theming:** Always use colors from the application's color palette (src/utils/theme/colors.ts) to ensure proper light/dark mode support and accessibility.
 
 #### 8. Testing Requirements
 *   If you modify a function, add or update a corresponding test case.

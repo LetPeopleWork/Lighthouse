@@ -7,10 +7,12 @@ import {
 	TableBody,
 	TableContainer,
 	TableHead,
+	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import type { IFeature } from "../../../models/Feature";
+import { appColors } from "../../../utils/theme/colors";
 
 export interface FeatureListBaseProps {
 	features: IFeature[];
@@ -27,6 +29,7 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 	contextId,
 	contextType,
 }) => {
+	const theme = useTheme();
 	const [hideCompletedFeatures, setHideCompletedFeatures] =
 		useState<boolean>(false);
 	const [groupFeaturesByParent, setGroupFeaturesByParent] =
@@ -63,9 +66,79 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 		localStorage.setItem(groupingStorageKey, newValue.toString());
 	};
 
-	const displayedFeatures = hideCompletedFeatures
+	// Filter features based on the "hide completed" setting
+	const filteredFeatures = hideCompletedFeatures
 		? features.filter((feature) => feature.stateCategory !== "Done")
 		: features;
+
+	// Group features by parent work item
+	const groupFeatures = (featuresToGroup: IFeature[]) => {
+		const groups: Record<string, IFeature[]> = {};
+
+		// Group with parent
+		featuresToGroup.forEach((feature) => {
+			const parentId = feature.parentWorkItemReference || "none";
+			if (!groups[parentId]) {
+				groups[parentId] = [];
+			}
+			groups[parentId].push(feature);
+		});
+
+		return groups;
+	};
+
+	// Get header background color based on theme mode
+	const headerBgColor =
+		theme.palette.mode === "dark"
+			? appColors.dark.paper
+			: appColors.light.background;
+
+	// Get text color based on theme mode
+	const headerTextColor =
+		theme.palette.mode === "dark"
+			? appColors.dark.text.primary
+			: appColors.light.text.primary;
+
+	// Determine if we should display grouped or flat list of features
+	const displayFeatures = () => {
+		if (!groupFeaturesByParent) {
+			// Return flat list
+			return <>{filteredFeatures.map((feature) => renderTableRow(feature))}</>;
+		}
+
+		// Group features by parent
+		const groups = groupFeatures(filteredFeatures);
+		const sortedKeys = Object.keys(groups).sort((a, b) => {
+			// Place "none" group at the bottom
+			if (a === "none") return 1;
+			if (b === "none") return -1;
+			return a.localeCompare(b);
+		});
+
+		return (
+			<>
+				{sortedKeys.map((parentId) => (
+					<Fragment key={parentId}>
+						<tr>
+							<td
+								colSpan={100}
+								style={{
+									backgroundColor: headerBgColor,
+									padding: "8px 16px",
+									fontWeight: "bold",
+									color: headerTextColor,
+									borderBottom: `1px solid ${theme.palette.divider}`,
+								}}
+							>
+								{parentId === "none" ? "No Parent" : `Parent ID: ${parentId}`}
+							</td>
+						</tr>
+						{groups[parentId].map((feature) => renderTableRow(feature))}
+					</Fragment>
+				))}
+			</>
+		);
+	};
 
 	return (
 		<TableContainer component={Paper}>
@@ -95,9 +168,7 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 			</Box>
 			<Table>
 				<TableHead>{renderTableHeader()}</TableHead>
-				<TableBody>
-					{displayedFeatures.map((feature) => renderTableRow(feature))}
-				</TableBody>
+				<TableBody>{displayFeatures()}</TableBody>
 			</Table>
 		</TableContainer>
 	);
