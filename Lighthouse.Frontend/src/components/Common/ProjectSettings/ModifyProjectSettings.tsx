@@ -188,6 +188,39 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		);
 	};
 
+	const handleReorderToDoStates = (newOrder: string[]) => {
+		setProjectSettings((prev) =>
+			prev
+				? {
+						...prev,
+						toDoStates: newOrder,
+					}
+				: prev,
+		);
+	};
+
+	const handleReorderDoingStates = (newOrder: string[]) => {
+		setProjectSettings((prev) =>
+			prev
+				? {
+						...prev,
+						doingStates: newOrder,
+					}
+				: prev,
+		);
+	};
+
+	const handleReorderDoneStates = (newOrder: string[]) => {
+		setProjectSettings((prev) =>
+			prev
+				? {
+						...prev,
+						doneStates: newOrder,
+					}
+				: prev,
+		);
+	};
+
 	const handleAddTag = (tag: string) => {
 		if (tag.trim()) {
 			setProjectSettings((prev) =>
@@ -361,6 +394,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onAddDoneState={handleAddDoneState}
 							onRemoveDoneState={handleRemoveDoneState}
 							isForTeam={false}
+							onReorderToDoStates={handleReorderToDoStates}
+							onReorderDoingStates={handleReorderDoingStates}
+							onReorderDoneStates={handleReorderDoneStates}
 						/>
 
 						{!modifyDefaultSettings && (

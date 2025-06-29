@@ -179,4 +179,79 @@ describe("ItemListManager", () => {
 
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();
 	});
+
+	it("calls onReorderItems when items are reordered", () => {
+		const mockOnReorderItems = vi.fn();
+		render(
+			<ItemListManager
+				title={title}
+				items={["Item 1", "Item 2", "Item 3"]}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+				onReorderItems={mockOnReorderItems}
+			/>,
+		);
+
+		const chips = screen.getAllByText(/Item \d/);
+		const firstChip = chips[0];
+		const thirdChip = chips[2];
+
+		// Simulate drag start on first chip
+		fireEvent.dragStart(firstChip, {
+			dataTransfer: {
+				effectAllowed: "move",
+				setData: vi.fn(),
+			},
+		});
+
+		// Simulate drop on third chip position
+		fireEvent.dragOver(thirdChip);
+		fireEvent.drop(thirdChip, {
+			dataTransfer: {
+				dropEffect: "move",
+				getData: vi.fn(),
+			},
+		});
+
+		// Should reorder items: Item 1 moved to position 2 (0-indexed)
+		expect(mockOnReorderItems).toHaveBeenCalledWith([
+			"Item 2",
+			"Item 3",
+			"Item 1",
+		]);
+	});
+
+	it("makes chips draggable when onReorderItems is provided", () => {
+		const mockOnReorderItems = vi.fn();
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+				onReorderItems={mockOnReorderItems}
+			/>,
+		);
+
+		const chips = screen.getAllByText(/Item \d/);
+		for (const chip of chips) {
+			expect(chip.closest('[draggable="true"]')).toBeInTheDocument();
+		}
+	});
+
+	it("does not make chips draggable when onReorderItems is not provided", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
+
+		const chips = screen.getAllByText(/Item \d/);
+		for (const chip of chips) {
+			expect(chip.closest('[draggable="true"]')).not.toBeInTheDocument();
+		}
+	});
 });

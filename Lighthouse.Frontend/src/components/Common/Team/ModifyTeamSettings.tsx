@@ -155,6 +155,39 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		);
 	};
 
+	const handleReorderToDoStates = (newOrder: string[]) => {
+		setTeamSettings((prev) =>
+			prev
+				? {
+						...prev,
+						toDoStates: newOrder,
+					}
+				: prev,
+		);
+	};
+
+	const handleReorderDoingStates = (newOrder: string[]) => {
+		setTeamSettings((prev) =>
+			prev
+				? {
+						...prev,
+						doingStates: newOrder,
+					}
+				: prev,
+		);
+	};
+
+	const handleReorderDoneStates = (newOrder: string[]) => {
+		setTeamSettings((prev) =>
+			prev
+				? {
+						...prev,
+						doneStates: newOrder,
+					}
+				: prev,
+		);
+	};
+
 	const handleAddTag = (tag: string) => {
 		if (tag.trim()) {
 			setTeamSettings((prev) =>
@@ -307,12 +340,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							toDoStates={teamSettings?.toDoStates || []}
 							onAddToDoState={handleAddToDoState}
 							onRemoveToDoState={handleRemoveToDoState}
+							onReorderToDoStates={handleReorderToDoStates}
 							doingStates={teamSettings?.doingStates || []}
 							onAddDoingState={handleAddDoingState}
 							onRemoveDoingState={handleRemoveDoingState}
+							onReorderDoingStates={handleReorderDoingStates}
 							doneStates={teamSettings?.doneStates || []}
 							onAddDoneState={handleAddDoneState}
 							onRemoveDoneState={handleRemoveDoneState}
+							onReorderDoneStates={handleReorderDoneStates}
 							isForTeam={true}
 						/>
 

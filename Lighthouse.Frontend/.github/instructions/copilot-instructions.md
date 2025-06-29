@@ -57,7 +57,7 @@ The plan's structure is defined by the following template. Adhere to all formatt
 
 #### 6. Forbidden Actions (Unless Explicitly Permitted)
 *   Do not perform global refactoring.
-*   Do not add new dependencies (e.g., npm packages, Python libraries).
+*   Do not add new dependencies (e.g., npm packages, Python libraries) on your own. If you believe a new dependency is necessary, log it as a comment and explain why it is needed. Ask for approval before proceeding.
 *   Do not change formatting or run a linter on an entire file.
 
 ---

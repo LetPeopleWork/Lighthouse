@@ -15,6 +15,7 @@ interface ItemListManagerProps {
 	items: string[];
 	onAddItem: (item: string) => void;
 	onRemoveItem: (item: string) => void;
+	onReorderItems?: (newOrder: string[]) => void;
 	suggestions?: string[];
 	isLoading?: boolean;
 }
@@ -24,6 +25,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 	items,
 	onAddItem,
 	onRemoveItem,
+	onReorderItems,
 	suggestions = [],
 	isLoading = false,
 }) => {
@@ -31,6 +33,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 	const [highlightedOption, setHighlightedOption] = useState<string | null>(
 		null,
 	);
+	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const filteredSuggestions = suggestions.filter(
@@ -57,19 +60,69 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 		}
 	};
 
+	const handleDragStart = (e: React.DragEvent, index: number) => {
+		setDraggedIndex(index);
+		e.dataTransfer.effectAllowed = "move";
+		e.dataTransfer.setData("text/html", e.currentTarget.outerHTML);
+		e.dataTransfer.setData("text/plain", items[index]);
+	};
+
+	const handleDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		if (e.dataTransfer) {
+			e.dataTransfer.dropEffect = "move";
+		}
+	};
+
+	const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+		e.preventDefault();
+
+		if (draggedIndex === null || !onReorderItems) return;
+
+		if (draggedIndex !== dropIndex) {
+			const newItems = [...items];
+			const draggedItem = newItems[draggedIndex];
+
+			// Remove the dragged item
+			newItems.splice(draggedIndex, 1);
+			// Insert it at the new position
+			newItems.splice(dropIndex, 0, draggedItem);
+
+			onReorderItems(newItems);
+		}
+
+		setDraggedIndex(null);
+	};
+
+	const handleDragEnd = () => {
+		setDraggedIndex(null);
+	};
+
 	return (
 		<Grid container spacing={2}>
 			<Grid size={{ xs: 12 }}>
 				<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
 					{items
 						.filter((item) => item.trim())
-						.map((item) => (
+						.map((item, index) => (
 							<Chip
 								key={item}
 								label={item}
 								onDelete={() => onRemoveItem(item)}
 								color="primary"
 								variant="outlined"
+								draggable={!!onReorderItems}
+								onDragStart={(e) => handleDragStart(e, index)}
+								onDragOver={handleDragOver}
+								onDrop={(e) => handleDrop(e, index)}
+								onDragEnd={handleDragEnd}
+								sx={{
+									cursor: onReorderItems ? "grab" : "default",
+									"&:active": {
+										cursor: onReorderItems ? "grabbing" : "default",
+									},
+									opacity: draggedIndex === index ? 0.5 : 1,
+								}}
 							/>
 						))}
 				</Stack>

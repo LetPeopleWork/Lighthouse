@@ -262,4 +262,42 @@ describe("StatesList", () => {
 
 		expect(mockSuggestionService.getStatesForTeams).toHaveBeenCalledTimes(1);
 	});
+
+	it("passes reorder handlers to ItemListManager components when provided", async () => {
+		const mockOnReorderToDoStates = vi.fn();
+		const mockOnReorderDoingStates = vi.fn();
+		const mockOnReorderDoneStates = vi.fn();
+
+		await act(async () => {
+			render(
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<StatesList
+						toDoStates={toDoStates}
+						onAddToDoState={mockOnAddToDoState}
+						onRemoveToDoState={mockOnRemoveToDoState}
+						onReorderToDoStates={mockOnReorderToDoStates}
+						doingStates={doingStates}
+						onAddDoingState={mockOnAddDoingState}
+						onRemoveDoingState={mockOnRemoveDoingState}
+						onReorderDoingStates={mockOnReorderDoingStates}
+						doneStates={doneStates}
+						onAddDoneState={mockOnAddDoneState}
+						onRemoveDoneState={mockOnRemoveDoneState}
+						onReorderDoneStates={mockOnReorderDoneStates}
+						isForTeam={true}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+		});
+
+		// Check that chips are draggable (indicating reorder handlers are passed)
+		const toDoChips = screen.getAllByText(/Task \d/);
+		const doingChips = screen.getAllByText("In Progress");
+		const doneChips = screen.getAllByText("Completed");
+
+		// Verify chips are draggable when reorder handlers are provided
+		for (const chip of [...toDoChips, ...doingChips, ...doneChips]) {
+			expect(chip.closest('[draggable="true"]')).toBeInTheDocument();
+		}
+	});
 });

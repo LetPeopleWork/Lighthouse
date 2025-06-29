@@ -11,14 +11,17 @@ interface StatesListComponentProps {
 	toDoStates: string[];
 	onAddToDoState: (type: string) => void;
 	onRemoveToDoState: (type: string) => void;
+	onReorderToDoStates?: (newOrder: string[]) => void;
 
 	doingStates: string[];
 	onAddDoingState: (type: string) => void;
 	onRemoveDoingState: (type: string) => void;
+	onReorderDoingStates?: (newOrder: string[]) => void;
 
 	doneStates: string[];
 	onAddDoneState: (type: string) => void;
 	onRemoveDoneState: (type: string) => void;
+	onReorderDoneStates?: (newOrder: string[]) => void;
 
 	isForTeam?: boolean;
 }
@@ -27,12 +30,15 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 	toDoStates,
 	onAddToDoState,
 	onRemoveToDoState,
+	onReorderToDoStates,
 	doingStates,
 	onAddDoingState,
 	onRemoveDoingState,
+	onReorderDoingStates,
 	doneStates,
 	onAddDoneState,
 	onRemoveDoneState,
+	onReorderDoneStates,
 	isForTeam = true,
 }) => {
 	const [statesSuggestions, setStatesSuggestions] =
@@ -111,6 +117,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 						items={toDoStates}
 						onAddItem={onAddToDoState}
 						onRemoveItem={onRemoveToDoState}
+						onReorderItems={onReorderToDoStates}
 						suggestions={todoSuggestions}
 						isLoading={isLoading}
 					/>
@@ -122,6 +129,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 						items={doingStates}
 						onAddItem={onAddDoingState}
 						onRemoveItem={onRemoveDoingState}
+						onReorderItems={onReorderDoingStates}
 						suggestions={doingSuggestions}
 						isLoading={isLoading}
 					/>
@@ -133,6 +141,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 						items={doneStates}
 						onAddItem={onAddDoneState}
 						onRemoveItem={onRemoveDoneState}
+						onReorderItems={onReorderDoneStates}
 						suggestions={doneSuggestions}
 						isLoading={isLoading}
 					/>
