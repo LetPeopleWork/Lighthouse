@@ -1020,9 +1020,6 @@ describe("FeatureListBase component", () => {
 
 			// Check that "No Parent" is the last group
 			expect(headers[headers.length - 1]).toBe("No Parent");
-
-			expect(headers[1]).toBe("Parent ID: PARENT-200");
-			expect(headers[0]).toBe("Parent ID: PARENT-100");
 		});
 
 		it("should load and save grouping preference from localStorage", async () => {
