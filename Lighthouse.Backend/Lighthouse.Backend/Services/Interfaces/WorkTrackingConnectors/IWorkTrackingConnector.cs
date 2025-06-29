@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
         Task<List<Feature>> GetFeaturesForProject(Project project);
 
+        Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds);
+
         Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery);
 
         string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder);

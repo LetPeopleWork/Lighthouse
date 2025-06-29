@@ -4,8 +4,10 @@ using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Microsoft.Build.Framework;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
 using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
@@ -769,6 +771,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                     Assert.That(fw.TotalWorkItems, Is.EqualTo(5));
                 }
             });
+        }
+
+        [Test]
+        public async Task UpdateFeaturesForProject_FeatureHasParent_StoresParentAsFeature()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            var feature = new Feature(team, 12) { ReferenceId = "12", ParentReferenceId = "1886" };
+            var parentFeature = new Feature { ReferenceId = "1886" };
+
+            featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => null);
+
+            SetupWorkForFeature(feature, 1, 0, team);
+
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId })).ReturnsAsync(new List<Feature>([parentFeature]));
+
+            var subject = CreateSubject();
+            await subject.UpdateFeaturesForProject(project);
+
+            featureRepositoryMock.Verify(x => x.Add(parentFeature));
+            Assert.That(parentFeature.IsParentFeature, Is.True);
+        }
+
+        [Test]
+        public async Task UpdateFeaturesForProject_FeatureHasParent_FeatureAlreadyExists_UpdatesParentFeature()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            var feature = new Feature(team, 12) { ReferenceId = "12", ParentReferenceId = "1886" };
+            var parentFeature = new Feature { ReferenceId = "1886" };
+
+            featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => new List<Feature> { parentFeature }.SingleOrDefault(predicate));
+
+            SetupWorkForFeature(feature, 1, 0, team);
+
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId })).ReturnsAsync(new List<Feature>([parentFeature]));
+
+            var subject = CreateSubject();
+            await subject.UpdateFeaturesForProject(project);
+
+            featureRepositoryMock.Verify(x => x.Update(parentFeature));
+            Assert.That(parentFeature.IsParentFeature, Is.True);
         }
 
         [Test]

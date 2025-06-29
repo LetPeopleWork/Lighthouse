@@ -91,6 +91,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
+        public Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds)
+        {
+            logger.LogInformation("Getting Parent Feature is not supported in Linear Work Tracking Connector.");
+
+            var parentFeatures = new List<Feature>();
+
+            foreach (var parentFeatureId in parentFeatureIds)
+            {
+                var parentFeature = new Feature
+                {
+                    ReferenceId = parentFeatureId,
+                    Name = "Parent Feature",
+                    Type = UnknownStateIdentifier,
+                    State = UnknownStateIdentifier,
+                    StateCategory = StateCategories.Unknown,
+                    Url = string.Empty,
+                    ParentReferenceId = string.Empty,
+                    Order = "0",
+                    CreatedDate = DateTime.UtcNow,
+                    StartedDate = DateTime.UtcNow,
+                    ClosedDate = DateTime.UtcNow
+                };
+
+                parentFeatures.Add(parentFeature);
+            }
+
+            return Task.FromResult(parentFeatures);
+        }
+
         public string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder)
         {
             logger.LogInformation("Getting Adjacent Order Index for items {ExistingItemsOrder} in order {RelativeOrder}", string.Join(", ", existingItemsOrder), relativeOrder);

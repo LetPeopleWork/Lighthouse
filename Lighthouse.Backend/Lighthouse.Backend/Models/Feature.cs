@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.Models
 
         public bool IsUnparentedFeature { get; set; }
 
+        public bool IsParentFeature { get; set; } = false;
+
         public bool IsUsingDefaultFeatureSize { get; set; } = false;
 
         public int EstimatedSize { get; set; } = 0;

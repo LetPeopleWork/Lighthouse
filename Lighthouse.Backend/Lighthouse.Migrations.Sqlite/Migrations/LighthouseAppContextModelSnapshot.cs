@@ -64,6 +64,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("EstimatedSize")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsParentFeature")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsUnparentedFeature")
                         .HasColumnType("INTEGER");
 

@@ -29,6 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             logger.LogInformation("Updating Features for Project {ProjectName}", project.Name);
 
             await RefreshFeatures(project);
+            await RefreshParentFeatures(project);
             await UpdateUnparentedItems(project);
 
             await UpdateRemainingWorkForProject(project);
@@ -349,26 +350,56 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             foreach (var feature in await workItemService.GetFeaturesForProject(project))
             {
-                var featureFromDatabase = featureRepository.GetByPredicate(f => f.ReferenceId == feature.ReferenceId);
-
-                if (featureFromDatabase == null)
-                {
-                    featureRepository.Add(feature);
-                    logger.LogDebug("Found New Feature {FeatureName}", feature.Name);
-                    featureFromDatabase = feature;
-                }
-                else
-                {
-                    featureFromDatabase.Update(feature);
-                    featureRepository.Update(featureFromDatabase);
-                    logger.LogDebug("Updated Existing Feature {FeatureName}", feature.Name);
-                }
+                var featureFromDatabase = AddOrUpdateFeature(feature);
 
                 AddProjectToFeature(featureFromDatabase, project);
                 features.Add(featureFromDatabase);
             }
 
             project.UpdateFeatures(features.OrderBy(f => f, new FeatureComparer()));
+
+            await featureRepository.Save();
+        }
+
+        private Feature AddOrUpdateFeature(Feature feature)
+        {
+            var featureFromDatabase = featureRepository.GetByPredicate(f => f.ReferenceId == feature.ReferenceId);
+
+            if (featureFromDatabase == null)
+            {
+                featureRepository.Add(feature);
+                logger.LogDebug("Found New Feature {FeatureName}", feature.Name);
+                featureFromDatabase = feature;
+            }
+            else
+            {
+                featureFromDatabase.Update(feature);
+                featureRepository.Update(featureFromDatabase);
+                logger.LogDebug("Updated Existing Feature {FeatureName}", feature.Name);
+            }
+
+            return featureFromDatabase;
+        }
+
+        private async Task RefreshParentFeatures(Project project)
+        {
+            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var parentFeatureIds = project.Features.Where(f => !string.IsNullOrEmpty(f.ParentReferenceId)).Select(f => f.ParentReferenceId).Distinct().ToList();
+
+            if (parentFeatureIds.Count == 0)
+            {
+                logger.LogDebug("No Parent Features found for Project {ProjectName}", project.Name);
+                return;
+            }
+
+            var parentFeatures = await workItemService.GetParentFeaturesDetails(project, parentFeatureIds);
+
+            foreach (var parentFeature in parentFeatures)
+            {
+                parentFeature.IsParentFeature = true;
+
+                AddOrUpdateFeature(parentFeature);
+            }
 
             await featureRepository.Save();
         }

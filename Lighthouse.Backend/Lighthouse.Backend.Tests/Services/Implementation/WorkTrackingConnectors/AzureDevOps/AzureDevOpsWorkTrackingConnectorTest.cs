@@ -469,6 +469,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetParentFeaturesDetails_ReturnsCorrectDetails()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
+
+            var parentItems = await subject.GetParentFeaturesDetails(project, ["400"]);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(parentItems, Has.Count.EqualTo(1));
+                var parentItem = parentItems.Single();
+
+                Assert.That(parentItem.ReferenceId, Is.EqualTo("400"));
+                Assert.That(parentItem.Name, Is.EqualTo("Delivery for Agnieszka"));
+                Assert.That(parentItem.Url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/400"));
+            });
+        }
+
+        [Test]
         public async Task GetWorkItemsIdsForTeamWithAdditionalQuery_IncludesClosedItems()
         {
             var subject = CreateSubject();

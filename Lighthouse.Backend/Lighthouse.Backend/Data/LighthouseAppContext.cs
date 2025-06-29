@@ -173,6 +173,7 @@ namespace Lighthouse.Backend.Data
         {
             logger.LogDebug("Removing orphaned features");
             var orphanedFeatures = Features
+                .Where(f => !f.IsParentFeature)
                 .Include(f => f.Projects)
                 .Where(f => f.Projects.Count == 0)
                 .ToList();

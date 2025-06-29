@@ -58,35 +58,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
             var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery, project.ParentOverrideField ?? string.Empty);
-
-            var adoWorkItems = await FetchAdoWorkItemsByQuery(project, query, project.SizeEstimateField ?? string.Empty, project.FeatureOwnerField ?? string.Empty, project.ParentOverrideField ?? string.Empty);
-
-            var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, project);
-
-            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, project);
-
-            var estimatedSizes = ExtractFieldValue(adoWorkItems, project.SizeEstimateField ?? string.Empty);
-            var featureOwners = ExtractFieldValue(adoWorkItems, project.FeatureOwnerField ?? string.Empty);
-
-            var parentReferences = await parentReferencesTask;
-            var features = new List<Feature>();
-
-            foreach (var workItem in workItemBase)
-            {
-                workItem.ParentReferenceId = parentReferences[workItem.ReferenceId];
-                var estimatedSize = GetEstimatedSizeForItem(estimatedSizes[workItem.ReferenceId]);
-
-                var feature = new Feature(workItem)
-                {
-                    EstimatedSize = estimatedSize,
-                    OwningTeam = featureOwners[workItem.ReferenceId]
-                };
-
-                features.Add(feature);
-            }
+            var features = await GetFeaturesForProjectByQuery(project, query);
 
             logger.LogInformation("Found Features with IDs {FeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
 
+            return features;
+        }
+
+        public async Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds)
+        {
+            logger.LogInformation("Getting Parent Features with IDs {ParentFeatureIds} for Project {ProjectName}", string.Join(", ", parentFeatureIds), project.Name);
+
+            var extraFieldsQuery = string.Empty;
+            if (!string.IsNullOrEmpty(project.ParentOverrideField))
+            {
+                extraFieldsQuery = $", [{project.ParentOverrideField}]";
+            }
+            var whereClause = string.Join(" OR ", parentFeatureIds.Select(id => $"[{AzureDevOpsFieldNames.Id}] = {id}"));
+
+            var query = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{extraFieldsQuery} FROM WorkItems WHERE {whereClause}";
+
+            var features = await GetFeaturesForProjectByQuery(project, query);
+
+            logger.LogInformation("Found Parent Features with IDs {ParentFeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
             return features;
         }
 
@@ -226,6 +220,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", project.Name);
                 return false;
             }
+        }
+
+        private async Task<List<Feature>> GetFeaturesForProjectByQuery(Project project, string query)
+        {
+            var adoWorkItems = await FetchAdoWorkItemsByQuery(project, query, project.SizeEstimateField ?? string.Empty, project.FeatureOwnerField ?? string.Empty, project.ParentOverrideField ?? string.Empty);
+
+            var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, project);
+
+            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, project);
+
+            var estimatedSizes = ExtractFieldValue(adoWorkItems, project.SizeEstimateField ?? string.Empty);
+            var featureOwners = ExtractFieldValue(adoWorkItems, project.FeatureOwnerField ?? string.Empty);
+
+            var parentReferences = await parentReferencesTask;
+            var features = new List<Feature>();
+
+            foreach (var workItem in workItemBase)
+            {
+                workItem.ParentReferenceId = parentReferences[workItem.ReferenceId];
+                var estimatedSize = GetEstimatedSizeForItem(estimatedSizes[workItem.ReferenceId]);
+
+                var feature = new Feature(workItem)
+                {
+                    EstimatedSize = estimatedSize,
+                    OwningTeam = featureOwners[workItem.ReferenceId]
+                };
+
+                features.Add(feature);
+            }
+
+            return features;
         }
 
         private async Task<int> GetRelatedWorkItems(Team team, string relatedWorkItemId)

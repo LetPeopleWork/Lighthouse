@@ -59,22 +59,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.WorkItemQuery);
             var issues = await GetIssuesByQuery(project, query, project.ParentOverrideField);
+            return await CreateFeaturesFromIssues(project, issues);
+        }
 
-            var features = new List<Feature>();
-            foreach (var issue in issues)
-            {
-                var feature = new Feature(CreateWorkItemFromJiraIssue(issue, project));
+        public async Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds)
+        {
+            logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", parentFeatureIds));
 
-                var size = await GetEstimatedSizeForItem(issue.Key, project);
-                var owner = await GetFeatureOwnerByField(issue.Key, project);
-
-                feature.EstimatedSize = size;
-                feature.OwningTeam = owner;
-
-                features.Add(feature);
-            }
-
-            return features;
+            var query = string.Join(" OR ", parentFeatureIds.Select(id => $"key = \"{id}\""));
+            var issues = await GetIssuesByQuery(project, query, project.ParentOverrideField);
+            return await CreateFeaturesFromIssues(project, issues);
         }
 
         public async Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
@@ -204,6 +198,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", project.Name);
                 return false;
             }
+        }
+
+        private async Task<List<Feature>> CreateFeaturesFromIssues(Project project, IEnumerable<Issue> issues)
+        {
+            var features = new List<Feature>();
+            foreach (var issue in issues)
+            {
+                var feature = new Feature(CreateWorkItemFromJiraIssue(issue, project));
+
+                var size = await GetEstimatedSizeForItem(issue.Key, project);
+                var owner = await GetFeatureOwnerByField(issue.Key, project);
+
+                feature.EstimatedSize = size;
+                feature.OwningTeam = owner;
+
+                features.Add(feature);
+            }
+
+            return features;
         }
 
         private async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)

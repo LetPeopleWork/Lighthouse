@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -310,6 +311,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var feature = features.Single(f => f.ReferenceId == issueKey);
             
             Assert.That(feature.OwningTeam, Contains.Substring(expectedFeatureOwnerFieldValue));
+        }
+
+        [Test]
+        public async Task GetParentFeaturesDetails_ReturnsCorrectDetails()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"project = LGHTHSDMO");
+
+            var parentItems = await subject.GetParentFeaturesDetails(project, ["LGHTHSDMO-2377"]);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(parentItems, Has.Count.EqualTo(1));
+                var parentItem = parentItems.Single();
+
+                Assert.That(parentItem.ReferenceId, Is.EqualTo("LGHTHSDMO-2377"));
+                Assert.That(parentItem.Name, Is.EqualTo("Delivery for Agnieszka"));
+                Assert.That(parentItem.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/LGHTHSDMO-2377"));
+            });
         }
 
         [Test]
