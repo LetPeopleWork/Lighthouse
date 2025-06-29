@@ -41,6 +41,19 @@ If a team is involved in one (or more) projects, all the features where this spe
 
 For every feature, you can see the following details.
 
+### Table Options
+The Feature table offers two options that you can toggle on/off:
+- Group Features by Parent
+- Hide Completed Features
+
+The settings will be stored for this specific team, so next time you won't have to toggle it off/on again.
+
+#### Group Features by Parent
+If this is toggled on, the Features will not be shown in a flat list, but grouped by their respective parents. This can be useful if your Features (for example *Epics*) have parent items that are of relevance to you. This could be something like an *Initiative* or *Objective* (if you use OKRs or some kind of quarterly planning).
+
+#### Hide Completed Features
+If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features.
+
 ### Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
 
