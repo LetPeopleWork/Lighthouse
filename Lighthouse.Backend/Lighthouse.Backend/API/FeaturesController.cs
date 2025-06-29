@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.API
         {
             var parentFeatures = new List<FeatureDto>();
 
-            var features = featureRepository.GetAllByPredicate(f => parentFeatureReferenceIds.Contains(f.ReferenceId));
+            var features = featureRepository.GetAllByPredicate(f => parentFeatureReferenceIds.Contains(f.ReferenceId)).ToList();
 
             foreach (var feature in features.OrderBy(f => f, new FeatureComparer()))
             {

@@ -1,6 +1,7 @@
 import {
 	Box,
 	FormControlLabel,
+	Link,
 	Paper,
 	Switch,
 	Table,
@@ -10,8 +11,9 @@ import {
 	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { Fragment, useEffect, useState } from "react";
-import type { IFeature } from "../../../models/Feature";
+import { Fragment, useContext, useEffect, useState } from "react";
+import type { Feature, IFeature } from "../../../models/Feature";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { appColors } from "../../../utils/theme/colors";
 
 export interface FeatureListBaseProps {
@@ -30,10 +32,15 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 	contextType,
 }) => {
 	const theme = useTheme();
+	const { featureService } = useContext(ApiServiceContext);
 	const [hideCompletedFeatures, setHideCompletedFeatures] =
 		useState<boolean>(false);
 	const [groupFeaturesByParent, setGroupFeaturesByParent] =
 		useState<boolean>(false);
+	const [parentFeatures, setParentFeatures] = useState<Record<string, Feature>>(
+		{},
+	);
+	const [isLoadingParents, setIsLoadingParents] = useState<boolean>(false);
 
 	const baseKey = "lighthouse_hide_completed_features";
 	const storageKey = `${baseKey}_${contextType}_${contextId}`;
@@ -87,6 +94,36 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 		return groups;
 	};
 
+	// Helper function to render parent header
+	const renderParentHeader = (parentId: string): React.ReactNode => {
+		if (parentId === "none") {
+			return "No Parent";
+		}
+
+		if (isLoadingParents) {
+			return `Loading parent feature ${parentId}...`;
+		}
+
+		const parentFeature = parentFeatures[parentId];
+		if (parentFeature) {
+			return (
+				<Link
+					href={parentFeature.url || "#"}
+					target="_blank"
+					rel="noopener noreferrer"
+					color="inherit"
+					underline="hover"
+					data-testid={`parent-feature-link-${parentId}`}
+					sx={{ display: "flex", alignItems: "center" }}
+				>
+					{`${parentFeature.referenceId}: ${parentFeature.name}`}
+				</Link>
+			);
+		}
+
+		return `Parent ID: ${parentId}`;
+	};
+
 	// Get header background color based on theme mode
 	const headerBgColor =
 		theme.palette.mode === "dark"
@@ -108,10 +145,21 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 
 		// Group features by parent
 		const groups = groupFeatures(filteredFeatures);
-		const sortedKeys = Object.keys(groups).sort((a, b) => {
+		let sortedKeys = Object.keys(groups);
+
+		// Sort keys based on parent features order (from API) and put "none" at the bottom
+		sortedKeys = sortedKeys.sort((a, b) => {
 			// Place "none" group at the bottom
 			if (a === "none") return 1;
 			if (b === "none") return -1;
+
+			// Use order from API if we have both parent features
+			if (parentFeatures[a] && parentFeatures[b]) {
+				// By default, keep the order from the API
+				return 0;
+			}
+
+			// If we don't have both parents, fall back to alphanumeric sort
 			return a.localeCompare(b);
 		});
 
@@ -130,7 +178,7 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 									borderBottom: `1px solid ${theme.palette.divider}`,
 								}}
 							>
-								{parentId === "none" ? "No Parent" : `Parent ID: ${parentId}`}
+								{renderParentHeader(parentId)}
 							</td>
 						</tr>
 						{groups[parentId].map((feature) => renderTableRow(feature))}
@@ -139,6 +187,44 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 			</>
 		);
 	};
+
+	// Fetch parent features when needed
+	useEffect(() => {
+		if (groupFeaturesByParent) {
+			// Extract unique parent IDs that are not "none"
+			const uniqueParentIds = Array.from(
+				new Set(
+					features
+						.map((feature) => feature.parentWorkItemReference)
+						.filter((id): id is string => !!id),
+				),
+			);
+
+			if (uniqueParentIds.length > 0) {
+				const fetchParentFeatures = async () => {
+					setIsLoadingParents(true);
+					try {
+						const parentFeaturesList =
+							await featureService.getParentFeatures(uniqueParentIds);
+						// Convert array to a record object with referenceId as the key
+						const parentsMap = parentFeaturesList.reduce<
+							Record<string, Feature>
+						>((acc, feature) => {
+							acc[feature.referenceId] = feature;
+							return acc;
+						}, {});
+						setParentFeatures(parentsMap);
+					} catch (error) {
+						console.error("Error fetching parent features:", error);
+					} finally {
+						setIsLoadingParents(false);
+					}
+				};
+
+				fetchParentFeatures();
+			}
+		}
+	}, [features, groupFeaturesByParent, featureService]);
 
 	return (
 		<TableContainer component={Paper}>
