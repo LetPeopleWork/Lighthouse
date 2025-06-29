@@ -22,11 +22,11 @@ const EditTeamPage: React.FC = () => {
 		let newSettings: ITeamSettings;
 		if (isNewTeam) {
 			newSettings = await teamService.createTeam(updatedSettings);
+			await teamService.updateTeamData(newSettings.id);
 		} else {
 			newSettings = await teamService.updateTeam(updatedSettings);
 		}
 
-		await teamService.updateTeamData(newSettings.id);
 		navigate(`/teams/${newSettings.id}`);
 	};
 

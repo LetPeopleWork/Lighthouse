@@ -44,11 +44,11 @@ const EditProject: React.FC = () => {
 		let savedSettings: IProjectSettings;
 		if (isNewProject) {
 			savedSettings = await projectService.createProject(updatedSettings);
+			await projectService.refreshFeaturesForProject(savedSettings.id);
 		} else {
 			savedSettings = await projectService.updateProject(updatedSettings);
 		}
 
-		await projectService.refreshFeaturesForProject(savedSettings.id);
 		navigate(`/projects/${savedSettings.id}`);
 	};
 
