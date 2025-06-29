@@ -10,11 +10,40 @@ nav_order: 95
 Preview
 {: .label .label-blue }
 -->
-
-# Lighthouse v25.6.16.1514
+# Lighthouse v25.6.29.1252
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+# Allow to Group Features by Parent
+So far, the Features listed for Teams/Projects was always a flat list. However, many teams have another layer "on top" of their feature that they track in Lighthouse.
+With this release, it's now possible to visualize the Parent in this list. If the "Group Features by Parent" toggle is switched on, the flat list changes to a hierarchy, where items are sorted under their parent.
+
+The parent is using the default parent field from your system. If you can't use this, you can now also define a *Parent Override Field* for your project (similar) to the teams.
+*Note:* The field must contain an ID to an item in your Work Tracking System so Lighthouse can fetch more information for it.
+
+![Features Grouped By Parent](./GroupByFeatures.png)
+
+*As this is the first version of this feature - we're eager to get your feedback. Join our [Slack](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A) and let us know how we can improve it!*
+
+# Other Improvements
+- The Footer now contains a link to the LetPeopleWork Offering Obeya
+- Improved the speed of the Project Validation on Jira
+- Renamed "Custom Related Field" to "Parent Override Field"
+
+# Bug Fixes
+- Opening Work Items from Lighthouse sometimes added a double "/" which made the url invalid (observed on Jira Data Center) - this should be fixed now.
+- The legend for show/hide the System WIP Limit was sometimes overlapping the points in the chart. Aligned Legend now with other charts.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Nina Wagen](https://www.linkedin.com/in/nina-wagen-04a9756a/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+ 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.6.16.1514...v25.6.29.1252)
+
+# Lighthouse v25.6.16.1514
 
 This release focused on many smaller improvements and bug fixes, many of which came in through our Slack community.
 
