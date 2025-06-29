@@ -1,6 +1,7 @@
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IConfigurationService } from "../services/Api/ConfigurationService";
 import { DemoApiService } from "../services/Api/DemoApiService";
+import type { IFeatureService } from "../services/Api/FeatureService";
 import type { ILogService } from "../services/Api/LogService";
 import type {
 	IProjectMetricsService,
@@ -37,6 +38,7 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["suggestionService"],
 		configurationService:
 			null as unknown as IApiServiceContext["configurationService"],
+		featureService: null as unknown as IApiServiceContext["featureService"],
 		...overrides,
 	};
 };
@@ -90,6 +92,12 @@ export const createMockTeamService = (): ITeamService => {
 		updateTeam: vi.fn(),
 		createTeam: vi.fn(),
 		updateTeamData: vi.fn(),
+	};
+};
+
+export const createMockFeatureService = (): IFeatureService => {
+	return {
+		getParentFeatures: vi.fn(),
 	};
 };
 

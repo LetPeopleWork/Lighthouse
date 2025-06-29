@@ -44,6 +44,7 @@ import type {
 	UpdateType,
 } from "../UpdateSubscriptionService";
 import type { IConfigurationService } from "./ConfigurationService";
+import type { IFeatureService } from "./FeatureService";
 import type { IForecastService } from "./ForecastService";
 import type { ILogService } from "./LogService";
 import type {
@@ -482,7 +483,8 @@ export class DemoApiService
 		IOptionalFeatureService,
 		IUpdateSubscriptionService,
 		ISuggestionService,
-		IConfigurationService
+		IConfigurationService,
+		IFeatureService
 {
 	private readonly subscribers: Map<string, (status: IUpdateStatus) => void> =
 		new Map();
@@ -765,6 +767,29 @@ export class DemoApiService
 			howManyForecasts,
 			likelihood,
 		);
+	}
+
+	async getParentFeatures(
+		parentFeatureReferenceIds: string[],
+	): Promise<Feature[]> {
+		console.log(
+			`Getting Parent Features for Reference IDs: ${parentFeatureReferenceIds.join(
+				", ",
+			)}`,
+		);
+		await delay();
+
+		const parentFeatures: Feature[] = [];
+		for (const referenceId of parentFeatureReferenceIds) {
+			const feature = features.find(
+				(feature) => feature.referenceId === referenceId,
+			);
+			if (feature) {
+				parentFeatures.push(feature);
+			}
+		}
+
+		return parentFeatures;
 	}
 
 	async getTeams(): Promise<Team[]> {
