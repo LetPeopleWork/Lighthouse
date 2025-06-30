@@ -7,6 +7,7 @@ import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTi
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
+import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { IFeature } from "../../../models/Feature";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
@@ -26,6 +27,7 @@ export interface BaseMetricsViewProps<
 	title: string;
 	defaultDateRange?: number;
 	renderAdditionalComponents?: () => React.ReactNode;
+	doingStates: string[];
 }
 
 export const BaseMetricsView = <
@@ -37,6 +39,7 @@ export const BaseMetricsView = <
 	title,
 	defaultDateRange = 30,
 	renderAdditionalComponents,
+	doingStates,
 }: BaseMetricsViewProps<T, E>) => {
 	const [throughputData, setThroughputData] = useState<RunChartData | null>(
 		null,
@@ -212,6 +215,15 @@ export const BaseMetricsView = <
 					cycleTimeDataPoints={cycleTimeData}
 					percentileValues={percentileValues}
 					serviceLevelExpectation={serviceLevelExpectation}
+				/>
+			</Grid>
+
+			<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
+				<WorkItemAgingChart
+					inProgressItems={inProgressItems}
+					percentileValues={percentileValues}
+					serviceLevelExpectation={serviceLevelExpectation}
+					doingStates={doingStates}
 				/>
 			</Grid>
 

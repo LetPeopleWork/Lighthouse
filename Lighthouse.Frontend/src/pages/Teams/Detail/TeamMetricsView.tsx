@@ -12,7 +12,8 @@ interface TeamMetricsViewProps {
 
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
-	const { teamMetricsService } = useContext(ApiServiceContext);
+	const [doingStates, setDoingStates] = useState<string[]>([]);
+	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
 
 	useEffect(() => {
@@ -29,6 +30,19 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 
 		fetchFeatures();
 	}, [team.id, teamMetricsService]);
+
+	useEffect(() => {
+		const fetchTeamSettings = async () => {
+			try {
+				const settings = await teamService.getTeamSettings(team.id);
+				setDoingStates(settings.doingStates);
+			} catch (err) {
+				console.error("Error fetching team settings:", err);
+			}
+		};
+
+		fetchTeamSettings();
+	}, [team.id, teamService]);
 
 	useEffect(() => {
 		if (team.useFixedDatesForThroughput) {
@@ -59,6 +73,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			title="Work Items"
 			defaultDateRange={dateRange}
 			renderAdditionalComponents={renderTeamSpecificContent}
+			doingStates={doingStates}
 		/>
 	);
 };

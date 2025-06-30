@@ -164,6 +164,32 @@ vi.mock("../../../components/Common/Charts/StackedAreaChart", () => ({
 	),
 }));
 
+vi.mock("../../../components/Common/Charts/WorkItemAgingChart", () => ({
+	default: ({
+		inProgressItems,
+		percentileValues,
+		serviceLevelExpectation,
+	}: {
+		inProgressItems: IWorkItem[];
+		percentileValues: IPercentileValue[];
+		serviceLevelExpectation: IPercentileValue | null;
+	}) => (
+		<div data-testid="work-item-aging-chart">
+			<div data-testid="aging-in-progress-items-count">
+				{inProgressItems.length}
+			</div>
+			<div data-testid="aging-percentile-values-count">
+				{percentileValues.length}
+			</div>
+			<div data-testid="aging-service-level-expectation">
+				{serviceLevelExpectation
+					? `${serviceLevelExpectation.percentile}:${serviceLevelExpectation.value}`
+					: "none"}
+			</div>
+		</div>
+	),
+}));
+
 describe("BaseMetricsView component", () => {
 	// Create RunChartData with correct properties
 	const mockItemsCompletedData: RunChartData = new RunChartData(
@@ -299,6 +325,7 @@ describe("BaseMetricsView component", () => {
 				metricsService={mockMetricsService}
 				title="Features"
 				defaultDateRange={90}
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
@@ -373,6 +400,7 @@ describe("BaseMetricsView component", () => {
 				metricsService={mockMetricsService}
 				title="Work Items"
 				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
@@ -412,6 +440,7 @@ describe("BaseMetricsView component", () => {
 				metricsService={mockMetricsService}
 				title="Features"
 				defaultDateRange={90}
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
@@ -447,6 +476,7 @@ describe("BaseMetricsView component", () => {
 				metricsService={mockMetricsService}
 				title="Features"
 				defaultDateRange={90}
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
@@ -482,6 +512,7 @@ describe("BaseMetricsView component", () => {
 				metricsService={mockMetricsService}
 				title="Features"
 				defaultDateRange={60}
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
@@ -515,6 +546,7 @@ describe("BaseMetricsView component", () => {
 				entity={mockProject}
 				metricsService={mockMetricsService}
 				title="Features"
+				doingStates={["To Do", "In Progress", "Review"]}
 				// No defaultDateRange provided
 			/>,
 		);
@@ -554,6 +586,7 @@ describe("BaseMetricsView component", () => {
 				entity={mockProject}
 				metricsService={errorMetricsService}
 				title="Features"
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
@@ -595,6 +628,7 @@ describe("BaseMetricsView component", () => {
 				metricsService={mockMetricsService}
 				title="Features"
 				renderAdditionalComponents={additionalComponent}
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
@@ -620,6 +654,7 @@ describe("BaseMetricsView component", () => {
 				entity={projectWithoutSLE}
 				metricsService={mockMetricsService}
 				title="Features"
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
@@ -644,6 +679,7 @@ describe("BaseMetricsView component", () => {
 				entity={projectWithPartialSLE}
 				metricsService={mockMetricsService}
 				title="Features"
+				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 

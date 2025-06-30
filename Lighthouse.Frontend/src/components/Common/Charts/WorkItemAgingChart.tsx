@@ -3,17 +3,16 @@ import {
 	CardContent,
 	Chip,
 	Stack,
-	type Theme,
 	Typography,
 	useTheme,
 } from "@mui/material";
+import type { Theme } from "@mui/material/styles";
 import {
 	ChartContainer,
 	ChartsReferenceLine,
 	ChartsTooltip,
 	ChartsXAxis,
 	ChartsYAxis,
-	type ScatterMarkerProps,
 	ScatterPlot,
 } from "@mui/x-charts";
 import type React from "react";
@@ -25,10 +24,16 @@ import { hexToRgba } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
-const getDateOnlyTimestamp = (date: Date): number => {
-	const dateOnly = new Date(date);
-	dateOnly.setHours(0, 0, 0, 0);
-	return dateOnly.getTime();
+interface ScatterMarkerProps {
+	x: number;
+	y: number;
+	color: string;
+	isHighlighted?: boolean;
+	dataIndex?: number;
+}
+
+const getAgeInDays = (item: IWorkItem): number => {
+	return item.workItemAge;
 };
 
 const getBubbleSize = (count: number): number => {
@@ -64,9 +69,9 @@ const ScatterMarker = (
 				opacity={props.isHighlighted ? 1 : 0.8}
 				stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
 				strokeWidth={props.isHighlighted ? 2 : 0}
-				pointerEvents="none" // Disable pointer events as the button will handle clicks
+				pointerEvents="none"
 			>
-				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}</title>
+				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} aged ${group.age} days in ${group.state}`}</title>
 			</circle>
 
 			<foreignObject
@@ -87,7 +92,7 @@ const ScatterMarker = (
 						borderRadius: "50%",
 					}}
 					onClick={handleOpenWorkItems}
-					aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}
+					aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} aged ${group.age} days in ${group.state}`}
 				/>
 			</foreignObject>
 		</>
@@ -95,23 +100,40 @@ const ScatterMarker = (
 };
 
 interface IGroupedWorkItem {
-	closedDateTimestamp: number;
-	cycleTime: number;
+	state: string;
+	stateIndex: number;
+	age: number;
 	items: IWorkItem[];
 }
 
-const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
+const groupWorkItems = (
+	items: IWorkItem[],
+	doingStates: string[],
+): IGroupedWorkItem[] => {
 	const groups: Record<string, IGroupedWorkItem> = {};
 
-	for (const item of items) {
-		const closedDateTimestamp = getDateOnlyTimestamp(item.closedDate);
+	// Create state index map from the provided doingStates order
+	const stateIndexMap: Record<string, number> = {};
+	for (let i = 0; i < doingStates.length; i++) {
+		stateIndexMap[doingStates[i]] = i;
+	}
 
-		const key = `${closedDateTimestamp}-${item.cycleTime}`;
+	for (const item of items) {
+		if (!item.state) continue;
+
+		const age = getAgeInDays(item);
+		const stateIndex = stateIndexMap[item.state];
+
+		// Skip items that are not in the doing states
+		if (stateIndex === undefined) continue;
+
+		const key = `${item.state}-${age}`;
 
 		if (!groups[key]) {
 			groups[key] = {
-				closedDateTimestamp,
-				cycleTime: item.cycleTime,
+				state: item.state,
+				stateIndex,
+				age,
 				items: [],
 			};
 		}
@@ -122,37 +144,18 @@ const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
 	return Object.values(groups);
 };
 
-interface CycleTimeScatterPlotChartProps {
+interface WorkItemAgingChartProps {
+	inProgressItems: IWorkItem[];
 	percentileValues: IPercentileValue[];
-	cycleTimeDataPoints: IWorkItem[];
 	serviceLevelExpectation?: IPercentileValue | null;
+	doingStates: string[];
 }
 
-const getMaxYAxisHeight = (
-	percentiles: IPercentileValue[],
-	serviceLevelExpectation: IPercentileValue | null | undefined,
-	cycleTimeDataPoints: IWorkItem[],
-): number => {
-	const maxFromPercentiles =
-		percentiles.length > 0 ? Math.max(...percentiles.map((p) => p.value)) : 0;
-
-	const maxFromSle = serviceLevelExpectation?.value ?? 0;
-
-	const maxFromData =
-		cycleTimeDataPoints.length > 0
-			? Math.max(...cycleTimeDataPoints.map((item) => item.cycleTime))
-			: 0;
-
-	const absoluteMax = Math.max(maxFromPercentiles, maxFromSle, maxFromData);
-
-	// Add 10% padding to the top
-	return absoluteMax * 1.1;
-};
-
-const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
+const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
+	inProgressItems,
 	percentileValues,
-	cycleTimeDataPoints,
 	serviceLevelExpectation = null,
+	doingStates,
 }) => {
 	const [percentiles, setPercentiles] = useState<IPercentileValue[]>([]);
 	const [visiblePercentiles, setVisiblePercentiles] = useState<
@@ -176,8 +179,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	}, [percentileValues]);
 
 	useEffect(() => {
-		setGroupedDataPoints(groupWorkItems(cycleTimeDataPoints));
-	}, [cycleTimeDataPoints]);
+		const grouped = groupWorkItems(inProgressItems, doingStates);
+		setGroupedDataPoints(grouped);
+	}, [inProgressItems, doingStates]);
 
 	const togglePercentileVisibility = (percentile: number) => {
 		setVisiblePercentiles((prev) => ({
@@ -195,11 +199,28 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		setDialogOpen(true);
 	};
 
-	return cycleTimeDataPoints.length > 0 ? (
+	// Calculate minimum Y-axis height based on percentiles and SLE
+	const getMaxYAxisHeight = () => {
+		const percentileMax =
+			percentileValues.length > 0
+				? Math.max(...percentileValues.map((p) => p.value))
+				: 0;
+		const sleMax = serviceLevelExpectation ? serviceLevelExpectation.value : 0;
+		const dataMax =
+			groupedDataPoints.length > 0
+				? Math.max(...groupedDataPoints.map((g) => g.age))
+				: 0;
+
+		// Add some padding above the highest value
+		const maxValue = Math.max(percentileMax, sleMax, dataMax, 5);
+		return Math.ceil(maxValue * 1.1); // 10% padding
+	};
+
+	return inProgressItems.length > 0 ? (
 		<>
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">Cycle Time</Typography>
+					<Typography variant="h6">Work Item Aging</Typography>
 
 					<Stack
 						direction="row"
@@ -270,25 +291,28 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 						height={500}
 						xAxis={[
 							{
-								id: "timeAxis",
-								scaleType: "time",
-								label: "Date",
+								id: "stateAxis",
+								scaleType: "linear",
+								data: doingStates.map((_, index) => index),
+								label: "State",
+								min: -0.5,
+								max: doingStates.length - 0.5,
+								tickNumber: doingStates.length,
 								valueFormatter: (value: number) => {
-									return new Date(value).toLocaleDateString();
+									const index = Math.round(value);
+									return index >= 0 && index < doingStates.length
+										? doingStates[index]
+										: "";
 								},
 							},
 						]}
 						yAxis={[
 							{
-								id: "cycleTimeAxis",
+								id: "ageAxis",
 								scaleType: "linear",
-								label: "Cycle Time (days)",
+								label: "Age (days)",
 								min: 0,
-								max: getMaxYAxisHeight(
-									percentiles,
-									serviceLevelExpectation,
-									cycleTimeDataPoints,
-								),
+								max: getMaxYAxisHeight(),
 								valueFormatter: (value: number) => {
 									return Number.isInteger(value) ? value.toString() : "";
 								},
@@ -298,13 +322,13 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							{
 								type: "scatter",
 								data: groupedDataPoints.map((group, index) => ({
-									x: group.closedDateTimestamp,
-									y: group.cycleTime,
+									x: group.stateIndex,
+									y: group.age,
 									id: index,
 									itemCount: group.items.length,
 								})),
-								xAxisId: "timeAxis",
-								yAxisId: "cycleTimeAxis",
+								xAxisId: "stateAxis",
+								yAxisId: "ageAxis",
 								color: theme.palette.primary.main,
 								markerSize: 4,
 								highlightScope: {
@@ -317,14 +341,14 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 									const group = groupedDataPoints[item.id as number];
 									if (!group) return "";
 
-									const numberOfClosedItems = group.items.length ?? 0;
+									const numberOfItems = group.items.length ?? 0;
 
-									if (numberOfClosedItems === 1) {
+									if (numberOfItems === 1) {
 										const item = group.items[0];
 										return `${getWorkItemName(item)} (Click for details)`;
 									}
 
-									return `${numberOfClosedItems} Closed Items (Click for details)`;
+									return `${numberOfItems} Items in ${group.state} (Click for details)`;
 								},
 							},
 						]}
@@ -358,6 +382,19 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								}}
 							/>
 						)}
+
+						{/* Vertical grid lines between states */}
+						{doingStates.slice(0, -1).map((stateName, index) => (
+							<ChartsReferenceLine
+								key={`vertical-grid-${stateName}`}
+								x={index + 0.5}
+								lineStyle={{
+									stroke: theme.palette.divider,
+									strokeWidth: 1,
+									opacity: 0.3,
+								}}
+							/>
+						))}
 
 						<ChartsXAxis />
 						<ChartsYAxis />
@@ -397,18 +434,22 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				</CardContent>
 			</Card>
 			<WorkItemsDialog
-				title={`Items closed on ${selectedItems[0]?.closedDate.toLocaleDateString()} with Cycle Time of ${selectedItems[0]?.cycleTime} days`}
+				title={
+					selectedItems.length > 0
+						? `Items in ${selectedItems[0]?.state} aged ${getAgeInDays(selectedItems[0])} days`
+						: "Work Items"
+				}
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				timeMetric="cycleTime"
+				timeMetric="age"
 			/>
 		</>
 	) : (
 		<Typography variant="body2" color="text.secondary">
-			No data available
+			No items in progress
 		</Typography>
 	);
 };
 
-export default CycleTimeScatterPlotChart;
+export default WorkItemAgingChart;
