@@ -104,5 +104,41 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             });
         }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void IsUpdateSupported_ReturnsCorrectValue(bool isSupported)
+        {
+            lighthouseReleaseServiceMock.Setup(x => x.IsUpdateSupported()).Returns(isSupported);
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
+
+            var response = subject.IsUpdateSupported();
+            var actual = response.Result as ObjectResult;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(actual.StatusCode, Is.EqualTo(200));
+                Assert.That(actual.Value, Is.EqualTo(isSupported));
+            });
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task InstallUpdate_ReturnsCorrectValue(bool installResult)
+        {
+            lighthouseReleaseServiceMock.Setup(x => x.InstallUpdateAsync()).ReturnsAsync(installResult);
+            var subject = new VersionController(lighthouseReleaseServiceMock.Object);
+
+            var response = await subject.InstallUpdate();
+            var actual = response.Result as ObjectResult;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(actual.StatusCode, Is.EqualTo(200));
+                Assert.That(actual.Value, Is.EqualTo(installResult));
+            });
+        }
     }
 }

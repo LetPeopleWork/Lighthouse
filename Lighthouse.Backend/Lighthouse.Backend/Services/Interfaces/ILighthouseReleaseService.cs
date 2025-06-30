@@ -9,5 +9,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task<IEnumerable<LighthouseRelease>> GetNewReleases();
 
         Task<bool> UpdateAvailable();
+
+        bool IsUpdateSupported();
+
+        Task<bool> InstallUpdateAsync();
     }
 }

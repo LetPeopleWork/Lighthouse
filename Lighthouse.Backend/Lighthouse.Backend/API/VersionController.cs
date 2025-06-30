@@ -49,5 +49,19 @@ namespace Lighthouse.Backend.API
 
             return Ok(lighthouseReleases);
         }
+
+        [HttpGet("updateSupported")]
+        public ActionResult<bool> IsUpdateSupported()
+        {
+            var isSupported = lighthouseReleaseService.IsUpdateSupported();
+            return Ok(isSupported);
+        }
+
+        [HttpPost("installUpdate")]
+        public async Task<ActionResult<bool>> InstallUpdate()
+        {
+            var result = await lighthouseReleaseService.InstallUpdateAsync();
+            return Ok(result);
+        }
     }
 }

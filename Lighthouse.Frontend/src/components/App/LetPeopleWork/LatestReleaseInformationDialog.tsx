@@ -2,8 +2,10 @@ import DownloadIcon from "@mui/icons-material/Download";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import UpdateIcon from "@mui/icons-material/Update";
 import {
+	Alert,
 	Box,
 	Button,
+	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -24,21 +26,67 @@ interface LatestReleaseInformationDialogProps {
 	open: boolean;
 	onClose: () => void;
 	newReleases: ILighthouseRelease[] | null;
+	isUpdateSupported: boolean;
+	isInstalling: boolean;
+	installError: string | null;
+	installSuccess: boolean;
+	onInstallUpdate: () => void;
 }
 
 const LatestReleaseInformationDialog: React.FC<
 	LatestReleaseInformationDialogProps
-> = ({ open, onClose, newReleases }) => {
+> = ({
+	open,
+	onClose,
+	newReleases,
+	isUpdateSupported,
+	isInstalling,
+	installError,
+	installSuccess,
+	onInstallUpdate,
+}) => {
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
 			<DialogTitle>Update Available</DialogTitle>
 			<DialogContent>
+				{isUpdateSupported && (
+					<Box display="flex" alignItems="center" mb={2}>
+						<UpdateIcon color="primary" sx={{ marginRight: 1 }} />
+						<Typography variant="body1">
+							Click "Install Update" to automatically download and install the
+							latest version. The application will restart automatically after
+							the update is complete.
+						</Typography>
+					</Box>
+				)}
+
+				{installError && (
+					<Alert severity="error" sx={{ mb: 2 }}>
+						{installError}
+					</Alert>
+				)}
+
+				{installSuccess && (
+					<Alert severity="success" sx={{ mb: 2 }}>
+						Update installed successfully! The application is restarting...
+					</Alert>
+				)}
+
+				{isInstalling && (
+					<Box display="flex" alignItems="center" mb={2}>
+						<CircularProgress size={20} sx={{ marginRight: 1 }} />
+						<Typography variant="body1">
+							Installing update... Please do not close this window.
+						</Typography>
+					</Box>
+				)}
+
 				<Box display="flex" alignItems="center" mb={2}>
 					<DownloadIcon color="primary" sx={{ marginRight: 1 }} />
 					<Typography variant="body1">
-						To update Lighthouse, stop the running instance, download the latest
-						version, and extract it into your Lighthouse folder. Your database
-						and configuration will not be changed by updating.
+						To update Lighthouse manually, stop the running instance, download
+						the latest version, and extract it into your Lighthouse folder. Your
+						database and configuration will not be changed by updating.
 					</Typography>
 				</Box>
 
@@ -96,7 +144,18 @@ const LatestReleaseInformationDialog: React.FC<
 				))}
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={onClose} color="primary" variant="contained">
+				{isUpdateSupported && !isInstalling && !installSuccess && (
+					<Button
+						onClick={onInstallUpdate}
+						color="primary"
+						variant="contained"
+						startIcon={<UpdateIcon />}
+						disabled={isInstalling}
+					>
+						Install Update
+					</Button>
+				)}
+				<Button onClick={onClose} color="secondary" variant="outlined">
 					Close
 				</Button>
 			</DialogActions>

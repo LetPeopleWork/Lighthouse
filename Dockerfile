@@ -46,4 +46,5 @@ COPY --from=publish /app/publish .
 
 ENV Kestrel__Endpoints__Http__Url="http://+:80"
 ENV Kestrel__Endpoints__Https__Url="https://+:443"
+ENV LIGHTHOUSE_DOCKER="true"
 ENTRYPOINT ["dotnet", "Lighthouse.dll"]

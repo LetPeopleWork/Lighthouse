@@ -990,6 +990,16 @@ export class DemoApiService
 		];
 	}
 
+	async isUpdateSupported(): Promise<boolean> {
+		await delay();
+		return false; // Demo mode doesn't support updates
+	}
+
+	async installUpdate(): Promise<boolean> {
+		await delay();
+		return false; // Demo mode doesn't support updates
+	}
+
 	async getProjects(): Promise<Project[]> {
 		await delay();
 

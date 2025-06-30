@@ -12,11 +12,15 @@ import LighthouseVersion from "./LighthouseVersion";
 const mockGetCurrentVersion = vi.fn();
 const mockIsUpdateAvailable = vi.fn();
 const mockGetNewReleases = vi.fn();
+const mockIsUpdateSupported = vi.fn();
+const mockInstallUpdate = vi.fn();
 
 const mockVersionService: IVersionService = {
 	getCurrentVersion: mockGetCurrentVersion,
 	isUpdateAvailable: mockIsUpdateAvailable,
 	getNewReleases: mockGetNewReleases,
+	isUpdateSupported: mockIsUpdateSupported,
+	installUpdate: mockInstallUpdate,
 };
 
 vi.mock("./LatestReleaseInformationDialog", () => ({
@@ -27,6 +31,11 @@ vi.mock("./LatestReleaseInformationDialog", () => ({
 		open: boolean;
 		onClose: () => void;
 		newReleases: ILighthouseRelease[];
+		isUpdateSupported: boolean;
+		isInstalling: boolean;
+		installError: string | null;
+		installSuccess: boolean;
+		onInstallUpdate: () => void;
 	}) => {
 		if (!open) {
 			return null;
@@ -63,6 +72,8 @@ describe("LighthouseVersion component", () => {
 		mockGetCurrentVersion.mockResolvedValue("1.33.7");
 		mockIsUpdateAvailable.mockResolvedValue(false);
 		mockGetNewReleases.mockResolvedValue([]);
+		mockIsUpdateSupported.mockResolvedValue(false);
+		mockInstallUpdate.mockResolvedValue(false);
 	});
 
 	afterEach(() => {
@@ -161,6 +172,7 @@ describe("LighthouseVersion component", () => {
 
 		mockIsUpdateAvailable.mockResolvedValue(true);
 		mockGetNewReleases.mockResolvedValue(releases);
+		mockIsUpdateSupported.mockResolvedValue(true);
 
 		render(
 			<MockApiServiceProvider>

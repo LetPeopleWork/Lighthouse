@@ -131,6 +131,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(newReleases, Has.Count.EqualTo(0));
         }
 
+        [Test]
+        public void IsUpdateSupported_DevelopmentEnvironment_ReturnsFalse()
+        {
+            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
+
+            var subject = CreateSubject();
+
+            var isSupported = subject.IsUpdateSupported();
+
+            Assert.That(isSupported, Is.False);
+        }
+
+        [Test]
+        public void IsUpdateSupported_ProductionEnvironment_ReturnsTrue()
+        {
+            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Production);
+
+            var subject = CreateSubject();
+
+            var isSupported = subject.IsUpdateSupported();
+
+            Assert.That(isSupported, Is.True);
+        }
+
+        [Test]
+        public async Task InstallUpdateAsync_UpdateNotSupported_ReturnsFalse()
+        {
+            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
+
+            var subject = CreateSubject();
+
+            var result = await subject.InstallUpdateAsync();
+
+            Assert.That(result, Is.False);
+        }
+
         private LighthouseReleaseService CreateSubject()
         {
             return new LighthouseReleaseService(hostEnvironmentMock.Object, githubServiceMock.Object, assemblyServiceMock.Object);
