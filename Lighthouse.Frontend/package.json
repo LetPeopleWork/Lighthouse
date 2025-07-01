@@ -21,7 +21,7 @@
     "@microsoft/signalr": "^8.0.7",
     "@mui/icons-material": "^7.1.2",
     "@mui/lab": "^7.0.0-beta.14",
-    "@mui/material": "^7.1.0",
+    "@mui/material": "^7.2.0",
     "@mui/x-charts": "^8.6.0",
     "@mui/x-date-pickers": "^8.6.0",
     "axios": "^1.10.0",
