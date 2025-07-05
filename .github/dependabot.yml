@@ -11,7 +11,7 @@ updates:
 
   # Update .NET NuGet dependencies in the C# projects
   - package-ecosystem: "nuget"
-    directory: "/"
+    directory: "/Lighthouse.Backend"
     schedule:
       interval: "daily"
     commit-message:
