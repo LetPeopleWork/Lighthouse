@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.UpdateForecastForProject(12);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response, Is.InstanceOf<OkResult>());
 
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(12), Times.Once);
-            });
+            };
         }
 
         [Test]
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API
             var manualForecastInput = new ForecastController.ManualForecastInputDto { TargetDate = DateTime.Now.AddDays(3) };
             var result = await subject.RunManualForecastAsync(12, manualForecastInput);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.Likelihood, Is.EqualTo(0));
-            });
+            };
         }
 
         [Test]
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API
             var manualForecastInput = new ForecastController.ManualForecastInputDto { RemainingItems = 42 };
             var result = await subject.RunManualForecastAsync(12, manualForecastInput);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.Likelihood, Is.EqualTo(0));
-            });
+            };
         }
 
         [Test]
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Tests.API
             var manualForecastInput = new ForecastController.ManualForecastInputDto { RemainingItems = 42, TargetDate = DateTime.Now.AddDays(3) };
             var result = await subject.RunManualForecastAsync(12, manualForecastInput);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.Likelihood, Is.Not.EqualTo(0));
-            });
+            };
         }
 
         [Test]
@@ -141,13 +141,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.RunManualForecastAsync(12, new ForecastController.ManualForecastInputDto());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.RunItemCreationPrediction(12, itemCreationPredictionInput);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(prediction.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(prediction.WhenForecasts, Has.Count.EqualTo(0));
                 Assert.That(prediction.Likelihood, Is.EqualTo(0));
-            });
+            };
         }
 
         [Test]
@@ -194,13 +194,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.RunItemCreationPrediction(12, new ForecastController.ItemCreationPredictionInputDto());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         private ForecastController CreateSubject()

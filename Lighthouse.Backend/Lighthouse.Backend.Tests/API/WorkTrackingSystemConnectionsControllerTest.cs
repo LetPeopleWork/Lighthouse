@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetSupportedWorkTrackingSystemConnections();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.API
                 var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
 
                 Assert.That(supportedSystems?.Count(), Is.EqualTo(workTrackingSystems.Length));
-            });
+            };
 
             workTrackingSystemsFactoryMock.Verify(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>()), Times.Exactly(workTrackingSystems.Length));
         }
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetSupportedWorkTrackingSystemConnections();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API
                 var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
 
                 Assert.That(supportedSystems?.Count(), Is.EqualTo(2));
-            });
+            };
         }
 
         [Test]
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetWorkTrackingSystemConnections();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.API
                 var connections = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
 
                 Assert.That(connections?.Count(), Is.EqualTo(expectedConnections.Count));
-            });
+            };
         }
 
         [Test]
@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(connection.Options.Single().Key, Is.EqualTo("MyKey"));
                 Assert.That(connection.Options.Single().Value, Is.EqualTo("MyValue"));
                 Assert.That(connection.Options.Single().IsSecret, Is.EqualTo(false));
-            });
+            };
 
             repositoryMock.Verify(x => x.Add(It.IsAny<WorkTrackingSystemConnection>()));
             repositoryMock.Verify(x => x.Save());
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API
             connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Option", Value = "Nobody expects the Spanish Inquisition" });
             var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(connection.Name, Is.EqualTo("Fancy New Name"));
                 Assert.That(connection.Options, Has.Count.EqualTo(1));
                 Assert.That(connection.Options.Single().Value, Is.EqualTo("Nobody expects the Spanish Inquisition"));
-            });
+            };
 
             repositoryMock.Verify(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()));
             repositoryMock.Verify(x => x.Save());
@@ -189,13 +189,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, new WorkTrackingSystemConnectionDto());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
                 var notFoundResult = result.Result as NotFoundResult;
 
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -207,13 +207,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.DeleteWorkTrackingSystemConnectionAsync(12);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.InstanceOf<OkResult>());
                 var okResult = result as OkResult;
 
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-            });
+            };
 
             repositoryMock.Verify(x => x.Remove(12));
             repositoryMock.Verify(x => x.Save());
@@ -226,13 +226,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.DeleteWorkTrackingSystemConnectionAsync(12);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.InstanceOf<NotFoundResult>());
                 var notFoundResult = result as NotFoundResult;
 
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -250,14 +250,14 @@ namespace Lighthouse.Backend.Tests.API
             var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = workTrackingSystem };
             var result = await subject.ValidateConnection(connectionDto);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.InstanceOf<ActionResult<bool>>());
                 var okResult = result.Result as OkObjectResult;
 
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(true));
-            });
+            };
         }
 
         [Test]

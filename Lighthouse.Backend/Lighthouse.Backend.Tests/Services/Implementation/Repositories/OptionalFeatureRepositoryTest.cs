@@ -19,10 +19,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             var optionalFeature = subject.GetByPredicate(s => s.Key == key);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(optionalFeature, Is.Null);
-            });
+            };
         }
 
         [TestCase(OptionalFeatureKeys.McpServerKey)]
@@ -33,10 +33,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             var optionalFeature = subject.GetByPredicate(s => s.Key == key);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(optionalFeature, Is.Not.Null);
-            });
+            };
         }
 
         private OptionalFeatureRepository CreateSubject()

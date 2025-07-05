@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetParentFeaturesById(["1886"]);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API
                 var parentFeatures = okResult.Value as List<FeatureDto>;
 
                 Assert.That(parentFeatures, Is.Empty);
-            });
+            };
         }
 
         [Test]
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetParentFeaturesById(["1886"]);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(parentFeatures[0].ReferenceId, Is.EqualTo("1886"));
                 Assert.That(parentFeatures[0].Url, Is.EqualTo("https://example.com/feature/1886"));
                 Assert.That(parentFeatures[0].Name, Is.EqualTo("Test Feature"));
-            });
+            };
         }
 
         [Test]
@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.API
             
             var response = subject.GetParentFeaturesById(["1886", "1887"]);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(parentFeatures[1].ReferenceId, Is.EqualTo("1887"));
                 Assert.That(parentFeatures[1].Url, Is.EqualTo("https://example.com/feature/1887"));
                 Assert.That(parentFeatures[1].Name, Is.EqualTo("Test Feature 2"));
-            });
+            };
         }
 
         [Test]
@@ -144,14 +144,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetParentFeaturesById(["1886", "1887"]);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var okResult = response.Result as OkObjectResult;
                 var parentFeatures = okResult.Value as List<FeatureDto>;
 
                 Assert.That(parentFeatures[0].ReferenceId, Is.EqualTo("1887"));
                 Assert.That(parentFeatures[1].ReferenceId, Is.EqualTo("1886"));
-            });
+            };
         }
 
         private FeaturesController CreateSubject()

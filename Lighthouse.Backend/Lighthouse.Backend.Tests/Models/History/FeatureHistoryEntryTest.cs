@@ -26,11 +26,11 @@ namespace Lighthouse.Backend.Tests.Models.History
 
             subject.Update(feature);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.FeatureWork, Has.Count.EqualTo(1));
                 Assert.That(subject.FeatureWork.Single().RemainingWorkItems, Is.EqualTo(10));
-            });
+            };
         }
 
         [Test]
@@ -40,11 +40,11 @@ namespace Lighthouse.Backend.Tests.Models.History
 
             subject.Update(feature);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.Forecasts, Has.Count.EqualTo(1));
                 Assert.That(subject.Forecasts.Single().NumberOfItems, Is.EqualTo(1337));
-            });
+            };
         }
 
         [Test]
@@ -56,11 +56,11 @@ namespace Lighthouse.Backend.Tests.Models.History
             feature.FeatureWork.Single().RemainingWorkItems = 7;
             subject.Update(feature);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.FeatureWork, Has.Count.EqualTo(1));
                 Assert.That(subject.FeatureWork.Single().RemainingWorkItems, Is.EqualTo(7));
-            });
+            };
         }
 
         [Test]
@@ -72,11 +72,11 @@ namespace Lighthouse.Backend.Tests.Models.History
             feature.Forecasts.Single().NumberOfItems = 42;
             subject.Update(feature);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.Forecasts, Has.Count.EqualTo(1));
                 Assert.That(subject.Forecasts.Single().NumberOfItems, Is.EqualTo(42));
-            });
+            };
         }
 
         private FeatureHistoryEntry CreateSubject()

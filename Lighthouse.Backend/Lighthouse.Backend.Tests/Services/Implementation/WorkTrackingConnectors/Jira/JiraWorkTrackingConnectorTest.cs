@@ -193,14 +193,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForProject(project);
             var feature = features.Single(f => f.ReferenceId == "PROJ-18");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.Name, Is.EqualTo("Test 32523"));
                 Assert.That(feature.Order, Is.EqualTo("0|i00037:9"));
                 Assert.That(feature.State, Is.EqualTo("In Progress"));
                 Assert.That(feature.StateCategory, Is.EqualTo(StateCategories.Doing));
                 Assert.That(feature.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
-            });
+            };
         }
 
         [Test]
@@ -229,13 +229,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForProject(project);
             var feature = features.Single(f => f.ReferenceId == "PROJ-21");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.StartedDate.HasValue, Is.True);
                 Assert.That(feature.StartedDate?.Date, Is.EqualTo(new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc)));
 
                 Assert.That(feature.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -249,11 +249,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForProject(project);
             var feature = features.Single(f => f.ReferenceId == "PROJ-21");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.ClosedDate.HasValue, Is.True);
                 Assert.That(feature.ClosedDate?.Date, Is.EqualTo(new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc)));
-            });
+            };
         }
 
         [Test]
@@ -268,10 +268,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForProject(project);
             var feature = features.Single(f => f.ReferenceId == "PROJ-21");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.StartedDate, Is.EqualTo(feature.ClosedDate));
-            });
+            };
         }
 
         [Test]
@@ -321,7 +321,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var parentItems = await subject.GetParentFeaturesDetails(project, ["LGHTHSDMO-2377"]);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(parentItems, Has.Count.EqualTo(1));
                 var parentItem = parentItems.Single();
@@ -329,7 +329,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(parentItem.ReferenceId, Is.EqualTo("LGHTHSDMO-2377"));
                 Assert.That(parentItem.Name, Is.EqualTo("Delivery for Agnieszka"));
                 Assert.That(parentItem.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/LGHTHSDMO-2377"));
-            });
+            };
         }
 
         [Test]

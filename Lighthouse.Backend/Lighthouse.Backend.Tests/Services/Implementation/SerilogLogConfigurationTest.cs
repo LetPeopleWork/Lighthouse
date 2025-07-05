@@ -27,11 +27,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var config = SetupConfiguration(logLevel);
             var subject = CreateSubject(config);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(config["Serilog:MinimumLevel:Default"], Is.EqualTo(logLevel));
                 Assert.That(subject.CurrentLogLevel, Is.EqualTo(logLevel));
-            });
+            };
         }
 
         [Test]
@@ -42,10 +42,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var config = SetupConfiguration("");
             var subject = CreateSubject(config);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.CurrentLogLevel, Is.EqualTo(expectedLogLevel));
-            });
+            };
         }
 
         [Test]
@@ -58,11 +58,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             subject.SetLogLevel(logLevel);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 configFileUpdaterMock.Verify(x => x.UpdateConfigFile("Serilog:MinimumLevel:Default", logLevel));
                 Assert.That(subject.CurrentLogLevel, Is.EqualTo(logLevel));
-            });
+            };
         }
 
         [Test]
@@ -75,11 +75,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             subject.SetLogLevel("This is not the best log level in the world - this is just a tribute...");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 configFileUpdaterMock.Verify(x => x.UpdateConfigFile("Serilog:MinimumLevel:Default", expectedLogLevel));
                 Assert.That(subject.CurrentLogLevel, Is.EqualTo(expectedLogLevel));
-            });
+            };
         }
 
         [Test]
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var config = SetupConfiguration("Warning");
             fileSystemMock
                 .Setup(fs => fs.GetFiles(It.IsAny<string>(), "*.txt"))
-                .Returns(Array.Empty<string>());
+                .Returns([]);
 
             var subject = CreateSubject(config);
 

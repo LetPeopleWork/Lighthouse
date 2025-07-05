@@ -21,11 +21,11 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var subject = CreateSubject(feature);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.LastUpdated, Is.EqualTo(forecastCreationTime));
                 Assert.That(subject.LastUpdated.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         private FeatureDto CreateSubject(Feature feature)

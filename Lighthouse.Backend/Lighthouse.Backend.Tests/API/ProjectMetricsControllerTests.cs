@@ -46,12 +46,12 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetThroughput(1, startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult?.Value, Is.EqualTo(expectedResult));
-            });
+            };
         }
 
         [Test]
@@ -81,13 +81,13 @@ namespace Lighthouse.Backend.Tests.API
         {
             var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -95,13 +95,13 @@ namespace Lighthouse.Backend.Tests.API
         {
             var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now.AddDays(-1));
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            });
+            };
         }
 
         [Test]
@@ -115,14 +115,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetStartedItems(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedStartedItems));
-            });
+            };
         }
 
         [Test]
@@ -137,12 +137,12 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetFeaturesInProgressOverTime(1, startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult?.Value, Is.EqualTo(expectedResult));
-            });
+            };
         }
 
         [Test]
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetCycleTimePercentiles(1, startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -196,7 +196,7 @@ namespace Lighthouse.Backend.Tests.API
                 var returnedPercentiles = okResult?.Value as IEnumerable<PercentileValue>;
                 
                 Assert.That(returnedPercentiles?.Count(), Is.EqualTo(4));
-            });
+            };
         }
 
         [Test]
@@ -215,13 +215,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetCycleTimeData(1, startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
                 Assert.That(featureDtos?.Count(), Is.EqualTo(2));
-            });
+            };
         }
     }
 }

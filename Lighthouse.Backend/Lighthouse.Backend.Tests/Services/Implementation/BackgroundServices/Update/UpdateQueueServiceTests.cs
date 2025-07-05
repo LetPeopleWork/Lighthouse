@@ -56,11 +56,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.EnqueueUpdate(updateType, id, _ => Task.Delay(300));
             subject.EnqueueUpdate(updateType, id, _ => Task.CompletedTask);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(updateStatuses.ContainsKey(new UpdateKey(updateType, id)), Is.True);
                 Assert.That(updateStatuses, Has.Count.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -85,11 +85,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 await Task.Delay(100);
             }
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(wasExecuted, Is.True);
                 Assert.That(updateStatuses.ContainsKey(updateKey), Is.False);
-            });
+            };
         }
 
         [Test]

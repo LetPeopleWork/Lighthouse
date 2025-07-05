@@ -45,13 +45,13 @@ namespace Lighthouse.Backend.Tests.API
             var results = subject.GetTeams().ToList();
 
             var result = results.Single();
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(result.Projects, Has.Count.EqualTo(0));
                 Assert.That(result.Features, Has.Count.EqualTo(0));
-            });
+            };
         }
 
         [Test]
@@ -68,13 +68,13 @@ namespace Lighthouse.Backend.Tests.API
             var results = subject.GetTeams().ToList();
 
             var result = results.Single();
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(result.Projects, Has.Count.EqualTo(1));
                 Assert.That(result.Features, Has.Count.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -92,13 +92,13 @@ namespace Lighthouse.Backend.Tests.API
             var results = subject.GetTeams().ToList();
 
             var result = results.Single();
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(result.Projects, Has.Count.EqualTo(1));
                 Assert.That(result.Features, Has.Count.EqualTo(2));
-            });
+            };
         }
 
         [Test]
@@ -121,13 +121,13 @@ namespace Lighthouse.Backend.Tests.API
             var results = subject.GetTeams().ToList();
 
             var result = results.Single();
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Id, Is.EqualTo(1));
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(result.Projects, Has.Count.EqualTo(2));
                 Assert.That(result.Features, Has.Count.EqualTo(3));
-            });
+            };
         }
 
         [Test]
@@ -152,7 +152,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var team1Results = results[0];
             var team2Results = results[results.Count - 1];
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(team1Results.Id, Is.EqualTo(1));
                 Assert.That(team2Results.Id, Is.EqualTo(2));
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(team1Results.Features, Has.Count.EqualTo(2));
                 Assert.That(team2Results.Features, Has.Count.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetTeam(1);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -217,7 +217,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(returnedTeamDto.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(returnedTeamDto.Projects, Has.Count.EqualTo(2));
                 Assert.That(returnedTeamDto.Features, Has.Count.EqualTo(3));
-            });
+            };
         }
 
         [Test]
@@ -227,13 +227,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetTeam(1);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -255,7 +255,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetTeamSettings(12);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(team.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(team.ServiceLevelExpectationRange));
                 Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(team.SystemWIPLimit));
-            });
+            };
         }
 
         [Test]
@@ -286,13 +286,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetTeamSettings(1);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -322,7 +322,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Verify(x => x.Add(It.IsAny<Team>()));
             teamRepositoryMock.Verify(x => x.Save());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -348,7 +348,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(newTeamSettings.ServiceLevelExpectationRange));
 
                 Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(newTeamSettings.SystemWIPLimit));
-            });
+            };
         }
 
         [Test]
@@ -380,7 +380,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Verify(x => x.Update(existingTeam));
             teamRepositoryMock.Verify(x => x.Save());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -400,7 +400,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.AutomaticallyAdjustFeatureWIP, Is.EqualTo(updatedTeamSettings.AutomaticallyAdjustFeatureWIP));
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationRange));
-            });
+            };
         }
 
         [Test]
@@ -574,13 +574,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateTeam(1, new TeamSettingDto());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -595,12 +595,12 @@ namespace Lighthouse.Backend.Tests.API
 
             teamUpdateServiceMock.Verify(x => x.TriggerUpdate(expectedTeam.Id));
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response, Is.InstanceOf<OkResult>());
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-            });
+            };
         }
 
         [Test]
@@ -612,12 +612,12 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.That(response, Is.InstanceOf<NotFoundObjectResult>());
             var notFoundObjectResult = response as NotFoundObjectResult;
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
                 var value = notFoundObjectResult.Value;
                 Assert.That(value, Is.Null);
-            });
+            };
         }
 
         [Test]
@@ -637,7 +637,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = await subject.ValidateTeamSettings(teamSettings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 
@@ -646,7 +646,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var value = okObjectResult.Value;
                 Assert.That(value, Is.EqualTo(expectedResult));
-            });
+            };
         }
 
         [Test]
@@ -660,13 +660,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = await subject.ValidateTeamSettings(teamSettings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
                 
                 var notFoundObjectResult = response.Result as NotFoundResult;
                 Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         private Team CreateTeam(int id, string name)

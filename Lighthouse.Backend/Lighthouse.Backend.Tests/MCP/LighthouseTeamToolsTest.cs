@@ -40,19 +40,19 @@ namespace Lighthouse.Backend.Tests.MCP
             var subject = CreateSubject();
             var result = subject.GetAllTeams();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var teams = result.FromJson<IEnumerable<dynamic>>().ToList();
 
                 Assert.That(teams, Has.Count.EqualTo(1));
 
-                var team = teams.Single();
-                int teamId = Convert.ToInt32(team.Id);
-                string teamName = team.Name;
+                var teamToVerify = teams.Single();
+                int teamId = Convert.ToInt32(teamToVerify.Id);
+                string teamName = teamToVerify.Name;
 
                 Assert.That(teamId, Is.EqualTo(1));
                 Assert.That(teamName, Is.EqualTo("Test Team"));
-            });
+            };
         }
 
         [Test]
@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.MCP
             var subject = CreateSubject();
             var result = subject.GetTeamByName(teamName);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 var teamDetails = result.FromJson<Team>();
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.MCP
                 Assert.That(teamDetails.FeatureWIP, Is.EqualTo(3));
                 Assert.That(teamDetails.AutomaticallyAdjustFeatureWIP, Is.True);
                 Assert.That(teamDetails.ParentOverrideField, Is.EqualTo("SomeField"));
-            });
+            };
         }
 
         [Test]
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Tests.MCP
             var subject = CreateSubject();
             var result = subject.GetFlowMetricsForTeam("Test Team", startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var metrics = result.FromJson<dynamic>();
                 Assert.That(metrics, Is.Not.Null);
@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Tests.MCP
                 Assert.That(actualThroughput, Is.Not.Null);
                 Assert.That(actualThroughput.History, Is.EqualTo(throughput.History));
                 Assert.That(actualThroughput.Total, Is.EqualTo(throughput.Total));
-            });
+            };
         }
 
         private Team CreateTeam()

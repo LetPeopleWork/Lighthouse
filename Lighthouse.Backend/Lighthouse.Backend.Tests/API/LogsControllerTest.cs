@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetLogLevel();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var actualLogLevel = okResult.Value as string;
                 Assert.That(actualLogLevel, Is.EqualTo(logLevel));
-            });            
+            };            
         }
 
         [Test]
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.SetLogLevel(new LogsController.LogLevelDto { Level = expectedLogLevel });
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response, Is.InstanceOf<OkResult>());
 
@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
                 logConfigurationMock.Verify(x => x.SetLogLevel(expectedLogLevel));
-            });
+            };
         }
 
         [Test]        
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetSupportedLogLevels();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var supportedLogLevels = okResult.Value as string[];
                 Assert.That(supportedLogLevels, Is.EquivalentTo(expectedLogLevels));
-            });
+            };
         }
 
         [Test]
@@ -94,7 +94,7 @@ And a hundred percent reason to remember the name (Mike!)
 
             var response = subject.GetLogs();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -103,7 +103,7 @@ And a hundred percent reason to remember the name (Mike!)
 
                 var logs = okResult.Value as string;
                 Assert.That(logs, Is.EqualTo(expectedLogs));
-            });
+            };
         }
 
         [Test]
@@ -123,7 +123,7 @@ And a hundred percent reason to remember the name (Mike!)
 
             var response = subject.DownloadLogs();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response, Is.InstanceOf<FileContentResult>());
 
@@ -133,7 +133,7 @@ And a hundred percent reason to remember the name (Mike!)
 
                 var logs = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
                 Assert.That(logs, Is.EqualTo(expectedLogs));
-            });
+            };
         }
 
         private LogsController CreateSubject()

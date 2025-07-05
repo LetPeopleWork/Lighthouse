@@ -49,13 +49,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var forecast = subject.HowMany(new RunChartData(RunChartDataGenerator.GenerateRunChartData([1])), TimeSpan.FromDays(timespan).Days);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(forecast.GetProbability(50), Is.EqualTo(timespan));
                 Assert.That(forecast.GetProbability(70), Is.EqualTo(timespan));
                 Assert.That(forecast.GetProbability(85), Is.EqualTo(timespan));
                 Assert.That(forecast.GetProbability(95), Is.EqualTo(timespan));
-            });
+            }
         }
 
         [Test]
@@ -79,13 +79,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var forecast = await subject.When(CreateTeam(1, [1]), remainingItems);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(forecast.GetProbability(50), Is.EqualTo(remainingItems));
                 Assert.That(forecast.GetProbability(70), Is.EqualTo(remainingItems));
                 Assert.That(forecast.GetProbability(85), Is.EqualTo(remainingItems));
                 Assert.That(forecast.GetProbability(95), Is.EqualTo(remainingItems));
-            });
+            }
         }
 
         [Test]
@@ -96,13 +96,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var forecast = subject.HowMany(throughput, 10);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(forecast.GetProbability(50), Is.InRange(9, 11));
                 Assert.That(forecast.GetProbability(70), Is.InRange(7, 9));
                 Assert.That(forecast.GetProbability(85), Is.InRange(5, 7));
                 Assert.That(forecast.GetProbability(95), Is.InRange(3, 5));
-            });
+            }
         }
 
         [Test]
@@ -122,13 +122,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var subject = CreateSubjectWithRealThroughput();
             var itemCreationForecast = subject.PredictWorkItemCreation(team, workItemTypes, startDate, endDate, daysToForecast);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(itemCreationForecast.GetProbability(50), Is.InRange(9, 11));
                 Assert.That(itemCreationForecast.GetProbability(70), Is.InRange(7, 9));
                 Assert.That(itemCreationForecast.GetProbability(85), Is.InRange(5, 7));
                 Assert.That(itemCreationForecast.GetProbability(95), Is.InRange(3, 5));
-            });
+            }
         }
 
         [Test]
@@ -140,13 +140,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var forecast = await subject.When(team, 35);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(forecast.GetProbability(50), Is.InRange(32, 34));
                 Assert.That(forecast.GetProbability(70), Is.InRange(36, 39));
                 Assert.That(forecast.GetProbability(85), Is.InRange(40, 43));
                 Assert.That(forecast.GetProbability(95), Is.InRange(46, 49));
-            });
+            }
         }
 
         [Test]
@@ -157,13 +157,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var forecast = subject.HowMany(throughput, 30);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(forecast.GetProbability(50), Is.InRange(30, 33));
                 Assert.That(forecast.GetProbability(70), Is.InRange(27, 29));
                 Assert.That(forecast.GetProbability(85), Is.InRange(23, 25));
                 Assert.That(forecast.GetProbability(95), Is.InRange(19, 21));
-            });
+            }
         }
 
         [Test]
@@ -174,7 +174,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
             var forecast = await subject.When(CreateTeam(1, throughput), 28);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(forecast.GetProbability(50), Is.InRange(26, 28));
                 Assert.That(forecast.GetProbability(70), Is.InRange(29, 31));
@@ -182,7 +182,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(forecast.GetProbability(95), Is.InRange(38, 41));
 
                 Assert.That(forecast.GetLikelihood(30), Is.InRange(65, 73));
-            });
+            }
         }
 
         [Test]
@@ -199,13 +199,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(35));
                 Assert.That(feature.Forecast.GetProbability(70), Is.EqualTo(35));
                 Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(35));
                 Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(35));
-            });
+            }
         }
 
         [Test]
@@ -223,7 +223,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature1.Forecast.GetProbability(50), Is.EqualTo(35));
                 Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(35));
@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(feature2.Forecast.GetProbability(70), Is.EqualTo(55));
                 Assert.That(feature2.Forecast.GetProbability(85), Is.EqualTo(55));
                 Assert.That(feature2.Forecast.GetProbability(95), Is.EqualTo(55));
-            });
+            }
         }
 
         [Test]
@@ -252,13 +252,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
                 Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
                 Assert.That(feature2.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
                 Assert.That(feature2.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
-            });
+            }
         }
 
         [Test]
@@ -277,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
                 Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
@@ -293,7 +293,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(feature1.Forecast.GetProbability(70), Is.LessThan(feature3.Forecast.GetProbability(70)));
                 Assert.That(feature1.Forecast.GetProbability(85), Is.LessThan(feature3.Forecast.GetProbability(85)));
                 Assert.That(feature1.Forecast.GetProbability(95), Is.LessThan(feature3.Forecast.GetProbability(95)));
-            });
+            }
         }
 
         [Test]
@@ -312,7 +312,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
                 Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
@@ -328,7 +328,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(feature3.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
                 Assert.That(feature3.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
                 Assert.That(feature3.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
-            });
+            }
         }
 
         [Test]
@@ -347,13 +347,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
                 Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
                 Assert.That(feature2.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
                 Assert.That(feature2.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
-            });
+            }
         }
 
         [Test]
@@ -373,7 +373,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature2.Forecast.GetProbability(50), Is.LessThan(feature1.Forecast.GetProbability(50)));
                 Assert.That(feature2.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
@@ -384,7 +384,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(feature3.Forecast.GetProbability(70), Is.LessThan(feature1.Forecast.GetProbability(70)));
                 Assert.That(feature3.Forecast.GetProbability(85), Is.LessThan(feature1.Forecast.GetProbability(85)));
                 Assert.That(feature3.Forecast.GetProbability(95), Is.LessThan(feature1.Forecast.GetProbability(95)));
-            });
+            }
         }
 
         [Test]
@@ -404,7 +404,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature1.Forecast.GetProbability(50), Is.LessThan(feature2.Forecast.GetProbability(50)));
                 Assert.That(feature1.Forecast.GetProbability(70), Is.LessThan(feature2.Forecast.GetProbability(70)));
@@ -415,7 +415,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(feature1.Forecast.GetProbability(70), Is.LessThan(feature3.Forecast.GetProbability(70)));
                 Assert.That(feature1.Forecast.GetProbability(85), Is.LessThan(feature3.Forecast.GetProbability(85)));
                 Assert.That(feature1.Forecast.GetProbability(95), Is.LessThan(feature3.Forecast.GetProbability(95)));
-            });
+            }
         }
 
         [Test]
@@ -433,13 +433,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature1.Forecast.GetProbability(50), Is.EqualTo(20));
                 Assert.That(feature1.Forecast.GetProbability(70), Is.EqualTo(20));
                 Assert.That(feature1.Forecast.GetProbability(85), Is.EqualTo(20));
                 Assert.That(feature1.Forecast.GetProbability(95), Is.EqualTo(20));
-            });
+            }
         }
 
         [Test]
@@ -471,13 +471,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(15));
                 Assert.That(feature.Forecast.GetProbability(70), Is.EqualTo(15));
                 Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(15));
                 Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(15));
-            });
+            }
         }
 
         [Test]
@@ -493,13 +493,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             await subject.UpdateForecastsForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(0));
-                Assert.That(feature.Forecast.GetProbability(70), Is.EqualTo(0));
-                Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(0));
-                Assert.That(feature.Forecast.GetProbability(95), Is.EqualTo(0));
-            });
+                Assert.That(feature.Forecast.GetProbability(50), Is.Zero);
+                Assert.That(feature.Forecast.GetProbability(70), Is.Zero);
+                Assert.That(feature.Forecast.GetProbability(85), Is.Zero);
+                Assert.That(feature.Forecast.GetProbability(95), Is.Zero);
+            }
         }
 
         [Test]

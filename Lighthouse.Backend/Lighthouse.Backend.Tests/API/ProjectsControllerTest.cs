@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.Get(42);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(projectDto.Id, Is.EqualTo(testProject.Id));
                 Assert.That(projectDto.Name, Is.EqualTo(testProject.Name));
-            });
+            };
         }
 
         [Test]
@@ -77,12 +77,12 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.Get(1337);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.UpdateFeaturesForProject(42);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.InstanceOf<OkResult>());
 
@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
                 workItemCollectorServiceMock.Verify(x => x.TriggerUpdate(testProject.Id));
-            });
+            };
         }
 
         [Test]
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetProjectSettings(12);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(project.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(project.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(project.WorkTrackingSystemConnectionId));
-            });
+            };
         }
 
 
@@ -178,13 +178,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetProjectSettings(1);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -218,7 +218,7 @@ namespace Lighthouse.Backend.Tests.API
             projectRepoMock.Verify(x => x.Add(It.IsAny<Project>()));
             projectRepoMock.Verify(x => x.Save());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -251,7 +251,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(newProjectSettings.ServiceLevelExpectationRange));
 
                 Assert.That(projectSettingDto.SystemWIPLimit, Is.EqualTo(newProjectSettings.SystemWIPLimit));
-            });
+            };
         }
 
         [Test]
@@ -296,7 +296,7 @@ namespace Lighthouse.Backend.Tests.API
             projectRepoMock.Verify(x => x.Update(existingProject));
             projectRepoMock.Verify(x => x.Save());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -336,7 +336,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedProjectSettings.ServiceLevelExpectationRange));
 
                 Assert.That(projectSettingDto.SystemWIPLimit, Is.EqualTo(updatedProjectSettings.SystemWIPLimit));
-            });
+            };
         }
 
         [Test]
@@ -346,13 +346,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateProject(1, new ProjectSettingDto());
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -372,7 +372,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = await subject.ValidateProjectSettings(projectSettings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -381,7 +381,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var value = okObjectResult.Value;
                 Assert.That(value, Is.EqualTo(expectedResult));
-            });
+            };
         }
 
         [Test]
@@ -395,13 +395,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = await subject.ValidateProjectSettings(projectSettings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundObjectResult = response.Result as NotFoundResult;
                 Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
-            });
+            }
         }
 
         private ProjectsController CreateSubject()
