@@ -40,6 +40,11 @@ namespace Lighthouse.Backend
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            if (builder == null)
+            {
+                throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
+            }
+
             try
             {
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
@@ -54,10 +59,14 @@ namespace Lighthouse.Backend
                 ConfigureServices(builder);
                 ConfigureDatabase(builder);
 
-                ConfigureOptionalServices(builder);
+                var serviceProvider = builder.Services?.BuildServiceProvider();
+                var optionalFeatureRepository = serviceProvider?.GetRequiredService<IRepository<OptionalFeature>>();
+
+                var mcpFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
+                ConfigureOptionalServices(builder, mcpFeature);
 
                 var app = builder.Build();
-                ConfigureApp(app);
+                ConfigureApp(app, mcpFeature);
                 app.Run();
             }
             catch (Exception ex)
@@ -70,7 +79,7 @@ namespace Lighthouse.Backend
             }
         }
 
-        private static void ConfigureApp(WebApplication app)
+        private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature)
         {
             if (app.Environment.IsDevelopment())
             {
@@ -83,7 +92,7 @@ namespace Lighthouse.Backend
             }
 
             app.UseCors("AllowAll");
-            
+
             app.UseSwagger(c =>
             {
                 c.RouteTemplate = "api/swagger/{documentName}/swagger.json";
@@ -110,7 +119,10 @@ namespace Lighthouse.Backend
                 spa.Options.DefaultPage = "/index.html";
             });
 
-            app.MapMcp();
+            if (mcpFeature?.Enabled ?? false)
+            {
+                app.MapMcp();
+            }
         }
 
         private static void ConfigureServices(WebApplicationBuilder builder)
@@ -146,12 +158,8 @@ namespace Lighthouse.Backend
             builder.Services.AddHttpClient();
         }
 
-        private static void ConfigureOptionalServices(WebApplicationBuilder builder)
+        private static void ConfigureOptionalServices(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
         {
-            var serviceProvider = builder.Services.BuildServiceProvider();
-            var optionalFeatureRepository = serviceProvider.GetRequiredService<IRepository<OptionalFeature>>();
-
-            var mcpFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
             ConfigureMcpServer(builder, mcpFeature);
         }
 
@@ -160,6 +168,7 @@ namespace Lighthouse.Backend
             if (mcpFeature?.Enabled ?? false)
             {
                 builder.Services.AddMcpServer()
+                    .WithHttpTransport()
                     .WithTools<LighthouseTeamTools>()
                     .WithGetPromptHandler((request, cancellationToken) => ValueTask.FromResult(new GetPromptResult()))
                     .WithListPromptsHandler((request, cancellationToken) => ValueTask.FromResult(new ListPromptsResult()))
