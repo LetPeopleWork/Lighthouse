@@ -87,6 +87,23 @@ If you click on a specific day, it will show you the details of which items were
 
 If you have defined a *System WIP Limit*, you can show this as a horizontal line on your chart.
 
+## Work Item Aging Chart
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Projects |
+| **Flow Metric** | WIP, Work Item Age |
+| **Affected by Filtering** | Yes |
+
+The Work Item Aging Chart shows you all in progress items on a scatter plot:
+
+![Work Item Aging Chart](../../assets/features/metrics/workItemAgingChart.png)
+
+On the x-axis you will find the different states you've configured in the settings of your team/project.
+On the y-axis, you'll see how long each particular item is in progress already.
+
+Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), multiple items are grouped in a bubble that is shown bigger. If you want more details, you can click on a specific bubble.
+You can selectively show various percentiles from your cycle time for the selected range, as well as the Service Level Expectation if you have configured it.
+
 ## Started vs. Closed
 
 |--------------|-------------------------|

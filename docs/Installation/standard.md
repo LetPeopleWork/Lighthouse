@@ -19,49 +19,6 @@ Lighthouse runs on Windows, MacOs, and Linux based systems.
 Download the latest version of Lighthouse for your operating system from the [Releases](https://github.com/LetPeopleWork/Lighthouse/releases/latest).
 Download the zip file, and extract it to the location you want to run the application from.
 
-## Updating Lighthouse
-If you want to update Lighthouse, you can simply replace the files in the directory.
-
-{: .note }
-As the published packages do not include the database, you will keep your data. Lighthouse will in normal circumstances always support migrations to newer versions, so you will not lose any data.
-
-{: .note }
-You must make sure to stop Lighthouse from running before updating.
-
-## Installation and Update Scripts
-If you don't want to manually download it, you can also use the following scripts, which will look for the latest released version and will download and extract it from the directory you run the script from.
-
-The scripts are part of the packages, so you can execute them from the installation directory.
-
-### Windows
-You can run the Powershell script [update_windows.ps1](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_windows.ps1). In order to do so, you need to have PowerShell 5.1 or later which is normally installed at your system.
-
-You can also directly download the latest version into your current directory by executing the following command in your terminal:
-
-```powershell
-iwr 'https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_windows.ps1' | iex
-```
-  
-### Linux
-For Linux, there is a bash script called [update_linux.sh](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_linux.sh). It requires unzip to be installed, which you can do by running the following command:
-
-`sudo apt-get install unzip`
-
-You can also directly download the latest version into your current directory by executing the following command in your terminal:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_linux.sh | bash
-```
-
-### MacOS
-For MacOS, there is a bash script called [update_mac.sh](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_mac.sh). It requires unzip to be installed, which is usually pre-installed on MacOS.
-
-You can also directly download the latest version into your current directory by executing the following command in your terminal:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_mac.sh | bash
-```
-
 ## Run Lighthouse
 Once downloaded, you can run the the `Lighthouse` application:
 - `Lighthouse.exe` on Windows
@@ -96,7 +53,66 @@ By default, Lighthouse will start running on the system on port 5001. If everyth
 You should see the (empty) landing page:
 ![Landing Page](../assets/installation/landingpage.png)
 
-### Troubleshoot Startup Issues
+
+
+## Updating Lighthouse
+If a new version is released, you will see an indication on the lower right edge in the footer. If you click on it, a dialog will pop up and you see the release notes of all newer versions of yours.
+
+{: .note }
+As the published packages do not include the database, you will keep your data. Lighthouse will in normal circumstances always support migrations to newer versions, so you will not lose any data.
+
+{: .recommendation}
+We recommend that you stay on the latest versions. We continuously update Lighthouse with new features and bug fixes, and we only offer support if you're on the latest version.
+
+If you want to update Lighthouse, you have the following three options.
+
+### Automatic Update
+Through the "New Releases" dialog, you get the option to directly install the latest version. If you click it, Lighthouse will fetch the latest released version, replace the files, and restart. Once it's done, you'll see a dialog, and you're ready to go with the latest version.
+
+{: .note}
+This is not supported on docker. For Docker, please just use the latest container.
+
+### Replace Files
+You can simply replace the files in the directory. Download and extract the latest version, and copy/paste them into your Lighthouse directory. Override all existing files.
+
+{: .note }
+You must make sure to stop Lighthouse from running before updating.
+
+### Installation and Update Scripts
+If you don't want to manually download it, you can also use the following scripts, which will look for the latest released version and will download and extract it from the directory you run the script from.
+
+The scripts are part of the packages, so you can execute them from the installation directory.
+
+#### Windows
+You can run the Powershell script [update_windows.ps1](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_windows.ps1). In order to do so, you need to have PowerShell 5.1 or later which is normally installed at your system.
+
+You can also directly download the latest version into your current directory by executing the following command in your terminal:
+
+```powershell
+iwr 'https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_windows.ps1' | iex
+```
+  
+#### Linux
+For Linux, there is a bash script called [update_linux.sh](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_linux.sh). It requires unzip to be installed, which you can do by running the following command:
+
+`sudo apt-get install unzip`
+
+You can also directly download the latest version into your current directory by executing the following command in your terminal:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_linux.sh | bash
+```
+
+#### MacOS
+For MacOS, there is a bash script called [update_mac.sh](https://github.com/LetPeopleWork/Lighthouse/blob/main/Scripts/update_mac.sh). It requires unzip to be installed, which is usually pre-installed on MacOS.
+
+You can also directly download the latest version into your current directory by executing the following command in your terminal:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/main/Scripts/update_mac.sh | bash
+```
+
+## Troubleshoot Startup Issues
 If you follow the instructions, but Lighthouse is not available on the above port, something didn't go as expected.
 
 In such a case, please inspect the logs in the terminal and try to spot an `Error`. They often tell already what the issue may be.
@@ -113,7 +129,7 @@ System.IO.IOException: Failed to bind to address http://[::]:5000: address alrea
 ```
 This means that the specified port is already used by another application. This may be another instance of Lighthouse (did you stop all other instances?), or by chance another tool is using the same port (we've seen for example *AirPlay Receiver* using Port 5000 which is Lighthouse default port). If the port is blocked and you can't change/stop the other application that is using it, you can also adjust the port that Lighthouse is using. Check the [Configuration Options](configuration.html#http--https-url) for more details.
 
-### Register Lighthouse as a Service
+## Register Lighthouse as a Service
 Using this approach, you'll have to restart Lighthouse after every restart. What you can do instead is to register it as a service, that way it will run automatically in the background.
 
 See [Run as Service](./service.html) for more details.

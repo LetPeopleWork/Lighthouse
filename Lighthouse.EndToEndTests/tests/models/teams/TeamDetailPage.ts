@@ -129,11 +129,15 @@ export class TeamDetailPage {
 	}
 
 	get wipOverTimeWidget(): Locator {
+		return this.page.locator("div:nth-child(8) > .MuiPaper-root");
+	}
+
+	get workItemAgingChart():Locator {
 		return this.page.locator("div:nth-child(7) > .MuiPaper-root");
 	}
 
 	get simplifiedCfdWidget(): Locator {
-		return this.page.locator("div:nth-child(8) > .MuiPaper-root");
+		return this.page.locator("div:nth-child(9) > .MuiPaper-root");
 	}
 
 	get sleWidgetButton(): Locator {

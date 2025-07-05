@@ -1,3 +1,4 @@
+import type { APIRequestContext } from "@playwright/test";
 import { TestConfig } from "../../../playwright.config";
 import {
 	type ModelIdentifier,
@@ -5,6 +6,7 @@ import {
 	test,
 	testWithData,
 } from "../../fixutres/LighthouseFixture";
+import { updateTeam } from "../../helpers/api/teams";
 
 import {
 	takeDialogScreenshot,
@@ -58,6 +60,7 @@ const updateWorkTrackingSystems = async (
 };
 
 const updateTeams = async (
+	api: APIRequestContext,
 	overviewPage: OverviewPage,
 	teams: ModelIdentifier[],
 ) => {
@@ -76,11 +79,14 @@ const updateTeams = async (
 
 		const teamDetailPage = await editTeam.save();
 
+		updateTeam(api, team.id);
+
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 	}
 };
 
 const updateProjects = async (
+	api: APIRequestContext,
 	overviewPage: OverviewPage,
 	projects: ModelIdentifier[],
 ) => {
@@ -99,6 +105,8 @@ const updateProjects = async (
 
 		const projectDetailPage = await editProject.save();
 
+		updateTeam(api, project.id);
+
 		await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();
 	}
 };
@@ -109,10 +117,10 @@ test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
 
 testWithData(
 	"Take @screenshot of import dialog",
-	async ({ overviewPage, testData }) => {
+	async ({ overviewPage, testData, request }) => {
 		await updateWorkTrackingSystems(overviewPage, testData.connections);
-		await updateTeams(overviewPage, testData.teams);
-		await updateProjects(overviewPage, testData.projects);
+		await updateTeams(request, overviewPage, testData.teams);
+		await updateProjects(request, overviewPage, testData.projects);
 
 		const settingsPage = await overviewPage.lightHousePage.goToSettings();
 		const systemSettings = await settingsPage.goToSystemSettings();
@@ -293,9 +301,9 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 
 testWithData(
 	"Take @screenshot of populated overview, teams overview, team detail, projects overview, and project detail pages",
-	async ({ testData, overviewPage }) => {
-		await updateTeams(overviewPage, testData.teams);
-		await updateProjects(overviewPage, testData.projects);
+	async ({ testData, overviewPage, request }) => {
+		await updateTeams(request, overviewPage, testData.teams);
+		await updateProjects(request, overviewPage, testData.projects);
 
 		// Overview Page
 		const landingPage = await overviewPage.lightHousePage.goToOverview();
@@ -389,6 +397,11 @@ testWithData(
 		await takeElementScreenshot(
 			teamDetailPage.wipOverTimeWidget,
 			"features/metrics/wipOverTime.png",
+		);
+
+		await takeElementScreenshot(
+			teamDetailPage.workItemAgingChart,
+			"features/metrics/workItemAgingChart.png",
 		);
 
 		await takeElementScreenshot(
