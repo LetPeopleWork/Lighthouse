@@ -120,10 +120,12 @@ describe("WorkTrackingSystemSettings", () => {
 
 		// Assert
 		// The component should call updateWorkTrackingSystemSettings with the updated settings
-		expect(mockUpdateWorkTrackingSystemSettings).toHaveBeenCalledWith({
-			overrideRequestTimeout: true,
-			requestTimeoutInSeconds: 60,
-		});
+		await waitFor(() =>
+			expect(mockUpdateWorkTrackingSystemSettings).toHaveBeenCalledWith({
+				overrideRequestTimeout: true,
+				requestTimeoutInSeconds: 60,
+			}),
+		);
 	});
 	it("should show error state when API call fails", async () => {
 		// Arrange
