@@ -106,8 +106,10 @@ describe("WorkItemTypesComponent", () => {
 		fireEvent.change(input, { target: { value: "Improvement" } });
 		fireEvent.keyDown(input, { key: "Enter" });
 
-		expect(mockOnAddWorkItemType).toHaveBeenCalledWith("Improvement");
-		expect(mockOnAddWorkItemType).toHaveBeenCalledTimes(1);
+		await waitFor(() => {
+			expect(mockOnAddWorkItemType).toHaveBeenCalledWith("Improvement");
+			expect(mockOnAddWorkItemType).toHaveBeenCalledTimes(1);
+		});
 	});
 
 	it("does not call onAddWorkItemType when the input is empty", async () => {

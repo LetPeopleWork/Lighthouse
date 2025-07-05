@@ -108,7 +108,9 @@ const LighthouseVersion: React.FC = () => {
 	};
 
 	const handleRestartConfirm = () => {
-		window.location.reload();
+		if (typeof window !== "undefined") {
+			window.location.reload();
+		}
 	};
 
 	const handleDialogOpen = () => {
