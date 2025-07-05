@@ -45,6 +45,7 @@ This should help keeping up with the frequent releases, and make it easier also 
 ## Other Improvements
 - States can now be re-ordered when editing Teams and Projects through drag and drop. The order of the states is affecting the [Work Item Aging Chart](#work-item-aging-chart).
 - When editing a team/project, it will **not** trigger an automatic update anymore after saving.
+- Updated various third party dependencies
 
 ## Contributions ❤️ 
 Special Thanks to everyone who contributed their feedback to this release:
