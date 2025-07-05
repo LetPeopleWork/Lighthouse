@@ -30,8 +30,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.MCP;
-using ModelContextProtocol.Protocol.Types;
-using Microsoft.AspNetCore.HttpOverrides;
+using ModelContextProtocol.Protocol;
 
 namespace Lighthouse.Backend
 {
@@ -162,10 +161,10 @@ namespace Lighthouse.Backend
             {
                 builder.Services.AddMcpServer()
                     .WithTools<LighthouseTeamTools>()
-                    .WithGetPromptHandler((request, cancellationToken) => Task.FromResult(new GetPromptResult()))
-                    .WithListPromptsHandler((request, cancellationToken) => Task.FromResult(new ListPromptsResult()))
-                    .WithReadResourceHandler((request, cancellationToken) => Task.FromResult(new ReadResourceResult()))
-                    .WithListResourcesHandler((request, cancellationToken) => Task.FromResult(new ListResourcesResult()));
+                    .WithGetPromptHandler((request, cancellationToken) => ValueTask.FromResult(new GetPromptResult()))
+                    .WithListPromptsHandler((request, cancellationToken) => ValueTask.FromResult(new ListPromptsResult()))
+                    .WithReadResourceHandler((request, cancellationToken) => ValueTask.FromResult(new ReadResourceResult()))
+                    .WithListResourcesHandler((request, cancellationToken) => ValueTask.FromResult(new ListResourcesResult()));
             }
         }
 
