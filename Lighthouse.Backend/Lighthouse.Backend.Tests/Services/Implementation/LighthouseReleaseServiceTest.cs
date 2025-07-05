@@ -101,12 +101,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var newReleases = (await subject.GetNewReleases()).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(newReleases, Has.Count.EqualTo(2));
                 Assert.That(newReleases[0].Name, Is.EqualTo("Release4"));
                 Assert.That(newReleases[1].Name, Is.EqualTo("Release3"));
-            });
+            };
             
         }
 

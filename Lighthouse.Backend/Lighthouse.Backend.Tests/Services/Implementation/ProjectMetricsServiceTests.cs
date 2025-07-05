@@ -51,12 +51,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var result = subject.GetThroughputForProject(project, startDate, endDate);
 
             // Assert
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.WorkItemsPerUnitOfTime, Has.Count.EqualTo(10));
                 Assert.That(result.Total, Is.EqualTo(2));
-            });
+            };
         }
 
         [Test]
@@ -73,11 +73,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Act
             var result = subject.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.WorkItemsPerUnitOfTime, Has.Count.EqualTo(5));
-            });
+            };
         }
 
         [Test]
@@ -101,12 +101,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Act
             var result = subject.GetInProgressFeaturesForProject(project).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(1));
                 Assert.That(result.First().ReferenceId, Is.EqualTo("F3"));
-            });
+            };
         }
 
         [Test]
@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = subject.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(4));
@@ -125,7 +125,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result[1].Percentile, Is.EqualTo(70));
                 Assert.That(result[2].Percentile, Is.EqualTo(85));
                 Assert.That(result[3].Percentile, Is.EqualTo(95));
-            });
+            };
         }
 
         [Test]
@@ -136,11 +136,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = subject.GetCycleTimePercentilesForProject(project, startDate, endDate).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(0));
-            });
+            };
         }
 
         [Test]
@@ -151,13 +151,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(2));
                 Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
                 Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.True);
-            });
+            };
         }
 
         [Test]
@@ -172,13 +172,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(1));
                 Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
                 Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.False);
-            });
+            };
         }
 
         [Test]
@@ -193,13 +193,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = subject.GetCycleTimeDataForProject(project, startDate, endDate).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(1));
                 Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
                 Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.False);
-            });
+            };
         }
 
         [Test]

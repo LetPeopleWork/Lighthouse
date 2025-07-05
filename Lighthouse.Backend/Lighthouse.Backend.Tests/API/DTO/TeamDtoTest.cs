@@ -16,11 +16,11 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var subject = CreateSubject(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.LastUpdated, Is.EqualTo(teamUpdateTime));
                 Assert.That(subject.LastUpdated.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         private TeamDto CreateSubject(Team team)

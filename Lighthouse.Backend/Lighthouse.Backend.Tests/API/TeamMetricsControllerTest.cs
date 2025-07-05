@@ -28,13 +28,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetThroughput(1337, DateTime.Now, DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -44,13 +44,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetThroughput(1337, DateTime.Now, DateTime.Now.AddDays(-1));
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            });
+            };
         }
 
         [Test]
@@ -66,14 +66,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetThroughput(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedThroughput));
-            });
+            };
         }
 
         [Test]
@@ -83,13 +83,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -99,13 +99,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now.AddDays(-1));
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            });
+            };
         }
 
         [Test]
@@ -121,14 +121,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetStartedItems(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedStartedItems));
-            });
+            };
         }
 
         [Test]
@@ -138,13 +138,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetFeaturesInProgress(1337);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -171,7 +171,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetFeaturesInProgress(team.Id);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -182,7 +182,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(actualItems?.Count(), Is.EqualTo(2));
                 Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
                 Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
-            });
+            };
         }
 
         [Test]
@@ -192,13 +192,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetCurrentWipForTeam(1337);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -225,7 +225,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetCurrentWipForTeam(team.Id);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -236,7 +236,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(actualItems?.Count(), Is.EqualTo(2));
                 Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
                 Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
-            });
+            };
         }
 
         [Test]
@@ -246,13 +246,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetCycleTimePercentilesForTeam(1337, DateTime.Now, DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -262,13 +262,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetCycleTimePercentilesForTeam(1337, DateTime.Now, DateTime.Now.AddDays(-1));
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            });
+            };
         }
 
         [Test]
@@ -289,14 +289,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetCycleTimePercentilesForTeam(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedPercentiles));
-            });
+            };
         }
 
         [Test]
@@ -306,13 +306,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetCycleTimeDataForTeam(1337, DateTime.Now, DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -322,13 +322,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetCycleTimeDataForTeam(1337, DateTime.Now, DateTime.Now.AddDays(-1));
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            });
+            };
         }
 
         [Test]
@@ -354,7 +354,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetCycleTimeDataForTeam(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -365,7 +365,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(actualItems?.Count(), Is.EqualTo(2));
                 Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
                 Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
-            });
+            };
         }
 
         [Test]
@@ -375,13 +375,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetWorkInProgressOverTime(1337, DateTime.Now, DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -391,13 +391,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetWorkInProgressOverTime(1337, DateTime.Now, DateTime.Now.AddDays(-1));
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
 
                 var badRequestResult = response.Result as BadRequestObjectResult;
                 Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
-            });
+            };
         }
 
         [Test]
@@ -413,14 +413,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetWorkInProgressOverTime(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedData));
-            });
+            };
         }
 
         private TeamMetricsController CreateSubject()

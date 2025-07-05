@@ -25,11 +25,11 @@ namespace Lighthouse.Backend.Tests.API
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
             var actual = (ObjectResult)subject.GetCurrentVersion();
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
                 Assert.That(actual.Value, Is.EqualTo(version));
-            });
+            };
         }
 
         [Test]
@@ -39,11 +39,11 @@ namespace Lighthouse.Backend.Tests.API
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
             var actual = (ObjectResult)subject.GetCurrentVersion();
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(404));
                 Assert.That(actual.Value, Is.EqualTo("404"));
-            });
+            };
         }
 
         [Test]
@@ -55,11 +55,11 @@ namespace Lighthouse.Backend.Tests.API
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
             var actual = await subject.IsUpdateAvailable() as ObjectResult;
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
                 Assert.That(actual.Value, Is.EqualTo(isUpdateAvailable));
-            });
+            };
         }
 
         [Test]
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = await subject.GetNewReleases();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.API
                 var newReleases = okResult.Value as IEnumerable<LighthouseRelease>;
 
                 Assert.That(newReleases, Does.Contain(lighthouseRelease));
-            });
+            };
         }
 
         [Test]
@@ -94,13 +94,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = await subject.GetNewReleases();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
 
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -114,11 +114,11 @@ namespace Lighthouse.Backend.Tests.API
             var response = subject.IsUpdateSupported();
             var actual = response.Result as ObjectResult;
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
                 Assert.That(actual.Value, Is.EqualTo(isSupported));
-            });
+            };
         }
 
         [Test]
@@ -132,11 +132,11 @@ namespace Lighthouse.Backend.Tests.API
             var response = await subject.InstallUpdate();
             var actual = response.Result as ObjectResult;
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(actual.StatusCode, Is.EqualTo(200));
                 Assert.That(actual.Value, Is.EqualTo(installResult));
-            });
+            };
         }
     }
 }

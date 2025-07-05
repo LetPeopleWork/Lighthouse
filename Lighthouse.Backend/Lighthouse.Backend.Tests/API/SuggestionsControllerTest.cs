@@ -36,14 +36,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
             
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var tags = (List<string>)((OkObjectResult)response.Result).Value;
                 Assert.That(tags, Has.Count.EqualTo(0));
-            });
+            };
         }
 
         [Test]
@@ -56,14 +56,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var tags = (List<string>)((OkObjectResult)response.Result).Value;
                 Assert.That(tags, Has.Count.EqualTo(1));
                 Assert.That(tags, Has.Member(tag));
-            });
+            };
         }
 
         [Test]
@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Tests.API
             
             var response = suggestionsController.GetTags();
             
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(tags, Has.Count.EqualTo(2));
                 Assert.That(tags, Has.Member(tag1));
                 Assert.That(tags, Has.Member(tag2));
-            });
+            };
         }
 
         [Test]
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(tags, Has.Count.EqualTo(2));
                 Assert.That(tags, Has.Member(tag1));
                 Assert.That(tags, Has.Member(tag2));
-            });
+            };
         }
 
         [Test]
@@ -125,7 +125,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(tags, Has.Count.EqualTo(2));
                 Assert.That(tags, Has.Member(tag1));
                 Assert.That(tags, Has.Member(tag2));
-            });
+            };
         }
 
         [Test]
@@ -143,14 +143,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var tags = (List<string>)((OkObjectResult)response.Result).Value;
                 Assert.That(tags, Has.Count.EqualTo(0));
-            });
+            };
         }
 
         [Test]
@@ -163,14 +163,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var tags = (List<string>)((OkObjectResult)response.Result).Value;
                 Assert.That(tags, Has.Count.EqualTo(1));
                 Assert.That(tags, Has.Member(tag));
-            });
+            };
         }
 
         [Test]
@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(tags, Has.Count.EqualTo(2));
                 Assert.That(tags, Has.Member(tag1));
                 Assert.That(tags, Has.Member(tag2));
-            });
+            };
         }
 
         [Test]
@@ -208,7 +208,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(tags, Has.Count.EqualTo(2));
                 Assert.That(tags, Has.Member(tag1));
                 Assert.That(tags, Has.Member(tag2));
-            });
+            };
         }
 
         [Test]
@@ -232,7 +232,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -240,7 +240,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(tags, Has.Count.EqualTo(2));
                 Assert.That(tags, Has.Member(tag1));
                 Assert.That(tags, Has.Member(tag2));
-            });
+            };
         }
 
         [Test]
@@ -258,7 +258,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -267,7 +267,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(tags, Has.Member(teamTag1));
                 Assert.That(tags, Has.Member(projectTag1));
                 Assert.That(tags, Has.Member(projectTag2));
-            });
+            };
         }
 
         [Test]
@@ -285,7 +285,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetTags();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -296,7 +296,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(itemTypes, Has.Member(teamTag2));
                 Assert.That(itemTypes, Has.Member(projectTag1));
                 Assert.That(itemTypes, Has.Member(projectTag2));
-            });
+            };
         }
 
         [Test]
@@ -317,7 +317,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetWorkItemTypesForTeams();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -327,7 +327,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(itemTypes, Has.Member(teamType1));
                 Assert.That(itemTypes, Has.Member(teamType2));
                 Assert.That(itemTypes, Has.Member(teamType3));
-            });
+            };
         }
 
         [Test]
@@ -349,7 +349,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetWorkItemTypesForTeams();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -359,7 +359,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(itemTypes, Has.Member(teamType1));
                 Assert.That(itemTypes, Has.Member(teamType2));
                 Assert.That(itemTypes, Has.Member(teamType3));
-            });
+            };
         }
 
         [Test]
@@ -378,7 +378,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetWorkItemTypesForProjects();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -387,7 +387,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(itemTypes, Has.Count.EqualTo(2));
                 Assert.That(itemTypes, Has.Member(projectType1));
                 Assert.That(itemTypes, Has.Member(projectType2));
-            });
+            };
         }
 
         [Test]
@@ -407,7 +407,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetWorkItemTypesForProjects();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -416,7 +416,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(itemTypes, Has.Count.EqualTo(2));
                 Assert.That(itemTypes, Has.Member(projectType1));
                 Assert.That(itemTypes, Has.Member(projectType2));
-            });
+            };
         }
 
         [Test]
@@ -440,7 +440,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetStatesForTeams();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -449,7 +449,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(statesCollection.ToDoStates, Is.EquivalentTo(toDoStates));
                 Assert.That(statesCollection.DoingStates, Is.EquivalentTo(doingStates));
                 Assert.That(statesCollection.DoneStates, Is.EquivalentTo(doneStates));
-            });
+            };
         }
 
         [Test]
@@ -484,7 +484,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetStatesForTeams();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -493,7 +493,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(statesCollection.ToDoStates, Is.EquivalentTo(toDoStates));
                 Assert.That(statesCollection.DoingStates, Is.EquivalentTo(doingStates));
                 Assert.That(statesCollection.DoneStates, Is.EquivalentTo(doneStates));
-            });
+            };
         }
 
         [Test]
@@ -517,7 +517,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetStatesForProjects();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -526,7 +526,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(statesCollection.ToDoStates, Is.EquivalentTo(toDoStates));
                 Assert.That(statesCollection.DoingStates, Is.EquivalentTo(doingStates));
                 Assert.That(statesCollection.DoneStates, Is.EquivalentTo(doneStates));
-            });
+            };
         }
 
         [Test]
@@ -561,7 +561,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = suggestionsController.GetStatesForProjects();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.Not.Null);
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
@@ -570,7 +570,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(statesCollection.ToDoStates, Is.EquivalentTo(toDoStates));
                 Assert.That(statesCollection.DoingStates, Is.EquivalentTo(doingStates));
                 Assert.That(statesCollection.DoneStates, Is.EquivalentTo(doneStates));
-            });
+            };
         }
 
         private Project CreateProject(params string[] tags)

@@ -26,12 +26,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var settings = service.GetFeaturRefreshSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(settings.Interval, Is.EqualTo(60));
                 Assert.That(settings.RefreshAfter, Is.EqualTo(360));
                 Assert.That(settings.StartDelay, Is.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -43,12 +43,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var settings = service.GetTeamDataRefreshSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(settings.Interval, Is.EqualTo(30));
                 Assert.That(settings.RefreshAfter, Is.EqualTo(180));
                 Assert.That(settings.StartDelay, Is.EqualTo(2));
-            });
+            };
         }
 
         [Test]
@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var settings = service.GetDefaultTeamSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(settings.Name, Is.EqualTo("MyTeam"));                
 
@@ -142,7 +142,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(settings.ServiceLevelExpectationProbability, Is.EqualTo(88));
                 Assert.That(settings.ServiceLevelExpectationRange, Is.EqualTo(10));
-            });
+            };
         }
 
         [Test]
@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var settings = service.GetDefaultProjectSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(settings.Name, Is.EqualTo("My Project"));
                 Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
@@ -267,7 +267,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.ServiceLevelExpectationRange, Is.EqualTo(10));
 
                 Assert.That(settings.ParentOverrideField, Is.EqualTo("customfield_10923123"));
-            });
+            };
         }
 
         [Test]
@@ -386,11 +386,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var settings = service.GetWorkTrackingSystemSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(settings.OverrideRequestTimeout, Is.True);
                 Assert.That(settings.RequestTimeoutInSeconds, Is.EqualTo(300));
-            });
+            };
         }
 
         [Test]

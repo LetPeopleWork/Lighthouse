@@ -38,12 +38,7 @@ namespace Lighthouse.Backend
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
-            }
+            var builder = WebApplication.CreateBuilder(args) ?? throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
 
             try
             {
@@ -59,8 +54,7 @@ namespace Lighthouse.Backend
                 ConfigureServices(builder);
                 ConfigureDatabase(builder);
 
-                var serviceProvider = builder.Services?.BuildServiceProvider();
-                var optionalFeatureRepository = serviceProvider?.GetRequiredService<IRepository<OptionalFeature>>();
+                var optionalFeatureRepository = GetOptionalFeatureRepository(builder);
 
                 var mcpFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
                 ConfigureOptionalServices(builder, mcpFeature);
@@ -77,6 +71,20 @@ namespace Lighthouse.Backend
             {
                 Log.CloseAndFlush();
             }
+        }
+
+        private static IRepository<OptionalFeature> GetOptionalFeatureRepository(WebApplicationBuilder builder)
+        {
+            var serviceProvider = builder.Services?.BuildServiceProvider();
+            var optionalFeatureRepository = serviceProvider?.GetRequiredService<IRepository<OptionalFeature>>();
+
+            if (optionalFeatureRepository == null)
+            {
+                Log.Error("OptionalFeatureRepository is not registered in the service collection.");
+                throw new InvalidOperationException("OptionalFeatureRepository is required but not registered.");
+            }
+
+            return optionalFeatureRepository;
         }
 
         private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature)

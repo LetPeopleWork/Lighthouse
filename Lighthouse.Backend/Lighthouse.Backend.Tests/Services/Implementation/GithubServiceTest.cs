@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var allReleases = (await subject.GetAllReleases()).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(allReleases, Has.Count.GreaterThan(2));
 
@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(firstRelease.Assets, Has.Count.EqualTo(1));
                 Assert.That(firstRelease.Assets[0].Name, Is.EqualTo("Lighthouse.v24.7.26.1246.zip"));
                 Assert.That(firstRelease.Assets[0].Link, Is.EqualTo("https://github.com/LetPeopleWork/Lighthouse/releases/download/v24.7.26.1246/Lighthouse.v24.7.26.1246.zip"));
-            });
+            };
         }
     }
 }

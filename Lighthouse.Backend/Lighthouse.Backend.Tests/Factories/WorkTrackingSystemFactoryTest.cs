@@ -20,12 +20,12 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var defaultConnection = subject.CreateDefaultConnectionForWorkTrackingSystem(workTrackingSystem);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(defaultConnection.Id, Is.EqualTo(0));
                 Assert.That(defaultConnection.Name, Is.EqualTo($"New {workTrackingSystem} Connection"));
                 Assert.That(defaultConnection.WorkTrackingSystem, Is.EqualTo(workTrackingSystem));
-            });
+            };
         }
 
         [Test]
@@ -35,12 +35,12 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.AzureDevOps);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(connection.Options, Has.Count.EqualTo(2));
                 Assert.That(ContainsOption(connection.Options, AzureDevOpsWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(connection.Options, AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, true), Is.True);
-            });
+            };
         }
 
         [Test]
@@ -50,13 +50,13 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Jira);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(connection.Options, Has.Count.EqualTo(3));
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Url), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.Username, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, JiraWorkTrackingOptionNames.ApiToken, true), Is.True);
-            });
+            };
         }
 
         [Test]
@@ -66,11 +66,11 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Linear);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(connection.Options, Has.Count.EqualTo(1));
                 Assert.That(ContainsOption(connection.Options, LinearWorkTrackingOptionNames.ApiKey, true, false), Is.True);
-            });
+            };
         }
 
         private bool ContainsOption(IEnumerable<WorkTrackingSystemConnectionOption> options, string key, bool isSecret = false, bool isOptional = false)

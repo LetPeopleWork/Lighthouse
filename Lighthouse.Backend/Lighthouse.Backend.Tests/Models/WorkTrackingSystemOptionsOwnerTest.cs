@@ -49,11 +49,11 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = CreateSubject();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.ServiceLevelExpectationProbability, Is.EqualTo(0));
                 Assert.That(subject.ServiceLevelExpectationRange, Is.EqualTo(0));
-            });
+            };
         }
 
         [Test]

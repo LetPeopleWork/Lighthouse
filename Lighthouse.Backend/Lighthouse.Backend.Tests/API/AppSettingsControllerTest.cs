@@ -27,14 +27,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetFeatureRefreshSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            });
+            }
         }
 
         [Test]
@@ -46,11 +46,11 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateFeatureRefreshSettings(refreshSettings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 appSettingServiceMock.Verify(x => x.UpdateFeatureRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            });
+            };
         }
 
         [Test]
@@ -63,14 +63,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetTeamDataRefreshSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            });
+            };
         }
 
         [Test]
@@ -82,11 +82,11 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateTeamDataRefreshSettings(refreshSettings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 appSettingServiceMock.Verify(x => x.UpdateTeamDataRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            });
+            };
         }
 
         [Test]
@@ -99,14 +99,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetDefaultTeamSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            });
+            };
         }
 
         [Test]
@@ -118,11 +118,11 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateDefaultTeamSettings(settings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 appSettingServiceMock.Verify(x => x.UpdateDefaultTeamSettings(settings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            });
+            };
         }
 
         [Test]
@@ -135,14 +135,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetDefaultProjectSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            });
+            };
         }
 
         [Test]
@@ -154,11 +154,11 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateDefaultProjectSettings(settings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 appSettingServiceMock.Verify(x => x.UpdateDefaultProjectSettings(settings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            });
+            };
         }
 
         [Test]
@@ -171,14 +171,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetDataRetentionSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            });
+            };
         }
 
         [Test]
@@ -190,11 +190,11 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateDataRetentionSettings(settings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 appSettingServiceMock.Verify(x => x.UpdateDataRetentionSettings(settings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            });
+            };
         }
 
         [Test]
@@ -207,14 +207,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetWorkTrackingSystemSettings();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
 
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            });
+            };
         }
 
         [Test]
@@ -226,11 +226,11 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.UpdateWorkTrackingSystemSettings(settings);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 appSettingServiceMock.Verify(x => x.UpdateWorkTrackingSystemSettings(settings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
-            });
+            };
         }
 
         private AppSettingsController CreateSubject()

@@ -53,14 +53,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(project.Features.ToList(), Has.Count.EqualTo(1));
 
                 var actualFeature = project.Features.Single();
                 Assert.That(actualFeature.ReferenceId, Is.EqualTo(feature.ReferenceId));
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
 
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 var isDefault = defaultWork == expectedWork;
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.EqualTo(isDefault));
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedWork));
-            });
+            };
         }
 
         [Test]
@@ -139,15 +139,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(project.Features, Has.Count.EqualTo(1));
 
-                var feature = project.Features[0];
+                var featureToVerify = project.Features[0];
 
-                Assert.That(feature.IsUsingDefaultFeatureSize, Is.False);
-                Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedWork));
-            });
+                Assert.That(featureToVerify.IsUsingDefaultFeatureSize, Is.False);
+                Assert.That(featureToVerify.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedWork));
+            };
         }
 
         [Test]
@@ -172,14 +172,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
 
                 var feature = project.Features.Single(f => f.ReferenceId == "12");
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(7));
-            });
+            };
         }
 
         [Test]
@@ -198,14 +198,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
 
                 var feature = project.Features[0];
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
-            });
+            };
         }
 
         [Test]
@@ -239,12 +239,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var feature = project.Features[0];
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(expectedValue));
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
-            });
+            };
         }
 
         [Test]
@@ -268,12 +268,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var feature = project.Features[0];
                 Assert.That(feature.FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
                 Assert.That(feature.IsUsingDefaultFeatureSize, Is.True);
-            });
+            };
         }
 
         [Test]
@@ -337,7 +337,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             await subject.UpdateFeaturesForProject(project);
 
             Assert.That(project.Features, Has.Count.EqualTo(2));
-            Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(0));
+            Assert.That(project.Features[0].FeatureWork.Sum(x => x.RemainingWorkItems), Is.Zero);
         }
 
         [Test]
@@ -360,7 +360,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(project.Features, Has.Count.EqualTo(2));
 
@@ -368,7 +368,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Assert.That(featureWork.Sum(x => x.RemainingWorkItems), Is.EqualTo(12));
                 Assert.That(featureWork[featureWork.Count - 1].RemainingWorkItems, Is.EqualTo(6));
                 Assert.That(featureWork[featureWork.Count - 1].RemainingWorkItems, Is.EqualTo(6));
-            });
+            };
         }
 
         [Test]
@@ -458,11 +458,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             await subject.UpdateFeaturesForProject(project);
 
             var actualFeature = project.Features.Single();
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(actualFeature.GetRemainingWorkForTeam(team1), Is.EqualTo(remainingWorkItemsTeam1));
                 Assert.That(actualFeature.GetRemainingWorkForTeam(team2), Is.EqualTo(remainingWorkItemsTeam2));
-            });
+            };
         }
 
         [Test]
@@ -494,13 +494,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             await subject.UpdateFeaturesForProject(project);
 
             var actualFeature = project.Features.Single();
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(actualFeature.Name, Is.EqualTo("Release 1 - Unparented"));
                 Assert.That(actualFeature.GetRemainingWorkForTeam(team), Is.EqualTo(expectedItems));
                 Assert.That(actualFeature.Order, Is.EqualTo(expectedUnparentedOrder));
                 Assert.That(Guid.TryParse(actualFeature.ReferenceId, out _), Is.True, "ReferenceId should be a valid GUID");
-            });
+            };
         }
 
         [Test]
@@ -522,14 +522,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                var feature = project.Features.Single();
+                var featureToVerify = project.Features.Single();
 
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
-                Assert.That(feature.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
-                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(6));
-            });
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(2));
+                Assert.That(featureToVerify.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(6));
+            };
         }
 
         [Test]
@@ -552,14 +552,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                var feature = project.Features.Single();
+                var featureToVerify = project.Features.Single();
 
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(1));
-                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
-                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
-            });
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
+                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
+            };
         }
 
         [Test]
@@ -586,14 +586,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                var feature = project.Features.Single();
+                var featureToVerify = project.Features.Single();
 
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(1));
-                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
-                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
-            });
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
+                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
+            };
         }
 
         [Test]
@@ -618,14 +618,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                var feature = project.Features.Single();
+                var featureToVerify = project.Features.Single();
 
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(1));
-                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
-                Assert.That(feature.FeatureWork[feature.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
-            });
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
+                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(featureToVerify.FeatureWork[featureToVerify.FeatureWork.Count - 1].Team, Is.EqualTo(team2));
+            };
         }
 
         [Test]
@@ -652,16 +652,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                var feature = project.Features.Single();
+                var featureToVerify = project.Features.Single();
 
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
-                Assert.That(feature.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
-                Assert.That(feature.FeatureWork[0].Team, Is.EqualTo(team2));
-                Assert.That(feature.FeatureWork[1].TotalWorkItems, Is.EqualTo(6));
-                Assert.That(feature.FeatureWork[1].Team, Is.EqualTo(team3));
-            });
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(2));
+                Assert.That(featureToVerify.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(featureToVerify.FeatureWork[0].Team, Is.EqualTo(team2));
+                Assert.That(featureToVerify.FeatureWork[1].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(featureToVerify.FeatureWork[1].Team, Is.EqualTo(team3));
+            };
         }
 
         [Test]
@@ -689,16 +689,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                var feature = project.Features.Single();
+                var featureToVerify = project.Features.Single();
 
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(2));
-                Assert.That(feature.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
-                Assert.That(feature.FeatureWork[0].Team, Is.EqualTo(team2));
-                Assert.That(feature.FeatureWork[1].TotalWorkItems, Is.EqualTo(6));
-                Assert.That(feature.FeatureWork[1].Team, Is.EqualTo(team3));
-            });
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(2));
+                Assert.That(featureToVerify.FeatureWork[0].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(featureToVerify.FeatureWork[0].Team, Is.EqualTo(team2));
+                Assert.That(featureToVerify.FeatureWork[1].TotalWorkItems, Is.EqualTo(6));
+                Assert.That(featureToVerify.FeatureWork[1].Team, Is.EqualTo(team3));
+            };
         }
 
         [Test]
@@ -726,14 +726,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                var feature = project.Features.Single();
+                var featureToVerify = project.Features.Single();
 
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(1));
-                Assert.That(feature.FeatureWork[0].TotalWorkItems, Is.EqualTo(12));
-                Assert.That(feature.FeatureWork[0].Team, Is.EqualTo(team1));
-            });
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
+                Assert.That(featureToVerify.FeatureWork[0].TotalWorkItems, Is.EqualTo(12));
+                Assert.That(featureToVerify.FeatureWork[0].Team, Is.EqualTo(team1));
+            };
         }
 
         [Test]
@@ -760,17 +760,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                var feature = project.Features.Single();
+                var featureToVerify = project.Features.Single();
 
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(3));
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(3));
 
-                foreach (var fw in feature.FeatureWork)
+                foreach (var fw in featureToVerify.FeatureWork)
                 {
                     Assert.That(fw.TotalWorkItems, Is.EqualTo(5));
                 }
-            });
+            };
         }
 
         [Test]

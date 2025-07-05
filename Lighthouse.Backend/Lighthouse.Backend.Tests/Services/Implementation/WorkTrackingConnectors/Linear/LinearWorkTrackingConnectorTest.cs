@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItems = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems.ToList(), Has.Count.EqualTo(1));
                 var workItem = workItems.Single();
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 24, 11, 05, 51, 877, DateTimeKind.Utc)));
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 04, 24, 11, 06, 40, 918, DateTimeKind.Utc)));
                 Assert.That(workItem.ClosedDate, Is.Null);
-            });
+            };
         }
 
         [Test]
@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItems = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems.ToList(), Has.Count.EqualTo(1));
                 var workItem = workItems.Single();
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 12, 32, 958, DateTimeKind.Utc)));
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 04, 23, 08, 27, 38, 556, DateTimeKind.Utc)));
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 04, 23, 08, 27, 38, 556, DateTimeKind.Utc)));
-            });
+            };
         }
 
         [Test]
@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItems = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems.ToList(), Has.Count.EqualTo(2));
                 var item1 = workItems.First();
@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 // Ordering = Manual, Less = "higher up"
                 Assert.That(item2Order, Is.LessThan(item1Order));
-            });
+            };
         }
 
         [Test]
@@ -250,7 +250,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var features = await subject.GetFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(features.ToList(), Has.Count.EqualTo(1));
                 var feature = features.Single();
@@ -268,7 +268,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 25, 09, 648, DateTimeKind.Utc)));
                 Assert.That(feature.StartedDate, Is.Null);
                 Assert.That(feature.ClosedDate, Is.Null);
-            });
+            };
         }
 
         [Test]
@@ -283,7 +283,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var features = await subject.GetFeaturesForProject(project);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(features.ToList(), Has.Count.EqualTo(1));
                 var feature = features.Single();
@@ -301,7 +301,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 23, 07, 25, 09, 648, DateTimeKind.Utc)));
                 Assert.That(feature.StartedDate, Is.Null);
                 Assert.That(feature.ClosedDate, Is.Null);
-            });
+            };
         }
 
         [Test]

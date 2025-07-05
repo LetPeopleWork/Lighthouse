@@ -64,14 +64,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ExportConfiguration();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var configuration = ParseExportResponse(response);
 
                 Assert.That(configuration.WorkTrackingSystems, Is.Empty);
                 Assert.That(configuration.Teams, Is.Empty);
                 Assert.That(configuration.Projects, Is.Empty);
-            });
+            };
         }
 
         [Test]
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ExportConfiguration();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var configuration = ParseExportResponse(response);
                 Assert.That(configuration.WorkTrackingSystems, Has.Count.EqualTo(1));
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedWorkTrackingSystem.Name, Is.EqualTo("Test System"));
                 Assert.That(exportedWorkTrackingSystem.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Jira));
                 Assert.That(exportedWorkTrackingSystem.Options, Is.Empty);
-            });
+            };
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ExportConfiguration();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var configuration = ParseExportResponse(response);
                 Assert.That(configuration.WorkTrackingSystems, Has.Count.EqualTo(1));
@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedWorkTrackingSystem.Options[0].Value, Is.EqualTo("Value1"));
                 Assert.That(exportedWorkTrackingSystem.Options[1].Key, Is.EqualTo("Option2"));
                 Assert.That(exportedWorkTrackingSystem.Options[1].Value, Is.EqualTo("Value2"));
-            });
+            };
         }
 
         [Test]
@@ -134,7 +134,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ExportConfiguration();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var configuration = ParseExportResponse(response);
                 Assert.That(configuration.WorkTrackingSystems, Has.Count.EqualTo(1));
@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedWorkTrackingSystem.Options[0].Value, Is.EqualTo("Value1"));
                 Assert.That(exportedWorkTrackingSystem.Options[1].Key, Is.EqualTo("Option2"));
                 Assert.That(exportedWorkTrackingSystem.Options[1].Value, Is.Empty);
-            });
+            };
         }
 
         [Test]
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Tests.API
             var subject = CreateSubject();
             var response = subject.ExportConfiguration();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var configuration = ParseExportResponse(response);
                 Assert.That(configuration.Teams, Has.Count.EqualTo(1));
@@ -210,7 +210,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedTeam.ServiceLevelExpectationProbability, Is.EqualTo(73));
                 Assert.That(exportedTeam.ServiceLevelExpectationRange, Is.EqualTo(14));
                 Assert.That(exportedTeam.SystemWIPLimit, Is.EqualTo(5));
-            });
+            };
         }
 
         [Test]
@@ -259,51 +259,51 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ExportConfiguration();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var configuration = ParseExportResponse(response);
                 Assert.That(configuration.Projects, Has.Count.EqualTo(1));
-                var project = configuration.Projects[0];
+                var projectToVerify = configuration.Projects[0];
 
-                Assert.That(project.Id, Is.EqualTo(1));
-                Assert.That(project.Name, Is.EqualTo("Project A"));
-                Assert.That(project.WorkItemQuery, Is.EqualTo("SELECT * FROM WorkItems WHERE ProjectId = 1"));
-                Assert.That(project.InvolvedTeams, Has.Count.EqualTo(1));
-                Assert.That(project.InvolvedTeams[0].Id, Is.EqualTo(1));
-                Assert.That(project.WorkItemTypes, Has.Count.EqualTo(2));
-                Assert.That(project.WorkItemTypes[0], Is.EqualTo("Epic"));
-                Assert.That(project.WorkItemTypes[1], Is.EqualTo("Feature"));
-                Assert.That(project.ToDoStates, Has.Count.EqualTo(2));
-                Assert.That(project.ToDoStates[0], Is.EqualTo("To Do"));
-                Assert.That(project.ToDoStates[1], Is.EqualTo("New"));
-                Assert.That(project.DoingStates, Has.Count.EqualTo(2));
-                Assert.That(project.DoingStates[0], Is.EqualTo("In Progress"));
-                Assert.That(project.DoingStates[1], Is.EqualTo("Testing"));
-                Assert.That(project.DoneStates, Has.Count.EqualTo(2));
-                Assert.That(project.DoneStates[0], Is.EqualTo("Done"));
-                Assert.That(project.DoneStates[1], Is.EqualTo("Closed"));
-                Assert.That(project.WorkTrackingSystemConnectionId, Is.EqualTo(workTrackingSystem.Id));
-                Assert.That(project.Tags, Has.Count.EqualTo(2));
-                Assert.That(project.Tags[0], Is.EqualTo("ProjectTag1"));
-                Assert.That(project.Tags[1], Is.EqualTo("ProjectTag2"));
-                Assert.That(project.UnparentedItemsQuery, Is.EqualTo("SELECT * FROM UnparentedItems WHERE ProjectId = 1"));
-                Assert.That(project.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.False);
-                Assert.That(project.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(14));
-                Assert.That(project.SizeEstimateField, Is.EqualTo("SizeEstimate"));
-                Assert.That(project.OverrideRealChildCountStates, Has.Count.EqualTo(2));
-                Assert.That(project.OverrideRealChildCountStates[0], Is.EqualTo("In Progress"));
-                Assert.That(project.OverrideRealChildCountStates[1], Is.EqualTo("Testing"));
-                Assert.That(project.OwningTeam.Id, Is.EqualTo(team.Id));
-                Assert.That(project.FeatureOwnerField, Is.EqualTo("FeatureOwner"));
-                Assert.That(project.ServiceLevelExpectationProbability, Is.EqualTo(85));
-                Assert.That(project.ServiceLevelExpectationRange, Is.EqualTo(21));
-                Assert.That(project.SystemWIPLimit, Is.EqualTo(1));
+                Assert.That(projectToVerify.Id, Is.EqualTo(1));
+                Assert.That(projectToVerify.Name, Is.EqualTo("Project A"));
+                Assert.That(projectToVerify.WorkItemQuery, Is.EqualTo("SELECT * FROM WorkItems WHERE ProjectId = 1"));
+                Assert.That(projectToVerify.InvolvedTeams, Has.Count.EqualTo(1));
+                Assert.That(projectToVerify.InvolvedTeams[0].Id, Is.EqualTo(1));
+                Assert.That(projectToVerify.WorkItemTypes, Has.Count.EqualTo(2));
+                Assert.That(projectToVerify.WorkItemTypes[0], Is.EqualTo("Epic"));
+                Assert.That(projectToVerify.WorkItemTypes[1], Is.EqualTo("Feature"));
+                Assert.That(projectToVerify.ToDoStates, Has.Count.EqualTo(2));
+                Assert.That(projectToVerify.ToDoStates[0], Is.EqualTo("To Do"));
+                Assert.That(projectToVerify.ToDoStates[1], Is.EqualTo("New"));
+                Assert.That(projectToVerify.DoingStates, Has.Count.EqualTo(2));
+                Assert.That(projectToVerify.DoingStates[0], Is.EqualTo("In Progress"));
+                Assert.That(projectToVerify.DoingStates[1], Is.EqualTo("Testing"));
+                Assert.That(projectToVerify.DoneStates, Has.Count.EqualTo(2));
+                Assert.That(projectToVerify.DoneStates[0], Is.EqualTo("Done"));
+                Assert.That(projectToVerify.DoneStates[1], Is.EqualTo("Closed"));
+                Assert.That(projectToVerify.WorkTrackingSystemConnectionId, Is.EqualTo(workTrackingSystem.Id));
+                Assert.That(projectToVerify.Tags, Has.Count.EqualTo(2));
+                Assert.That(projectToVerify.Tags[0], Is.EqualTo("ProjectTag1"));
+                Assert.That(projectToVerify.Tags[1], Is.EqualTo("ProjectTag2"));
+                Assert.That(projectToVerify.UnparentedItemsQuery, Is.EqualTo("SELECT * FROM UnparentedItems WHERE ProjectId = 1"));
+                Assert.That(projectToVerify.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.False);
+                Assert.That(projectToVerify.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(14));
+                Assert.That(projectToVerify.SizeEstimateField, Is.EqualTo("SizeEstimate"));
+                Assert.That(projectToVerify.OverrideRealChildCountStates, Has.Count.EqualTo(2));
+                Assert.That(projectToVerify.OverrideRealChildCountStates[0], Is.EqualTo("In Progress"));
+                Assert.That(projectToVerify.OverrideRealChildCountStates[1], Is.EqualTo("Testing"));
+                Assert.That(projectToVerify.OwningTeam.Id, Is.EqualTo(team.Id));
+                Assert.That(projectToVerify.FeatureOwnerField, Is.EqualTo("FeatureOwner"));
+                Assert.That(projectToVerify.ServiceLevelExpectationProbability, Is.EqualTo(85));
+                Assert.That(projectToVerify.ServiceLevelExpectationRange, Is.EqualTo(21));
+                Assert.That(projectToVerify.SystemWIPLimit, Is.EqualTo(1));
 
-                Assert.That(project.Milestones, Has.Count.EqualTo(1));
-                Assert.That(project.Milestones[0].Id, Is.EqualTo(1));
-                Assert.That(project.Milestones[0].Name, Is.EqualTo("Milestone 1"));
-                Assert.That(project.Milestones[0].Date.Date, Is.EqualTo(DateTime.UtcNow.AddDays(30).Date));
-            });
+                Assert.That(projectToVerify.Milestones, Has.Count.EqualTo(1));
+                Assert.That(projectToVerify.Milestones[0].Id, Is.EqualTo(1));
+                Assert.That(projectToVerify.Milestones[0].Name, Is.EqualTo("Milestone 1"));
+                Assert.That(projectToVerify.Milestones[0].Date.Date, Is.EqualTo(DateTime.UtcNow.AddDays(30).Date));
+            };
         }
 
         [Test]
@@ -351,7 +351,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ValidateConfiguration(configuration);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -372,7 +372,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.New));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.Empty);
-            });
+            };
         }
 
         [Test]
@@ -397,7 +397,7 @@ namespace Lighthouse.Backend.Tests.API
             };
 
             var response = subject.ValidateConfiguration(configuration);
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -419,7 +419,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Update));
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
-            });
+            };
         }
 
         [Test]
@@ -442,7 +442,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ValidateConfiguration(configuration);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -459,7 +459,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
                 Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.Update));
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.Empty);
-            });
+            };
         }
 
         [Test]
@@ -481,7 +481,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ValidateConfiguration(configuration);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -493,7 +493,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Teams[0].Id, Is.EqualTo(team.Id));
                 Assert.That(validationResult.Teams[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Teams[0].ErrorMessage, Is.EqualTo("Work Tracking System Not Found"));
-            });
+            };
         }
 
         [Test]
@@ -515,7 +515,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ValidateConfiguration(configuration);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -532,7 +532,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Work Tracking System Not Found"));
-            });
+            };
         }
 
         [Test]
@@ -556,7 +556,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ValidateConfiguration(configuration);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -568,7 +568,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Involved Team Not Found"));
-            });
+            };
         }
 
         [Test]
@@ -597,7 +597,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.ValidateConfiguration(configuration);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = response.Result as OkObjectResult;
@@ -609,7 +609,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(validationResult.Projects[0].Id, Is.EqualTo(project.Id));
                 Assert.That(validationResult.Projects[0].Status, Is.EqualTo(ValidationStatus.Error));
                 Assert.That(validationResult.Projects[0].ErrorMessage, Is.EqualTo("Owning Team must be involved in the project"));
-            });
+            };
         }
 
         private WorkTrackingSystemConnection AddWorkTrackingSystemConnection()

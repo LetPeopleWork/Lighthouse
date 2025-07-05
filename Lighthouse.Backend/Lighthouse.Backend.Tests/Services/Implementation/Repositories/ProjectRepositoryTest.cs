@@ -46,12 +46,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             var foundProject = subject.GetById(project.Id);
             
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(foundProject, Is.EqualTo(project));
                 Assert.That(foundProject.Teams.ToList(), Has.Count.EqualTo(1));
                 Assert.That(foundProject.Teams.Single().WorkTrackingSystemConnection.Options, Has.Count.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -78,11 +78,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             var foundProject = subject.GetById(project.Id);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(foundProject, Is.EqualTo(project));
                 Assert.That(foundProject.Features, Has.Count.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -109,12 +109,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             var foundProject = subject.GetById(project.Id);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(foundProject.OverrideRealChildCountStates, Has.Count.EqualTo(2));
                 Assert.That(foundProject.OverrideRealChildCountStates, Does.Contain("New"));
                 Assert.That(foundProject.OverrideRealChildCountStates, Does.Contain("AnalysisInProgress"));
-            });
+            };
         }
 
         private ProjectRepository CreateSubject()

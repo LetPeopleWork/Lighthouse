@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Count, Is.EqualTo(1));
                 var workItem = result.Single();
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 6, 34, 677, DateTimeKind.Utc)));
-            });
+            };
         }
 
         [Test]
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Count, Is.EqualTo(1));
                 var workItem = result.Single();
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 10, 647, DateTimeKind.Utc)));
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Count, Is.EqualTo(1));
                 var workItem = result.Single();
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 5, 57, 453, DateTimeKind.Utc)));
-            });
+            };
         }
 
         [Test]
@@ -149,7 +149,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Count, Is.EqualTo(1));
                 var workItem = result.Single();
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 10, 647, DateTimeKind.Utc)));
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Count, Is.EqualTo(1));
                 var workItem = result.Single();
@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 22, 12, 623, DateTimeKind.Utc)));
-            });
+            };
         }
 
         [Test]
@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Count, Is.EqualTo(1));
                 var workItem = result.Single();
@@ -202,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 58, 753, DateTimeKind.Utc)));
-            });
+            };
         }
 
         [Test]
@@ -214,7 +214,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Count, Is.EqualTo(1));
                 var workItem = result.Single();
@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 25, 25, 217, DateTimeKind.Utc)));
-            });
+            };
         }
 
         [Test]
@@ -369,14 +369,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForProject(project);
             var feature = features.Single(f => f.ReferenceId == "366");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.Name, Is.EqualTo("Test Test Test"));
                 Assert.That(feature.Order, Is.EqualTo("1999821120"));
                 Assert.That(feature.State, Is.EqualTo("Resolved"));
                 Assert.That(feature.StateCategory, Is.EqualTo(StateCategories.Doing));
                 Assert.That(feature.Url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/366"));
-            });
+            };
         }
 
         [Test]
@@ -388,13 +388,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForProject(project);
             var feature = features.Single(f => f.ReferenceId == "370");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.StartedDate.HasValue, Is.True);
                 Assert.That(feature.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 2, 16, 0, 0, 0, DateTimeKind.Utc)));
 
                 Assert.That(feature.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -408,11 +408,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForProject(project);
             var feature = features.Single(f => f.ReferenceId == "370");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.ClosedDate.HasValue, Is.True);
                 Assert.That(feature.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 2, 16, 0, 0, 0, DateTimeKind.Utc)));
-            });
+            };
         }
 
         [Test]
@@ -426,10 +426,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForProject(project);
             var feature = features.Single(f => f.ReferenceId == "370");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.StartedDate, Is.EqualTo(feature.ClosedDate));
-            });
+            };
         }
 
         [Test]
@@ -476,7 +476,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var parentItems = await subject.GetParentFeaturesDetails(project, ["400"]);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(parentItems, Has.Count.EqualTo(1));
                 var parentItem = parentItems.Single();
@@ -484,7 +484,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(parentItem.ReferenceId, Is.EqualTo("400"));
                 Assert.That(parentItem.Name, Is.EqualTo("Delivery for Agnieszka"));
                 Assert.That(parentItem.Url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/400"));
-            });
+            };
         }
 
         [Test]

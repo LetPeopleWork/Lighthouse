@@ -182,12 +182,12 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.CreatedDate.HasValue, Is.True);
                 Assert.That(issue.CreatedDate?.Date, Is.EqualTo(new DateTime(2024, 4, 7, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.CreatedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         [Test]
@@ -236,11 +236,11 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.False);
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -258,13 +258,13 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -283,7 +283,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
@@ -291,7 +291,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         [Test]
@@ -310,13 +310,13 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -336,13 +336,13 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -363,7 +363,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
@@ -371,7 +371,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 29, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         [Test]
@@ -392,7 +392,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
@@ -400,7 +400,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         [Test]
@@ -424,7 +424,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
@@ -432,7 +432,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 10, 2, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         [Test]
@@ -450,13 +450,13 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(issue.ClosedDate.HasValue, Is.False);
-            });
+            };
         }
 
         [Test]
@@ -475,7 +475,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 27, 0, 0, 0, DateTimeKind.Utc).Date));
@@ -483,7 +483,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 30, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         [Test]
@@ -501,7 +501,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwnerMock.Object);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(issue.StartedDate.HasValue, Is.True);
                 Assert.That(issue.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc).Date));
@@ -509,7 +509,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(issue.ClosedDate.HasValue, Is.True);
                 Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 28, 0, 0, 0, DateTimeKind.Utc).Date));
                 Assert.That(issue.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            });
+            };
         }
 
         private void SetupStateMapping(StateCategories stateCategory, List<string> states)

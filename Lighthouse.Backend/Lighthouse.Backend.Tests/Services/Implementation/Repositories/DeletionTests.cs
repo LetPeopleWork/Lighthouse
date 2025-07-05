@@ -73,12 +73,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             projectRepository.Remove(project.Id);
             await projectRepository.Save();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(featureRepository.GetAll().ToList(), Has.Count.EqualTo(0));
                 Assert.That(projectRepository.GetAll().ToList(), Has.Count.EqualTo(0));
                 Assert.That(teamRepository.GetAll().ToList(), Has.Count.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -124,12 +124,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             projectRepository.Remove(project.Id);
             await projectRepository.Save();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(featureRepository.GetAll().ToList(), Has.Count.EqualTo(0));
                 Assert.That(projectRepository.GetAll().ToList(), Has.Count.EqualTo(0));
                 Assert.That(teamRepository.GetAll().ToList(), Has.Count.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -169,15 +169,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             teamRepository.Remove(team1.Id);
             await teamRepository.Save();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(featureRepository.GetAll().ToList(), Has.Count.EqualTo(1));
                 Assert.That(projectRepository.GetAll().ToList(), Has.Count.EqualTo(1));
                 Assert.That(teamRepository.GetAll().ToList(), Has.Count.EqualTo(1));
 
-                var feature = featureRepository.GetAll().Single();
-                Assert.That(feature.FeatureWork, Has.Count.EqualTo(1));
-            });
+                var featureToVerify = featureRepository.GetAll().Single();
+                Assert.That(featureToVerify.FeatureWork, Has.Count.EqualTo(1));
+            };
         }
     }
 }

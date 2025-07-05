@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.Total, Is.EqualTo(0));
+            Assert.That(throughput.Total, Is.Zero);
         }
 
         [Test]
@@ -203,7 +203,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.That(throughput.Total, Is.EqualTo(0));
+            Assert.That(throughput.Total, Is.Zero);
         }
 
         [Test]
@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var throughput = subject.GetCurrentThroughputForTeam(testTeam);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(throughput.Total, Is.EqualTo(10));
                 Assert.That(throughput.History, Is.EqualTo(10));
@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 {
                     Assert.That(kvp.Value, Has.Count.EqualTo(1));
                 }
-            });
+            };
         }
 
         [Test]
@@ -355,14 +355,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var createdItems = subject.GetCreatedItemsForTeam(testTeam, ["User Story", "Bug"], startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(createdItems.Total, Is.EqualTo(3));
                 Assert.That(createdItems.History, Is.EqualTo(8));
 
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([1, 0, 0, 0, 1, 0, 0, 1]));
-            });
+            };
         }
 
         [Test]
@@ -392,14 +392,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var createdItems = subject.GetCreatedItemsForTeam(testTeam, [includedWorkItemType], startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(createdItems.Total, Is.EqualTo(2));
                 Assert.That(createdItems.History, Is.EqualTo(8));
 
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([1, 0, 0, 0, 0, 0, 0, 1]));
-            });
+            };
         }
 
 
@@ -418,14 +418,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var createdItems = subject.GetCreatedItemsForTeam(testTeam, ["User Story", "Bug"], startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                Assert.That(createdItems.Total, Is.EqualTo(0));
+                Assert.That(createdItems.Total, Is.Zero);
                 Assert.That(createdItems.History, Is.EqualTo(8));
 
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([0, 0, 0, 0, 0, 0, 0, 0]));
-            });
+            };
         }
 
         [Test]
@@ -490,7 +490,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(wipData.History, Is.EqualTo(10));
 
@@ -498,7 +498,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 {
                     Assert.That(wipData.WorkItemsPerUnitOfTime[index], Has.Count.EqualTo(9 - index));
                 }
-            });
+            };
         }
 
         [Test]
@@ -513,7 +513,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.That(wipData.Total, Is.EqualTo(0));
+            Assert.That(wipData.Total, Is.Zero);
         }
 
         [Test]
@@ -527,7 +527,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.That(wipData.Total, Is.EqualTo(0));
+            Assert.That(wipData.Total, Is.Zero);
         }
 
         [Test]
@@ -540,7 +540,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.That(wipData.Total, Is.EqualTo(0));
+            Assert.That(wipData.Total, Is.Zero);
         }
 
         [Test]
@@ -555,12 +555,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(wipData.WorkItemsPerUnitOfTime, Has.Count.EqualTo(2));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[0], Has.Count.EqualTo(1));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[1], Is.Empty);
-            });
+            };
         }
 
         [Test]
@@ -575,13 +575,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(wipData.WorkItemsPerUnitOfTime, Has.Count.EqualTo(3));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[0], Has.Count.EqualTo(0));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[1], Has.Count.EqualTo(1));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[2], Has.Count.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -597,7 +597,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var cycleTimePercentiles = subject.GetCycleTimePercentilesForTeam(testTeam, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(cycleTimePercentiles, Has.Count.EqualTo(4));
 
@@ -612,7 +612,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(cycleTimePercentiles[3].Percentile, Is.EqualTo(95));
                 Assert.That(cycleTimePercentiles[3].Value, Is.EqualTo(9));
-            });
+            };
         }
 
         [Test]
@@ -620,22 +620,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var cycleTimePercentiles = subject.GetCycleTimePercentilesForTeam(testTeam, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(cycleTimePercentiles, Has.Count.EqualTo(4));
 
                 Assert.That(cycleTimePercentiles[0].Percentile, Is.EqualTo(50));
-                Assert.That(cycleTimePercentiles[0].Value, Is.EqualTo(0));
+                Assert.That(cycleTimePercentiles[0].Value, Is.Zero);
 
                 Assert.That(cycleTimePercentiles[1].Percentile, Is.EqualTo(70));
-                Assert.That(cycleTimePercentiles[1].Value, Is.EqualTo(0));
+                Assert.That(cycleTimePercentiles[1].Value, Is.Zero);
 
                 Assert.That(cycleTimePercentiles[2].Percentile, Is.EqualTo(85));
-                Assert.That(cycleTimePercentiles[2].Value, Is.EqualTo(0));
+                Assert.That(cycleTimePercentiles[2].Value, Is.Zero);
 
                 Assert.That(cycleTimePercentiles[3].Percentile, Is.EqualTo(95));
-                Assert.That(cycleTimePercentiles[3].Value, Is.EqualTo(0));
-            });
+                Assert.That(cycleTimePercentiles[3].Value, Is.Zero);
+            };
         }
 
         [Test]
@@ -651,7 +651,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(10));
 
@@ -659,7 +659,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 {
                     Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
                 }
-            });
+            };
         }
 
         [Test]
@@ -671,11 +671,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
                 Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(2));
-            });
+            };
         }
 
         [Test]
@@ -687,11 +687,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.Today.AddDays(-1), DateTime.Today).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
                 Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(1));
-            });
+            };
         }
 
         [Test]
@@ -707,7 +707,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.Now.AddDays(-10), DateTime.Now).ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(11));
 
@@ -715,7 +715,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 {
                     Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
                 }
-            });
+            };
         }
 
         [Test]
@@ -766,7 +766,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.UpdateTeamMetrics(testTeam);
 
-            Assert.That(testTeam.FeatureWIP, Is.EqualTo(0));
+            Assert.That(testTeam.FeatureWIP, Is.Zero);
         }
 
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)

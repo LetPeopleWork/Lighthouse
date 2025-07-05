@@ -16,12 +16,12 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var subject = new WorkTrackingSystemConnectionDto(workTrackingSystemConnection);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.Id, Is.EqualTo(workTrackingSystemConnection.Id));
                 Assert.That(subject.Name, Is.EqualTo(workTrackingSystemConnection.Name));
                 Assert.That(subject.WorkTrackingSystem, Is.EqualTo(workTrackingSystemConnection.WorkTrackingSystem));
-            });
+            };
         }
 
         [Test]

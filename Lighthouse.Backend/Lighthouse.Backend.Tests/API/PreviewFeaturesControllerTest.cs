@@ -31,14 +31,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetAll();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var okResult = response.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(features));
-            });
+            };
         }
 
         [Test]
@@ -50,11 +50,11 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetOptionalFeatureByKey("InexistingKey");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            });
+            };
         }
 
         [Test]
@@ -67,14 +67,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = subject.GetOptionalFeatureByKey("Key1");
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
                 var okResult = response.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(feature));
-            });
+            };
         }
 
         [Test]
@@ -87,11 +87,11 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = await subject.UpdateOptionalFeature(1, feature);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
                 {
                     var notFoundResult = response.Result as NotFoundResult;
                     Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-                });
+                };
         }
 
         [Test]
@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var response = await subject.UpdateOptionalFeature(0, feature);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
                 {
                     Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.API
 
                     repositoryMock.Verify(x => x.Update(feature));
                     repositoryMock.Verify(x => x.Save());
-                });
+                };
         }
 
         private OptionalFeaturesController CreateSubject()
