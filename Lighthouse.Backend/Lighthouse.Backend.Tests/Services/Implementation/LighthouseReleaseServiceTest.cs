@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 
@@ -132,18 +133,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void IsUpdateSupported_DevelopmentEnvironment_ReturnsFalse()
-        {
-            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
-
-            var subject = CreateSubject();
-
-            var isSupported = subject.IsUpdateSupported();
-
-            Assert.That(isSupported, Is.False);
-        }
-
-        [Test]
         public void IsUpdateSupported_ProductionEnvironment_ReturnsTrue()
         {
             hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Production);
@@ -155,21 +144,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(isSupported, Is.True);
         }
 
-        [Test]
-        public async Task InstallUpdateAsync_UpdateNotSupported_ReturnsFalse()
-        {
-            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
-
-            var subject = CreateSubject();
-
-            var result = await subject.InstallUpdateAsync();
-
-            Assert.That(result, Is.False);
-        }
-
         private LighthouseReleaseService CreateSubject()
         {
-            return new LighthouseReleaseService(hostEnvironmentMock.Object, githubServiceMock.Object, assemblyServiceMock.Object);
+            return new LighthouseReleaseService(hostEnvironmentMock.Object, githubServiceMock.Object, assemblyServiceMock.Object, Mock.Of<ILogger<LighthouseReleaseService>>());
         }
     }
 }

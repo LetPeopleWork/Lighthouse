@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.API
         [HttpPost("installUpdate")]
         public async Task<ActionResult<bool>> InstallUpdate()
         {
-            var result = await lighthouseReleaseService.InstallUpdateAsync();
+            var result = await lighthouseReleaseService.InstallUpdate();
             return Ok(result);
         }
     }

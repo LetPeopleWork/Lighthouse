@@ -1,9 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -90,7 +88,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task GetNewReleases_NoNewReleaseExists_ReturnsNotFoundAsync()
         {
-            lighthouseReleaseServiceMock.Setup(x => x.GetNewReleases()).ReturnsAsync(Enumerable.Empty<LighthouseRelease>());
+            lighthouseReleaseServiceMock.Setup(x => x.GetNewReleases()).ReturnsAsync([]);
 
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
@@ -128,7 +126,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(false)]
         public async Task InstallUpdate_ReturnsCorrectValue(bool installResult)
         {
-            lighthouseReleaseServiceMock.Setup(x => x.InstallUpdateAsync()).ReturnsAsync(installResult);
+            lighthouseReleaseServiceMock.Setup(x => x.InstallUpdate()).ReturnsAsync(installResult);
             var subject = new VersionController(lighthouseReleaseServiceMock.Object);
 
             var response = await subject.InstallUpdate();

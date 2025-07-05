@@ -1,6 +1,9 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
-using Updatum;
+using System.Diagnostics;
+using System.IO.Compression;
+using System.Net.Http;
+using System.Runtime.InteropServices;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -9,12 +12,17 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IHostEnvironment hostEnvironment;
         private readonly IGitHubService gitHubService;
         private readonly IAssemblyService assemblyService;
+        private readonly ILogger<LighthouseReleaseService> logger;
+        private readonly HttpClient httpClient;
 
-        public LighthouseReleaseService(IHostEnvironment hostEnvironment, IGitHubService gitHubService, IAssemblyService assemblyService)
+        public LighthouseReleaseService(
+            IHostEnvironment hostEnvironment, IGitHubService gitHubService, IAssemblyService assemblyService, ILogger<LighthouseReleaseService> logger)
         {
             this.hostEnvironment = hostEnvironment;
             this.gitHubService = gitHubService;
             this.assemblyService = assemblyService;
+            this.logger = logger;
+            this.httpClient = new HttpClient();
         }
 
         public string GetCurrentVersion()
@@ -43,8 +51,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 return false;
             }
 
-            var currentReleaseVersion = new Version(currentRelease.Substring(1));
-            var latestReleaseVersion = new Version(latestRelease.Substring(1));
+            var currentReleaseVersion = new Version(currentRelease[1..]);
+            var latestReleaseVersion = new Version(latestRelease[1..]);
 
             return latestReleaseVersion > currentReleaseVersion;
         }
@@ -76,13 +84,6 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public bool IsUpdateSupported()
         {
-            // Don't support updates in development mode
-            if (hostEnvironment.IsDevelopment())
-            {
-                return false;
-            }
-
-            // Don't support updates when running in Docker
             if (IsRunningInDocker())
             {
                 return false;
@@ -91,8 +92,9 @@ namespace Lighthouse.Backend.Services.Implementation
             return true;
         }
 
-        public async Task<bool> InstallUpdateAsync()
+        public async Task<bool> InstallUpdate()
         {
+            logger.LogDebug("Trying to install update...");
             if (!IsUpdateSupported())
             {
                 return false;
@@ -100,33 +102,277 @@ namespace Lighthouse.Backend.Services.Implementation
 
             try
             {
-                // Create an instance of UpdatumManager for the Lighthouse repository
-                var updater = new UpdatumManager("LetPeopleWork", "Lighthouse");
+                logger.LogInformation("Installing latest update...");
 
-                // Check for updates
-                var updateFound = await updater.CheckForUpdatesAsync();
-                if (!updateFound)
+                var latestRelease = await GetLatestRelease();
+                var operatingSystem = GetOperatingSystemIdentifier();
+                var releaseAsset = GetLatestReleaseAssetForOperatingSystem(latestRelease, operatingSystem);
+
+                if (releaseAsset == null)
+                {
+                    logger.LogError("Could not find a compatible release asset for the current platform: {OperatingSystem}", operatingSystem);
+                    return false;
+                }
+
+                logger.LogInformation("Download asset for release {ReleaseVersion} for {OperatingSystem}", latestRelease.Version.ToString(), operatingSystem);
+
+                var tempDir = CreateTempDirectoryForUpdate();
+
+                var assetPath = await DownloadAssetToTempDirectory(releaseAsset, tempDir);
+                if (string.IsNullOrEmpty(assetPath))
                 {
                     return false;
                 }
 
-                // Download the update
-                var downloadedAsset = await updater.DownloadUpdateAsync();
-                if (downloadedAsset == null)
+                var extractPath = ExtractAsset(releaseAsset, tempDir, assetPath);
+
+                (var currentProcess, var currentProcessPath, var currentProcessDir) = GetProcessInformation();
+
+                if (string.IsNullOrEmpty(currentProcessDir))
                 {
+                    logger.LogError("Could not determine current process directory");
                     return false;
                 }
 
-                // Install the update (this will terminate the process and restart with the new version)
-                await updater.InstallUpdateAsync(downloadedAsset);
-                
-                // This line should never be reached if the update was successful
+                var args = GetCommandLineArguments();
+
+                logger.LogDebug("Current process path: {path}, args: {args}", currentProcessPath, args);
+
+                // Create update script based on OS
+                var updateScriptPath = CreateUpdateScript(
+                    operatingSystem,
+                    extractPath,
+                    currentProcessDir,
+                    currentProcess.Id,
+                    currentProcessPath,
+                    args);
+
+                if (string.IsNullOrEmpty(updateScriptPath))
+                {
+                    logger.LogError("Failed to create update script");
+                    return false;
+                }
+
+                logger.LogInformation("Update script created: {path}", updateScriptPath);
+
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(1000);
+                    ExecuteUpdateScript(updateScriptPath, operatingSystem);
+                });
+
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Log the exception if needed
+                logger.LogError(ex, "Error installing update");
                 return false;
+            }
+        }
+
+        private static (Process currentProcess, string currentProcessPath, string currentProcessDir) GetProcessInformation()
+        {
+            var currentProcess = Process.GetCurrentProcess();
+            var currentProcessPath = currentProcess.MainModule?.FileName ?? string.Empty;
+            var currentProcessDir = Path.GetDirectoryName(currentProcessPath) ?? string.Empty;
+
+            return (currentProcess, currentProcessPath, currentProcessDir);
+        }
+
+        private static string GetCommandLineArguments()
+        {
+            var commandLineArgs = Environment.GetCommandLineArgs();
+            var args = commandLineArgs.Length > 1 ?
+                string.Join(" ", commandLineArgs.Skip(1).Select(arg => $"\"{arg}\"")) :
+                string.Empty;
+            return args;
+        }
+
+        private string ExtractAsset(LighthouseReleaseAsset releaseAsset, string tempDir, string assetPath)
+        {
+            var extractPath = Path.Combine(tempDir, "extracted");
+            Directory.CreateDirectory(extractPath);
+
+            if (releaseAsset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogDebug("Extracting zip file to {extractPath}", extractPath);
+                ZipFile.ExtractToDirectory(assetPath, extractPath, true);
+                logger.LogInformation("Extraction completed to {extractPath}", extractPath);
+            }
+            else
+            {
+                // Copy the asset directly if it's not a zip (like an executable)
+                logger.LogDebug("Asset is not a zip file, copying directly to {extractPath}", extractPath);
+                File.Copy(assetPath, Path.Combine(extractPath, releaseAsset.Name), true);
+            }
+
+            return extractPath;
+        }
+
+        private async Task<string> DownloadAssetToTempDirectory(LighthouseReleaseAsset releaseAsset, string tempDir)
+        {
+            var assetPath = Path.Combine(tempDir, releaseAsset.Name);
+            logger.LogDebug("Downloading asset {assetName} from {link} to {path}", releaseAsset.Name, releaseAsset.Link, assetPath);
+
+            using (var response = await httpClient.GetAsync(releaseAsset.Link))
+            {
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogError("Failed to download asset: {statusCode}", response.StatusCode);
+                    return string.Empty;
+                }
+
+                using (var fileStream = new FileStream(assetPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await response.Content.CopyToAsync(fileStream);
+                }
+            }
+
+            logger.LogInformation("Asset downloaded successfully to {path}", assetPath);
+            return assetPath;
+        }
+
+        private string CreateTempDirectoryForUpdate()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), $"lighthouse_update_{Guid.NewGuid()}");
+            Directory.CreateDirectory(tempDir);
+            logger.LogDebug("Created temporary directory for update: {tempDir}", tempDir);
+            return tempDir;
+        }
+
+        private async Task<LighthouseRelease> GetLatestRelease()
+        {
+            var allReleases = await gitHubService.GetAllReleases();
+            var latestRelease = allReleases.First();
+            return latestRelease;
+        }
+
+        private static LighthouseReleaseAsset? GetLatestReleaseAssetForOperatingSystem(LighthouseRelease latestRelease, string operatingSystem)
+        {
+            return latestRelease.Assets.SingleOrDefault(a => a.Name.Contains(operatingSystem, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string GetOperatingSystemIdentifier()
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" :
+                                 RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
+                                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" :
+                                 throw new PlatformNotSupportedException("Current OS platform is not supported for updates");
+        }
+
+        private string CreateUpdateScript(string operatingSystem, string sourcePath, string destinationPath, int processId, string executablePath, string arguments)
+        {
+            try
+            {
+                string scriptPath;
+                string scriptContent;
+
+                if (operatingSystem == "win")
+                {
+                    scriptPath = Path.Combine(Path.GetTempPath(), $"lighthouse_update_{Guid.NewGuid()}.bat");
+                    scriptContent = $@"@echo off
+echo Waiting for process {processId} to exit...
+:checkProcess
+timeout /t 1 /nobreak > NUL
+tasklist /FI ""PID eq {processId}"" 2>NUL | find ""{processId}"" > NUL
+if %ERRORLEVEL% == 0 goto checkProcess
+
+echo Process has exited. Installing update...
+xcopy ""{sourcePath}\*.*"" ""{destinationPath}"" /E /I /Y
+if %ERRORLEVEL% neq 0 (
+    echo Failed to copy files. Update aborted.
+    exit /b 1
+)
+
+echo Update installed successfully, restarting application...
+start """" ""{executablePath}"" {arguments}
+exit";
+                }
+                else // Linux/MacOS
+                {
+                    scriptPath = Path.Combine(Path.GetTempPath(), $"lighthouse_update_{Guid.NewGuid()}.sh");
+                    scriptContent = $@"#!/bin/bash
+echo ""Waiting for process {processId} to exit...""
+while ps -p {processId} > /dev/null; do
+    sleep 1
+done
+
+echo ""Process has exited. Installing update...""
+cp -R ""{sourcePath}/""* ""{destinationPath}/""
+if [ $? -ne 0 ]; then
+    echo ""Failed to copy files. Update aborted.""
+    exit 1
+fi
+
+echo ""Update installed successfully, restarting application...""
+""{executablePath}"" {arguments} &
+exit 0";
+
+                    // Make the script executable on Linux/MacOS
+                    File.WriteAllText(scriptPath, scriptContent);
+                    var makeExecutableProcess = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "chmod",
+                            Arguments = $"+x \"{scriptPath}\"",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            CreateNoWindow = true
+                        }
+                    };
+                    makeExecutableProcess.Start();
+                    makeExecutableProcess.WaitForExit();
+                    return scriptPath;
+                }
+
+                File.WriteAllText(scriptPath, scriptContent);
+                return scriptPath;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error creating update script");
+                return string.Empty;
+            }
+        }
+
+        private void ExecuteUpdateScript(string scriptPath, string operatingSystem)
+        {
+            try
+            {
+                ProcessStartInfo startInfo;
+
+                if (operatingSystem == "win")
+                {
+                    startInfo = new ProcessStartInfo
+                    {
+                        FileName = scriptPath,
+                        UseShellExecute = true,
+                        CreateNoWindow = false
+                    };
+                }
+                else // Linux/MacOS
+                {
+                    startInfo = new ProcessStartInfo
+                    {
+                        FileName = "/bin/bash",
+                        Arguments = $"\"{scriptPath}\"",
+                        UseShellExecute = true,
+                        CreateNoWindow = false
+                    };
+                }
+
+                logger.LogInformation("Executing update script: {script}", scriptPath);
+                Process.Start(startInfo);
+
+                // Exit the application to allow the update script to work
+                logger.LogInformation("Exiting application for update installation...");
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error executing update script");
             }
         }
 

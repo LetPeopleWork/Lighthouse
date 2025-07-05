@@ -12,6 +12,6 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         bool IsUpdateSupported();
 
-        Task<bool> InstallUpdateAsync();
+        Task<bool> InstallUpdate();
     }
 }

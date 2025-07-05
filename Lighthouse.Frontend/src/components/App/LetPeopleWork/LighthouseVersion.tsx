@@ -1,5 +1,15 @@
 import UpdateIcon from "@mui/icons-material/Update";
-import { Button, IconButton, Tooltip, useTheme } from "@mui/material";
+import {
+	Button,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	IconButton,
+	Tooltip,
+	Typography,
+	useTheme,
+} from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -20,6 +30,7 @@ const LighthouseVersion: React.FC = () => {
 	const [isInstalling, setIsInstalling] = useState(false);
 	const [installError, setInstallError] = useState<string | null>(null);
 	const [installSuccess, setInstallSuccess] = useState(false);
+	const [showRestartDialog, setShowRestartDialog] = useState(false);
 
 	const { versionService } = useContext(ApiServiceContext);
 
@@ -83,7 +94,7 @@ const LighthouseVersion: React.FC = () => {
 				await new Promise((resolve) => setTimeout(resolve, delay));
 				await versionService.getCurrentVersion();
 				// If we get here, the backend is back online
-				window.location.reload();
+				setShowRestartDialog(true);
 				return;
 			} catch {
 				// Backend is still restarting, continue polling
@@ -94,6 +105,10 @@ const LighthouseVersion: React.FC = () => {
 		setInstallError(
 			"Update may have succeeded, but the application didn't restart properly. Please refresh the page.",
 		);
+	};
+
+	const handleRestartConfirm = () => {
+		window.location.reload();
 	};
 
 	const handleDialogOpen = () => {
@@ -153,6 +168,27 @@ const LighthouseVersion: React.FC = () => {
 				installSuccess={installSuccess}
 				onInstallUpdate={handleInstallUpdate}
 			/>
+
+			<Dialog open={showRestartDialog} maxWidth="sm" fullWidth>
+				<DialogTitle>Update Complete!</DialogTitle>
+				<DialogContent>
+					<Typography variant="body1">
+						The update has been successfully installed and the application has
+						restarted. Click "Reload Page" to refresh the application with the
+						new version.
+					</Typography>
+				</DialogContent>
+				<DialogActions>
+					<Button
+						onClick={handleRestartConfirm}
+						color="primary"
+						variant="contained"
+						autoFocus
+					>
+						Reload Page
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</LoadingAnimation>
 	);
 };
