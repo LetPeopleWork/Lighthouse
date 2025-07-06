@@ -51,8 +51,8 @@ namespace Lighthouse.Backend.Tests.Models
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(subject.ServiceLevelExpectationProbability, Is.EqualTo(0));
-                Assert.That(subject.ServiceLevelExpectationRange, Is.EqualTo(0));
+                Assert.That(subject.ServiceLevelExpectationProbability, Is.Zero);
+                Assert.That(subject.ServiceLevelExpectationRange, Is.Zero);
             };
         }
 
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Models
         public void NewWorkTrackingSystemOptionsOwner_InitializesWIPLimit()
         {
             var subject = CreateSubject();
-            Assert.That(subject.SystemWIPLimit, Is.EqualTo(0));
+            Assert.That(subject.SystemWIPLimit, Is.Zero);
         }
 
         private WorkTrackingSystemOptionsOwnerTestClass CreateSubject()

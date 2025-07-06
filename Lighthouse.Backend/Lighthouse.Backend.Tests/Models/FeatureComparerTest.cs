@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Models
             int result = comparer.Compare(feature1, feature2);
 
             // Assert
-            Assert.That(result, Is.EqualTo(0));
+            Assert.That(result, Is.Zero);
         }
 
         [Test]

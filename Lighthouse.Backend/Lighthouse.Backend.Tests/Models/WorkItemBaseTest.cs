@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var cycleTime = subject.CycleTime;
 
-            Assert.That(cycleTime, Is.EqualTo(0));
+            Assert.That(cycleTime, Is.Zero);
         }
 
         [Test]
@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var cycleTime = subject.CycleTime;
             
-            Assert.That(cycleTime, Is.EqualTo(0));
+            Assert.That(cycleTime, Is.Zero);
         }
 
         [Test]
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var cycleTime = subject.CycleTime;
             
-            Assert.That(cycleTime, Is.EqualTo(0));
+            Assert.That(cycleTime, Is.Zero);
         }
 
         [Test]
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var cycleTime = subject.CycleTime;
             
-            Assert.That(cycleTime, Is.EqualTo(0));
+            Assert.That(cycleTime, Is.Zero);
         }
 
         [Test]
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var workItemAge = subject.WorkItemAge;
 
-            Assert.That(workItemAge, Is.EqualTo(0));
+            Assert.That(workItemAge, Is.Zero);
         }
 
         [Test]
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var workItemAge = subject.WorkItemAge;
             
-            Assert.That(workItemAge, Is.EqualTo(0));
+            Assert.That(workItemAge, Is.Zero);
         }
 
         [Test]
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var workItemAge = subject.WorkItemAge;
             
-            Assert.That(workItemAge, Is.EqualTo(0));
+            Assert.That(workItemAge, Is.Zero);
         }
 
         [Test]

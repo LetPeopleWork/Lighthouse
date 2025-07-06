@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(defaultConnection.Id, Is.EqualTo(0));
+                Assert.That(defaultConnection.Id, Is.Zero);
                 Assert.That(defaultConnection.Name, Is.EqualTo($"New {workTrackingSystem} Connection"));
                 Assert.That(defaultConnection.WorkTrackingSystem, Is.EqualTo(workTrackingSystem));
             };

@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(0));
-                Assert.That(manualForecast.Likelihood, Is.EqualTo(0));
+                Assert.That(manualForecast.Likelihood, Is.Zero);
             };
         }
 
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(4));
-                Assert.That(manualForecast.Likelihood, Is.EqualTo(0));
+                Assert.That(manualForecast.Likelihood, Is.Zero);
             };
         }
 
@@ -183,7 +183,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(prediction.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(prediction.WhenForecasts, Has.Count.EqualTo(0));
-                Assert.That(prediction.Likelihood, Is.EqualTo(0));
+                Assert.That(prediction.Likelihood, Is.Zero);
             };
         }
 
