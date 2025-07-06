@@ -324,6 +324,14 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.PrimitiveCollection<List<string>>("BlockedStates")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.PrimitiveCollection<List<string>>("BlockedTags")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<int>("DefaultAmountOfWorkItemsPerFeature")
                         .HasColumnType("integer");
 
@@ -418,6 +426,14 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<bool>("AutomaticallyAdjustFeatureWIP")
                         .HasColumnType("boolean");
+
+                    b.PrimitiveCollection<List<string>>("BlockedStates")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.PrimitiveCollection<List<string>>("BlockedTags")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.PrimitiveCollection<List<string>>("DoingStates")
                         .IsRequired()

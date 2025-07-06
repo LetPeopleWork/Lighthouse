@@ -3,6 +3,7 @@ using System;
 using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lighthouse.Backend.Migrations
 {
     [DbContext(typeof(LighthouseAppContext))]
-    partial class LighthouseAppContextModelSnapshot : ModelSnapshot
+    [Migration("20250706103420_BlockedStatesTags")]
+    partial class BlockedStatesTags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.6");

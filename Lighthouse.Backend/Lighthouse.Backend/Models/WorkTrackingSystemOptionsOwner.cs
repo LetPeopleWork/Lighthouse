@@ -34,6 +34,10 @@
 
         public int WorkTrackingSystemConnectionId { get; set; }
 
+        public List<string> BlockedStates { get; set; } = [];
+
+        public List<string> BlockedTags { get; set; } = [];
+
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }
 
         public StateCategories MapStateToStateCategory(string state)
