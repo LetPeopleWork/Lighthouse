@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
 vi.mock("../../../pages/Common/AdvancedInputs/AdvancedInputs.tsx", () => ({
@@ -188,27 +189,9 @@ describe("ModifyTeamSettings", () => {
 	const mockSaveTeamSettings = vi.fn();
 	const mockValidateTeamSettings = vi.fn();
 
-	const teamSettings: ITeamSettings = {
-		name: "Team 1",
-		throughputHistory: 10,
-		useFixedDatesForThroughput: false,
-		throughputHistoryStartDate: new Date(),
-		throughputHistoryEndDate: new Date(),
-		featureWIP: 5,
-		toDoStates: ["ToDo"],
-		doingStates: ["Doing"],
-		doneStates: ["Done"],
-		workItemTypes: ["Bug"],
-		tags: [],
-		workItemQuery: "Query",
-		workTrackingSystemConnectionId: 1,
-		automaticallyAdjustFeatureWIP: false,
-		id: 12,
-		parentOverrideField: "",
-		serviceLevelExpectationProbability: 0,
-		serviceLevelExpectationRange: 0,
-		systemWIPLimit: 0,
-	};
+	const teamSettings = createMockTeamSettings();
+	teamSettings.id = 1;
+	teamSettings.name = "Test Team";
 
 	const workTrackingSystems: IWorkTrackingSystemConnection[] = [
 		{ id: 1, name: "System 1", options: [], workTrackingSystem: "Jira" },
@@ -348,27 +331,7 @@ describe("ModifyTeamSettings", () => {
 	});
 
 	it("sets inputsValid to true when all inputs are valid", async () => {
-		const validTeamSettings: ITeamSettings = {
-			id: 1,
-			name: "Valid Team",
-			throughputHistory: 10,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 5,
-			workItemTypes: ["Bug"],
-			toDoStates: ["ToDo"],
-			doingStates: ["Doing"],
-			doneStates: ["Done"],
-			tags: [],
-			workItemQuery: "Query",
-			workTrackingSystemConnectionId: 1,
-			automaticallyAdjustFeatureWIP: false,
-			parentOverrideField: "custom",
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		};
+		const validTeamSettings = createMockTeamSettings();
 
 		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);
 		mockValidateTeamSettings.mockResolvedValueOnce(true);

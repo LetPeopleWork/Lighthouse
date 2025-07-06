@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
 vi.mock("../BaseSettings/GeneralSettingsComponent", () => ({
@@ -218,32 +219,8 @@ describe("ModifyProjectSettings", () => {
 		},
 	];
 
-	const projectSettings: IProjectSettings = {
-		name: "Project 1",
-		defaultAmountOfWorkItemsPerFeature: 10,
-		workItemTypes: ["Bug"],
-		workItemQuery: "Query",
-		workTrackingSystemConnectionId: 1,
-		toDoStates: ["ToDo"],
-		doingStates: ["Doing"],
-		doneStates: ["Done"],
-		tags: [],
-		milestones: [],
-		involvedTeams: teams,
-		id: 1,
-		owningTeam: undefined,
-		usePercentileToCalculateDefaultAmountOfWorkItems: false,
-		defaultWorkItemPercentile: 80,
-		historicalFeaturesWorkItemQuery: "",
-		unparentedItemsQuery: "",
-		overrideRealChildCountStates: [],
-		featureOwnerField: "",
-		sizeEstimateField: "",
-		serviceLevelExpectationProbability: 0,
-		serviceLevelExpectationRange: 0,
-		systemWIPLimit: 0,
-		parentOverrideField: "",
-	};
+	const projectSettings = createMockProjectSettings();
+	projectSettings.involvedTeams = teams;
 
 	beforeEach(() => {
 		mockGetWorkTrackingSystems.mockClear();

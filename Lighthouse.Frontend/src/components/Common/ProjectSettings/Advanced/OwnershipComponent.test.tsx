@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { IEntityReference } from "../../../../models/EntityReference";
 import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../../models/Team/Team";
+import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import OwnershipComponent from "./OwnershipComponent";
 
 describe("OwnershipComponent", () => {
@@ -45,32 +46,8 @@ describe("OwnershipComponent", () => {
 		},
 	];
 
-	const initialSettings: IProjectSettings = {
-		id: 1,
-		name: "Settings",
-		workItemTypes: [],
-		milestones: [],
-		workItemQuery: "Initial Query",
-		unparentedItemsQuery: "Unparented Query",
-		usePercentileToCalculateDefaultAmountOfWorkItems: false,
-		defaultAmountOfWorkItemsPerFeature: 10,
-		defaultWorkItemPercentile: 85,
-		historicalFeaturesWorkItemQuery: "Historical Feature Query",
-		workTrackingSystemConnectionId: 12,
-		sizeEstimateField: "",
-		tags: [],
-		toDoStates: ["New"],
-		doingStates: ["Active"],
-		doneStates: ["Done"],
-		overrideRealChildCountStates: [""],
-		involvedTeams: [],
-		serviceLevelExpectationProbability: 85,
-		serviceLevelExpectationRange: 30,
-		featureOwnerField: "custom.owner",
-		owningTeam: undefined,
-		systemWIPLimit: 0,
-		parentOverrideField: "",
-	};
+	const initialSettings = createMockProjectSettings();
+	initialSettings.featureOwnerField = "custom.owner";
 
 	const mockOnProjectSettingsChange = vi.fn();
 

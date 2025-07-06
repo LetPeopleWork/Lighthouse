@@ -171,6 +171,8 @@ describe("ConfigurationService", () => {
 					serviceLevelExpectationProbability: 0,
 					serviceLevelExpectationRange: 0,
 					systemWIPLimit: 0,
+					blockedStates: ["Waiting for Peter"],
+					blockedTags: ["Blocked", "On Hold"],
 				},
 			],
 			projects: [
@@ -196,6 +198,8 @@ describe("ConfigurationService", () => {
 					serviceLevelExpectationRange: 0,
 					systemWIPLimit: 0,
 					parentOverrideField: "",
+					blockedStates: ["Waiting for Peter"],
+					blockedTags: ["Blocked", "On Hold"],
 				},
 			],
 		};

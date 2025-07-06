@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
-import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ForecastSettingsComponent from "./ForecastSettingsComponent";
 
 // Mock InputGroup component
@@ -24,27 +24,7 @@ vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
 describe("ForecastSettingsComponent", () => {
 	const onTeamSettingsChange = vi.fn();
 
-	const teamSettings: ITeamSettings = {
-		id: 0,
-		name: "Test Name",
-		throughputHistory: 10,
-		useFixedDatesForThroughput: false,
-		throughputHistoryStartDate: new Date(),
-		throughputHistoryEndDate: new Date(),
-		featureWIP: 20,
-		workItemQuery: "Test Query",
-		workItemTypes: [],
-		tags: [],
-		workTrackingSystemConnectionId: 12,
-		parentOverrideField: "Test Field",
-		toDoStates: ["New"],
-		doingStates: ["Active"],
-		doneStates: ["Done"],
-		automaticallyAdjustFeatureWIP: false,
-		serviceLevelExpectationProbability: 0,
-		serviceLevelExpectationRange: 0,
-		systemWIPLimit: 0,
-	};
+	const teamSettings = createMockTeamSettings();
 
 	it("renders correctly with provided teamSettings", () => {
 		render(
@@ -56,7 +36,7 @@ describe("ForecastSettingsComponent", () => {
 		);
 
 		// Check if the TextFields display the correct values
-		expect(screen.getByLabelText("Throughput History")).toHaveValue(10);
+		expect(screen.getByLabelText("Throughput History")).toHaveValue(30);
 	});
 
 	it("calls onTeamSettingsChange with correct parameters when Throughput History TextField value changes", () => {

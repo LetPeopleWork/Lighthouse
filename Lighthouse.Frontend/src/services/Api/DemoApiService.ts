@@ -517,6 +517,8 @@ export class DemoApiService
 			serviceLevelExpectationRange: 35,
 			systemWIPLimit: 0,
 			parentOverrideField: "",
+			blockedStates: ["Waiting for Approval"],
+			blockedTags: ["Blocked", "Waiting for Customer Input"],
 		},
 		{
 			id: 1,
@@ -541,6 +543,8 @@ export class DemoApiService
 			serviceLevelExpectationRange: 18,
 			systemWIPLimit: 0,
 			parentOverrideField: "",
+			blockedStates: ["Waiting for Approval"],
+			blockedTags: ["Blocked", "Waiting for Customer Input"],
 		},
 		{
 			id: 2,
@@ -565,6 +569,8 @@ export class DemoApiService
 			serviceLevelExpectationRange: 45,
 			systemWIPLimit: 0,
 			parentOverrideField: "",
+			blockedStates: ["Waiting for Approval"],
+			blockedTags: ["Blocked", "Waiting for Customer Input"],
 		},
 	];
 
@@ -845,6 +851,8 @@ export class DemoApiService
 			serviceLevelExpectationProbability: 75,
 			serviceLevelExpectationRange: 35,
 			systemWIPLimit: 0,
+			blockedStates: ["Waiting for Approval"],
+			blockedTags: ["Blocked", "Waiting for Customer Input"],
 		};
 	}
 
@@ -1302,6 +1310,8 @@ export class DemoApiService
 			serviceLevelExpectationProbability: 75,
 			serviceLevelExpectationRange: 35,
 			systemWIPLimit: 0,
+			blockedStates: ["Waiting for Approval"],
+			blockedTags: ["Blocked", "Waiting for Customer Input"],
 		};
 	}
 
@@ -1344,6 +1354,8 @@ export class DemoApiService
 			serviceLevelExpectationRange: 35,
 			systemWIPLimit: 0,
 			parentOverrideField: "",
+			blockedStates: ["Waiting for Approval"],
+			blockedTags: ["Blocked", "Waiting for Customer Input"],
 		};
 	}
 

@@ -2,53 +2,19 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import InvolvedTeamsList from "./InvolvedTeamsList";
 
 describe("InvolvedTeamsList component", () => {
 	const teams: ITeamSettings[] = [
-		{
-			id: 1,
-			name: "Team 1",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 2,
-			workItemQuery: "",
-			workItemTypes: [],
-			workTrackingSystemConnectionId: 5,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		},
-		{
-			id: 2,
-			name: "Team 2",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 1,
-			workItemQuery: "",
-			workItemTypes: [],
-			tags: [],
-			workTrackingSystemConnectionId: 5,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		},
+		createMockTeamSettings(),
+		createMockTeamSettings(),
 	];
+
+	teams[0].id = 1;
+	teams[0].name = "Team 1";
+	teams[1].id = 2;
+	teams[1].name = "Team 2";
 
 	it("should render without errors when there are teams", () => {
 		render(

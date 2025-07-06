@@ -1,33 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import UnparentedItemsComponent from "./UnparentedItemsComponent";
 
 describe("UnparentedItemsComponent", () => {
-	const initialSettings: IProjectSettings = {
-		id: 1,
-		name: "Settings",
-		workItemTypes: [],
-		milestones: [],
-		workItemQuery: "Initial Query",
-		unparentedItemsQuery: "Unparented Query",
-		usePercentileToCalculateDefaultAmountOfWorkItems: false,
-		defaultAmountOfWorkItemsPerFeature: 10,
-		defaultWorkItemPercentile: 85,
-		historicalFeaturesWorkItemQuery: "Historical Feature Query",
-		workTrackingSystemConnectionId: 12,
-		sizeEstimateField: "",
-		tags: [],
-		toDoStates: ["New"],
-		doingStates: ["Active"],
-		doneStates: ["Done"],
-		overrideRealChildCountStates: [""],
-		involvedTeams: [],
-		serviceLevelExpectationProbability: 85,
-		serviceLevelExpectationRange: 30,
-		systemWIPLimit: 0,
-		parentOverrideField: "",
-	};
+	const initialSettings = createMockProjectSettings();
 
 	const mockOnProjectSettingsChange = vi.fn();
 

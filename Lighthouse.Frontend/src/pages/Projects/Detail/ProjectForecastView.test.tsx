@@ -4,9 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IMilestone } from "../../../models/Project/Milestone";
 import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
-import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import { Team } from "../../../models/Team/Team";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import {
+	createMockProjectSettings,
+	createMockTeamSettings,
+} from "../../../tests/TestDataProvider";
 import ProjectForecastView from "./ProjectForecastView";
 
 // Mock the child components
@@ -154,73 +157,18 @@ describe("ProjectForecastView component", () => {
 		return project;
 	})();
 
-	const mockProjectSettings: IProjectSettings = {
-		id: 1,
-		name: "Test Project Settings",
-		workItemTypes: ["User Story", "Bug"],
-		milestones: [mockMilestone1, mockMilestone2],
-		workItemQuery: "query",
-		unparentedItemsQuery: "query",
-		involvedTeams: [mockTeam1, mockTeam2],
-		toDoStates: ["New"],
-		doingStates: ["Active"],
-		doneStates: ["Closed"],
-		overrideRealChildCountStates: [],
-		tags: [],
-		usePercentileToCalculateDefaultAmountOfWorkItems: false,
-		defaultAmountOfWorkItemsPerFeature: 5,
-		defaultWorkItemPercentile: 85,
-		historicalFeaturesWorkItemQuery: "query",
-		workTrackingSystemConnectionId: 1,
-		serviceLevelExpectationProbability: 0,
-		serviceLevelExpectationRange: 0,
-		systemWIPLimit: 0,
-		parentOverrideField: "",
-	};
+	const mockProjectSettings = createMockProjectSettings();
+	mockProjectSettings.id = 1;
+	mockProjectSettings.name = "Test Project Settings";
+	mockProjectSettings.milestones = [mockMilestone1, mockMilestone2];
 
-	const mockTeamSettings1: ITeamSettings = {
-		id: 1,
-		name: "Team A Settings",
-		throughputHistory: 30,
-		useFixedDatesForThroughput: false,
-		throughputHistoryStartDate: new Date(),
-		throughputHistoryEndDate: new Date(),
-		featureWIP: 5,
-		workItemQuery: "query",
-		workItemTypes: ["User Story"],
-		toDoStates: ["New"],
-		doingStates: ["Active"],
-		doneStates: ["Closed"],
-		tags: [],
-		workTrackingSystemConnectionId: 1,
-		parentOverrideField: "",
-		automaticallyAdjustFeatureWIP: false,
-		serviceLevelExpectationProbability: 0,
-		serviceLevelExpectationRange: 0,
-		systemWIPLimit: 0,
-	};
+	const mockTeamSettings1 = createMockTeamSettings();
+	mockTeamSettings1.id = 1;
+	mockTeamSettings1.name = "Team A Settings";
 
-	const mockTeamSettings2: ITeamSettings = {
-		id: 2,
-		name: "Team B Settings",
-		throughputHistory: 30,
-		useFixedDatesForThroughput: false,
-		throughputHistoryStartDate: new Date(),
-		throughputHistoryEndDate: new Date(),
-		featureWIP: 5,
-		workItemQuery: "query",
-		workItemTypes: ["User Story"],
-		toDoStates: ["New"],
-		doingStates: ["Active"],
-		doneStates: ["Closed"],
-		tags: [],
-		workTrackingSystemConnectionId: 1,
-		parentOverrideField: "",
-		automaticallyAdjustFeatureWIP: false,
-		serviceLevelExpectationProbability: 0,
-		serviceLevelExpectationRange: 0,
-		systemWIPLimit: 0,
-	};
+	const mockTeamSettings2 = createMockTeamSettings();
+	mockTeamSettings2.id = 2;
+	mockTeamSettings2.name = "Team B Settings";
 
 	const mockInvolvedTeams: ITeamSettings[] = [
 		mockTeamSettings1,

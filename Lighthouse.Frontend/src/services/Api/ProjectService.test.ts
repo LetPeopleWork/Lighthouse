@@ -1,7 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type IProject, Project } from "../../models/Project/Project";
-import type { IProjectSettings } from "../../models/Project/ProjectSettings";
+import { createMockProjectSettings } from "../../tests/TestDataProvider";
 import { ProjectService } from "./ProjectService";
 
 vi.mock("axios");
@@ -59,30 +59,7 @@ describe("ProjectService", () => {
 	});
 
 	it("should get project settings by id", async () => {
-		const mockSettings: IProjectSettings = {
-			id: 1,
-			name: "ProjectSetting",
-			workItemTypes: ["Epic"],
-			milestones: [],
-			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 10,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 0,
-			sizeEstimateField: "Size",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			overrideRealChildCountStates: [""],
-			involvedTeams: [],
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideField: "",
-		};
+		const mockSettings = createMockProjectSettings();
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
 
@@ -93,30 +70,7 @@ describe("ProjectService", () => {
 	});
 
 	it("should update project settings", async () => {
-		const projectSettings: IProjectSettings = {
-			id: 1,
-			name: "ProjectSetting",
-			workItemTypes: ["Epic"],
-			milestones: [],
-			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 10,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 0,
-			sizeEstimateField: "Size",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			overrideRealChildCountStates: [""],
-			involvedTeams: [],
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideField: "",
-		};
+		const projectSettings = createMockProjectSettings();
 
 		mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
 
@@ -130,55 +84,9 @@ describe("ProjectService", () => {
 	});
 
 	it("should create a new project", async () => {
-		const newProjectSettings: IProjectSettings = {
-			id: 1,
-			name: "ProjectSetting",
-			workItemTypes: ["Epic"],
-			milestones: [],
-			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 10,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 0,
-			sizeEstimateField: "Size",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			overrideRealChildCountStates: [""],
-			involvedTeams: [],
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideField: "",
-		};
+		const newProjectSettings = createMockProjectSettings();
 
-		const mockResponse: IProjectSettings = {
-			id: 2,
-			name: "ProjectSetting",
-			workItemTypes: ["Epic"],
-			milestones: [],
-			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 10,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 0,
-			sizeEstimateField: "Size",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			overrideRealChildCountStates: [""],
-			involvedTeams: [],
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideField: "",
-		};
+		const mockResponse = createMockProjectSettings();
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
 
@@ -221,30 +129,7 @@ describe("ProjectService", () => {
 	});
 
 	it("should validate project settings successfully", async () => {
-		const mockProjectSettings: IProjectSettings = {
-			id: 1,
-			name: "Project A",
-			workItemTypes: ["Epic"],
-			milestones: [],
-			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 10,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 0,
-			sizeEstimateField: "Size",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			overrideRealChildCountStates: [""],
-			involvedTeams: [],
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideField: "",
-		};
+		const mockProjectSettings = createMockProjectSettings();
 
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
 
@@ -259,30 +144,7 @@ describe("ProjectService", () => {
 	});
 
 	it("should return false for invalid project settings", async () => {
-		const mockProjectSettings: IProjectSettings = {
-			id: 1,
-			name: "Project A",
-			workItemTypes: ["Epic"],
-			milestones: [],
-			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 10,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 0,
-			sizeEstimateField: "Size",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			overrideRealChildCountStates: [""],
-			involvedTeams: [],
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideField: "",
-		};
+		const mockProjectSettings = createMockProjectSettings();
 
 		mockedAxios.post.mockResolvedValueOnce({ data: false });
 

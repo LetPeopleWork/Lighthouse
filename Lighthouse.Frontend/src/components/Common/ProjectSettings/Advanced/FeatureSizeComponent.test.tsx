@@ -6,33 +6,16 @@ import {
 	createMockApiServiceContext,
 	createMockSuggestionService,
 } from "../../../../tests/MockApiServiceProvider";
+import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import FeatureSizeComponent from "./FeatureSizeComponent";
 
 describe("FeatureSizeComponent", () => {
-	const initialSettings: IProjectSettings = {
-		id: 1,
-		name: "Settings",
-		workItemTypes: [],
-		milestones: [],
-		workItemQuery: "Initial Query",
-		unparentedItemsQuery: "Unparented Query",
-		usePercentileToCalculateDefaultAmountOfWorkItems: false,
-		defaultAmountOfWorkItemsPerFeature: 10,
-		defaultWorkItemPercentile: 85,
-		historicalFeaturesWorkItemQuery: "Historical Feature Query",
-		workTrackingSystemConnectionId: 12,
-		sizeEstimateField: "",
-		tags: [],
-		toDoStates: ["New"],
-		doingStates: ["Active"],
-		doneStates: ["Done"],
-		overrideRealChildCountStates: [""],
-		involvedTeams: [],
-		serviceLevelExpectationProbability: 85,
-		serviceLevelExpectationRange: 30,
-		systemWIPLimit: 0,
-		parentOverrideField: "",
-	};
+	const initialSettings = createMockProjectSettings();
+	initialSettings.usePercentileToCalculateDefaultAmountOfWorkItems = false;
+	initialSettings.defaultAmountOfWorkItemsPerFeature = 10;
+	initialSettings.defaultWorkItemPercentile = 85;
+	initialSettings.historicalFeaturesWorkItemQuery = "Historical Feature Query";
+	initialSettings.sizeEstimateField = "";
 
 	const mockOnProjectSettingsChange = vi.fn();
 

@@ -6,8 +6,10 @@ import {
 	RefreshSettings,
 } from "../../models/AppSettings/RefreshSettings";
 import type { IWorkTrackingSystemSettings } from "../../models/AppSettings/WorkTrackingSystemSettings";
-import type { IProjectSettings } from "../../models/Project/ProjectSettings";
-import type { ITeamSettings } from "../../models/Team/TeamSettings";
+import {
+	createMockProjectSettings,
+	createMockTeamSettings,
+} from "../../tests/TestDataProvider";
 import { SettingsService } from "./SettingsService";
 
 vi.mock("axios");
@@ -91,27 +93,7 @@ describe("SettingsService", () => {
 	});
 
 	it("should get default team settings", async () => {
-		const mockResponse: ITeamSettings = {
-			id: 1,
-			name: "Team 1",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 1,
-			workItemQuery: "Query",
-			workItemTypes: ["Epic"],
-			workTrackingSystemConnectionId: 12,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		};
+		const mockResponse = createMockTeamSettings();
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
 		const teamSettings = await settingsService.getDefaultTeamSettings();
@@ -123,27 +105,7 @@ describe("SettingsService", () => {
 	});
 
 	it("should update default team settings", async () => {
-		const mockTeamSettings: ITeamSettings = {
-			id: 1,
-			name: "Team 1",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 1,
-			workItemQuery: "Query",
-			workItemTypes: ["User Story", "Bug"],
-			workTrackingSystemConnectionId: 12,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		};
+		const mockTeamSettings = createMockTeamSettings();
 		mockedAxios.put.mockResolvedValueOnce({});
 
 		await settingsService.updateDefaultTeamSettings(mockTeamSettings);
@@ -155,30 +117,7 @@ describe("SettingsService", () => {
 	});
 
 	it("should get default project settings", async () => {
-		const mockResponse: IProjectSettings = {
-			id: 1,
-			name: "Project A",
-			workItemTypes: ["Epic"],
-			milestones: [],
-			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 15,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 2,
-			sizeEstimateField: "EstimatedSize",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			overrideRealChildCountStates: [""],
-			involvedTeams: [],
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideField: "",
-		};
+		const mockResponse = createMockProjectSettings();
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
@@ -191,30 +130,7 @@ describe("SettingsService", () => {
 	});
 
 	it("should update default project settings", async () => {
-		const mockProjectSettings: IProjectSettings = {
-			id: 1,
-			name: "Project A",
-			workItemTypes: ["Epic"],
-			milestones: [],
-			workItemQuery: "Query",
-			unparentedItemsQuery: "Unparented Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 15,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 2,
-			sizeEstimateField: "EstimatedSize",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			overrideRealChildCountStates: [""],
-			involvedTeams: [],
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideField: "",
-		};
+		const mockProjectSettings = createMockProjectSettings();
 
 		mockedAxios.put.mockResolvedValueOnce({});
 

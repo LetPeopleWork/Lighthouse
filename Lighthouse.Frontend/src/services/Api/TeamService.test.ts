@@ -2,6 +2,7 @@ import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type ITeam, Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
+import { createMockTeamSettings } from "../../tests/TestDataProvider";
 import { TeamService } from "./TeamService";
 
 vi.mock("axios");
@@ -92,27 +93,7 @@ describe("TeamService", () => {
 	});
 
 	it("should get team settings", async () => {
-		const mockResponse: ITeamSettings = {
-			id: 1,
-			name: "Team A",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 1,
-			workItemQuery: "Query",
-			workItemTypes: ["Epic"],
-			workTrackingSystemConnectionId: 12,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		};
+		const mockResponse = createMockTeamSettings();
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
@@ -123,27 +104,7 @@ describe("TeamService", () => {
 	});
 
 	it("should create a team", async () => {
-		const newTeamSettings: ITeamSettings = {
-			id: 0,
-			name: "New Team",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 1,
-			workItemQuery: "Query",
-			workItemTypes: ["Epic"],
-			workTrackingSystemConnectionId: 12,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		};
+		const newTeamSettings = createMockTeamSettings();
 		const mockResponse: ITeamSettings = { ...newTeamSettings, id: 1 };
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
@@ -155,27 +116,7 @@ describe("TeamService", () => {
 	});
 
 	it("should update a team", async () => {
-		const updatedTeamSettings: ITeamSettings = {
-			id: 1,
-			name: "Updated Team",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 1,
-			workItemQuery: "Query",
-			workItemTypes: ["Epic"],
-			workTrackingSystemConnectionId: 12,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		};
+		const updatedTeamSettings = createMockTeamSettings();
 
 		mockedAxios.put.mockResolvedValueOnce({ data: updatedTeamSettings });
 
@@ -205,27 +146,7 @@ describe("TeamService", () => {
 	});
 
 	it("should validate team settings successfully", async () => {
-		const mockTeamSettings: ITeamSettings = {
-			id: 1,
-			name: "Team A",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 1,
-			workItemQuery: "Query",
-			workItemTypes: ["Epic"],
-			workTrackingSystemConnectionId: 12,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			automaticallyAdjustFeatureWIP: false,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		};
+		const mockTeamSettings = createMockTeamSettings();
 
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
 
@@ -239,27 +160,7 @@ describe("TeamService", () => {
 	});
 
 	it("should return false for invalid team settings", async () => {
-		const mockTeamSettings: ITeamSettings = {
-			id: 1,
-			name: "Team A",
-			throughputHistory: 30,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 1,
-			workItemQuery: "Query",
-			workItemTypes: ["Epic"],
-			workTrackingSystemConnectionId: 12,
-			parentOverrideField: "",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-			tags: [],
-			automaticallyAdjustFeatureWIP: true,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-		};
+		const mockTeamSettings = createMockTeamSettings();
 
 		mockedAxios.post.mockResolvedValueOnce({ data: false });
 

@@ -12,4 +12,6 @@ export interface IBaseSettings {
 	serviceLevelExpectationRange: number;
 	systemWIPLimit: number;
 	parentOverrideField: string;
+	blockedStates: string[];
+	blockedTags: string[];
 }

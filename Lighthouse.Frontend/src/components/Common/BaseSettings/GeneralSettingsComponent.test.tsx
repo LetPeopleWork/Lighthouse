@@ -1,26 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import GeneralSettingsComponent from "./GeneralSettingsComponent";
 
 describe("GeneralSettingsComponent", () => {
 	const mockOnSettingsChange = vi.fn();
 
-	const testSettings: IBaseSettings = {
-		id: 1,
-		name: "Test Settings",
-		workItemQuery: "Test Query",
-		workItemTypes: [],
-		toDoStates: [],
-		doingStates: [],
-		doneStates: [],
-		tags: [],
-		workTrackingSystemConnectionId: 1,
-		serviceLevelExpectationProbability: 85,
-		serviceLevelExpectationRange: 30,
-		systemWIPLimit: 0,
-		parentOverrideField: "",
-	};
+	const testSettings = createMockTeamSettings();
+	testSettings.name = "Test Settings";
+	testSettings.workItemQuery = "Test Query";
 
 	beforeEach(() => {
 		mockOnSettingsChange.mockClear();

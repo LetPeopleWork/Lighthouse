@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import { testTheme } from "../../../tests/testTheme";
 import FlowMetricsConfigurationComponent from "./FlowMetricsConfigurationComponent";
 
@@ -40,21 +40,7 @@ vi.mock("../InputGroup/InputGroup", () => ({
 }));
 
 describe("FlowMetricsConfigurationComponent", () => {
-	const mockSettings: IBaseSettings = {
-		id: 1,
-		name: "Test Settings",
-		workItemQuery: "Test Query",
-		workItemTypes: ["User Story", "Bug"],
-		toDoStates: ["To Do"],
-		doingStates: ["Doing"],
-		doneStates: ["Done"],
-		tags: ["Tag1", "Tag2"],
-		workTrackingSystemConnectionId: 1,
-		serviceLevelExpectationProbability: 0,
-		serviceLevelExpectationRange: 0,
-		systemWIPLimit: 0,
-		parentOverrideField: "",
-	};
+	const mockSettings = createMockProjectSettings();
 
 	const mockSettingsWithFeatureWIP = {
 		...mockSettings,

@@ -1,3 +1,5 @@
+import type { IProjectSettings } from "../models/Project/ProjectSettings";
+import type { ITeamSettings } from "../models/Team/TeamSettings";
 import type { IWorkItem } from "../models/WorkItem";
 
 export function generateWorkItemMapForRunChart(rawDataInput: number[]) {
@@ -16,6 +18,61 @@ export function generateWorkItemMapForRunChart(rawDataInput: number[]) {
 	}
 
 	return workItemsPerUnitOfTime;
+}
+
+export function createMockTeamSettings(): ITeamSettings {
+	return {
+		id: 1,
+		name: "Team A",
+		throughputHistory: 30,
+		useFixedDatesForThroughput: false,
+		throughputHistoryStartDate: new Date(),
+		throughputHistoryEndDate: new Date(),
+		featureWIP: 1,
+		workItemQuery: "Query",
+		workItemTypes: ["Bug", "Story"],
+		workTrackingSystemConnectionId: 1,
+		parentOverrideField: "",
+		toDoStates: ["New"],
+		doingStates: ["Active"],
+		doneStates: ["Done"],
+		tags: [],
+		automaticallyAdjustFeatureWIP: true,
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
+		blockedStates: [],
+		blockedTags: [],
+	};
+}
+
+export function createMockProjectSettings(): IProjectSettings {
+	return {
+		id: 1,
+		name: "Project A",
+		workItemTypes: ["Epic"],
+		milestones: [],
+		workItemQuery: "Query",
+		unparentedItemsQuery: "Unparented Query",
+		usePercentileToCalculateDefaultAmountOfWorkItems: false,
+		defaultAmountOfWorkItemsPerFeature: 15,
+		defaultWorkItemPercentile: 85,
+		historicalFeaturesWorkItemQuery: "",
+		workTrackingSystemConnectionId: 1,
+		sizeEstimateField: "EstimatedSize",
+		toDoStates: ["New"],
+		doingStates: ["Active"],
+		doneStates: ["Done"],
+		tags: [],
+		overrideRealChildCountStates: [""],
+		involvedTeams: [],
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
+		parentOverrideField: "",
+		blockedStates: [],
+		blockedTags: [],
+	};
 }
 
 export function generateWorkItem(id: number): IWorkItem {
