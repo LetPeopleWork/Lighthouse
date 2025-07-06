@@ -62,7 +62,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		<ItemsInProgress
 			title="Features being Worked On:"
 			items={inProgressFeatures}
-			idealWip={team.featureWip}
+			idealWip={team.featureWip > 0 ? team.featureWip : undefined}
 		/>
 	);
 

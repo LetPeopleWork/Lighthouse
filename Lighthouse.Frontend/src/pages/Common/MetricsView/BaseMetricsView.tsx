@@ -182,6 +182,12 @@ export const BaseMetricsView = <
 				/>
 
 				{renderAdditionalComponents?.()}
+
+				<ItemsInProgress
+					title={`Blocked Items:`}
+					items={inProgressItems.filter((item) => item.isBlocked)}
+					idealWip={0}
+				/>
 			</Grid>
 
 			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>

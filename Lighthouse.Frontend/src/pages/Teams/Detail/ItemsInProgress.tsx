@@ -40,7 +40,7 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 						{title}
 					</Typography>
 					<Typography variant="h4">{count}</Typography>
-					{idealWip != null && idealWip > 0 && (
+					{idealWip != null && idealWip >= 0 && (
 						<Chip
 							label={`Goal: ${idealWip}`}
 							color={getChipColor()}

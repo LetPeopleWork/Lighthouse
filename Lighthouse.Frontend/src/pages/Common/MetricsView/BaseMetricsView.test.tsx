@@ -125,8 +125,8 @@ vi.mock("../../Teams/Detail/ItemsInProgress", () => ({
 		idealWip: number;
 	}) => (
 		<div data-testid={`items-in-progress-${title}`}>
-			<div data-testid="items-count">{items.length}</div>
-			<div data-testid="ideal-wip">{idealWip}</div>
+			<div data-testid={`items-count-${title}`}>{items.length}</div>
+			<div data-testid={`ideal-wip-${title}`}>{idealWip}</div>
 		</div>
 	),
 }));
@@ -373,8 +373,12 @@ describe("BaseMetricsView component", () => {
 			expect(
 				screen.getByTestId("items-in-progress-Features in Progress:"),
 			).toBeInTheDocument();
-			expect(screen.getByTestId("items-count")).toHaveTextContent("2");
-			expect(screen.getByTestId("ideal-wip")).toBeEmptyDOMElement();
+			expect(
+				screen.getByTestId("items-count-Features in Progress:"),
+			).toHaveTextContent("2");
+			expect(
+				screen.getByTestId("ideal-wip-Features in Progress:"),
+			).toBeEmptyDOMElement();
 			expect(screen.getByTestId("cycle-time-percentiles")).toBeInTheDocument();
 			expect(
 				screen.getByTestId("bar-run-chart-Features Completed"),
@@ -425,7 +429,9 @@ describe("BaseMetricsView component", () => {
 			expect(
 				screen.getByTestId("items-in-progress-Work Items in Progress:"),
 			).toBeInTheDocument();
-			expect(screen.getByTestId("ideal-wip")).toBeEmptyDOMElement();
+			expect(
+				screen.getByTestId("ideal-wip-Work Items in Progress:"),
+			).toBeEmptyDOMElement();
 			expect(
 				screen.getByTestId("bar-run-chart-Work Items Completed"),
 			).toBeInTheDocument();
