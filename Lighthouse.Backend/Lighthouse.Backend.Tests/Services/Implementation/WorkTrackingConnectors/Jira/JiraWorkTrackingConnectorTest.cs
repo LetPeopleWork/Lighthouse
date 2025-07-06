@@ -111,6 +111,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetWorkItemsForTeam_GetsLabelsAndStoresAsTag()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND key = PROJ-23");
+
+            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.Tags, Has.Count.EqualTo(2));
+                Assert.That(workItem.Tags, Contains.Item("TagTest"));
+                Assert.That(workItem.Tags, Contains.Item("ExistingLabel"));
+            }
+        }
+
+        [Test]
         public async Task GetFeaturesForProject_LabelDoesNotExist_ReturnsNoItems()
         {
             var subject = CreateSubject();
@@ -311,6 +328,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var feature = features.Single(f => f.ReferenceId == issueKey);
             
             Assert.That(feature.OwningTeam, Contains.Substring(expectedFeatureOwnerFieldValue));
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_GetsLabelsAndStoresAsTag()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"project = PROJ AND key = PROJ-7");
+
+            var features = await subject.GetFeaturesForProject(project);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-7");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.Tags, Has.Count.EqualTo(2));
+                Assert.That(feature.Tags, Contains.Item("TagTest"));
+                Assert.That(feature.Tags, Contains.Item("ExistingLabel"));
+            }
         }
 
         [Test]

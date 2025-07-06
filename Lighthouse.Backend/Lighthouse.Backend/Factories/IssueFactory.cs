@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Factories
             var title = GetTitleFromFields(fields);
             var createdDate = GetCreatedDateFromFields(fields);
             var parentKey = GetParentFromFields(fields);
+            var labels = GetLabelsFromFields(fields);
             var rank = GetRankFromFields(fields, rankField);
             var issueType = GetIssueTypeFromFields(fields);
             var state = GetStateFromFields(fields);
@@ -38,7 +39,7 @@ namespace Lighthouse.Backend.Factories
 
             (var startedDate, var closedDate) = GetStartedAndClosedDate(json, workitemQueryOwner, state);
 
-            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, fields);
+            return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, labels, fields);
         }
 
         private static (DateTime? startedDate, DateTime? closedDate) GetStartedAndClosedDate(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string state)
@@ -131,6 +132,21 @@ namespace Lighthouse.Backend.Factories
             }
 
             return parentKey;
+        }
+
+        private static List<string> GetLabelsFromFields(JsonElement fields)
+        {
+            var labels = new List<string>();
+
+            if (fields.TryGetProperty(JiraFieldNames.LabelsFieldName, out var labelsElement))
+            {
+                foreach (var label in labelsElement.EnumerateArray())
+                {
+                    labels.Add(label.ToString());
+                }
+            }
+
+            return labels;
         }
 
         private static DateTime? GetTransitionDate(JsonElement json, IEnumerable<string> targetStates, IEnumerable<string> statesToIgnoreTransition)

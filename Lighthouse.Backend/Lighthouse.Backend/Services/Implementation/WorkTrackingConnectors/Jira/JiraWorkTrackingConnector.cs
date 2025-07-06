@@ -326,6 +326,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 Type = issue.IssueType,
                 State = issue.State,
                 Url = url,
+                Tags = issue.Labels,
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
             };
 

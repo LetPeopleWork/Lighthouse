@@ -20,6 +20,8 @@
 
         public static string CreatedDateFieldName => "created";
 
+        public static string LabelsFieldName => "labels";
+
         public static string ChangelogFieldName => "changelog";
 
         public static string HistoriesFieldName => "histories";
