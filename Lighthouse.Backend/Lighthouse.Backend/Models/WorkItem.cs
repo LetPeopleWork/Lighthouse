@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Models
 
         public int TeamId { get; set; }
 
+        public override bool IsBlocked => Team.BlockedStates.Contains(State) || Team.BlockedTags.Any(Tags.Contains);
+
         internal void Update(WorkItem item)
         {
             base.Update(item);

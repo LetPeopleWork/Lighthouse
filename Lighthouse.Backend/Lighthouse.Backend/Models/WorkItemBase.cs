@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Models
 
         public string Order { get; set; }
 
+        public virtual bool IsBlocked { get; }
+
         public DateTime? CreatedDate { get; set; }
 
         public DateTime? StartedDate { get; set; }
