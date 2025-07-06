@@ -207,7 +207,6 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-
             var item1 = new WorkItem
             {
                 Name = "Vfl",

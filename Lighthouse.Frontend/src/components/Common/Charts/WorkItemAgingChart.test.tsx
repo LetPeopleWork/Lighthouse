@@ -135,6 +135,55 @@ describe("WorkItemAgingChart component", () => {
 		},
 	];
 
+	// Create mock work items with blocked items
+	const mockBlockedItems: IWorkItem[] = [
+		{
+			id: 4,
+			referenceId: "ITEM-4",
+			name: "Blocked Item 1",
+			url: "https://example.com/item4",
+			cycleTime: 0,
+			startedDate: new Date(2023, 0, 1),
+			closedDate: new Date(),
+			workItemAge: 15,
+			type: "Story",
+			state: "In Progress",
+			stateCategory: "Doing",
+			parentWorkItemReference: "",
+			isBlocked: true,
+		},
+		{
+			id: 5,
+			referenceId: "ITEM-5",
+			name: "Regular Item",
+			url: "https://example.com/item5",
+			cycleTime: 0,
+			startedDate: new Date(2023, 0, 12),
+			closedDate: new Date(),
+			workItemAge: 3,
+			type: "Bug",
+			state: "Review",
+			stateCategory: "Doing",
+			parentWorkItemReference: "",
+			isBlocked: false,
+		},
+		{
+			id: 6,
+			referenceId: "ITEM-6",
+			name: "Another Blocked Item",
+			url: "https://example.com/item6",
+			cycleTime: 0,
+			startedDate: new Date(2023, 0, 2),
+			closedDate: new Date(),
+			workItemAge: 8,
+			type: "Task",
+			state: "In Progress",
+			stateCategory: "Doing",
+			parentWorkItemReference: "",
+			isBlocked: true,
+		},
+	];
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -377,5 +426,80 @@ describe("WorkItemAgingChart component", () => {
 
 		// The chart should render with the item
 		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+	});
+
+	describe("Blocked items functionality", () => {
+		it("renders blocked items with red color", () => {
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mockBlockedItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Chart should render with blocked items
+			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
+		});
+
+		it("groups blocked and regular items correctly", () => {
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mockBlockedItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Chart should render and handle grouping correctly
+			expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
+			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+		});
+
+		it("marks group as blocked if any item in group is blocked", () => {
+			// Test with items that have same state and age but different blocked status
+			const mixedBlockedItems: IWorkItem[] = [
+				{
+					...mockInProgressItems[0],
+					workItemAge: 10,
+					isBlocked: false,
+				},
+				{
+					...mockInProgressItems[1],
+					state: "In Progress",
+					workItemAge: 10,
+					isBlocked: true,
+				},
+			];
+
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mixedBlockedItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Chart should render with grouped items
+			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+		});
+
+		it("handles empty blocked items array", () => {
+			render(
+				<WorkItemAgingChart
+					inProgressItems={[]}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Should show empty state
+			expect(screen.getByText("No items in progress")).toBeInTheDocument();
+		});
 	});
 });

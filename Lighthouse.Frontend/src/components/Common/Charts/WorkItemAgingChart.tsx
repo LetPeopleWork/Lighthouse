@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { getWorkItemName } from "../../../utils/featureName";
-import { hexToRgba } from "../../../utils/theme/colors";
+import { errorColor, hexToRgba } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
@@ -52,6 +52,7 @@ const ScatterMarker = (
 	if (!group) return null;
 
 	const bubbleSize = getBubbleSize(group.items.length);
+	const bubbleColor = group.hasBlockedItems ? errorColor : props.color;
 
 	const handleOpenWorkItems = () => {
 		if (group.items.length > 0) {
@@ -65,13 +66,13 @@ const ScatterMarker = (
 				cx={props.x}
 				cy={props.y}
 				r={bubbleSize}
-				fill={props.color}
+				fill={bubbleColor}
 				opacity={props.isHighlighted ? 1 : 0.8}
 				stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
 				strokeWidth={props.isHighlighted ? 2 : 0}
 				pointerEvents="none"
 			>
-				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} aged ${group.age} days in ${group.state}`}</title>
+				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} aged ${group.age} days in ${group.state}${group.hasBlockedItems ? " (includes blocked items)" : ""}`}</title>
 			</circle>
 
 			<foreignObject
@@ -92,7 +93,7 @@ const ScatterMarker = (
 						borderRadius: "50%",
 					}}
 					onClick={handleOpenWorkItems}
-					aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} aged ${group.age} days in ${group.state}`}
+					aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} aged ${group.age} days in ${group.state}${group.hasBlockedItems ? " (includes blocked items)" : ""}`}
 				/>
 			</foreignObject>
 		</>
@@ -104,6 +105,7 @@ interface IGroupedWorkItem {
 	stateIndex: number;
 	age: number;
 	items: IWorkItem[];
+	hasBlockedItems: boolean;
 }
 
 const groupWorkItems = (
@@ -135,10 +137,16 @@ const groupWorkItems = (
 				stateIndex,
 				age,
 				items: [],
+				hasBlockedItems: false,
 			};
 		}
 
 		groups[key].items.push(item);
+
+		// Update hasBlockedItems if this item is blocked
+		if (item.isBlocked) {
+			groups[key].hasBlockedItems = true;
+		}
 	}
 
 	return Object.values(groups);

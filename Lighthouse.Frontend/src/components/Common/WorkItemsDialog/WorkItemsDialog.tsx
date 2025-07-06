@@ -1,3 +1,4 @@
+import BlockIcon from "@mui/icons-material/Block";
 import CloseIcon from "@mui/icons-material/Close";
 import {
 	Chip,
@@ -11,6 +12,7 @@ import {
 	TableCell,
 	TableHead,
 	TableRow,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -206,6 +208,17 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 														? "(Cycle Time)"
 														: "(Age)"}
 												</Typography>
+											)}
+											{item.isBlocked && (
+												<Tooltip title="This item is blocked">
+													<BlockIcon
+														sx={{
+															color: "error.main",
+															fontSize: "1rem",
+															ml: 1,
+														}}
+													/>
+												</Tooltip>
 											)}
 										</Typography>
 									</TableCell>

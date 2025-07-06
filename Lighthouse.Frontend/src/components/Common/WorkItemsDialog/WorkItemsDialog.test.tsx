@@ -87,6 +87,55 @@ const mockWorkItems: IWorkItem[] = [
 	},
 ];
 
+// Mock data with blocked items for testing
+const mockBlockedWorkItems: IWorkItem[] = [
+	{
+		id: 6,
+		name: "Blocked Feature",
+		state: "In Progress",
+		stateCategory: "Doing" as StateCategory,
+		type: "User Story",
+		referenceId: "US-300",
+		url: "https://example.com/work-item/6",
+		startedDate: new Date("2023-06-01"),
+		closedDate: new Date("2023-06-15"),
+		cycleTime: 14,
+		workItemAge: 10,
+		parentWorkItemReference: "",
+		isBlocked: true,
+	},
+	{
+		id: 7,
+		name: "Regular Task",
+		state: "Active",
+		stateCategory: "Doing" as StateCategory,
+		type: "Task",
+		referenceId: "TASK-400",
+		url: null,
+		startedDate: new Date("2023-07-01"),
+		closedDate: new Date("2023-07-05"),
+		cycleTime: 4,
+		workItemAge: 5,
+		parentWorkItemReference: "",
+		isBlocked: false,
+	},
+	{
+		id: 8,
+		name: "Blocked Bug Fix",
+		state: "Review",
+		stateCategory: "Doing" as StateCategory,
+		type: "Bug",
+		referenceId: "BUG-500",
+		url: "https://example.com/work-item/8",
+		startedDate: new Date("2023-08-01"),
+		closedDate: new Date("2023-08-12"),
+		cycleTime: 11,
+		workItemAge: 15,
+		parentWorkItemReference: "",
+		isBlocked: true,
+	},
+];
+
 // Test scenarios
 describe("WorkItemsDialog Component", () => {
 	const defaultProps = {
@@ -357,6 +406,137 @@ describe("WorkItemsDialog Component", () => {
 
 			// 5 days should be confident (50% of SLE)
 			expect(cycleTimeCells[4]).toHaveStyle("color: rgb(76, 175, 80)"); // RGB equivalent of lightgreen
+		});
+	});
+
+	describe("Blocked items functionality", () => {
+		test("displays blocked icon next to time value for blocked items", () => {
+			render(
+				<WorkItemsDialog {...defaultProps} items={mockBlockedWorkItems} />,
+			);
+
+			// Check that blocked icons are present for blocked items
+			const blockIcons = screen.getAllByTestId("BlockIcon");
+			expect(blockIcons).toHaveLength(2); // Two blocked items
+		});
+
+		test("blocked icons have correct tooltip", () => {
+			render(
+				<WorkItemsDialog {...defaultProps} items={mockBlockedWorkItems} />,
+			);
+
+			// Check that blocked icons have tooltips by finding tooltips with the correct aria-label
+			const tooltips = screen.getAllByLabelText("This item is blocked");
+			expect(tooltips).toHaveLength(2);
+		});
+
+		test("does not display blocked icon for non-blocked items", () => {
+			render(<WorkItemsDialog {...defaultProps} />);
+
+			// Should not have any blocked icons since no items are blocked
+			const blockIcons = screen.queryAllByTestId("BlockIcon");
+			expect(blockIcons).toHaveLength(0);
+		});
+
+		test("displays blocked icon with correct styling", () => {
+			render(
+				<WorkItemsDialog {...defaultProps} items={mockBlockedWorkItems} />,
+			);
+
+			const blockIcons = screen.getAllByTestId("BlockIcon");
+
+			// Check that the icon has error color
+			blockIcons.forEach((icon) => {
+				expect(icon).toHaveStyle("color: rgb(211, 47, 47)"); // RGB equivalent of error.main
+			});
+		});
+
+		test("blocked icon appears in time column, not dedicated column", () => {
+			render(
+				<WorkItemsDialog {...defaultProps} items={mockBlockedWorkItems} />,
+			);
+
+			// Check that there's no dedicated "Blocked" column header
+			expect(screen.queryByText("Blocked")).not.toBeInTheDocument();
+
+			// Check that blocked icons are in the same cell as time values
+			const timeCells = screen.getAllByText(/\d+ days/);
+			const blockedTimeCells = timeCells.filter((cell) => {
+				// Check if this cell contains a blocked icon
+				const parent = cell.closest("td");
+				return parent?.querySelector('[data-testid="BlockIcon"]') !== null;
+			});
+
+			expect(blockedTimeCells).toHaveLength(2); // Two blocked items
+		});
+
+		test("blocked items are sorted correctly with time metrics", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={mockBlockedWorkItems}
+					timeMetric="age"
+				/>,
+			);
+
+			// Items should be sorted by age in descending order
+			const timeCells = screen.getAllByText(/\d+ days/);
+
+			// First should be 15 days (blocked), then 10 days (blocked), then 5 days (not blocked)
+			expect(timeCells[0]).toHaveTextContent("15 days");
+			expect(timeCells[1]).toHaveTextContent("10 days");
+			expect(timeCells[2]).toHaveTextContent("5 days");
+		});
+
+		test("blocked icon works with different time metrics", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={mockBlockedWorkItems}
+					timeMetric="cycleTime"
+				/>,
+			);
+
+			// Should still show blocked icons
+			const blockIcons = screen.getAllByTestId("BlockIcon");
+			expect(blockIcons).toHaveLength(2);
+
+			// Check column header
+			expect(screen.getByText("Cycle Time")).toBeInTheDocument();
+		});
+
+		test("blocked icon works with ageCycleTime metric", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={mockBlockedWorkItems}
+					timeMetric="ageCycleTime"
+				/>,
+			);
+
+			// Should still show blocked icons
+			const blockIcons = screen.getAllByTestId("BlockIcon");
+			expect(blockIcons).toHaveLength(2);
+
+			// Check column header
+			expect(screen.getByText("Age/Cycle Time")).toBeInTheDocument();
+		});
+
+		test("blocked icon appears with SLE coloring", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={mockBlockedWorkItems}
+					sle={12}
+				/>,
+			);
+
+			const blockIcons = screen.getAllByTestId("BlockIcon");
+			expect(blockIcons).toHaveLength(2);
+
+			// Time values should still have SLE coloring
+			const timeCells = screen.getAllByText(/\d+ days/);
+			expect(timeCells[0]).toHaveStyle("font-weight: 700"); // Bold due to SLE
 		});
 	});
 });
