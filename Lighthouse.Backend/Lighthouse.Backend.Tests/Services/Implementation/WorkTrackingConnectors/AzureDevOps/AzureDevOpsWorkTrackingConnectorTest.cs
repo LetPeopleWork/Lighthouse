@@ -94,7 +94,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 6, 34, 677, DateTimeKind.Utc)));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -114,7 +115,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 10, 647, DateTimeKind.Utc)));
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.False);
-            };
+            }
+            ;
         }
 
         [Test]
@@ -138,7 +140,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 5, 57, 453, DateTimeKind.Utc)));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -158,7 +161,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 10, 647, DateTimeKind.Utc)));
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.False);
-            };
+            }
+            ;
         }
 
         [Test]
@@ -180,7 +184,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 22, 12, 623, DateTimeKind.Utc)));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -202,7 +207,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 58, 753, DateTimeKind.Utc)));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -224,7 +230,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Assert.That(workItem.ClosedDate.HasValue, Is.True);
                 Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 25, 25, 217, DateTimeKind.Utc)));
-            };
+            }
+            ;
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_GetsCorrectTags()
+        {
+            var workItemId = "373";
+
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
+
+            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.Tags, Has.Count.EqualTo(2));
+                Assert.That(workItem.Tags, Contains.Item("Release1"));
+                Assert.That(workItem.Tags, Contains.Item("TagTest"));
+            }
         }
 
         [Test]
@@ -376,7 +402,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.State, Is.EqualTo("Resolved"));
                 Assert.That(feature.StateCategory, Is.EqualTo(StateCategories.Doing));
                 Assert.That(feature.Url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/366"));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -394,7 +421,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(feature.StartedDate?.Date, Is.EqualTo(new DateTime(2024, 2, 16, 0, 0, 0, DateTimeKind.Utc)));
 
                 Assert.That(feature.ClosedDate.HasValue, Is.False);
-            };
+            }
+            ;
         }
 
         [Test]
@@ -412,7 +440,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(feature.ClosedDate.HasValue, Is.True);
                 Assert.That(feature.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 2, 16, 0, 0, 0, DateTimeKind.Utc)));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -429,7 +458,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.StartedDate, Is.EqualTo(feature.ClosedDate));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -454,7 +484,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("", "370", "")]
         [TestCase("Microsoft.VSTS.Scheduling.Size", "370", "12")]
         [TestCase("System.AreaPath", "370", "CMFTTestTeamProject")]
-        [TestCase("System.Tags", "370", "Release1")]
+        [TestCase("System.Tags", "370", "Release1; TagTest")]
         public async Task GetFeaturesForProject_ReadsFeatureOwnerFieldCorrect(string fieldName, string workItemId, string expectedFeatureOwnerFieldValue)
         {
             var subject = CreateSubject();
@@ -466,6 +496,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var feature = features.Single(f => f.ReferenceId == workItemId);
 
             Assert.That(feature.OwningTeam, Is.EqualTo(expectedFeatureOwnerFieldValue));
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_GetsCorrectTags()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '370'");
+
+            var features = await subject.GetFeaturesForProject(project);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features, Has.Count.EqualTo(1));
+                Assert.That(features.Single().Tags, Has.Count.EqualTo(2));
+                Assert.That(features.Single().Tags, Contains.Item("Release1"));
+                Assert.That(features.Single().Tags, Contains.Item("TagTest"));
+            }
         }
 
         [Test]
@@ -484,7 +531,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(parentItem.ReferenceId, Is.EqualTo("400"));
                 Assert.That(parentItem.Name, Is.EqualTo("Delivery for Agnieszka"));
                 Assert.That(parentItem.Url, Is.EqualTo("https://dev.azure.com/huserben/e7b3c1df-8d70-4943-98a7-ef00c7a0c523/_workitems/edit/400"));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -494,7 +542,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\PreviousReleaseAreaPath'");
 
             var totalItems = await subject.GetWorkItemsIdsForTeamWithAdditionalQuery(team, "[System.Tags] CONTAINS 'ThroughputIgnore'");
-            
+
             Assert.That(totalItems, Has.Count.EqualTo(1));
         }
 

@@ -64,6 +64,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (DateTime?)workItem.Fields[AzureDevOpsFieldNames.CreatedDate] ?? DateTime.MinValue;
         }
 
+        public static List<string> ExtractTagsFromWorkItem(this WorkItem workItem)
+        {
+            if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.Tags, out var tagsField) && tagsField is string tags)
+            {
+                return tags.Split([';'], StringSplitOptions.RemoveEmptyEntries).Select(tag => tag.Trim()).ToList();
+            }
+
+            return new List<string>();
+        }
+
         private static string ExtractFieldFromWorkItem(WorkItem workItem, string fieldName)
         {
             return workItem.Fields[fieldName]?.ToString() ?? string.Empty;

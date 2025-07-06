@@ -319,6 +319,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 AzureDevOpsFieldNames.StackRank,
                 AzureDevOpsFieldNames.BacklogPriority,
                 AzureDevOpsFieldNames.CreatedDate,
+                AzureDevOpsFieldNames.Tags,
             };
 
             fields.AddRange(additionalFields.Where(f => !string.IsNullOrEmpty(f)));
@@ -359,6 +360,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 CreatedDate = workItem.ExtractCreatedDateFromWorkItem(),
                 StartedDate = startedDate,
                 ClosedDate = closedDate,
+                Tags = workItem.ExtractTagsFromWorkItem(),
             };
         }
 

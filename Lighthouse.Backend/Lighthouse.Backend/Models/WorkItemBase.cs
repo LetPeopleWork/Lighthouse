@@ -83,6 +83,7 @@ namespace Lighthouse.Backend.Models
             CreatedDate = workItemBase.CreatedDate;
             StartedDate = workItemBase.StartedDate;
             ClosedDate = workItemBase.ClosedDate;
+            Tags = workItemBase.Tags;
         }
     }
 }
