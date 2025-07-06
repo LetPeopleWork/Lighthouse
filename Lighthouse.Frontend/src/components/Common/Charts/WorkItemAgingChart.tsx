@@ -46,7 +46,7 @@ const ScatterMarker = (
 	theme: Theme,
 	onShowItems: (items: IWorkItem[]) => void,
 ) => {
-	const dataIndex = props.dataIndex || 0;
+	const dataIndex = props.dataIndex ?? 0;
 	const group = groupedDataPoints[dataIndex];
 
 	if (!group) return null;
@@ -298,6 +298,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								min: -0.5,
 								max: doingStates.length - 0.5,
 								tickNumber: doingStates.length,
+								tickLabelInterval: () => true,
+								disableTicks: false,
 								valueFormatter: (value: number) => {
 									const index = Math.round(value);
 									return index >= 0 && index < doingStates.length

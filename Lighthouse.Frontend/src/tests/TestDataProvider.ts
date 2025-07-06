@@ -38,12 +38,24 @@ export function generateWorkItem(id: number): IWorkItem {
 	const closedDate = new Date(startedDate);
 	closedDate.setDate(startedDate.getDate() + daysAfterStart);
 
+	const potentialStates = [
+		"In Progress",
+		"In Discovery",
+		"Ready for Testing",
+		"In Q&A Testing",
+		"Peer Review",
+		"Testing Completed",
+		"Ready for Release",
+	];
+	const state =
+		potentialStates[Math.floor(Math.random() * potentialStates.length)];
+
 	return {
 		name: `Work Item that has a very long name so I can test whether the text wrapping works so I'm just adding more text and see whenever it's getting too big. I wonder what people think, don't they know titles should be short - put all that other stuff in the description...anyway, is this wrapped? - ${id}`,
 		id: id,
 		referenceId: `WI-${id}`,
 		url: `https://example.com/work-items/${id}`,
-		state: "In Progress",
+		state: state,
 		stateCategory: "Doing",
 		type: "Feature",
 		workItemAge: Math.floor(Math.random() * (19 - 3 + 1)) + 3,
