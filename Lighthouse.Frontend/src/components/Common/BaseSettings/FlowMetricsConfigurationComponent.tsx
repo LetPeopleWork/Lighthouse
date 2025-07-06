@@ -1,12 +1,20 @@
-import { Checkbox, FormControlLabel, TextField } from "@mui/material";
+import WarningIcon from "@mui/icons-material/Warning";
+import {
+	Box,
+	Checkbox,
+	FormControlLabel,
+	TextField,
+	Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useEffect, useState } from "react";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import InputGroup from "../InputGroup/InputGroup";
+import ItemListManager from "../ItemListManager/ItemListManager";
 
 interface FlowMetricsConfigurationComponentProps<T extends IBaseSettings> {
 	settings: T;
-	onSettingsChange: (key: keyof T, value: number | boolean) => void;
+	onSettingsChange: (key: keyof T, value: number | boolean | string[]) => void;
 	showFeatureWip?: boolean;
 }
 
@@ -18,6 +26,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const [isSleEnabled, setIsSleEnabled] = useState(false);
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
 	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
+	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(false);
 
 	useEffect(() => {
 		setIsSleEnabled(
@@ -29,6 +38,10 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			showFeatureWip &&
 				"featureWIP" in settings &&
 				Number(settings.featureWIP) > 0,
+		);
+		setIsBlockedItemsEnabled(
+			(settings.blockedTags && settings.blockedTags.length > 0) ||
+				(settings.blockedStates && settings.blockedStates.length > 0),
 		);
 	}, [settings, showFeatureWip]);
 
@@ -89,6 +102,45 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		const numValue = Number.parseInt(value, 10);
 		onSettingsChange("serviceLevelExpectationRange", numValue);
 	};
+
+	const handleAddBlockedTag = (tag: string) => {
+		if (tag.trim()) {
+			const newTags = [...(settings.blockedTags || []), tag.trim()];
+			onSettingsChange("blockedTags" as keyof T, newTags);
+		}
+	};
+
+	const handleRemoveBlockedTag = (tag: string) => {
+		const newTags = (settings.blockedTags || []).filter((item) => item !== tag);
+		onSettingsChange("blockedTags" as keyof T, newTags);
+	};
+
+	const handleAddBlockedState = (state: string) => {
+		if (state.trim()) {
+			const newStates = [...(settings.blockedStates || []), state.trim()];
+			onSettingsChange("blockedStates" as keyof T, newStates);
+		}
+	};
+
+	const handleRemoveBlockedState = (state: string) => {
+		const newStates = (settings.blockedStates || []).filter(
+			(item) => item !== state,
+		);
+		onSettingsChange("blockedStates" as keyof T, newStates);
+	};
+
+	const handleBlockedItemsEnableChange = (checked: boolean) => {
+		setIsBlockedItemsEnabled(checked);
+
+		if (!checked) {
+			// Clear both blocked tags and blocked states when disabled
+			onSettingsChange("blockedTags" as keyof T, []);
+			onSettingsChange("blockedStates" as keyof T, []);
+		}
+	};
+
+	// Get only "Doing" states for blocked states suggestions
+	const doingStatesSuggestions = settings.doingStates ?? [];
 
 	return (
 		<InputGroup title={"Flow Metrics Configuration"} initiallyExpanded={false}>
@@ -234,6 +286,71 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 						/>
 					</Grid>
 				</>
+			)}
+
+			{/* Blocked Items Configuration */}
+			<Grid size={{ xs: 12 }}>
+				<FormControlLabel
+					control={
+						<Checkbox
+							checked={isBlockedItemsEnabled}
+							onChange={(e) => handleBlockedItemsEnableChange(e.target.checked)}
+						/>
+					}
+					label="Configure Blocked Items"
+				/>
+			</Grid>
+
+			{/* Blocked Tags Configuration */}
+			{isBlockedItemsEnabled && (
+				<Grid size={{ xs: 12 }}>
+					<InputGroup title={"Blocked Tags"} initiallyExpanded={true}>
+						<Grid size={{ xs: 12 }}>
+							<ItemListManager
+								title="Blocked Tag"
+								items={settings.blockedTags || []}
+								onAddItem={handleAddBlockedTag}
+								onRemoveItem={handleRemoveBlockedTag}
+								suggestions={[]}
+								isLoading={false}
+							/>
+						</Grid>
+					</InputGroup>
+				</Grid>
+			)}
+
+			{/* Blocked States Configuration */}
+			{isBlockedItemsEnabled && (
+				<Grid size={{ xs: 12 }}>
+					<InputGroup title={"Blocked States"} initiallyExpanded={false}>
+						<Grid size={{ xs: 12 }}>
+							<Box
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									mb: 2,
+									color: "warning.main",
+									padding: 1,
+									borderRadius: 1,
+								}}
+							>
+								<WarningIcon sx={{ mr: 1, fontSize: 20 }} />
+								<Typography variant="body2">
+									We do not recommend using states for identifying blocked
+									items. Preferably you use Tags.
+								</Typography>
+							</Box>
+							<ItemListManager
+								title="Blocked State"
+								items={settings.blockedStates || []}
+								onAddItem={handleAddBlockedState}
+								onRemoveItem={handleRemoveBlockedState}
+								suggestions={doingStatesSuggestions}
+								isLoading={false}
+							/>
+						</Grid>
+					</InputGroup>
+				</Grid>
 			)}
 		</InputGroup>
 	);

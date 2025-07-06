@@ -61,6 +61,6 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public int SystemWIPLimit { get; set; }
 
-        public string ParentOverrideField { get; set; }
+        public string? ParentOverrideField { get; set; }
     }
 }
