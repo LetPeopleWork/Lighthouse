@@ -10,10 +10,25 @@ nav_order: 95
 Preview
 {: .label .label-blue }
 -->
-# Lighthouse v25.7.5.1158
+
+# Lighthouse v25.7.6
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+# Fixed disappearing states in Work Item Aging Chart
+If you have many states, some of them would not show up in the x-axis of the Work Item Aging Chart.
+This is adjusted now, and all states will always show, independent of available space.
+
+**Note:** This may mean that some of the text is overlapping. This is known and accepted for the time being.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+ 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.5.1158...v25.7.6)
+
+# Lighthouse v25.7.5.1158
 
 ## Work Item Aging Chart
 We added a new chart to visualize *In Progress* work. In the *Work Item Aging Chart*, you'll see all ongoing work, where:
