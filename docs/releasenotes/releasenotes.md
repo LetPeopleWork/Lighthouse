@@ -16,7 +16,7 @@ Preview
 Latest
 {: .label .label-green }
 
-# Fixed disappearing states in Work Item Aging Chart
+## Fixed disappearing states in Work Item Aging Chart
 If you have many states, some of them would not show up in the x-axis of the Work Item Aging Chart.
 This is adjusted now, and all states will always show, independent of available space.
 
