@@ -157,5 +157,6 @@ describe("TeamMetricsService", () => {
 		stateCategory: "Doing",
 		type: "Task",
 		parentWorkItemReference: "",
+		isBlocked: false,
 	});
 });

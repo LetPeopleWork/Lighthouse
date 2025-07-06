@@ -55,6 +55,7 @@ describe("FeatureService", () => {
 				getTotalWorkForFeature: () => 10,
 				getTotalWorkForTeam: () => 10,
 				getMilestoneLikelihood: () => 85.5,
+				isBlocked: false,
 			},
 			{
 				name: "Feature 2",
@@ -86,6 +87,7 @@ describe("FeatureService", () => {
 				getTotalWorkForFeature: () => 8,
 				getTotalWorkForTeam: () => 8,
 				getMilestoneLikelihood: () => 90.2,
+				isBlocked: false,
 			},
 		];
 

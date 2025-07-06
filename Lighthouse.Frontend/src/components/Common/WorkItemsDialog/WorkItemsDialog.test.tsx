@@ -23,6 +23,7 @@ const mockWorkItems: IWorkItem[] = [
 		cycleTime: 10,
 		workItemAge: 5,
 		parentWorkItemReference: "",
+		isBlocked: false,
 	},
 	{
 		id: 2,
@@ -37,6 +38,7 @@ const mockWorkItems: IWorkItem[] = [
 		cycleTime: 5,
 		workItemAge: 20,
 		parentWorkItemReference: "",
+		isBlocked: false,
 	},
 	{
 		id: 3,
@@ -51,6 +53,7 @@ const mockWorkItems: IWorkItem[] = [
 		cycleTime: 15,
 		workItemAge: 2,
 		parentWorkItemReference: "",
+		isBlocked: false,
 	},
 	{
 		id: 4,
@@ -65,6 +68,7 @@ const mockWorkItems: IWorkItem[] = [
 		cycleTime: 7,
 		workItemAge: 0, // Age is 0 for closed items
 		parentWorkItemReference: "",
+		isBlocked: false,
 	},
 	{
 		id: 5,
@@ -79,6 +83,7 @@ const mockWorkItems: IWorkItem[] = [
 		cycleTime: 12,
 		workItemAge: 0, // Age is 0 for closed items
 		parentWorkItemReference: "",
+		isBlocked: false,
 	},
 ];
 

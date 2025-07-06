@@ -48,6 +48,7 @@ describe("CycleTimePercentiles component", () => {
 			cycleTime: 2,
 			workItemAge: 2,
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 		{
 			id: 2,
@@ -62,6 +63,7 @@ describe("CycleTimePercentiles component", () => {
 			cycleTime: 4,
 			workItemAge: 4,
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 		{
 			id: 3,
@@ -76,6 +78,7 @@ describe("CycleTimePercentiles component", () => {
 			cycleTime: 7,
 			workItemAge: 7,
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 		{
 			id: 4,
@@ -90,6 +93,7 @@ describe("CycleTimePercentiles component", () => {
 			cycleTime: 14,
 			workItemAge: 14,
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 	];
 

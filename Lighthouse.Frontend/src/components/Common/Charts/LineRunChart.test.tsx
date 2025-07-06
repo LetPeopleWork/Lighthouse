@@ -122,6 +122,7 @@ function generateMockWorkItems(count: number): IWorkItem[] {
 		closedDate: new Date(2025, 0, 10),
 		cycleTime: 10,
 		parentWorkItemReference: "",
+		isBlocked: false,
 	}));
 }
 

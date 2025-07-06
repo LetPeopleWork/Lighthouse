@@ -13,4 +13,5 @@ export interface IWorkItem {
 	cycleTime: number;
 	workItemAge: number;
 	parentWorkItemReference: string;
+	isBlocked: boolean;
 }

@@ -18,6 +18,7 @@ namespace Lighthouse.Backend.API.DTO
             ClosedDate = workItem.ClosedDate;
             CycleTime = workItem.CycleTime;
             WorkItemAge = workItem.WorkItemAge;
+            IsBlocked = workItem.IsBlocked;
         }
 
         public string Name { get; }
@@ -33,6 +34,8 @@ namespace Lighthouse.Backend.API.DTO
         public string Type { get; }
 
         public string State { get; }
+
+        public bool IsBlocked { get; }
 
         public StateCategories StateCategory { get; }
 

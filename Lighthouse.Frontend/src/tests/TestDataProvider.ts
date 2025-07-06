@@ -120,5 +120,6 @@ export function generateWorkItem(id: number): IWorkItem {
 		closedDate,
 		cycleTime: daysAfterStart + 1,
 		parentWorkItemReference: "",
+		isBlocked: Math.random() < 0.5,
 	};
 }

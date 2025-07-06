@@ -226,6 +226,7 @@ describe("BaseMetricsView component", () => {
 			cycleTime: 0,
 			workItemAge: 10,
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 		{
 			id: 2,
@@ -240,6 +241,7 @@ describe("BaseMetricsView component", () => {
 			cycleTime: 0,
 			workItemAge: 8,
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 	];
 
@@ -257,6 +259,7 @@ describe("BaseMetricsView component", () => {
 			cycleTime: 9,
 			workItemAge: 9,
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 		{
 			id: 4,
@@ -271,6 +274,7 @@ describe("BaseMetricsView component", () => {
 			cycleTime: 10,
 			workItemAge: 10,
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 	];
 

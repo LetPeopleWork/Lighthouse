@@ -101,6 +101,7 @@ describe("WorkItemAgingChart component", () => {
 			state: "In Progress",
 			stateCategory: "Doing",
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 		{
 			id: 2,
@@ -115,6 +116,7 @@ describe("WorkItemAgingChart component", () => {
 			state: "Ready for Review",
 			stateCategory: "Doing",
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 		{
 			id: 3,
@@ -129,6 +131,7 @@ describe("WorkItemAgingChart component", () => {
 			state: "In Progress",
 			stateCategory: "Doing",
 			parentWorkItemReference: "",
+			isBlocked: false,
 		},
 	];
 
