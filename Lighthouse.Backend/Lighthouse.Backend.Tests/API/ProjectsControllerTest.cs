@@ -209,6 +209,8 @@ namespace Lighthouse.Backend.Tests.API
                 ServiceLevelExpectationProbability = 90,
                 ServiceLevelExpectationRange = 10,
                 SystemWIPLimit = 7,
+                BlockedStates = new List<string> { "Blocked" },
+                BlockedTags = new List<string> { "Waiting", "Customer Input" },
             };
 
             var subject = CreateSubject();
@@ -251,7 +253,12 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(newProjectSettings.ServiceLevelExpectationRange));
 
                 Assert.That(projectSettingDto.SystemWIPLimit, Is.EqualTo(newProjectSettings.SystemWIPLimit));
-            };
+
+                Assert.That(projectSettingDto.BlockedStates, Contains.Item("Blocked"));
+                Assert.That(projectSettingDto.BlockedTags, Contains.Item("Waiting"));
+                Assert.That(projectSettingDto.BlockedTags, Contains.Item("Customer Input"));
+            }
+            ;
         }
 
         [Test]
@@ -287,6 +294,8 @@ namespace Lighthouse.Backend.Tests.API
                 ServiceLevelExpectationProbability = 95,
                 ServiceLevelExpectationRange = 5,
                 SystemWIPLimit = 12,
+                BlockedStates = new List<string> { "On Hold" },
+                BlockedTags = new List<string> { "Waiting for Review", "Customer Feedback" }
             };
 
             var subject = CreateSubject();
@@ -336,7 +345,12 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedProjectSettings.ServiceLevelExpectationRange));
 
                 Assert.That(projectSettingDto.SystemWIPLimit, Is.EqualTo(updatedProjectSettings.SystemWIPLimit));
-            };
+
+                Assert.That(projectSettingDto.BlockedStates, Contains.Item("On Hold"));
+                Assert.That(projectSettingDto.BlockedTags, Contains.Item("Waiting for Review"));
+                Assert.That(projectSettingDto.BlockedTags, Contains.Item("Customer Feedback"));
+            }
+            ;
         }
 
         [Test]

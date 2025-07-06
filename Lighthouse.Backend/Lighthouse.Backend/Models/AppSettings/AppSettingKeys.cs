@@ -40,6 +40,10 @@
 
         public const string TeamSettingAutomaticallyAdjustFeatureWIP = "DefaultTeamSetting:AutomaticallyAdjustFeatureWIP";
 
+        public const string TeamSettingBlockedStates = "DefaultTeamSetting:BlockedStates";
+
+        public const string TeamSettingBlockedTags = "DefaultTeamSetting:BlockedTags";
+
         public const string ProjectSettingName = "DefaultProjectSetting:Name";
 
         public const string ProjectSettingWorkItemQuery = "DefaultProjectSetting:WorkItemQuery";
@@ -75,6 +79,10 @@
         public const string ProjectSettingSLERange = "DefaultProjectSetting:SLERange";
 
         public const string ProjectSettingParentOverrideField = "DefaultProjectSetting:ParentOverrideField";
+
+        public const string ProjectSettingBlockedStates = "DefaultProjectSetting:BlockedStates";
+
+        public const string ProjectSettingBlockedTags = "DefaultProjectSetting:BlockedTags";
 
         public const string CleanUpDataHistorySettingsMaxStorageTimeInDays = "CleanUpDataHistorySettings:MaxStorageTimeInDays";
 

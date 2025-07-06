@@ -64,6 +64,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
             AddIfNotExists(new AppSetting { Id = 37, Key = AppSettingKeys.ProjectSettingParentOverrideField, Value = string.Empty });
 
+            AddIfNotExists(new AppSetting { Id = 38, Key = AppSettingKeys.TeamSettingBlockedStates, Value = string.Empty });
+            AddIfNotExists(new AppSetting { Id = 39, Key = AppSettingKeys.TeamSettingBlockedTags, Value = string.Empty });
+
+            AddIfNotExists(new AppSetting { Id = 40, Key = AppSettingKeys.ProjectSettingBlockedStates, Value = string.Empty });
+            AddIfNotExists(new AppSetting { Id = 41, Key = AppSettingKeys.ProjectSettingBlockedTags, Value = string.Empty });
+
             SaveSync();
         }
 

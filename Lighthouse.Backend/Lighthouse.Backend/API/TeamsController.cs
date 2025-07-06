@@ -182,6 +182,7 @@ namespace Lighthouse.Backend.API
 
             SyncStates(team, teamSetting);
             SyncServiceLevelExpectation(team, teamSetting);
+            SyncBlockedItems(team, teamSetting);
         }
 
         private static void SyncStates(Team team, TeamSettingDto teamSetting)
@@ -189,6 +190,12 @@ namespace Lighthouse.Backend.API
             team.ToDoStates = TrimListEntries(teamSetting.ToDoStates);
             team.DoingStates = TrimListEntries(teamSetting.DoingStates);
             team.DoneStates = TrimListEntries(teamSetting.DoneStates);
+        }
+
+        private static void SyncBlockedItems(Team team, TeamSettingDto teamSetting)
+        {
+            team.BlockedStates = TrimListEntries(teamSetting.BlockedStates);
+            team.BlockedTags = TrimListEntries(teamSetting.BlockedTags);
         }
 
         private static void SyncServiceLevelExpectation(Team team, TeamSettingDto teamSetting)

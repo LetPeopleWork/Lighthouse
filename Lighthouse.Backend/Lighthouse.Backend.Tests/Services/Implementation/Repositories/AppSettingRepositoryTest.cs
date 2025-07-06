@@ -43,6 +43,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.WorkTrackingSystemSettingsOverrideRequestTimeout, "False")]
         [TestCase(AppSettingKeys.WorkTrackingSystemSettingsRequestTimeoutInSeconds, "100")]
         [TestCase(AppSettingKeys.ProjectSettingParentOverrideField, "")]
+        [TestCase(AppSettingKeys.TeamSettingBlockedStates, "")]
+        [TestCase(AppSettingKeys.TeamSettingBlockedTags, "")]
+        [TestCase(AppSettingKeys.ProjectSettingBlockedStates, "")]
+        [TestCase(AppSettingKeys.ProjectSettingBlockedTags, "")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();

@@ -45,6 +45,8 @@ export async function createProject(
 			serviceLevelExpectationRange: 25,
 			systemWIPLImit: 2,
 			parentOverrideField: "",
+			blockedStates: [],
+			blockedTags: [],
 		},
 	});
 	return response.json();

@@ -313,6 +313,8 @@ namespace Lighthouse.Backend.Tests.API
                 ServiceLevelExpectationProbability = 50,
                 ServiceLevelExpectationRange = 2,
                 SystemWIPLimit = 3,
+                BlockedStates = new List<string> { "Blocked" },
+                BlockedTags = new List<string> { "Waiting", "Customer Input Needed" },
             };
 
             var subject = CreateSubject();
@@ -348,7 +350,12 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(newTeamSettings.ServiceLevelExpectationRange));
 
                 Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(newTeamSettings.SystemWIPLimit));
-            };
+
+                Assert.That(teamSettingDto.BlockedStates, Contains.Item("Blocked"));
+                Assert.That(teamSettingDto.BlockedTags, Contains.Item("Waiting"));
+                Assert.That(teamSettingDto.BlockedTags, Contains.Item("Customer Input Needed"));
+            }
+            ;
         }
 
         [Test]
@@ -371,6 +378,8 @@ namespace Lighthouse.Backend.Tests.API
                 AutomaticallyAdjustFeatureWIP = true,
                 ServiceLevelExpectationRange = 18,
                 ServiceLevelExpectationProbability = 86,
+                BlockedStates = new List<string> { "Waiting for Peter" },
+                BlockedTags = new List<string> { "Customer Input Needed" },
             };
 
             var subject = CreateSubject();
@@ -400,7 +409,10 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.AutomaticallyAdjustFeatureWIP, Is.EqualTo(updatedTeamSettings.AutomaticallyAdjustFeatureWIP));
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationRange));
-            };
+                Assert.That(teamSettingDto.BlockedStates, Contains.Item("Waiting for Peter"));
+                Assert.That(teamSettingDto.BlockedTags, Contains.Item("Customer Input Needed"));
+            }
+            ;
         }
 
         [Test]

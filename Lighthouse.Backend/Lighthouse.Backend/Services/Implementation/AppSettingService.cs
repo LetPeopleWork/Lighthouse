@@ -48,6 +48,8 @@ namespace Lighthouse.Backend.Services.Implementation
             var toDoStates = GetListByKey(AppSettingKeys.TeamSettingToDoStates);
             var doingStates = GetListByKey(AppSettingKeys.TeamSettingDoingStates);
             var doneStates = GetListByKey(AppSettingKeys.TeamSettingDoneStates);
+            var blockedStates = GetListByKey(AppSettingKeys.TeamSettingBlockedStates);
+            var blockedTags = GetListByKey(AppSettingKeys.TeamSettingBlockedTags);
 
             var teamSettings = new TeamSettingDto
             {
@@ -66,6 +68,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 Tags = GetListByKey(AppSettingKeys.TeamSettingTags),
                 ServiceLevelExpectationProbability = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingSLEProbability).Value),
                 ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.TeamSettingSLERange).Value),
+                BlockedStates = blockedStates,
+                BlockedTags = blockedTags,
             };
 
             return teamSettings;
@@ -125,6 +129,14 @@ namespace Lighthouse.Backend.Services.Implementation
             sleRange.Value = defaultTeamSetting.ServiceLevelExpectationRange.ToString();
             repository.Update(sleRange);
 
+            var blockedStates = GetSettingByKey(AppSettingKeys.TeamSettingBlockedStates);
+            blockedStates.Value = string.Join(',', defaultTeamSetting.BlockedStates);
+            repository.Update(blockedStates);
+
+            var blockedTags = GetSettingByKey(AppSettingKeys.TeamSettingBlockedTags);
+            blockedTags.Value = string.Join(',', defaultTeamSetting.BlockedTags);
+            repository.Update(blockedTags);
+
             await repository.Save();
         }
 
@@ -136,6 +148,8 @@ namespace Lighthouse.Backend.Services.Implementation
             var doingStates = GetListByKey(AppSettingKeys.ProjectSettingDoingStates);
             var doneStates = GetListByKey(AppSettingKeys.ProjectSettingDoneStates);
             var tags = GetListByKey(AppSettingKeys.ProjectSettingTags);
+            var blockedStates = GetListByKey(AppSettingKeys.ProjectSettingBlockedStates);
+            var blockedTags = GetListByKey(AppSettingKeys.ProjectSettingBlockedTags);
 
             var overrideRealChildCountStates = GetListByKey(AppSettingKeys.ProjectSettingOverrideRealChildCountStates);
 
@@ -164,6 +178,9 @@ namespace Lighthouse.Backend.Services.Implementation
                 ServiceLevelExpectationRange = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingSLERange).Value),
 
                 ParentOverrideField = GetSettingByKey(AppSettingKeys.ProjectSettingParentOverrideField).Value,
+
+                BlockedStates = blockedStates,
+                BlockedTags = blockedTags,
             };
 
             return projectSettings;
@@ -242,6 +259,14 @@ namespace Lighthouse.Backend.Services.Implementation
             var parentOverrideField = GetSettingByKey(AppSettingKeys.ProjectSettingParentOverrideField);
             parentOverrideField.Value = defaultProjectSetting.ParentOverrideField;
             repository.Update(parentOverrideField);
+
+            var blockedStates = GetSettingByKey(AppSettingKeys.ProjectSettingBlockedStates);
+            blockedStates.Value = string.Join(',', defaultProjectSetting.BlockedStates);
+            repository.Update(blockedStates);
+
+            var blockedTags = GetSettingByKey(AppSettingKeys.ProjectSettingBlockedTags);
+            blockedTags.Value = string.Join(',', defaultProjectSetting.BlockedTags);
+            repository.Update(blockedTags);
 
             await repository.Save();
         }

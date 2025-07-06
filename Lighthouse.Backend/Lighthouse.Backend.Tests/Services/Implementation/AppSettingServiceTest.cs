@@ -31,7 +31,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.Interval, Is.EqualTo(60));
                 Assert.That(settings.RefreshAfter, Is.EqualTo(360));
                 Assert.That(settings.StartDelay, Is.EqualTo(1));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -48,7 +49,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.Interval, Is.EqualTo(30));
                 Assert.That(settings.RefreshAfter, Is.EqualTo(180));
                 Assert.That(settings.StartDelay, Is.EqualTo(2));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -97,7 +99,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "true",
                 AppSettingKeys.TeamSettingTags, "tag1,tag2",
                 AppSettingKeys.TeamSettingSLEProbability, "88",
-                AppSettingKeys.TeamSettingSLERange, "10"
+                AppSettingKeys.TeamSettingSLERange, "10",
+                AppSettingKeys.TeamSettingBlockedStates, "Blocked,On Hold",
+                AppSettingKeys.TeamSettingBlockedTags, "tag1,tag2"
                 );
 
             var service = CreateService();
@@ -106,7 +110,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(settings.Name, Is.EqualTo("MyTeam"));                
+                Assert.That(settings.Name, Is.EqualTo("MyTeam"));
 
                 Assert.That(settings.ThroughputHistory, Is.EqualTo(90));
                 Assert.That(settings.UseFixedDatesForThroughput, Is.False);
@@ -114,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var today = DateTime.Today;
                 Assert.That(settings.ThroughputHistoryStartDate, Is.EqualTo(today.AddDays(-90)));
                 Assert.That(settings.ThroughputHistoryEndDate, Is.EqualTo(today));
-                
+
                 Assert.That(settings.FeatureWIP, Is.EqualTo(2));
                 Assert.That(settings.WorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
                 Assert.That(settings.ParentOverrideField, Is.EqualTo("Custom.RemoteParentID"));
@@ -142,7 +146,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(settings.ServiceLevelExpectationProbability, Is.EqualTo(88));
                 Assert.That(settings.ServiceLevelExpectationRange, Is.EqualTo(10));
-            };
+
+                Assert.That(settings.BlockedStates, Has.Count.EqualTo(2));
+                Assert.That(settings.BlockedStates, Does.Contain("Blocked"));
+                Assert.That(settings.BlockedStates, Does.Contain("On Hold"));
+                Assert.That(settings.BlockedTags, Has.Count.EqualTo(2));
+                Assert.That(settings.BlockedTags, Does.Contain("tag1"));
+                Assert.That(settings.BlockedTags, Does.Contain("tag2"));
+            }
+            ;
         }
 
         [Test]
@@ -161,7 +173,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, "False",
                 AppSettingKeys.TeamSettingTags, "tag1,tag2",
                 AppSettingKeys.TeamSettingSLEProbability, "88",
-                AppSettingKeys.TeamSettingSLERange, "10"
+                AppSettingKeys.TeamSettingSLERange, "10",
+                AppSettingKeys.TeamSettingBlockedStates, "Blocked,On Hold",
+                AppSettingKeys.TeamSettingBlockedTags, "tag1,tag2"
                 );
 
             var service = CreateService();
@@ -181,6 +195,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Tags = ["tag3", "tag4"],
                 ServiceLevelExpectationProbability = 80,
                 ServiceLevelExpectationRange = 12,
+                BlockedStates = ["Waiting for QA"],
+                BlockedTags = ["tag3", "tag4"],
             };
 
             await service.UpdateDefaultTeamSettings(newSettings);
@@ -198,6 +214,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.TeamSettingTags, "tag3,tag4");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingSLEProbability, "80");
             VerifyUpdateCalled(AppSettingKeys.TeamSettingSLERange, "12");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingBlockedStates, "Waiting for QA");
+            VerifyUpdateCalled(AppSettingKeys.TeamSettingBlockedTags, "tag3,tag4");
         }
 
         [Test]
@@ -221,7 +239,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingTags, "tag1,tag2",
                 AppSettingKeys.ProjectSettingSLEProbability, "88",
                 AppSettingKeys.ProjectSettingSLERange, "10",
-                AppSettingKeys.ProjectSettingParentOverrideField, "customfield_10923123"
+                AppSettingKeys.ProjectSettingParentOverrideField, "customfield_10923123",
+                AppSettingKeys.ProjectSettingBlockedStates, "Blocked,On Hold",
+                AppSettingKeys.ProjectSettingBlockedTags, "tag1,tag2"
                 );
 
             var service = CreateService();
@@ -267,7 +287,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.ServiceLevelExpectationRange, Is.EqualTo(10));
 
                 Assert.That(settings.ParentOverrideField, Is.EqualTo("customfield_10923123"));
-            };
+
+                Assert.That(settings.BlockedStates, Has.Count.EqualTo(2));
+                Assert.That(settings.BlockedStates, Does.Contain("Blocked"));
+                Assert.That(settings.BlockedStates, Does.Contain("On Hold"));
+
+                Assert.That(settings.BlockedTags, Has.Count.EqualTo(2));
+                Assert.That(settings.BlockedTags, Does.Contain("tag1"));
+                Assert.That(settings.BlockedTags, Does.Contain("tag2"));
+            }
+            ;
         }
 
         [Test]
@@ -291,7 +320,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingTags, "tag1,tag2",
                 AppSettingKeys.ProjectSettingSLEProbability, "88",
                 AppSettingKeys.ProjectSettingSLERange, "10",
-                AppSettingKeys.ProjectSettingParentOverrideField, "customfield_10923123"
+                AppSettingKeys.ProjectSettingParentOverrideField, "customfield_10923123",
+                AppSettingKeys.ProjectSettingBlockedStates, "Blocked,On Hold",
+                AppSettingKeys.ProjectSettingBlockedTags, "tag1,tag2"
                 );
 
             var service = CreateService();
@@ -316,6 +347,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ServiceLevelExpectationProbability = 70,
                 ServiceLevelExpectationRange = 35,
                 ParentOverrideField = "customfield_1886",
+                BlockedStates = ["Waiting for Peter"],
+                BlockedTags = ["tag3", "tag4"]
             };
 
             await service.UpdateDefaultProjectSettings(newSettings);
@@ -338,6 +371,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingSLEProbability, "70");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingSLERange, "35");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingParentOverrideField, "customfield_1886");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingBlockedStates, "Waiting for Peter");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingBlockedTags, "tag3,tag4");
         }
 
         [Test]
@@ -390,7 +425,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(settings.OverrideRequestTimeout, Is.True);
                 Assert.That(settings.RequestTimeoutInSeconds, Is.EqualTo(300));
-            };
+            }
+            ;
         }
 
         [Test]
