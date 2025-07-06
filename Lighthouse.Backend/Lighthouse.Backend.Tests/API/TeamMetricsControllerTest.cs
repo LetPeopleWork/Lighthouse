@@ -210,12 +210,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var item1 = new WorkItem
             {
-                Name = "Vfl"
+                Name = "Vfl",
+                Team = team,
             };
 
             var item2 = new WorkItem
             {
-                Name = "GCZ"
+                Name = "GCZ",
+                Team = team,
             };
 
             var expectedItems = new List<WorkItem> { item1, item2 };
@@ -339,12 +341,14 @@ namespace Lighthouse.Backend.Tests.API
 
             var item1 = new WorkItem
             {
-                Name = "Vfl"
+                Name = "Vfl",
+                Team = team,
             };
 
             var item2 = new WorkItem
             {
-                Name = "GCZ"
+                Name = "GCZ",
+                Team = team,
             };
 
             var expectedItems = new List<WorkItem> { item1, item2 };
