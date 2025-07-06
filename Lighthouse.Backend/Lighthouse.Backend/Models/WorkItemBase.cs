@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.Models
 
         public string State { get; set; } = string.Empty;
 
+        public List<string> Tags { get; set; } = [];
+
         public StateCategories StateCategory { get; set; } = StateCategories.Unknown;
 
         public string? Url { get; set; }
