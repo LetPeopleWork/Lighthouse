@@ -11,7 +11,7 @@ Preview
 {: .label .label-blue }
 -->
 
-# Lighthouse vNext
+# Lighthouse v25.7.7.1834
 {: .d-inline-block }
 Latest
 {: .label .label-green }
@@ -38,7 +38,7 @@ You can specify tags (*labels* in Jira) or states that mark an item as blocked.
 Special Thanks to everyone who contributed their feedback to this release:
 - [Lars Henning](https://www.linkedin.com/in/larshenning42/)
  
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.5.1158...v25.7.6)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.6...v25.7.7.1834)
 
 # Lighthouse v25.7.6
 
