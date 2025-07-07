@@ -37,6 +37,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetVersion_ProductionVersionEndsWithZero_RemovesLastSegment()
+        {
+            var version = new Version(1, 88, 7, 0);
+            assemblyServiceMock.Setup(x => x.GetAssemblyVersion()).Returns(version.ToString());
+            var subject = CreateSubject();
+
+            var currentVersion = subject.GetCurrentVersion();
+
+            Assert.That(currentVersion, Is.EqualTo($"v{version.Major}.{version.Minor}.{version.Build}"));
+        }
+
+        [Test]
         public void GetVersion_DevVersion_ReturnsDev()
         {
             hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);

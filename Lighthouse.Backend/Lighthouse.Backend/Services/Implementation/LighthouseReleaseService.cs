@@ -22,7 +22,8 @@ namespace Lighthouse.Backend.Services.Implementation
             this.gitHubService = gitHubService;
             this.assemblyService = assemblyService;
             this.logger = logger;
-            this.httpClient = new HttpClient();
+            
+            httpClient = new HttpClient();
         }
 
         public string GetCurrentVersion()
@@ -33,6 +34,13 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var version = assemblyService.GetAssemblyVersion();
+
+            if (version.EndsWith(".0"))
+            {
+                // Remove the trailing ".0" if it exists
+                version = version[..^2];
+            }
+
             return $"v{version}";
         }
 
