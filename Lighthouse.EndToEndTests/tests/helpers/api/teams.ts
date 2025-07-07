@@ -29,7 +29,7 @@ export async function createTeam(
 			serviceLevelExpectationRange: 7,
 			systemWIPLimit: 6,
 			blockedStates: [],
-			blockedTags: [],
+			blockedTags: ["Blocked"],
 		},
 	});
 

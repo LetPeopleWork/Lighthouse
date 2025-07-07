@@ -82,6 +82,11 @@ export class TeamDetailPage {
 		return new WorkItemsInProgressDialog(this.page);
 	}
 
+	async openBlockedItemsDialog(): Promise<WorkItemsInProgressDialog> {
+		await this.blockedItemsWidget.click();
+		return new WorkItemsInProgressDialog(this.page);
+	}
+
 	async openClosedItemsDialog(): Promise<WorkItemsInProgressDialog> {
 		await this.cycleTimePercentileWidget.click();
 		return new WorkItemsInProgressDialog(this.page);
@@ -165,6 +170,13 @@ export class TeamDetailPage {
 		return this.page
 			.locator("div")
 			.filter({ hasText: /^Features being Worked On:.*$/ })
+			.first();
+	}
+
+	get blockedItemsWidget(): Locator {
+		return this.page
+			.locator("div")
+			.filter({ hasText: /^Blocked Items:.*$/ })
 			.first();
 	}
 

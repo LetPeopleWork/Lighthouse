@@ -357,7 +357,20 @@ testWithData(
 			featuresInProgressDialog.page.getByRole("dialog"),
 			"features/metrics/featuresinprogress_dialog.png",
 		);
-		await featuresInProgressDialog.close();
+		await featuresInProgressDialog.close();		
+
+		await takeElementScreenshot(
+			teamDetailPage.blockedItemsWidget,
+			"features/metrics/blockedItems.png",
+		);
+
+		const blockedItemsDialog =
+			await teamDetailPage.openBlockedItemsDialog();
+		await takeElementScreenshot(
+			blockedItemsDialog.page.getByRole("dialog"),
+			"features/metrics/blockedItems_dialog.png",
+		);
+		await blockedItemsDialog.close();
 
 		await takeElementScreenshot(
 			teamDetailPage.cycleTimePercentileWidget,
