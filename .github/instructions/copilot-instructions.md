@@ -23,7 +23,7 @@ The plan's structure is defined by the following template. Adhere to all formatt
 **🛠️ STEPS:** A numbered list of concise, high-level actions.
   - 1. Start each step with a verb.
   - 2. Keep each step to a single sentence.
-**💡 Learning:** If applicable, include a brief note on what you learned from this task and that you would add to the instructions file. Only do this if it's something generally applicable, and not something specific to this task. Adding a new learning should be an exception rather than the rule. If in doubt, better ask whether to add it or not.
+**💡 Learning:** If applicable, include a brief note on what you learned from this task and that you would add to the instructions file.
 
 **Key Rules:**
 *   **Conciseness:** Keep all fields as brief as possible.
