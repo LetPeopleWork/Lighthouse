@@ -18,6 +18,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IWorkItemService> workItemServiceMock;
         private Mock<IForecastService> forecastServiceMock;
+        private Mock<IProjectMetricsService> projectMetricsServiceMock;
 
         private int idCounter = 0;
 
@@ -28,11 +29,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = new Mock<IForecastService>();
             workItemServiceMock = new Mock<IWorkItemService>();
+            projectMetricsServiceMock = new Mock<IProjectMetricsService>();
 
             SetupServiceProviderMock(projectRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(workItemServiceMock.Object);
+            SetupServiceProviderMock(projectMetricsServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
         }
@@ -76,6 +79,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             await subject.StartAsync(CancellationToken.None);
 
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project.Id, It.IsAny<Func<IServiceProvider, Task>>()));
+        }
+
+        [Test]
+        public async Task ExecuteAsync_InvalidatesProjectMetricsAfterUpdate()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects(project);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            projectMetricsServiceMock.Verify(x => x.InvalidateProjectMetrics(project));
         }
 
         [Test]

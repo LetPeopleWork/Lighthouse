@@ -10,7 +10,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public class ProjectUpdater : UpdateServiceBase<Project>, IProjectUpdater
     {
-        public ProjectUpdater(ILogger<ProjectUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
+        public ProjectUpdater(
+            ILogger<ProjectUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
             : base(logger, serviceScopeFactory, updateQueueService, UpdateType.Features)
         {
         }
@@ -35,8 +36,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
             var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
-            var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
-            var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
             
             var project = projectRepository.GetById(id);
             if (project == null)
@@ -44,7 +43,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
+            var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
+            var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
+            var projectMetricsService = serviceProvider.GetRequiredService<IProjectMetricsService>();
+
             await workItemService.UpdateFeaturesForProject(project);
+            projectMetricsService.InvalidateProjectMetrics(project);
+
             await forecastUpdateService.UpdateForecastsForProject(project);
         }
     }
