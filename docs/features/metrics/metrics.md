@@ -72,6 +72,22 @@ Similar to the Work in Progress widget, it is **not affected** by the date selec
 {: .note}
 The number being shown here is based on the parent items that are currently *in progress*. It **does not** matter whether your Feature is in a *To Do*, *Doing*, or *Done* state. If you work on an item that links to a feature, that feature is being worked on, and it will show up here. Thus this widget is not available for *Projects*, but only for *Teams*.
 
+
+## Blocked Items
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Projects |
+| **Flow Metric** | WIP |
+| **Affected by Filtering** | No |
+
+![Blocked Items](../../assets/features/metrics/blockedItems.png)
+
+This widget shows the items that are currently blocked. As with the [Work in Progress](#work-in-progress), it shows the total, and with a click on it will reveal more details. The *Goal* is always set to 0.
+
+Similar to the Work in Progress widget, it is **not affected** by the date selection.
+
+![Blocked Items Details](../../assets/features/metrics/blockedItems_dialog.png)
+
 ## WIP Over Time
 
 |--------------|-------------------------|
@@ -103,6 +119,9 @@ On the y-axis, you'll see how long each particular item is in progress already.
 
 Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), multiple items are grouped in a bubble that is shown bigger. If you want more details, you can click on a specific bubble.
 You can selectively show various percentiles from your cycle time for the selected range, as well as the Service Level Expectation if you have configured it.
+
+{: .note}
+If there is a blocked item, it will appear as a red dot in the chart.
 
 ## Started vs. Closed
 

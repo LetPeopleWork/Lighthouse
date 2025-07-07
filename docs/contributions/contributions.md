@@ -66,6 +66,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Frank Barner**](https://www.linkedin.com/in/frankbarner/)
 - [**Nina Wagen**](https://www.linkedin.com/in/nina-wagen-04a9756a/)
 - [**Becky Tedds**](https://www.linkedin.com/in/beckytedds/)
+- [**Lars Henning**](https://www.linkedin.com/in/larshenning42/)
 
 ---
 

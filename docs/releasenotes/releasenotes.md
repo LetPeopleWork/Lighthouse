@@ -11,10 +11,36 @@ Preview
 {: .label .label-blue }
 -->
 
-# Lighthouse v25.7.6
+# Lighthouse vNext
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Visualize Blocked Items
+
+![Blocked Items Widget](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/assets/features/metrics/blockedItems.png?raw=true)
+
+Lighthouse now can visualize items that are blocked. Following changes were made:
+- New widget that shows the total of blocked items
+- The *Work Item Aging Chart* displays blocked items with a red dot
+- Blocked items have a dedicated icon in the Work Item Dialog when you
+
+![Blocked Items Dialog](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/assets/features/metrics/blockedItems_dialog.png?raw=true)
+
+In order to configure blocked items, both Teams and Projects offer a new option under *Flow Metrics Configuration*.
+You can specify tags (*labels* in Jira) or states that mark an item as blocked.
+
+## Bug Fixes
+- In certain cases, the validation for Projects was never completing. This should be fixed now.
+- Some of the metrics in a project were cached but never invalidated, thus the value never updated. This is fixed.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Lars Henning](https://www.linkedin.com/in/larshenning42/)
+ 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.5.1158...v25.7.6)
+
+# Lighthouse v25.7.6
 
 ## Fixed disappearing states in Work Item Aging Chart
 If you have many states, some of them would not show up in the x-axis of the Work Item Aging Chart.

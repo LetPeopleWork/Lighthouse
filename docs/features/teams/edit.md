@@ -127,6 +127,18 @@ You can enable a Service Level Expectation (SLE) for your teams. If you do, you 
 
 If you enable the SLE, you will get additional information in the [Metrics View](../metrics/metrics.html).
 
+## Blocked Items
+You can configure how you identify blocked items in your process. Lighthouse offers two options for this.
+
+### Tags
+If you use tags (*labels* in Jira), you can specify which tag mean that an item is blocked. You are free to define whatever and how many tags you like.
+
+### States
+You can also specify states that indicate a blockage of your work. You can pick any state that you defined as [doing state](#states).
+
+{: .important}
+We do not recommend using states for identifying blocked work. Tags work better from a Flow perspective. [More Details here](https://www.prokanban.org/blog/whats-wrong-with-having-a-blocked-column).
+
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
 
