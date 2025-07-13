@@ -36,14 +36,31 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 	const scoreColor = getPredictabilityScoreColor(data.predictabilityScore);
 	const hasResults = data.forecastResults.size > 0;
 
-	// Convert Map to chart data
+	// Convert Map to chart data with zero-padding before first key
 	const chartData = hasResults
-		? Array.from(data.forecastResults.entries())
-				.sort(([a], [b]) => a - b)
-				.map(([key, value]) => ({
-					x: key,
-					y: value,
-				}))
+		? (() => {
+				const sortedEntries = Array.from(data.forecastResults.entries()).sort(
+					([a], [b]) => a - b,
+				);
+
+				if (sortedEntries.length === 0) return [];
+
+				const lastKey = sortedEntries[sortedEntries.length - 1][0];
+				const paddedData: { x: number; y: number }[] = [];
+
+				// Create a map for quick lookup
+				const dataMap = new Map(sortedEntries);
+
+				// Add zero-padding from 0 to lastKey, filling gaps
+				for (let i = 0; i <= lastKey; i++) {
+					paddedData.push({
+						x: i,
+						y: dataMap.get(i) || 0,
+					});
+				}
+
+				return paddedData;
+			})()
 		: [];
 
 	// Get percentile marks for reference lines
@@ -93,24 +110,23 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 					>
 						{(data.predictabilityScore * 100).toFixed(1)}%
 					</Typography>
-					<Typography variant="body2" color="text.secondary">
-						Predictability Score
-					</Typography>
 				</Box>
 			</Box>
 
 			{/* Bar Chart with Percentiles */}
 			{hasResults && (
-				<Box sx={{ position: "relative", height: title ? 200 : 400 }}>
+				<Box sx={{ position: "relative", height: 400 }}>
 					<ChartContainer
-						height={title ? 200 : 400}
-						margin={{ left: 5, right: 5, top: 35, bottom: 5 }}
+						height={400}
 						xAxis={[
 							{
 								id: "forecastAxis",
 								scaleType: "band",
 								data: chartData.map((d) => d.x.toString()),
-								hideTooltip: true,
+								position: "bottom",
+								disableLine: false,
+								disableTicks: false,
+								tickLabelStyle: { display: "none" },
 							},
 						]}
 						yAxis={[
@@ -122,7 +138,10 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 									chartData.length > 0
 										? Math.max(...chartData.map((d) => d.y)) * 1.3
 										: 10, // Add 30% padding above highest bar
-								hideTooltip: true,
+								label: "Occurrences",
+								position: "left",
+								disableLine: false,
+								disableTicks: false,
 							},
 						]}
 						series={[
@@ -134,14 +153,6 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 								color: theme.palette.primary.main,
 							},
 						]}
-						sx={{
-							"& .MuiChartsAxis-root": {
-								display: "none",
-							},
-							"& .MuiChartsAxis-tickLabel": {
-								display: "none",
-							},
-						}}
 					>
 						{/* Percentile Reference Lines */}
 						{percentileMarks.map((mark) => (
@@ -163,11 +174,24 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 						))}
 
 						<BarPlot />
-						<ChartsXAxis />
-						<ChartsYAxis />
+						<ChartsXAxis axisId="forecastAxis" />
+						<ChartsYAxis axisId="countAxis" />
 					</ChartContainer>
 				</Box>
 			)}
+
+			{/* Explanation Text */}
+			<Box sx={{ mt: 2, textAlign: "center" }}>
+				<Typography variant="body2" color="text.secondary">
+					The predictability score shows how "close" the 50% and 95% chance are.
+					The closer they are, the more predictable you are. 100% means they are
+					exactly the same value. The higher number, the better.
+				</Typography>
+				<Typography variant="body2" color="text.secondary">
+					The chart shows the result of a forecast that was made based on the
+					Throughput for the selected date range.
+				</Typography>
+			</Box>
 		</Box>
 	);
 };

@@ -1,7 +1,6 @@
 import type { IPercentileValue } from "../PercentileValue";
 
 export interface IForecastPredictabilityScore {
-	[x: string]: any;
 	predictabilityScore: number;
 	percentiles: IPercentileValue[];
 	forecastResults: Map<number, number>;

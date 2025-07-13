@@ -108,7 +108,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 								onClick={handleFlip}
 								sx={{
 									position: "absolute",
-									top: 8,
+									top: -24,
 									right: 8,
 									zIndex: 1,
 									cursor: "pointer",
