@@ -110,6 +110,7 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getInProgressItems: vi.fn(),
 		getCycleTimeData: vi.fn(),
 		getCycleTimePercentiles: vi.fn(),
+		getMultiItemForecastPredictabilityScore: vi.fn(),
 	};
 };
 
@@ -123,6 +124,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getInProgressItems: vi.fn().mockResolvedValue([]),
 		getCycleTimeData: vi.fn().mockResolvedValue([]),
 		getCycleTimePercentiles: vi.fn().mockResolvedValue([]),
+		getMultiItemForecastPredictabilityScore: vi.fn(),
 	};
 };
 

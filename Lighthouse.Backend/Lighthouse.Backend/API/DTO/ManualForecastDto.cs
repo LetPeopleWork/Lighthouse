@@ -16,6 +16,6 @@
 
         public List<WhenForecastDto> WhenForecasts { get; } = new List<WhenForecastDto>();
 
-        public List<HowManyForecastDto> HowManyForecasts { get; } = new List<HowManyForecastDto>();
+        public List<ForecastDto> HowManyForecasts { get; } = new List<ForecastDto>();
     }
 }

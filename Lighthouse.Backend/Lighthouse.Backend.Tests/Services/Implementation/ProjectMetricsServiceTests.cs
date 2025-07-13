@@ -1,8 +1,13 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
@@ -15,6 +20,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<ILogger<ProjectMetricsService>> logger;
         private Mock<IRepository<Feature>> featureRepository;
         private Mock<IAppSettingService> appSettingService;
+        private Mock<IForecastService> forecastServiceMock;
+
         private ProjectMetricsService subject;
         private Project project;
         private List<Feature> features;
@@ -28,7 +35,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             appSettingService.Setup(m => m.GetFeaturRefreshSettings()).Returns(new RefreshSettings { Interval = 30 });
 
-            subject = new ProjectMetricsService(logger.Object, featureRepository.Object, appSettingService.Object);
+            forecastServiceMock = new Mock<IForecastService>();
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
+                .Returns(forecastServiceMock.Object);
+
+            subject = new ProjectMetricsService(logger.Object, featureRepository.Object, appSettingService.Object, serviceProvider.Object);
+
             featureRepository.Setup(x => x.GetAllByPredicate(
                     It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
@@ -206,6 +219,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void InvalidateProjectMetrics_DoesNotThrow()
         {
             Assert.DoesNotThrow(() => subject.InvalidateProjectMetrics(project));
+        }
+
+        [Test]
+        public void GetMultiItemForecastPredictabilityScoreForProject_ReturnsScoreBasedOnProjectssThroughputAndHowManyForecast()
+        {
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 10);
+
+            featureRepository.Setup(x => x.GetAllByPredicate(
+                It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
+
+            var howManyForecast = new HowManyForecast();
+            var expectedResult = new ForecastPredictabilityScore(howManyForecast);
+
+            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 10)).Returns(howManyForecast);
+
+            var score = subject.GetMultiItemForecastPredictabilityScoreForProject(project, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(score, Is.Not.Null);
+                Assert.That(score.PredictabilityScore, Is.EqualTo(expectedResult.PredictabilityScore));
+                foreach (var percentile in score.Percentiles)
+                {
+                    Assert.That(percentile.Value, Is.EqualTo(expectedResult.Percentiles.Single(p => p.Percentile == percentile.Percentile).Value));
+                }
+            }
+            ;
         }
 
         private void SetupTestData()

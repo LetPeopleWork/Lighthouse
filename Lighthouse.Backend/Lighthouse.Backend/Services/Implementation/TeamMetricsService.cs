@@ -1,6 +1,8 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -15,8 +17,13 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IWorkItemRepository workItemRepository;
         private readonly IRepository<Feature> featureRepository;
 
-        public TeamMetricsService(ILogger<TeamMetricsService> logger, IWorkItemRepository workItemRepository, IRepository<Feature> featureRepository, IAppSettingService appSettingService)
-            : base(appSettingService.GetTeamDataRefreshSettings().Interval)
+        public TeamMetricsService(
+            ILogger<TeamMetricsService> logger, 
+            IWorkItemRepository workItemRepository, 
+            IRepository<Feature> featureRepository, 
+            IAppSettingService appSettingService,
+            IServiceProvider serviceProvider)
+            : base(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider)
         {
             this.logger = logger;
             this.workItemRepository = workItemRepository;
@@ -84,7 +91,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Current Throughput for Team {TeamName}", team.Name);
 
-            return GetFromCacheIfExists<RunChartData, Team>(team, throughputMetricIdentifier, () =>
+            return GetFromCacheIfExists(team, throughputMetricIdentifier, () =>
             {
                 var startDate = DateTime.UtcNow.Date.AddDays(-(team.ThroughputHistory - 1));
                 var endDate = DateTime.UtcNow;
@@ -149,6 +156,12 @@ namespace Lighthouse.Backend.Services.Implementation
             var throughput = new RunChartData(wipOverTime);
 
             return throughput;
+        }
+
+        public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            var throughput = GetThroughputForTeam(team, startDate, endDate);
+            return GetMultiItemForecastPredictabilityScore(throughput, startDate, endDate);
         }
 
         public IEnumerable<WorkItem> GetClosedItemsForTeam(Team team, DateTime startDate, DateTime endDate)

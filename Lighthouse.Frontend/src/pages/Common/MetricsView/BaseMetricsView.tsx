@@ -10,6 +10,7 @@ import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedV
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { IFeature } from "../../../models/Feature";
+import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -53,6 +54,8 @@ export const BaseMetricsView = <
 		[],
 	);
 	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
+	const [predictabilityData, setPredictabilityData] =
+		useState<IForecastPredictabilityScore | null>(null);
 
 	const [startDate, setStartDate] = useState<Date>(() => {
 		const date = new Date();
@@ -64,6 +67,24 @@ export const BaseMetricsView = <
 		useState<IPercentileValue | null>(null);
 
 	const [endDate, setEndDate] = useState<Date>(new Date());
+
+	useEffect(() => {
+		const fetchPredictabilityData = async () => {
+			try {
+				const data =
+					await metricsService.getMultiItemForecastPredictabilityScore(
+						entity.id,
+						startDate,
+						endDate,
+					);
+				setPredictabilityData(data);
+			} catch (error) {
+				console.error("Error fetching predictability data:", error);
+			}
+		};
+
+		fetchPredictabilityData();
+	}, [entity, metricsService, startDate, endDate]);
 
 	useEffect(() => {
 		const fetchThroughput = async () => {
@@ -212,6 +233,7 @@ export const BaseMetricsView = <
 						startDate={startDate}
 						chartData={throughputData}
 						displayTotal={true}
+						predictabilityData={predictabilityData}
 					/>
 				)}
 			</Grid>

@@ -101,14 +101,10 @@ namespace Lighthouse.Backend
 
             app.UseCors("AllowAll");
 
-            app.UseSwagger(c =>
-            {
-                c.RouteTemplate = "api/swagger/{documentName}/swagger.json";
-            });
+            app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "Lighthouse API V1");
-                c.RoutePrefix = "api/swagger";
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Lighthouse API V1");
             });
 
             app.UseDefaultFiles();

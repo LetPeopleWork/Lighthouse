@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Services.Interfaces
@@ -14,6 +15,8 @@ namespace Lighthouse.Backend.Services.Interfaces
         RunChartData GetCreatedItemsForTeam(Team team, IEnumerable<string> workItemTypes, DateTime startDate, DateTime endDate);
 
         RunChartData GetWorkInProgressOverTimeForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForTeam(Team team, DateTime startDate, DateTime endDate);
 
         IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team);
 

@@ -8,6 +8,10 @@ import {
 import type { IWorkTrackingSystemSettings } from "../../models/AppSettings/WorkTrackingSystemSettings";
 import type { ConfigurationValidation } from "../../models/Configuration/ConfigurationValidation";
 import { Feature, type IFeature } from "../../models/Feature";
+import {
+	ForecastPredictabilityScore,
+	type IForecastPredictabilityScore,
+} from "../../models/Forecasts/ForecastPredictabilityScore";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
@@ -125,6 +129,54 @@ export class DemoTeamMetricsService implements ITeamMetricsService {
 			{ percentile: 85, value: 10 },
 			{ percentile: 95, value: 12 },
 		];
+	}
+
+	async getMultiItemForecastPredictabilityScore(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IForecastPredictabilityScore> {
+		console.log(
+			`Getting Forecast Predictability Score for Team ${teamId} for the date range from ${startDate} to ${endDate}`,
+		);
+
+		await delay();
+
+		const percentileValues = [
+			{ percentile: 50, value: 42 },
+			{ percentile: 70, value: 31 },
+			{ percentile: 85, value: 12 },
+			{ percentile: 95, value: 7 },
+		];
+
+		const predictabilityScore = new ForecastPredictabilityScore(
+			percentileValues,
+			Math.random() * 100,
+			new Map([
+				[1, 1],
+				[2, 0],
+				[3, 3],
+				[4, 1],
+				[5, 2],
+				[6, 2],
+				[7, 3],
+				[8, 2],
+				[9, 2],
+				[10, 1],
+				[11, 1],
+				[12, 0],
+				[13, 0],
+				[14, 1],
+				[15, 0],
+				[16, 0],
+				[17, 0],
+				[18, 0],
+				[19, 0],
+				[20, 0],
+			]),
+		);
+
+		return predictabilityScore;
 	}
 
 	async getCycleTimeData(
@@ -326,6 +378,19 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 		const workItemsPerUnitOfTime: { [key: number]: IWorkItem[] } =
 			generateWorkItemMapForRunChart(combinedThroughput);
 		return new RunChartData(workItemsPerUnitOfTime, totalHistory, totalSum);
+	}
+
+	async getMultiItemForecastPredictabilityScore(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ForecastPredictabilityScore> {
+		await delay();
+		console.log(
+			`Getting Forecast Predictability Score for Project ${id} for the date range from ${startDate} to ${endDate}`,
+		);
+
+		return new ForecastPredictabilityScore([], 0.1, new Map([]));
 	}
 
 	async getStartedItems(
@@ -1139,7 +1204,7 @@ export class DemoApiService
 
 		return {
 			toDoStates: ["New"],
-			doingStates: ["Active"],
+			doingStates: ["Active", "Resolved"],
 			doneStates: ["Done"],
 		};
 	}
@@ -1263,7 +1328,9 @@ export class DemoApiService
 		settingName: string,
 		refreshSettings: IRefreshSettings,
 	): Promise<void> {
-		console.log(`Update ${settingName} refresh settings: ${refreshSettings}`);
+		console.log(
+			`Update ${settingName} refresh settings: ${refreshSettings.interval} - ${refreshSettings.refreshAfter} - ${refreshSettings.startDelay}`,
+		);
 
 		await delay();
 	}
@@ -1281,7 +1348,7 @@ export class DemoApiService
 		workTrackingSystemSettings: IWorkTrackingSystemSettings,
 	): Promise<void> {
 		console.log(
-			`Updating Work Tracking System Settings: ${workTrackingSystemSettings}`,
+			`Updating Work Tracking System Settings: ${workTrackingSystemSettings.overrideRequestTimeout} - ${workTrackingSystemSettings.requestTimeoutInSeconds}`,
 		);
 
 		await delay();

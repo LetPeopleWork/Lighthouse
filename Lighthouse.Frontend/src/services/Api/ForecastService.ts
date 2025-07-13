@@ -45,8 +45,7 @@ export class ForecastService
 			);
 		});
 		const howManyForecasts = manualForecastData.howManyForecasts.map(
-			(forecast) =>
-				new HowManyForecast(forecast.probability, forecast.expectedItems),
+			(forecast) => new HowManyForecast(forecast.probability, forecast.value),
 		);
 		return new ManualForecast(
 			manualForecastData.remainingItems,

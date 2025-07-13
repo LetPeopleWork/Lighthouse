@@ -17,13 +17,14 @@ namespace Lighthouse.Backend.API.DTO
 
             return forecastDtos;
         }
-        public static IEnumerable<HowManyForecastDto> CreateForecastDtos(this HowManyForecast howManyForecast, params int[] probabilities)
+
+        public static IEnumerable<ForecastDto> CreateForecastDtos(this HowManyForecast howManyForecast, params int[] probabilities)
         {
-            var forecastDtos = new List<HowManyForecastDto>();
+            var forecastDtos = new List<ForecastDto>();
             foreach (var probability in probabilities)
             {
                 forecastDtos.Add(
-                        new HowManyForecastDto { Probability = probability, ExpectedItems = howManyForecast.GetProbability(probability) }
+                        new ForecastDto { Probability = probability, Value = howManyForecast.GetProbability(probability) }
                     );
             }
 

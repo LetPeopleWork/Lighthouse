@@ -1,7 +1,8 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -16,8 +17,9 @@ namespace Lighthouse.Backend.Services.Implementation
         public ProjectMetricsService(
             ILogger<ProjectMetricsService> logger,
             IRepository<Feature> featureRepository,
-            IAppSettingService appSettingService)
-            : base(appSettingService.GetFeaturRefreshSettings().Interval)
+            IAppSettingService appSettingService,
+            IServiceProvider serviceProvider)
+            : base(appSettingService.GetFeaturRefreshSettings().Interval, serviceProvider)
         {
             this.logger = logger;
             this.featureRepository = featureRepository;
@@ -70,6 +72,12 @@ namespace Lighthouse.Backend.Services.Implementation
             var throughput = new RunChartData(startedItemsByDay);
 
             return throughput;
+        }
+
+        public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForProject(Project project, DateTime startDate, DateTime endDate)
+        {
+            var throughput = GetThroughputForProject(project, startDate, endDate);
+            return GetMultiItemForecastPredictabilityScore(throughput, startDate, endDate);
         }
 
         public IEnumerable<Feature> GetInProgressFeaturesForProject(Project project)

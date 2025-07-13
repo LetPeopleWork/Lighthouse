@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
@@ -70,6 +71,16 @@ vi.mock("@mui/x-charts", async () => {
 	};
 });
 
+// Mock the PredictabilityScore component
+vi.mock("./PredictabilityScore", () => ({
+	default: vi.fn(({ data }) => (
+		<div data-testid="predictability-score-component">
+			Predictability Score Component - Score:{" "}
+			{(data.predictabilityScore * 100).toFixed(1)}%
+		</div>
+	)),
+}));
+
 // Function to generate mock work items
 function generateMockWorkItems(count: number): IWorkItem[] {
 	return Array.from({ length: count }, (_, i) => ({
@@ -87,6 +98,28 @@ function generateMockWorkItems(count: number): IWorkItem[] {
 		parentWorkItemReference: "",
 		isBlocked: false,
 	}));
+}
+
+// Function to generate mock predictability data
+function generateMockPredictabilityData(
+	score: number,
+): IForecastPredictabilityScore {
+	return {
+		predictabilityScore: score,
+		percentiles: [
+			{ percentile: 50, value: 5 },
+			{ percentile: 70, value: 7 },
+			{ percentile: 85, value: 10 },
+			{ percentile: 95, value: 15 },
+		],
+		forecastResults: new Map([
+			[3, 1],
+			[5, 5],
+			[7, 12],
+			[10, 6],
+			[15, 1],
+		]),
+	};
 }
 
 describe("BarRunChart component", () => {
@@ -235,5 +268,253 @@ describe("BarRunChart component", () => {
 
 		// Dialog should be closed
 		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
+	});
+});
+
+describe("Predictability Score functionality", () => {
+	it("should display predictability chip when predictability data is provided", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+		const mockPredictabilityData = generateMockPredictabilityData(0.75);
+
+		render(
+			<BarRunChart
+				chartData={mockThroughputData}
+				startDate={new Date()}
+				predictabilityData={mockPredictabilityData}
+			/>,
+		);
+
+		const predictabilityChip = screen.getByText("Predictability Score: 75.0%");
+		expect(predictabilityChip).toBeInTheDocument();
+	});
+
+	it("should not display predictability chip when predictability data is null", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+
+		render(
+			<BarRunChart
+				chartData={mockThroughputData}
+				startDate={new Date()}
+				predictabilityData={null}
+			/>,
+		);
+
+		expect(screen.queryByText(/Predictability Score:/)).not.toBeInTheDocument();
+	});
+
+	it("should not display predictability chip when predictability data is undefined", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+
+		render(
+			<BarRunChart
+				chartData={mockThroughputData}
+				startDate={new Date()}
+				predictabilityData={undefined}
+			/>,
+		);
+
+		expect(screen.queryByText(/Predictability Score:/)).not.toBeInTheDocument();
+	});
+
+	it("should flip to predictability score view when chip is clicked", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+		const mockPredictabilityData = generateMockPredictabilityData(0.85);
+
+		render(
+			<BarRunChart
+				chartData={mockThroughputData}
+				startDate={new Date()}
+				predictabilityData={mockPredictabilityData}
+			/>,
+		);
+
+		// Initially should show bar chart
+		expect(screen.getByTestId("mock-bar-chart")).toBeInTheDocument();
+		expect(screen.queryByText("Predictability Score")).not.toBeInTheDocument();
+
+		// Click the chip to flip
+		const predictabilityChip = screen.getByText("Predictability Score: 85.0%");
+		fireEvent.click(predictabilityChip); // Should now show predictability score view
+		expect(screen.queryByTestId("mock-bar-chart")).not.toBeInTheDocument();
+		expect(screen.getByText("Predictability Score")).toBeInTheDocument();
+		expect(
+			screen.getByTestId("predictability-score-component"),
+		).toBeInTheDocument();
+	});
+
+	it("should flip back to bar chart view when back button is clicked", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+		const mockPredictabilityData = generateMockPredictabilityData(0.6);
+
+		render(
+			<BarRunChart
+				chartData={mockThroughputData}
+				startDate={new Date()}
+				predictabilityData={mockPredictabilityData}
+			/>,
+		);
+
+		// Click the chip to flip to predictability view
+		const predictabilityChip = screen.getByText("Predictability Score: 60.0%");
+		fireEvent.click(predictabilityChip);
+
+		// Verify we're in predictability view
+		expect(screen.getByText("Predictability Score")).toBeInTheDocument();
+
+		// Click the back button to flip back
+		const backButton = screen.getByRole("button");
+		fireEvent.click(backButton); // Should be back to bar chart view
+		expect(screen.getByTestId("mock-bar-chart")).toBeInTheDocument();
+		expect(screen.queryByText("Predictability Score")).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("predictability-score-component"),
+		).not.toBeInTheDocument();
+	});
+
+	it("should format predictability score percentage correctly with one decimal", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+		const mockPredictabilityData = generateMockPredictabilityData(0.123);
+
+		render(
+			<BarRunChart
+				chartData={mockThroughputData}
+				startDate={new Date()}
+				predictabilityData={mockPredictabilityData}
+			/>,
+		);
+
+		const predictabilityChip = screen.getByText("Predictability Score: 12.3%");
+		expect(predictabilityChip).toBeInTheDocument();
+	});
+
+	it("should prevent dialog from opening when clicking chip to flip", () => {
+		const rawData = [5, 10, 15];
+		const mockWorkItems = generateMockWorkItems(10);
+		const workItemsMap: { [key: number]: IWorkItem[] } = {
+			0: [],
+			1: mockWorkItems,
+			2: [],
+		};
+
+		const mockThroughputData = new RunChartData(
+			workItemsMap,
+			rawData.length,
+			30,
+		);
+		const mockPredictabilityData = generateMockPredictabilityData(0.8);
+
+		render(
+			<BarRunChart
+				chartData={mockThroughputData}
+				startDate={new Date()}
+				predictabilityData={mockPredictabilityData}
+			/>,
+		);
+
+		// Click the chip - this should flip the view but not open dialog
+		const predictabilityChip = screen.getByText("Predictability Score: 80.0%");
+		fireEvent.click(predictabilityChip);
+
+		// Dialog should not be opened
+		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument(); // Should be in predictability view
+		expect(screen.getByText("Predictability Score")).toBeInTheDocument();
+		expect(
+			screen.getByTestId("predictability-score-component"),
+		).toBeInTheDocument();
+	});
+
+	it("should display different predictability score values correctly", () => {
+		const testCases = [
+			{ score: 0.0, expectedText: "0.0%" },
+			{ score: 0.333, expectedText: "33.3%" },
+			{ score: 0.5, expectedText: "50.0%" },
+			{ score: 0.999, expectedText: "99.9%" },
+			{ score: 1.0, expectedText: "100.0%" },
+		];
+
+		testCases.forEach(({ score, expectedText }) => {
+			const rawData = [10];
+			const mockThroughputData = new RunChartData(
+				generateWorkItemMapForRunChart(rawData),
+				rawData.length,
+				10,
+			);
+			const mockPredictabilityData = generateMockPredictabilityData(score);
+
+			const { unmount } = render(
+				<BarRunChart
+					chartData={mockThroughputData}
+					startDate={new Date()}
+					predictabilityData={mockPredictabilityData}
+				/>,
+			);
+
+			const predictabilityChip = screen.getByText(
+				`Predictability Score: ${expectedText}`,
+			);
+			expect(predictabilityChip).toBeInTheDocument();
+
+			unmount();
+		});
+	});
+
+	it("should pass correct data to PredictabilityScore component", () => {
+		const rawData = [10, 20, 30];
+		const mockThroughputData = new RunChartData(
+			generateWorkItemMapForRunChart(rawData),
+			rawData.length,
+			60,
+		);
+		const mockPredictabilityData = generateMockPredictabilityData(0.42);
+
+		render(
+			<BarRunChart
+				chartData={mockThroughputData}
+				startDate={new Date()}
+				predictabilityData={mockPredictabilityData}
+			/>,
+		);
+
+		// Click the chip to flip to predictability view
+		const predictabilityChip = screen.getByText("Predictability Score: 42.0%");
+		fireEvent.click(predictabilityChip);
+
+		// Verify the PredictabilityScore component receives the correct data
+		expect(
+			screen.getByTestId("predictability-score-component"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("Predictability Score Component - Score: 42.0%"),
+		).toBeInTheDocument();
 	});
 });

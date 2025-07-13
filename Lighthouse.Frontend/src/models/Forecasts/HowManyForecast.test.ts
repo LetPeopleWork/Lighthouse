@@ -8,7 +8,7 @@ describe("HowManyForecast", () => {
 		const forecast = new HowManyForecast(probability, expectedItems);
 
 		expect(forecast.probability).toBe(probability);
-		expect(forecast.expectedItems).toBe(expectedItems);
+		expect(forecast.value).toBe(expectedItems);
 	});
 
 	it("should implement the IHowManyForecast interface", () => {
@@ -16,6 +16,6 @@ describe("HowManyForecast", () => {
 
 		expect(forecast).toBeInstanceOf(HowManyForecast);
 		expect(forecast).toHaveProperty("probability");
-		expect(forecast).toHaveProperty("expectedItems");
+		expect(forecast).toHaveProperty("value");
 	});
 });

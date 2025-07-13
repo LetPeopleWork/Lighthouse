@@ -198,3 +198,15 @@ export const calculateContrastRatio = (
 
 	return (lighter + 0.05) / (darker + 0.05);
 };
+
+/**
+ * Get color based on predictability score thresholds
+ * @param score - Predictability score between 0 and 1
+ * @returns Color string from forecast color palette
+ */
+export const getPredictabilityScoreColor = (score: number): string => {
+	if (score >= 0.75) return appColors.forecast.certain;
+	if (score >= 0.6) return appColors.forecast.confident;
+	if (score >= 0.5) return appColors.forecast.realistic;
+	return appColors.forecast.risky;
+};

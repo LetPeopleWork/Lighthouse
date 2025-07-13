@@ -11,7 +11,7 @@ describe("ManualForecast", () => {
 
 	const mockHowManyForecast: IHowManyForecast = {
 		probability: 80,
-		expectedItems: 100,
+		value: 100,
 	};
 
 	it("should create a ManualForecast with the correct properties", () => {

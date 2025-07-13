@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 
@@ -11,12 +12,14 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetStartedItemsForProject(Project project, DateTime startDate, DateTime endDate);
 
+        ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForProject(Project project, DateTime startDate, DateTime endDate);
+
         IEnumerable<Feature> GetInProgressFeaturesForProject(Project project);
 
         IEnumerable<PercentileValue> GetCycleTimePercentilesForProject(Project project, DateTime startDate, DateTime endDate);
         
         IEnumerable<Feature> GetCycleTimeDataForProject(Project project, DateTime startDate, DateTime endDate);
-        
+
         void InvalidateProjectMetrics(Project project);
     }
 }

@@ -1,8 +1,12 @@
 using System.Linq.Expressions;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,6 +18,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     {
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IForecastService> forecastServiceMock;
+
         private Team testTeam;
 
         private TeamMetricsService subject;
@@ -24,13 +30,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
+            forecastServiceMock = new Mock<IForecastService>();
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetTeamDataRefreshSettings())
                 .Returns(new RefreshSettings { Interval = 1 });
+            
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
+                .Returns(forecastServiceMock.Object);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
-            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object);
+            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object);
+
             workItems = new List<WorkItem>();
 
             workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
@@ -228,7 +240,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 {
                     Assert.That(kvp.Value, Has.Count.EqualTo(1));
                 }
-            };
+            }
+            ;
         }
 
         [Test]
@@ -362,7 +375,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([1, 0, 0, 0, 1, 0, 0, 1]));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -399,7 +413,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([1, 0, 0, 0, 0, 0, 0, 1]));
-            };
+            }
+            ;
         }
 
 
@@ -425,7 +440,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 var workItemsPerUnitOfTime = createdItems.WorkItemsPerUnitOfTime;
                 Assert.That(workItemsPerUnitOfTime.Keys.Select(k => workItemsPerUnitOfTime[k].Count).ToArray(), Is.EqualTo([0, 0, 0, 0, 0, 0, 0, 0]));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -498,7 +514,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 {
                     Assert.That(wipData.WorkItemsPerUnitOfTime[index], Has.Count.EqualTo(9 - index));
                 }
-            };
+            }
+            ;
         }
 
         [Test]
@@ -560,7 +577,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(wipData.WorkItemsPerUnitOfTime, Has.Count.EqualTo(2));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[0], Has.Count.EqualTo(1));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[1], Is.Empty);
-            };
+            }
+            ;
         }
 
         [Test]
@@ -581,7 +599,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(wipData.WorkItemsPerUnitOfTime[0], Has.Count.EqualTo(0));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[1], Has.Count.EqualTo(1));
                 Assert.That(wipData.WorkItemsPerUnitOfTime[2], Has.Count.EqualTo(1));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -612,7 +631,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(cycleTimePercentiles[3].Percentile, Is.EqualTo(95));
                 Assert.That(cycleTimePercentiles[3].Value, Is.EqualTo(9));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -635,7 +655,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 Assert.That(cycleTimePercentiles[3].Percentile, Is.EqualTo(95));
                 Assert.That(cycleTimePercentiles[3].Value, Is.Zero);
-            };
+            }
+            ;
         }
 
         [Test]
@@ -659,7 +680,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 {
                     Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
                 }
-            };
+            }
+            ;
         }
 
         [Test]
@@ -675,7 +697,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
                 Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(2));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -691,7 +714,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
                 Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(1));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -715,7 +739,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 {
                     Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
                 }
-            };
+            }
+            ;
         }
 
         [Test]
@@ -767,6 +792,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.UpdateTeamMetrics(testTeam);
 
             Assert.That(testTeam.FeatureWIP, Is.Zero);
+        }
+
+        [Test]
+        public void GetMultiItemForecastPredictabilityScoreForTeam_ReturnsScoreBasedOnTeamsThroughputAndHowManyForecast()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 8, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var howManyForecast = new HowManyForecast();
+            var expectedResult = new ForecastPredictabilityScore(howManyForecast);
+
+            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 8)).Returns(howManyForecast);
+
+            var score = subject.GetMultiItemForecastPredictabilityScoreForTeam(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(score, Is.Not.Null);
+                Assert.That(score.PredictabilityScore, Is.EqualTo(expectedResult.PredictabilityScore));
+                foreach (var percentile in score.Percentiles)
+                {
+                    Assert.That(percentile.Value, Is.EqualTo(expectedResult.Percentiles.Single(p => p.Percentile == percentile.Percentile).Value));
+                }
+            }
+            ;
         }
 
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)

@@ -1,4 +1,8 @@
 import type { IFeature } from "../../models/Feature";
+import {
+	ForecastPredictabilityScore,
+	type IForecastPredictabilityScore,
+} from "../../models/Forecasts/ForecastPredictabilityScore";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
 import type { IWorkItem } from "../../models/WorkItem";
@@ -32,6 +36,12 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IPercentileValue[]>;
+
+	getMultiItemForecastPredictabilityScore(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ForecastPredictabilityScore>;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
@@ -153,6 +163,36 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 
 			return items;
 		});
+	}
+
+	async getMultiItemForecastPredictabilityScore(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IForecastPredictabilityScore> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IForecastPredictabilityScore>(
+				`/${this.api}/${id}/metrics/multiitemforecastpredictabilityscore?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return this.deserializeForecastAccuracy(response.data);
+		});
+	}
+
+	private deserializeForecastAccuracy(
+		forecastPredictabilityScoreData: IForecastPredictabilityScore,
+	): ForecastPredictabilityScore {
+		const forecastResults = new Map<number, number>(
+			Object.entries(forecastPredictabilityScoreData.forecastResults).map(
+				([key, value]) => [Number(key), value as number],
+			),
+		);
+
+		return new ForecastPredictabilityScore(
+			forecastPredictabilityScoreData.percentiles,
+			forecastPredictabilityScoreData.predictabilityScore,
+			forecastResults,
+		);
 	}
 
 	getDateFormatString(startDate: Date, endDate: Date): string {

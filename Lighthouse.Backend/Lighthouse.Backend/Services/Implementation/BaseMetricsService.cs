@@ -1,6 +1,10 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -8,10 +12,24 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private static readonly Cache<string, object> metricsCache = new Cache<string, object>();
         protected readonly int refreshRateInMinutes;
+        private readonly IServiceProvider serviceProvider;
+        private IForecastService? forecastService;
 
-        protected BaseMetricsService(int refreshRateInMinutes)
+        protected BaseMetricsService(int refreshRateInMinutes, IServiceProvider serviceProvider)
         {
             this.refreshRateInMinutes = refreshRateInMinutes;
+            this.serviceProvider = serviceProvider;
+        }
+
+        protected IForecastService ForecastService => forecastService ??= serviceProvider.GetRequiredService<IForecastService>();
+
+        protected ForecastPredictabilityScore GetMultiItemForecastPredictabilityScore(RunChartData throughput, DateTime startDate, DateTime endDate)
+        {
+            var numberOfDays = (endDate - startDate).Days + 1;
+
+            var howManyForecast = ForecastService.HowMany(throughput, numberOfDays);
+
+            return new ForecastPredictabilityScore(howManyForecast);
         }
 
         protected static Dictionary<int, List<WorkItemBase>> GenerateThroughputRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)

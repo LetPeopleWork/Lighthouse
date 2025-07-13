@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -222,6 +223,56 @@ namespace Lighthouse.Backend.Tests.API
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
                 Assert.That(featureDtos?.Count(), Is.EqualTo(2));
             };
+        }
+
+        [Test]
+        public void GetMultiItemForecastPredictabilityScore_ProjectIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+            ;
+        }
+
+        [Test]
+        public void GetMultiItemForecastPredictabilityScore_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequestResult = response.Result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+            }
+            ;
+        }
+
+        [Test]
+        public void GetMultiItemForecastPredictabilityScore_ProjectExists_GetsPredictabilityScoreFromTeamMetricsService()
+        {
+            var project = new Project { Id = 1 };
+            projectRepository.Setup(repo => repo.GetById(1)).Returns(project);
+
+            var howManyForecast = new HowManyForecast();
+            var expectedScore = new ForecastPredictabilityScore(howManyForecast);
+            projectMetricsService.Setup(service => service.GetMultiItemForecastPredictabilityScoreForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedScore);
+
+            var response = subject.GetMultiItemForecastPredictabilityScore(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedScore));
+            }
+            ;
         }
     }
 }

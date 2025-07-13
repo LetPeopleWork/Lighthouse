@@ -99,5 +99,19 @@ namespace Lighthouse.Backend.API
                 return workItems.Select(w => new WorkItemDto(w));
             });
         }
+
+        [HttpGet("multiitemforecastpredictabilityscore")]
+        public ActionResult<ForecastPredictabilityScore> GetMultiItemForecastPredictabilityScore(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest("Start date must be before end date.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+            {
+                return teamMetricsService.GetMultiItemForecastPredictabilityScoreForTeam(team, startDate, endDate);
+            });
+        }
     }
 }

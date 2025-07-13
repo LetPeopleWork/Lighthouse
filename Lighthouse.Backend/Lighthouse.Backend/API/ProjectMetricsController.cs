@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -28,7 +29,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest("Start date must be before end date.");
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) => 
+            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
                 projectMetricsService.GetThroughputForProject(project, startDate, endDate));
         }
 
@@ -51,7 +52,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest("Start date must be before end date.");
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) => 
+            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
                 projectMetricsService.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate));
         }
 
@@ -73,7 +74,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest("Start date must be before end date.");
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) => 
+            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
                 projectMetricsService.GetCycleTimePercentilesForProject(project, startDate, endDate));
         }
 
@@ -89,6 +90,20 @@ namespace Lighthouse.Backend.API
             {
                 var features = projectMetricsService.GetCycleTimeDataForProject(project, startDate, endDate);
                 return features.Select(f => new FeatureDto(f));
+            });
+        }
+
+        [HttpGet("multiitemforecastpredictabilityscore")]
+        public ActionResult<ForecastPredictabilityScore> GetMultiItemForecastPredictabilityScore(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest("Start date must be before end date.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, project =>
+            {
+                return projectMetricsService.GetMultiItemForecastPredictabilityScoreForProject(project, startDate, endDate);
             });
         }
     }

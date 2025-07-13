@@ -27,7 +27,7 @@ describe("ForecastInfo component", () => {
 	};
 
 	const howManyForecast: IHowManyForecast = {
-		expectedItems: 50,
+		value: 50,
 		probability: 70,
 	};
 

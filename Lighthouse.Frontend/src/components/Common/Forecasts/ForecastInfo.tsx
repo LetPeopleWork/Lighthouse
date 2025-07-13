@@ -29,7 +29,7 @@ const ForecastInfo: React.FC<ForecastInfoProps> = ({ forecast }) => {
 	const isHowManyForecast = (
 		forecast: IForecast,
 	): forecast is IHowManyForecast => {
-		return (forecast as IHowManyForecast).expectedItems !== undefined;
+		return (forecast as IHowManyForecast).value !== undefined;
 	};
 
 	const renderForecast = (): React.ReactNode => {
@@ -38,9 +38,7 @@ const ForecastInfo: React.FC<ForecastInfoProps> = ({ forecast }) => {
 		}
 
 		if (isHowManyForecast(forecast)) {
-			return (
-				<Typography variant="body2">{forecast.expectedItems} Items</Typography>
-			);
+			return <Typography variant="body2">{forecast.value} Items</Typography>;
 		}
 
 		return <div>Forecast Type not Supported</div>;

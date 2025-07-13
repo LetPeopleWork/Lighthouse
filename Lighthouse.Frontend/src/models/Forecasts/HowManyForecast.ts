@@ -1,15 +1,15 @@
 import type { IForecast } from "./IForecast";
 
 export interface IHowManyForecast extends IForecast {
-	expectedItems: number;
+	value: number;
 }
 
 export class HowManyForecast implements IHowManyForecast {
-	expectedItems: number;
+	value: number;
 	probability: number;
 
 	constructor(probability: number, expectedItems: number) {
 		this.probability = probability;
-		this.expectedItems = expectedItems;
+		this.value = expectedItems;
 	}
 }

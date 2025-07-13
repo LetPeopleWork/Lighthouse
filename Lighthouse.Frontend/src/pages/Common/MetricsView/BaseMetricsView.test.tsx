@@ -1,5 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import {
+	ForecastPredictabilityScore,
+	type IForecastPredictabilityScore,
+} from "../../../models/Forecasts/ForecastPredictabilityScore";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { Project } from "../../../models/Project/Project";
@@ -14,12 +18,22 @@ vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
 	default: ({
 		title,
 		chartData,
+		predictabilityData,
 	}: {
 		title: string;
 		chartData: RunChartData;
+		predictabilityData?: IForecastPredictabilityScore;
 	}) => (
 		<div data-testid={`bar-run-chart-${title}`}>
 			<div data-testid="chart-data-count">{chartData.history}</div>
+			<div data-testid="predictability-data">
+				{predictabilityData
+					? "has-predictability-data"
+					: "no-predictability-data"}
+			</div>
+			<div data-testid="predictability-score">
+				{predictabilityData ? predictabilityData.predictabilityScore : "none"}
+			</div>
 		</div>
 	),
 }));
@@ -294,6 +308,16 @@ describe("BaseMetricsView component", () => {
 		getInProgressItems: vi.fn().mockResolvedValue(mockInProgressItems),
 		getCycleTimeData: vi.fn().mockResolvedValue(mockCycleTimeData),
 		getCycleTimePercentiles: vi.fn().mockResolvedValue(mockPercentileValues),
+		getMultiItemForecastPredictabilityScore: vi.fn().mockResolvedValue(
+			new ForecastPredictabilityScore(
+				[
+					{ percentile: 50, value: 10 },
+					{ percentile: 85, value: 15 },
+				],
+				0.73,
+				new Map([]),
+			),
+		),
 	};
 
 	// Create two types of entities to test with
@@ -362,6 +386,13 @@ describe("BaseMetricsView component", () => {
 				expect.any(Date),
 			);
 			expect(mockMetricsService.getStartedItems).toHaveBeenCalledWith(
+				mockProject.id,
+				expect.any(Date),
+				expect.any(Date),
+			);
+			expect(
+				mockMetricsService.getMultiItemForecastPredictabilityScore,
+			).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
 				expect.any(Date),
@@ -476,6 +507,9 @@ describe("BaseMetricsView component", () => {
 				1,
 			);
 			expect(mockMetricsService.getStartedItems).toHaveBeenCalledTimes(1);
+			expect(
+				mockMetricsService.getMultiItemForecastPredictabilityScore,
+			).toHaveBeenCalledTimes(1);
 		});
 	});
 
@@ -512,6 +546,9 @@ describe("BaseMetricsView component", () => {
 				1,
 			);
 			expect(mockMetricsService.getStartedItems).toHaveBeenCalledTimes(1);
+			expect(
+				mockMetricsService.getMultiItemForecastPredictabilityScore,
+			).toHaveBeenCalledTimes(1);
 		});
 	});
 
@@ -585,6 +622,9 @@ describe("BaseMetricsView component", () => {
 			getInProgressItems: vi.fn().mockRejectedValue(new Error("API error")),
 			getCycleTimeData: vi.fn().mockRejectedValue(new Error("API error")),
 			getCycleTimePercentiles: vi
+				.fn()
+				.mockRejectedValue(new Error("API error")),
+			getMultiItemForecastPredictabilityScore: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
 		};
@@ -698,6 +738,350 @@ describe("BaseMetricsView component", () => {
 			expect(screen.getByTestId("service-level-expectation")).toHaveTextContent(
 				"none",
 			);
+		});
+	});
+
+	describe("Predictability Score functionality", () => {
+		it("fetches predictability data on initial load", async () => {
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Check that predictability data is fetched
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledWith(
+					mockProject.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			});
+		});
+
+		it("passes predictability data to BarRunChart component", async () => {
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched and passed to components
+			await waitFor(() => {
+				expect(screen.getByTestId("predictability-data")).toHaveTextContent(
+					"has-predictability-data",
+				);
+				expect(screen.getByTestId("predictability-score")).toHaveTextContent(
+					"0.73",
+				);
+			});
+		});
+
+		it("refetches predictability data when start date changes", async () => {
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for initial load
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledTimes(1);
+			});
+
+			// Reset mock call counts
+			vi.clearAllMocks();
+
+			// Change start date
+			fireEvent.click(screen.getByTestId("change-start-date"));
+
+			// Verify predictability data is fetched again with new date
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledTimes(1);
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledWith(
+					mockProject.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			});
+		});
+
+		it("refetches predictability data when end date changes", async () => {
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for initial load
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledTimes(1);
+			});
+
+			// Reset mock call counts
+			vi.clearAllMocks();
+
+			// Change end date
+			fireEvent.click(screen.getByTestId("change-end-date"));
+
+			// Verify predictability data is fetched again with new date
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("refetches predictability data when entity changes", async () => {
+			const { rerender } = render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for initial load
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledTimes(1);
+			});
+
+			// Reset mock call counts
+			vi.clearAllMocks();
+
+			// Change entity
+			rerender(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={mockMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Verify predictability data is fetched again with new entity
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledTimes(1);
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledWith(mockTeam.id, expect.any(Date), expect.any(Date));
+			});
+		});
+
+		it("handles predictability data fetch errors gracefully", async () => {
+			const errorPredictabilityService: IMetricsService<IWorkItem> = {
+				...mockMetricsService,
+				getMultiItemForecastPredictabilityScore: vi
+					.fn()
+					.mockRejectedValue(new Error("Predictability API error")),
+			};
+
+			const consoleSpy = vi
+				.spyOn(console, "error")
+				.mockImplementation(() => {});
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={errorPredictabilityService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for error to be logged
+			await waitFor(() => {
+				expect(consoleSpy).toHaveBeenCalledWith(
+					"Error fetching predictability data:",
+					expect.any(Error),
+				);
+			});
+
+			// BarRunChart should still render but without predictability data
+			await waitFor(() => {
+				expect(screen.getByTestId("predictability-data")).toHaveTextContent(
+					"no-predictability-data",
+				);
+				expect(screen.getByTestId("predictability-score")).toHaveTextContent(
+					"none",
+				);
+			});
+
+			consoleSpy.mockRestore();
+		});
+
+		it("handles null predictability data correctly", async () => {
+			const nullPredictabilityService: IMetricsService<IWorkItem> = {
+				...mockMetricsService,
+				getMultiItemForecastPredictabilityScore: vi
+					.fn()
+					.mockResolvedValue(null),
+			};
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={nullPredictabilityService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// BarRunChart should render without predictability data
+			await waitFor(() => {
+				expect(screen.getByTestId("predictability-data")).toHaveTextContent(
+					"no-predictability-data",
+				);
+				expect(screen.getByTestId("predictability-score")).toHaveTextContent(
+					"none",
+				);
+			});
+		});
+
+		it("passes correct predictability score values to BarRunChart", async () => {
+			const customPredictabilityData = new ForecastPredictabilityScore(
+				[
+					{ percentile: 50, value: 8 },
+					{ percentile: 85, value: 12 },
+				],
+				0.456,
+				new Map([
+					[5, 10],
+					[8, 20],
+				]),
+			);
+
+			const customService: IMetricsService<IWorkItem> = {
+				...mockMetricsService,
+				getMultiItemForecastPredictabilityScore: vi
+					.fn()
+					.mockResolvedValue(customPredictabilityData),
+			};
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={customService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Verify the exact predictability score is passed through
+			await waitFor(() => {
+				expect(screen.getByTestId("predictability-score")).toHaveTextContent(
+					"0.456",
+				);
+			});
+		});
+
+		it("calls predictability service with correct date parameters", async () => {
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for service call and verify date parameters
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledWith(
+					mockProject.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+
+				// Get the actual call arguments
+				const calls = (
+					mockMetricsService.getMultiItemForecastPredictabilityScore as Mock
+				).mock.calls;
+				expect(calls[0][0]).toBe(mockProject.id);
+				expect(calls[0][1]).toBeInstanceOf(Date);
+				expect(calls[0][2]).toBeInstanceOf(Date);
+			});
+		});
+
+		it("includes predictability data fetch in error handling test", async () => {
+			// This test verifies that the existing error handling test includes predictability data
+			const errorMetricsService: IMetricsService<IWorkItem> = {
+				getThroughput: vi.fn().mockRejectedValue(new Error("API error")),
+				getStartedItems: vi.fn().mockRejectedValue(new Error("API error")),
+				getWorkInProgressOverTime: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
+				getInProgressItems: vi.fn().mockRejectedValue(new Error("API error")),
+				getCycleTimeData: vi.fn().mockRejectedValue(new Error("API error")),
+				getCycleTimePercentiles: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
+				getMultiItemForecastPredictabilityScore: vi
+					.fn()
+					.mockRejectedValue(new Error("Predictability API error")),
+			};
+
+			const consoleSpy = vi
+				.spyOn(console, "error")
+				.mockImplementation(() => {});
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={errorMetricsService}
+					title="Features"
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for predictability error to be logged
+			await waitFor(() => {
+				expect(consoleSpy).toHaveBeenCalledWith(
+					"Error fetching predictability data:",
+					expect.any(Error),
+				);
+			});
+
+			consoleSpy.mockRestore();
 		});
 	});
 });
