@@ -143,7 +143,7 @@ export abstract class BaseEditPage<T> {
 
 	async toggleAdvancedConfiguration(): Promise<void> {
 		await this.page
-			.getByRole('heading', { name: 'Advanced Configuration' })
+			.getByRole("heading", { name: "Advanced Configuration" })
 			.click();
 	}
 

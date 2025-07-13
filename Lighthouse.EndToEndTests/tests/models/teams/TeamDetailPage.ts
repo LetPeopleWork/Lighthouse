@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
 import { TeamEditPage } from "./TeamEditPage";
 import { WorkItemsInProgressDialog } from "./WorkItemsInProgressDialog";
@@ -100,6 +100,17 @@ export class TeamDetailPage {
 		await this.returnToCycleTimePercentilesButton.click();
 	}
 
+	async openPredictabilityScoreWidget(): Promise<void> {
+		await this.page
+			.getByRole("button")
+			.filter({ hasText: "Predictability Score" })
+			.click();
+
+		await expect(
+			this.page.getByRole("heading", { name: "Predictability Score" }),
+		).toBeVisible();
+	}
+
 	getFeatureLink(featureName: string): Locator {
 		return this.page.getByRole("link", { name: featureName });
 	}
@@ -137,7 +148,7 @@ export class TeamDetailPage {
 		return this.page.locator("div:nth-child(8) > .MuiPaper-root");
 	}
 
-	get workItemAgingChart():Locator {
+	get workItemAgingChart(): Locator {
 		return this.page.locator("div:nth-child(7) > .MuiPaper-root");
 	}
 
