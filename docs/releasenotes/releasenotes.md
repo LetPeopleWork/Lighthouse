@@ -10,11 +10,28 @@ nav_order: 95
 Preview
 {: .label .label-blue }
 -->
-
-# Lighthouse v25.7.7.1834
+# Lighthouse v25.7.14.809
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Predictability Score
+The Throughput Run Chart now includes a *Predictability Score*:
+
+![Predictability Score in Throughput Run Chart](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/assets/features/metrics/throughputRunChart.png?raw=true)
+
+The score tries to give you an indication of the predictability of the selected Throughput range when it's used for a forecast. It's showing how *close together* the 95% chance and 50% chance values are. The higher the score, the better the predictability.
+
+When you click on the predictability chip in the Throughput Run Chart, you'll see more details:
+
+![Predictability Score](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/assets/features/metrics/predictabilityscore.png?raw=true)
+
+Please check the [docs](https://docs.lighthouse.letpeople.work/features/metrics/metrics.html#predictability-score) for more information on how this works and how you can potentially use it!
+
+ 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.7.1834...v25.7.14.809)
+
+# Lighthouse v25.7.7.1834
 
 ## Visualize Blocked Items
 
