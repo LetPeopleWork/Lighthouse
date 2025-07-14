@@ -145,7 +145,7 @@ This can help you to prepare just enough items for your team(s). Whether you do 
 
 If you want to know more details, you can click on the widget, and it will show you the specific items that were closed and opened in the selected time range.
 
-## Throughput
+## Throughput Run Chart
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -159,6 +159,33 @@ You can see how many items were closed each day over the last several days. The 
 ![Throughput Run Chart](../../assets/features/metrics/throughputRunChart.png)
 
 This widget will adjust based on the selected time range. If you want to know which exact items were closed, you can click on a specific day and get more details.
+
+On the top right, you will see the *Predictability Score*. If you click on it, another widget is brought up:
+
+## Predictability Score
+|--------------|-------------------------|
+| **Applies to** | Teams and Projects |
+| **Flow Metric** | Throughput |
+| **Affected by Filtering** | Yes |
+
+The Predictability Score is showing you the result of a how many forecast, based on the Throughput Run Chart of the currently selected range. Lighthouse will run an *MCS How Many* forecast for the number of days in the date range. For example, if you have selected the last 30 days, Lighthouse will forecast how many items you can close in the next 30 days based on the specific Throughput run chart.
+
+![Predictability Score](../../assets/features/metrics/predictabilityscore.png)
+
+The score is calculated like this:
+> (*Value at 95th Percentile* / *Value at 50% Percentile*) * 100
+
+You can interprete the value as follows:
+- The closer you are to 100%, the closer together your 50% and 95% chance are
+- If you were at 100%, this means that every single day, you closed exactly the same amount of items, and thus are *perfectly predictable*
+
+The idea behind the score is that, if your percentiles are very much "away" from each other (meaning the values are far off), the forecast will most likely not be of much use to you. So if your goal is predictability, this can be a trigger for a discussion to see how to "get the score up" and thus become more predictable. Ways to do that include (but are not limited to, and highly depend on your context):
+- Asking LetPeopleWork to help you out
+- Trying to reduce your batch size, favoring more frequent but smaller delivery
+- Reducing WIP and focusing on old items first and get them to done as fast as possible
+
+{: .important}
+The goal is not to be at 100%. In fact, that's far from realistic. We believe any value above 60% is decent. The intent of this chart is to show the results of an MCS for various inputs. For example if the throughput is distributed differently, or you take a longer or different range.
 
 ## Cycle Time Percentiles
 
