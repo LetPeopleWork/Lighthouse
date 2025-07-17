@@ -33,7 +33,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.6.3",
+    "react-router-dom": "^7.7.0",
     "reflect-metadata": "^0.2.2",
     "remark-gfm": "^4.0.1"
   },
