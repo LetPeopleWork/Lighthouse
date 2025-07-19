@@ -14,8 +14,6 @@ You can use it with a single team for doing manual "When" and "How Many" forecas
 
 Lighthouse is provided free of charge as open-source software by [Let People Work](https://letpeople.work). If you want to learn more about the tool, what we can offer you and your company, or just want to chat, [please reach out](https://letpeople.work#contact).
 
-You can check out the latest version in our [Public Live Demo](https://demo.lighthouse.letpeople.work).
-
 ## Documentation Structure
 The documentation is structure into various chapters. In [Installation](./installation/installation.html) you can find information about how to get started with setting up Lighthouse.
 
