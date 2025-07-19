@@ -1,4 +1,4 @@
-import BugReport from "@mui/icons-material/BugReport";
+import FeedbackIcon from "@mui/icons-material/Feedback";
 import HandshakeIcon from "@mui/icons-material/Handshake";
 import HelpIcon from "@mui/icons-material/Help";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -10,21 +10,32 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import { useTheme } from "@mui/material/styles";
 import Toolbar from "@mui/material/Toolbar";
+import Tooltip from "@mui/material/Tooltip";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useState } from "react";
 import ThemeToggler from "../../Common/ThemeToggler/ThemeToggler";
 import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
 import ExternalLinkButton from "./ExternalLinkButton";
+import FeedbackDialog from "./FeedbackDialog";
 import NavigationItem from "./NavigationItem";
 
 const Header: React.FC = () => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
 
 	const handleDrawerToggle = () => {
 		setMobileOpen(!mobileOpen);
+	};
+
+	const handleFeedbackClick = () => {
+		setFeedbackDialogOpen(true);
+	};
+
+	const handleFeedbackClose = () => {
+		setFeedbackDialogOpen(false);
 	};
 
 	const navigationLinks = [
@@ -102,11 +113,17 @@ const Header: React.FC = () => {
 								icon={HandshakeIcon}
 								tooltip="Contributors"
 							/>
-							<ExternalLinkButton
-								link="https://github.com/LetPeopleWork/Lighthouse/issues"
-								icon={BugReport}
-								tooltip="Report an Issue"
-							/>
+							<Tooltip title="Provide Feedback" arrow>
+								<IconButton
+									size="large"
+									color="inherit"
+									onClick={handleFeedbackClick}
+									aria-label="Provide Feedback"
+									data-testid="feedback-button"
+								>
+									<FeedbackIcon style={{ color: theme.palette.primary.main }} />
+								</IconButton>
+							</Tooltip>
 							<ExternalLinkButton
 								link="https://docs.lighthouse.letpeople.work"
 								icon={HelpIcon}
@@ -116,6 +133,7 @@ const Header: React.FC = () => {
 					</>
 				)}
 			</Toolbar>
+			<FeedbackDialog open={feedbackDialogOpen} onClose={handleFeedbackClose} />
 		</AppBar>
 	);
 };

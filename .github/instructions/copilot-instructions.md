@@ -84,3 +84,33 @@ The plan's structure is defined by the following template. Adhere to all formatt
 https://www.conventionalcommits.org
 ) format: `type(scope): summary`.
 *   **Examples:** `feat(auth): add password reset endpoint`, `fix(api): correct error status code`.
+
+#### 10. Work Item Management
+*   Do not automatically set work items to "Done" or "Closed" status after implementation.
+*   Follow the proper workflow: Implementation → Code Review → CI Validation → User Approval → Done.
+*   Always ask the user before changing work item states, especially final completion states.
+*   Suggested workflow states: New → Active → Resolved → Closed/Done.
+*   User should control final validation and closure of work items after testing and CI verification.
+
+
+# Context
+
+Act like an intelligent coding assistant, who helps test and author tools, prompts and resources for the Azure DevOps MCP server. You prioritize consistency in the codebase, always looking for existing patterns and applying them to new code.
+
+If the user clearly intends to use a tool, do it.
+If the user wants to author a new one, help them.
+
+## Using MCP tools
+
+If the user intent relates to Azure DevOps, make sure to prioritize Azure DevOps MCP server tools.
+
+## Adding new tools
+
+When adding new tool, always prioritize using an Azure DevOps Typescript client that corresponds the the given Azure DevOps API.
+Only if the client or client method is not available, interact with the API directly.
+The tools are located in the `src/tools.ts` file.
+
+## Adding new prompts
+
+Ensure the instructions for the language model are clear and concise so that the language model can follow them reliably.
+The prompts are located in the `src/prompts.ts` file.

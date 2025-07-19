@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import Header from "./Header";
@@ -28,7 +29,8 @@ describe("Header component", () => {
 		expect(screen.getByText("Settings")).toBeInTheDocument();
 	});
 
-	it("should render external link buttons with correct links", () => {
+	it("should render external link buttons and feedback button with correct behavior", async () => {
+		const user = userEvent.setup();
 		render(
 			<MemoryRouter>
 				<Header />
@@ -38,9 +40,7 @@ describe("Header component", () => {
 		const contributorsLink = screen.getByTestId(
 			"https://docs.lighthouse.letpeople.work/contributions/contributions.html",
 		);
-		const bugReportLink = screen.getByTestId(
-			"https://github.com/LetPeopleWork/Lighthouse/issues",
-		);
+		const feedbackButton = screen.getByTestId("feedback-button");
 		const documentationLink = screen.getByTestId(
 			"https://docs.lighthouse.letpeople.work",
 		);
@@ -49,13 +49,15 @@ describe("Header component", () => {
 			"href",
 			"https://docs.lighthouse.letpeople.work/contributions/contributions.html",
 		);
-		expect(bugReportLink).toHaveAttribute(
-			"href",
-			"https://github.com/LetPeopleWork/Lighthouse/issues",
-		);
+		expect(feedbackButton).toBeInTheDocument();
+		expect(feedbackButton).toHaveAttribute("aria-label", "Provide Feedback");
 		expect(documentationLink).toHaveAttribute(
 			"href",
 			"https://docs.lighthouse.letpeople.work",
 		);
+
+		// Test feedback dialog opens when button is clicked
+		await user.click(feedbackButton);
+		expect(screen.getByText("We'd Love to Hear from You!")).toBeInTheDocument();
 	});
 });

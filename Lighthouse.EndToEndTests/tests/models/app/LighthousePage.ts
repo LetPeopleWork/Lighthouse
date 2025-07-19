@@ -69,13 +69,6 @@ export class LighthousePage {
 		});
 	}
 
-	async goToReportIssue(): Promise<Page> {
-		return this.OpenInNewTab(async () => {
-			const reportIssueButton = this.GetReportIssueButton();
-			await reportIssueButton.click();
-		});
-	}
-
 	async goToDocumentation(): Promise<Page> {
 		return this.OpenInNewTab(async () => {
 			const documentationButton = this.GetDocumentationButton();
@@ -134,10 +127,6 @@ export class LighthousePage {
 		return this.page.getByTestId(
 			"https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md",
 		);
-	}
-
-	private GetReportIssueButton(): Locator {
-		return this.page.getByLabel("Report an Issue");
 	}
 
 	private GetDocumentationButton(): Locator {
