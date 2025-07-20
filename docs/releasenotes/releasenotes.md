@@ -4,12 +4,20 @@ layout: home
 nav_order: 95
 ---
 
-<!-- 
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
--->
+
+## Improved Feedback Collection
+We've enhanced how users can provide feedback and report issues. Instead of redirecting to GitHub Issues, Lighthouse now displays a dedicated feedback dialog that:
+- Provides clear guidance on how to submit feature requests and bug reports
+- Directs users to our preferred Slack community for real-time feedback and discussions
+- Offers email support as an alternative contact method
+- Includes information about our review processes and custom development options
+
+This change makes it easier for users to get help and ensures feedback reaches us through the most effective channels.
+
 # Lighthouse v25.7.14.809
 {: .d-inline-block }
 Latest
