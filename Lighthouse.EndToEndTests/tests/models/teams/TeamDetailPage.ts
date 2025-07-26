@@ -32,7 +32,7 @@ export class TeamDetailPage {
 		await this.page
 			.getByLabel("Number of Items to Forecast")
 			.fill(`${howMany}`);
-		await this.page.getByRole("button", { name: "Forecast" }).click();
+		await this.page.getByRole("button", { name: "Forecast", exact: true }).click();
 
 		const likelihood =
 			(await this.page.getByRole("heading", { name: "%" }).textContent()) ??
