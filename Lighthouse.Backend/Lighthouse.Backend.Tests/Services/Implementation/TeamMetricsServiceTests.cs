@@ -604,6 +604,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetWorkInProgressOverTime_ItemInDoneState_NoClosedDateSet_AssumeItWasClosedOnSameDay()
+        {
+            var startDate = DateTime.UtcNow.AddDays(-2);
+            var endDate = DateTime.UtcNow;
+
+            var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            workItem.StartedDate = DateTime.UtcNow.AddDays(-1);
+            workItem.ClosedDate = null;
+
+            var wipData = subject.GetWorkInProgressOverTimeForTeam(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(wipData.WorkItemsPerUnitOfTime, Has.Count.EqualTo(3));
+                Assert.That(wipData.WorkItemsPerUnitOfTime[0], Has.Count.EqualTo(0));
+                Assert.That(wipData.WorkItemsPerUnitOfTime[1], Has.Count.EqualTo(0));
+                Assert.That(wipData.WorkItemsPerUnitOfTime[2], Has.Count.EqualTo(0));
+            }
+            ;
+        }
+
+        [Test]
         public void GetCycleTimePercentilesForTeam_GetsCycleTimeForItemsInRange()
         {
             // Set up work item cycle times (1, 2, 3, ... 10)

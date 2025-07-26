@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static bool WasItemProgressOnDay(DateTime day, WorkItemBase item)
         {
-            if (!item.StartedDate.HasValue)
+            if (!item.StartedDate.HasValue || (!item.ClosedDate.HasValue && item.StateCategory == StateCategories.Done))
             {
                 return false;
             }
