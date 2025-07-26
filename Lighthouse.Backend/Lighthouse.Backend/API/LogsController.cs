@@ -9,10 +9,12 @@ namespace Lighthouse.Backend.API
     public class LogsController : ControllerBase
     {
         private readonly ILogConfiguration logConfiguration;
+        private readonly ILogger<LogsController> logger;
 
-        public LogsController(ILogConfiguration logConfiguration)
+        public LogsController(ILogConfiguration logConfiguration, ILogger<LogsController> logger)
         {
             this.logConfiguration = logConfiguration;
+            this.logger = logger;
         }
 
         [HttpGet("level/supported")]
@@ -30,7 +32,15 @@ namespace Lighthouse.Backend.API
         [HttpPost("level")]
         public ActionResult SetLogLevel([FromBody] LogLevelDto logLevel)
         {
-            logConfiguration.SetLogLevel(logLevel.Level);
+            try
+            {
+                logConfiguration.SetLogLevel(logLevel.Level);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error when setting log level to {Level}", logLevel.Level);
+            }
+
             return Ok();
         }
 

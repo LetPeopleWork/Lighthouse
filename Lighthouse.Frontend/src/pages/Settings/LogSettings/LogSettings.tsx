@@ -66,7 +66,7 @@ const LogSettings: React.FC = () => {
 							}}
 						>
 							{supportedLogLevels.map((level) => (
-								<MenuItem key={level} value={level} data-testId={level}>
+								<MenuItem key={level} value={level} data-testid={level}>
 									{level}
 								</MenuItem>
 							))}

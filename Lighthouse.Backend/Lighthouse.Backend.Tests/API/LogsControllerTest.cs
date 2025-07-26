@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -8,11 +9,13 @@ namespace Lighthouse.Backend.Tests.API
     public class LogsControllerTest
     {
         private Mock<ILogConfiguration> logConfigurationMock;
+        private Mock<ILogger<LogsController>> loggerMock;
 
         [SetUp]
         public void Setup()
         {
             logConfigurationMock = new Mock<ILogConfiguration>();
+            loggerMock = new Mock<ILogger<LogsController>>();
         }
 
         [Test]
@@ -34,7 +37,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var actualLogLevel = okResult.Value as string;
                 Assert.That(actualLogLevel, Is.EqualTo(logLevel));
-            };            
+            }
+            ;
         }
 
         [Test]
@@ -54,10 +58,42 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
                 logConfigurationMock.Verify(x => x.SetLogLevel(expectedLogLevel));
-            };
+            }
+            ;
         }
 
-        [Test]        
+        [Test]
+        public void SetLogLevel_ExceptionWhenChangingLogLevel_LogsErrorAndHandlesGracefully()
+        {
+            var expectedLogLevel = "Warning";
+            logConfigurationMock.Setup(x => x.SetLogLevel(expectedLogLevel))
+                .Throws(new Exception("Failed to set log level"));
+
+            var subject = CreateSubject();
+
+            var response = subject.SetLogLevel(new LogsController.LogLevelDto { Level = expectedLogLevel });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response, Is.InstanceOf<OkResult>());
+
+                var okResult = response as OkResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                logConfigurationMock.Verify(x => x.SetLogLevel(expectedLogLevel));
+                loggerMock.Verify(
+                    x => x.Log(
+                        LogLevel.Error,
+                        It.IsAny<EventId>(),
+                        It.IsAny<It.IsAnyType>(),
+                        It.IsAny<Exception>(),
+                        It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    Times.AtLeastOnce);
+            }
+          ;
+        }
+
+        [Test]
         public void GetSupportedLogLevel_SupportsReturnsAvailableLogLevels()
         {
             var expectedLogLevels = new[] { "Level 1", "Level 2", "Level 3" };
@@ -76,7 +112,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var supportedLogLevels = okResult.Value as string[];
                 Assert.That(supportedLogLevels, Is.EquivalentTo(expectedLogLevels));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -103,7 +140,8 @@ And a hundred percent reason to remember the name (Mike!)
 
                 var logs = okResult.Value as string;
                 Assert.That(logs, Is.EqualTo(expectedLogs));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -133,12 +171,13 @@ And a hundred percent reason to remember the name (Mike!)
 
                 var logs = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
                 Assert.That(logs, Is.EqualTo(expectedLogs));
-            };
+            }
+            ;
         }
 
         private LogsController CreateSubject()
         {
-            return new LogsController(logConfigurationMock.Object);
+            return new LogsController(logConfigurationMock.Object, loggerMock.Object);
         }
     }
 }
