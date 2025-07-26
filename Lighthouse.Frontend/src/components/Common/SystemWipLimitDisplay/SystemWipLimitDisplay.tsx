@@ -2,6 +2,7 @@ import WorkIcon from "@mui/icons-material/Work";
 import { IconButton, Tooltip, useTheme } from "@mui/material";
 import type React from "react";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 
 interface SystemWIPLimitDisplayProps {
@@ -14,7 +15,7 @@ const SystemWIPLimitDisplay: React.FC<SystemWIPLimitDisplayProps> = ({
 	hide = false,
 }) => {
 	const theme = useTheme();
-	const { terminology } = useTerminology();
+	const { getTerm } = useTerminology();
 
 	if (hide || !featureOwner.systemWIPLimit || featureOwner.systemWIPLimit < 1) {
 		return null;
@@ -22,7 +23,7 @@ const SystemWIPLimitDisplay: React.FC<SystemWIPLimitDisplayProps> = ({
 
 	const wipLimit = featureOwner.systemWIPLimit;
 
-	const tooltipText = `System WIP Limit: ${wipLimit} ${wipLimit === 1 ? terminology.workItem : terminology.workItems}`;
+	const tooltipText = `System WIP Limit: ${wipLimit} ${wipLimit === 1 ? getTerm(TERMINOLOGY_KEYS.WORK_ITEM) : getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}`;
 
 	return (
 		<Tooltip title={tooltipText} arrow>

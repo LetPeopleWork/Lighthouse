@@ -2,32 +2,40 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import React from "react";
 import { vi } from "vitest";
+import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
 import {
 	ApiServiceContext,
 	type IApiServiceContext,
 } from "../services/Api/ApiServiceContext";
-import type { ITerminologyService } from "../services/Api/TerminologyService";
 import { TerminologyProvider } from "../services/TerminologyContext";
 import { createMockApiServiceContext } from "./MockApiServiceProvider";
 
-// Default mock terminology service
-const createMockTerminologyService = (): ITerminologyService => {
-	return {
-		getTerminology: vi.fn().mockResolvedValue({
-			workItem: "Work Item",
-			workItems: "Work Items",
-		}),
-	};
+// Simple key/value dictionary for terminology mappings - easily extensible
+const mockTerminologyMap: Record<string, string> = {
+	[TERMINOLOGY_KEYS.WORK_ITEM]: "Work Item",
+	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
+	// Add more terminology mappings here as needed
 };
+
+vi.mock("../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => {
+			return mockTerminologyMap[key] || key;
+		},
+		isLoading: false,
+		error: null,
+		refetchTerminology: vi.fn(),
+	}),
+	TerminologyProvider: ({ children }: { children: React.ReactNode }) =>
+		children,
+}));
 
 // Test Providers wrapper component
 export const TestProviders = ({
 	children,
-	terminologyService,
 	apiServiceOverrides,
 }: {
 	children: React.ReactNode;
-	terminologyService?: ITerminologyService;
 	apiServiceOverrides?: Partial<IApiServiceContext>;
 }) => {
 	const queryClient = new QueryClient({
@@ -40,11 +48,7 @@ export const TestProviders = ({
 		},
 	});
 
-	const mockTerminologyService =
-		terminologyService || createMockTerminologyService();
-
 	const mockApiContext: IApiServiceContext = createMockApiServiceContext({
-		terminologyService: mockTerminologyService,
 		...apiServiceOverrides,
 	});
 
@@ -60,16 +64,10 @@ export const TestProviders = ({
 // Utility function to render components with all necessary providers
 export const renderWithProviders = (
 	component: React.ReactNode,
-	options?: {
-		terminologyService?: ITerminologyService;
-		apiServiceOverrides?: Partial<IApiServiceContext>;
-	},
+	apiServiceOverrides?: Partial<IApiServiceContext>,
 ) => {
 	return render(
-		<TestProviders
-			terminologyService={options?.terminologyService}
-			apiServiceOverrides={options?.apiServiceOverrides}
-		>
+		<TestProviders apiServiceOverrides={apiServiceOverrides}>
 			{component}
 		</TestProviders>,
 	);

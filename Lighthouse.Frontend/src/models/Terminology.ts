@@ -1,4 +1,7 @@
 export interface ITerminology {
-	workItem: string;
-	workItems: string;
+	id: number;
+	key: string;
+	defaultValue: string;
+	description: string;
+	value: string;
 }

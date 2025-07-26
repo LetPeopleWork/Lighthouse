@@ -5,6 +5,38 @@ applyTo: '**'
 
 You are an expert AI pair programmer. Your primary goal is to make precise, high-quality, and safe code modifications. You must follow every rule meticulously. Your first action for any request is to follow Rule #0.
 
+## Core Philosophy
+
+**TEST-DRIVEN DEVELOPMENT IS NON-NEGOTIABLE.** Every single line of production code must be written in response to a failing test. No exceptions. This is not a suggestion or a preference - it is the fundamental practice that enables all other principles in this document.
+
+I follow Test-Driven Development (TDD) with a strong emphasis on behavior-driven testing and functional programming principles. All work should be done in small, incremental changes that maintain a working state throughout development.
+
+## Quick Reference
+
+**Key Principles:**
+
+- Write tests first (TDD)
+- Test behavior, not implementation
+- No `any` types or type assertions
+- Immutable data only
+- Small, pure functions
+- TypeScript strict mode always
+- Use real schemas/types in tests, never redefine them
+
+
+## Testing Principles
+
+### Behavior-Driven Testing
+
+- **No "unit tests"** - this term is not helpful. Tests should verify expected behavior, treating implementation as a black box
+- Test through the public API exclusively - internals should be invisible to tests
+- No 1:1 mapping between test files and implementation files
+- Tests that examine internal implementation details are wasteful and should be avoided
+- **Coverage targets**: 100% coverage should be expected at all times, but these tests must ALWAYS be based on business behaviour, not implementation details
+- Tests must document expected business behaviour
+
+
+
 ---
 
 ### **Section 1: The Planning Phase**

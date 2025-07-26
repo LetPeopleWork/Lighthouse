@@ -18,6 +18,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
@@ -177,7 +178,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const theme = useTheme();
-	const { terminology } = useTerminology();
+	const { getTerm } = useTerminology();
 
 	useEffect(() => {
 		setPercentiles(percentileValues);
@@ -230,7 +231,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		<>
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">{terminology.workItem} Aging</Typography>
+					<Typography variant="h6">
+						{getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} Aging
+					</Typography>
 
 					<Stack
 						direction="row"
@@ -449,7 +452,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				title={
 					selectedItems.length > 0
 						? `Items in ${selectedItems[0]?.state} aged ${getAgeInDays(selectedItems[0])} days`
-						: terminology.workItems
+						: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)
 				}
 				items={selectedItems}
 				open={dialogOpen}

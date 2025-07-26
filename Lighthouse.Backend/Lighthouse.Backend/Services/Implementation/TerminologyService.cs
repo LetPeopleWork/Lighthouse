@@ -1,19 +1,38 @@
-using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
     public class TerminologyService : ITerminologyService
     {
-        public TerminologyDto GetTerminology()
+        private readonly IRepository<TerminologyEntry> repository;
+
+        public TerminologyService(IRepository<TerminologyEntry> repository)
         {
-            // NOTE: As specified in the story, no DB/Repo implementation yet
-            // For now, return default terminology that can be easily extended later
-            return new TerminologyDto
+            this.repository = repository;
+        }
+
+        public IEnumerable<TerminologyEntry> GetAll()
+        {
+            var entries = repository.GetAll();
+            return entries;
+        }
+
+        public async Task UpdateTerminology(IEnumerable<TerminologyEntry> terminology)
+        {
+            foreach (var entry in terminology)
             {
-                WorkItem = "Work Item",
-                WorkItems = "Work Items",
-            };
+                var existing = repository.GetByPredicate(e => e.Key == entry.Key);
+                if (existing != null)
+                {
+                    existing.DefaultValue = entry.DefaultValue;
+                }
+
+                // We do not support adding new entries through this method.
+            }
+
+            await repository.Save();
         }
     }
 }

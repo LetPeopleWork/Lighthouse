@@ -1,18 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
-import { createContext, useContext, useMemo } from "react";
-import type { ITerminology } from "../models/Terminology";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import { ApiServiceContext } from "./Api/ApiServiceContext";
 
 interface ITerminologyContext {
-	terminology: ITerminology;
+	getTerm: (key: string) => string;
 	isLoading: boolean;
 	error: string | null;
+	refetchTerminology: () => void;
 }
-
-const defaultTerminology: ITerminology = {
-	workItem: "Work Item",
-	workItems: "Work Items",
-};
 
 const TerminologyContext = createContext<ITerminologyContext | null>(null);
 
@@ -22,30 +17,50 @@ export function TerminologyProvider({
 	readonly children: React.ReactNode;
 }) {
 	const { terminologyService } = useContext(ApiServiceContext);
+	const queryClient = useQueryClient();
 
 	const {
-		data: terminology = defaultTerminology,
+		data: terminologyData = [],
 		isLoading,
 		error,
+		refetch,
 	} = useQuery({
-		queryKey: ["terminology"],
-		queryFn: () => terminologyService.getTerminology(),
-		staleTime: 1000 * 60 * 60 * 24, // 24 hours - terminology rarely changes
-		gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days cache time
-		retry: 3,
-		retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+		queryKey: ["terminology-database"],
+		queryFn: () => terminologyService.getAllTerminology(),
+		staleTime: 1000 * 60 * 5, // 5 minutes - refresh more frequently for configurable data
+		gcTime: 1000 * 60 * 60 * 24, // 24 hours cache time
+		retry: false, // Disable retries to prevent hanging in loading state on errors
 		refetchOnWindowFocus: false,
 		refetchOnMount: false,
 		refetchOnReconnect: true,
 	});
 
+	const refetchTerminology = useCallback(() => {
+		queryClient.invalidateQueries({ queryKey: ["terminology-database"] });
+		refetch();
+	}, [queryClient, refetch]);
+
+	const getTerm = useCallback(
+		(key: string): string => {
+			const term = terminologyData.find((t) => t.key === key);
+
+			if (!term) {
+				return key;
+			}
+
+			return term.value || term.defaultValue || key;
+		},
+		[terminologyData],
+	);
+
 	const contextValue = useMemo(
 		() => ({
-			terminology,
 			isLoading,
 			error: error ? "Failed to load terminology" : null,
+			refetchTerminology,
+			getTerm,
 		}),
-		[terminology, isLoading, error],
+		[isLoading, error, refetchTerminology, getTerm],
 	);
 
 	return (

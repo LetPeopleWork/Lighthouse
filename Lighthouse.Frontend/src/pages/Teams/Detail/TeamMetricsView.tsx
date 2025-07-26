@@ -1,6 +1,7 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import type { Team } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -16,7 +17,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
-	const { terminology } = useTerminology();
+	const { getTerm } = useTerminology();
 
 	useEffect(() => {
 		const fetchFeatures = async () => {
@@ -72,7 +73,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		<BaseMetricsView
 			entity={team}
 			metricsService={teamMetricsService}
-			title={terminology.workItems}
+			title={getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}
 			defaultDateRange={dateRange}
 			renderAdditionalComponents={renderTeamSpecificContent}
 			doingStates={doingStates}

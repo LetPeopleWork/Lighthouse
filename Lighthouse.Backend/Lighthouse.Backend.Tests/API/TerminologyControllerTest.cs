@@ -1,5 +1,5 @@
 using Lighthouse.Backend.API;
-using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -10,30 +10,28 @@ namespace Lighthouse.Backend.Tests.API
     public class TerminologyControllerTest
     {
         private Mock<ITerminologyService> terminologyServiceMock;
-        private TerminologyController controller;
+        private TerminologyController subject;
 
         [SetUp]
         public void SetUp()
         {
             terminologyServiceMock = new Mock<ITerminologyService>();
-            controller = new TerminologyController(terminologyServiceMock.Object);
+            subject = new TerminologyController(terminologyServiceMock.Object);
         }
 
         [Test]
-        public void GetTerminology_ServiceReturnsTerminology_ReturnsOkWithTerminology()
+        public void GetAllTerminology_ServiceReturnsData_ReturnsOkWithData()
         {
-            // Arrange
-            var expectedTerminology = new TerminologyDto
+            var expectedTerminology = new List<TerminologyEntry>
             {
-                WorkItem = "Task",
-                WorkItems = "Tasks"
+                new TerminologyEntry { Key = "feature", Description = "A large work item", DefaultValue = "Epic" },
+                new TerminologyEntry { Key = "story", Description = "A small work item", DefaultValue = "User Story" }
             };
-            terminologyServiceMock.Setup(x => x.GetTerminology()).Returns(expectedTerminology);
 
-            // Act
-            var result = controller.GetTerminology();
+            terminologyServiceMock.Setup(x => x.GetAll()).Returns(expectedTerminology);
 
-            // Assert
+            var result = subject.GetAllTerminology();
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
@@ -44,30 +42,49 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetTerminology_ServiceThrowsException_ExceptionPropagates()
+        public void GetAllTerminology_ServiceReturnsEmptyList_ReturnsOkWithEmptyData()
         {
-            // Arrange
-            var expectedException = new InvalidOperationException("Service error");
-            terminologyServiceMock.Setup(x => x.GetTerminology()).Throws(expectedException);
+            var expectedTerminology = new List<TerminologyEntry>();
+            terminologyServiceMock.Setup(x => x.GetAll()).Returns(expectedTerminology);
 
-            // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => controller.GetTerminology());
-            Assert.That(exception.Message, Is.EqualTo("Service error"));
-        }
+            var result = subject.GetAllTerminology();
 
-        [Test]
-        public void GetTerminology_ServiceReturnsNull_ReturnsOkWithNull()
-        {
-            var result = controller.GetTerminology();
-
-            // Assert
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.Null);
+                Assert.That(okResult.Value, Is.EqualTo(expectedTerminology));
             }
+        }
+
+        [Test]
+        public async Task UpdateTerminology_ValidData_ReturnsOk()
+        {
+            var terminologyData = new List<TerminologyEntry>
+            {
+                new TerminologyEntry { Key = "feature", Description = "A large work item", DefaultValue = "Epic" },
+                new TerminologyEntry { Key = "story", Description = "A small work item", DefaultValue = "Task" }
+            };
+            
+            terminologyServiceMock.Setup(x => x.UpdateTerminology(terminologyData)).Returns(Task.CompletedTask);
+
+            var result = await subject.UpdateTerminology(terminologyData);
+
+            Assert.That(result, Is.InstanceOf<OkResult>());
+            var okResult = result as OkResult;
+            Assert.That(okResult.StatusCode, Is.EqualTo(200));
+            terminologyServiceMock.Verify(x => x.UpdateTerminology(terminologyData), Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateTerminologyAsync_NullData_ReturnsBadRequest()
+        {
+            var result = await subject.UpdateTerminology(null!);
+
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.That(badRequestResult!.StatusCode, Is.EqualTo(400));
         }
     }
 }

@@ -1,4 +1,4 @@
-using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,18 +8,30 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class TerminologyController : ControllerBase
     {
-        private readonly ITerminologyService _terminologyService;
+        private readonly ITerminologyService terminologyService;
 
         public TerminologyController(ITerminologyService terminologyService)
         {
-            _terminologyService = terminologyService ?? throw new ArgumentNullException(nameof(terminologyService));
+            this.terminologyService = terminologyService ?? throw new ArgumentNullException(nameof(terminologyService));
         }
 
-        [HttpGet]
-        public ActionResult<TerminologyDto> GetTerminology()
+        [HttpGet("all")]
+        public ActionResult<IEnumerable<TerminologyEntry>> GetAllTerminology()
         {
-            var terminology = _terminologyService.GetTerminology();
+            var terminology = terminologyService.GetAll();
             return Ok(terminology);
+        }
+
+        [HttpPut]
+        public async Task<ActionResult> UpdateTerminology([FromBody] IEnumerable<TerminologyEntry> terminology)
+        {
+            if (terminology == null)
+            {
+                return BadRequest("Terminology data cannot be null");
+            }
+
+            await terminologyService.UpdateTerminology(terminology);
+            return Ok();
         }
     }
 }

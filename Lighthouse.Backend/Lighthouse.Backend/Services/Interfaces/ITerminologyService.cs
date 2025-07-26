@@ -1,9 +1,11 @@
-using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
     public interface ITerminologyService
     {
-        TerminologyDto GetTerminology();
+        IEnumerable<TerminologyEntry> GetAll();
+
+        Task UpdateTerminology(IEnumerable<TerminologyEntry> terminology);
     }
 }

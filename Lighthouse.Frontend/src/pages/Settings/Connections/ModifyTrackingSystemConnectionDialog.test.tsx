@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
@@ -49,6 +50,11 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		mockOnClose.mockClear();
 	});
 
+	afterEach(() => {
+		vi.clearAllTimers();
+		vi.useRealTimers();
+	});
+
 	it("should render the dialog with initial values", () => {
 		render(
 			<ModifyTrackingSystemConnectionDialog
@@ -90,6 +96,8 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		fireEvent.click(screen.getByText("Validate"));
 
 		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+		// Wait for ActionButton's 300ms timeout to complete
+		await waitFor(() => {}, { timeout: 500 });
 		expect(mockValidateSettings).toHaveBeenCalledTimes(1);
 	});
 
@@ -108,10 +116,16 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		});
 		fireEvent.click(screen.getByText("Validate"));
 
+		// Wait for ActionButton's validate timeout to complete
+		await waitFor(() => {}, { timeout: 500 });
+
 		const saveButton = await screen.findByRole("button", {
 			name: /Save|Create/i,
 		});
 		fireEvent.click(saveButton);
+
+		// Wait for ActionButton's save timeout to complete
+		await waitFor(() => {}, { timeout: 500 });
 
 		expect(mockOnClose).toHaveBeenCalledTimes(1);
 	});
@@ -155,6 +169,8 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 
 		// The validate function should be called with the updated connection that includes the pasted password
 		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+		// Wait for ActionButton's timeout to complete
+		await waitFor(() => {}, { timeout: 500 });
 
 		// Verify that mockValidateSettings was called with a connection that has the pasted password
 		expect(mockValidateSettings).toHaveBeenCalledWith(
@@ -182,6 +198,8 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		// First validate to set the correct state
 		fireEvent.click(screen.getByText("Validate"));
 		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+		// Wait for ActionButton's timeout to complete
+		await waitFor(() => {}, { timeout: 500 });
 
 		// Clear the name field to make inputs invalid
 		fireEvent.change(screen.getByLabelText("Connection Name"), {
@@ -217,6 +235,8 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		// First validate to set the correct state
 		fireEvent.click(screen.getByText("Validate"));
 		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+		// Wait for ActionButton's timeout to complete
+		await waitFor(() => {}, { timeout: 500 });
 
 		// Clear a required option field to make inputs invalid
 		const urlInput: HTMLInputElement = screen.getByLabelText("url");
@@ -249,6 +269,8 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 		// First validate to set the correct state
 		fireEvent.click(screen.getByText("Validate"));
 		await waitFor(() => expect(mockValidateSettings).toHaveBeenCalledTimes(1));
+		// Wait for ActionButton's timeout to complete
+		await waitFor(() => {}, { timeout: 500 });
 
 		// Use the Select component directly instead of trying to find it by label
 		const selectElement = screen.getByRole("combobox");

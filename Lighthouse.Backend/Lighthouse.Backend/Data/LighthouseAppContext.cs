@@ -35,10 +35,23 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<WorkItem> WorkItems { get; set; } = default!;
 
+        public DbSet<TerminologyEntry> TerminologyEntries { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
             modelBuilder.Entity<OptionalFeature>().HasKey(a => a.Key);
+            
+            modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Key);
+            modelBuilder.Entity<TerminologyEntry>()
+                .Property(t => t.Key)
+                .IsRequired();
+            modelBuilder.Entity<TerminologyEntry>()
+                .Property(t => t.Description)
+                .IsRequired();
+            modelBuilder.Entity<TerminologyEntry>()
+                .Property(t => t.DefaultValue)
+                .IsRequired();
 
             modelBuilder.Entity<Milestone>()
                 .HasOne(m => m.Project)

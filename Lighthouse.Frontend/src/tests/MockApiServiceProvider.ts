@@ -13,6 +13,7 @@ import type { IProjectService } from "../services/Api/ProjectService";
 import type { ISettingsService } from "../services/Api/SettingsService";
 import type { ISuggestionService } from "../services/Api/SuggestionService";
 import type { ITeamService } from "../services/Api/TeamService";
+import type { ITerminologyService } from "../services/Api/TerminologyService";
 import type { IWorkTrackingSystemService } from "../services/Api/WorkTrackingSystemService";
 import type { IUpdateSubscriptionService } from "../services/UpdateSubscriptionService";
 
@@ -43,6 +44,13 @@ export const createMockApiServiceContext = (
 		terminologyService:
 			null as unknown as IApiServiceContext["terminologyService"],
 		...overrides,
+	};
+};
+
+export const createMockTerminologyService = (): ITerminologyService => {
+	return {
+		getAllTerminology: vi.fn(),
+		updateTerminology: vi.fn(),
 	};
 };
 

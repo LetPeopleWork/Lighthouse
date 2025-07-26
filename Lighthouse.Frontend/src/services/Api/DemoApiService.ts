@@ -1319,13 +1319,31 @@ export class DemoApiService
 		return validation;
 	}
 
-	async getTerminology(): Promise<ITerminology> {
+	async getAllTerminology(): Promise<ITerminology[]> {
 		await delay();
 
-		return {
-			workItem: "Work Item",
-			workItems: "Work Items",
-		};
+		return [
+			{
+				key: "workItem",
+				defaultValue: "Work Item",
+				description: "Work Item",
+				value: "",
+				id: 0,
+			},
+			{
+				key: "workItems",
+				defaultValue: "Work Items",
+				description: "Work Items",
+				value: "",
+				id: 1,
+			},
+		];
+	}
+
+	async updateTerminology(terminology: ITerminology[]): Promise<void> {
+		await delay();
+		// Demo implementation - just log the update
+		console.log("Demo: Updated terminology", terminology);
 	}
 
 	async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {

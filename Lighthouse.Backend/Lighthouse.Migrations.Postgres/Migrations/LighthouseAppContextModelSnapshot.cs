@@ -18,7 +18,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -501,6 +501,31 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.HasIndex("WorkTrackingSystemConnectionId");
 
                     b.ToTable("Teams");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.TerminologyEntry", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefaultValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("TerminologyEntries");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkItem", b =>

@@ -5,6 +5,7 @@ import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
 import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
+	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
 import { TestProviders } from "../../../tests/TestProviders";
 import TeamMetricsView from "./TeamMetricsView";
@@ -71,8 +72,14 @@ describe("TeamMetricsView component", () => {
 	});
 
 	const setupTest = (team: Team) => {
+		const mockTeamService = createMockTeamService();
+		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+			doingStates: ["In Progress", "Review"],
+		});
+
 		const mockContext = createMockApiServiceContext({
 			teamMetricsService: mockTeamMetricsService,
+			teamService: mockTeamService,
 		});
 
 		return render(
@@ -93,11 +100,15 @@ describe("TeamMetricsView component", () => {
 		// Act
 		setupTest(team);
 
-		// Assert
-		expect(screen.getByTestId("base-metrics-view")).toBeInTheDocument();
-		expect(screen.getByTestId("entity-name")).toHaveTextContent("Test Team");
-		expect(screen.getByTestId("metrics-title")).toHaveTextContent("Work Items");
-		expect(screen.getByTestId("default-date-range")).toHaveTextContent("30");
+		// Assert - wait for async operations to complete
+		await waitFor(() => {
+			expect(screen.getByTestId("base-metrics-view")).toBeInTheDocument();
+			expect(screen.getByTestId("entity-name")).toHaveTextContent("Test Team");
+			expect(screen.getByTestId("metrics-title")).toHaveTextContent(
+				"Work Items",
+			);
+			expect(screen.getByTestId("default-date-range")).toHaveTextContent("30");
+		});
 	});
 
 	it("should fetch features in progress when component mounts", async () => {

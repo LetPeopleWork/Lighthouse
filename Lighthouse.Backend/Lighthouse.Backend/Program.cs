@@ -192,6 +192,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
             builder.Services.AddScoped<IRepository<FeatureHistoryEntry>, FeatureHistoryRepository>();
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
+            builder.Services.AddScoped<IRepository<TerminologyEntry>, TerminologyRepository>();
 
             // Factories
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
