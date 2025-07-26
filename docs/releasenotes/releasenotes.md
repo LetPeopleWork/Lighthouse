@@ -4,10 +4,17 @@ layout: home
 nav_order: 95
 ---
 
+<!-- 
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
+-->
+
+# Lighthouse v25.7.26.915
+{: .d-inline-block }
+Latest
+{: .label .label-green }
 
 ## Improved Visual Indicators
 We've added visual icons to make configuration status more apparent:
@@ -35,16 +42,16 @@ This change makes it easier for users to get help and ensures feedback reaches u
 - Fixed handling of work items with 0 days Age/Cycle Time to prevent calculation errors
 - Log Level change was not reflecting in UI when using docker
 
+## Other Improvements
+- Updated various third party dependencies
+
 ## Contributions ❤️ 
 Special Thanks to everyone who contributed their feedback to this release:
 - [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
  
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.14.809...vNext)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.14.809...v25.7.26.915)
 
 # Lighthouse v25.7.14.809
-{: .d-inline-block }
-Latest
-{: .label .label-green }
 
 ## Predictability Score
 The Throughput Run Chart now includes a *Predictability Score*:
