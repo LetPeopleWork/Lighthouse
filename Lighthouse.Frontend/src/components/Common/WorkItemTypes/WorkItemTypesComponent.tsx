@@ -1,6 +1,7 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
 
@@ -20,6 +21,7 @@ const WorkItemTypesComponent: React.FC<WorkItemTypesComponentProps> = ({
 	const [suggestions, setSuggestions] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const { suggestionService } = useContext(ApiServiceContext);
+	const { terminology } = useTerminology();
 
 	useEffect(() => {
 		const fetchWorkItemTypes = async () => {
@@ -44,9 +46,9 @@ const WorkItemTypesComponent: React.FC<WorkItemTypesComponentProps> = ({
 	}, [suggestionService, isForTeam]);
 
 	return (
-		<InputGroup title={"Work Item Types"}>
+		<InputGroup title={`${terminology.workItem} Types`}>
 			<ItemListManager
-				title="Work Item Type"
+				title={`${terminology.workItem} Type`}
 				items={workItemTypes}
 				onAddItem={onAddWorkItemType}
 				onRemoveItem={onRemoveWorkItemType}

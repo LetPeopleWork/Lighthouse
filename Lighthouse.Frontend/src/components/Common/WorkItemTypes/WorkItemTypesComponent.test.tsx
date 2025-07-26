@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
 	createMockSuggestionService,
 } from "../../../tests/MockApiServiceProvider";
+import { TestProviders } from "../../../tests/TestProviders";
 import WorkItemTypesComponent from "./WorkItemTypesComponent";
 
 describe("WorkItemTypesComponent", () => {
@@ -31,14 +31,14 @@ describe("WorkItemTypesComponent", () => {
 
 	const renderWithContext = (isForTeam = true) => {
 		return render(
-			<ApiServiceContext.Provider value={mockApiContext}>
+			<TestProviders apiServiceOverrides={mockApiContext}>
 				<WorkItemTypesComponent
 					workItemTypes={workItemTypes}
 					onAddWorkItemType={mockOnAddWorkItemType}
 					onRemoveWorkItemType={mockOnRemoveWorkItemType}
 					isForTeam={isForTeam}
 				/>
-			</ApiServiceContext.Provider>,
+			</TestProviders>,
 		);
 	};
 

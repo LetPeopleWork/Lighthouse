@@ -5,7 +5,6 @@ import { Feature } from "../../../models/Feature";
 import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import type { IProjectService } from "../../../services/Api/ProjectService";
 import type { ITeamService } from "../../../services/Api/TeamService";
@@ -17,6 +16,7 @@ import {
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
+import { TestProviders } from "../../../tests/TestProviders";
 import ProjectDetail from "./ProjectDetail";
 
 vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
@@ -118,9 +118,7 @@ const MockApiServiceProvider = ({
 	});
 
 	return (
-		<ApiServiceContext.Provider value={mockContext}>
-			{children}
-		</ApiServiceContext.Provider>
+		<TestProviders apiServiceOverrides={mockContext}>{children}</TestProviders>
 	);
 };
 

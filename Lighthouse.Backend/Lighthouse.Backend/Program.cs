@@ -211,6 +211,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();
+            builder.Services.AddScoped<ITerminologyService, TerminologyService>();
 
             builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<JiraWorkTrackingConnector>();

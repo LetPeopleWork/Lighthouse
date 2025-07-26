@@ -32,6 +32,10 @@ import {
 } from "./SuggestionService";
 import { TeamMetricsService } from "./TeamMetricsService";
 import { type ITeamService, TeamService } from "./TeamService";
+import {
+	type ITerminologyService,
+	TerminologyService,
+} from "./TerminologyService";
 import { type IVersionService, VersionService } from "./VersionService";
 import {
 	type IWorkTrackingSystemService,
@@ -53,6 +57,7 @@ export interface IApiServiceContext {
 	suggestionService: ISuggestionService;
 	configurationService: IConfigurationService;
 	featureService: IFeatureService;
+	terminologyService: ITerminologyService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -74,6 +79,7 @@ const defaultServices: IApiServiceContext = {
 	suggestionService: new SuggestionService(),
 	configurationService: new ConfigurationService(),
 	featureService: new FeatureService(),
+	terminologyService: new TerminologyService(),
 };
 
 const useDelay: boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
@@ -96,6 +102,7 @@ const demoServices: IApiServiceContext = {
 	suggestionService: demoApiService,
 	configurationService: demoApiService,
 	featureService: demoApiService,
+	terminologyService: demoApiService,
 };
 
 export function getApiServices(): IApiServiceContext {

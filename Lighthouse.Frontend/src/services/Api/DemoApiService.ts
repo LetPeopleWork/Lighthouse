@@ -32,6 +32,7 @@ import type { IProjectSettings } from "../../models/Project/ProjectSettings";
 import type { StatesCollection } from "../../models/StatesCollection";
 import { Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
+import type { ITerminology } from "../../models/Terminology";
 import type { IWorkItem } from "../../models/WorkItem";
 import {
 	type IWorkTrackingSystemConnection,
@@ -60,6 +61,7 @@ import type { IProjectService } from "./ProjectService";
 import type { ISettingsService } from "./SettingsService";
 import type { ISuggestionService } from "./SuggestionService";
 import type { ITeamService } from "./TeamService";
+import type { ITerminologyService } from "./TerminologyService";
 import type { IVersionService } from "./VersionService";
 import type { IWorkTrackingSystemService } from "./WorkTrackingSystemService";
 
@@ -549,7 +551,8 @@ export class DemoApiService
 		IUpdateSubscriptionService,
 		ISuggestionService,
 		IConfigurationService,
-		IFeatureService
+		IFeatureService,
+		ITerminologyService
 {
 	private readonly subscribers: Map<string, (status: IUpdateStatus) => void> =
 		new Map();
@@ -1314,6 +1317,15 @@ export class DemoApiService
 		};
 
 		return validation;
+	}
+
+	async getTerminology(): Promise<ITerminology> {
+		await delay();
+
+		return {
+			workItem: "Work Item",
+			workItems: "Work Items",
+		};
 	}
 
 	async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {

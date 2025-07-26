@@ -19,6 +19,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 import { errorColor, hexToRgba } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
@@ -176,6 +177,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const theme = useTheme();
+	const { terminology } = useTerminology();
 
 	useEffect(() => {
 		setPercentiles(percentileValues);
@@ -228,7 +230,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		<>
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">Work Item Aging</Typography>
+					<Typography variant="h6">{terminology.workItem} Aging</Typography>
 
 					<Stack
 						direction="row"
@@ -447,7 +449,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				title={
 					selectedItems.length > 0
 						? `Items in ${selectedItems[0]?.state} aged ${getAgeInDays(selectedItems[0])} days`
-						: "Work Items"
+						: terminology.workItems
 				}
 				items={selectedItems}
 				open={dialogOpen}

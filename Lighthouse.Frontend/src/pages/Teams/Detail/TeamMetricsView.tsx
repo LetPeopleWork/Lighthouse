@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import type { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
 import ItemsInProgress from "./ItemsInProgress";
 
@@ -15,6 +16,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
+	const { terminology } = useTerminology();
 
 	useEffect(() => {
 		const fetchFeatures = async () => {
@@ -70,7 +72,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		<BaseMetricsView
 			entity={team}
 			metricsService={teamMetricsService}
-			title="Work Items"
+			title={terminology.workItems}
 			defaultDateRange={dateRange}
 			renderAdditionalComponents={renderTeamSpecificContent}
 			doingStates={doingStates}

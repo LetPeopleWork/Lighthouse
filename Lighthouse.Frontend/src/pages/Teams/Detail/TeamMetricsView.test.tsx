@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Team } from "../../../models/Team/Team";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
 import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
 } from "../../../tests/MockApiServiceProvider";
+import { TestProviders } from "../../../tests/TestProviders";
 import TeamMetricsView from "./TeamMetricsView";
 
 interface BaseMetricsViewProps {
@@ -76,9 +76,9 @@ describe("TeamMetricsView component", () => {
 		});
 
 		return render(
-			<ApiServiceContext.Provider value={mockContext}>
+			<TestProviders apiServiceOverrides={mockContext}>
 				<TeamMetricsView team={team} />
-			</ApiServiceContext.Provider>,
+			</TestProviders>,
 		);
 	};
 

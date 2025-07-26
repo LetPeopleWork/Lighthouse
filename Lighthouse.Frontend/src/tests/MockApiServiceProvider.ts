@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IConfigurationService } from "../services/Api/ConfigurationService";
 import { DemoApiService } from "../services/Api/DemoApiService";
@@ -39,6 +40,8 @@ export const createMockApiServiceContext = (
 		configurationService:
 			null as unknown as IApiServiceContext["configurationService"],
 		featureService: null as unknown as IApiServiceContext["featureService"],
+		terminologyService:
+			null as unknown as IApiServiceContext["terminologyService"],
 		...overrides,
 	};
 };

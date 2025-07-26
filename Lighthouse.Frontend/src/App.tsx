@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 import { useTheme } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
@@ -21,6 +22,21 @@ import {
 	getApiServices,
 	type IApiServiceContext,
 } from "./services/Api/ApiServiceContext";
+import { TerminologyProvider } from "./services/TerminologyContext";
+
+// Create a QueryClient instance with optimized defaults
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: 1000 * 60 * 5, // 5 minutes default stale time
+			gcTime: 1000 * 60 * 30, // 30 minutes garbage collection time
+			retry: 2,
+			refetchOnWindowFocus: false,
+			refetchOnMount: true,
+			refetchOnReconnect: true,
+		},
+	},
+});
 
 const App: React.FC = () => {
 	const theme = useTheme();
@@ -46,53 +62,57 @@ const App: React.FC = () => {
 	};
 
 	return (
-		<Router>
-			<ApiServiceContext.Provider value={apiServices}>
-				<Box
-					className="container"
-					sx={{
-						bgcolor: theme.palette.background.default,
-						color: theme.palette.text.primary,
-						transition: "background-color 0.3s ease, color 0.3s ease",
-					}}
-				>
-					<CssBaseline />
-					<Header />
-					<Box
-						component="main"
-						className="main-content"
-						sx={{
-							bgcolor: theme.palette.background.default,
-							pt: 2,
-							pb: 4,
-						}}
-					>
-						<Routes>
-							<Route path="/" element={<OverviewDashboard />} />
-							<Route path="/teams">
-								<Route index element={<TeamsOverview />} />
-								<Route path=":id" element={<TeamDetail />} />
-								<Route path="edit/:id" element={<EditTeam />} />
-								<Route path="new" element={<EditTeam />} />
-							</Route>
-							<Route path="/projects">
-								<Route index element={<ProjectsOverview />} />
-								<Route path=":id" element={<ProjectDetail />} />
-								<Route path="edit/:id" element={<EditProject />} />
-								<Route path="new" element={<EditProject />} />
-							</Route>
-							<Route path="/settings" element={<Settings />} />
-						</Routes>
-					</Box>
-					<Footer />
-				</Box>
-				<DemoDialog
-					open={isDemoDialogOpen}
-					onClose={handleCloseDemoDialog}
-					onDontShowAgain={handleDontShowAgain}
-				/>
-			</ApiServiceContext.Provider>
-		</Router>
+		<QueryClientProvider client={queryClient}>
+			<Router>
+				<ApiServiceContext.Provider value={apiServices}>
+					<TerminologyProvider>
+						<Box
+							className="container"
+							sx={{
+								bgcolor: theme.palette.background.default,
+								color: theme.palette.text.primary,
+								transition: "background-color 0.3s ease, color 0.3s ease",
+							}}
+						>
+							<CssBaseline />
+							<Header />
+							<Box
+								component="main"
+								className="main-content"
+								sx={{
+									bgcolor: theme.palette.background.default,
+									pt: 2,
+									pb: 4,
+								}}
+							>
+								<Routes>
+									<Route path="/" element={<OverviewDashboard />} />
+									<Route path="/teams">
+										<Route index element={<TeamsOverview />} />
+										<Route path=":id" element={<TeamDetail />} />
+										<Route path="edit/:id" element={<EditTeam />} />
+										<Route path="new" element={<EditTeam />} />
+									</Route>
+									<Route path="/projects">
+										<Route index element={<ProjectsOverview />} />
+										<Route path=":id" element={<ProjectDetail />} />
+										<Route path="edit/:id" element={<EditProject />} />
+										<Route path="new" element={<EditProject />} />
+									</Route>
+									<Route path="/settings" element={<Settings />} />
+								</Routes>
+							</Box>
+							<Footer />
+						</Box>
+						<DemoDialog
+							open={isDemoDialogOpen}
+							onClose={handleCloseDemoDialog}
+							onDontShowAgain={handleDontShowAgain}
+						/>
+					</TerminologyProvider>
+				</ApiServiceContext.Provider>
+			</Router>
+		</QueryClientProvider>
 	);
 };
 
