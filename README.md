@@ -16,6 +16,30 @@ You can find the documentation including how to download and get started in the 
 # Questions & Problems
 If the [Documentation](#documentation) is not answering your question, you can get support in our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
 
+# Bug Reports & Feature Requests
+We are eager to get feedback and constantly improve Lighthouse to better serve your needs. We run regular reviews and would love for people to join there to hear their thoughts and discuss improvements.
+
+## 💬 Preferred Way: Join Our Slack Community
+Our preferred way of getting feedback is through our Slack Channel where you can engage with the community and development team:
+
+**[Join Let People Work Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)**
+
+## 📧 Alternative: Email Feedback
+You can also provide feedback via email to **[lighthouse@letpeople.work](mailto:lighthouse@letpeople.work)**
+
+### 🐛 When reporting issues, please include:
+
+**For Feature Requests:**
+- Description of the desired functionality
+- Use case and expected benefits
+- Any relevant context or examples
+
+**For Bugs:**
+- Steps to reproduce the issue
+- Lighthouse version you're using
+- Expected behavior vs. actual behavior
+- Screenshots or logs if applicable
+
 # Support Our Work
 Lighthouse is completely free and open-source. If you find it valuable for your team and would like to support its continued development, consider making a donation on [Ko-fi](https://ko-fi.com/letpeoplework). Your support helps us maintain and improve Lighthouse for everyone!
 
