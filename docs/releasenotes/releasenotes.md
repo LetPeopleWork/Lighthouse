@@ -9,6 +9,19 @@ nav_order: 95
 Preview
 {: .label .label-blue }
 
+## Improved Visual Indicators
+We've added visual icons to make configuration status more apparent:
+- Teams and Projects now display dedicated icons for System WIP Limits, Forecast Configuration, and Service Level Expectations
+- Icons only appear when the respective configuration is enabled
+- Hover over icons to see detailed tooltip information about the current configuration
+- This replaces the previous dashed border visual indicators with cleaner, more intuitive icons
+
+## Donation Support
+We've added support for community donations through Ko-fi:
+- A donation button is now available in the application footer
+- Donation option is also included in the bug reporting and feedback dialog
+- This provides an easy way for users who want to support the product's development
+
 ## Improved Feedback Collection
 We've enhanced how users can provide feedback and report issues. Instead of redirecting to GitHub Issues, Lighthouse now displays a dedicated feedback dialog that:
 - Provides clear guidance on how to submit feature requests and bug reports
@@ -17,6 +30,16 @@ We've enhanced how users can provide feedback and report issues. Instead of redi
 - Includes information about our review processes and custom development options
 
 This change makes it easier for users to get help and ensures feedback reaches us through the most effective channels.
+
+## Bug Fixes
+- Fixed handling of work items with 0 days Age/Cycle Time to prevent calculation errors
+- Log Level change was not reflecting in UI when using docker
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+ 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.14.809...vNext)
 
 # Lighthouse v25.7.14.809
 {: .d-inline-block }
