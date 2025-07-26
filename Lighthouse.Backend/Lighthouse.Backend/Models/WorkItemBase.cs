@@ -45,9 +45,16 @@ namespace Lighthouse.Backend.Models
         {
             get
             {
-                if (StateCategory == StateCategories.Done && ClosedDate?.Date >= StartedDate?.Date)
+                if (StateCategory == StateCategories.Done)
                 {
-                    return GetDateDifference(StartedDate.Value, ClosedDate.Value);
+                    var startingReferenceDate = StartedDate ?? CreatedDate;
+                    if (ClosedDate?.Date >= startingReferenceDate?.Date)
+                    {
+                        return GetDateDifference(startingReferenceDate.Value, ClosedDate.Value);
+                    }
+
+                    // Item is closed, but something is wrong with the Closed Date --> Default to 1
+                    return 1;
                 }
 
                 return 0;
@@ -58,9 +65,16 @@ namespace Lighthouse.Backend.Models
         {
             get
             {
-                if (StateCategory == StateCategories.Doing && StartedDate?.Date <= DateTime.UtcNow.Date)
+                if (StateCategory == StateCategories.Doing)
                 {
-                    return GetDateDifference(StartedDate.Value, DateTime.UtcNow);
+                    var referencedDate = StartedDate ?? CreatedDate;
+                    if (referencedDate?.Date <= DateTime.UtcNow.Date)
+                    {
+                        return GetDateDifference(referencedDate.Value, DateTime.UtcNow);
+                    }
+
+                    // Item is in progress,  but started date is in the future or not set --> Default to 1
+                    return 1;
                 }
 
                 return 0;

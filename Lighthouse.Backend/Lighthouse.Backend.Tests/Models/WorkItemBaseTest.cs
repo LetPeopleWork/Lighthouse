@@ -22,7 +22,20 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        public void GetCycleTime_ItemClosed_NoStartedDate_Returns0()
+        public void GetCycleTime_ItemClosed_NoStartedDate_UsesCreatedDateForDifference()
+        {
+            var subject = CreateSubject();
+            subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
+            subject.CreatedDate = DateTime.UtcNow.AddDays(-2);
+            subject.StateCategory = StateCategories.Done;
+
+            var cycleTime = subject.CycleTime;
+            
+            Assert.That(cycleTime, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetCycleTime_ItemClosed_NoStartedDate_NoCreatedDate_Returns1()
         {
             var subject = CreateSubject();
             subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
@@ -30,11 +43,11 @@ namespace Lighthouse.Backend.Tests.Models
 
             var cycleTime = subject.CycleTime;
             
-            Assert.That(cycleTime, Is.Zero);
+            Assert.That(cycleTime, Is.EqualTo(1));
         }
 
         [Test]
-        public void GetCycleTime_ItemClosed_NoClosedDate_Returns0()
+        public void GetCycleTime_ItemClosed_NoClosedDate_Returns1()
         {
             var subject = CreateSubject();
             subject.StartedDate = DateTime.UtcNow.AddDays(-2);
@@ -42,11 +55,11 @@ namespace Lighthouse.Backend.Tests.Models
 
             var cycleTime = subject.CycleTime;
             
-            Assert.That(cycleTime, Is.Zero);
+            Assert.That(cycleTime, Is.EqualTo(1));
         }
 
         [Test]
-        public void GetCycleTime_ItemClosed_StartedDateAfterClosedDate_Returns0()
+        public void GetCycleTime_ItemClosed_StartedDateAfterClosedDate_Returns1()
         {
             var subject = CreateSubject();
             subject.ClosedDate = DateTime.UtcNow.AddDays(-15);
@@ -55,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var cycleTime = subject.CycleTime;
             
-            Assert.That(cycleTime, Is.Zero);
+            Assert.That(cycleTime, Is.EqualTo(1));
         }
 
         [Test]
@@ -99,6 +112,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             Assert.That(cycleTime, Is.EqualTo(2));
         }
+
         [Test]
         [TestCase(StateCategories.Unknown)]
         [TestCase(StateCategories.Done)]
@@ -116,18 +130,30 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        public void GetWorkItemAge_ItemInProgress_NoStartedDate_Returns0()
+        public void GetWorkItemAge_ItemInProgress_NoStartedDate_FallsBackToCreatedDate()
+        {
+            var subject = CreateSubject();
+            subject.CreatedDate = DateTime.UtcNow.AddDays(-1);
+            subject.StateCategory = StateCategories.Doing;
+
+            var workItemAge = subject.WorkItemAge;
+            
+            Assert.That(workItemAge, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetWorkItemAge_ItemInProgress_NoStartedDate_NoCreatedDate_Returns1()
         {
             var subject = CreateSubject();
             subject.StateCategory = StateCategories.Doing;
 
             var workItemAge = subject.WorkItemAge;
             
-            Assert.That(workItemAge, Is.Zero);
+            Assert.That(workItemAge, Is.EqualTo(1));
         }
 
         [Test]
-        public void GetWorkItemAge_ItemInProgress_StartedDateAfterToday_Returns0()
+        public void GetWorkItemAge_ItemInProgress_StartedDateAfterToday_Returns1()
         {
             var subject = CreateSubject();
             subject.StartedDate = DateTime.UtcNow.AddDays(1);
@@ -135,7 +161,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var workItemAge = subject.WorkItemAge;
             
-            Assert.That(workItemAge, Is.Zero);
+            Assert.That(workItemAge, Is.EqualTo(1));
         }
 
         [Test]
