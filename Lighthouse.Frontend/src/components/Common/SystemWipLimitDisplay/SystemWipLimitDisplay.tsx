@@ -1,4 +1,5 @@
-import { Card, CardContent, Typography, useTheme } from "@mui/material";
+import WorkIcon from "@mui/icons-material/Work";
+import { IconButton, Tooltip, useTheme } from "@mui/material";
 import type React from "react";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 
@@ -18,45 +19,22 @@ const SystemWIPLimitDisplay: React.FC<SystemWIPLimitDisplayProps> = ({
 
 	const wipLimit = featureOwner.systemWIPLimit;
 
+	const tooltipText = `System WIP Limit: ${wipLimit} Work ${wipLimit === 1 ? "Item" : "Items"}`;
+
 	return (
-		<Card
-			elevation={0}
-			sx={{
-				backgroundColor: "transparent",
-				borderRadius: 2,
-				minWidth: 250,
-				maxWidth: 300,
-				border: `2px dashed ${theme.palette.secondary.main}`,
-				boxShadow: "none",
-				p: 0,
-			}}
-		>
-			<CardContent
-				sx={{ padding: "8px 12px", "&:last-child": { paddingBottom: "8px" } }}
+		<Tooltip title={tooltipText} arrow>
+			<IconButton
+				size="small"
+				sx={{
+					color: theme.palette.primary.main,
+					"&:hover": {
+						backgroundColor: "action.hover",
+					},
+				}}
 			>
-				<Typography
-					variant="caption"
-					sx={{
-						display: "block",
-						fontWeight: theme.emphasis.high,
-						lineHeight: 1,
-						color: theme.palette.secondary.main,
-						mb: 0.5,
-					}}
-				>
-					System WIP Limit
-				</Typography>
-				<Typography
-					variant="body2"
-					sx={{
-						color: theme.palette.text.primary,
-						fontWeight: theme.emphasis.medium,
-					}}
-				>
-					{wipLimit} Work {wipLimit === 1 ? "Item" : "Items"}
-				</Typography>
-			</CardContent>
-		</Card>
+				<WorkIcon />
+			</IconButton>
+		</Tooltip>
 	);
 };
 

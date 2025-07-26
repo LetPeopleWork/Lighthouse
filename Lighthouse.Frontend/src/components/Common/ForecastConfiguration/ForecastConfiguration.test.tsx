@@ -35,22 +35,27 @@ describe("ForecastConfiguration component", () => {
 
 		render(<ForecastConfiguration team={team} />);
 
-		expect(screen.getByText("Forecast Configuration:")).toBeInTheDocument();
-		expect(
-			screen.getByText(
-				`${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-			),
-		).toBeInTheDocument();
+		// Check that the main forecast icon is rendered with correct tooltip
+		const mainIcon = screen.getByTestId("DateRangeIcon");
+		expect(mainIcon).toBeInTheDocument();
+
+		const iconButton = screen.getByRole("button");
+		expect(iconButton).toHaveAttribute(
+			"aria-label",
+			`Forecast Configuration: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+		);
 	});
+
 	it("should not show a warning icon when not using fixed dates", () => {
 		const team = createTeam(false, new Date(), new Date());
 
 		render(<ForecastConfiguration team={team} />);
 
-		const warningIcon = screen.queryByRole("button");
-		expect(warningIcon).not.toBeInTheDocument();
+		// Main icon should be present
+		const mainIcon = screen.getByTestId("DateRangeIcon");
+		expect(mainIcon).toBeInTheDocument();
 
-		// Also verify no warning icon by test id
+		// Warning icon should not be present
 		const warningIconByTestId = screen.queryByTestId("GppMaybeOutlinedIcon");
 		expect(warningIconByTestId).not.toBeInTheDocument();
 	});
@@ -62,7 +67,8 @@ describe("ForecastConfiguration component", () => {
 			<ForecastConfiguration team={teamWithoutFixedDates} />,
 		);
 
-		// Verify no warning icon
+		// Verify main icon is present but no warning icon
+		expect(screen.getByTestId("DateRangeIcon")).toBeInTheDocument();
 		expect(
 			screen.queryByTestId("GppMaybeOutlinedIcon"),
 		).not.toBeInTheDocument();
@@ -71,19 +77,27 @@ describe("ForecastConfiguration component", () => {
 		const teamWithFixedDates = createTeam(true, new Date(), new Date());
 		rerender(<ForecastConfiguration team={teamWithFixedDates} />);
 
-		// Verify warning icon appears
+		// Verify both icons appear
+		expect(screen.getByTestId("DateRangeIcon")).toBeInTheDocument();
 		expect(screen.getByTestId("GppMaybeOutlinedIcon")).toBeInTheDocument();
 	});
+
 	it("should show a warning icon with tooltip when using fixed dates", () => {
 		const team = createTeam(true, new Date(), new Date());
 
 		render(<ForecastConfiguration team={team} />);
 
-		const warningIcon = screen.getByRole("button");
+		// Should have both icons - main and warning
+		const buttons = screen.getAllByRole("button");
+		expect(buttons).toHaveLength(2);
+
+		// Check the warning icon button
+		const warningIcon = screen.getByTestId("GppMaybeOutlinedIcon");
 		expect(warningIcon).toBeInTheDocument();
 
-		// Check that the button has the correct aria-label for the tooltip
-		expect(warningIcon).toHaveAttribute(
+		// Check that the warning button has the correct aria-label for the tooltip
+		const warningButton = warningIcon.closest("button");
+		expect(warningButton).toHaveAttribute(
 			"aria-label",
 			"This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts",
 		);
@@ -93,26 +107,24 @@ describe("ForecastConfiguration component", () => {
 
 		render(<ForecastConfiguration team={team} />);
 
-		const card = screen
-			.getByText("Forecast Configuration:")
-			.closest(".MuiCard-root");
+		// Check that the main icon button is styled correctly
+		const mainIcon = screen.getByTestId("DateRangeIcon");
+		expect(mainIcon).toBeInTheDocument();
 
-		// Check that the min and max width properties are set (using getComputedStyle would work better in a real browser environment)
-		expect(card).toHaveAttribute(
-			"style",
-			expect.stringContaining("--Paper-shadow"),
-		);
+		// Check that the Stack container is present
+		const stack = mainIcon.closest(".MuiStack-root");
+		expect(stack).toBeInTheDocument();
 	});
 
-	it("should display the card content with proper styling", () => {
+	it("should display the icons with proper styling", () => {
 		const team = createTeam(false, new Date(), new Date());
 
 		render(<ForecastConfiguration team={team} />);
 
-		const cardContent = screen
-			.getByText("Forecast Configuration:")
-			.closest(".MuiCardContent-root");
-		expect(cardContent).toBeInTheDocument();
+		// Check that the main icon is present with correct styling
+		const mainIcon = screen.getByTestId("DateRangeIcon");
+		expect(mainIcon).toBeInTheDocument();
+		expect(mainIcon).toHaveClass("MuiSvgIcon-root");
 	});
 	it("should display the warning icon with correct color when using fixed dates", () => {
 		const team = createTeam(true, new Date(), new Date());

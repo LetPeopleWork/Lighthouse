@@ -1,27 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
+import { testTheme } from "../../../tests/testTheme";
 import SystemWIPLimitDisplay from "./SystemWipLimitDisplay";
 
-// Mock Material UI theme hook
+// Mock the Material-UI theme
 vi.mock("@mui/material", async () => {
 	const actual = await vi.importActual("@mui/material");
 	return {
 		...actual,
-		useTheme: () => ({
-			palette: {
-				secondary: {
-					main: "#f50057",
-				},
-				text: {
-					primary: "#000000",
-				},
-			},
-			emphasis: {
-				high: 700,
-				medium: 500,
-			},
-		}),
+		useTheme: () => testTheme,
 	};
 });
 
@@ -71,22 +59,44 @@ describe("SystemWIPLimitDisplay", () => {
 		const featureOwner = createMockFeatureOwner(1);
 		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
-		expect(screen.getByText("System WIP Limit")).toBeInTheDocument();
-		expect(screen.getByText("1 Work Item")).toBeInTheDocument();
+		// Check that the icon button with tooltip is rendered
+		const iconButton = screen.getByRole("button");
+		expect(iconButton).toBeInTheDocument();
+		expect(iconButton).toHaveAttribute(
+			"aria-label",
+			"System WIP Limit: 1 Work Item",
+		);
+
+		// Check that the WorkIcon is present
+		expect(screen.getByTestId("WorkIcon")).toBeInTheDocument();
 	});
 
 	it("should render with correct WIP limit when systemWIPLimit is greater than 1", () => {
 		const featureOwner = createMockFeatureOwner(5);
 		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
-		expect(screen.getByText("System WIP Limit")).toBeInTheDocument();
-		expect(screen.getByText("5 Work Items")).toBeInTheDocument();
+		// Check that the icon button with tooltip is rendered
+		const iconButton = screen.getByRole("button");
+		expect(iconButton).toBeInTheDocument();
+		expect(iconButton).toHaveAttribute(
+			"aria-label",
+			"System WIP Limit: 5 Work Items",
+		);
+
+		// Check that the WorkIcon is present
+		expect(screen.getByTestId("WorkIcon")).toBeInTheDocument();
 	});
 
 	it("should use default hide value when not provided", () => {
 		const featureOwner = createMockFeatureOwner(5);
 		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
-		expect(screen.getByText("System WIP Limit")).toBeInTheDocument();
+		// Check that the icon button with tooltip is rendered
+		const iconButton = screen.getByRole("button");
+		expect(iconButton).toBeInTheDocument();
+		expect(iconButton).toHaveAttribute(
+			"aria-label",
+			"System WIP Limit: 5 Work Items",
+		);
 	});
 });

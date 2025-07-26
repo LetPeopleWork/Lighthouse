@@ -37,14 +37,16 @@ describe("ServiceLevelExpectation component", () => {
 
 		render(<ServiceLevelExpectation featureOwner={mockOwner} />);
 
-		// Check that the component title is rendered
-		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
+		// Check that the icon button with tooltip is rendered
+		const iconButton = screen.getByRole("button");
+		expect(iconButton).toBeInTheDocument();
+		expect(iconButton).toHaveAttribute(
+			"aria-label",
+			"Service Level Expectation: 85% of items within 14 days or less",
+		);
 
-		// Check that the formatted text displays with correct values
-		// 85% rounds to 85, 14 days remains as 14
-		expect(
-			screen.getByText("85% of items within 14 days or less"),
-		).toBeInTheDocument();
+		// Check that the SpeedIcon is present
+		expect(screen.getByTestId("SpeedIcon")).toBeInTheDocument();
 	});
 
 	it("rounds probability percentage correctly", () => {
@@ -53,9 +55,11 @@ describe("ServiceLevelExpectation component", () => {
 		render(<ServiceLevelExpectation featureOwner={mockOwner} />);
 
 		// 85.7% should round to 86%
-		expect(
-			screen.getByText("86% of items within 10 days or less"),
-		).toBeInTheDocument();
+		const iconButton = screen.getByRole("button");
+		expect(iconButton).toHaveAttribute(
+			"aria-label",
+			"Service Level Expectation: 86% of items within 10 days or less",
+		);
 	});
 
 	it("returns null when probability is missing", () => {
