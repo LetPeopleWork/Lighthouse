@@ -167,7 +167,7 @@ export class TeamDetailPage {
 	}
 
 	get returnToCycleTimePercentilesButton(): Locator {
-		return this.page.getByRole("button").filter({ hasText: /^$/ }).nth(3);
+		return this.page.locator('.MuiCardContent-root > div > .MuiButtonBase-root').first();
 	}
 
 	get workItemsInProgressWidget(): Locator {
