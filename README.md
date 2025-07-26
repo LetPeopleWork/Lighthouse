@@ -16,6 +16,9 @@ You can find the documentation including how to download and get started in the 
 # Questions & Problems
 If the [Documentation](#documentation) is not answering your question, you can get support in our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
 
+# Support Our Work
+Lighthouse is completely free and open-source. If you find it valuable for your team and would like to support its continued development, consider making a donation on [Ko-fi](https://ko-fi.com/letpeoplework). Your support helps us maintain and improve Lighthouse for everyone!
+
 # Contribution
 See our [Contributions Page](https://docs.lighthouse.letpeople.work/contributions/contributions.html) for more details on how you can contribute.
 

@@ -22,4 +22,21 @@ describe("Footer component", () => {
 		const version = screen.getByTestId("version");
 		expect(version).toBeInTheDocument();
 	});
+
+	it("renders donation button with correct link", async () => {
+		render(
+			<Router>
+				<Footer />
+			</Router>,
+		);
+
+		const donationButton = screen.getByLabelText("Support Our Work");
+		expect(donationButton).toBeInTheDocument();
+		expect(donationButton).toHaveAttribute(
+			"href",
+			"https://ko-fi.com/letpeoplework",
+		);
+		expect(donationButton).toHaveAttribute("target", "_blank");
+		expect(donationButton).toHaveAttribute("rel", "noopener noreferrer");
+	});
 });

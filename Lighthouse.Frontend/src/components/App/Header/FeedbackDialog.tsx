@@ -2,6 +2,7 @@ import BugReportIcon from "@mui/icons-material/BugReport";
 import SlackIcon from "@mui/icons-material/Chat";
 import EmailIcon from "@mui/icons-material/Email";
 import HandshakeIcon from "@mui/icons-material/Handshake";
+import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import {
 	Box,
 	Button,
@@ -100,6 +101,30 @@ const FeedbackDialog: React.FC<FeedbackDialogProps> = ({ open, onClose }) => {
 							<br />• Expected behavior vs. actual behavior
 							<br />• Screenshots or logs if applicable
 						</Typography>
+					</Box>
+
+					<Box
+						sx={{ display: "flex", alignItems: "center", gap: 1, mt: 3, mb: 2 }}
+					>
+						<VolunteerActivismIcon color="primary" />
+						<Typography variant="h6" component="h3">
+							Support Our Work
+						</Typography>
+					</Box>
+					<Typography variant="body1" sx={{ mb: 2 }}>
+						Lighthouse is completely Free and Open Source. If you find it
+						valuable for your team and would like to support its continued
+						development, consider making a donation:
+					</Typography>
+					<Box sx={{ pl: 2, mb: 2 }}>
+						<Link
+							href="https://ko-fi.com/letpeoplework"
+							target="_blank"
+							rel="noopener noreferrer"
+							variant="body1"
+						>
+							Support us on Ko-fi
+						</Link>
 					</Box>
 
 					<Box

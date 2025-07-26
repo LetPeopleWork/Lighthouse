@@ -112,6 +112,21 @@ describe("FeedbackDialog", () => {
 		expect(title).toBeInTheDocument();
 	});
 
+	it("displays donation section with Ko-fi link", () => {
+		render(<FeedbackDialog open={true} onClose={mockOnClose} />);
+
+		expect(screen.getByText("Support Our Work")).toBeInTheDocument();
+		expect(
+			screen.getByText(/Lighthouse is completely Free and Open Source/),
+		).toBeInTheDocument();
+
+		const kofiLink = screen.getByText("Support us on Ko-fi");
+		expect(kofiLink).toBeInTheDocument();
+		expect(kofiLink).toHaveAttribute("href", "https://ko-fi.com/letpeoplework");
+		expect(kofiLink).toHaveAttribute("target", "_blank");
+		expect(kofiLink).toHaveAttribute("rel", "noopener noreferrer");
+	});
+
 	it("displays all required content sections", () => {
 		render(<FeedbackDialog open={true} onClose={mockOnClose} />);
 

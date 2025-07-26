@@ -3,6 +3,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import ForumIcon from "@mui/icons-material/Forum";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import {
 	Box,
 	Container,
@@ -72,6 +73,11 @@ const Footer: React.FC = () => {
 								link="https://miro.com/app/board/uXjVItmYi5c=/?share_link_id=330450244368"
 								icon={ShoppingCartIcon}
 								tooltip="See our Offering"
+							/>
+							<ExternalLinkButton
+								link="https://ko-fi.com/letpeoplework"
+								icon={VolunteerActivismIcon}
+								tooltip="Support Our Work"
 							/>
 						</Box>
 					</Box>
