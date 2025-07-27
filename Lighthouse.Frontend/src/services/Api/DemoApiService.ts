@@ -1326,14 +1326,14 @@ export class DemoApiService
 			{
 				key: "workItem",
 				defaultValue: "Work Item",
-				description: "Work Item",
-				value: "",
+				description: "Generic Name of items your team is working on.",
+				value: "Issue",
 				id: 0,
 			},
 			{
 				key: "workItems",
 				defaultValue: "Work Items",
-				description: "Work Items",
+				description: "Work Item in Plural",
 				value: "",
 				id: 1,
 			},

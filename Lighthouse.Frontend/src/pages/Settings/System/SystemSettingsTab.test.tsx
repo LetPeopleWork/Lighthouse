@@ -1,14 +1,18 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import type { ISettingsService } from "../../../services/Api/SettingsService";
+import type { ITerminologyService } from "../../../services/Api/TerminologyService";
+import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
 	createMockConfigurationService,
 	createMockOptionalFeatureService,
 	createMockSettingsService,
+	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import SystemSettingsTab from "./SystemSettingsTab";
 
@@ -34,6 +38,14 @@ const mockExportConfiguration = vi.fn();
 const mockConfigurationService = createMockConfigurationService();
 mockConfigurationService.exportConfiguration = mockExportConfiguration;
 
+const mockGetAllTerminology = vi.fn();
+const mockUpdateTerminology = vi.fn();
+
+const mockTerminologyService: ITerminologyService =
+	createMockTerminologyService();
+mockTerminologyService.getAllTerminology = mockGetAllTerminology;
+mockTerminologyService.updateTerminology = mockUpdateTerminology;
+
 const MockApiServiceProvider = ({
 	children,
 }: {
@@ -43,12 +55,22 @@ const MockApiServiceProvider = ({
 		settingsService: mockSettingsService,
 		optionalFeatureService: mockOptionalFeatureService,
 		configurationService: mockConfigurationService,
+		terminologyService: mockTerminologyService,
+	});
+
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: { retry: false },
+			mutations: { retry: false },
+		},
 	});
 
 	return (
-		<ApiServiceContext.Provider value={mockContext}>
-			{children}
-		</ApiServiceContext.Provider>
+		<QueryClientProvider client={queryClient}>
+			<ApiServiceContext.Provider value={mockContext}>
+				<TerminologyProvider>{children}</TerminologyProvider>
+			</ApiServiceContext.Provider>
+		</QueryClientProvider>
 	);
 };
 
@@ -80,6 +102,27 @@ describe("SystemSettingsTab Component", () => {
 				description: "Description 2",
 				enabled: true,
 				isPreview: false,
+			},
+		]);
+
+		mockGetDataRetentionSettings.mockResolvedValue({
+			maxStorageTimeInDays: 30,
+		});
+
+		mockGetAllTerminology.mockResolvedValue([
+			{
+				id: 1,
+				key: "Work Item",
+				defaultValue: "Work Item",
+				description: "Term used for individual work items",
+				value: "Work Item",
+			},
+			{
+				id: 2,
+				key: "Work Items",
+				defaultValue: "Work Items",
+				description: "Term used for multiple work items",
+				value: "Work Items",
 			},
 		]);
 	});

@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var existing = repository.GetByPredicate(e => e.Key == entry.Key);
                 if (existing != null)
                 {
-                    existing.DefaultValue = entry.DefaultValue;
+                    existing.Value = entry.Value;
                 }
 
                 // We do not support adding new entries through this method.

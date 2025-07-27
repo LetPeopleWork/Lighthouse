@@ -16,6 +16,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
+import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
 import type { IDataRetentionSettings } from "../../../models/AppSettings/DataRetentionSettings";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -176,6 +177,10 @@ const SystemSettingsTab: React.FC = () => {
 						</TableBody>
 					</Table>
 				</TableContainer>
+			</InputGroup>
+
+			<InputGroup title="Terminology Configuration" initiallyExpanded={true}>
+				<TerminologyConfiguration />
 			</InputGroup>
 
 			<InputGroup title="Team Refresh">

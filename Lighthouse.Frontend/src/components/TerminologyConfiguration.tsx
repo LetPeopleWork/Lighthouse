@@ -3,7 +3,6 @@ import {
 	Box,
 	Button,
 	CircularProgress,
-	Paper,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -11,6 +10,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import type { ITerminology } from "../models/Terminology";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { useTerminology } from "../services/TerminologyContext";
 
 interface TerminologyConfigurationProps {
 	onClose?: () => void;
@@ -20,6 +20,7 @@ export const TerminologyConfiguration: React.FC<
 	TerminologyConfigurationProps
 > = ({ onClose }) => {
 	const { terminologyService } = useContext(ApiServiceContext);
+	const { refetchTerminology } = useTerminology();
 	const [terminology, setTerminology] = useState<ITerminology[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -51,6 +52,10 @@ export const TerminologyConfiguration: React.FC<
 			setSuccess(null);
 			await terminologyService.updateTerminology(terminology);
 			setSuccess("Terminology configuration updated successfully");
+
+			// Invalidate terminology context cache to fetch latest data
+			refetchTerminology();
+
 			if (onClose) {
 				setTimeout(() => onClose(), 1500);
 			}
@@ -63,16 +68,15 @@ export const TerminologyConfiguration: React.FC<
 	};
 
 	const handleInputChange = (key: string, value: string) => {
-		setTerminology((prev) => ({
-			...prev,
-			[key]: value,
-		}));
+		setTerminology((prev) =>
+			prev.map((term) => (term.key === key ? { ...term, value } : term)),
+		);
 		setSuccess(null);
 	};
 
 	if (loading) {
 		return (
-			<Box display="flex" justifyContent="center" alignItems="center" p={4}>
+			<Box display="flex" justifyContent="center" alignItems="center" p={2}>
 				<CircularProgress />
 				<Typography variant="body1" sx={{ ml: 2 }}>
 					Loading terminology configuration...
@@ -82,17 +86,7 @@ export const TerminologyConfiguration: React.FC<
 	}
 
 	return (
-		<Paper elevation={2} sx={{ p: 3, maxWidth: 800, mx: "auto" }}>
-			<Box mb={3}>
-				<Typography variant="h4" component="h2" gutterBottom>
-					Terminology Configuration
-				</Typography>
-				<Typography variant="body1" color="text.secondary">
-					Configure the terminology used throughout the application. Changes
-					will be applied immediately after saving.
-				</Typography>
-			</Box>
-
+		<Box>
 			{error && (
 				<Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
 					{error}
@@ -109,17 +103,22 @@ export const TerminologyConfiguration: React.FC<
 				</Alert>
 			)}
 
+			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+				Configure the terminology used throughout the application. Changes will
+				be applied immediately after saving.
+			</Typography>
+
 			<Box sx={{ mb: 3 }}>
-				{Object.entries(terminology).map(([key, value]) => (
+				{terminology.map((term) => (
 					<Box
-						key={key}
+						key={term.key}
 						sx={{ display: "flex", alignItems: "center", mb: 2, gap: 2 }}
 					>
 						<TextField
-							label={key}
-							value={value}
-							onChange={(e) => handleInputChange(key, e.target.value)}
-							placeholder={`Enter value for ${key}`}
+							label={term.defaultValue}
+							value={term.value}
+							onChange={(e) => handleInputChange(term.key, e.target.value)}
+							placeholder={term.description}
 							fullWidth
 							variant="outlined"
 						/>
@@ -149,6 +148,6 @@ export const TerminologyConfiguration: React.FC<
 					)}
 				</Button>
 			</Box>
-		</Paper>
+		</Box>
 	);
 };

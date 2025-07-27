@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { TerminologyProvider } from "../services/TerminologyContext";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
 import { TerminologyConfiguration } from "./TerminologyConfiguration";
 
@@ -27,7 +28,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 	return render(
 		<QueryClientProvider client={queryClient}>
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
-				{component}
+				<TerminologyProvider>{component}</TerminologyProvider>
 			</ApiServiceContext.Provider>
 		</QueryClientProvider>,
 	);
@@ -52,48 +53,83 @@ describe("TerminologyConfiguration", () => {
 	});
 
 	it("should load and display terminology from the service", async () => {
-		const mockTerminology = {
-			workItem: "Task",
-			workItems: "Tasks",
-			customTerm: "Custom Value",
-		};
+		const mockTerminology = [
+			{
+				id: 1,
+				key: "workItem",
+				defaultValue: "Task",
+				description: "Individual work item",
+				value: "Task",
+			},
+			{
+				id: 2,
+				key: "workItems",
+				defaultValue: "Tasks",
+				description: "Multiple work items",
+				value: "Tasks",
+			},
+			{
+				id: 3,
+				key: "customTerm",
+				defaultValue: "Custom Default",
+				description: "Custom terminology",
+				value: "Custom Value",
+			},
+		];
 
 		mockTerminologyService.getAllTerminology.mockResolvedValue(mockTerminology);
 
 		renderWithProviders(<TerminologyConfiguration />);
 
 		await waitFor(() => {
-			expect(screen.getByDisplayValue("Task")).toBeInTheDocument();
-			expect(screen.getByDisplayValue("Tasks")).toBeInTheDocument();
-			expect(screen.getByDisplayValue("Custom Value")).toBeInTheDocument();
+			expect(screen.getByLabelText("Task")).toBeInTheDocument();
+			expect(screen.getByLabelText("Tasks")).toBeInTheDocument();
+			expect(screen.getByLabelText("Custom Default")).toBeInTheDocument();
 		});
 
-		expect(mockTerminologyService.getAllTerminology).toHaveBeenCalledTimes(1);
+		// Check that values are displayed correctly
+		expect(screen.getByDisplayValue("Task")).toBeInTheDocument();
+		expect(screen.getByDisplayValue("Tasks")).toBeInTheDocument();
+		expect(screen.getByDisplayValue("Custom Value")).toBeInTheDocument();
+
+		expect(mockTerminologyService.getAllTerminology).toHaveBeenCalled();
 	});
 
 	it("should allow editing terminology values", async () => {
-		const mockTerminology = {
-			workItem: "Work Item",
-		};
+		const mockTerminology = [
+			{
+				id: 1,
+				key: "workItem",
+				defaultValue: "Work Item",
+				description: "Individual work item",
+				value: "Work Item",
+			},
+		];
 
 		mockTerminologyService.getAllTerminology.mockResolvedValue(mockTerminology);
 
 		renderWithProviders(<TerminologyConfiguration />);
 
 		await waitFor(() => {
-			expect(screen.getByDisplayValue("Work Item")).toBeInTheDocument();
+			expect(screen.getByLabelText("Work Item")).toBeInTheDocument();
 		});
 
-		const input = screen.getByDisplayValue("Work Item");
+		const input = screen.getByLabelText("Work Item");
 		fireEvent.change(input, { target: { value: "Task" } });
 
 		expect(screen.getByDisplayValue("Task")).toBeInTheDocument();
 	});
 
 	it("should save terminology when save button is clicked", async () => {
-		const mockTerminology = {
-			workItem: "Work Item",
-		};
+		const mockTerminology = [
+			{
+				id: 1,
+				key: "workItem",
+				defaultValue: "Work Item",
+				description: "Individual work item",
+				value: "Work Item",
+			},
+		];
 
 		mockTerminologyService.getAllTerminology.mockResolvedValue(mockTerminology);
 		mockTerminologyService.updateTerminology.mockResolvedValue(undefined);
@@ -101,10 +137,10 @@ describe("TerminologyConfiguration", () => {
 		renderWithProviders(<TerminologyConfiguration />);
 
 		await waitFor(() => {
-			expect(screen.getByDisplayValue("Work Item")).toBeInTheDocument();
+			expect(screen.getByLabelText("Work Item")).toBeInTheDocument();
 		});
 
-		const input = screen.getByDisplayValue("Work Item");
+		const input = screen.getByLabelText("Work Item");
 		fireEvent.change(input, { target: { value: "Task" } });
 
 		const saveButton = screen.getByRole("button", {
@@ -113,16 +149,28 @@ describe("TerminologyConfiguration", () => {
 		fireEvent.click(saveButton);
 
 		await waitFor(() => {
-			expect(mockTerminologyService.updateTerminology).toHaveBeenCalledWith({
-				workItem: "Task",
-			});
+			expect(mockTerminologyService.updateTerminology).toHaveBeenCalledWith([
+				{
+					id: 1,
+					key: "workItem",
+					defaultValue: "Work Item",
+					description: "Individual work item",
+					value: "Task",
+				},
+			]);
 		});
 	});
 
 	it("should display success message after saving", async () => {
-		const mockTerminology = {
-			workItem: "Work Item",
-		};
+		const mockTerminology = [
+			{
+				id: 1,
+				key: "workItem",
+				defaultValue: "Work Item",
+				description: "Individual work item",
+				value: "Work Item",
+			},
+		];
 
 		mockTerminologyService.getAllTerminology.mockResolvedValue(mockTerminology);
 		mockTerminologyService.updateTerminology.mockResolvedValue(undefined);
@@ -130,7 +178,7 @@ describe("TerminologyConfiguration", () => {
 		renderWithProviders(<TerminologyConfiguration />);
 
 		await waitFor(() => {
-			expect(screen.getByDisplayValue("Work Item")).toBeInTheDocument();
+			expect(screen.getByLabelText("Work Item")).toBeInTheDocument();
 		});
 
 		const saveButton = screen.getByRole("button", {
@@ -160,9 +208,15 @@ describe("TerminologyConfiguration", () => {
 	});
 
 	it("should display error message when saving fails", async () => {
-		const mockTerminology = {
-			workItem: "Work Item",
-		};
+		const mockTerminology = [
+			{
+				id: 1,
+				key: "workItem",
+				defaultValue: "Work Item",
+				description: "Individual work item",
+				value: "Work Item",
+			},
+		];
 
 		mockTerminologyService.getAllTerminology.mockResolvedValue(mockTerminology);
 		mockTerminologyService.updateTerminology.mockRejectedValue(
@@ -172,7 +226,7 @@ describe("TerminologyConfiguration", () => {
 		renderWithProviders(<TerminologyConfiguration />);
 
 		await waitFor(() => {
-			expect(screen.getByDisplayValue("Work Item")).toBeInTheDocument();
+			expect(screen.getByLabelText("Work Item")).toBeInTheDocument();
 		});
 
 		const saveButton = screen.getByRole("button", {
@@ -189,16 +243,22 @@ describe("TerminologyConfiguration", () => {
 
 	it("should call onClose when cancel button is clicked", async () => {
 		const mockOnClose = vi.fn();
-		const mockTerminology = {
-			workItem: "Work Item",
-		};
+		const mockTerminology = [
+			{
+				id: 1,
+				key: "workItem",
+				defaultValue: "Work Item",
+				description: "Individual work item",
+				value: "Work Item",
+			},
+		];
 
 		mockTerminologyService.getAllTerminology.mockResolvedValue(mockTerminology);
 
 		renderWithProviders(<TerminologyConfiguration onClose={mockOnClose} />);
 
 		await waitFor(() => {
-			expect(screen.getByDisplayValue("Work Item")).toBeInTheDocument();
+			expect(screen.getByLabelText("Work Item")).toBeInTheDocument();
 		});
 
 		const cancelButton = screen.getByRole("button", { name: /cancel/i });
