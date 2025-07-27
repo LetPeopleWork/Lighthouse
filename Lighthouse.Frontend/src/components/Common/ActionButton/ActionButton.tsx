@@ -1,6 +1,6 @@
 import { Button, CircularProgress, useTheme } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ButtonVariant = "text" | "outlined" | "contained";
 
@@ -30,7 +30,15 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 	color = "primary",
 }) => {
 	const [internalIsWaiting, setInternalIsWaiting] = useState<boolean>(false);
+	const isMountedRef = useRef(true);
 	const theme = useTheme();
+
+	// Cleanup ref when component unmounts
+	useEffect(() => {
+		return () => {
+			isMountedRef.current = false;
+		};
+	}, []);
 
 	const handleClick = async () => {
 		setInternalIsWaiting(true);
@@ -40,7 +48,10 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 			new Promise((resolve) => setTimeout(resolve, 300)),
 		]);
 
-		setInternalIsWaiting(false);
+		// Only update state if component is still mounted
+		if (isMountedRef.current) {
+			setInternalIsWaiting(false);
+		}
 	};
 
 	const isWaiting = internalIsWaiting || externalIsWaiting;
