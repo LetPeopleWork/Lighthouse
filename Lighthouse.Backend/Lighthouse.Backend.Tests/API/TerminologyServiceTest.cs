@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var updateData = new List<TerminologyEntry>
             {
-                new TerminologyEntry { Key = "feature", DefaultValue = "Epic" }
+                new TerminologyEntry { Key = "feature", Value = "Epic", DefaultValue = "Epic " }
             };
 
             await terminologyService.UpdateTerminology(updateData);
@@ -85,7 +85,8 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(updatedEntry, Is.Not.Null);
-                Assert.That(updatedEntry.DefaultValue, Is.EqualTo("Epic"));
+                Assert.That(updatedEntry.DefaultValue, Is.EqualTo("Feature"));
+                Assert.That(updatedEntry.Value, Is.EqualTo("Epic"));
             }
         }
 
@@ -117,9 +118,9 @@ namespace Lighthouse.Backend.Tests.API
 
             var updateData = new List<TerminologyEntry>
             {
-                new TerminologyEntry { Key = "feature", DefaultValue = "Epic" },
-                new TerminologyEntry { Key = "story", DefaultValue = "Task" },
-                new TerminologyEntry { Key = "bug", DefaultValue = "Defect" }
+                new TerminologyEntry { Key = "feature", Value = "Epic" },
+                new TerminologyEntry { Key = "story", Value = "Task" },
+                new TerminologyEntry { Key = "bug", Value = "Defect" }
             };
 
             await terminologyService.UpdateTerminology(updateData);
@@ -131,9 +132,9 @@ namespace Lighthouse.Backend.Tests.API
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(featureEntry.DefaultValue, Is.EqualTo("Epic"));
-                Assert.That(storyEntry.DefaultValue, Is.EqualTo("Task"));
-                Assert.That(bugEntry.DefaultValue, Is.EqualTo("Defect"));
+                Assert.That(featureEntry.Value, Is.EqualTo("Epic"));
+                Assert.That(storyEntry.Value, Is.EqualTo("Task"));
+                Assert.That(bugEntry.Value, Is.EqualTo("Defect"));
             }
         }
     }
