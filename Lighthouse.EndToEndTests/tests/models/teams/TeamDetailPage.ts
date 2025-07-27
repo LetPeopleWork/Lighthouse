@@ -191,7 +191,7 @@ export class TeamDetailPage {
 	get blockedItemsWidget(): Locator {
 		return this.page
 			.locator("div")
-			.filter({ hasText: /^Blocked Items:.*$/ })
+			.filter({ hasText: /^Blocked:.*$/ })
 			.first();
 	}
 
