@@ -4,12 +4,41 @@ layout: home
 nav_order: 95
 ---
 
-<!-- 
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
--->
+
+## Terminology Configuration
+Lighthouse now allows you to customize terminology throughout the application to match your organization's language and workflow:
+
+![Terminology Configuration](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/releasenotes/Terminology_Config.png?raw=true)
+
+- **Configurable Terms**: Customize how Lighthouse displays common terminology including:
+  - Work Item/Work Items (can be customized to Stories, Tasks, Issues, etc.)
+  - Feature/Features (can be changed to Epic, Initiative, etc.)
+  - Cycle Time, Throughput, Work in Progress (WIP)
+  - Work Item Age, Service Level Expectation (SLE)
+  - Teams, Work Tracking Systems, Queries, Tags, and Blocked items
+- **System Settings Integration**: Access terminology configuration through *Settings* → *System Settings* → *Terminology*
+- **Dynamic Updates**: Changes are applied immediately across the entire application interface
+- **Default Values**: Each term shows its default value and description to help with configuration
+- **Consistent Language**: Eliminates confusion by harmonizing terminology that was previously inconsistent (e.g., "Items" vs "Work Items")
+
+![Terminology Applied](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/releasenotes/Terminology_Adjusted.png?raw=true)
+
+This feature addresses feedback about terminology inconsistencies and enables organizations to use familiar language that aligns with their existing processes and tools.
+
+## Bug Fixes
+- TBD (#2829 )
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+ 
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.26.915...TBD)
 
 # Lighthouse v25.7.26.915
 {: .d-inline-block }
