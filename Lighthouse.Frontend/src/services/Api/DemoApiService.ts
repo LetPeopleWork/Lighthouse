@@ -1326,16 +1326,140 @@ export class DemoApiService
 			{
 				key: "workItem",
 				defaultValue: "Work Item",
-				description: "Generic Name of items your team is working on.",
+				description:
+					"Units of Value that move through your system and that your teams work on. Alternatives may be 'Story' or 'Issue'",
 				value: "Issue",
 				id: 0,
 			},
 			{
 				key: "workItems",
 				defaultValue: "Work Items",
-				description: "Work Item in Plural",
+				description: "Plural form of 'Work Item'",
 				value: "",
 				id: 1,
+			},
+			{
+				key: "feature",
+				defaultValue: "Feature",
+				description:
+					"Larger unit of work that contains multiple Work Items. Alternatives may be 'Epic' or 'Theme'",
+				value: "",
+				id: 2,
+			},
+			{
+				key: "features",
+				defaultValue: "Features",
+				description: "Plural form of 'Feature'",
+				value: "",
+				id: 3,
+			},
+			{
+				key: "cycleTime",
+				defaultValue: "Cycle Time",
+				description:
+					"The elapsed time between when a work item started and when a work item finished. Alternatives may be 'Lead Time' or 'Flow Time'",
+				value: "",
+				id: 4,
+			},
+			{
+				key: "throughput",
+				defaultValue: "Throughput",
+				description:
+					"The number of work items finished per unit of time. Alternatives may be 'Delivery Rate' or 'Flow Velocity'",
+				value: "",
+				id: 5,
+			},
+			{
+				key: "workInProgress",
+				defaultValue: "Work In Progress",
+				description:
+					"The number of work items started but not finished. Alternatives may be 'Flow Load' or 'Ongoing Stuff'",
+				value: "",
+				id: 6,
+			},
+			{
+				key: "wip",
+				defaultValue: "WIP",
+				description: "Abbreviation of 'Work In Progress'.",
+				value: "",
+				id: 7,
+			},
+			{
+				key: "workItemAge",
+				defaultValue: "Work Item Age",
+				description:
+					"The elapsed time between when a work item started and the current date. Alternatives may be 'Age' or 'In Progress Time'",
+				value: "",
+				id: 8,
+			},
+			{
+				key: "tag",
+				defaultValue: "Tag",
+				description:
+					"A user defined indication on your 'Work Items'. Alternatives may be 'Label' or 'Category'",
+				value: "",
+				id: 9,
+			},
+			{
+				key: "workTrackingSystem",
+				defaultValue: "Work Tracking System",
+				description:
+					"Generic name of the source of your data. Alternatives may be 'Jira Instance' or 'Azure DevOps Organization'",
+				value: "",
+				id: 10,
+			},
+			{
+				key: "workTrackingSystems",
+				defaultValue: "Work Tracking Systems",
+				description: "Plural form of 'Work Tracking System'",
+				value: "",
+				id: 11,
+			},
+			{
+				key: "workItemQuery",
+				defaultValue: "Work Item Query",
+				description:
+					"Query that is applied on your 'Work Tracking System' for filtering. Alternatives may be 'JQL' or 'WIQL'",
+				value: "",
+				id: 12,
+			},
+			{
+				key: "blocked",
+				defaultValue: "Blocked",
+				description:
+					"Indication for 'Work Items' that don't progress anymore. Alternatives may be 'On Hold' or 'Stopped'",
+				value: "",
+				id: 13,
+			},
+			{
+				key: "serviceLevelExpectation",
+				defaultValue: "Service Level Expectation",
+				description:
+					"A forecast of how long it should take a work item to flow from started to finished. Alternatives may be 'Target' or 'Goal'",
+				value: "",
+				id: 14,
+			},
+			{
+				key: "sle",
+				defaultValue: "SLE",
+				description: "Abbreviation of 'Service Level Expectation'",
+				value: "",
+				id: 15,
+			},
+			{
+				key: "team",
+				defaultValue: "Team",
+				description:
+					"The smallest groups in the organization that deliver 'Work Items'. Alternatives may be 'Squad' or 'Crew'",
+				value: "",
+				id: 16,
+			},
+			{
+				key: "teams",
+				defaultValue: "Teams",
+				description: "Plural form of 'Team'",
+				value: "",
+				id: 17,
 			},
 		];
 	}

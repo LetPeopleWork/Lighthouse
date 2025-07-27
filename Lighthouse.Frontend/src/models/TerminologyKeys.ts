@@ -5,6 +5,22 @@
 export const TERMINOLOGY_KEYS = {
 	WORK_ITEM: "workItem",
 	WORK_ITEMS: "workItems",
+	FEATURE: "feature",
+	FEATURES: "features",
+	CYCLE_TIME: "cycleTime",
+	THROUGHPUT: "throughput",
+	WORK_IN_PROGRESS: "workInProgress",
+	WIP: "wip",
+	WORK_ITEM_AGE: "workItemAge",
+	TAG: "tag",
+	WORK_TRACKING_SYSTEM: "workTrackingSystem",
+	WORK_TRACKING_SYSTEMS: "workTrackingSystems",
+	WORK_ITEM_QUERY: "workItemQuery",
+	BLOCKED: "blocked",
+	SERVICE_LEVEL_EXPECTATION: "serviceLevelExpectation",
+	SLE: "sle",
+	TEAM: "team",
+	TEAMS: "teams",
 } as const;
 
 export type TerminologyKey =

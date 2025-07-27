@@ -14,6 +14,22 @@ import { createMockApiServiceContext } from "./MockApiServiceProvider";
 const mockTerminologyMap: Record<string, string> = {
 	[TERMINOLOGY_KEYS.WORK_ITEM]: "Work Item",
 	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
+	[TERMINOLOGY_KEYS.FEATURE]: "Feature",
+	[TERMINOLOGY_KEYS.FEATURES]: "Features",
+	[TERMINOLOGY_KEYS.CYCLE_TIME]: "Cycle Time",
+	[TERMINOLOGY_KEYS.THROUGHPUT]: "Throughput",
+	[TERMINOLOGY_KEYS.WORK_IN_PROGRESS]: "Work In Progress",
+	[TERMINOLOGY_KEYS.WIP]: "WIP",
+	[TERMINOLOGY_KEYS.WORK_ITEM_AGE]: "Work Item Age",
+	[TERMINOLOGY_KEYS.TAG]: "Tag",
+	[TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM]: "Work Tracking System",
+	[TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS]: "Work Tracking Systems",
+	[TERMINOLOGY_KEYS.WORK_ITEM_QUERY]: "Work Item Query",
+	[TERMINOLOGY_KEYS.BLOCKED]: "Blocked",
+	[TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION]: "Service Level Expectation",
+	[TERMINOLOGY_KEYS.SLE]: "SLE",
+	[TERMINOLOGY_KEYS.TEAM]: "Team",
+	[TERMINOLOGY_KEYS.TEAMS]: "Teams",
 	// Add more terminology mappings here as needed
 };
 

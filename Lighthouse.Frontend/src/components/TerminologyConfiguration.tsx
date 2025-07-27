@@ -107,8 +107,10 @@ export const TerminologyConfiguration: React.FC<
 			)}
 
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-				Use your own terminology so it fits your use case. The naming will be used throughout the application - changes will be applied
-				immediately after saving. The defaults are aligned with the terminology in the Kanban Guide wherever applicable.
+				Use your own terminology so it fits your use case. The naming will be
+				used throughout the application - changes will be applied immediately
+				after saving. The defaults are aligned with the terminology in the
+				Kanban Guide wherever applicable.
 			</Typography>
 
 			<Box sx={{ mb: 3 }}>
@@ -131,7 +133,9 @@ export const TerminologyConfiguration: React.FC<
 
 			<Alert severity="info" sx={{ mb: 3 }}>
 				<Typography variant="body2">
-					<strong>Found a place where we don't use your configured terminology?</strong>
+					<strong>
+						Found a place where we don't use your configured terminology?
+					</strong>
 					<br />
 					We'd love to hear from you!{" "}
 					<Link
@@ -142,7 +146,8 @@ export const TerminologyConfiguration: React.FC<
 					>
 						Please reach out
 					</Link>{" "}
-					if you spot inconsistencies or have requests for making additional terminology configurable.
+					if you spot inconsistencies or have requests for making additional
+					terminology configurable.
 				</Typography>
 			</Alert>
 
