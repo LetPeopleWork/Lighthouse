@@ -91,7 +91,7 @@ const WorkTrackingSystemComponent: React.FC<
 	return (
 		<InputGroup title={workTrackingSystemTerm}>
 			<FormControl fullWidth margin="normal">
-				<InputLabel>Select Work Tracking System</InputLabel>
+				<InputLabel>{`Select ${workTrackingSystemTerm}`}</InputLabel>
 				<Select
 					value={selectedWorkTrackingSystem?.name ?? ""}
 					onChange={onWorkTrackingSystemChange}

@@ -8,11 +8,13 @@ import { useTerminology } from "../../../services/TerminologyContext";
 interface ServiceLevelExpectationProps {
 	featureOwner: IFeatureOwner;
 	hide?: boolean;
+	itemTypeKey?: string;
 }
 
 const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 	featureOwner,
 	hide = false,
+	itemTypeKey = TERMINOLOGY_KEYS.WORK_ITEMS,
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
@@ -27,7 +29,7 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 		return null;
 	}
 
-	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const workItemsTerm = getTerm(itemTypeKey);
 	const serviceLevelExpectationTerm = getTerm(
 		TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION,
 	);

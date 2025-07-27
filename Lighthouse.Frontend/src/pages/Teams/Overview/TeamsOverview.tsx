@@ -6,7 +6,9 @@ import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmat
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { Team } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 const TeamsOverview: React.FC = () => {
 	const [teams, setTeams] = useState<Team[]>([]);
@@ -19,6 +21,9 @@ const TeamsOverview: React.FC = () => {
 	const navigate = useNavigate();
 	const queryParams = new URLSearchParams(location.search);
 	const initialFilterText = queryParams.get("filter") ?? "";
+
+	const { getTerm } = useTerminology();
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	const { teamService } = useContext(ApiServiceContext);
 
@@ -82,6 +87,7 @@ const TeamsOverview: React.FC = () => {
 		<LoadingAnimation hasError={hasError} isLoading={isLoading}>
 			<DataOverviewTable
 				data={teams}
+				title={teamTerm}
 				api="teams"
 				onDelete={handleDelete}
 				initialFilterText={initialFilterText}

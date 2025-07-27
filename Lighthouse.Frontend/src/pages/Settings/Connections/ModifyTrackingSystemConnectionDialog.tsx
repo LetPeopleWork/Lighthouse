@@ -151,7 +151,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 				/>
 
 				<FormControl fullWidth margin="normal">
-					<InputLabel>Select Work Tracking System</InputLabel>
+					<InputLabel>{`Select ${workTrackingSystemTerm}`}</InputLabel>
 					<Select
 						value={selectedWorkTrackingSystem?.workTrackingSystem ?? ""}
 						onChange={handleSystemChange}

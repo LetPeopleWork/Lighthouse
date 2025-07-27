@@ -14,6 +14,8 @@ import Tooltip from "@mui/material/Tooltip";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useState } from "react";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import ThemeToggler from "../../Common/ThemeToggler/ThemeToggler";
 import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
 import ExternalLinkButton from "./ExternalLinkButton";
@@ -25,6 +27,9 @@ const Header: React.FC = () => {
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+
+	const { getTerm } = useTerminology();
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
 
 	const handleDrawerToggle = () => {
 		setMobileOpen(!mobileOpen);
@@ -40,7 +45,7 @@ const Header: React.FC = () => {
 
 	const navigationLinks = [
 		{ path: "/", text: "Overview" },
-		{ path: "/teams", text: "Teams" },
+		{ path: "/teams", text: teamsTerm },
 		{ path: "/projects", text: "Projects" },
 		{ path: "/settings", text: "Settings" },
 	];

@@ -61,14 +61,24 @@ const sampleData: IFeatureOwner[] = [
 describe("DataOverviewTable", () => {
 	it("renders correctly", () => {
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 		expect(screen.getByTestId("table-container")).toBeInTheDocument();
 	});
 
 	it("displays all items from the data passed in", () => {
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 		for (const item of sampleData) {
 			expect(screen.getByTestId(`table-row-${item.id}`)).toBeInTheDocument();
@@ -120,7 +130,12 @@ describe("DataOverviewTable", () => {
 		];
 
 		renderWithRouter(
-			<DataOverviewTable data={unsortedData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={unsortedData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 
 		// Get all row elements
@@ -134,7 +149,12 @@ describe("DataOverviewTable", () => {
 
 	it("filters properly", () => {
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 		const filterInput = screen.getByRole("textbox", { name: "" });
 
@@ -151,7 +171,12 @@ describe("DataOverviewTable", () => {
 
 	it("displays the custom message when no item matches filter", () => {
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 		const filterInput = screen.getByRole("textbox", { name: "" });
 
@@ -164,7 +189,12 @@ describe("DataOverviewTable", () => {
 		vi.mocked(useNavigate).mockReturnValue(navigate);
 
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 
 		// Find the button by startsWith to handle dynamic text
@@ -181,6 +211,7 @@ describe("DataOverviewTable", () => {
 		renderWithRouter(
 			<DataOverviewTable
 				data={sampleData}
+				title="api"
 				api="api"
 				onDelete={vi.fn()}
 				initialFilterText={initialFilterText}
@@ -202,6 +233,7 @@ describe("DataOverviewTable", () => {
 			<DataOverviewTable
 				data={sampleData}
 				api="api"
+				title="api"
 				onDelete={vi.fn()}
 				onFilterChange={onFilterChange}
 			/>,
@@ -227,7 +259,12 @@ describe("DataOverviewTable", () => {
 		}));
 
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 
 		// Check the first item with multiple tags
@@ -266,7 +303,12 @@ describe("DataOverviewTable", () => {
 		}));
 
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 
 		// Check the item with no tags
@@ -309,6 +351,7 @@ describe("DataOverviewTable", () => {
 		renderWithRouter(
 			<DataOverviewTable
 				data={dataWithEmptyTag}
+				title="api"
 				api="api"
 				onDelete={vi.fn()}
 			/>,
@@ -323,7 +366,12 @@ describe("DataOverviewTable", () => {
 
 	it("filters items by tag", () => {
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 		const filterInput = screen.getByRole("textbox", { name: "" });
 
@@ -336,7 +384,12 @@ describe("DataOverviewTable", () => {
 
 	it("filters items by partial tag match", () => {
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 		const filterInput = screen.getByRole("textbox", { name: "" });
 
@@ -349,7 +402,12 @@ describe("DataOverviewTable", () => {
 
 	it("filters by tag when name doesn't match", () => {
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 		const filterInput = screen.getByRole("textbox", { name: "" });
 
@@ -362,7 +420,12 @@ describe("DataOverviewTable", () => {
 
 	it("should not show items when neither name nor tags match", () => {
 		renderWithRouter(
-			<DataOverviewTable data={sampleData} api="api" onDelete={vi.fn()} />,
+			<DataOverviewTable
+				data={sampleData}
+				title="api"
+				api="api"
+				onDelete={vi.fn()}
+			/>,
 		);
 		const filterInput = screen.getByRole("textbox", { name: "" });
 

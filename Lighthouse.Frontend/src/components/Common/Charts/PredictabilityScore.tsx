@@ -8,6 +8,8 @@ import {
 } from "@mui/x-charts";
 import type React from "react";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import {
 	appColors,
 	getPredictabilityScoreColor,
@@ -23,6 +25,9 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 	title = "Predictability Score",
 }) => {
 	const theme = useTheme();
+
+	const { getTerm } = useTerminology();
+	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 
 	// Get percentile color based on percentile value
 	const getPercentileColor = (percentile: number): string => {
@@ -188,8 +193,8 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 					exactly the same value. The higher number, the better.
 				</Typography>
 				<Typography variant="body2" color="text.secondary">
-					The chart shows the result of a forecast that was made based on the
-					Throughput for the selected date range.
+					{`The chart shows the result of a forecast that was made based on the
+					${throughputTerm} for the selected date range.`}
 				</Typography>
 			</Box>
 		</Box>

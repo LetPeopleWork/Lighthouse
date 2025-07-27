@@ -3,14 +3,19 @@ import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 const EditTeamPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewTeam = id === undefined;
 	const navigate = useNavigate();
 
-	const pageTitle = isNewTeam ? "Create Team" : "Update Team";
+	const { getTerm } = useTerminology();
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+
+	const pageTitle = isNewTeam ? `Create ${teamTerm}` : `Update ${teamTerm}`;
 	const { settingsService, teamService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
 

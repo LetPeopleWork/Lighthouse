@@ -11,7 +11,9 @@ import LoadingAnimation from "../../../components/Common/LoadingAnimation/Loadin
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import type { Team } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
@@ -20,6 +22,9 @@ const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
 	const { id } = useParams<{ id: string }>();
 	const teamId = Number(id);
+
+	const { getTerm } = useTerminology();
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	let subscribedToUpdates = false;
 
@@ -150,7 +155,7 @@ const TeamDetail: React.FC = () => {
 									<>
 										<ActionButton
 											onClickHandler={onUpdateTeamData}
-											buttonText="Update Team Data"
+											buttonText={`Update ${teamTerm} Data`}
 											maxHeight="40px"
 											minWidth="120px"
 											externalIsWaiting={isTeamUpdating}
@@ -160,7 +165,7 @@ const TeamDetail: React.FC = () => {
 											onClick={onEditTeam}
 											sx={{ maxHeight: "40px", minWidth: "120px" }}
 										>
-											Edit Team
+											{`Edit ${teamTerm}`}
 										</Button>
 									</>
 								}

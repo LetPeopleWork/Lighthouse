@@ -9,7 +9,9 @@ import ProgressIndicator from "../../../components/Common/ProgressIndicator/Prog
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type { IFeature } from "../../../models/Feature";
 import type { Team } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 
 interface FeatureListProps {
@@ -20,6 +22,9 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	const { teamMetricsService } = useContext(ApiServiceContext);
 
 	const [featuresInProgress, setFeaturesInProgress] = useState<string[]>([]);
+
+	const { getTerm } = useTerminology();
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 
 	useEffect(() => {
 		const fetchFeaturesInProgress = async () => {
@@ -34,7 +39,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 		<TableRow>
 			<TableCell sx={{ width: "15%" }}>
 				<Typography variant="h6" component="div">
-					Feature Name
+					{`${featureTerm} Name`}
 				</Typography>
 			</TableCell>
 			<TableCell sx={{ width: "30%" }}>

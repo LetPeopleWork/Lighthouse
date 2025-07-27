@@ -33,6 +33,7 @@ import ProgressIndicator from "../ProgressIndicator/ProgressIndicator";
 interface DataOverviewTableProps<IFeatureOwner> {
 	data: IFeatureOwner[];
 	api: string;
+	title: string;
 	onDelete: (item: IFeatureOwner) => void;
 	initialFilterText?: string;
 	onFilterChange?: (filterText: string) => void;
@@ -41,6 +42,7 @@ interface DataOverviewTableProps<IFeatureOwner> {
 const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	data,
 	api,
+	title,
 	onDelete,
 	initialFilterText = "",
 	onFilterChange,
@@ -108,11 +110,11 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 						textTransform: "capitalize",
 					}}
 				>
-					{api} Overview
+					{title} Overview
 				</Typography>
 
 				<ActionButton
-					buttonText={`Add New ${api.slice(0, -1)}`}
+					buttonText={`Add New ${title}`}
 					startIcon={<AddIcon />}
 					onClickHandler={handleRedirect}
 					buttonVariant="contained"
@@ -138,7 +140,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 						data-testid="empty-items-message"
 					>
 						<Typography variant="body1">
-							No {api} Defined.{" "}
+							No {title} Defined.{" "}
 							<MuiLink
 								href="https://docs.lighthouse.letpeople.work"
 								target="_blank"
@@ -172,7 +174,8 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 						}}
 						data-testid="no-items-message"
 					>
-						No {api} found matching the filter: <strong>"{filterText}"</strong>
+						No {title} found matching the filter:{" "}
+						<strong>"{filterText}"</strong>
 					</Alert>
 				</Fade>
 			) : (

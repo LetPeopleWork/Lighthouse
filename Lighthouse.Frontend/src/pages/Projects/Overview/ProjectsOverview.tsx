@@ -82,6 +82,7 @@ const ProjectsOverview: React.FC = () => {
 		<LoadingAnimation hasError={hasError} isLoading={isLoading}>
 			<DataOverviewTable
 				data={projects}
+				title="Project"
 				api="projects"
 				onDelete={handleDelete}
 				initialFilterText={initialFilterText}

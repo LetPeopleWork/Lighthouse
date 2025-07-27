@@ -184,6 +184,7 @@ const ProjectDetail: React.FC = () => {
 											<ServiceLevelExpectation
 												featureOwner={project}
 												hide={activeView !== "forecast"}
+												itemTypeKey={TERMINOLOGY_KEYS.FEATURES}
 											/>
 											<SystemWIPLimitDisplay
 												featureOwner={project}
