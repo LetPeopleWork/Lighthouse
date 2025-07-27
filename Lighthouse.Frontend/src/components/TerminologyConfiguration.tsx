@@ -3,6 +3,7 @@ import {
 	Box,
 	Button,
 	CircularProgress,
+	Link,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -11,6 +12,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import type { ITerminology } from "../models/Terminology";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { useTerminology } from "../services/TerminologyContext";
+import FeedbackDialog from "./App/Header/FeedbackDialog";
 
 interface TerminologyConfigurationProps {
 	onClose?: () => void;
@@ -26,6 +28,7 @@ export const TerminologyConfiguration: React.FC<
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
+	const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
 
 	const loadTerminology = useCallback(async () => {
 		try {
@@ -104,8 +107,8 @@ export const TerminologyConfiguration: React.FC<
 			)}
 
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-				Configure the terminology used throughout the application. Changes will
-				be applied immediately after saving.
+				Use your own terminology so it fits your use case. The naming will be used throughout the application - changes will be applied
+				immediately after saving. The defaults are aligned with the terminology in the Kanban Guide wherever applicable.
 			</Typography>
 
 			<Box sx={{ mb: 3 }}>
@@ -125,6 +128,28 @@ export const TerminologyConfiguration: React.FC<
 					</Box>
 				))}
 			</Box>
+
+			<Alert severity="info" sx={{ mb: 3 }}>
+				<Typography variant="body2">
+					<strong>Found a place where we don't use your configured terminology?</strong>
+					<br />
+					We'd love to hear from you!{" "}
+					<Link
+						component="button"
+						variant="body2"
+						onClick={() => setFeedbackDialogOpen(true)}
+						sx={{ cursor: "pointer" }}
+					>
+						Please reach out
+					</Link>{" "}
+					if you spot inconsistencies or have requests for making additional terminology configurable.
+				</Typography>
+			</Alert>
+
+			<FeedbackDialog
+				open={feedbackDialogOpen}
+				onClose={() => setFeedbackDialogOpen(false)}
+			/>
 
 			<Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
 				{onClose && (
