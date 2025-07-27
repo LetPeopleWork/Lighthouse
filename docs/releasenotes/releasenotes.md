@@ -3,11 +3,14 @@ title: Release Notes
 layout: home
 nav_order: 95
 ---
-
+<!-- 
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
+--> 
+
+# Lighthouse v25.7.27.1729
 
 ## Terminology Configuration
 Lighthouse now allows you to customize terminology throughout the application to match your organization's language and workflow:
@@ -30,7 +33,7 @@ Lighthouse now allows you to customize terminology throughout the application to
 This feature addresses feedback about terminology inconsistencies and enables organizations to use familiar language that aligns with their existing processes and tools.
 
 ## Bug Fixes
-- TBD (#2829 )
+- Fixed issue that caused Work Items not to appear correctly if the state was in a different case than on the work tracking system
 
 ## Contributions ❤️ 
 Special Thanks to everyone who contributed their feedback to this release:
@@ -38,7 +41,7 @@ Special Thanks to everyone who contributed their feedback to this release:
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
 - [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
  
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.26.915...TBD)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.26.915...v25.7.27.1729)
 
 # Lighthouse v25.7.26.915
 {: .d-inline-block }
