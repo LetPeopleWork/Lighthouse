@@ -4,6 +4,8 @@ import type React from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface InvolvedTeamsListProps {
 	teams: ITeamSettings[];
@@ -16,6 +18,11 @@ const InvolvedTeamsList: React.FC<InvolvedTeamsListProps> = ({
 	onTeamUpdated,
 	initiallyExpanded = false,
 }) => {
+	const { getTerm } = useTerminology();
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
+
 	if (teams.length === 0) {
 		return null;
 	}
@@ -30,7 +37,7 @@ const InvolvedTeamsList: React.FC<InvolvedTeamsListProps> = ({
 
 	return (
 		<InputGroup
-			title={"Involved Teams (Feature WIP)"}
+			title={`Involved ${teamTerm}s (${featureTerm} ${wipTerm})`}
 			initiallyExpanded={initiallyExpanded}
 		>
 			<Grid container spacing={2}>

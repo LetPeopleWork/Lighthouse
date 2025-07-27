@@ -62,7 +62,7 @@ describe("FeatureName", () => {
 		);
 
 		const tooltip = screen.getByLabelText(
-			"No child items were found for this Feature. The remaining items displayed are based on the default feature size specified in the advanced project settings.",
+			"No child Work Items were found for this Feature. The remaining Work Items displayed are based on the default Feature size specified in the advanced project settings.",
 		);
 		expect(tooltip).toBeInTheDocument();
 	});

@@ -4,11 +4,13 @@ import { useState } from "react";
 import type { IBaseSettings } from "../../../../../models/Common/BaseSettings";
 import type { IProjectSettings } from "../../../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IConfigurationService } from "../../../../../services/Api/ConfigurationService";
 import type { IProjectService } from "../../../../../services/Api/ProjectService";
 import type { ITeamService } from "../../../../../services/Api/TeamService";
 import type { IWorkTrackingSystemService } from "../../../../../services/Api/WorkTrackingSystemService";
+import { useTerminology } from "../../../../../services/TerminologyContext";
 import type { ImportResults } from "../ImportResults";
 
 interface ImportStepProps {
@@ -48,6 +50,10 @@ const ImportStep: React.FC<ImportStepProps> = ({
 }) => {
 	const [isImporting, setIsImporting] = useState(false);
 
+	const { getTerm } = useTerminology();
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+
 	const importResult: ImportResults = {
 		workTrackingSystems: [],
 		teams: [],
@@ -77,8 +83,8 @@ const ImportStep: React.FC<ImportStepProps> = ({
 					status: "Error",
 					errorMessage:
 						error instanceof Error
-							? `Failed to add work tracking system: ${error.message}`
-							: "Failed to add work tracking system",
+							? `Failed to add ${workTrackingSystemTerm}: ${error.message}`
+							: `Failed to add ${workTrackingSystemTerm}`,
 				});
 			}
 		}
@@ -102,8 +108,8 @@ const ImportStep: React.FC<ImportStepProps> = ({
 					status: "Error",
 					errorMessage:
 						error instanceof Error
-							? `Failed to update work tracking system: ${error.message}`
-							: "Failed to update work tracking system",
+							? `Failed to update ${workTrackingSystemTerm}: ${error.message}`
+							: `Failed to update ${workTrackingSystemTerm}`,
 				});
 			}
 		}
@@ -148,8 +154,8 @@ const ImportStep: React.FC<ImportStepProps> = ({
 					status: "Error",
 					errorMessage:
 						error instanceof Error
-							? `Failed to add team: ${error.message}`
-							: "Failed to add team",
+							? `Failed to add ${teamTerm}: ${error.message}`
+							: `Failed to add ${teamTerm}`,
 				});
 			}
 		}
@@ -172,8 +178,8 @@ const ImportStep: React.FC<ImportStepProps> = ({
 					status: "Error",
 					errorMessage:
 						error instanceof Error
-							? `Failed to update team: ${error.message}`
-							: "Failed to update team",
+							? `Failed to update ${teamTerm}: ${error.message}`
+							: `Failed to update ${teamTerm}`,
 				});
 			}
 		}

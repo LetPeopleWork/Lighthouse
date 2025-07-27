@@ -15,7 +15,9 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 import {
 	certainColor,
 	confidentColor,
@@ -44,6 +46,12 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	timeMetric = "age",
 	sle,
 }) => {
+	const { getTerm } = useTerminology();
+	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
+	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
+	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
+
 	const sortedItems = [...items].sort((a, b) => {
 		if (timeMetric === "ageCycleTime") {
 			// For combined mode, sort by state category first (active items before done)
@@ -71,9 +79,9 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	};
 
 	const getTimeColumnName = () => {
-		if (timeMetric === "age") return "Age";
-		if (timeMetric === "cycleTime") return "Cycle Time";
-		return "Age/Cycle Time";
+		if (timeMetric === "age") return workItemAgeTerm;
+		if (timeMetric === "cycleTime") return cycleTimeTerm;
+		return `${workItemAgeTerm}/${cycleTimeTerm}`;
 	};
 
 	const getTimeValue = (item: IWorkItem) => {
@@ -205,12 +213,14 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 													sx={{ ml: 1, fontStyle: "italic" }}
 												>
 													{item.stateCategory === "Done"
-														? "(Cycle Time)"
-														: "(Age)"}
+														? `(${cycleTimeTerm})`
+														: `(${workItemAgeTerm})`}
 												</Typography>
 											)}
 											{item.isBlocked && (
-												<Tooltip title="This item is blocked">
+												<Tooltip
+													title={`This ${workItemTerm} is ${blockedTerm}`}
+												>
 													<BlockIcon
 														sx={{
 															color: "error.main",

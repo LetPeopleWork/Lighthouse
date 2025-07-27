@@ -9,6 +9,8 @@ import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface ManualForecasterProps {
 	remainingItems: number;
@@ -27,6 +29,9 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 	onTargetDateChange,
 	onRunManualForecast,
 }) => {
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+
 	function getLocaleDateFormat(): string {
 		const date = new Date(2000, 0, 2);
 		const formatter = new Intl.DateTimeFormat(undefined);
@@ -55,7 +60,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 				<Grid container spacing={2}>
 					<Grid size={{ xs: 4 }}>
 						<TextField
-							label="Number of Items to Forecast"
+							label={`Number of ${workItemsTerm} to Forecast`}
 							type="number"
 							fullWidth
 							value={remainingItems}
@@ -89,13 +94,13 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 					<Grid container spacing={2}>
 						<Grid size={{ xs: 4 }}>
 							<ForecastInfoList
-								title={`When will ${manualForecastResult.remainingItems} items be done?`}
+								title={`When will ${manualForecastResult.remainingItems} ${workItemsTerm} be done?`}
 								forecasts={manualForecastResult.whenForecasts}
 							/>
 						</Grid>
 						<Grid size={{ xs: 4 }}>
 							<ForecastInfoList
-								title={`How Many Items will you get done till ${manualForecastResult.targetDate.toLocaleDateString()}?`}
+								title={`How Many ${workItemsTerm} will you get done till ${manualForecastResult.targetDate.toLocaleDateString()}?`}
 								forecasts={manualForecastResult.howManyForecasts}
 							/>
 						</Grid>

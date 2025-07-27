@@ -619,7 +619,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 
 			// Enable blocked items
 			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Items",
+				"Configure Blocked Work Items",
 			);
 			await user.click(blockedItemsCheckbox);
 
@@ -736,7 +736,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			);
 
 			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Items",
+				"Configure Blocked Work Items",
 			);
 			await user.click(blockedItemsCheckbox);
 
@@ -772,7 +772,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 
 			// Enable blocked items
 			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Items",
+				"Configure Blocked Work Items",
 			);
 			await user.click(blockedItemsCheckbox);
 
@@ -908,7 +908,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			);
 
 			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Items",
+				"Configure Blocked Work Items",
 			);
 			expect(blockedItemsCheckbox).not.toBeChecked();
 		});
@@ -927,7 +927,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			);
 
 			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Items",
+				"Configure Blocked Work Items",
 			);
 			expect(blockedItemsCheckbox).toBeChecked();
 		});
@@ -946,7 +946,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			);
 
 			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Items",
+				"Configure Blocked Work Items",
 			);
 			expect(blockedItemsCheckbox).toBeChecked();
 		});

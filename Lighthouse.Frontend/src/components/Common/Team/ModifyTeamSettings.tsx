@@ -3,9 +3,11 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
+import { useTerminology } from "../../../services/TerminologyContext";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
@@ -47,6 +49,10 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	) => {
 		setTeamSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
 	};
+
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const workItemQueryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
 
 	const handleAddWorkItemType = (newWorkItemType: string) => {
 		if (newWorkItemType.trim()) {
@@ -388,7 +394,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 								onValidate={modifyDefaultSettings ? undefined : handleValidate}
 								onSave={handleSave}
 								inputsValid={inputsValid}
-								validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no closed items in the specified history could be found. Check the logs for additional details."
+								validationFailedMessage={`Validation failed - either the connection failed, the ${workItemQueryTerm} is invalid, or no closed ${workItemsTerm} in the specified history could be found. Check the logs for additional details."`}
 							/>
 						</Grid>
 					</Grid>

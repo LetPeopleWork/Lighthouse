@@ -99,7 +99,7 @@ describe("BaseRunChart component", () => {
 			</BaseRunChart>,
 		);
 
-		const totalElement = screen.getByText("Total: 60 Items");
+		const totalElement = screen.getByText("Total: 60 Work Items");
 		expect(totalElement).toBeInTheDocument();
 	});
 

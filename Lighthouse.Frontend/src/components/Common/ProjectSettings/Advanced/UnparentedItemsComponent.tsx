@@ -2,6 +2,8 @@ import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import { useTerminology } from "../../../../services/TerminologyContext";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface UnparentedItemsComponentProps {
@@ -16,11 +18,15 @@ const UnparentedItemsComponent: React.FC<UnparentedItemsComponentProps> = ({
 	projectSettings,
 	onProjectSettingsChange,
 }) => {
+	const { getTerm } = useTerminology();
+	const workItemsText = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const queryText = getTerm(TERMINOLOGY_KEYS.QUERY);
+
 	return (
-		<InputGroup title={"Unparented Work Items"} initiallyExpanded={false}>
+		<InputGroup title={`Unparented ${workItemsText}`} initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
 				<TextField
-					label="Unparented Work Items Query"
+					label={`Unparented ${workItemsText} ${queryText}`}
 					fullWidth
 					multiline
 					rows={4}

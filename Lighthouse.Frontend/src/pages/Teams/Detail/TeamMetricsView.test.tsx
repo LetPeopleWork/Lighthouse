@@ -1,13 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Team } from "../../../models/Team/Team";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
 import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
-import { TestProviders } from "../../../tests/TestProviders";
 import TeamMetricsView from "./TeamMetricsView";
 
 interface BaseMetricsViewProps {
@@ -83,9 +83,9 @@ describe("TeamMetricsView component", () => {
 		});
 
 		return render(
-			<TestProviders apiServiceOverrides={mockContext}>
+			<ApiServiceContext.Provider value={mockContext}>
 				<TeamMetricsView team={team} />
-			</TestProviders>,
+			</ApiServiceContext.Provider>,
 		);
 	};
 
@@ -169,7 +169,7 @@ describe("TeamMetricsView component", () => {
 		await waitFor(() => {
 			expect(mockGetFeaturesInProgress).toHaveBeenCalledWith(team.id);
 			expect(consoleSpy).toHaveBeenCalledWith(
-				"Error fetching features in progress:",
+				"Error fetching Features in progress:",
 				expect.any(Error),
 			);
 		});

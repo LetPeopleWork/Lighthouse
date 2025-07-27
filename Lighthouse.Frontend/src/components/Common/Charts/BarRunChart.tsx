@@ -13,7 +13,9 @@ import type React from "react";
 import { useState } from "react";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 import { getPredictabilityScoreColor } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
@@ -41,13 +43,16 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 	const [dialogTitle, setDialogTitle] = useState<string>("");
 	const [isFlipped, setIsFlipped] = useState(false);
 
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+
 	const handleBarClick = (dataIndex: number) => {
 		const items = chartData.workItemsPerUnitOfTime[dataIndex] || [];
 		if (items.length > 0) {
 			const day = new Date(startDate);
 			day.setDate(day.getDate() + dataIndex);
 			const formattedDate = day.toLocaleDateString();
-			setDialogTitle(`Items Closed on ${formattedDate}`);
+			setDialogTitle(`${workItemsTerm} Closed on ${formattedDate}`);
 			setSelectedItems(items);
 			setDialogOpen(true);
 		}
@@ -164,10 +169,10 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 										}
 
 										if (numberOfClosedItems > 0) {
-											return `${numberOfClosedItems} Closed Items (Click for details)`;
+											return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
 										}
 
-										return "No Closed Items";
+										return `No Closed ${workItemsTerm}`;
 									},
 								},
 							]}

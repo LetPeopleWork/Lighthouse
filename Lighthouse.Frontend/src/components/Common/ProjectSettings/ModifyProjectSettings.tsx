@@ -4,8 +4,10 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
+import { useTerminology } from "../../../services/TerminologyContext";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
@@ -49,6 +51,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] =
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [formValid, setFormValid] = useState<boolean>(false);
+
+	const { getTerm } = useTerminology();
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const queryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
 
 	const handleTeamSelectionChange = (teamIds: number[]) => {
 		setSelectedTeams(teamIds);
@@ -452,7 +458,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								onValidate={modifyDefaultSettings ? undefined : handleValidate}
 								onSave={handleSave}
 								inputsValid={formValid}
-								validationFailedMessage="Validation failed - either the connection failed, the query is invalid, or no Features could be found. Check the logs for additional details."
+								validationFailedMessage={`Validation failed - either the connection failed, the ${queryTerm} is invalid, or no ${featuresTerm} could be found. Check the logs for additional details."`}
 							/>
 						</Grid>
 					</Grid>

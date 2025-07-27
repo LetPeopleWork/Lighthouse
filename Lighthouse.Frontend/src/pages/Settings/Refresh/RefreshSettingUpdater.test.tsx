@@ -47,7 +47,7 @@ describe("RefreshSettingUpdater", () => {
 		// Act
 		render(
 			<MockApiServiceProvider>
-				<RefreshSettingUpdater settingName="test" />
+				<RefreshSettingUpdater title="test" settingName="test" />
 			</MockApiServiceProvider>,
 		);
 
@@ -68,7 +68,7 @@ describe("RefreshSettingUpdater", () => {
 
 		render(
 			<MockApiServiceProvider>
-				<RefreshSettingUpdater settingName="test" />
+				<RefreshSettingUpdater title="test" settingName="test" />
 			</MockApiServiceProvider>,
 		);
 
@@ -102,7 +102,7 @@ describe("RefreshSettingUpdater", () => {
 
 		render(
 			<MockApiServiceProvider>
-				<RefreshSettingUpdater settingName="test" />
+				<RefreshSettingUpdater title="test" settingName="test" />
 			</MockApiServiceProvider>,
 		);
 

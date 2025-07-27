@@ -162,7 +162,7 @@ describe("LineRunChart component", () => {
 			/>,
 		);
 
-		const totalText = screen.getByText("Total: 60 Items");
+		const totalText = screen.getByText("Total: 60 Work Items");
 		expect(totalText).toBeInTheDocument();
 	});
 

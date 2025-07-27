@@ -42,7 +42,7 @@ describe("ServiceLevelExpectation component", () => {
 		expect(iconButton).toBeInTheDocument();
 		expect(iconButton).toHaveAttribute(
 			"aria-label",
-			"Service Level Expectation: 85% of items within 14 days or less",
+			"Service Level Expectation: 85% of Work Items within 14 days or less",
 		);
 
 		// Check that the SpeedIcon is present
@@ -58,7 +58,7 @@ describe("ServiceLevelExpectation component", () => {
 		const iconButton = screen.getByRole("button");
 		expect(iconButton).toHaveAttribute(
 			"aria-label",
-			"Service Level Expectation: 86% of items within 10 days or less",
+			"Service Level Expectation: 86% of Work Items within 10 days or less",
 		);
 	});
 

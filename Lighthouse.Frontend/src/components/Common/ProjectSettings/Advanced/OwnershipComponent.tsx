@@ -9,6 +9,8 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import { useTerminology } from "../../../../services/TerminologyContext";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface OwnershipComponentProps {
@@ -25,6 +27,10 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 	onProjectSettingsChange,
 	currentInvolvedTeams,
 }) => {
+	const { getTerm } = useTerminology();
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+
 	return (
 		<InputGroup title={"Ownership Settings"} initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
@@ -32,7 +38,7 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 					<InputLabel>Owning Team</InputLabel>
 					<Select
 						value={projectSettings?.owningTeam?.id ?? ""}
-						label="Owning Team"
+						label={`Owning ${teamTerm}`}
 						onChange={(e) => {
 							const teamId = e.target.value;
 							const team = currentInvolvedTeams.find((t) => t.id === teamId);
@@ -52,7 +58,7 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 			</Grid>
 			<Grid size={{ xs: 12 }}>
 				<TextField
-					label="Feature Owner Field"
+					label={`${featureTerm} Owner Field`}
 					fullWidth
 					margin="normal"
 					value={projectSettings?.featureOwnerField ?? ""}

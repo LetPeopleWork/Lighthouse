@@ -9,7 +9,9 @@ import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import type { IWorkTrackingSystemSettings } from "../../../models/AppSettings/WorkTrackingSystemSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 const WorkTrackingSystemSettings: React.FC = () => {
 	const [settings, setSettings] = useState<IWorkTrackingSystemSettings | null>(
@@ -19,6 +21,9 @@ const WorkTrackingSystemSettings: React.FC = () => {
 	const [hasError, setHasError] = useState<boolean>(false);
 
 	const { settingsService } = useContext(ApiServiceContext);
+
+	const { getTerm } = useTerminology();
+	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 
 	const updateSettings = async () => {
 		if (settings == null) {
@@ -66,7 +71,7 @@ const WorkTrackingSystemSettings: React.FC = () => {
 	};
 
 	return (
-		<InputGroup title={"Work Tracking System Settings"}>
+		<InputGroup title={`${workTrackingSystemTerm} Settings`}>
 			<LoadingAnimation isLoading={isLoading} hasError={hasError}>
 				<Container maxWidth={false}>
 					<Grid container spacing={3}>
@@ -102,7 +107,7 @@ const WorkTrackingSystemSettings: React.FC = () => {
 							<ActionButton
 								buttonVariant="contained"
 								onClickHandler={updateSettings}
-								buttonText="Update Work Tracking System Settings"
+								buttonText={`Update ${workTrackingSystemTerm} Settings`}
 							/>
 						</Grid>
 					</Grid>

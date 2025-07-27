@@ -58,7 +58,7 @@ describe("FeatureSizeComponent", () => {
 		);
 
 		expect(
-			screen.getByLabelText(/Default Number of Items per Feature/i),
+			screen.getByLabelText(/Default Number of Work Items per Feature/i),
 		).toHaveValue(10);
 		expect(screen.getByLabelText(/Size Estimate Field/i)).toHaveValue("");
 	});
@@ -72,7 +72,7 @@ describe("FeatureSizeComponent", () => {
 		);
 
 		fireEvent.change(
-			screen.getByLabelText(/Default Number of Items per Feature/i),
+			screen.getByLabelText(/Default Number of Work Items per Feature/i),
 			{ target: { value: "20" } },
 		);
 

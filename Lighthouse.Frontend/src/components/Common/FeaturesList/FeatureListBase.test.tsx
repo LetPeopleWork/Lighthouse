@@ -601,10 +601,10 @@ describe("FeatureListBase component", () => {
 
 			// Verify loading messages are shown
 			expect(
-				screen.getByText("Loading parent feature PARENT-100..."),
+				screen.getByText("Loading parent Feature PARENT-100..."),
 			).toBeInTheDocument();
 			expect(
-				screen.getByText("Loading parent feature PARENT-200..."),
+				screen.getByText("Loading parent Feature PARENT-200..."),
 			).toBeInTheDocument();
 
 			// Create mock parent features and resolve the promise
@@ -860,7 +860,7 @@ describe("FeatureListBase component", () => {
 
 			// Check that error was logged
 			expect(consoleErrorSpy).toHaveBeenCalledWith(
-				"Error fetching parent features:",
+				"Error fetching parent Features:",
 				expect.any(Error),
 			);
 
@@ -918,12 +918,12 @@ describe("FeatureListBase component", () => {
 			// Verify parent headers are shown with loading state
 			expect(
 				screen.getByText((content) =>
-					content.includes("Loading parent feature PARENT-100"),
+					content.includes("Loading parent Feature PARENT-100"),
 				),
 			).toBeInTheDocument();
 			expect(
 				screen.getByText((content) =>
-					content.includes("Loading parent feature PARENT-200"),
+					content.includes("Loading parent Feature PARENT-200"),
 				),
 			).toBeInTheDocument();
 			expect(screen.getByText("No Parent")).toBeInTheDocument();
@@ -1046,10 +1046,10 @@ describe("FeatureListBase component", () => {
 
 			// Parent group headers should be visible on initial render due to localStorage setting
 			expect(
-				screen.getByText("Loading parent feature PARENT-100..."),
+				screen.getByText("Loading parent Feature PARENT-100..."),
 			).toBeInTheDocument();
 			expect(
-				screen.getByText("Loading parent feature PARENT-200..."),
+				screen.getByText("Loading parent Feature PARENT-200..."),
 			).toBeInTheDocument();
 			expect(screen.getByText("No Parent")).toBeInTheDocument();
 

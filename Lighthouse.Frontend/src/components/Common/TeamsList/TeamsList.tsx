@@ -3,6 +3,8 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useState } from "react";
 import type { ITeam } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import InputGroup from "../InputGroup/InputGroup";
 
 interface TeamsListProps {
@@ -22,6 +24,9 @@ const TeamsList: React.FC<TeamsListProps> = ({
 		team.name.toLowerCase().includes(searchTerm.toLowerCase()),
 	);
 
+	const { getTerm } = useTerminology();
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+
 	const handleCheckboxChange = (teamId: number) => {
 		if (selectedTeams.includes(teamId)) {
 			onSelectionChange(selectedTeams.filter((id) => id !== teamId));
@@ -31,9 +36,9 @@ const TeamsList: React.FC<TeamsListProps> = ({
 	};
 
 	return (
-		<InputGroup title={"Involved Teams"}>
+		<InputGroup title={`Involved ${teamsTerm}`}>
 			<TextField
-				label="Search Teams"
+				label={`Search ${teamsTerm}`}
 				variant="outlined"
 				fullWidth
 				value={searchTerm}

@@ -19,7 +19,9 @@ import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
 import type { IDataRetentionSettings } from "../../../models/AppSettings/DataRetentionSettings";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import ImportConfigurationDialog from "./ImportConfiguration/ImportConfigurationDialog";
 
@@ -52,6 +54,10 @@ const SystemSettingsTab: React.FC = () => {
 
 		await settingsService.updateDataRetentionSettings(dataRetentionSettings);
 	};
+
+	const { getTerm } = useTerminology();
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		if (dataRetentionSettings) {
@@ -183,11 +189,11 @@ const SystemSettingsTab: React.FC = () => {
 				<TerminologyConfiguration />
 			</InputGroup>
 
-			<InputGroup title="Team Refresh">
-				<RefreshSettingUpdater settingName="Team" />
+			<InputGroup title={`${teamTerm} Refresh`}>
+				<RefreshSettingUpdater title={teamTerm} settingName="Team" />
 			</InputGroup>
-			<InputGroup title="Feature Refresh">
-				<RefreshSettingUpdater settingName="Feature" />
+			<InputGroup title={`${featuresTerm} Refresh`}>
+				<RefreshSettingUpdater title={featuresTerm} settingName="Feature" />
 			</InputGroup>
 
 			<InputGroup title="Data Retention Settings" initiallyExpanded={true}>
@@ -205,7 +211,7 @@ const SystemSettingsTab: React.FC = () => {
 										min: 30,
 									},
 								}}
-								helperText="After this many days the archived data for Features is removed."
+								helperText={`After this many days the archived data for ${featuresTerm} is removed.`}
 								data-testid="data-retention-days-input"
 							/>
 						</Grid>

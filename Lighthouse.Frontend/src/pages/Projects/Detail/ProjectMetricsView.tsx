@@ -1,7 +1,9 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import type { IProject } from "../../../models/Project/Project";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
 
 interface ProjectMetricsViewProps {
@@ -12,6 +14,9 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
 	const { projectMetricsService, projectService } =
 		useContext(ApiServiceContext);
+
+	const { getTerm } = useTerminology();
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	useEffect(() => {
 		const fetchProjectSettings = async () => {
@@ -30,7 +35,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 		<BaseMetricsView
 			entity={project}
 			metricsService={projectMetricsService}
-			title="Features"
+			title={featuresTerm}
 			defaultDateRange={90}
 			doingStates={doingStates}
 		/>

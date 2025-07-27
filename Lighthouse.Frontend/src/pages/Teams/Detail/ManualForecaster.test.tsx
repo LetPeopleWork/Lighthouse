@@ -77,7 +77,9 @@ describe("ManualForecaster component", () => {
 	});
 
 	it("should call onRemainingItemsChange when items input changes", () => {
-		const itemsTextField = screen.getByLabelText("Number of Items to Forecast");
+		const itemsTextField = screen.getByLabelText(
+			"Number of Work Items to Forecast",
+		);
 		fireEvent.change(itemsTextField, { target: { value: "15" } });
 		expect(mockOnRemainingItemsChange).toHaveBeenCalled();
 		expect(mockOnRemainingItemsChange.mock.calls[0][0]).toBe(15);
@@ -110,7 +112,7 @@ describe("ManualForecaster component", () => {
 		}
 
 		const howManyForecastList = screen.getByText(
-			`How Many Items will you get done till ${new Date().toLocaleDateString()}?`,
+			`How Many Work Items will you get done till ${new Date().toLocaleDateString()}?`,
 		);
 		const likelihoodComponent = screen.getByTestId("forecast-likelihood");
 

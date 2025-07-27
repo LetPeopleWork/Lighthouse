@@ -5,7 +5,9 @@ import { useContext, useState } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import type { Team } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import ManualForecaster from "./ManualForecaster";
 import TeamFeatureList from "./TeamFeatureList";
 
@@ -22,6 +24,10 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		useState<ManualForecast | null>(null);
 
 	const { forecastService } = useContext(ApiServiceContext);
+
+	const { getTerm } = useTerminology();
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	const onRunManualForecast = async () => {
 		if (!team || !targetDate) {
@@ -42,10 +48,10 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 
 	return (
 		<Grid container spacing={3}>
-			<InputGroup title="Features">
+			<InputGroup title={featuresTerm}>
 				<TeamFeatureList team={team} />
 			</InputGroup>
-			<InputGroup title="Team Forecast">
+			<InputGroup title={`${teamTerm} Forecast`}>
 				<ManualForecaster
 					remainingItems={remainingItems}
 					targetDate={targetDate}

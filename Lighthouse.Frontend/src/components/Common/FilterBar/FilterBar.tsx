@@ -10,6 +10,8 @@ import {
 	useTheme,
 } from "@mui/material";
 import { useCallback, useEffect, useId, useState } from "react";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface FilterBarProps {
 	filterText: string;
@@ -26,6 +28,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isFocused, setIsFocused] = useState(false);
 	const [localFilterText, setLocalFilterText] = useState(filterText);
+
+	const { getTerm } = useTerminology();
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	const searchFilterBarId = useId();
 
@@ -94,7 +99,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
 					id={searchFilterBarId}
 					data-testid={dataTestId}
 					placeholder={
-						isMobile ? "Search" : "Search by project or team name (Ctrl+F)"
+						isMobile
+							? "Search"
+							: `Search by project or ${teamTerm} name (Ctrl+F)`
 					}
 					variant="standard"
 					value={localFilterText}

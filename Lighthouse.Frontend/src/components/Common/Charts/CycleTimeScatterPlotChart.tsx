@@ -19,7 +19,9 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 import { hexToRgba } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
@@ -39,6 +41,7 @@ const ScatterMarker = (
 	props: ScatterMarkerProps,
 	groupedDataPoints: IGroupedWorkItem[],
 	theme: Theme,
+	workItemsTerm: string,
 	onShowItems: (items: IWorkItem[]) => void,
 ) => {
 	const dataIndex = props.dataIndex || 0;
@@ -87,7 +90,7 @@ const ScatterMarker = (
 						borderRadius: "50%",
 					}}
 					onClick={handleOpenWorkItems}
-					aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}
+					aria-label={`View ${group.items.length} ${workItemsTerm}${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}
 				/>
 			</foreignObject>
 		</>
@@ -166,6 +169,14 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const theme = useTheme();
 
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const serviceLevelExpectationTerm = getTerm(
+		TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION,
+	);
+	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
+	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+
 	useEffect(() => {
 		setPercentiles(percentileValues);
 		const initialVisibility: Record<number, boolean> = {};
@@ -199,7 +210,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		<>
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">Cycle Time</Typography>
+					<Typography variant="h6">{cycleTimeTerm}</Typography>
 
 					<Stack
 						direction="row"
@@ -239,7 +250,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 						{serviceLevelExpectation && (
 							<Chip
 								key="legend-sle"
-								label="Service Level Expectation"
+								label={serviceLevelExpectationTerm}
 								sx={{
 									borderColor: theme.palette.primary.main,
 									borderWidth: sleVisible ? 2 : 1,
@@ -282,7 +293,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							{
 								id: "cycleTimeAxis",
 								scaleType: "linear",
-								label: "Cycle Time (days)",
+								label: `${cycleTimeTerm} (days)`,
 								min: 0,
 								max: getMaxYAxisHeight(
 									percentiles,
@@ -324,7 +335,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 										return `${getWorkItemName(item)} (Click for details)`;
 									}
 
-									return `${numberOfClosedItems} Closed Items (Click for details)`;
+									return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
 								},
 							},
 						]}
@@ -349,7 +360,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							<ChartsReferenceLine
 								key="sle-reference-line"
 								y={serviceLevelExpectation.value}
-								label={`SLE: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
+								label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
 								labelAlign="start"
 								lineStyle={{
 									stroke: theme.palette.primary.main,
@@ -368,6 +379,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 										props,
 										groupedDataPoints,
 										theme,
+										workItemsTerm,
 										handleShowItems,
 									),
 							}}
@@ -397,7 +409,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				</CardContent>
 			</Card>
 			<WorkItemsDialog
-				title={`Items closed on ${selectedItems[0]?.closedDate.toLocaleDateString()} with Cycle Time of ${selectedItems[0]?.cycleTime} days`}
+				title={`${workItemsTerm} closed on ${selectedItems[0]?.closedDate.toLocaleDateString()} with ${cycleTimeTerm} of ${selectedItems[0]?.cycleTime} days`}
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}

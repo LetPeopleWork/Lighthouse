@@ -54,7 +54,9 @@ describe("FlowInformationDisplay component", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Started vs. Closed Items")).toBeInTheDocument();
+		expect(
+			screen.getByText("Started vs. Closed Work Items"),
+		).toBeInTheDocument();
 		expect(screen.getByText("Started:")).toBeInTheDocument();
 		expect(screen.getByText("Closed:")).toBeInTheDocument();
 
@@ -68,7 +70,9 @@ describe("FlowInformationDisplay component", () => {
 	it("should display zeros when no data is provided", () => {
 		render(<StartedVsFinishedDisplay startedItems={null} closedItems={null} />);
 
-		expect(screen.getByText("Started vs. Closed Items")).toBeInTheDocument();
+		expect(
+			screen.getByText("Started vs. Closed Work Items"),
+		).toBeInTheDocument();
 
 		// Check for zeros in both rows
 		const startedRow = screen.getByText("Started:").closest("tr");
@@ -122,7 +126,9 @@ describe("FlowInformationDisplay component", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Started vs. Closed Items")).toBeInTheDocument();
+		expect(
+			screen.getByText("Started vs. Closed Work Items"),
+		).toBeInTheDocument();
 
 		const startedRow = screen.getByText("Started:").closest("tr");
 		const closedRow = screen.getByText("Closed:").closest("tr");
@@ -196,7 +202,9 @@ describe("FlowInformationDisplay component", () => {
 		expect(screen.queryByTestId("mock-dialog")).not.toBeInTheDocument();
 
 		// Click on the card to open dialog
-		const card = screen.getByText("Started vs. Closed Items").closest("div");
+		const card = screen
+			.getByText("Started vs. Closed Work Items")
+			.closest("div");
 		expect(card).not.toBeNull();
 		if (card) {
 			fireEvent.click(card);
@@ -205,7 +213,7 @@ describe("FlowInformationDisplay component", () => {
 		// Dialog should now be visible
 		expect(screen.getByTestId("mock-dialog")).toBeInTheDocument();
 		expect(screen.getByTestId("dialog-title")).toHaveTextContent(
-			"Started and Closed Items",
+			"Started and Closed Work Items",
 		);
 	});
 
@@ -218,7 +226,9 @@ describe("FlowInformationDisplay component", () => {
 		);
 
 		// Open the dialog
-		const card = screen.getByText("Started vs. Closed Items").closest("div");
+		const card = screen
+			.getByText("Started vs. Closed Work Items")
+			.closest("div");
 		if (card) {
 			fireEvent.click(card);
 		}
@@ -253,7 +263,9 @@ describe("FlowInformationDisplay component", () => {
 		);
 
 		// Open the dialog
-		const card = screen.getByText("Started vs. Closed Items").closest("div");
+		const card = screen
+			.getByText("Started vs. Closed Work Items")
+			.closest("div");
 		if (card) {
 			fireEvent.click(card);
 		}
@@ -272,7 +284,9 @@ describe("FlowInformationDisplay component", () => {
 		);
 
 		// Open the dialog
-		const card = screen.getByText("Started vs. Closed Items").closest("div");
+		const card = screen
+			.getByText("Started vs. Closed Work Items")
+			.closest("div");
 		if (card) {
 			fireEvent.click(card);
 		}
@@ -287,7 +301,9 @@ describe("FlowInformationDisplay component", () => {
 		render(<StartedVsFinishedDisplay startedItems={null} closedItems={null} />);
 
 		// Open the dialog with no data
-		const card = screen.getByText("Started vs. Closed Items").closest("div");
+		const card = screen
+			.getByText("Started vs. Closed Work Items")
+			.closest("div");
 		if (card) {
 			fireEvent.click(card);
 		}
@@ -373,7 +389,7 @@ describe("FlowInformationDisplay component", () => {
 			);
 
 			expect(
-				screen.getByText("You are starting more items than you close"),
+				screen.getByText("You are starting more Work Items than you close"),
 			).toBeInTheDocument();
 			expect(
 				screen.getByText("Observe and take action if needed!"),
@@ -429,7 +445,7 @@ describe("FlowInformationDisplay component", () => {
 
 			// Since 45 vs 42 means started > closed
 			expect(
-				screen.getByText("You are starting more items than you close"),
+				screen.getByText("You are starting more Work Items than you close"),
 			).toBeInTheDocument();
 			expect(
 				screen.getByText("Observe and take action if needed!"),
@@ -457,7 +473,7 @@ describe("FlowInformationDisplay component", () => {
 			);
 
 			expect(
-				screen.getByText("You are starting more items than you close"),
+				screen.getByText("You are starting more Work Items than you close"),
 			).toBeInTheDocument();
 			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
 		});
@@ -483,7 +499,7 @@ describe("FlowInformationDisplay component", () => {
 			);
 
 			expect(
-				screen.getByText("You are closing more items than you start"),
+				screen.getByText("You are closing more Work Items than you start"),
 			).toBeInTheDocument();
 			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
 		});
@@ -508,7 +524,7 @@ describe("FlowInformationDisplay component", () => {
 			);
 
 			expect(
-				screen.getByText("You are closing more items than you start"),
+				screen.getByText("You are closing more Work Items than you start"),
 			).toBeInTheDocument();
 			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
 		});

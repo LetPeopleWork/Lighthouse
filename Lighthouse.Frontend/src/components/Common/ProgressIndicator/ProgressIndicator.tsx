@@ -10,6 +10,8 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { IProgressable } from "../../../models/IProgressable";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { hexToRgba } from "../../../utils/theme/colors";
 
 interface ProgressIndicatorProps {
@@ -27,6 +29,10 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 }) => {
 	const theme = useTheme();
 	const [animatedValue, setAnimatedValue] = useState(0);
+
+	const { getTerm } = useTerminology();
+	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	const completedItems =
 		progressableItem.totalWork - progressableItem.remainingWork;
@@ -104,7 +110,7 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 							<Box display="flex" alignItems="center">
 								Could not determine work
 								<Tooltip
-									title="The remaining and total work could not be determined. This can happen if the work was added to a team in your work tracking system, but you have not defined this team yet in Lighthouse."
+									title={`The remaining and total work could not be determined. This can happen if the work was added to a ${teamTerm} in your ${workTrackingSystemTerm}, but you have not defined this ${teamTerm} yet in Lighthouse.`}
 									arrow
 								>
 									<IconButton

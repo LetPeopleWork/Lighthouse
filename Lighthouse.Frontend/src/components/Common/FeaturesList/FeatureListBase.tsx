@@ -13,7 +13,9 @@ import {
 import type React from "react";
 import { Fragment, useContext, useEffect, useState } from "react";
 import type { Feature, IFeature } from "../../../models/Feature";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
 
 export interface FeatureListBaseProps {
@@ -46,6 +48,10 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 	const storageKey = `${baseKey}_${contextType}_${contextId}`;
 	const groupingBaseKey = "lighthouse_group_features_by_parent";
 	const groupingStorageKey = `${groupingBaseKey}_${contextType}_${contextId}`;
+
+	const { getTerm } = useTerminology();
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	useEffect(() => {
 		const storedPreference = localStorage.getItem(storageKey);
@@ -101,7 +107,7 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 		}
 
 		if (isLoadingParents) {
-			return `Loading parent feature ${parentId}...`;
+			return `Loading parent ${featureTerm} ${parentId}...`;
 		}
 
 		const parentFeature = parentFeatures[parentId];
@@ -215,7 +221,7 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 						}, {});
 						setParentFeatures(parentsMap);
 					} catch (error) {
-						console.error("Error fetching parent features:", error);
+						console.error(`Error fetching parent ${featuresTerm}:`, error);
 					} finally {
 						setIsLoadingParents(false);
 					}
@@ -224,7 +230,7 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 				fetchParentFeatures();
 			}
 		}
-	}, [features, groupFeaturesByParent, featureService]);
+	}, [features, groupFeaturesByParent, featureService, featuresTerm]);
 
 	return (
 		<TableContainer component={Paper}>
@@ -238,7 +244,7 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 							data-testid="group-features-by-parent-toggle"
 						/>
 					}
-					label="Group Features by Parent"
+					label={`Group ${featuresTerm} by Parent`}
 				/>
 				<FormControlLabel
 					control={
@@ -249,7 +255,7 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 							data-testid="hide-completed-features-toggle"
 						/>
 					}
-					label="Hide Completed Features"
+					label={`Hide Completed ${featuresTerm}`}
 				/>
 			</Box>
 			<Table>

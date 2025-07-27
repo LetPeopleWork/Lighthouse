@@ -7,7 +7,9 @@ import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import { IconButton, Link, Tooltip } from "@mui/material";
 import React from "react";
 import type { IEntityReference } from "../../../models/EntityReference";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { StateCategory } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 import StyledLink from "../StyledLink/StyledLink";
 
 interface FeatureNameProps {
@@ -30,6 +32,10 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 			{team.name}
 		</StyledLink>
 	));
+
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 
 	return (
 		<span>
@@ -55,7 +61,9 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 			)}
 
 			{isUsingDefaultFeatureSize && (
-				<Tooltip title="No child items were found for this Feature. The remaining items displayed are based on the default feature size specified in the advanced project settings.">
+				<Tooltip
+					title={`No child ${workItemsTerm} were found for this ${featureTerm}. The remaining ${workItemsTerm} displayed are based on the default ${featureTerm} size specified in the advanced project settings.`}
+				>
 					<IconButton size="small" sx={{ ml: 1 }}>
 						<GppMaybeOutlinedIcon sx={{ color: "warning.main" }} />
 					</IconButton>
@@ -82,7 +90,7 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 				</Tooltip>
 			)}
 
-			<Tooltip title={`Feature State: ${stateCategory}`}>
+			<Tooltip title={`${featureTerm} State: ${stateCategory}`}>
 				<IconButton size="small" sx={{ ml: 1 }}>
 					{stateCategory === "ToDo" && <PauseCircleOutlineOutlinedIcon />}
 					{stateCategory === "Doing" && <PlayCircleFilledWhiteOutlinedIcon />}

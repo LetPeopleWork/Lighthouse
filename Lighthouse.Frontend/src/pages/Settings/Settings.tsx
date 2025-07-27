@@ -15,6 +15,8 @@ import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
+import { useTerminology } from "../../services/TerminologyContext";
 import WorkTrackingSystemConnectionSettings from "./Connections/WorkTrackingSystemConnectionSettings";
 import DefaultProjectSettings from "./DefaultProjectSettings/DefaultProjectSettings";
 import DefaultTeamSettings from "./DefaultTeamSettings/DefaultTeamSettings";
@@ -27,6 +29,12 @@ const Settings: React.FC = () => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
+	const { getTerm } = useTerminology();
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const workTrackingSystemConnectionSettingsTerm = getTerm(
+		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
+	);
+
 	useEffect(() => {
 		setMounted(true);
 	}, []);
@@ -38,7 +46,7 @@ const Settings: React.FC = () => {
 	const tabConfig = [
 		{
 			value: "10",
-			label: "Work Tracking",
+			label: workTrackingSystemConnectionSettingsTerm,
 			testId: "work-tracking-tab",
 			panelTestId: "work-tracking-panel",
 			icon: <SettingsIcon />,
@@ -54,7 +62,7 @@ const Settings: React.FC = () => {
 		},
 		{
 			value: "30",
-			label: "Default Teams",
+			label: `Default ${teamsTerm}`,
 			testId: "default-team-settings-tab",
 			panelTestId: "default-team-settings-panel",
 			icon: <GroupWorkIcon />,

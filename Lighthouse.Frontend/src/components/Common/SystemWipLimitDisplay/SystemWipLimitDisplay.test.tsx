@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import { TestProviders } from "../../../tests/TestProviders";
 import { testTheme } from "../../../tests/testTheme";
 import SystemWIPLimitDisplay from "./SystemWipLimitDisplay";
 
@@ -32,9 +31,7 @@ describe("SystemWIPLimitDisplay", () => {
 	it("should not render when hide prop is true", () => {
 		const featureOwner = createMockFeatureOwner(5);
 		const { container } = render(
-			<TestProviders>
-				<SystemWIPLimitDisplay featureOwner={featureOwner} hide={true} />
-			</TestProviders>,
+			<SystemWIPLimitDisplay featureOwner={featureOwner} hide={true} />,
 		);
 
 		expect(container.firstChild).toBeNull();
@@ -43,9 +40,7 @@ describe("SystemWIPLimitDisplay", () => {
 	it("should not render when systemWIPLimit is 0", () => {
 		const featureOwner = createMockFeatureOwner(0);
 		const { container } = render(
-			<TestProviders>
-				<SystemWIPLimitDisplay featureOwner={featureOwner} />
-			</TestProviders>,
+			<SystemWIPLimitDisplay featureOwner={featureOwner} />,
 		);
 
 		expect(container.firstChild).toBeNull();
@@ -54,9 +49,7 @@ describe("SystemWIPLimitDisplay", () => {
 	it("should not render when systemWIPLimit is negative", () => {
 		const featureOwner = createMockFeatureOwner(-1);
 		const { container } = render(
-			<TestProviders>
-				<SystemWIPLimitDisplay featureOwner={featureOwner} />
-			</TestProviders>,
+			<SystemWIPLimitDisplay featureOwner={featureOwner} />,
 		);
 
 		expect(container.firstChild).toBeNull();
@@ -64,11 +57,7 @@ describe("SystemWIPLimitDisplay", () => {
 
 	it("should render with correct WIP limit when systemWIPLimit is 1", () => {
 		const featureOwner = createMockFeatureOwner(1);
-		render(
-			<TestProviders>
-				<SystemWIPLimitDisplay featureOwner={featureOwner} />
-			</TestProviders>,
-		);
+		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
 		// Check that the icon button with tooltip is rendered
 		const iconButton = screen.getByRole("button");
@@ -84,11 +73,7 @@ describe("SystemWIPLimitDisplay", () => {
 
 	it("should render with correct WIP limit when systemWIPLimit is greater than 1", () => {
 		const featureOwner = createMockFeatureOwner(5);
-		render(
-			<TestProviders>
-				<SystemWIPLimitDisplay featureOwner={featureOwner} />
-			</TestProviders>,
-		);
+		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
 		// Check that the icon button with tooltip is rendered
 		const iconButton = screen.getByRole("button");
@@ -104,11 +89,7 @@ describe("SystemWIPLimitDisplay", () => {
 
 	it("should use default hide value when not provided", () => {
 		const featureOwner = createMockFeatureOwner(5);
-		render(
-			<TestProviders>
-				<SystemWIPLimitDisplay featureOwner={featureOwner} />
-			</TestProviders>,
-		);
+		render(<SystemWIPLimitDisplay featureOwner={featureOwner} />);
 
 		// Check that the icon button with tooltip is rendered
 		const iconButton = screen.getByRole("button");

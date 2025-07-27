@@ -12,7 +12,9 @@ import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisp
 import type { IProject, Project } from "../../../models/Project/Project";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import ProjectForecastView from "./ProjectForecastView";
 import ProjectMetricsView from "./ProjectMetricsView";
@@ -38,6 +40,9 @@ const ProjectDetail: React.FC = () => {
 
 	const { projectService, teamService, updateSubscriptionService } =
 		useContext(ApiServiceContext);
+
+	const { getTerm } = useTerminology();
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	const fetchProject = useCallback(async () => {
 		const fetchInvolvedTeams = async (projectData: IProject | null) => {
@@ -200,7 +205,7 @@ const ProjectDetail: React.FC = () => {
 								rightContent={
 									<>
 										<ActionButton
-											buttonText="Refresh Features"
+											buttonText={`Refresh ${featuresTerm}`}
 											onClickHandler={onRefreshFeatures}
 											maxHeight="40px"
 											minWidth="120px"

@@ -3,6 +3,8 @@ import GppMaybeOutlinedIcon from "@mui/icons-material/GppMaybeOutlined";
 import { IconButton, Stack, Tooltip, useTheme } from "@mui/material";
 import type React from "react";
 import type { Team } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface ForecastConfigurationProps {
 	team: Team;
@@ -12,6 +14,10 @@ const ForecastConfiguration: React.FC<ForecastConfigurationProps> = ({
 	team,
 }) => {
 	const theme = useTheme();
+	const { getTerm } = useTerminology();
+	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+
 	const tooltipText = `Forecast Configuration: ${team.throughputStartDate.toLocaleDateString()} - ${team.throughputEndDate.toLocaleDateString()}`;
 
 	return (
@@ -30,7 +36,9 @@ const ForecastConfiguration: React.FC<ForecastConfigurationProps> = ({
 				</IconButton>
 			</Tooltip>
 			{team.useFixedDatesForThroughput && (
-				<Tooltip title="This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts">
+				<Tooltip
+					title={`This ${teamTerm} is using a fixed ${throughputTerm} - consider switching to a rolling history to get more realistic forecasts`}
+				>
 					<IconButton
 						size="small"
 						sx={{

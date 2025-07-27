@@ -3,7 +3,9 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../../services/TerminologyContext";
 import InputGroup from "../../InputGroup/InputGroup";
 import ItemListManager from "../../ItemListManager/ItemListManager";
 
@@ -22,6 +24,13 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 	const [statesSuggestions, setStatesSuggestions] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const { suggestionService } = useContext(ApiServiceContext);
+
+	const { getTerm } = useTerminology();
+	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const queryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
 
 	useEffect(() => {
 		const fetchStates = async () => {
@@ -73,7 +82,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 	};
 
 	return (
-		<InputGroup title={"Default Feature Size"} initiallyExpanded={false}>
+		<InputGroup title={`Default ${featureTerm} Size`} initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
 				<FormControlLabel
 					control={
@@ -89,7 +98,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 							}
 						/>
 					}
-					label="Use Historical Feature Size To Calculate Default"
+					label={`Use Historical ${featureTerm} Size To Calculate Default`}
 				/>
 			</Grid>
 
@@ -97,7 +106,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 				<>
 					<Grid size={{ xs: 12 }}>
 						<TextField
-							label="Feature Size Percentile"
+							label={`${featureTerm} Size Percentile`}
 							type="number"
 							fullWidth
 							margin="normal"
@@ -118,7 +127,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 					</Grid>
 					<Grid size={{ xs: 12 }}>
 						<TextField
-							label="Historical Features Work Item Query"
+							label={`Historical ${featuresTerm} ${workItemTerm} ${queryTerm}`}
 							fullWidth
 							multiline
 							rows={4}
@@ -136,7 +145,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 			) : (
 				<Grid size={{ xs: 12 }}>
 					<TextField
-						label="Default Number of Items per Feature"
+						label={`Default Number of ${workItemsTerm} per ${featureTerm}`}
 						type="number"
 						fullWidth
 						margin="normal"
@@ -165,8 +174,8 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 
 			<Grid size={{ xs: 12 }}>
 				<Typography variant="body1">
-					Use Default Size instead of real Child Items for Features in these
-					States:
+					{`Use Default Size instead of real Child ${workItemsTerm} for ${featuresTerm} in these
+					States:`}
 				</Typography>
 				<ItemListManager
 					title="Size Override State"

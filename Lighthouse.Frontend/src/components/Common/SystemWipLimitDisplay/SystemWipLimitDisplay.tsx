@@ -16,6 +16,9 @@ const SystemWIPLimitDisplay: React.FC<SystemWIPLimitDisplayProps> = ({
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
+	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
 
 	if (hide || !featureOwner.systemWIPLimit || featureOwner.systemWIPLimit < 1) {
 		return null;
@@ -23,7 +26,7 @@ const SystemWIPLimitDisplay: React.FC<SystemWIPLimitDisplayProps> = ({
 
 	const wipLimit = featureOwner.systemWIPLimit;
 
-	const tooltipText = `System WIP Limit: ${wipLimit} ${wipLimit === 1 ? getTerm(TERMINOLOGY_KEYS.WORK_ITEM) : getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}`;
+	const tooltipText = `System ${wipTerm} Limit: ${wipLimit} ${wipLimit === 1 ? workItemTerm : workItemsTerm}`;
 
 	return (
 		<Tooltip title={tooltipText} arrow>

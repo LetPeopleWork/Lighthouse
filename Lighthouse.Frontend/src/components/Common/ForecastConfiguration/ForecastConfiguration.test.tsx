@@ -99,7 +99,7 @@ describe("ForecastConfiguration component", () => {
 		const warningButton = warningIcon.closest("button");
 		expect(warningButton).toHaveAttribute(
 			"aria-label",
-			"This team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts",
+			"This Team is using a fixed Throughput - consider switching to a rolling history to get more realistic forecasts",
 		);
 	});
 	it("should have correct styling", () => {

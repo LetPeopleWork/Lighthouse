@@ -1,6 +1,8 @@
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import InputGroup from "../InputGroup/InputGroup";
 
 interface GeneralSettingsComponentProps<T extends IBaseSettings> {
@@ -14,6 +16,10 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 	onSettingsChange,
 	title = "General Configuration",
 }: GeneralSettingsComponentProps<T>) => {
+	const { getTerm } = useTerminology();
+	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
+	const queryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
+
 	return (
 		<InputGroup title={title}>
 			<Grid size={{ xs: 12 }}>
@@ -29,7 +35,7 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 			</Grid>
 			<Grid size={{ xs: 12 }}>
 				<TextField
-					label="Work Item Query"
+					label={`${workItemTerm} ${queryTerm}`}
 					multiline
 					rows={4}
 					fullWidth

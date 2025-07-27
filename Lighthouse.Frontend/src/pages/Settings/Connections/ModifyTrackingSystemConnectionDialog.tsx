@@ -13,8 +13,10 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import ValidationActions from "../../../components/Common/ValidationActions/ValidationActions";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface ModifyWorkTrackingSystemConnectionDialogProps {
 	open: boolean;
@@ -35,6 +37,9 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 		IWorkTrackingSystemOption[]
 	>([]);
 	const [inputsValid, setInputsValid] = useState<boolean>(false);
+
+	const { getTerm } = useTerminology();
+	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 
 	useEffect(() => {
 		if (open && workTrackingSystems.length > 0) {
@@ -150,7 +155,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					<Select
 						value={selectedWorkTrackingSystem?.workTrackingSystem ?? ""}
 						onChange={handleSystemChange}
-						label="Select Work Tracking System"
+						label={`Select ${workTrackingSystemTerm}`}
 					>
 						{workTrackingSystems.map((system) => (
 							<MenuItem
@@ -181,7 +186,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 					onValidate={handleValidate}
 					onSave={handleSubmit}
 					inputsValid={inputsValid}
-					validationFailedMessage="Could not connect to the work tracking system with the provided settings. Please review and try again."
+					validationFailedMessage={`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`}
 					saveButtonText={workTrackingSystems.length === 1 ? "Save" : "Create"}
 				/>
 			</DialogActions>

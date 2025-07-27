@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
-import { TestProviders } from "../../../tests/TestProviders";
 import { testTheme } from "../../../tests/testTheme";
 import WorkItemAgingChart from "./WorkItemAgingChart";
 
@@ -191,31 +190,38 @@ describe("WorkItemAgingChart component", () => {
 
 	it("renders correctly with in-progress items", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
 		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
 		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 	});
+	it("displays correct chart title", () => {
+		render(
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
 
+		expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
+	});
 	it("renders 'No items in progress' when there are no items", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={[]}
-					percentileValues={mockPercentileValues}
-					doingStates={["To Do", "In Progress", "Review"]}
-					serviceLevelExpectation={mockSLE}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={[]}
+				percentileValues={mockPercentileValues}
+				doingStates={["To Do", "In Progress", "Review"]}
+				serviceLevelExpectation={mockSLE}
+			/>,
 		);
 
 		expect(screen.getByText("No items in progress")).toBeInTheDocument();
@@ -226,14 +232,12 @@ describe("WorkItemAgingChart component", () => {
 
 	it("renders percentile chips with correct labels", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		// Use getAllByText to handle multiple elements and check chips specifically
@@ -249,14 +253,12 @@ describe("WorkItemAgingChart component", () => {
 
 	it("renders service level expectation chip when provided", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
@@ -264,14 +266,12 @@ describe("WorkItemAgingChart component", () => {
 
 	it("does not render service level expectation chip when not provided", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={null}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={null}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		expect(
@@ -281,14 +281,12 @@ describe("WorkItemAgingChart component", () => {
 
 	it("toggles percentile visibility when chip is clicked", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		// Find the chip by its role and aria-label or use a more specific query
@@ -311,14 +309,12 @@ describe("WorkItemAgingChart component", () => {
 
 	it("toggles service level expectation visibility when chip is clicked", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		const sleChip = screen.getByText("Service Level Expectation");
@@ -333,14 +329,12 @@ describe("WorkItemAgingChart component", () => {
 	it("groups items correctly by state and age", () => {
 		// This test verifies the grouping logic through the component rendering
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		// The chart should render with the grouped data
@@ -350,14 +344,12 @@ describe("WorkItemAgingChart component", () => {
 
 	it("handles empty percentile values array", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={[]}
-					serviceLevelExpectation={null}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={[]}
+				serviceLevelExpectation={null}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
@@ -371,14 +363,12 @@ describe("WorkItemAgingChart component", () => {
 
 	it("renders chart components correctly", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		// Verify chart components are rendered
@@ -391,14 +381,12 @@ describe("WorkItemAgingChart component", () => {
 
 	it("renders reference lines for visible percentiles", () => {
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={mockInProgressItems}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={null}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={mockInProgressItems}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={null}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		// All percentiles should be visible initially
@@ -416,14 +404,12 @@ describe("WorkItemAgingChart component", () => {
 		];
 
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={itemsWithMissingState}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={itemsWithMissingState}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		// Component should still render without crashing
@@ -441,14 +427,12 @@ describe("WorkItemAgingChart component", () => {
 		];
 
 		render(
-			<TestProviders>
-				<WorkItemAgingChart
-					inProgressItems={itemWithSpecificAge}
-					percentileValues={mockPercentileValues}
-					serviceLevelExpectation={mockSLE}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</TestProviders>,
+			<WorkItemAgingChart
+				inProgressItems={itemWithSpecificAge}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
 		);
 
 		// The chart should render with the item
@@ -458,14 +442,12 @@ describe("WorkItemAgingChart component", () => {
 	describe("Blocked items functionality", () => {
 		it("renders blocked items with red color", () => {
 			render(
-				<TestProviders>
-					<WorkItemAgingChart
-						inProgressItems={mockBlockedItems}
-						percentileValues={mockPercentileValues}
-						serviceLevelExpectation={mockSLE}
-						doingStates={["To Do", "In Progress", "Review"]}
-					/>
-				</TestProviders>,
+				<WorkItemAgingChart
+					inProgressItems={mockBlockedItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
 			);
 
 			// Chart should render with blocked items
@@ -475,14 +457,12 @@ describe("WorkItemAgingChart component", () => {
 
 		it("groups blocked and regular items correctly", () => {
 			render(
-				<TestProviders>
-					<WorkItemAgingChart
-						inProgressItems={mockBlockedItems}
-						percentileValues={mockPercentileValues}
-						serviceLevelExpectation={mockSLE}
-						doingStates={["To Do", "In Progress", "Review"]}
-					/>
-				</TestProviders>,
+				<WorkItemAgingChart
+					inProgressItems={mockBlockedItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
 			);
 
 			// Chart should render and handle grouping correctly
@@ -507,14 +487,12 @@ describe("WorkItemAgingChart component", () => {
 			];
 
 			render(
-				<TestProviders>
-					<WorkItemAgingChart
-						inProgressItems={mixedBlockedItems}
-						percentileValues={mockPercentileValues}
-						serviceLevelExpectation={mockSLE}
-						doingStates={["To Do", "In Progress", "Review"]}
-					/>
-				</TestProviders>,
+				<WorkItemAgingChart
+					inProgressItems={mixedBlockedItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
 			);
 
 			// Chart should render with grouped items
@@ -523,14 +501,12 @@ describe("WorkItemAgingChart component", () => {
 
 		it("handles empty blocked items array", () => {
 			render(
-				<TestProviders>
-					<WorkItemAgingChart
-						inProgressItems={[]}
-						percentileValues={mockPercentileValues}
-						serviceLevelExpectation={mockSLE}
-						doingStates={["To Do", "In Progress", "Review"]}
-					/>
-				</TestProviders>,
+				<WorkItemAgingChart
+					inProgressItems={[]}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
 			);
 
 			// Should show empty state

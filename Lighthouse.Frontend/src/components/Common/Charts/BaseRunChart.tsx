@@ -1,6 +1,8 @@
 import { Card, CardContent, Typography } from "@mui/material";
 import type React from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 export interface ChartDataItem {
 	day: string;
@@ -22,6 +24,9 @@ const BaseRunChart: React.FC<BaseRunChartProps> = ({
 	displayTotal = false,
 	children,
 }) => {
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+
 	const data = Array.from({ length: chartData.history }, (_, index) => {
 		const targetDate = new Date(startDate);
 		targetDate.setDate(targetDate.getDate() + index);
@@ -37,7 +42,9 @@ const BaseRunChart: React.FC<BaseRunChartProps> = ({
 			<CardContent>
 				<Typography variant="h6">{title}</Typography>
 				{displayTotal && (
-					<Typography variant="h6">Total: {chartData.total} Items</Typography>
+					<Typography variant="h6">
+						Total: {chartData.total} {workItemsTerm}
+					</Typography>
 				)}
 				{children(data)}
 			</CardContent>

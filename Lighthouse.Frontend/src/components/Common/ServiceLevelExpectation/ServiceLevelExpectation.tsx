@@ -2,6 +2,8 @@ import SpeedIcon from "@mui/icons-material/Speed";
 import { IconButton, Tooltip, useTheme } from "@mui/material";
 import type React from "react";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface ServiceLevelExpectationProps {
 	featureOwner: IFeatureOwner;
@@ -13,6 +15,8 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 	hide = false,
 }) => {
 	const theme = useTheme();
+	const { getTerm } = useTerminology();
+
 	if (
 		hide ||
 		!featureOwner.serviceLevelExpectationProbability ||
@@ -23,10 +27,15 @@ const ServiceLevelExpectation: React.FC<ServiceLevelExpectationProps> = ({
 		return null;
 	}
 
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const serviceLevelExpectationTerm = getTerm(
+		TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION,
+	);
+
 	const probability = featureOwner.serviceLevelExpectationProbability;
 	const range = featureOwner.serviceLevelExpectationRange;
 
-	const tooltipText = `Service Level Expectation: ${Math.round(probability)}% of items within ${range} days or less`;
+	const tooltipText = `${serviceLevelExpectationTerm}: ${Math.round(probability)}% of ${workItemsTerm} within ${range} days or less`;
 
 	return (
 		<Tooltip title={tooltipText} arrow>

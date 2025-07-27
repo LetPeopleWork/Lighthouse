@@ -14,7 +14,9 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 import {
 	certainColor,
 	confidentColor,
@@ -38,6 +40,14 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 	const theme = useTheme();
 	const [isFlipped, setIsFlipped] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
+
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const serviceLevelExpectationTerm = getTerm(
+		TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION,
+	);
+	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
+	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
 	const formatDays = (days: number): string => {
 		return days === 1 ? `${days.toFixed(0)} day` : `${days.toFixed(0)} days`;
@@ -129,7 +139,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 					alignItems="center"
 					mb={2}
 				>
-					<Typography variant="h6">Service Level Expectation</Typography>
+					<Typography variant="h6">{serviceLevelExpectationTerm}</Typography>
 					<IconButton onClick={(e) => handleFlip(e)} size="small">
 						<ArrowBackIcon fontSize="small" />
 					</IconButton>
@@ -153,8 +163,8 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 							fontWeight: "bold",
 						}}
 					>
-						{serviceLevelExpectation.percentile}% of all work items are done
-						within {formatDays(serviceLevelExpectation.value)} or less
+						{`${serviceLevelExpectation.percentile}% of all ${workItemsTerm} are done
+						within ${formatDays(serviceLevelExpectation.value)} or less`}
 					</Typography>
 
 					{stats.totalItems > 0 ? (
@@ -174,8 +184,8 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 								fontWeight="bold"
 								sx={{ color: titleColor }}
 							>
-								{stats.percentageWithinSLE.toFixed(1)}% of all items completed
-								within SLE target
+								{`${stats.percentageWithinSLE.toFixed(1)}% of all ${workItemsTerm} completed
+								within ${sleTerm} target`}
 							</Typography>
 						</Box>
 					) : (
@@ -185,7 +195,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 							color="text.secondary"
 							mt={4}
 						>
-							No completed items available to analyze
+							{`No completed ${workItemsTerm} available to analyze`}
 						</Typography>
 					)}
 				</Box>
@@ -200,11 +210,11 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 			>
 				<Box display="flex" justifyContent="space-between" alignItems="center">
 					<Typography variant="h6" gutterBottom>
-						Cycle Time Percentiles
+						{`${cycleTimeTerm} Percentiles`}
 					</Typography>
 					{serviceLevelExpectation && (
 						<Chip
-							label={`SLE: ${serviceLevelExpectation.percentile}% @ ${formatDays(serviceLevelExpectation.value)}`}
+							label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${formatDays(serviceLevelExpectation.value)}`}
 							size="small"
 							onClick={(e) => handleFlip(e)}
 							sx={{
@@ -288,7 +298,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 			</Card>
 
 			<WorkItemsDialog
-				title="Closed Items"
+				title={`Closed ${workItemsTerm}`}
 				items={items}
 				open={dialogOpen}
 				onClose={handleCloseDialog}

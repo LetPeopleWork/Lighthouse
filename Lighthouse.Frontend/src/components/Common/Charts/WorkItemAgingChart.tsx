@@ -46,6 +46,9 @@ const ScatterMarker = (
 	props: ScatterMarkerProps,
 	groupedDataPoints: IGroupedWorkItem[],
 	theme: Theme,
+	workItemTerm: string,
+	workItemsTerm: string,
+	blockedTerm: string,
 	onShowItems: (items: IWorkItem[]) => void,
 ) => {
 	const dataIndex = props.dataIndex ?? 0;
@@ -62,6 +65,11 @@ const ScatterMarker = (
 		}
 	};
 
+	const blockedTermText = group.hasBlockedItems
+		? ` (${blockedTerm} ${workItemsTerm})`
+		: "";
+	const itemsText = group.items.length > 1 ? workItemsTerm : workItemTerm;
+
 	return (
 		<>
 			<circle
@@ -74,7 +82,7 @@ const ScatterMarker = (
 				strokeWidth={props.isHighlighted ? 2 : 0}
 				pointerEvents="none"
 			>
-				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} aged ${group.age} days in ${group.state}${group.hasBlockedItems ? " (includes blocked items)" : ""}`}</title>
+				<title>{`${group.items.length} ${itemsText} aged ${group.age} days in ${group.state} ${blockedTermText}`}</title>
 			</circle>
 
 			<foreignObject
@@ -95,7 +103,7 @@ const ScatterMarker = (
 						borderRadius: "50%",
 					}}
 					onClick={handleOpenWorkItems}
-					aria-label={`View ${group.items.length} item${group.items.length > 1 ? "s" : ""} aged ${group.age} days in ${group.state}${group.hasBlockedItems ? " (includes blocked items)" : ""}`}
+					aria-label={`View ${group.items.length} ${itemsText} aged ${group.age} days in ${group.state} ${blockedTermText}`}
 				/>
 			</foreignObject>
 		</>
@@ -180,6 +188,15 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
+	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
+	const serviceLevelExpectationTerm = getTerm(
+		TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION,
+	);
+	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
+	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
+
 	useEffect(() => {
 		setPercentiles(percentileValues);
 		const initialVisibility: Record<number, boolean> = {};
@@ -231,9 +248,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		<>
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">
-						{getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} Aging
-					</Typography>
+					<Typography variant="h6">{workItemTerm} Aging</Typography>
 
 					<Stack
 						direction="row"
@@ -273,7 +288,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 						{serviceLevelExpectation && (
 							<Chip
 								key="legend-sle"
-								label="Service Level Expectation"
+								label={serviceLevelExpectationTerm}
 								sx={{
 									borderColor: theme.palette.primary.main,
 									borderWidth: sleVisible ? 2 : 1,
@@ -325,7 +340,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							{
 								id: "ageAxis",
 								scaleType: "linear",
-								label: "Age (days)",
+								label: `${workItemAgeTerm} (days)`,
 								min: 0,
 								max: getMaxYAxisHeight(),
 								valueFormatter: (value: number) => {
@@ -363,7 +378,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 										return `${getWorkItemName(item)} (Click for details)`;
 									}
 
-									return `${numberOfItems} Items in ${group.state} (Click for details)`;
+									return `${numberOfItems} ${workItemsTerm} in ${group.state} (Click for details)`;
 								},
 							},
 						]}
@@ -388,7 +403,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							<ChartsReferenceLine
 								key="sle-reference-line"
 								y={serviceLevelExpectation.value}
-								label={`SLE: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
+								label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
 								labelAlign="start"
 								lineStyle={{
 									stroke: theme.palette.primary.main,
@@ -420,6 +435,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 										props,
 										groupedDataPoints,
 										theme,
+										workItemTerm,
+										workItemsTerm,
+										blockedTerm,
 										handleShowItems,
 									),
 							}}
@@ -451,8 +469,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 			<WorkItemsDialog
 				title={
 					selectedItems.length > 0
-						? `Items in ${selectedItems[0]?.state} aged ${getAgeInDays(selectedItems[0])} days`
-						: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)
+						? `${workItemsTerm} in ${selectedItems[0]?.state} aged ${getAgeInDays(selectedItems[0])} days`
+						: workItemsTerm
 				}
 				items={selectedItems}
 				open={dialogOpen}

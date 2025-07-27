@@ -158,7 +158,7 @@ describe("BarRunChart component", () => {
 			/>,
 		);
 
-		const totalThroughputText = screen.getByText("Total: 60 Items");
+		const totalThroughputText = screen.getByText("Total: 60 Work Items");
 		expect(totalThroughputText).toBeInTheDocument();
 	});
 

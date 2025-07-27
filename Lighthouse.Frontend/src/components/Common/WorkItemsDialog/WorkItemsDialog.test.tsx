@@ -159,7 +159,7 @@ describe("WorkItemsDialog Component", () => {
 		expect(screen.getByText("Name")).toBeInTheDocument();
 		expect(screen.getByText("Type")).toBeInTheDocument();
 		expect(screen.getByText("State")).toBeInTheDocument();
-		expect(screen.getByText("Age")).toBeInTheDocument();
+		expect(screen.getByText("Work Item Age")).toBeInTheDocument();
 
 		// Check if work item data is displayed
 		expect(screen.getByText("Implement feature X")).toBeInTheDocument();
@@ -264,7 +264,7 @@ describe("WorkItemsDialog Component", () => {
 		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />);
 
 		// Check if column header is displayed correctly
-		expect(screen.getByText("Age/Cycle Time")).toBeInTheDocument();
+		expect(screen.getByText("Work Item Age/Cycle Time")).toBeInTheDocument();
 	});
 
 	test("displays appropriate time values based on item state", () => {
@@ -276,7 +276,7 @@ describe("WorkItemsDialog Component", () => {
 		expect(screen.getByText("12 days")).toBeInTheDocument();
 
 		// Check if labels are added for each type
-		expect(screen.getAllByText("(Age)")).toHaveLength(3);
+		expect(screen.getAllByText("(Work Item Age)")).toHaveLength(3);
 		expect(screen.getAllByText("(Cycle Time)")).toHaveLength(2);
 	});
 
@@ -426,7 +426,7 @@ describe("WorkItemsDialog Component", () => {
 			);
 
 			// Check that blocked icons have tooltips by finding tooltips with the correct aria-label
-			const tooltips = screen.getAllByLabelText("This item is blocked");
+			const tooltips = screen.getAllByLabelText("This Work Item is Blocked");
 			expect(tooltips).toHaveLength(2);
 		});
 
@@ -519,7 +519,7 @@ describe("WorkItemsDialog Component", () => {
 			expect(blockIcons).toHaveLength(2);
 
 			// Check column header
-			expect(screen.getByText("Age/Cycle Time")).toBeInTheDocument();
+			expect(screen.getByText("Work Item Age/Cycle Time")).toBeInTheDocument();
 		});
 
 		test("blocked icon appears with SLE coloring", () => {

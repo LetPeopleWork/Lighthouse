@@ -8,9 +8,11 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import ModifyTrackingSystemConnectionDialog from "../../../pages/Settings/Connections/ModifyTrackingSystemConnectionDialog";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import InputGroup from "../InputGroup/InputGroup";
 
 interface WorkTrackingSystemComponentProps {
@@ -37,6 +39,12 @@ const WorkTrackingSystemComponent: React.FC<
 	const [openDialog, setOpenDialog] = useState<boolean>(false);
 
 	const { workTrackingSystemService } = useContext(ApiServiceContext);
+
+	const { getTerm } = useTerminology();
+	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+	const workTrackingSystemsTerm = getTerm(
+		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
+	);
 
 	const handleDialogOpen = () => {
 		setOpenDialog(true);
@@ -70,21 +78,24 @@ const WorkTrackingSystemComponent: React.FC<
 					await workTrackingSystemService.getWorkTrackingSystems();
 				setDefaultWorkTrackingSystems(systems);
 			} catch (error) {
-				console.error("Error fetching default work tracking systems", error);
+				console.error(
+					`Error fetching default ${workTrackingSystemsTerm}`,
+					error,
+				);
 			}
 		};
 
 		fetchDefaultSystems();
-	}, [workTrackingSystemService]);
+	}, [workTrackingSystemService, workTrackingSystemsTerm]);
 
 	return (
-		<InputGroup title="Work Tracking System">
+		<InputGroup title={workTrackingSystemTerm}>
 			<FormControl fullWidth margin="normal">
 				<InputLabel>Select Work Tracking System</InputLabel>
 				<Select
 					value={selectedWorkTrackingSystem?.name ?? ""}
 					onChange={onWorkTrackingSystemChange}
-					label="Select Work Tracking System"
+					label={`Select ${workTrackingSystemTerm}`}
 				>
 					{workTrackingSystems.map((system) => (
 						<MenuItem key={system.id} value={system.name}>
@@ -94,7 +105,7 @@ const WorkTrackingSystemComponent: React.FC<
 				</Select>
 			</FormControl>
 			<Button variant="contained" color="primary" onClick={handleDialogOpen}>
-				Add New Work Tracking System
+				Add New {workTrackingSystemTerm}
 			</Button>
 			<ModifyTrackingSystemConnectionDialog
 				open={openDialog}

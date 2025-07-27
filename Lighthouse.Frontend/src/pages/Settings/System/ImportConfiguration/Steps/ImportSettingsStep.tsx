@@ -21,8 +21,10 @@ import type {
 } from "../../../../../models/Configuration/ConfigurationValidation";
 import type { IProjectSettings } from "../../../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IConfigurationService } from "../../../../../services/Api/ConfigurationService";
+import { useTerminology } from "../../../../../services/TerminologyContext";
 
 interface ImportSettingsStepProps {
 	configurationService: IConfigurationService;
@@ -55,6 +57,13 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 	const [hasError, setHasError] = useState<boolean>(false);
 	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [clearConfiguration, setClearConfiguration] = useState<boolean>(false);
+
+	const { getTerm } = useTerminology();
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const workTrackingSystemsTerm = getTerm(
+		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
+	);
 
 	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const selectedFile = event.target.files?.[0] || null;
@@ -162,7 +171,9 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 					{title}
 				</Typography>
 				{items.length === 0 ? (
-					<Typography variant="body2">No items to validate</Typography>
+					<Typography variant="body2">
+						No {workItemsTerm} to validate
+					</Typography>
 				) : (
 					items.map((item) => (
 						<Grid container key={item.id} sx={{ my: 0.5 }}>
@@ -325,7 +336,7 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 							<div style={{ display: "flex", alignItems: "center" }}>
 								Delete Existing Configuration
 								<Tooltip
-									title="If this option is selected, all existing work tracking systems, teams, and projects will be removed"
+									title={`If this option is selected, all existing ${workTrackingSystemsTerm}, ${teamsTerm}, and projects will be removed`}
 									arrow
 									placement="top"
 								>
@@ -366,10 +377,10 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 							</Typography>
 
 							{renderValidationSection(
-								"Work Tracking Systems",
+								workTrackingSystemsTerm,
 								validationResults.workTrackingSystems,
 							)}
-							{renderValidationSection("Teams", validationResults.teams)}
+							{renderValidationSection(teamsTerm, validationResults.teams)}
 							{renderValidationSection("Projects", validationResults.projects)}
 
 							{hasValidationErrors() && (

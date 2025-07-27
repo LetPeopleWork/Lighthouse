@@ -1416,8 +1416,8 @@ export class DemoApiService
 				id: 11,
 			},
 			{
-				key: "workItemQuery",
-				defaultValue: "Work Item Query",
+				key: "query",
+				defaultValue: "Query",
 				description:
 					"Query that is applied on your 'Work Tracking System' for filtering. Alternatives may be 'JQL' or 'WIQL'",
 				value: "",

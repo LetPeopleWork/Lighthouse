@@ -14,8 +14,10 @@ import type { IForecastPredictabilityScore } from "../../../models/Forecasts/For
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
 import ItemsInProgress from "../../Teams/Detail/ItemsInProgress";
 
@@ -68,6 +70,11 @@ export const BaseMetricsView = <
 
 	const [endDate, setEndDate] = useState<Date>(new Date());
 
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
+
 	useEffect(() => {
 		const fetchPredictabilityData = async () => {
 			try {
@@ -113,12 +120,12 @@ export const BaseMetricsView = <
 				);
 				setStartedItems(data);
 			} catch (error) {
-				console.error("Error getting started items:", error);
+				console.error(`Error getting started ${workItemsTerm}:`, error);
 			}
 		};
 
 		fetchStartedItems();
-	}, [entity, metricsService, startDate, endDate]);
+	}, [entity, metricsService, startDate, endDate, workItemsTerm]);
 
 	useEffect(() => {
 		const fetchInProgressItems = async () => {
@@ -133,12 +140,12 @@ export const BaseMetricsView = <
 				);
 				setWipOverTimeData(wipData);
 			} catch (error) {
-				console.error("Error getting items in progress:", error);
+				console.error(`Error getting ${workItemsTerm} in progress:`, error);
 			}
 		};
 
 		fetchInProgressItems();
-	}, [entity, metricsService, startDate, endDate]);
+	}, [entity, metricsService, startDate, endDate, workItemsTerm]);
 
 	useEffect(() => {
 		const fetchCycleTimeData = async () => {
@@ -157,12 +164,12 @@ export const BaseMetricsView = <
 				);
 				setPercentileValues(percentiles);
 			} catch (error) {
-				console.error("Error fetching cycle time data:", error);
+				console.error(`Error fetching ${cycleTimeTerm} data:`, error);
 			}
 		};
 
 		fetchCycleTimeData();
-	}, [entity, metricsService, startDate, endDate]);
+	}, [entity, metricsService, startDate, endDate, cycleTimeTerm]);
 
 	useEffect(() => {
 		if (
@@ -205,7 +212,7 @@ export const BaseMetricsView = <
 				{renderAdditionalComponents?.()}
 
 				<ItemsInProgress
-					title={`Blocked Items:`}
+					title={`${blockedTerm}:`}
 					items={inProgressItems.filter((item) => item.isBlocked)}
 					idealWip={0}
 				/>

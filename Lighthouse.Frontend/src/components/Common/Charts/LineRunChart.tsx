@@ -3,7 +3,9 @@ import { ChartsReferenceLine, LineChart } from "@mui/x-charts";
 import type React from "react";
 import { useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 import { hexToRgba } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
@@ -32,13 +34,17 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 		!!wipLimit && wipLimit >= 1,
 	);
 
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
+
 	const handleLineClick = (dataIndex: number) => {
 		const items = chartData.workItemsPerUnitOfTime[dataIndex] || [];
 		if (items.length > 0) {
 			const day = new Date(startDate);
 			day.setDate(day.getDate() + dataIndex);
 			const formattedDate = day.toLocaleDateString();
-			setDialogTitle(`Items in Progress on ${formattedDate}`);
+			setDialogTitle(`${workItemsTerm} in Progress on ${formattedDate}`);
 			setSelectedItems(items);
 			setDialogOpen(true);
 		}
@@ -72,7 +78,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 									sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}
 								>
 									<Chip
-										label="System WIP Limit"
+										label={`System ${wipTerm} Limit`}
 										onClick={toggleWipLimitVisibility}
 										sx={{
 											borderColor: theme.palette.secondary.main,
@@ -140,10 +146,10 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 												}
 
 												if (numberOfItems > 0) {
-													return `${numberOfItems} Items in Progress (Click for details)`;
+													return `${numberOfItems} ${workItemsTerm} in Progress (Click for details)`;
 												}
 
-												return "No Items in Progress";
+												return `No ${workItemsTerm} in Progress`;
 											},
 										},
 									]}

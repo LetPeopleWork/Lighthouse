@@ -211,7 +211,7 @@ describe("CycleTimePercentiles component", () => {
 		// Now showing SLE view
 		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
 		expect(
-			screen.getByText(/85% of all work items are done within 10 days or less/),
+			screen.getByText(/85% of all Work Items are done within 10 days or less/),
 		).toBeInTheDocument();
 	});
 
@@ -230,7 +230,7 @@ describe("CycleTimePercentiles component", () => {
 
 		// Check statistics - 3 out of 4 items (75%) have cycle time <= 7 days
 		expect(
-			screen.getByText(/75\.0% of all items completed within SLE target/),
+			screen.getByText(/75\.0% of all Work Items completed within SLE target/),
 		).toBeInTheDocument();
 	});
 
@@ -267,7 +267,7 @@ describe("CycleTimePercentiles component", () => {
 		fireEvent.click(screen.getByText("SLE: 85% @ 10 days"));
 
 		expect(
-			screen.getByText("No completed items available to analyze"),
+			screen.getByText("No completed Work Items available to analyze"),
 		).toBeInTheDocument();
 	});
 

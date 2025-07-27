@@ -3,6 +3,8 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface ForecastSettingsComponentProps {
 	teamSettings: ITeamSettings | null;
@@ -18,6 +20,9 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 	isDefaultSettings,
 	onTeamSettingsChange,
 }) => {
+	const { getTerm } = useTerminology();
+	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
+
 	const handleDateChange = (name: keyof ITeamSettings, newDate: string) => {
 		onTeamSettingsChange(name, new Date(newDate));
 	};
@@ -38,7 +43,7 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 								}
 							/>
 						}
-						label="Use Fixed Dates for Throughput"
+						label={`Use Fixed Dates for ${throughputTerm}`}
 					/>
 				</Grid>
 			)}
@@ -46,7 +51,7 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 			{!teamSettings?.useFixedDatesForThroughput ? (
 				<Grid size={{ xs: 12 }}>
 					<TextField
-						label="Throughput History"
+						label={`${throughputTerm} History`}
 						type="number"
 						fullWidth
 						margin="normal"

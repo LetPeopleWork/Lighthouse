@@ -647,15 +647,15 @@ describe("BaseMetricsView component", () => {
 				expect.any(Error),
 			);
 			expect(consoleSpy).toHaveBeenCalledWith(
-				"Error getting items in progress:",
+				"Error getting Work Items in progress:",
 				expect.any(Error),
 			);
 			expect(consoleSpy).toHaveBeenCalledWith(
-				"Error fetching cycle time data:",
+				"Error fetching Cycle Time data:",
 				expect.any(Error),
 			);
 			expect(consoleSpy).toHaveBeenCalledWith(
-				"Error getting started items:",
+				"Error getting started Work Items:",
 				expect.any(Error),
 			);
 		});

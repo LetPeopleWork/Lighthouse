@@ -10,7 +10,9 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 import {
 	certainColor,
 	confidentColor,
@@ -29,6 +31,10 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	closedItems,
 }) => {
 	const [dialogOpen, setDialogOpen] = useState(false);
+
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
 
 	const handleOpenDialog = () => {
 		setDialogOpen(true);
@@ -112,12 +118,12 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 		} else if (difference <= 15) {
 			tip = "Observe and take action if needed!";
 		} else {
-			tip = "Reflect on WIP control!";
+			tip = `Reflect on ${wipTerm} control!`;
 		}
 
 		if (isTotalDifferenceLessThanTwo() || difference <= 5) {
 			return {
-				text: "You are keeping a steady WIP",
+				text: `You are keeping a steady ${wipTerm}`,
 				tip,
 				color,
 			};
@@ -125,14 +131,14 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 
 		if (startedTotal > closedTotal) {
 			return {
-				text: "You are starting more items than you close",
+				text: `You are starting more ${workItemsTerm} than you close`,
 				tip,
 				color,
 			};
 		}
 
 		return {
-			text: "You are closing more items than you start",
+			text: `You are closing more ${workItemsTerm} than you start`,
 			tip,
 			color,
 		};
@@ -148,7 +154,7 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 			>
 				<CardContent>
 					<Typography variant="h6" gutterBottom>
-						Started vs. Closed Items
+						{`Started vs. Closed ${workItemsTerm}`}
 					</Typography>
 					<Table size="small">
 						<TableBody>
@@ -229,7 +235,7 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 			</Card>
 
 			<WorkItemsDialog
-				title="Started and Closed Items"
+				title={`Started and Closed ${workItemsTerm}`}
 				items={getAllWorkItems()}
 				open={dialogOpen}
 				onClose={handleCloseDialog}

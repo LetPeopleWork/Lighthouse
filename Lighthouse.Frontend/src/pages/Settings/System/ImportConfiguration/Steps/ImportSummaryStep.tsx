@@ -16,8 +16,10 @@ import {
 	TableRow,
 	Typography,
 } from "@mui/material";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type { IProjectService } from "../../../../../services/Api/ProjectService";
 import type { ITeamService } from "../../../../../services/Api/TeamService";
+import { useTerminology } from "../../../../../services/TerminologyContext";
 import type { ImportResults } from "../ImportResults";
 
 interface ImportSummaryStepProps {
@@ -38,6 +40,12 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 		"Validation Failed": number;
 		Error: number;
 	}
+
+	const { getTerm } = useTerminology();
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const workTrackingSystemsTerm = getTerm(
+		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
+	);
 
 	const countResults = (entities: Array<{ status: string }>) => {
 		return entities.reduce(
@@ -181,7 +189,9 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 				</Typography>
 				<Stack direction="row" spacing={2}>
 					<Paper sx={{ p: 2, flex: 1 }} elevation={2}>
-						<Typography variant="subtitle1">Work Tracking Systems</Typography>
+						<Typography variant="subtitle1">
+							{workTrackingSystemsTerm}
+						</Typography>
 						<Typography variant="body2">
 							Success: {workTrackingSystemsCounts.Success}
 						</Typography>
@@ -194,7 +204,7 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 						</Typography>
 					</Paper>
 					<Paper sx={{ p: 2, flex: 1 }} elevation={2}>
-						<Typography variant="subtitle1">Teams</Typography>
+						<Typography variant="subtitle1">{teamsTerm}</Typography>
 						<Typography variant="body2">
 							Success: {teamsCounts.Success}
 						</Typography>
@@ -225,10 +235,10 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 				}}
 			>
 				{renderEntityTable(
-					"Work Tracking Systems",
+					workTrackingSystemsTerm,
 					importResults.workTrackingSystems,
 				)}
-				{renderEntityTable("Teams", importResults.teams)}
+				{renderEntityTable(teamsTerm, importResults.teams)}
 				{renderEntityTable("Projects", importResults.projects)}
 			</Box>
 			<Divider sx={{ my: 2 }} />
@@ -253,7 +263,7 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 						disabled={!hasSuccessful}
 						data-testid="update-data-button"
 					>
-						Update Team and Project Data
+						{`Update ${teamsTerm} and Project Data`}
 					</Button>
 					<Button
 						sx={{ ml: 2 }}

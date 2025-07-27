@@ -15,7 +15,7 @@ export const TERMINOLOGY_KEYS = {
 	TAG: "tag",
 	WORK_TRACKING_SYSTEM: "workTrackingSystem",
 	WORK_TRACKING_SYSTEMS: "workTrackingSystems",
-	WORK_ITEM_QUERY: "workItemQuery",
+	QUERY: "query",
 	BLOCKED: "blocked",
 	SERVICE_LEVEL_EXPECTATION: "serviceLevelExpectation",
 	SLE: "sle",

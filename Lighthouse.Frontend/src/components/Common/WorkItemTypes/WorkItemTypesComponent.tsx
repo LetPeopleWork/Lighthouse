@@ -23,6 +23,7 @@ const WorkItemTypesComponent: React.FC<WorkItemTypesComponentProps> = ({
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const { suggestionService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
+	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 
 	useEffect(() => {
 		const fetchWorkItemTypes = async () => {
@@ -37,19 +38,19 @@ const WorkItemTypesComponent: React.FC<WorkItemTypesComponentProps> = ({
 				}
 				setSuggestions(availableTypes);
 			} catch (error) {
-				console.error("Failed to fetch work item types:", error);
+				console.error(`Failed to fetch ${workItemTerm} types:`, error);
 			} finally {
 				setIsLoading(false);
 			}
 		};
 
 		fetchWorkItemTypes();
-	}, [suggestionService, isForTeam]);
+	}, [suggestionService, isForTeam, workItemTerm]);
 
 	return (
-		<InputGroup title={`${getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} Types`}>
+		<InputGroup title={`${workItemTerm} Types`}>
 			<ItemListManager
-				title={`${getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} Type`}
+				title={`${workItemTerm} Type`}
 				items={workItemTypes}
 				onAddItem={onAddWorkItemType}
 				onRemoveItem={onRemoveWorkItemType}

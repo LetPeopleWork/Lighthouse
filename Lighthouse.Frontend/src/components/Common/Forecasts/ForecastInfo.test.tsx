@@ -42,7 +42,7 @@ describe("ForecastInfo component", () => {
 		render(<ForecastInfo forecast={howManyForecast} />);
 
 		expect(screen.getByTestId("icon")).toBeInTheDocument();
-		expect(screen.getByText("50 Items")).toBeInTheDocument();
+		expect(screen.getByText("50 Work Items")).toBeInTheDocument();
 	});
 
 	it("should show unsupported forecast type message", () => {

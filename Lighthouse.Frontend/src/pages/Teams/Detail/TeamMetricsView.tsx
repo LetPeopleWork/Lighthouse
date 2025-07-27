@@ -17,7 +17,10 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
+
 	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	useEffect(() => {
 		const fetchFeatures = async () => {
@@ -27,12 +30,12 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 				);
 				setInProgressFeatures(featuresData);
 			} catch (err) {
-				console.error("Error fetching features in progress:", err);
+				console.error(`Error fetching ${featuresTerm} in progress:`, err);
 			}
 		};
 
 		fetchFeatures();
-	}, [team.id, teamMetricsService]);
+	}, [team.id, teamMetricsService, featuresTerm]);
 
 	useEffect(() => {
 		const fetchTeamSettings = async () => {
@@ -63,7 +66,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 
 	const renderTeamSpecificContent = () => (
 		<ItemsInProgress
-			title="Features being Worked On:"
+			title={`${featuresTerm} being Worked On:`}
 			items={inProgressFeatures}
 			idealWip={team.featureWip > 0 ? team.featureWip : undefined}
 		/>
@@ -73,7 +76,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		<BaseMetricsView
 			entity={team}
 			metricsService={teamMetricsService}
-			title={getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}
+			title={workItemsTerm}
 			defaultDateRange={dateRange}
 			renderAdditionalComponents={renderTeamSpecificContent}
 			doingStates={doingStates}

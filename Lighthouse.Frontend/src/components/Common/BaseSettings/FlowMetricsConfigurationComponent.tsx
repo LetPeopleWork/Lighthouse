@@ -9,6 +9,8 @@ import {
 import Grid from "@mui/material/Grid";
 import { useEffect, useState } from "react";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
 
@@ -27,6 +29,16 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
 	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
 	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(false);
+
+	const { getTerm } = useTerminology();
+	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const tagTerm = getTerm(TERMINOLOGY_KEYS.TAG);
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
+	const serviceLevelExpectationTerm = getTerm(
+		TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION,
+	);
 
 	useEffect(() => {
 		setIsSleEnabled(
@@ -153,13 +165,13 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							onChange={(e) => handleWipLimitEnableChange(e.target.checked)}
 						/>
 					}
-					label="Set System WIP Limit"
+					label={`Set System ${wipTerm} Limit`}
 				/>
 			</Grid>
 			{isWipLimitEnabled && (
 				<Grid size={{ xs: 12 }}>
 					<TextField
-						label="WIP Limit"
+						label={`${wipTerm} Limit`}
 						type="number"
 						fullWidth
 						margin="normal"
@@ -189,14 +201,14 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 									}
 								/>
 							}
-							label="Set Feature WIP"
+							label={`Set ${featureTerm} ${wipTerm}`}
 						/>
 					</Grid>
 					{isFeatureWipEnabled && (
 						<>
 							<Grid size={{ xs: 12 }}>
 								<TextField
-									label="Feature WIP"
+									label={`${featureTerm} ${wipTerm}`}
 									type="number"
 									fullWidth
 									margin="normal"
@@ -228,7 +240,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 											}}
 										/>
 									}
-									label="Automatically Adjust Feature WIP based on actual WIP"
+									label={`Automatically Adjust ${featureTerm} ${wipTerm} based on actual ${wipTerm}`}
 								/>
 							</Grid>
 						</>
@@ -245,7 +257,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							onChange={(e) => handleSleEnableChange(e.target.checked)}
 						/>
 					}
-					label="Set Service Level Expectation"
+					label={`Set ${serviceLevelExpectationTerm}`}
 				/>
 			</Grid>
 			{isSleEnabled && (
@@ -297,17 +309,20 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							onChange={(e) => handleBlockedItemsEnableChange(e.target.checked)}
 						/>
 					}
-					label="Configure Blocked Items"
+					label={`Configure ${blockedTerm} ${workItemsTerm}`}
 				/>
 			</Grid>
 
 			{/* Blocked Tags Configuration */}
 			{isBlockedItemsEnabled && (
 				<Grid size={{ xs: 12 }}>
-					<InputGroup title={"Blocked Tags"} initiallyExpanded={true}>
+					<InputGroup
+						title={`${blockedTerm} ${tagTerm}s`}
+						initiallyExpanded={true}
+					>
 						<Grid size={{ xs: 12 }}>
 							<ItemListManager
-								title="Blocked Tag"
+								title={`${blockedTerm} ${tagTerm}`}
 								items={settings.blockedTags || []}
 								onAddItem={handleAddBlockedTag}
 								onRemoveItem={handleRemoveBlockedTag}
@@ -322,7 +337,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			{/* Blocked States Configuration */}
 			{isBlockedItemsEnabled && (
 				<Grid size={{ xs: 12 }}>
-					<InputGroup title={"Blocked States"} initiallyExpanded={false}>
+					<InputGroup title={`${blockedTerm} States`} initiallyExpanded={false}>
 						<Grid size={{ xs: 12 }}>
 							<Box
 								sx={{
@@ -341,7 +356,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 								</Typography>
 							</Box>
 							<ItemListManager
-								title="Blocked State"
+								title={`${blockedTerm} State`}
 								items={settings.blockedStates || []}
 								onAddItem={handleAddBlockedState}
 								onRemoveItem={handleRemoveBlockedState}

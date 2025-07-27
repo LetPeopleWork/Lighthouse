@@ -9,10 +9,12 @@ import type { IRefreshSettings } from "../../../models/AppSettings/RefreshSettin
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface RefreshSettingUpdaterProps {
+	title: string;
 	settingName: string;
 }
 
 const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({
+	title,
 	settingName,
 }) => {
 	const [refreshSettings, setRefreshSettings] =
@@ -113,7 +115,7 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({
 						<ActionButton
 							buttonVariant="contained"
 							onClickHandler={updateSettings}
-							buttonText={`Update ${settingName} Settings`}
+							buttonText={`Update ${title} Settings`}
 						/>
 					</Grid>
 				</Grid>
