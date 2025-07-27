@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Extensions;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using System.Globalization;
@@ -189,7 +190,7 @@ namespace Lighthouse.Backend.Factories
                 var newStatus = item.GetProperty(JiraFieldNames.ToStringPropertyName).GetString();
                 var oldStatus = item.GetProperty(JiraFieldNames.FromStringPropertyName).GetString();
 
-                if (changedField == JiraFieldNames.StatusFieldName && IsInList(newStatus, targetStates) && !IsInList(oldStatus, targetStates) && !IsInList(oldStatus, statesToIgnoreTransitions))
+                if (changedField == JiraFieldNames.StatusFieldName && targetStates.IsItemInList(newStatus) && !targetStates.IsItemInList(oldStatus) && !statesToIgnoreTransitions.IsItemInList(oldStatus))
                 {
                     transitionDate = historyEntryCreationDate;
                 }
@@ -201,16 +202,6 @@ namespace Lighthouse.Backend.Factories
             }
 
             return DateTime.SpecifyKind(transitionDate.Value, DateTimeKind.Utc);
-        }
-
-        private static bool IsInList(string? value, IEnumerable<string> list)
-        {
-            if (string.IsNullOrEmpty(value))
-            {
-                return false;
-            }
-
-            return list.Any(s => string.Equals(s, value, StringComparison.OrdinalIgnoreCase));
         }
 
         private static DateTime? GetCreatedDateFromFields(JsonElement fields)

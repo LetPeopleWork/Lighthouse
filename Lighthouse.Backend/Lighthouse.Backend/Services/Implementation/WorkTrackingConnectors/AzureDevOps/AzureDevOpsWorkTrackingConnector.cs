@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Extensions;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -407,7 +408,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 if (RevisionWasChangingState(revision, out (string state, DateTime changedDate) result))
                 {
-                    var isRelevantCategory = targetStates.Contains(result.state) && !targetStates.Contains(previousState) && !statesToIgnore.Contains(previousState);
+                    var isRelevantCategory = targetStates.IsItemInList(result.state) && !targetStates.IsItemInList(previousState) && !statesToIgnore.IsItemInList(previousState);
 
                     if (isRelevantCategory)
                     {

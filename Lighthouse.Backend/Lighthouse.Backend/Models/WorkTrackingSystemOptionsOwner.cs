@@ -1,4 +1,6 @@
-﻿namespace Lighthouse.Backend.Models
+﻿using Lighthouse.Backend.Extensions;
+
+namespace Lighthouse.Backend.Models
 {
     public abstract class WorkTrackingSystemOptionsOwner : IWorkItemQueryOwner
     {
@@ -42,17 +44,17 @@
 
         public StateCategories MapStateToStateCategory(string state)
         {
-            if (IsStateInList(state, ToDoStates))
+            if (ToDoStates.IsItemInList(state))
             {
                 return StateCategories.ToDo;
             }
 
-            if (IsStateInList(state, DoingStates))
+            if (DoingStates.IsItemInList(state))
             {
                 return StateCategories.Doing;
             }
 
-            if (IsStateInList(state, DoneStates))
+            if (DoneStates.IsItemInList(state))
             {
                 return StateCategories.Done;
             }
@@ -68,11 +70,6 @@
         public void RefreshUpdateTime()
         {
             UpdateTime = DateTime.UtcNow;
-        }
-
-        private static bool IsStateInList(string state, List<string> states)
-        {
-            return states.Any(s => string.Equals(s, state, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

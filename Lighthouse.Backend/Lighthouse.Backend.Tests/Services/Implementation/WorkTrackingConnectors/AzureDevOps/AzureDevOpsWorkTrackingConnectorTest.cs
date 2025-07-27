@@ -10,7 +10,6 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
-    [Category("Integration")]
     public class AzureDevOpsWorkTrackingConnectorTest
     {
         [Test]
@@ -103,6 +102,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '396'");
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 8, 10, 647, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.False);
+            }
+            ;
+        }
+
+        [Test]
+        public async Task SetStartedAndClosedDate_IgnoresStateCasing()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '395'");
+            team.DoneStates.Clear();
+            team.DoneStates.Add("CLOSED");
+
+            var result = await subject.GetWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Count, Is.EqualTo(1));
+                var workItem = result.Single();
+
+                Assert.That(workItem.StartedDate.HasValue, Is.True);
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 5, 4, 707, DateTimeKind.Utc)));
+
+                Assert.That(workItem.ClosedDate.HasValue, Is.True);
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2025, 4, 24, 8, 6, 34, 677, DateTimeKind.Utc)));
+            }
+            ;
+        }
+
+        [Test]
+        public async Task SetStartedDate_IgnoresStateCasing()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '396'");
+            team.DoingStates.Clear();
+            team.DoingStates.Add("ACTIVE");
+            team.DoingStates.Add("ReSoLvED");
 
             var result = await subject.GetWorkItemsForTeam(team);
 
