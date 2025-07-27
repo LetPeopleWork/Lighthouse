@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public IEnumerable<TerminologyEntry> GetAll()
         {
-            var entries = repository.GetAll();
+            var entries = repository.GetAll().OrderBy(e => e.Id);
             return entries;
         }
 

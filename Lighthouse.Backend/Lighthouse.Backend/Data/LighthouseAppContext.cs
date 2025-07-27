@@ -42,10 +42,16 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
             modelBuilder.Entity<OptionalFeature>().HasKey(a => a.Key);
             
-            modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Key);
+            modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Id);
+            modelBuilder.Entity<TerminologyEntry>()
+                .Property(t => t.Id)
+                .ValueGeneratedOnAdd();
             modelBuilder.Entity<TerminologyEntry>()
                 .Property(t => t.Key)
                 .IsRequired();
+            modelBuilder.Entity<TerminologyEntry>()
+                .HasIndex(t => t.Key)
+                .IsUnique();
             modelBuilder.Entity<TerminologyEntry>()
                 .Property(t => t.Description)
                 .IsRequired();

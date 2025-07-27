@@ -149,5 +149,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                     "User's custom Value should be preserved during update");
             }
         }
+
+        [Test]
+        public async Task SeedTerminology_EntriesHaveAutoIncrementingIds()
+        {
+            // Arrange & Act
+            var subject = CreateSubject();
+            await subject.Save();
+            
+            // Assert
+            var entries = subject.GetAll().ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entries.Count, Is.GreaterThan(0));
+                
+                // Verify all entries have positive auto-incremented IDs
+                foreach (var entry in entries)
+                {
+                    Assert.That(entry.Id, Is.GreaterThan(0), $"Entry {entry.Key} should have auto-incremented ID");
+                }
+                
+                // Verify IDs are unique
+                var ids = entries.Select(e => e.Id).ToList();
+                var uniqueIds = ids.Distinct().ToList();
+                Assert.That(uniqueIds.Count, Is.EqualTo(ids.Count), "All IDs should be unique");
+                
+                // Verify entries are ordered by creation (first entry should have smallest ID)
+                var sortedIds = ids.OrderBy(id => id).ToList();
+                Assert.That(ids, Is.EqualTo(sortedIds), "Entries should be ordered by ID (creation order)");
+            }
+        }
     }
 }
