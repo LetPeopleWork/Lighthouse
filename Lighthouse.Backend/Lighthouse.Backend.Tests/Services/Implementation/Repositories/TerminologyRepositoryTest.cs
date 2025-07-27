@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase("tag", "Tag", "A user defined indication on your 'Work Items'. Alternatives may be 'Label' or 'Category'")]
         [TestCase("workTrackingSystem", "Work Tracking System", "Generic name of the source of your data. Alternatives may be 'Jira Instance' or 'Azure DevOps Organization'")]
         [TestCase("workTrackingSystems", "Work Tracking Systems", "Plural form of 'Work Tracking System'")]
-        [TestCase("workItemQuery", "Work Item Query", "Query that is applied on your 'Work Tracking System' for filtering. Alternatives may be 'JQL' or 'WIQL'")]
+        [TestCase("query", "Query", "Query that is applied on your 'Work Tracking System' for filtering. Alternatives may be 'JQL' or 'WIQL'")]
         [TestCase("blocked", "Blocked", "Indication for 'Work Items' that don't progress anymore. Alternatives may be 'On Hold' or 'Stopped'")]
         [TestCase("serviceLevelExpectation", "Service Level Expectation", "A forecast of how long it should take a work item to flow from started to finished. Alternatives may be 'Target' or 'Goal'")]
         [TestCase("sle", "SLE", "Abbreviation of 'Service Level Expectation'")]
