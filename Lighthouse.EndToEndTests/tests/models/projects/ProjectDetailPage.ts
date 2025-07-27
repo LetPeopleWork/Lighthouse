@@ -24,7 +24,7 @@ export class ProjectDetailPage {
 
 	getFeatureIsDefaultSize(): Locator {
 		const defaultSizeIcon = this.page.getByLabel(
-			"No child items were found for",
+			"No child Work Items were found for",
 		);
 		return defaultSizeIcon;
 	}

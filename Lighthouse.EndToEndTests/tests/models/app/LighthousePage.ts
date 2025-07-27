@@ -38,7 +38,7 @@ export class LighthousePage {
 
 		// Make sure the page has loaded by checking for a specific element
 		await expect(
-			this.page.getByRole("heading", { name: "teams Overview" }),
+			this.page.getByRole("heading", { name: "Team Overview" }),
 		).toBeVisible();
 
 		return new TeamsPage(this.page);
@@ -51,7 +51,7 @@ export class LighthousePage {
 
 		// Make sure the page has loaded by checking for a specific element
 		await expect(
-			this.page.getByRole("heading", { name: "projects Overview" }),
+			this.page.getByRole("heading", { name: "Project Overview" }),
 		).toBeVisible();
 
 		return new ProjectsPage(this.page);

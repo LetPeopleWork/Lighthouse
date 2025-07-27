@@ -30,9 +30,11 @@ export class TeamDetailPage {
 
 	async forecast(howMany: number): Promise<number> {
 		await this.page
-			.getByLabel("Number of Items to Forecast")
+			.getByLabel("Number of Work Items to Forecast")
 			.fill(`${howMany}`);
-		await this.page.getByRole("button", { name: "Forecast", exact: true }).click();
+		await this.page
+			.getByRole("button", { name: "Forecast", exact: true })
+			.click();
 
 		const likelihood =
 			(await this.page.getByRole("heading", { name: "%" }).textContent()) ??
@@ -167,7 +169,9 @@ export class TeamDetailPage {
 	}
 
 	get returnToCycleTimePercentilesButton(): Locator {
-		return this.page.locator('.MuiCardContent-root > div > .MuiButtonBase-root').first();
+		return this.page
+			.locator(".MuiCardContent-root > div > .MuiButtonBase-root")
+			.first();
 	}
 
 	get workItemsInProgressWidget(): Locator {

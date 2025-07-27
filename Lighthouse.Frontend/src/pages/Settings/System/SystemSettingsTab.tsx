@@ -56,6 +56,7 @@ const SystemSettingsTab: React.FC = () => {
 	};
 
 	const { getTerm } = useTerminology();
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
@@ -192,8 +193,8 @@ const SystemSettingsTab: React.FC = () => {
 			<InputGroup title={`${teamTerm} Refresh`}>
 				<RefreshSettingUpdater title={teamTerm} settingName="Team" />
 			</InputGroup>
-			<InputGroup title={`${featuresTerm} Refresh`}>
-				<RefreshSettingUpdater title={featuresTerm} settingName="Feature" />
+			<InputGroup title={`${featureTerm} Refresh`}>
+				<RefreshSettingUpdater title={featureTerm} settingName="Feature" />
 			</InputGroup>
 
 			<InputGroup title="Data Retention Settings" initiallyExpanded={true}>
