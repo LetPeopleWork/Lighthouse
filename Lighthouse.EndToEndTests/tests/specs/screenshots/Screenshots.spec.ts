@@ -277,6 +277,11 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	);
 
 	await takeElementScreenshot(
+		systemSettings.terminologyConfiguration,
+		"settings/terminologyConfiguration.png",
+	);
+
+	await takeElementScreenshot(
 		systemSettings.teamRefreshSettings,
 		"settings/teamrefreshsettings.png",
 	);

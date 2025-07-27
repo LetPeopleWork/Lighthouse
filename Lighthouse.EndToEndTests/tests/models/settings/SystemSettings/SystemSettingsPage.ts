@@ -178,4 +178,8 @@ export class SystemSettingsPage {
 			"Lighthouse ConfigurationExport ConfigurationImport Configuration",
 		);
 	}
+
+	get terminologyConfiguration(): Locator {
+		return this.page.getByText('Terminology ConfigurationUse');
+	}
 }
