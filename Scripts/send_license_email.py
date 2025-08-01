@@ -1,24 +1,39 @@
 #!/usr/bin/env python3
 """
-Send license file via Mailgun
+Send license file via Mailgun SMTP
 """
 import os
-import requests
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 
 
 def send_license_email():
     # Get environment variables
-    api_key = os.environ.get("MAILGUN_API_KEY")
+    smtp_username = os.environ.get(
+        "MAILGUN_SMTP_USERNAME"
+    )  # licensing@lighthouse.letpeople.work
+    smtp_password = os.environ.get(
+        "MAILGUN_SMTP_PASSWORD"
+    )  # The password Mailgun gave you
     recipient_name = os.environ.get("RECIPIENT_NAME")
     recipient_email = os.environ.get("RECIPIENT_EMAIL")
     organization = os.environ.get("ORGANIZATION")
 
-    if not all([api_key, recipient_name, recipient_email, organization]):
+    if not all(
+        [smtp_username, smtp_password, recipient_name, recipient_email, organization]
+    ):
         raise ValueError("Missing required environment variables")
 
-    # Prepare the email content
-    subject = "Your Lighthouse License"
+    # Create message
+    msg = MIMEMultipart("alternative")
+    msg["From"] = f"Lighthouse Licensing <{smtp_username}>"
+    msg["To"] = f"{recipient_name} <{recipient_email}>"
+    msg["Subject"] = "Your Lighthouse License"
+    msg["Reply-To"] = "support@lighthouse.letpeople.work"
 
+    # HTML version
     html_body = f"""
     <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -53,8 +68,27 @@ def send_license_email():
                 
                 <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
                 
-                <p>Best regards,<br>
-                The Lighthouse Team</p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                    <table style="width: 100%; font-family: Arial, sans-serif;">
+                        <tr>
+                            <td style="width: 60px; vertical-align: top; padding-right: 15px;">
+                                <!-- You can add a logo here -->
+                                <div style="width: 50px; height: 50px; background-color: #3498db; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px;">L</div>
+                            </td>
+                            <td style="vertical-align: top;">
+                                <div style="color: #2c3e50; font-weight: bold; font-size: 16px;">Lighthouse Licensing Team</div>
+                                <div style="color: #7f8c8d; font-size: 14px; margin-top: 2px;">Software Licensing Department</div>
+                                <div style="margin-top: 8px;">
+                                    <div style="color: #34495e; font-size: 13px;">📧 licensing@lighthouse.letpeople.work</div>
+                                    <div style="color: #34495e; font-size: 13px;">🌐 lighthouse.letpeople.work</div>
+                                </div>
+                                <div style="margin-top: 10px; font-size: 11px; color: #95a5a6;">
+                                    This email contains confidential licensing information. Please keep your license file secure.
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
                 
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                 <p style="font-size: 12px; color: #6c757d;">
@@ -65,6 +99,7 @@ def send_license_email():
     </html>
     """
 
+    # Text version
     text_body = f"""
 Your Lighthouse License
 
@@ -89,45 +124,57 @@ Important: Please keep this license file safe and do not share it with others. I
 If you have any questions or need assistance, please don't hesitate to contact our support team.
 
 Best regards,
-The Lighthouse Team
+
+--
+Lighthouse Licensing Team
+Software Licensing Department
+📧 licensing@lighthouse.letpeople.work
+🌐 lighthouse.letpeople.work
+
+This email contains confidential licensing information. Please keep your license file secure.
 
 ---
 This email was sent from an automated system. Please do not reply to this email address.
     """
 
-    # Prepare the attachment
+    # Attach text and HTML parts
+    text_part = MIMEText(text_body, "plain")
+    html_part = MIMEText(html_body, "html")
+
+    msg.attach(text_part)
+    msg.attach(html_part)
+
+    # Attach the license file
     with open("license.json", "rb") as f:
         license_data = f.read()
 
-    # Mailgun API endpoint for your domain
-    mailgun_url = "https://api.mailgun.net/v3/lighthouse.letpeople.work/messages"
+    attachment = MIMEApplication(license_data, _subtype="json")
+    attachment.add_header("Content-Disposition", "attachment", filename="license.json")
+    msg.attach(attachment)
 
-    # Prepare the request
-    auth = ("api", api_key)
-
-    data = {
-        "from": "Lighthouse Licensing <licensing@lighthouse.letpeople.work>",
-        "to": f"{recipient_name} <{recipient_email}>",
-        "subject": subject,
-        "text": text_body,
-        "html": html_body,
-    }
-
-    files = [("attachment", ("license.json", license_data, "application/json"))]
-
-    # Send the email
+    # Send the email via Mailgun SMTP
     print(f"Sending license to {recipient_email}...")
-    response = requests.post(mailgun_url, auth=auth, data=data, files=files)
 
-    if response.status_code == 200:
-        print("✅ License email sent successfully!")
-        print(f"Mailgun Message ID: {response.json().get('id', 'N/A')}")
-    else:
-        print(f"❌ Failed to send email. Status code: {response.status_code}")
-        print(f"Response: {response.text}")
-        raise Exception(
-            f"Failed to send email: {response.status_code} - {response.text}"
-        )
+    try:
+        # Mailgun SMTP settings
+        smtp_server = "smtp.mailgun.org"
+        smtp_port = 587  # or 465 for SSL
+
+        # Create SMTP session
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()  # Enable TLS encryption
+        server.login(smtp_username, smtp_password)
+
+        # Send email
+        text = msg.as_string()
+        server.sendmail(smtp_username, recipient_email, text)
+        server.quit()
+
+        print("✅ License email sent successfully via SMTP!")
+
+    except Exception as e:
+        print(f"❌ Failed to send email via SMTP: {str(e)}")
+        raise Exception(f"Failed to send email: {str(e)}")
 
 
 if __name__ == "__main__":
