@@ -1,5 +1,5 @@
 name: Generate and Verify License
-
+run-name: "License: ${{ inputs.name }} (${{ inputs.email }}) - ${{ inputs.organization }} - ${{ inputs.expiry }}"
 on:
   workflow_dispatch:
     inputs:
