@@ -52,3 +52,11 @@ jobs:
         with:
           name: license
           path: license.json
+
+      - name: Send license via email
+        run: python Scripts/send_license_email.py
+        env:
+          MAILGUN_API_KEY: ${{ secrets.MAILGUN_API_KEY }}
+          RECIPIENT_NAME: ${{ github.event.inputs.name }}
+          RECIPIENT_EMAIL: ${{ github.event.inputs.email }}
+          ORGANIZATION: ${{ github.event.inputs.organization }}
