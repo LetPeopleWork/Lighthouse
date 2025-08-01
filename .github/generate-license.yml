@@ -1,0 +1,54 @@
+name: Generate and Verify License
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Name'
+        required: true
+      email:
+        description: 'Email'
+        required: true
+      organization:
+        description: 'Organization'
+        required: true
+      expiry:
+        description: 'Expiry Date (YYYY-MM-DD)'
+        required: true
+
+jobs:
+  generate-and-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install cryptography
+
+      - name: Write private key to file
+        run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
+
+      - name: Generate license
+        run: |
+          python Scripts/generate_license.py private_key.pem license.json "${{ github.event.inputs.name }}" "${{ github.event.inputs.email }}" "${{ github.event.inputs.organization }}" "${{ github.event.inputs.expiry }}"
+
+      - name: Write public key to file
+        run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PUBLIC_KEY }}" > public_key.pem
+
+      - name: Verify license
+        run: python Scripts/verify_license.py public_key.pem license.json
+
+      - name: Upload license as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: license
+          path: license.json
