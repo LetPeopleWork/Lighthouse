@@ -157,7 +157,7 @@ This email was sent from an automated system. Please do not reply to this email 
 
     try:
         # Mailgun SMTP settings
-        smtp_server = "smtp.mailgun.org"
+        smtp_server = "smtp.eu.mailgun.org"
         smtp_port = 587  # or 465 for SSL
 
         # Create SMTP session
