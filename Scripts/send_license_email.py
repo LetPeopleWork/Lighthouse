@@ -4,26 +4,21 @@ Send license file via Mailgun
 """
 import os
 import requests
-import json
-import base64
+
 
 def send_license_email():
     # Get environment variables
-    api_key = os.environ.get('MAILGUN_API_KEY')
-    recipient_name = os.environ.get('RECIPIENT_NAME')
-    recipient_email = os.environ.get('RECIPIENT_EMAIL')
-    organization = os.environ.get('ORGANIZATION')
-    
+    api_key = os.environ.get("MAILGUN_API_KEY")
+    recipient_name = os.environ.get("RECIPIENT_NAME")
+    recipient_email = os.environ.get("RECIPIENT_EMAIL")
+    organization = os.environ.get("ORGANIZATION")
+
     if not all([api_key, recipient_name, recipient_email, organization]):
         raise ValueError("Missing required environment variables")
-    
-    # Read the license file
-    with open('license.json', 'r') as f:
-        license_content = f.read()
-    
+
     # Prepare the email content
     subject = "Your Lighthouse License"
-    
+
     html_body = f"""
     <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -69,7 +64,7 @@ def send_license_email():
         </body>
     </html>
     """
-    
+
     text_body = f"""
 Your Lighthouse License
 
@@ -99,40 +94,40 @@ The Lighthouse Team
 ---
 This email was sent from an automated system. Please do not reply to this email address.
     """
-    
+
     # Prepare the attachment
-    with open('license.json', 'rb') as f:
+    with open("license.json", "rb") as f:
         license_data = f.read()
-    
+
     # Mailgun API endpoint for your domain
     mailgun_url = "https://api.mailgun.net/v3/lighthouse.letpeople.work/messages"
-    
+
     # Prepare the request
     auth = ("api", api_key)
-    
+
     data = {
         "from": "Lighthouse Licensing <licensing@lighthouse.letpeople.work>",
         "to": f"{recipient_name} <{recipient_email}>",
         "subject": subject,
         "text": text_body,
-        "html": html_body
+        "html": html_body,
     }
-    
-    files = [
-        ("attachment", ("license.json", license_data, "application/json"))
-    ]
-    
+
+    files = [("attachment", ("license.json", license_data, "application/json"))]
+
     # Send the email
     print(f"Sending license to {recipient_email}...")
     response = requests.post(mailgun_url, auth=auth, data=data, files=files)
-    
+
     if response.status_code == 200:
         print("✅ License email sent successfully!")
         print(f"Mailgun Message ID: {response.json().get('id', 'N/A')}")
     else:
         print(f"❌ Failed to send email. Status code: {response.status_code}")
         print(f"Response: {response.text}")
-        raise Exception(f"Failed to send email: {response.status_code} - {response.text}")
+        raise Exception(
+            f"Failed to send email: {response.status_code} - {response.text}"
+        )
 
 
 if __name__ == "__main__":
