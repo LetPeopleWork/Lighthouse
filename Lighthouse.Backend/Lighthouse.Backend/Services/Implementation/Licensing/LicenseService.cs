@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -7,25 +8,26 @@ using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.Licensing
 {
-    public class LicenseService
+    public class LicenseService : ILicenseService
     {
         private readonly ILogger<LicenseService> logger;
         private readonly IRepository<LicenseInformation> licenseRepository;
-        private static readonly Lazy<string> publicKey = new(LoadEmbeddedPublicKey);
+        private readonly ILicenseVerifier licenseVerifier;
 
-        public LicenseService(ILogger<LicenseService> logger, IRepository<LicenseInformation> licenseRepository)
+        public LicenseService(ILogger<LicenseService> logger, IRepository<LicenseInformation> licenseRepository, ILicenseVerifier licenseVerifier)
         {
             this.logger = logger;
             this.licenseRepository = licenseRepository;
+            this.licenseVerifier = licenseVerifier;
         }
 
-        public bool ImportLicense(string licenseContent)
+        public LicenseInformation? ImportLicense(string licenseContent)
         {
             try
             {
                 var licenseInformation = ExtractLicenseInformation(licenseContent);
 
-                var verifyLicense = VerifyLicense(licenseInformation);
+                var verifyLicense = licenseVerifier.VerifyLicense(licenseInformation);
 
                 if (verifyLicense)
                 {
@@ -33,38 +35,28 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                     licenseRepository.Save();
                 }
 
-                return verifyLicense;
+                return licenseInformation;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "An error occurred while importing the license.");
-                return false;
+                return null;
             }
         }
 
-        private bool VerifyLicense(LicenseInformation license)
+        public (LicenseInformation? licenseInfo, bool isValid) GetLicenseData()
         {
-            if (string.IsNullOrEmpty(license.Signature))
-            {
-                return false;
-            }
+            var licenseInfo = licenseRepository.GetAll().FirstOrDefault();
 
-            string canonicalLicense = CanonicalizeJson(license);
+            var isValid = licenseInfo != null && licenseVerifier.VerifyLicense(licenseInfo);
 
-            byte[] licenseBytes = Encoding.UTF8.GetBytes(canonicalLicense);
-            byte[] signatureBytes = Convert.FromBase64String(license.Signature);
+            return (licenseInfo, isValid);
+        }
 
-            using RSA rsa = RSA.Create();
-            rsa.ImportFromPem(publicKey.Value);
-
-            bool valid = rsa.VerifyData(
-                licenseBytes,
-                signatureBytes,
-                HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1
-            );
-
-            return valid;
+        public bool CanUsePremiumFeatures()
+        {
+            var (licenseInfo, isValid) = GetLicenseData();
+            return isValid && licenseInfo?.ExpiryDate.Date >= DateTime.UtcNow.Date;
         }
 
         private LicenseInformation ExtractLicenseInformation(string license)
@@ -82,54 +74,6 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 ExpiryDate = licenseElement.GetProperty("expiry").GetDateTime(),
                 Signature = signatureBase64,
             };
-        }
-
-        private static string CanonicalizeJson(LicenseInformation license)
-        {
-            var dict = new SortedDictionary<string, object>
-            {
-                ["email"] = license.Email,
-                ["expiry"] = license.ExpiryDate.ToString("yyyy-MM-dd"),
-                ["name"] = license.Name,
-                ["organization"] = license.Organization
-            };
-
-            using var stream = new MemoryStream();
-            using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
-
-            writer.WriteStartObject();
-            foreach (var kvp in dict)
-            {
-                writer.WritePropertyName(kvp.Key);
-
-                switch (kvp.Value)
-                {
-                    case string stringValue:
-                        writer.WriteStringValue(stringValue);
-                        break;
-                    case DateTime dateValue:
-                        writer.WriteStringValue(dateValue.ToString("yyyy-MM-dd"));
-                        break;
-                    default:
-                        writer.WriteStringValue(kvp.Value?.ToString() ?? "");
-                        break;
-                }
-            }
-            writer.WriteEndObject();
-            writer.Flush();
-
-            return Encoding.UTF8.GetString(stream.ToArray());
-        }
-
-        private static string LoadEmbeddedPublicKey()
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = assembly.GetManifestResourceNames()
-                .First(x => x.EndsWith("public_key.pem"));
-
-            using var stream = assembly.GetManifestResourceStream(resourceName)!;
-            using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
         }
     }
 }
