@@ -38,5 +38,14 @@
 	  <ProjectReference Include="..\Lighthouse.Migrations.Sqlite\Lighthouse.Migrations.Sqlite.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="Services\Implementation\Licensing\invalid_license.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\Licensing\valid_license.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 
 </Project>
