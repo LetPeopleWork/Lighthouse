@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         protected LighthouseAppContext Context { get; private set; }
 
 
-        public void Add(T item)
+        public virtual void Add(T item)
         {
             logger.LogDebug("Adding item {Item_Id}", item.Id);
             dbSetGetter(Context).Add(item);

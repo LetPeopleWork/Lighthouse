@@ -246,6 +246,36 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("FeatureWorkHistoryEntry");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.LicenseInformation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Organization")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LicenseInformation");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Milestone", b =>
                 {
                     b.Property<int>("Id")

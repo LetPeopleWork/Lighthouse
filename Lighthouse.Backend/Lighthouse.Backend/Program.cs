@@ -31,6 +31,8 @@ using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.MCP;
 using ModelContextProtocol.Protocol;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 
 namespace Lighthouse.Backend
 {
@@ -193,6 +195,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<FeatureHistoryEntry>, FeatureHistoryRepository>();
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
             builder.Services.AddScoped<IRepository<TerminologyEntry>, TerminologyRepository>();
+            builder.Services.AddScoped<IRepository<LicenseInformation>, LicenseInformationRepository>();
 
             // Factories
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
@@ -213,6 +216,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();
             builder.Services.AddScoped<ITerminologyService, TerminologyService>();
+            builder.Services.AddScoped<ILicenseService, LicenseService>();
+            builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
 
             builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<JiraWorkTrackingConnector>();

@@ -1,9 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.Licensing

@@ -37,10 +37,13 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<TerminologyEntry> TerminologyEntries { get; set; } = default!;
 
+        public DbSet<LicenseInformation> LicenseInformation { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
             modelBuilder.Entity<OptionalFeature>().HasKey(a => a.Key);
+            modelBuilder.Entity<LicenseInformation>().HasKey(li => li.Id);
             
             modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Id);
             modelBuilder.Entity<TerminologyEntry>()
