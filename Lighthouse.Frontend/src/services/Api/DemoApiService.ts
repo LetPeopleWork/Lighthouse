@@ -15,6 +15,7 @@ import {
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
+import type { ILicenseStatus } from "../../models/ILicenseStatus";
 import {
 	type ILighthouseRelease,
 	LighthouseRelease,
@@ -51,6 +52,7 @@ import type {
 import type { IConfigurationService } from "./ConfigurationService";
 import type { IFeatureService } from "./FeatureService";
 import type { IForecastService } from "./ForecastService";
+import type { ILicensingService } from "./LicensingService";
 import type { ILogService } from "./LogService";
 import type {
 	IProjectMetricsService,
@@ -552,7 +554,8 @@ export class DemoApiService
 		ISuggestionService,
 		IConfigurationService,
 		IFeatureService,
-		ITerminologyService
+		ITerminologyService,
+		ILicensingService
 {
 	private readonly subscribers: Map<string, (status: IUpdateStatus) => void> =
 		new Map();
@@ -672,6 +675,34 @@ export class DemoApiService
 		for (const projectSetting of this.projectSettings) {
 			projectSetting.involvedTeams = [teams[0], teams[1], teams[2], teams[3]];
 		}
+	}
+
+	async getLicenseStatus(): Promise<ILicenseStatus> {
+		await delay();
+
+		return {
+			hasLicense: true,
+			isValid: true,
+			name: "John Doe",
+			email: "john.doe@example.com",
+			organization: "Example Corp",
+			expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+		};
+	}
+
+	async importLicense(file: File): Promise<ILicenseStatus> {
+		console.log(`Importing license from file: ${file.name}`);
+
+		await delay();
+
+		return {
+			hasLicense: true,
+			isValid: true,
+			name: "John Doe",
+			email: "john.doe@example.com",
+			organization: "Example Corp",
+			expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+		};
 	}
 
 	async initialize(): Promise<void> {
