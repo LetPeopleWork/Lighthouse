@@ -15,6 +15,14 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
             if (existingLicenses.Any())
             {
+                var existingLicense = existingLicenses.First();
+
+                existingLicense.Name = item.Name;
+                existingLicense.Email = item.Email;
+                existingLicense.Organization = item.Organization;
+                existingLicense.ExpiryDate = item.ExpiryDate;
+                existingLicense.Signature = item.Signature;
+
                 Update(item);
             }
             else

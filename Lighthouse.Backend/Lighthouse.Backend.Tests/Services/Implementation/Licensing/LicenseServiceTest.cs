@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
             var licenseService = CreateSubject();
 
             var result = licenseService.ImportLicense(string.Empty);
-            
+
             Assert.That(result, Is.Null);
         }
 
@@ -52,14 +52,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         }
 
         [Test]
-        public void ImportLicense_InvalidLicense_ReturnsFalse()
+        public void ImportLicense_InvalidLicense_ReturnsNull()
         {
             var licenseService = CreateSubject();
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/invalid_license.json");
-            
+
             var result = licenseService.ImportLicense(licenseContent);
-            
-            Assert.That(result, Is.Not.Null);
+
+            Assert.That(result, Is.Null);
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
             licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation>());
 
             var (licenseInfo, isValid) = licenseService.GetLicenseData();
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(licenseInfo, Is.Null);
@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
             licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
 
             var (result, isValid) = licenseService.GetLicenseData();
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
@@ -111,13 +111,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public void GetLicenseData_InvalidLicense_ReturnsLicenseInformationAndFalse()
         {
             var licenseService = CreateSubject();
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/invalid_license.json");
-            var licenseInfo = licenseService.ImportLicense(licenseContent) ?? throw new ArgumentNullException("LicenseInfo cannot be null");
 
-            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> {
+                new LicenseInformation
+                {
+                    Name = "Invalid License",
+                    Organization = "Test Org",
+                    Email = "invalid@mail.com",
+                    ExpiryDate = DateTime.UtcNow.AddDays(10),
+                    Signature = "invalid_signature"
+                }
+            });
 
             var (result, isValid) = licenseService.GetLicenseData();
-            
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
@@ -129,10 +136,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public void CanUsePremiumFeature_InvalidLicense_ReturnsFalse()
         {
             var licenseService = CreateSubject();
-            
+
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/invalid_license.json");
             licenseService.ImportLicense(licenseContent);
-            
+
             var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
             Assert.That(canUsePremiumFeatures, Is.False);
         }
@@ -141,7 +148,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public void CanUsePremiumFeature_ValidLicense_Expired_ReturnsFalse()
         {
             var licenseService = CreateSubject();
-            
+
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
             licenseService.ImportLicense(licenseContent);
 

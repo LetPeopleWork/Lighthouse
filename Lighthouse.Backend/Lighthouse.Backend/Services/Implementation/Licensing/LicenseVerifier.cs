@@ -18,22 +18,30 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 return false;
             }
 
-            string canonicalLicense = CanonicalizeJson(license);
+            try
+            {
+                string canonicalLicense = CanonicalizeJson(license);
 
-            byte[] licenseBytes = Encoding.UTF8.GetBytes(canonicalLicense);
-            byte[] signatureBytes = Convert.FromBase64String(license.Signature);
+                byte[] licenseBytes = Encoding.UTF8.GetBytes(canonicalLicense);
+                byte[] signatureBytes = Convert.FromBase64String(license.Signature);
 
-            using RSA rsa = RSA.Create();
-            rsa.ImportFromPem(publicKey.Value);
+                using RSA rsa = RSA.Create();
+                rsa.ImportFromPem(publicKey.Value);
 
-            bool valid = rsa.VerifyData(
-                licenseBytes,
-                signatureBytes,
-                HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1
-            );
+                bool valid = rsa.VerifyData(
+                    licenseBytes,
+                    signatureBytes,
+                    HashAlgorithmName.SHA256,
+                    RSASignaturePadding.Pkcs1
+                );
 
-            return valid;
+                return valid;
+            }
+            catch (FormatException)
+            {
+                // Signaure is not in a valid Base64 format --> tampering? Anyway, we cannot verify it --> invalid license
+                return false;
+            }
         }
 
         private static string CanonicalizeJson(LicenseInformation license)

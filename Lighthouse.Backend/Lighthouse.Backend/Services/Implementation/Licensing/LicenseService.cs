@@ -30,9 +30,10 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 {
                     licenseRepository.Add(licenseInformation);
                     licenseRepository.Save();
+                    return licenseInformation;
                 }
 
-                return licenseInformation;
+                return null;
             }
             catch (Exception ex)
             {
