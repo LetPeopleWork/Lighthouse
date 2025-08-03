@@ -16,6 +16,7 @@ import type React from "react";
 import { useState } from "react";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import LicenseStatusIcon from "../../Common/LicenseStatus/LicenseStatusIcon";
 import ThemeToggler from "../../Common/ThemeToggler/ThemeToggler";
 import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
 import ExternalLinkButton from "./ExternalLinkButton";
@@ -60,6 +61,9 @@ const Header: React.FC = () => {
 			<ListItem>
 				<ThemeToggler />
 			</ListItem>
+			<ListItem>
+				<LicenseStatusIcon />
+			</ListItem>
 		</List>
 	);
 
@@ -78,6 +82,7 @@ const Header: React.FC = () => {
 				{isMobile ? (
 					<>
 						<Box display="flex" alignItems="center">
+							<LicenseStatusIcon />
 							<ThemeToggler />
 							<IconButton
 								color="inherit"
@@ -112,6 +117,7 @@ const Header: React.FC = () => {
 							))}
 						</Box>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
+							<LicenseStatusIcon />
 							<ThemeToggler />
 							<ExternalLinkButton
 								link="https://docs.lighthouse.letpeople.work/contributions/contributions.html"
