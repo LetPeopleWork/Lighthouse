@@ -31,7 +31,7 @@ def send_license_email():
     msg["From"] = f"Lighthouse Licensing <{smtp_username}>"
     msg["To"] = f"{recipient_name} <{recipient_email}>"
     msg["Subject"] = "Your Lighthouse License"
-    msg["Reply-To"] = "support@lighthouse.letpeople.work"
+    msg["Reply-To"] = "licensing@letpeople.work"
 
     # HTML version
     html_body = f"""
@@ -87,13 +87,13 @@ def send_license_email():
                     <table style="width: 100%; font-family: Arial, sans-serif;">
                         <tr>
                             <td style="width: 80px; vertical-align: top; padding-right: 15px;">
-                                <img src="https://letpeople.work/assets/LPW_Banner_White-DTCn4RDr.png" alt="LetPeopleWork" style="width: 70px; height: auto;" />
+                                <img src="https://raw.githubusercontent.com/LetPeopleWork/flow-lighthouse-hub/refs/heads/main/src/assets/logo.png" alt="LetPeopleWork" style="width: 70px; height: auto;" />
                             </td>
                             <td style="vertical-align: top;">
                                 <div style="color: #2c3e50; font-weight: bold; font-size: 16px;">Lighthouse Team</div>
                                 <div style="margin-top: 8px;">
                                     <div style="color: #34495e; font-size: 13px;">📧 licensing@letpeople.work</div>
-                                    <div style="color: #34495e; font-size: 13px;">🌐 lighthouse.letpeople.work</div>
+                                    <div style="color: #34495e; font-size: 13px;">🌐 https://letpeople.work</div>
                                 </div>
                             </td>
                         </tr>
@@ -147,7 +147,7 @@ Best regards,
 --
 Lighthouse Team
 📧 licensing@letpeople.work
-🌐 lighthouse.letpeople.work
+🌐 https://letpeople.work
 
 ---
 This email was sent from an automated system. Please do not reply to this email address.
