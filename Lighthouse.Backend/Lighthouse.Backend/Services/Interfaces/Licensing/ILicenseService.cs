@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Licensing
     {
         (LicenseInformation? licenseInfo, bool isValid) GetLicenseData();
 
-        LicenseInformation? ImportLicense(string licenseContent);
+        Task<LicenseInformation?> ImportLicense(string licenseContent);
 
         bool CanUsePremiumFeatures();
     }

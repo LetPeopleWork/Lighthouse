@@ -328,7 +328,7 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 		>
 			{/* Info icon in top right */}
 			<Box sx={{ position: "relative" }}>
-				<Tooltip title="Learn more about Lighthouse">
+				<Tooltip title="Learn more about Premium Features">
 					<IconButton
 						onClick={handleInfoClick}
 						size="small"

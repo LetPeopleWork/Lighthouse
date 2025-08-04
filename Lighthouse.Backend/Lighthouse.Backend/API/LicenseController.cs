@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.API
                 using var reader = new StreamReader(file.OpenReadStream());
                 var content = await reader.ReadToEndAsync();
 
-                var licenseInfo = licenseService.ImportLicense(content);
+                var licenseInfo = await licenseService.ImportLicense(content);
 
                 if (licenseInfo == null)
                 {

@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var formFile = CreateMockFormFile("valid_license.json", validLicenseJson);
             licenseServiceMock.Setup(s => s.ImportLicense(validLicenseJson))
-                              .Returns(expectedLicenseInfo);
+                              .ReturnsAsync(expectedLicenseInfo);
 
             licenseServiceMock.Setup(x => x.GetLicenseData())
                               .Returns((expectedLicenseInfo, true));
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.API
             var formFile = CreateMockFormFile("invalid_license.json", invalidLicenseJson);
             
             licenseServiceMock.Setup(s => s.ImportLicense(invalidLicenseJson))
-                              .Returns((LicenseInformation?)null);
+                              .ReturnsAsync((LicenseInformation?)null);
 
             var result = await subject.ImportLicense(formFile);
 
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API
             var formFile = CreateMockFormFile("malformed.json", malformedJson);
             
             licenseServiceMock.Setup(s => s.ImportLicense(malformedJson))
-                              .Returns((LicenseInformation?)null);
+                              .ReturnsAsync((LicenseInformation?)null);
 
             var result = await subject.ImportLicense(formFile);
 

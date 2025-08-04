@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 existingLicense.ExpiryDate = item.ExpiryDate;
                 existingLicense.Signature = item.Signature;
 
-                Update(item);
+                Update(existingLicense);
             }
             else
             {

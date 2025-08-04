@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Threading.Tasks;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
 {
@@ -19,56 +20,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         }
 
         [Test]
-        public void ImportLicense_EmptyLicense_ReturnsNull()
+        public async Task ImportLicense_EmptyLicense_ReturnsNull()
         {
             var licenseService = CreateSubject();
 
-            var result = licenseService.ImportLicense(string.Empty);
+            var result = await licenseService.ImportLicense(string.Empty);
 
             Assert.That(result, Is.Null);
         }
 
         [Test]
-        public void ImportLicense_IsNotValidJson_ReturnsNull()
+        public async Task ImportLicense_IsNotValidJson_ReturnsNull()
         {
             var licenseService = CreateSubject();
             var licenseContent = "This is not a valid JSON string";
 
-            var result = licenseService.ImportLicense(licenseContent);
+            var result = await licenseService.ImportLicense(licenseContent);
 
             Assert.That(result, Is.Null);
         }
 
         [Test]
-        public void ImportLicense_ValidLicense_ReturnsLicenseInfo()
+        public async Task ImportLicense_ValidLicense_ReturnsLicenseInfo()
         {
             var licenseService = CreateSubject();
 
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
 
-            var result = licenseService.ImportLicense(licenseContent);
+            var result = await licenseService.ImportLicense(licenseContent);
 
             Assert.That(result, Is.Not.Null);
         }
 
         [Test]
-        public void ImportLicense_InvalidLicense_ReturnsNull()
+        public async Task ImportLicense_InvalidLicense_ReturnsNull()
         {
             var licenseService = CreateSubject();
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/invalid_license.json");
 
-            var result = licenseService.ImportLicense(licenseContent);
+            var result = await licenseService.ImportLicense(licenseContent);
 
             Assert.That(result, Is.Null);
         }
 
         [Test]
-        public void ImportLicense_ValidLicense_StoresInDatabase()
+        public async Task ImportLicense_ValidLicense_StoresInDatabase()
         {
             var licenseService = CreateSubject();
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
 
-            licenseService.ImportLicense(licenseContent);
+            await licenseService.ImportLicense(licenseContent);
 
             licenseRepoMock.Verify(repo => repo.Add(It.IsAny<LicenseInformation>()), Times.Once);
             licenseRepoMock.Verify(repo => repo.Save(), Times.Once);
@@ -90,12 +91,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         }
 
         [Test]
-        public void GetLicenseData_ValidLicense_ReturnsLicenseInformationAndTrue()
+        public async Task GetLicenseData_ValidLicense_ReturnsLicenseInformationAndTrue()
         {
             var licenseService = CreateSubject();
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
 
-            var licenseInfo = licenseService.ImportLicense(licenseContent) ?? throw new ArgumentNullException("LicenseInfo cannot be null");
+            var licenseInfo = await licenseService.ImportLicense(licenseContent) ?? throw new ArgumentNullException("LicenseInfo cannot be null");
             licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
 
             var (result, isValid) = licenseService.GetLicenseData();
@@ -133,24 +134,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         }
 
         [Test]
-        public void CanUsePremiumFeature_InvalidLicense_ReturnsFalse()
+        public async Task CanUsePremiumFeature_InvalidLicense_ReturnsFalse()
         {
             var licenseService = CreateSubject();
 
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/invalid_license.json");
-            licenseService.ImportLicense(licenseContent);
+            await licenseService.ImportLicense(licenseContent);
 
             var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
             Assert.That(canUsePremiumFeatures, Is.False);
         }
 
         [Test]
-        public void CanUsePremiumFeature_ValidLicense_Expired_ReturnsFalse()
+        public async Task CanUsePremiumFeature_ValidLicense_Expired_ReturnsFalse()
         {
             var licenseService = CreateSubject();
 
             var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
-            licenseService.ImportLicense(licenseContent);
+            await licenseService.ImportLicense(licenseContent);
 
             var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
             Assert.That(canUsePremiumFeatures, Is.False);

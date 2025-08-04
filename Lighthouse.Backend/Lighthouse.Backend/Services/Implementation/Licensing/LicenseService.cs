@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
             this.licenseVerifier = licenseVerifier;
         }
 
-        public LicenseInformation? ImportLicense(string licenseContent)
+        public async Task<LicenseInformation?> ImportLicense(string licenseContent)
         {
             try
             {
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 if (verifyLicense)
                 {
                     licenseRepository.Add(licenseInformation);
-                    licenseRepository.Save();
+                    await licenseRepository.Save();
                     return licenseInformation;
                 }
 
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 Name = licenseElement.GetProperty("name").GetString() ?? string.Empty,
                 Email = licenseElement.GetProperty("email").GetString() ?? string.Empty,
                 Organization = licenseElement.GetProperty("organization").GetString() ?? string.Empty,
-                ExpiryDate = licenseElement.GetProperty("expiry").GetDateTime(),
+                ExpiryDate = DateTime.SpecifyKind(licenseElement.GetProperty("expiry").GetDateTime(), DateTimeKind.Utc),
                 Signature = signatureBase64,
             };
         }
