@@ -38,14 +38,14 @@ def send_license_email():
     <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #2c3e50;">Your Lighthouse License</h2>
+                <h2 style="color: #2c3e50;">Your Lighthouse Premium License</h2>
                 
                 <p>Dear {recipient_name},</p>
                 
-                <p>Thank you for your interest in Lighthouse! We're pleased to provide you with your license file.</p>
+                <p>Thank you for purchasing your Lighthouse Premium License! We're excited to help you upgrade to Lighthouse Premium and unlock the full potential of your organization.</p>
                 
                 <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; padding: 15px; margin: 20px 0;">
-                    <h3 style="margin-top: 0; color: #495057;">License Details:</h3>
+                    <h3 style="margin-top: 0; color: #495057;">Premium License Details:</h3>
                     <ul style="margin-bottom: 0;">
                         <li><strong>Name:</strong> {recipient_name}</li>
                         <li><strong>Organization:</strong> {organization}</li>
@@ -53,17 +53,32 @@ def send_license_email():
                     </ul>
                 </div>
                 
-                <p>Your license file is attached to this email as <code>license.json</code>. Please save this file in a secure location as you'll need it to activate your Lighthouse software.</p>
+                <p>Your Premium License file is attached to this email as <code>license.json</code>.</p>
                 
                 <h3 style="color: #495057;">Next Steps:</h3>
                 <ol>
                     <li>Download the attached <code>license.json</code> file</li>
-                    <li>Place the file in your Lighthouse installation directory</li>
-                    <li>Restart your Lighthouse application to activate the license</li>
+                    <li>Upload the license through the license dialog in Lighthouse</li>
                 </ol>
+                
+                <div style="background-color: #e8f4fd; border: 1px solid #bee5eb; border-radius: 5px; padding: 15px; margin: 20px 0;">
+                    <h4 style="margin-top: 0; color: #0c5460;">Key License Terms:</h4>
+                    <ul style="margin-bottom: 0; font-size: 14px;">
+                        <li>License valid for 365 days from purchase date</li>
+                        <li>Maximum 50 concurrent Lighthouse instances per organization and license</li>
+                        <li>Non-transferable, non-sublicensable license</li>
+                        <li>Commercial use permitted within licensed organization only</li>
+                        <li>License termination for violations or misuse</li>
+                        <li>Software provided "as is" without warranties</li>
+                    </ul>
+                </div>
                 
                 <p style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 10px; margin: 20px 0;">
                     <strong>Important:</strong> Please keep this license file safe and do not share it with others. If you lose your license file, you'll need to contact support for a replacement.
+                </p>
+                
+                <p style="font-size: 14px; color: #6c757d; margin: 20px 0;">
+                    This license is subject to our general terms and conditions available at <a href="https://letpeople.work" style="color: #007bff;">https://letpeople.work</a>
                 </p>
                 
                 <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
@@ -71,19 +86,14 @@ def send_license_email():
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e9ecef;">
                     <table style="width: 100%; font-family: Arial, sans-serif;">
                         <tr>
-                            <td style="width: 60px; vertical-align: top; padding-right: 15px;">
-                                <!-- You can add a logo here -->
-                                <div style="width: 50px; height: 50px; background-color: #3498db; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px;">L</div>
+                            <td style="width: 80px; vertical-align: top; padding-right: 15px;">
+                                <img src="https://letpeople.work/assets/LPW_Banner_White-DTCn4RDr.png" alt="LetPeopleWork" style="width: 70px; height: auto;" />
                             </td>
                             <td style="vertical-align: top;">
-                                <div style="color: #2c3e50; font-weight: bold; font-size: 16px;">Lighthouse Licensing Team</div>
-                                <div style="color: #7f8c8d; font-size: 14px; margin-top: 2px;">Software Licensing Department</div>
+                                <div style="color: #2c3e50; font-weight: bold; font-size: 16px;">Lighthouse Team</div>
                                 <div style="margin-top: 8px;">
-                                    <div style="color: #34495e; font-size: 13px;">📧 licensing@lighthouse.letpeople.work</div>
+                                    <div style="color: #34495e; font-size: 13px;">📧 licensing@letpeople.work</div>
                                     <div style="color: #34495e; font-size: 13px;">🌐 lighthouse.letpeople.work</div>
-                                </div>
-                                <div style="margin-top: 10px; font-size: 11px; color: #95a5a6;">
-                                    This email contains confidential licensing information. Please keep your license file secure.
                                 </div>
                             </td>
                         </tr>
@@ -101,37 +111,43 @@ def send_license_email():
 
     # Text version
     text_body = f"""
-Your Lighthouse License
+Your Lighthouse Premium License
 
 Dear {recipient_name},
 
-Thank you for your interest in Lighthouse! We're pleased to provide you with your license file.
+Thank you for purchasing your Lighthouse Premium License! We're excited to help you upgrade to Lighthouse Premium and unlock the full potential of your organization.
 
-License Details:
+Premium License Details:
 - Name: {recipient_name}
 - Organization: {organization}
 - Email: {recipient_email}
 
-Your license file is attached to this email as license.json. Please save this file in a secure location as you'll need it to activate your Lighthouse software.
+Your Premium License file is attached to this email as license.json. Please save this file in a secure location as you'll need it to activate your Lighthouse software.
 
 Next Steps:
 1. Download the attached license.json file
-2. Place the file in your Lighthouse installation directory
-3. Restart your Lighthouse application to activate the license
+2. Upload the license through the license dialog in Lighthouse
+
+Key License Terms:
+- License valid for 365 days from purchase date
+- Maximum 50 concurrent Lighthouse instances per organization and license
+- Non-transferable, non-sublicensable license
+- Commercial use permitted within licensed organization only
+- License termination for violations or misuse
+- Software provided "as is" without warranties
 
 Important: Please keep this license file safe and do not share it with others. If you lose your license file, you'll need to contact support for a replacement.
+
+This license is subject to our general terms and conditions available at https://letpeople.work
 
 If you have any questions or need assistance, please don't hesitate to contact our support team.
 
 Best regards,
 
 --
-Lighthouse Licensing Team
-Software Licensing Department
-📧 licensing@lighthouse.letpeople.work
+Lighthouse Team
+📧 licensing@letpeople.work
 🌐 lighthouse.letpeople.work
-
-This email contains confidential licensing information. Please keep your license file secure.
 
 ---
 This email was sent from an automated system. Please do not reply to this email address.
