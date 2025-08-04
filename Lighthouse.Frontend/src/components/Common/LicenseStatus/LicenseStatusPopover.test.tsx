@@ -75,7 +75,7 @@ describe("LicenseStatusPopover", () => {
 		renderComponent();
 
 		expect(
-			screen.getByLabelText("Learn more about Lighthouse"),
+			screen.getByLabelText("Learn more about Premium Features"),
 		).toBeInTheDocument();
 		expect(screen.getByText("Add License")).toBeInTheDocument();
 	});
@@ -106,7 +106,7 @@ describe("LicenseStatusPopover", () => {
 		const user = userEvent.setup();
 		renderComponent();
 
-		const infoButton = screen.getByLabelText("Learn more about Lighthouse");
+		const infoButton = screen.getByLabelText("Learn more about Premium Features");
 		await user.click(infoButton);
 
 		expect(window.open).toHaveBeenCalledWith(
