@@ -5,13 +5,16 @@ import {
 	DialogActions,
 	DialogContent,
 	DialogTitle,
+	FormControl,
 	IconButton,
+	MenuItem,
+	Select,
 	Tooltip,
 	Typography,
 	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { ILighthouseRelease } from "../../../models/LighthouseRelease/LighthouseRelease";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -31,8 +34,51 @@ const LighthouseVersion: React.FC = () => {
 	const [installError, setInstallError] = useState<string | null>(null);
 	const [installSuccess, setInstallSuccess] = useState(false);
 	const [showRestartDialog, setShowRestartDialog] = useState(false);
+	const [showUpdateNotification, setShowUpdateNotification] = useState(false);
+	const [notificationPreference, setNotificationPreference] = useState("show");
 
 	const { versionService } = useContext(ApiServiceContext);
+
+	// localStorage utilities for managing notification preferences
+	const getNotificationKey = useCallback(
+		(version: string) => `lighthouse-hide-update-notification-${version}`,
+		[],
+	);
+
+	const getGlobalNotificationKey = useCallback(
+		() => "lighthouse-hide-all-update-notifications",
+		[],
+	);
+
+	const shouldShowNotification = useCallback(
+		(version: string): boolean => {
+			if (!version) return false;
+
+			// Check if all notifications are disabled globally
+			const globalKey = getGlobalNotificationKey();
+			if (localStorage.getItem(globalKey) === "true") {
+				return false;
+			}
+
+			// Check if this specific version notification is disabled
+			const versionKey = getNotificationKey(version);
+			return localStorage.getItem(versionKey) !== "true";
+		},
+		[getNotificationKey, getGlobalNotificationKey],
+	);
+
+	const hideNotificationForVersion = useCallback(
+		(version: string) => {
+			const key = getNotificationKey(version);
+			localStorage.setItem(key, "true");
+		},
+		[getNotificationKey],
+	);
+
+	const hideAllNotifications = useCallback(() => {
+		const key = getGlobalNotificationKey();
+		localStorage.setItem(key, "true");
+	}, [getGlobalNotificationKey]);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -49,6 +95,14 @@ const LighthouseVersion: React.FC = () => {
 
 					const updateSupported = await versionService.isUpdateSupported();
 					setIsUpdateSupported(updateSupported);
+
+					// Show notification popup if user hasn't opted out for this version
+					if (
+						releaseData.length > 0 &&
+						shouldShowNotification(releaseData[0].version)
+					) {
+						setShowUpdateNotification(true);
+					}
 				}
 
 				setIsLoading(false);
@@ -59,7 +113,7 @@ const LighthouseVersion: React.FC = () => {
 		};
 
 		fetchData();
-	}, [versionService]);
+	}, [versionService, shouldShowNotification]);
 
 	const handleInstallUpdate = async () => {
 		setIsInstalling(true);
@@ -121,6 +175,25 @@ const LighthouseVersion: React.FC = () => {
 		setIsDialogOpen(false);
 	};
 
+	const handleNotificationClose = () => {
+		if (
+			notificationPreference === "dontShowVersion" &&
+			newReleases.length > 0
+		) {
+			hideNotificationForVersion(newReleases[0].version);
+		} else if (notificationPreference === "dontShowAll") {
+			hideAllNotifications();
+		}
+		setShowUpdateNotification(false);
+		setNotificationPreference("show");
+	};
+
+	const handleShowDetails = () => {
+		setShowUpdateNotification(false);
+		setIsDialogOpen(true);
+		setNotificationPreference("show");
+	};
+
 	return (
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
 			<div style={{ display: "flex", alignItems: "center" }}>
@@ -170,6 +243,59 @@ const LighthouseVersion: React.FC = () => {
 				installSuccess={installSuccess}
 				onInstallUpdate={handleInstallUpdate}
 			/>
+
+			<Dialog open={showUpdateNotification} maxWidth="sm" fullWidth>
+				<DialogTitle>New Version Available!</DialogTitle>
+				<DialogContent>
+					<Typography variant="body1" gutterBottom>
+						{newReleases.length > 0 && (
+							<>
+								A new version of Lighthouse is available:{" "}
+								<strong>{newReleases[0].version}</strong>
+							</>
+						)}
+					</Typography>
+					<Typography variant="body2" color="text.secondary" gutterBottom>
+						Would you like to see the details of this update?
+					</Typography>
+				</DialogContent>
+				<DialogActions
+					sx={{ justifyContent: "space-between", alignItems: "center", p: 2 }}
+				>
+					<FormControl size="small" sx={{ minWidth: 180 }}>
+						<Typography
+							variant="caption"
+							color="text.secondary"
+							sx={{ mb: 0.5, fontSize: "0.7rem" }}
+						>
+							Notification preference:
+						</Typography>
+						<Select
+							value={notificationPreference}
+							onChange={(e) => setNotificationPreference(e.target.value)}
+							variant="outlined"
+							size="small"
+							sx={{ fontSize: "0.8rem" }}
+						>
+							<MenuItem value="show" sx={{ fontSize: "0.8rem" }}>
+								Show future notifications
+							</MenuItem>
+							<MenuItem value="dontShowVersion" sx={{ fontSize: "0.8rem" }}>
+								Don't show for this version
+							</MenuItem>
+							<MenuItem value="dontShowAll" sx={{ fontSize: "0.8rem" }}>
+								Don't show any more updates
+							</MenuItem>
+						</Select>
+					</FormControl>
+					<div style={{ display: "flex", gap: 8 }}>
+						<Button onClick={handleNotificationClose}>Close</Button>
+						<Button onClick={handleShowDetails} variant="contained" autoFocus>
+							Show Details
+						</Button>
+					</div>
+				</DialogActions>
+			</Dialog>
 
 			<Dialog open={showRestartDialog} maxWidth="sm" fullWidth>
 				<DialogTitle>Update Complete!</DialogTitle>

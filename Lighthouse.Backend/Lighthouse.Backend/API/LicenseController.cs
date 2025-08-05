@@ -20,8 +20,9 @@ namespace Lighthouse.Backend.API
         public IActionResult GetLicenseStatus()
         {
             var (licenseInfo, isValid) = licenseService.GetLicenseData();
+            var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
 
-            var licenseStatus = new LicenseStatusDto(licenseInfo, isValid);
+            var licenseStatus = new LicenseStatusDto(licenseInfo, isValid, canUsePremiumFeatures);
 
             return Ok(licenseStatus);
         }

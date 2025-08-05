@@ -4,11 +4,12 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class LicenseStatusDto
     {
-        public LicenseStatusDto(LicenseInformation? licenseInfo, bool isValid)
+        public LicenseStatusDto(LicenseInformation? licenseInfo, bool isValid, bool canUsePremiumFeatures)
         {
             HasLicense = licenseInfo != null;
             IsValid = isValid;
-            
+            CanUsePremiumFeatures = canUsePremiumFeatures;
+
             if (HasLicense)
             {
                 Name = licenseInfo.Name;
@@ -29,5 +30,7 @@ namespace Lighthouse.Backend.API.DTO
         public string? Organization { get; }
         
         public DateTime? ExpiryDate { get; }
+
+        public bool CanUsePremiumFeatures { get; }
     }
 }

@@ -61,6 +61,7 @@ describe("LicenseStatusDialog", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: false,
 			isValid: false,
+			canUsePremiumFeatures: false,
 		};
 
 		render(
@@ -89,6 +90,7 @@ describe("LicenseStatusDialog", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: false,
+			canUsePremiumFeatures: false,
 		};
 
 		render(
@@ -120,6 +122,7 @@ describe("LicenseStatusDialog", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			expiryDate,
 		};
 
@@ -147,6 +150,7 @@ describe("LicenseStatusDialog", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			expiryDate,
 		};
 
@@ -170,6 +174,7 @@ describe("LicenseStatusDialog", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 			organization: "Example Corp",
@@ -201,6 +206,7 @@ describe("LicenseStatusDialog", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 		};
 
 		render(
@@ -223,6 +229,7 @@ describe("LicenseStatusDialog", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 		};
 
 		render(
@@ -245,6 +252,7 @@ describe("LicenseStatusDialog", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 		};
 
 		render(

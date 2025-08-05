@@ -52,6 +52,7 @@ describe("LicenseStatusIcon", () => {
 		vi.mocked(mockLicensingService.getLicenseStatus).mockResolvedValue({
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 		});
 
 		renderComponent();
@@ -98,6 +99,7 @@ describe("LicenseStatusIcon", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: false,
 			isValid: false,
+			canUsePremiumFeatures: false,
 		};
 
 		vi.mocked(mockLicensingService.getLicenseStatus).mockResolvedValue(
@@ -122,6 +124,7 @@ describe("LicenseStatusIcon", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: false,
+			canUsePremiumFeatures: false,
 		};
 
 		vi.mocked(mockLicensingService.getLicenseStatus).mockResolvedValue(
@@ -149,6 +152,7 @@ describe("LicenseStatusIcon", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			expiryDate,
 		};
 
@@ -177,6 +181,7 @@ describe("LicenseStatusIcon", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			expiryDate,
 		};
 
@@ -202,6 +207,7 @@ describe("LicenseStatusIcon", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 		};
 
 		vi.mocked(mockLicensingService.getLicenseStatus).mockResolvedValue(

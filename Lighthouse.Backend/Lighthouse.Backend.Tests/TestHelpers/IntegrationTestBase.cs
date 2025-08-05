@@ -8,14 +8,20 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     {
         private readonly TestWebApplicationFactory<Program> webApplicationFactory;
 
+        private readonly HttpClient client;
+
         private IServiceScope serviceScope;
 
         protected IntegrationTestBase(TestWebApplicationFactory<Program> webApplicationFactory)
         {
             this.webApplicationFactory = webApplicationFactory;
+
+            client = webApplicationFactory.CreateClient();
         }
 
         protected IServiceProvider ServiceProvider { get; private set; }
+
+        protected HttpClient Client => client;
 
         protected LighthouseAppContext DatabaseContext { get; private set; }
 
@@ -23,6 +29,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public void GlobalTearDown()
         {
             webApplicationFactory.Dispose();
+
+            client?.Dispose();
         }
 
         [SetUp]
