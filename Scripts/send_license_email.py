@@ -87,7 +87,7 @@ def send_license_email():
                     <table style="width: 100%; font-family: Arial, sans-serif;">
                         <tr>
                             <td style="width: 80px; vertical-align: top; padding-right: 15px;">
-                                <img src="https://raw.githubusercontent.com/LetPeopleWork/flow-lighthouse-hub/refs/heads/main/src/assets/logo.png" alt="LetPeopleWork" style="width: 70px; height: auto;" />
+                                <img src="https://raw.githubusercontent.com/LetPeopleWork/website/refs/heads/main/src/assets/logo.png" alt="LetPeopleWork" style="width: 70px; height: auto;" />
                             </td>
                             <td style="vertical-align: top;">
                                 <div style="color: #2c3e50; font-weight: bold; font-size: 16px;">Lighthouse Team</div>
