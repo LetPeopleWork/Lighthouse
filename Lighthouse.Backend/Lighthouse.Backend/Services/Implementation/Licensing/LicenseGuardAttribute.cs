@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
 
         public int TeamLimitOverride { get; set; } = MaxAllowedTeams;
 
+        public int ProjectLimitOverride { get; set; } = MaxAllowedProjects;
+
         public bool CheckProjectConstraint { get; set; } = false;
 
         public Task OnAuthorizationAsync(AuthorizationFilterContext context)
@@ -50,7 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
 
                 if (CheckProjectConstraint)
                 {
-                    EntityLimitExceeded<Project>(context, MaxAllowedProjects);
+                    EntityLimitExceeded<Project>(context, ProjectLimitOverride);
                 }
             }
 

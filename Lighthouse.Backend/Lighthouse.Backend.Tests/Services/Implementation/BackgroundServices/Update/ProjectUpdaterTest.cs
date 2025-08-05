@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -19,6 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IWorkItemService> workItemServiceMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IProjectMetricsService> projectMetricsServiceMock;
+        private Mock<ILicenseService> licenseServiceMock;
 
         private int idCounter = 0;
 
@@ -30,12 +32,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             forecastServiceMock = new Mock<IForecastService>();
             workItemServiceMock = new Mock<IWorkItemService>();
             projectMetricsServiceMock = new Mock<IProjectMetricsService>();
+            licenseServiceMock = new Mock<ILicenseService>();
 
             SetupServiceProviderMock(projectRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(workItemServiceMock.Object);
             SetupServiceProviderMock(projectMetricsServiceMock.Object);
+            SetupServiceProviderMock(licenseServiceMock.Object);
 
             SetupRefreshSettings(10, 10);
         }
@@ -125,6 +129,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()), Times.Never);
+        }
+
+        [Test]
+        public async Task ExecuteAsync_ShouldBeRefreshed_NoPremiumLicense_MoreThanOneProject_DoesNotRefresh()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+
+            SetupRefreshSettings(10, 360);
+
+            SetupProjects([project, CreateProject(DateTime.Now)]);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            workItemServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Never);
+        }
+
+        [Test]
+        public async Task ExecuteAsync_ShouldBeRefreshed_PremiumLicense_MoreThanOneProject_Refreshes()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupRefreshSettings(10, 360);
+            SetupProjects([project, CreateProject(DateTime.Now)]);
+
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var subject = CreateSubject();
+
+            await subject.StartAsync(CancellationToken.None);
+
+            workItemServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once);
         }
 
         private void SetupProjects(params Project[] projects)

@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -58,6 +59,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("refresh/{id}")]
+        [LicenseGuard(CheckProjectConstraint = true)]
         public ActionResult UpdateFeaturesForProject(int id)
         {
             workItemUpdateService.TriggerUpdate(id);
@@ -84,6 +86,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("{id}")]
+        [LicenseGuard(CheckProjectConstraint = true)]
         public async Task<ActionResult<ProjectSettingDto>> UpdateProject(int id, ProjectSettingDto projectSetting)
         {
             return await this.GetEntityByIdAnExecuteAction(projectRepository, id, async project =>
@@ -99,6 +102,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost]
+        [LicenseGuard(CheckProjectConstraint = true, ProjectLimitOverride = 0)]
         public async Task<ActionResult<ProjectSettingDto>> CreateProject(ProjectSettingDto projectSetting)
         {
             projectSetting.Id = 0;
@@ -118,6 +122,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("validate")]
+        [LicenseGuard(CheckProjectConstraint = true)]
         public async Task<ActionResult<bool>> ValidateProjectSettings(ProjectSettingDto projectSettingDto)
         {
             return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, projectSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>

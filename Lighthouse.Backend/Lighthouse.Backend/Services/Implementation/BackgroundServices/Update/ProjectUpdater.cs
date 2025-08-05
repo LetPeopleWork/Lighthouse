@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
@@ -36,7 +37,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
             var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
-            
+
+            var licenseService = serviceProvider.GetRequiredService<ILicenseService>();
+            var projectCount = projectRepository.GetAll().Count();
+
+            if (!licenseService.CanUsePremiumFeatures() && projectCount > 1)
+            {
+                Logger.LogError("Skipped Refreshing project {TeamId} because the no Premium License was found and there are already {TeamCount} projects", id, projectCount);
+                return;
+            }
+
             var project = projectRepository.GetById(id);
             if (project == null)
             {
