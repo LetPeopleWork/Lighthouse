@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DataOverviewTable from "../../../components/Common/DataOverviewTable/DataOverviewTable";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { Project } from "../../../models/Project/Project";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -21,6 +22,7 @@ const ProjectsOverview: React.FC = () => {
 	const initialFilterText = queryParams.get("filter") ?? "";
 
 	const { projectService } = useContext(ApiServiceContext);
+	const { canCreateProject, createProjectTooltip } = useLicenseRestrictions();
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -87,6 +89,8 @@ const ProjectsOverview: React.FC = () => {
 				onDelete={handleDelete}
 				initialFilterText={initialFilterText}
 				onFilterChange={handleFilterChange}
+				disableAdd={!canCreateProject}
+				addButtonTooltip={createProjectTooltip}
 			/>
 			{selectedProject && (
 				<DeleteConfirmationDialog

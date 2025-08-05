@@ -2,6 +2,7 @@ import { Container, type SelectChangeEvent, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -55,6 +56,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const queryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
+	const { canUpdateProjectSettings, updateProjectSettingsTooltip } =
+		useLicenseRestrictions();
 
 	const handleTeamSelectionChange = (teamIds: number[]) => {
 		setSelectedTeams(teamIds);
@@ -459,6 +462,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								onSave={handleSave}
 								inputsValid={formValid}
 								validationFailedMessage={`Validation failed - either the connection failed, the ${queryTerm} is invalid, or no ${featuresTerm} could be found. Check the logs for additional details."`}
+								disableSave={!canUpdateProjectSettings}
+								saveTooltip={updateProjectSettingsTooltip}
 							/>
 						</Grid>
 					</Grid>

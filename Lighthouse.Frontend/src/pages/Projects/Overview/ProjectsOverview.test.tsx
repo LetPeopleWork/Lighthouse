@@ -25,7 +25,15 @@ vi.mock(
 	"../../../components/Common/DataOverviewTable/DataOverviewTable",
 	() => ({
 		default: vi.fn(
-			({ data, api, onDelete, initialFilterText, onFilterChange }) => (
+			({
+				data,
+				api,
+				onDelete,
+				initialFilterText,
+				onFilterChange,
+				disableAdd,
+				addButtonTooltip,
+			}) => (
 				<div data-testid="data-overview-table">
 					<div data-testid="api-type">{api}</div>
 					<div data-testid="initial-filter">{initialFilterText}</div>
@@ -34,6 +42,13 @@ vi.mock(
 						value={initialFilterText}
 						onChange={(e) => onFilterChange(e.target.value)}
 					/>
+					<button
+						type="button"
+						disabled={disableAdd}
+						aria-label={addButtonTooltip || `Add New ${api.slice(0, -1)}`}
+					>
+						Add New {api.slice(0, -1)}
+					</button>
 					<ul>
 						{data.map((item: { id: number; name: string }) => (
 							<li key={item.id} data-testid={`project-${item.id}`}>
@@ -284,6 +299,114 @@ describe("ProjectsOverview component", () => {
 			expect(screen.getByTestId("initial-filter").textContent).toBe(
 				"Project Beta",
 			);
+		});
+	});
+
+	describe("License restrictions", () => {
+		it("should disable add project button when non-premium user has reached project limit", async () => {
+			const singleProject = new Project();
+			singleProject.name = "Single Project";
+			singleProject.id = 1;
+
+			const mockProjectService = createMockProjectService();
+			mockProjectService.getProjects = vi
+				.fn()
+				.mockResolvedValue([singleProject]);
+
+			const mockContext = createMockApiServiceContext({
+				projectService: mockProjectService,
+				teamService: {
+					getTeams: vi.fn().mockResolvedValue([]),
+					getTeam: vi.fn(),
+					deleteTeam: vi.fn(),
+					getTeamSettings: vi.fn(),
+					validateTeamSettings: vi.fn(),
+					updateTeam: vi.fn(),
+					createTeam: vi.fn(),
+					updateTeamData: vi.fn(),
+				},
+				licensingService: {
+					getLicenseStatus: vi.fn().mockResolvedValue({
+						canUsePremiumFeatures: false,
+					}),
+					importLicense: vi.fn(),
+				},
+			});
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<MemoryRouter>
+						<Routes>
+							<Route path="/" element={<ProjectsOverview />} />
+						</Routes>
+					</MemoryRouter>
+				</ApiServiceContext.Provider>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("Single Project")).toBeInTheDocument();
+			});
+
+			// Find the add button and check it's disabled
+			const addButton = screen.getByText("Add New project");
+			expect(addButton).toBeDisabled();
+
+			// Check tooltip is present
+			expect(
+				screen.getByLabelText(
+					"Free users can only create up to 1 project. You currently have 1 project. Please obtain a premium license to create more projects.",
+				),
+			).toBeInTheDocument();
+		});
+
+		it("should enable add project button for premium users regardless of project count", async () => {
+			const multipleProjects = [
+				{ ...new Project(), name: "Project 1", id: 1 },
+				{ ...new Project(), name: "Project 2", id: 2 },
+			];
+
+			const mockProjectService = createMockProjectService();
+			mockProjectService.getProjects = vi
+				.fn()
+				.mockResolvedValue(multipleProjects);
+
+			const mockContext = createMockApiServiceContext({
+				projectService: mockProjectService,
+				teamService: {
+					getTeams: vi.fn().mockResolvedValue([]),
+					getTeam: vi.fn(),
+					deleteTeam: vi.fn(),
+					getTeamSettings: vi.fn(),
+					validateTeamSettings: vi.fn(),
+					updateTeam: vi.fn(),
+					createTeam: vi.fn(),
+					updateTeamData: vi.fn(),
+				},
+				licensingService: {
+					getLicenseStatus: vi.fn().mockResolvedValue({
+						canUsePremiumFeatures: true,
+					}),
+					importLicense: vi.fn(),
+				},
+			});
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<MemoryRouter>
+						<Routes>
+							<Route path="/" element={<ProjectsOverview />} />
+						</Routes>
+					</MemoryRouter>
+				</ApiServiceContext.Provider>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("Project 2")).toBeInTheDocument();
+			});
+
+			// Find the add button and check it's enabled
+			const addButton = screen.getByText("Add New project");
+			expect(addButton).not.toBeDisabled();
 		});
 	});
 });

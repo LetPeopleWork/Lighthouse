@@ -8,6 +8,7 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import {
 	createMockApiServiceContext,
+	createMockProjectService,
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
 import TeamsOverview from "./TeamsOverview";
@@ -21,6 +22,12 @@ vi.mock("react-router-dom", async () => {
 		useNavigate: () => mockNavigate,
 	};
 });
+
+// Mock the useLicenseRestrictions hook
+const mockUseLicenseRestrictions = vi.fn();
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => mockUseLicenseRestrictions(),
+}));
 
 // Create mock components outside the describe block to reduce nesting
 const mockDeleteButton = vi.fn();
@@ -165,11 +172,41 @@ describe("TeamsOverview component", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+
+		// Default mock for useLicenseRestrictions (premium user with no restrictions)
+		mockUseLicenseRestrictions.mockReturnValue({
+			canCreateTeam: true,
+			canUpdateTeamData: true,
+			canUpdateTeamSettings: true,
+			canCreateProject: true,
+			canUpdateProjectData: true,
+			canUpdateProjectSettings: true,
+			teamCount: 0,
+			projectCount: 0,
+			licenseStatus: { canUsePremiumFeatures: true },
+			isLoading: false,
+			createTeamTooltip: "",
+			updateTeamDataTooltip: "",
+			updateTeamSettingsTooltip: "",
+			createProjectTooltip: "",
+			updateProjectDataTooltip: "",
+			updateProjectSettingsTooltip: "",
+		});
 	});
 
 	const setupTest = (mockTeamService: ITeamService) => {
+		const mockProjectService = createMockProjectService();
+		mockProjectService.getProjects = vi.fn().mockResolvedValue([]);
+
 		const mockContext = createMockApiServiceContext({
 			teamService: mockTeamService,
+			projectService: mockProjectService,
+			licensingService: {
+				getLicenseStatus: vi.fn().mockResolvedValue({
+					canUsePremiumFeatures: true, // Default to premium to avoid restrictions in basic tests
+				}),
+				importLicense: vi.fn(),
+			},
 		});
 
 		return render(
@@ -320,10 +357,20 @@ describe("TeamsOverview component", () => {
 		const mockTeamService = createMockTeamService();
 		mockTeamService.getTeams = vi.fn().mockResolvedValue(mockTeams);
 
+		const mockProjectService = createMockProjectService();
+		mockProjectService.getProjects = vi.fn().mockResolvedValue([]);
+
 		render(
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({
 					teamService: mockTeamService,
+					projectService: mockProjectService,
+					licensingService: {
+						getLicenseStatus: vi.fn().mockResolvedValue({
+							canUsePremiumFeatures: true,
+						}),
+						importLicense: vi.fn(),
+					},
 				})}
 			>
 				<MemoryRouter initialEntries={["/teams?filter=Team%20B"]}>
@@ -355,11 +402,36 @@ describe("TeamsOverview component", () => {
 
 			const threeTeams = [team1, team2, team3];
 
+			// Mock useLicenseRestrictions for non-premium user at team limit
+			mockUseLicenseRestrictions.mockReturnValue({
+				canCreateTeam: false,
+				canUpdateTeamData: true,
+				canUpdateTeamSettings: true,
+				canCreateProject: true,
+				canUpdateProjectData: true,
+				canUpdateProjectSettings: true,
+				teamCount: 3,
+				projectCount: 0,
+				licenseStatus: { canUsePremiumFeatures: false },
+				isLoading: false,
+				createTeamTooltip:
+					"Free users can only create up to 3 teams. You currently have 3 teams. Please obtain a premium license to create more teams.",
+				updateTeamDataTooltip: "",
+				updateTeamSettingsTooltip: "",
+				createProjectTooltip: "",
+				updateProjectDataTooltip: "",
+				updateProjectSettingsTooltip: "",
+			});
+
 			const mockTeamService = createMockTeamService();
 			mockTeamService.getTeams = vi.fn().mockResolvedValue(threeTeams);
 
+			const mockProjectService = createMockProjectService();
+			mockProjectService.getProjects = vi.fn().mockResolvedValue([]);
+
 			const mockContext = createMockApiServiceContext({
 				teamService: mockTeamService,
+				projectService: mockProjectService,
 				licensingService: {
 					getLicenseStatus: vi.fn().mockResolvedValue({
 						canUsePremiumFeatures: false,
@@ -409,11 +481,35 @@ describe("TeamsOverview component", () => {
 
 			const threeTeams = [team1, team2, team3];
 
+			// Mock useLicenseRestrictions for premium user (no restrictions)
+			mockUseLicenseRestrictions.mockReturnValue({
+				canCreateTeam: true,
+				canUpdateTeamData: true,
+				canUpdateTeamSettings: true,
+				canCreateProject: true,
+				canUpdateProjectData: true,
+				canUpdateProjectSettings: true,
+				teamCount: 3,
+				projectCount: 0,
+				licenseStatus: { canUsePremiumFeatures: true },
+				isLoading: false,
+				createTeamTooltip: "",
+				updateTeamDataTooltip: "",
+				updateTeamSettingsTooltip: "",
+				createProjectTooltip: "",
+				updateProjectDataTooltip: "",
+				updateProjectSettingsTooltip: "",
+			});
+
 			const mockTeamService = createMockTeamService();
 			mockTeamService.getTeams = vi.fn().mockResolvedValue(threeTeams);
 
+			const mockProjectService = createMockProjectService();
+			mockProjectService.getProjects = vi.fn().mockResolvedValue([]);
+
 			const mockContext = createMockApiServiceContext({
 				teamService: mockTeamService,
+				projectService: mockProjectService,
 				licensingService: {
 					getLicenseStatus: vi.fn().mockResolvedValue({
 						canUsePremiumFeatures: true,

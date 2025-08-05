@@ -1,4 +1,4 @@
-import { Button, Container, Stack, Tab, Tabs } from "@mui/material";
+import { Button, Container, Stack, Tab, Tabs, Tooltip } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/Fe
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IProject, Project } from "../../../models/Project/Project";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -43,6 +44,12 @@ const ProjectDetail: React.FC = () => {
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const {
+		canUpdateProjectData,
+		updateProjectDataTooltip,
+		canUpdateProjectSettings,
+		updateProjectSettingsTooltip,
+	} = useLicenseRestrictions();
 
 	const fetchProject = useCallback(async () => {
 		const fetchInvolvedTeams = async (projectData: IProject | null) => {
@@ -205,20 +212,30 @@ const ProjectDetail: React.FC = () => {
 								}
 								rightContent={
 									<>
-										<ActionButton
-											buttonText={`Refresh ${featuresTerm}`}
-											onClickHandler={onRefreshFeatures}
-											maxHeight="40px"
-											minWidth="120px"
-											externalIsWaiting={isProjectUpdating}
-										/>
-										<Button
-											variant="contained"
-											onClick={onEditProject}
-											sx={{ maxHeight: "40px", minWidth: "120px" }}
-										>
-											Edit Project
-										</Button>
+										<Tooltip title={updateProjectDataTooltip} arrow>
+											<span>
+												<ActionButton
+													buttonText={`Refresh ${featuresTerm}`}
+													onClickHandler={onRefreshFeatures}
+													maxHeight="40px"
+													minWidth="120px"
+													externalIsWaiting={isProjectUpdating}
+													disabled={!canUpdateProjectData}
+												/>
+											</span>
+										</Tooltip>
+										<Tooltip title={updateProjectSettingsTooltip} arrow>
+											<span>
+												<Button
+													variant="contained"
+													onClick={onEditProject}
+													disabled={!canUpdateProjectSettings}
+													sx={{ maxHeight: "40px", minWidth: "120px" }}
+												>
+													Edit Project
+												</Button>
+											</span>
+										</Tooltip>
 									</>
 								}
 							/>
