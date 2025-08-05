@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -8,6 +9,7 @@ using System.Text.Json.Serialization;
 namespace Lighthouse.Backend.API
 {
     [Route("api/[controller]")]
+    [LicenseGuard(RequirePremium = true)]
     [ApiController]
     public class ConfigurationController : ControllerBase
     {
