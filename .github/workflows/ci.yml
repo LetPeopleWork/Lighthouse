@@ -351,6 +351,15 @@ jobs:
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install cryptography
+
       - name: Set linux executable permission
         run: sudo chmod -R +x ./linux-x64
         working-directory: ./Lighthouse  
@@ -363,6 +372,13 @@ jobs:
           Database__Provider: sqlite
           Database__ConnectionString: 'Data Source=lighthouse.db'
 
+      - name: Write private key to file
+        run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
+
+      - name: Generate license for E2E Tests
+        run: |
+          python Scripts/generate_license.py private_key.pem license.json "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+45 days' '+%Y-%m-%d')"
+
       - name: Wait for Lighthouse to start
         run: |
           echo "Waiting for server to be ready..."
@@ -371,6 +387,14 @@ jobs:
 
           cat lighthouse.log
         working-directory: ./Lighthouse/linux-x64
+
+      - name: Upload license to Lighthouse
+        run: |
+          echo "Uploading license file..."
+          curl --insecure -X POST \
+            -F "file=@license.json" \
+            https://localhost:5001/license/import
+          echo "License uploaded successfully!"
   
       - name: Run Playwright tests
         run: npm run test
@@ -477,6 +501,15 @@ jobs:
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install cryptography
+
       - name: Set linux executable permission
         run: sudo chmod -R +x ./linux-x64
         working-directory: ./Lighthouse  
@@ -489,6 +522,13 @@ jobs:
           Database__Provider: postgres
           Database__ConnectionString: 'Host=localhost;Port=5432;Database=lighthouse;Username=postgres;Password=postgres'
 
+      - name: Write private key to file
+        run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
+
+      - name: Generate license for E2E Tests
+        run: |
+          python Scripts/generate_license.py private_key.pem license.json "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+45 days' '+%Y-%m-%d')"
+
       - name: Wait for Lighthouse to start
         run: |
           echo "Waiting for server to be ready..."
@@ -497,7 +537,14 @@ jobs:
 
           cat lighthouse.log
         working-directory: ./Lighthouse/linux-x64
-
+        
+      - name: Upload license to Lighthouse
+        run: |
+          echo "Uploading license file..."
+          curl --insecure -X POST \
+            -F "file=@license.json" \
+            https://localhost:5001/license/import
+          echo "License uploaded successfully!"
 
       - name: Run Playwright tests
         run: npm run test
