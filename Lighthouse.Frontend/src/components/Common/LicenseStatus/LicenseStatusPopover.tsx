@@ -199,7 +199,7 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 					</Typography>
 					<Typography variant="body2" color="text.secondary">
 						In future versions, some features will become premium and require a
-                        valid license to use.
+						valid license to use.
 					</Typography>
 				</Box>
 			);

@@ -683,6 +683,7 @@ export class DemoApiService
 		return {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 			organization: "Example Corp",
@@ -698,6 +699,7 @@ export class DemoApiService
 		return {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 			organization: "Example Corp",

@@ -1,14 +1,11 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -77,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void ExportConfiguration_WithWorkTrackingSystem_IncludesSystemInExport()
         {
-            var workTrackingSystem = AddWorkTrackingSystemConnection();
+            AddWorkTrackingSystemConnection();
 
             var subject = CreateSubject();
 
