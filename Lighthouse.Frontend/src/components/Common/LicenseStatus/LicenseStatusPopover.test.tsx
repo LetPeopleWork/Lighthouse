@@ -106,7 +106,9 @@ describe("LicenseStatusPopover", () => {
 		const user = userEvent.setup();
 		renderComponent();
 
-		const infoButton = screen.getByLabelText("Learn more about Premium Features");
+		const infoButton = screen.getByLabelText(
+			"Learn more about Premium Features",
+		);
 		await user.click(infoButton);
 
 		expect(window.open).toHaveBeenCalledWith(
