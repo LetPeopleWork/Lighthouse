@@ -99,6 +99,7 @@ const LighthouseVersion: React.FC = () => {
 					// Show notification popup if user hasn't opted out for this version
 					if (
 						releaseData.length > 0 &&
+						versionData !== "DEV" &&
 						shouldShowNotification(releaseData[0].version)
 					) {
 						setShowUpdateNotification(true);

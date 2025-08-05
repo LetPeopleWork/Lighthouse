@@ -212,6 +212,16 @@ testWithData(
 	},
 );
 
+test("Take @screenshot of licensing", async ({ overviewPage }) => {
+
+	const licensingPopover = await overviewPage.showLicensingInformation();
+
+	await takeElementScreenshot(
+		licensingPopover,
+		"licensing/licenseinformation.png",
+	);
+});
+
 test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 	const workTrackingSystemsPage = await settingsPage.goToWorkTrackingSystems();

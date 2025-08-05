@@ -60,4 +60,10 @@ export class OverviewPage {
 		const projectLink = projectCard.getByRole("link", { name: project.name });
 		return projectLink;
 	}
+
+	async showLicensingInformation() : Promise<Locator> {
+		await this.page.getByTestId('license-status-button').click();
+
+		return this.page.locator('div').filter({ hasText: /Licensed to:/ }).nth(1);
+	}
 }
