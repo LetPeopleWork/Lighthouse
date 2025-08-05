@@ -198,8 +198,8 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 						No License
 					</Typography>
 					<Typography variant="body2" color="text.secondary">
-						In future versions, some features will become premium and require a
-						valid license to use.
+						You are using the free version of Lighthouse. Some features are not
+						available and some constraints apply.
 					</Typography>
 				</Box>
 			);

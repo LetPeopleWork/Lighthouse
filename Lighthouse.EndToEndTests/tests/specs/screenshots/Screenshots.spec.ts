@@ -213,6 +213,26 @@ testWithData(
 );
 
 test("Take @screenshot of licensing", async ({ overviewPage }) => {
+	await overviewPage.showLicenseTooltip();
+
+	// Get the bounding box of the toolbar
+	const toolbarBoundingBox = await overviewPage.toolbar.boundingBox();
+	if (toolbarBoundingBox) {
+		// Calculate the right third of the toolbar
+		const rightThirdWidth = toolbarBoundingBox.width / 3;
+		const rightThirdX = toolbarBoundingBox.x + (toolbarBoundingBox.width * 2 / 3);
+
+		// Take screenshot of only the right third of the toolbar
+		await overviewPage.page.screenshot({
+			path: `${require("../../helpers/folderPaths").getPathToDocsAssetsFolder()}/licensing/toolbar.png`,
+			clip: {
+				x: rightThirdX,
+				y: toolbarBoundingBox.y,
+				width: rightThirdWidth,
+				height: toolbarBoundingBox.height
+			}
+		});
+	}
 
 	const licensingPopover = await overviewPage.showLicensingInformation();
 
