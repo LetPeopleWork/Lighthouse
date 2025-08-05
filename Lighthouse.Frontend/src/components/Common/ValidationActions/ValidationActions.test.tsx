@@ -72,4 +72,45 @@ describe("ValidationActions", () => {
 		rerender(<ValidationActions {...defaultProps} inputsValid={false} />);
 		expect(screen.getByText("Validate")).toBeDisabled();
 	});
+
+	it("disables save button when disableSave prop is true", () => {
+		render(
+			<ValidationActions
+				{...defaultProps}
+				onValidate={undefined}
+				disableSave={true}
+			/>,
+		);
+
+		const saveButton = screen.getByText("Save");
+		expect(saveButton).toBeDisabled();
+	});
+
+	it("shows tooltip when saveTooltip prop is provided", () => {
+		const tooltipText = "License restriction tooltip";
+		render(
+			<ValidationActions
+				{...defaultProps}
+				onValidate={undefined}
+				saveTooltip={tooltipText}
+			/>,
+		);
+
+		// Check that the tooltip is set as aria-label
+		expect(screen.getByLabelText(tooltipText)).toBeInTheDocument();
+	});
+
+	it("prioritizes disableSave over validation state", () => {
+		render(
+			<ValidationActions
+				{...defaultProps}
+				onValidate={undefined}
+				disableSave={true}
+				inputsValid={true}
+			/>,
+		);
+
+		const saveButton = screen.getByText("Save");
+		expect(saveButton).toBeDisabled();
+	});
 });

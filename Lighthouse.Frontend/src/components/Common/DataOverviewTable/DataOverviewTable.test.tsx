@@ -436,4 +436,59 @@ describe("DataOverviewTable", () => {
 		expect(screen.queryByText("Another Item")).not.toBeInTheDocument();
 		expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
 	});
+
+	describe("Add button restrictions", () => {
+		it("disables add button when disableAdd prop is true", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleData}
+					title="api"
+					api="api"
+					onDelete={vi.fn()}
+					disableAdd={true}
+				/>,
+			);
+
+			const addButton = screen.getByText((content) =>
+				content.startsWith("Add New"),
+			);
+			expect(addButton).toBeDisabled();
+		});
+
+		it("shows tooltip when addButtonTooltip prop is provided", () => {
+			const tooltipText = "Premium license required";
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleData}
+					title="api"
+					api="api"
+					onDelete={vi.fn()}
+					addButtonTooltip={tooltipText}
+				/>,
+			);
+
+			// Check that the tooltip is set as aria-label
+			expect(screen.getByLabelText(tooltipText)).toBeInTheDocument();
+		});
+
+		it("disables add button and shows tooltip when both props are provided", () => {
+			const tooltipText = "License restriction";
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleData}
+					title="api"
+					api="api"
+					onDelete={vi.fn()}
+					disableAdd={true}
+					addButtonTooltip={tooltipText}
+				/>,
+			);
+
+			const addButton = screen.getByText((content) =>
+				content.startsWith("Add New"),
+			);
+			expect(addButton).toBeDisabled();
+			expect(screen.getByLabelText(tooltipText)).toBeInTheDocument();
+		});
+	});
 });

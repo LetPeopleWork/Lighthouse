@@ -682,7 +682,7 @@ export class DemoApiService
 
 		return {
 			hasLicense: true,
-			isValid: true,
+			isValid: false,
 			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",

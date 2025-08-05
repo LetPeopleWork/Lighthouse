@@ -2,6 +2,7 @@ import type React from "react";
 import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -18,6 +19,16 @@ const EditTeamPage: React.FC = () => {
 	const pageTitle = isNewTeam ? `Create ${teamTerm}` : `Update ${teamTerm}`;
 	const { settingsService, teamService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
+
+	const {
+		canCreateTeam,
+		canUpdateTeamSettings,
+		createTeamTooltip,
+		updateTeamSettingsTooltip,
+	} = useLicenseRestrictions();
+
+	const canSave = isNewTeam ? canCreateTeam : canUpdateTeamSettings;
+	const saveTooltip = isNewTeam ? createTeamTooltip : updateTeamSettingsTooltip;
 
 	const validateTeamSettings = async (updatedTeamSettings: ITeamSettings) => {
 		return teamService.validateTeamSettings(updatedTeamSettings);
@@ -55,6 +66,8 @@ const EditTeamPage: React.FC = () => {
 			getTeamSettings={getTeamSettings}
 			validateTeamSettings={validateTeamSettings}
 			saveTeamSettings={saveTeamSettings}
+			disableSave={!canSave}
+			saveTooltip={saveTooltip}
 		/>
 	);
 };

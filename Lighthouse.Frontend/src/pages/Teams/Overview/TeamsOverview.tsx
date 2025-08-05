@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DataOverviewTable from "../../../components/Common/DataOverviewTable/DataOverviewTable";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -26,6 +27,7 @@ const TeamsOverview: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	const { teamService } = useContext(ApiServiceContext);
+	const { canCreateTeam, createTeamTooltip } = useLicenseRestrictions();
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -92,6 +94,8 @@ const TeamsOverview: React.FC = () => {
 				onDelete={handleDelete}
 				initialFilterText={initialFilterText}
 				onFilterChange={handleFilterChange}
+				disableAdd={!canCreateTeam}
+				addButtonTooltip={createTeamTooltip}
 			/>
 
 			{selectedTeam && (

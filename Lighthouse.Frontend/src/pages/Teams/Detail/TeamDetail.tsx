@@ -1,4 +1,4 @@
-import { Button, Container, Stack, Tab, Tabs } from "@mui/material";
+import { Button, Container, Stack, Tab, Tabs, Tooltip } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import ForecastConfiguration from "../../../components/Common/ForecastConfigurat
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -25,6 +26,12 @@ const TeamDetail: React.FC = () => {
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const {
+		canUpdateTeamData,
+		updateTeamDataTooltip,
+		canUpdateTeamSettings,
+		updateTeamSettingsTooltip,
+	} = useLicenseRestrictions();
 
 	let subscribedToUpdates = false;
 
@@ -153,20 +160,30 @@ const TeamDetail: React.FC = () => {
 								}
 								rightContent={
 									<>
-										<ActionButton
-											onClickHandler={onUpdateTeamData}
-											buttonText={`Update ${teamTerm} Data`}
-											maxHeight="40px"
-											minWidth="120px"
-											externalIsWaiting={isTeamUpdating}
-										/>
-										<Button
-											variant="contained"
-											onClick={onEditTeam}
-											sx={{ maxHeight: "40px", minWidth: "120px" }}
-										>
-											{`Edit ${teamTerm}`}
-										</Button>
+										<Tooltip title={updateTeamDataTooltip} arrow>
+											<span>
+												<ActionButton
+													onClickHandler={onUpdateTeamData}
+													buttonText={`Update ${teamTerm} Data`}
+													maxHeight="40px"
+													minWidth="120px"
+													externalIsWaiting={isTeamUpdating}
+													disabled={!canUpdateTeamData}
+												/>
+											</span>
+										</Tooltip>
+										<Tooltip title={updateTeamSettingsTooltip} arrow>
+											<span>
+												<Button
+													variant="contained"
+													onClick={onEditTeam}
+													sx={{ maxHeight: "40px", minWidth: "120px" }}
+													disabled={!canUpdateTeamSettings}
+												>
+													{`Edit ${teamTerm}`}
+												</Button>
+											</span>
+										</Tooltip>
 									</>
 								}
 							/>

@@ -24,6 +24,8 @@ interface ModifyTeamSettingsProps {
 	saveTeamSettings: (settings: ITeamSettings) => Promise<void>;
 	validateTeamSettings: (settings: ITeamSettings) => Promise<boolean>;
 	modifyDefaultSettings?: boolean;
+	disableSave?: boolean;
+	saveTooltip?: string;
 }
 
 const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
@@ -33,6 +35,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	saveTeamSettings,
 	validateTeamSettings,
 	modifyDefaultSettings = false,
+	disableSave = false,
+	saveTooltip = "",
 }) => {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [teamSettings, setTeamSettings] = useState<ITeamSettings | null>(null);
@@ -395,6 +399,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 								onSave={handleSave}
 								inputsValid={inputsValid}
 								validationFailedMessage={`Validation failed - either the connection failed, the ${workItemQueryTerm} is invalid, or no closed ${workItemsTerm} in the specified history could be found. Check the logs for additional details."`}
+								disableSave={disableSave}
+								saveTooltip={saveTooltip}
 							/>
 						</Grid>
 					</Grid>

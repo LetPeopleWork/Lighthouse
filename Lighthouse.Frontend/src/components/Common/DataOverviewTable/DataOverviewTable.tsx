@@ -37,6 +37,8 @@ interface DataOverviewTableProps<IFeatureOwner> {
 	onDelete: (item: IFeatureOwner) => void;
 	initialFilterText?: string;
 	onFilterChange?: (filterText: string) => void;
+	disableAdd?: boolean;
+	addButtonTooltip?: string;
 }
 
 const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
@@ -46,6 +48,8 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	onDelete,
 	initialFilterText = "",
 	onFilterChange,
+	disableAdd = false,
+	addButtonTooltip = "",
 }) => {
 	const [filterText, setFilterText] = useState(initialFilterText);
 	const navigate = useNavigate();
@@ -113,12 +117,17 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					{title} Overview
 				</Typography>
 
-				<ActionButton
-					buttonText={`Add New ${title}`}
-					startIcon={<AddIcon />}
-					onClickHandler={handleRedirect}
-					buttonVariant="contained"
-				/>
+				<Tooltip title={addButtonTooltip} arrow>
+					<span>
+						<ActionButton
+							buttonText={`Add New ${title}`}
+							startIcon={<AddIcon />}
+							onClickHandler={handleRedirect}
+							buttonVariant="contained"
+							disabled={disableAdd}
+						/>
+					</span>
+				</Tooltip>
 			</Box>
 
 			<FilterBar

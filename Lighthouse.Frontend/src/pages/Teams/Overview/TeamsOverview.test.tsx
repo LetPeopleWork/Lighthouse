@@ -78,23 +78,24 @@ vi.mock(
 			onDelete,
 			initialFilterText,
 			onFilterChange,
+			disableAdd,
+			addButtonTooltip,
 		}: {
 			data: IFeatureOwner[];
 			api: string;
 			onDelete: (item: IFeatureOwner) => void;
 			initialFilterText: string;
 			onFilterChange: (value: string) => void;
+			disableAdd?: boolean;
+			addButtonTooltip?: string;
 		}) => {
 			mockDeleteButton.mockImplementation((item) => {
 				onDelete(item);
 			});
 
-			const handleFilterChange = React.useCallback(
-				(e: React.ChangeEvent<HTMLInputElement>) => {
-					onFilterChange(e.target.value);
-				},
-				[onFilterChange],
-			);
+			const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+				onFilterChange(e.target.value);
+			};
 
 			return (
 				<div data-testid="data-overview-table">
@@ -105,6 +106,13 @@ vi.mock(
 						value={initialFilterText}
 						onChange={handleFilterChange}
 					/>
+					<button
+						type="button"
+						disabled={disableAdd}
+						aria-label={addButtonTooltip || `Add New ${api.slice(0, -1)}`}
+					>
+						Add New {api.slice(0, -1)}
+					</button>
 					<ul>
 						{data.map((item: IFeatureOwner) => (
 							<li key={item.id} data-testid={`team-${item.id}`}>
@@ -328,6 +336,109 @@ describe("TeamsOverview component", () => {
 
 		await waitFor(() => {
 			expect(screen.getByTestId("initial-filter").textContent).toBe("Team B");
+		});
+	});
+
+	describe("License restrictions", () => {
+		it("should disable add team button when non-premium user has reached team limit", async () => {
+			const team1 = new Team();
+			team1.name = "Team A";
+			team1.id = 1;
+
+			const team2 = new Team();
+			team2.name = "Team B";
+			team2.id = 2;
+
+			const team3 = new Team();
+			team3.name = "Team C";
+			team3.id = 3;
+
+			const threeTeams = [team1, team2, team3];
+
+			const mockTeamService = createMockTeamService();
+			mockTeamService.getTeams = vi.fn().mockResolvedValue(threeTeams);
+
+			const mockContext = createMockApiServiceContext({
+				teamService: mockTeamService,
+				licensingService: {
+					getLicenseStatus: vi.fn().mockResolvedValue({
+						canUsePremiumFeatures: false,
+					}),
+					importLicense: vi.fn(),
+				},
+			});
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<MemoryRouter>
+						<Routes>
+							<Route path="/" element={<TeamsOverview />} />
+						</Routes>
+					</MemoryRouter>
+				</ApiServiceContext.Provider>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("Team C")).toBeInTheDocument();
+			});
+
+			// Find the add button and check it's disabled
+			const addButton = screen.getByText("Add New team");
+			expect(addButton).toBeDisabled();
+
+			// Check tooltip is present
+			expect(
+				screen.getByLabelText(
+					"Free users can only create up to 3 teams. You currently have 3 teams. Please obtain a premium license to create more teams.",
+				),
+			).toBeInTheDocument();
+		});
+
+		it("should enable add team button for premium users regardless of team count", async () => {
+			const team1 = new Team();
+			team1.name = "Team A";
+			team1.id = 1;
+
+			const team2 = new Team();
+			team2.name = "Team B";
+			team2.id = 2;
+
+			const team3 = new Team();
+			team3.name = "Team C";
+			team3.id = 3;
+
+			const threeTeams = [team1, team2, team3];
+
+			const mockTeamService = createMockTeamService();
+			mockTeamService.getTeams = vi.fn().mockResolvedValue(threeTeams);
+
+			const mockContext = createMockApiServiceContext({
+				teamService: mockTeamService,
+				licensingService: {
+					getLicenseStatus: vi.fn().mockResolvedValue({
+						canUsePremiumFeatures: true,
+					}),
+					importLicense: vi.fn(),
+				},
+			});
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<MemoryRouter>
+						<Routes>
+							<Route path="/" element={<TeamsOverview />} />
+						</Routes>
+					</MemoryRouter>
+				</ApiServiceContext.Provider>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("Team C")).toBeInTheDocument();
+			});
+
+			// Find the add button and check it's enabled
+			const addButton = screen.getByText("Add New team");
+			expect(addButton).not.toBeDisabled();
 		});
 	});
 });

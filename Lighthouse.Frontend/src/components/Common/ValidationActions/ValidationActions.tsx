@@ -1,7 +1,7 @@
 import CheckIcon from "@mui/icons-material/Check";
 import ErrorIcon from "@mui/icons-material/Error";
 import PendingIcon from "@mui/icons-material/HourglassEmpty";
-import { Alert, Button, Stack } from "@mui/material";
+import { Alert, Button, Stack, Tooltip } from "@mui/material";
 import type React from "react";
 import { useEffect, useState } from "react";
 import ActionButton from "../ActionButton/ActionButton";
@@ -16,6 +16,8 @@ interface ValidationActionsProps {
 	validationFailedMessage?: string;
 	saveButtonText?: string;
 	cancelButtonText?: string;
+	disableSave?: boolean;
+	saveTooltip?: string;
 }
 
 const ValidationActions: React.FC<ValidationActionsProps> = ({
@@ -26,6 +28,8 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
 	validationFailedMessage,
 	saveButtonText = "Save",
 	cancelButtonText = "Cancel",
+	disableSave = false,
+	saveTooltip = "",
 }) => {
 	const [validationState, setValidationState] = useState<ValidationState>(
 		inputsValid ? "success" : "pending",
@@ -85,15 +89,20 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
 				</>
 			)}
 
-			<ActionButton
-				buttonText={saveButtonText}
-				onClickHandler={handleSave}
-				buttonVariant="contained"
-				disabled={
-					(!onValidate && !inputsValid) ||
-					(onValidate && validationState !== "success")
-				}
-			/>
+			<Tooltip title={saveTooltip} arrow>
+				<span>
+					<ActionButton
+						buttonText={saveButtonText}
+						onClickHandler={handleSave}
+						buttonVariant="contained"
+						disabled={
+							disableSave ||
+							(!onValidate && !inputsValid) ||
+							(onValidate && validationState !== "success")
+						}
+					/>
+				</span>
+			</Tooltip>
 		</Stack>
 	);
 };
