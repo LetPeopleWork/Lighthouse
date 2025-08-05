@@ -10,11 +10,17 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
     public class LicenseGuardAttribute : Attribute, IAsyncAuthorizationFilter
     {
+        private const int MaxAllowedTeams = 3;
+
+        private const int MaxAllowedProjects = 1;
+
         public bool RequirePremium { get; set; } = false;
 
-        public int MaxAllowedTeams { get; set; } = -1;
+        public bool CheckTeamConstraint { get; set; } = false;
 
-        public int MaxAllowedProjects { get; set; } = -1;
+        public int TeamLimitOverride { get; set; } = MaxAllowedTeams;
+
+        public bool CheckProjectConstraint { get; set; } = false;
 
         public Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
@@ -33,12 +39,18 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                     {
                         StatusCode = StatusCodes.Status403Forbidden
                     };
+
                     return Task.CompletedTask;
                 }
 
-                if (EntityLimitExceeded<Team>(context, MaxAllowedTeams) || EntityLimitExceeded<Project>(context, MaxAllowedProjects))
+                if (CheckTeamConstraint)
                 {
-                    return Task.CompletedTask;
+                    EntityLimitExceeded<Team>(context, TeamLimitOverride);
+                }
+
+                if (CheckProjectConstraint)
+                {
+                    EntityLimitExceeded<Project>(context, MaxAllowedProjects);
                 }
             }
 
@@ -48,9 +60,6 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
         private bool EntityLimitExceeded<TEntity>(AuthorizationFilterContext context, int maxAllowed)
             where TEntity : class, IEntity
         {
-            if (maxAllowed <= 0)
-                return false;
-
             var repository = context.HttpContext.RequestServices.GetService<IRepository<TEntity>>();
             if (repository == null)
             {

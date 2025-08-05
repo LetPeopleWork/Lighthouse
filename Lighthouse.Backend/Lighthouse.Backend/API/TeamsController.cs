@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -69,6 +70,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("{id}")]
+        [LicenseGuard(CheckTeamConstraint = true)]
         public ActionResult UpdateTeamData(int id)
         {
             var team = teamRepository.GetById(id);
@@ -92,6 +94,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost]
+        [LicenseGuard(CheckTeamConstraint = true, TeamLimitOverride = 2)]
         public async Task<ActionResult<TeamSettingDto>> CreateTeam(TeamSettingDto teamSetting)
         {
             teamSetting.Id = 0;
@@ -106,6 +109,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPut("{id}")]
+        [LicenseGuard(CheckTeamConstraint = true)]
         public async Task<ActionResult<TeamSettingDto>> UpdateTeam(int id, TeamSettingDto teamSetting)
         {
             return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
@@ -138,6 +142,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("validate")]
+        [LicenseGuard(CheckTeamConstraint = true)]
         public async Task<ActionResult<bool>> ValidateTeamSettings(TeamSettingDto teamSettingDto)
         {
             return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, teamSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>

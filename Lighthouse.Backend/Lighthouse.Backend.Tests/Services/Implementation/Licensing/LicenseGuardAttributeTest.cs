@@ -79,7 +79,7 @@ public class LicenseGuardAttributeTest
         licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
         teamRepositoryMock.Setup(r => r.GetAll()).Returns(GetTeams(5)); // more than allowed
 
-        var attribute = new LicenseGuardAttribute { MaxAllowedTeams = 3 };
+        var attribute = new LicenseGuardAttribute { CheckTeamConstraint = true };
 
         await attribute.OnAuthorizationAsync(context);
 
@@ -97,7 +97,7 @@ public class LicenseGuardAttributeTest
         licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
         teamRepositoryMock.Setup(r => r.GetAll()).Returns(GetTeams(2));
 
-        var attribute = new LicenseGuardAttribute { MaxAllowedTeams = 3 };
+        var attribute = new LicenseGuardAttribute { CheckTeamConstraint = true };
 
         await attribute.OnAuthorizationAsync(context);
 
@@ -108,16 +108,16 @@ public class LicenseGuardAttributeTest
     public async Task LicenseGuard_ProjectLimitExceeded_ReturnsBadRequest()
     {
         licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
-        projectRepositoryMock.Setup(r => r.GetAll()).Returns(GetProjects(4));
+        projectRepositoryMock.Setup(r => r.GetAll()).Returns(GetProjects(2));
 
-        var attribute = new LicenseGuardAttribute { MaxAllowedProjects = 2 };
+        var attribute = new LicenseGuardAttribute { CheckProjectConstraint = true };
 
         await attribute.OnAuthorizationAsync(context);
 
         using (Assert.EnterMultipleScope())
         {
             Assert.That(context.Result, Is.InstanceOf<ObjectResult>());
-            Assert.That(((ObjectResult)context.Result).Value?.ToString(), Does.Contain("Free users can only use up to 2 Project"));
+            Assert.That(((ObjectResult)context.Result).Value?.ToString(), Does.Contain("Free users can only use up to 1 Project"));
             Assert.That(((ObjectResult)context.Result).StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
         }
     }

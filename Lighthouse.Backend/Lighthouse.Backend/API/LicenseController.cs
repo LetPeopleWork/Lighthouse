@@ -1,5 +1,4 @@
 ﻿using Lighthouse.Backend.API.DTO;
-using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
 
