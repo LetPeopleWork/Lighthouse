@@ -99,7 +99,7 @@ describe("ForecastSettingsComponent", () => {
 			/>,
 		);
 
-		const switchElement = screen.getByRole("checkbox", {
+		const switchElement = screen.getByRole("switch", {
 			name: "Use Fixed Dates for Throughput",
 		});
 		fireEvent.click(switchElement);
@@ -153,7 +153,7 @@ describe("ForecastSettingsComponent", () => {
 		);
 
 		expect(
-			screen.queryByRole("checkbox", {
+			screen.queryByRole("switch", {
 				name: "Use Fixed Dates for Throughput",
 			}),
 		).not.toBeInTheDocument();

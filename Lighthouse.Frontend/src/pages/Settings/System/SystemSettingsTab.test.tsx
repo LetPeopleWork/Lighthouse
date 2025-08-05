@@ -192,7 +192,7 @@ describe("SystemSettingsTab Component", () => {
 			expect(screen.getByText("Feature 1")).toBeVisible();
 		});
 
-		const switches = screen.getAllByRole("checkbox");
+		const switches = screen.getAllByRole("switch");
 		expect(switches[0]).not.toBeChecked();
 		expect(switches[1]).toBeChecked();
 	});
@@ -205,7 +205,7 @@ describe("SystemSettingsTab Component", () => {
 			expect(screen.getByText("Feature 1")).toBeVisible();
 		});
 
-		const switchElement = screen.getAllByRole("checkbox")[0];
+		const switchElement = screen.getAllByRole("switch")[0];
 		fireEvent.click(switchElement);
 
 		expect(mockUpdateFeature).toHaveBeenCalledWith({

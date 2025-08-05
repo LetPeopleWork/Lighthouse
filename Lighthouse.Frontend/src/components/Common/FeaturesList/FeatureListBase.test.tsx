@@ -1058,7 +1058,7 @@ describe("FeatureListBase component", () => {
 				"group-features-by-parent-toggle",
 			);
 			// Find the input element and check it's checked state
-			const input = within(groupingToggle).getByRole("checkbox");
+			const input = within(groupingToggle).getByRole("switch");
 			expect(input).toBeChecked();
 		});
 	});
