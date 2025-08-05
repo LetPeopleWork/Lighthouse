@@ -88,7 +88,7 @@ describe("StackedAreaChart component", () => {
 		render(<StackedAreaChart areas={areas} startDate={startDate} />);
 
 		// By default, trend should be shown (switch is checked)
-		const switchElement = screen.getByRole("checkbox");
+		const switchElement = screen.getByRole("switch");
 		expect(switchElement).toBeChecked();
 
 		// Click to hide trends

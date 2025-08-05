@@ -14,7 +14,7 @@ export class SystemSettingsPage {
 	async enableFeature(featureName: string): Promise<void> {
 		const featureToggle = this.page
 			.getByTestId(`${featureName}-toggle`)
-			.getByRole("checkbox");
+			.getByRole("switch");
 
 		if (await featureToggle.isChecked()) {
 			return;
