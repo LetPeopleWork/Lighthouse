@@ -84,6 +84,7 @@ describe("LicenseStatusPopover", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 		};
 
 		renderComponent({ licenseStatus });
@@ -95,6 +96,7 @@ describe("LicenseStatusPopover", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: false,
 			isValid: false,
+			canUsePremiumFeatures: false,
 		};
 
 		renderComponent({ licenseStatus });
@@ -123,6 +125,7 @@ describe("LicenseStatusPopover", () => {
 		const mockLicenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "Test User",
 		};
 
@@ -180,6 +183,7 @@ describe("LicenseStatusPopover", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: false,
 			isValid: false,
+			canUsePremiumFeatures: false,
 		};
 
 		renderComponent({ licenseStatus });
@@ -196,6 +200,7 @@ describe("LicenseStatusPopover", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: false,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 		};
@@ -227,6 +232,7 @@ describe("LicenseStatusPopover", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 			organization: "Example Corp",
@@ -259,6 +265,7 @@ describe("LicenseStatusPopover", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 			organization: "Example Corp",
@@ -290,6 +297,7 @@ describe("LicenseStatusPopover", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 		};
 
 		render(

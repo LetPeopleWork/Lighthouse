@@ -3,6 +3,7 @@ import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IConfigurationService } from "../services/Api/ConfigurationService";
 import { DemoApiService } from "../services/Api/DemoApiService";
 import type { IFeatureService } from "../services/Api/FeatureService";
+import type { ILicensingService } from "../services/Api/LicensingService";
 import type { ILogService } from "../services/Api/LogService";
 import type {
 	IProjectMetricsService,
@@ -189,5 +190,12 @@ export const createMockLogService = (): ILogService => {
 		getSupportedLogLevels: vi.fn(),
 		setLogLevel: vi.fn(),
 		downloadLogs: vi.fn(),
+	};
+};
+
+export const createMockLicensingService = (): ILicensingService => {
+	return {
+		getLicenseStatus: vi.fn(),
+		importLicense: vi.fn(),
 	};
 };

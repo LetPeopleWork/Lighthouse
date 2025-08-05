@@ -22,6 +22,7 @@ describe("LicensingService", () => {
 		const mockResponse: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 			organization: "Example Corp",
@@ -40,6 +41,7 @@ describe("LicensingService", () => {
 		const mockResponseWithStringDate = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 			organization: "Example Corp",
@@ -58,6 +60,7 @@ describe("LicensingService", () => {
 		const mockResponse: ILicenseStatus = {
 			hasLicense: false,
 			isValid: false,
+			canUsePremiumFeatures: false,
 		};
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
@@ -77,6 +80,7 @@ describe("LicensingService", () => {
 		const mockResponse: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
+			canUsePremiumFeatures: false,
 			name: "John Doe",
 			email: "john.doe@example.com",
 			organization: "Example Corp",

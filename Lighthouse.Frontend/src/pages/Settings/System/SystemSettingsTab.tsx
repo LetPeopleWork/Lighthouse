@@ -1,4 +1,5 @@
 import BiotechIcon from "@mui/icons-material/Biotech";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
@@ -18,6 +19,7 @@ import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
 import type { IDataRetentionSettings } from "../../../models/AppSettings/DataRetentionSettings";
+import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -38,8 +40,17 @@ const SystemSettingsTab: React.FC = () => {
 	// Import Configuration Dialog state
 	const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-	const { settingsService, optionalFeatureService, configurationService } =
-		useContext(ApiServiceContext);
+	// License status state
+	const [licenseStatus, setLicenseStatus] = useState<ILicenseStatus | null>(
+		null,
+	);
+
+	const {
+		settingsService,
+		optionalFeatureService,
+		configurationService,
+		licensingService,
+	} = useContext(ApiServiceContext);
 
 	// Data Retention functions
 	const fetchDataRetentionSettings = useCallback(async () => {
@@ -77,6 +88,17 @@ const SystemSettingsTab: React.FC = () => {
 		}
 	}, [optionalFeatureService]);
 
+	// License status functions
+	const fetchLicenseStatus = useCallback(async () => {
+		try {
+			const licenseData = await licensingService.getLicenseStatus();
+			setLicenseStatus(licenseData);
+		} catch (error) {
+			console.error("Failed to fetch license status:", error);
+			setLicenseStatus(null);
+		}
+	}, [licensingService]);
+
 	const onExportConfiguration = async () => {
 		await configurationService.exportConfiguration();
 	};
@@ -111,7 +133,8 @@ const SystemSettingsTab: React.FC = () => {
 	useEffect(() => {
 		fetchDataRetentionSettings();
 		fetchOptionalFeatures();
-	}, [fetchDataRetentionSettings, fetchOptionalFeatures]);
+		fetchLicenseStatus();
+	}, [fetchDataRetentionSettings, fetchOptionalFeatures, fetchLicenseStatus]);
 
 	return (
 		<Box sx={{ mb: 4 }}>
@@ -120,21 +143,28 @@ const SystemSettingsTab: React.FC = () => {
 				onClose={onCloseImportDialog}
 			/>
 			<InputGroup title="Lighthouse Configuration" initiallyExpanded={true}>
-				<Box sx={{ display: "flex", gap: 2 }}>
-					<ActionButton
-						buttonVariant="contained"
-						onClickHandler={onExportConfiguration}
-						buttonText="Export Configuration"
-					/>
-					<ActionButton
-						buttonVariant="contained"
-						onClickHandler={() => {
-							onOpenImportDialog();
-							return Promise.resolve();
-						}}
-						buttonText="Import Configuration"
-					/>
-				</Box>
+				{licenseStatus?.canUsePremiumFeatures ? (
+					<Box sx={{ display: "flex", gap: 2 }}>
+						<ActionButton
+							buttonVariant="contained"
+							onClickHandler={onExportConfiguration}
+							buttonText="Export Configuration"
+						/>
+						<ActionButton
+							buttonVariant="contained"
+							onClickHandler={() => {
+								onOpenImportDialog();
+								return Promise.resolve();
+							}}
+							buttonText="Import Configuration"
+						/>
+					</Box>
+				) : (
+					<Alert severity="info" sx={{ m: 2 }}>
+						Configuration export and import are premium features. Please obtain
+						a valid license to access these features.
+					</Alert>
+				)}
 			</InputGroup>
 
 			<InputGroup title="Optional Features" initiallyExpanded={true}>
