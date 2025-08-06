@@ -34,3 +34,10 @@ Deleting a project will remove it from Lighthouse with no functionality to undo 
 
 {: .note}
 You can always add a project again using the same queries. Deleting a project has no effect at all on the data in your Work Tracking System.
+
+
+# Constraints in the Free Version
+If you are using the free version, you are restricted to one Project on a single Lighthouse instance.
+
+{: .important}
+If you have more than the allowed number, Lighthouse will prevent any updates to all projects until you are not above the maximum number.

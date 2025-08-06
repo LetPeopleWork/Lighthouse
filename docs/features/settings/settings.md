@@ -50,6 +50,9 @@ The System Settings Page shows some generally applicable settings that affect th
 ## Lighthouse Configuration
 This section allows you to export your configuration to a file, as well as import it back into your Lighthouse instance.
 
+{: .recommendation}
+The Export and Import of the Lighthouse Configuration is only available if you have a valid [premium license](../../licensing/licensing.html).
+
 ![Lighthouse Configuration](../../assets/settings/lighthouseConfiguration.png)
 
 ### Export

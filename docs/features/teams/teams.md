@@ -34,3 +34,10 @@ Deleting a team will remove it from Lighthouse with no functionality to undo thi
 
 {: .note}
 You can always add a team again using the same queries. Deleting a team has no effect at all on the data in your Work Tracking System.
+
+# Constraints in the Free Version
+If you are using the free version, you are restricted to three Teams on a single Lighthouse instance.
+
+
+{: .important}
+If you have more than the allowed number, Lighthouse will prevent any updates to all teams until you are not above the maximum number.
