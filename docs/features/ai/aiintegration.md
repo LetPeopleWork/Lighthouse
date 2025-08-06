@@ -13,6 +13,9 @@ If you're using AI clients like Claude or Copilot, you can configure Lighthouse 
 {: .important}
 Be aware that this topic is very fast moving. We're trying to keep the docs up to date, but things may change. If you discover something outdated, please let us know via Slack.
 
+{: .recommendation}
+This feature is still in preview and freely available. It's planned that this will become a premium-only feature once it's out of preview.
+
 # Model Context Protocol
 The [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) is a standard that defines how applications can provide context to Large Language Models (LLMs). This allows to *extend* the knowledge of this LLM to include context from other applications, like Lighthouse. The use of this standardized protocol means that the feature can be implemented generically in Lighthouse, and if your LLM supports MCP already (you can check [here](https://modelcontextprotocol.io/clients)), you can use it.
 
