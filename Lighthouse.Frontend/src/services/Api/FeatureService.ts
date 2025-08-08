@@ -11,9 +11,9 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 	): Promise<Feature[]> {
 		return this.withErrorHandling(async () => {
 			const params = new URLSearchParams();
-			parentFeatureReferenceIds.forEach((id) => {
+			for (const id of parentFeatureReferenceIds) {
 				params.append("parentFeatureReferenceIds", id);
-			});
+			}
 
 			const response = await this.apiService.get<IFeature[]>(
 				`/features/parent?${params.toString()}`,

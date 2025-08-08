@@ -89,13 +89,13 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 		const groups: Record<string, IFeature[]> = {};
 
 		// Group with parent
-		featuresToGroup.forEach((feature) => {
+		for (const feature of featuresToGroup) {
 			const parentId = feature.parentWorkItemReference || "none";
 			if (!groups[parentId]) {
 				groups[parentId] = [];
 			}
 			groups[parentId].push(feature);
-		});
+		}
 
 		return groups;
 	};

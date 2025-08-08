@@ -446,9 +446,9 @@ describe("WorkItemsDialog Component", () => {
 			const blockIcons = screen.getAllByTestId("BlockIcon");
 
 			// Check that the icon has error color
-			blockIcons.forEach((icon) => {
+			for (const icon of blockIcons) {
 				expect(icon).toHaveStyle("color: rgb(211, 47, 47)"); // RGB equivalent of error.main
-			});
+			}
 		});
 
 		test("blocked icon appears in time column, not dedicated column", () => {

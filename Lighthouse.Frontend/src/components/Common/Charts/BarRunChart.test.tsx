@@ -462,7 +462,7 @@ describe("Predictability Score functionality", () => {
 			{ score: 1.0, expectedText: "100.0%" },
 		];
 
-		testCases.forEach(({ score, expectedText }) => {
+		for (const { score, expectedText } of testCases) {
 			const rawData = [10];
 			const mockThroughputData = new RunChartData(
 				generateWorkItemMapForRunChart(rawData),
@@ -485,7 +485,7 @@ describe("Predictability Score functionality", () => {
 			expect(predictabilityChip).toBeInTheDocument();
 
 			unmount();
-		});
+		}
 	});
 
 	it("should pass correct data to PredictabilityScore component", () => {

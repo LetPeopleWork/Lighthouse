@@ -191,7 +191,7 @@ describe("LicenseStatusPopover", () => {
 		expect(screen.getByText("No License")).toBeInTheDocument();
 		expect(
 			screen.getByText(
-				"In future versions, some features will become premium and require a valid license to use.",
+				"You are using the free version of Lighthouse. Some features are not available and some constraints apply.",
 			),
 		).toBeInTheDocument();
 	});
