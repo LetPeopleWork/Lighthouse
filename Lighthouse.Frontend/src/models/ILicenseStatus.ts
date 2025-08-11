@@ -6,4 +6,5 @@ export interface ILicenseStatus {
 	email?: string;
 	organization?: string;
 	expiryDate?: Date;
+	licenseNumber?: string;
 }
