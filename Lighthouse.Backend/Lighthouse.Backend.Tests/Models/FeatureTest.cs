@@ -105,6 +105,59 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(item.IsBlocked, Is.EqualTo(expectedResult));
         }
 
+        [Test]
+        public void GetFeatureSize_WhenFeautureHasNoWork_ReturnsZero()
+        {
+            var subject = CreateSubject();
+
+            var size = subject.Size;
+            
+            Assert.That(size, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void GetFeatureSize_WhenFeautureUsesDefaultSize_ReturnsZero()
+        {
+            var team = new Team { Name = "Team A" };
+
+            var subject = CreateSubject();
+            subject.AddOrUpdateWorkForTeam(team, 5, 10);
+
+            subject.IsUsingDefaultFeatureSize = true;
+
+            var size = subject.Size;
+            
+            Assert.That(size, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void GetFeatureSize_FeatureHasWorkOfOneTeam_ReturnsWorkOfThatTeam()
+        {
+            var team = new Team { Name = "Team A" };
+            var subject = CreateSubject();
+            subject.AddOrUpdateWorkForTeam(team, 5, 10);
+
+            var size = subject.Size;
+            
+            Assert.That(size, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void GetFeatureSize_FeatureHasWorkOfMultipleTeams_ReturnsSumOfWork()
+        {
+            var teamA = new Team { Name = "Team A" };
+            var teamB = new Team { Name = "Team B" };
+            
+            var subject = CreateSubject();
+            
+            subject.AddOrUpdateWorkForTeam(teamA, 5, 10);
+            subject.AddOrUpdateWorkForTeam(teamB, 3, 6);
+
+            var size = subject.Size;
+            
+            Assert.That(size, Is.EqualTo(16));
+        }
+
         private Feature CreateSubject()
         {
             return new Feature();

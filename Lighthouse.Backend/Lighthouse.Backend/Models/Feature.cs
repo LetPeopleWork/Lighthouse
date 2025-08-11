@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Models
             {
                 FeatureWork.Add(new FeatureWork(team, remainingItems, totalItems, this));
             }
-        }     
+        }
 
         public WhenForecast Forecast
         {
@@ -45,9 +45,22 @@ namespace Lighthouse.Backend.Models
 
         public bool IsUsingDefaultFeatureSize { get; set; } = false;
 
+        public int Size
+        {
+            get
+            {
+                if (IsUsingDefaultFeatureSize)
+                {
+                    return 0;
+                }
+
+                return FeatureWork.Sum(fw => fw.TotalWorkItems);
+            }
+        }
+
         public int EstimatedSize { get; set; } = 0;
 
-        public string OwningTeam { get;set; } = string.Empty;
+        public string OwningTeam { get; set; } = string.Empty;
 
         public override bool IsBlocked => Projects.Any(p => p.BlockedStates.Contains(State) || p.BlockedTags.Any(Tags.Contains));
 
