@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             {
                 Name = "Test",
                 Email = "test@mail.com",
+                LicenseNumber = "1234567890",
                 Organization = "LetPeopleWork GmbH",
                 ExpiryDate = DateTime.Now.AddYears(1),
                 Signature = "wlkjsdalkjfasdlkfasd"
@@ -49,6 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             {
                 Name = "Test",
                 Email = "test@mail.com",
+                LicenseNumber = "1234567890",
                 Organization = "LetPeopleWork GmbH",
                 ExpiryDate = DateTime.Now.AddYears(1),
                 Signature = "VflBochumOle"
