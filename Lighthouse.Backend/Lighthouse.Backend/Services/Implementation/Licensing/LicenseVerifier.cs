@@ -50,6 +50,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
             {
                 ["email"] = license.Email,
                 ["expiry"] = license.ExpiryDate.ToString("yyyy-MM-dd"),
+                ["license_number"] = license.LicenseNumber,
                 ["name"] = license.Name,
                 ["organization"] = license.Organization
             };

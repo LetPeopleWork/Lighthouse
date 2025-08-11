@@ -246,6 +246,12 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 					</Typography>
 				)}
 
+				{licenseStatus.licenseNumber && (
+					<Typography variant="body2" gutterBottom>
+						<strong>License Number:</strong> {licenseStatus.licenseNumber}
+					</Typography>
+				)}
+
 				{licenseStatus.expiryDate && (
 					<Typography variant="body2" gutterBottom>
 						<strong>Expires:</strong> {formatDate(licenseStatus.expiryDate)}

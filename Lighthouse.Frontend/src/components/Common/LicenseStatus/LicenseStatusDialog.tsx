@@ -200,6 +200,17 @@ const LicenseStatusDialog: React.FC<LicenseStatusDialogProps> = ({
 						</>
 					)}
 
+					{licenseStatus.hasLicense && licenseStatus.licenseNumber && (
+						<>
+							<Typography variant="body2" color="text.secondary" gutterBottom>
+								License Number
+							</Typography>
+							<Typography variant="body1" sx={{ mb: 2 }}>
+								{licenseStatus.licenseNumber}
+							</Typography>
+						</>
+					)}
+
 					{licenseStatus.hasLicense && licenseStatus.expiryDate && (
 						<>
 							<Typography variant="body2" color="text.secondary" gutterBottom>

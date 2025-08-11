@@ -8,17 +8,22 @@ from cryptography.hazmat.backends import default_backend
 
 
 def main():
-    if len(sys.argv) != 7:
+    # Expected args (excluding script name):
+    # <private_key.pem> <output_file.json> <license_number> <name> <email> <organization> <expiry>
+    if len(sys.argv) != 8:
         print(sys.argv)
-        print("Usage: python generate_license.py <private_key.pem> <output_file.json> <name> <email> <organization> <expiry>")
+        print(
+            "Usage: python generate_license.py <private_key.pem> <output_file.json> <license_number> <name> <email> <organization> <expiry>"
+        )
         sys.exit(1)
 
     private_key_path = sys.argv[1]
     output_path = sys.argv[2]
-    name = sys.argv[3]
-    email = sys.argv[4]
-    organization = sys.argv[5]
-    expiry = sys.argv[6]
+    license_number = sys.argv[3]
+    name = sys.argv[4]
+    email = sys.argv[5]
+    organization = sys.argv[6]
+    expiry = sys.argv[7]
 
     # Basic expiry format validation
     try:
@@ -28,10 +33,11 @@ def main():
         sys.exit(1)
 
     license_data = {
+        "license_number": str(license_number),  # ensure string for JSON stability
         "name": name,
         "email": email,
         "organization": organization,
-        "expiry": expiry
+        "expiry": expiry,
     }
 
     license_json = json.dumps(license_data, separators=(',', ':'), sort_keys=True).encode("utf-8")

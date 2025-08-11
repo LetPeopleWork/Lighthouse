@@ -64,7 +64,7 @@ def send_license_email():
                 <div style="background-color: #e8f4fd; border: 1px solid #bee5eb; border-radius: 5px; padding: 15px; margin: 20px 0;">
                     <h4 style="margin-top: 0; color: #0c5460;">Key License Terms:</h4>
                     <ul style="margin-bottom: 0; font-size: 14px;">
-                        <li>License valid for 365 days from purchase date</li>
+                        <li>License valid from now until the mentioned expiry date</li>
                         <li>Maximum 50 concurrent Lighthouse instances per organization and license</li>
                         <li>Non-transferable, non-sublicensable license</li>
                         <li>Commercial use permitted within licensed organization only</li>
@@ -129,7 +129,7 @@ Next Steps:
 2. Upload the license through the license dialog in Lighthouse
 
 Key License Terms:
-- License valid for 365 days from purchase date
+- License is valid from right now, until the mentioned expiry date
 - Maximum 50 concurrent Lighthouse instances per organization and license
 - Non-transferable, non-sublicensable license
 - Commercial use permitted within licensed organization only

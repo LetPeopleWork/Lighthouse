@@ -70,6 +70,9 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 Email = licenseElement.GetProperty("email").GetString() ?? string.Empty,
                 Organization = licenseElement.GetProperty("organization").GetString() ?? string.Empty,
                 ExpiryDate = DateTime.SpecifyKind(licenseElement.GetProperty("expiry").GetDateTime(), DateTimeKind.Utc),
+                LicenseNumber = licenseElement.TryGetProperty("license_number", out var licenseNumberElement) 
+                    ? licenseNumberElement.GetString() ?? string.Empty 
+                    : string.Empty,
                 Signature = signatureBase64,
             };
         }
