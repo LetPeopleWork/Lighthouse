@@ -377,7 +377,7 @@ jobs:
 
       - name: Generate license for E2E Tests
         run: |
-          python Scripts/generate_license.py private_key.pem license.json "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+45 days' '+%Y-%m-%d')"
+          python Scripts/generate_license.py private_key.pem license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+45 days' '+%Y-%m-%d')"
 
       - name: Wait for Lighthouse to start
         run: |
@@ -527,7 +527,7 @@ jobs:
 
       - name: Generate license for E2E Tests
         run: |
-          python Scripts/generate_license.py private_key.pem license.json "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+45 days' '+%Y-%m-%d')"
+          python Scripts/generate_license.py private_key.pem license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+45 days' '+%Y-%m-%d')"
 
       - name: Wait for Lighthouse to start
         run: |

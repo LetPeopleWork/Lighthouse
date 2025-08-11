@@ -1,20 +1,27 @@
 name: Generate and Verify License
-run-name: "License: ${{ inputs.name }} (${{ inputs.email }}) - ${{ inputs.organization }} - ${{ inputs.expiry }}"
+# Include the unique GitHub run number both in the run name and passed to the script as the license number
+run-name: "License #${{ github.run_number }}: ${{ inputs.name || 'Trial User' }} (${{ inputs.email || 'trial@lighthouse.com' }}) - ${{ inputs.organization || 'Trial Organization' }}"
 on:
+  schedule:
+    # Run every 5 days at 9:00 AM UTC
+    - cron: '0 9 */5 * *'
   workflow_dispatch:
     inputs:
       name:
         description: 'Name'
-        required: true
+        required: false
+        default: 'Trial User'
       email:
         description: 'Email'
-        required: true
+        required: false
+        default: 'trial@lighthouse.com'
       organization:
         description: 'Organization'
-        required: true
+        required: false
+        default: 'Trial Organization'
       expiry:
-        description: 'Expiry Date (YYYY-MM-DD)'
-        required: true
+        description: 'Expiry Date (YYYY-MM-DD) - defaults to 2 weeks from now'
+        required: false
 
 jobs:
   generate-and-verify:
@@ -29,6 +36,37 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Set default expiry date (2 weeks from now)
+        id: set-expiry
+        run: |
+          if [ -z "${{ github.event.inputs.expiry }}" ]; then
+            EXPIRY_DATE=$(date -d "+14 days" +%Y-%m-%d)
+          else
+            EXPIRY_DATE="${{ github.event.inputs.expiry }}"
+          fi
+          echo "expiry_date=$EXPIRY_DATE" >> $GITHUB_OUTPUT
+
+      - name: Set default values
+        id: set-defaults
+        run: |
+          NAME="${{ github.event.inputs.name }}"
+          EMAIL="${{ github.event.inputs.email }}"
+          ORG="${{ github.event.inputs.organization }}"
+          
+          if [ -z "$NAME" ]; then
+            NAME="Trial User"
+          fi
+          if [ -z "$EMAIL" ]; then
+            EMAIL="trial@lighthouse.com"
+          fi
+          if [ -z "$ORG" ]; then
+            ORG="Trial Organization"
+          fi
+          
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "email=$EMAIL" >> $GITHUB_OUTPUT
+          echo "organization=$ORG" >> $GITHUB_OUTPUT
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -39,7 +77,7 @@ jobs:
 
       - name: Generate license
         run: |
-          python Scripts/generate_license.py private_key.pem license.json "${{ github.event.inputs.name }}" "${{ github.event.inputs.email }}" "${{ github.event.inputs.organization }}" "${{ github.event.inputs.expiry }}"
+          python Scripts/generate_license.py private_key.pem license.json "${{ github.run_number }}" "${{ steps.set-defaults.outputs.name }}" "${{ steps.set-defaults.outputs.email }}" "${{ steps.set-defaults.outputs.organization }}" "${{ steps.set-expiry.outputs.expiry_date }}"
 
       - name: Write public key to file
         run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PUBLIC_KEY }}" > public_key.pem
@@ -58,6 +96,6 @@ jobs:
         env:
           MAILGUN_SMTP_USERNAME: ${{ secrets.MAILGUN_SMTP_USERNAME }}
           MAILGUN_SMTP_PASSWORD: ${{ secrets.MAILGUN_SMTP_PASSWORD }}
-          RECIPIENT_NAME: ${{ github.event.inputs.name }}
-          RECIPIENT_EMAIL: ${{ github.event.inputs.email }}
-          ORGANIZATION: ${{ github.event.inputs.organization }}
+          RECIPIENT_NAME: ${{ steps.set-defaults.outputs.name }}
+          RECIPIENT_EMAIL: ${{ steps.set-defaults.outputs.email }}
+          ORGANIZATION: ${{ steps.set-defaults.outputs.organization }}
