@@ -523,6 +523,7 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 			feature.referenceId = `FTR-${counter}`;
 			feature.state = workItem.state;
 			feature.type = "Feature";
+			feature.size = Math.floor(Math.random() * 20) + 1;
 			feature.workItemAge = workItem.workItemAge;
 			feature.startedDate = workItem.startedDate;
 			feature.closedDate = workItem.closedDate;

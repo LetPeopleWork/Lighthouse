@@ -8,6 +8,7 @@ namespace Lighthouse.Backend.API.DTO
         {            
             LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
+            Size = feature.Size;
 
             Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(50, 70, 85, 95) ?? []);
 
@@ -35,6 +36,8 @@ namespace Lighthouse.Backend.API.DTO
         }
         
         public bool IsUsingDefaultFeatureSize { get; }
+
+        public int Size { get; }
 
         public Dictionary<int, string> Projects { get; } = new Dictionary<int, string>();
 

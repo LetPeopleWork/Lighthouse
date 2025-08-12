@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
+import FeatureSizeScatterPlotChart from "../../../components/Common/Charts/FeatureSizeScatterPlotChart";
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
@@ -252,6 +253,17 @@ export const BaseMetricsView = <
 					serviceLevelExpectation={serviceLevelExpectation}
 				/>
 			</Grid>
+
+			{
+				// Only show this for Projects --> Items are Features
+				(cycleTimeData as IFeature[]).length > 0 && (
+					<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
+						<FeatureSizeScatterPlotChart
+							sizeDataPoints={cycleTimeData as IFeature[]}
+						/>
+					</Grid>
+				)
+			}
 
 			<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
 				<WorkItemAgingChart

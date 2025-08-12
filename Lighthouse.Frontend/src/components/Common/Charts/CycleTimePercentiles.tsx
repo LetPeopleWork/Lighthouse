@@ -302,7 +302,9 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 				items={items}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				timeMetric="cycleTime"
+				additionalColumnTitle={cycleTimeTerm}
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.cycleTime}
 				sle={serviceLevelExpectation?.value}
 			/>
 		</>

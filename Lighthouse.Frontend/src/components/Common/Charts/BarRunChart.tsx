@@ -45,6 +45,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
 	const handleBarClick = (dataIndex: number) => {
 		const items = chartData.workItemsPerUnitOfTime[dataIndex] || [];
@@ -193,7 +194,9 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				timeMetric="cycleTime"
+				additionalColumnTitle={cycleTimeTerm}
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.cycleTime}
 			/>
 		</>
 	);

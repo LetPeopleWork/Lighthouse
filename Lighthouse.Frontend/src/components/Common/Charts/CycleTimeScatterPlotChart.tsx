@@ -413,7 +413,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				timeMetric="cycleTime"
+				additionalColumnTitle={cycleTimeTerm}
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.cycleTime}
 			/>
 		</>
 	) : (

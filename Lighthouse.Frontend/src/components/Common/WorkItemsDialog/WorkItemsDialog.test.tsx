@@ -129,7 +129,7 @@ const mockBlockedWorkItems: IWorkItem[] = [
 		url: "https://example.com/work-item/8",
 		startedDate: new Date("2023-08-01"),
 		closedDate: new Date("2023-08-12"),
-		cycleTime: 11,
+		cycleTime: 0,
 		workItemAge: 15,
 		parentWorkItemReference: "",
 		isBlocked: true,
@@ -142,6 +142,9 @@ describe("WorkItemsDialog Component", () => {
 		title: "Test Dialog",
 		items: mockWorkItems,
 		open: true,
+		additionalColumnTitle: "Work Item Age",
+		additionalColumnDescription: "days",
+		additionalColumnContent: (item: IWorkItem) => item.workItemAge,
 		onClose: vi.fn(),
 	};
 
@@ -167,47 +170,67 @@ describe("WorkItemsDialog Component", () => {
 		expect(screen.getByText("Research Z")).toBeInTheDocument();
 
 		// Check formatting of age
-		expect(screen.getByText("5 days")).toBeInTheDocument();
-		expect(screen.getByText("20 days")).toBeInTheDocument();
-		expect(screen.getByText("2 days")).toBeInTheDocument();
+		expect(screen.getByText("5")).toBeInTheDocument();
+		expect(screen.getByText("20")).toBeInTheDocument();
+		expect(screen.getByText("2")).toBeInTheDocument();
 	});
 
 	test("renders with cycleTime metric", () => {
-		render(<WorkItemsDialog {...defaultProps} timeMetric="cycleTime" />);
+		render(
+			<WorkItemsDialog
+				{...defaultProps}
+				additionalColumnTitle="Cycle Time"
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.cycleTime}
+			/>,
+		);
 
 		// Check if correct column name is displayed
 		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
 
 		// Check formatting of cycle time
-		expect(screen.getByText("10 days")).toBeInTheDocument();
-		expect(screen.getByText("5 days")).toBeInTheDocument();
-		expect(screen.getByText("15 days")).toBeInTheDocument();
+		expect(screen.getByText("12")).toBeInTheDocument();
+		expect(screen.getByText("7")).toBeInTheDocument();
 	});
 
 	test("displays items sorted by age in descending order with age metric", () => {
-		render(<WorkItemsDialog {...defaultProps} timeMetric="age" />);
+		render(
+			<WorkItemsDialog
+				{...defaultProps}
+				additionalColumnTitle="Work Item Age"
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.workItemAge}
+			/>,
+		);
 
 		// Get all row cells with age information
-		const cells = screen.getAllByText(/\d+ days/);
+		const cells = screen.getAllByTestId("additionalColumnContent");
 
 		// Check if they're in descending order (20, 5, 2)
-		expect(cells[0]).toHaveTextContent("20 days");
-		expect(cells[1]).toHaveTextContent("5 days");
-		expect(cells[2]).toHaveTextContent("2 days");
+		expect(cells[0]).toHaveTextContent("20");
+		expect(cells[1]).toHaveTextContent("5");
+		expect(cells[2]).toHaveTextContent("2");
 	});
 
 	test("displays items sorted by cycle time in descending order with cycleTime metric", () => {
-		render(<WorkItemsDialog {...defaultProps} timeMetric="cycleTime" />);
+		render(
+			<WorkItemsDialog
+				{...defaultProps}
+				additionalColumnTitle="Cycle Time"
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.cycleTime}
+			/>,
+		);
 
 		// Get all row cells with cycle time information
-		const cells = screen.getAllByText(/\d+ days/);
+		const cells = screen.getAllByTestId("additionalColumnContent");
 
 		// Check if they're in descending order (15, 10, 5)
-		expect(cells[0]).toHaveTextContent("15 days");
-		expect(cells[1]).toHaveTextContent("12 days");
-		expect(cells[2]).toHaveTextContent("10 days");
-		expect(cells[3]).toHaveTextContent("7 days");
-		expect(cells[4]).toHaveTextContent("5 days");
+		expect(cells[0]).toHaveTextContent("15");
+		expect(cells[1]).toHaveTextContent("12");
+		expect(cells[2]).toHaveTextContent("10");
+		expect(cells[3]).toHaveTextContent("7");
+		expect(cells[4]).toHaveTextContent("5");
 	});
 
 	test("calls onClose when close button is clicked", () => {
@@ -261,77 +284,24 @@ describe("WorkItemsDialog Component", () => {
 	});
 
 	test("renders with ageCycleTime metric column header", () => {
-		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />);
+		render(
+			<WorkItemsDialog
+				{...defaultProps}
+				additionalColumnTitle="Work Item Age/Cycle Time"
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.cycleTime ?? item.workItemAge}
+			/>,
+		);
 
 		// Check if column header is displayed correctly
 		expect(screen.getByText("Work Item Age/Cycle Time")).toBeInTheDocument();
-	});
-
-	test("displays appropriate time values based on item state", () => {
-		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />); // Verify time values exist for both active and done items
-		expect(screen.getByText("5 days")).toBeInTheDocument();
-		expect(screen.getByText("20 days")).toBeInTheDocument();
-		expect(screen.getByText("2 days")).toBeInTheDocument();
-		expect(screen.getByText("7 days")).toBeInTheDocument();
-		expect(screen.getByText("12 days")).toBeInTheDocument();
-
-		// Check if labels are added for each type
-		expect(screen.getAllByText("(Work Item Age)")).toHaveLength(3);
-		expect(screen.getAllByText("(Cycle Time)")).toHaveLength(2);
-	});
-
-	test("sorts items with Done state after active items", () => {
-		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />);
-
-		// Analyze state ordering in the table
-
-		// Get all state cells with Chip components
-		const stateCells = screen.getAllByRole("cell");
-		const stateChips = Array.from(stateCells).filter((cell) => {
-			const text = cell.textContent;
-			return (
-				text === "In Progress" ||
-				text === "Active" ||
-				text === "New" ||
-				text === "Closed" ||
-				text === "Done"
-			);
-		});
-
-		// First 3 should be active states
-		expect(stateChips[0].textContent).not.toBe("Closed");
-		expect(stateChips[0].textContent).not.toBe("Done");
-		expect(stateChips[1].textContent).not.toBe("Closed");
-		expect(stateChips[1].textContent).not.toBe("Done");
-		expect(stateChips[2].textContent).not.toBe("Closed");
-		expect(stateChips[2].textContent).not.toBe("Done");
-
-		// Last 2 should be done states
-		expect(["Closed", "Done"]).toContain(stateChips[3].textContent);
-		expect(["Closed", "Done"]).toContain(stateChips[4].textContent);
-	});
-
-	test("sorts active items by workItemAge and Done items by cycleTime", () => {
-		render(<WorkItemsDialog {...defaultProps} timeMetric="ageCycleTime" />);
-
-		// Get all time cells
-		const timeCells = screen.getAllByText(/\d+ days/);
-
-		// First 3 cells should be sorted by age in descending order (active items)
-		expect(timeCells[0]).toHaveTextContent("20 days");
-		expect(timeCells[1]).toHaveTextContent("5 days");
-		expect(timeCells[2]).toHaveTextContent("2 days");
-
-		// Last 2 cells should be sorted by cycle time in descending order (Done items)
-		expect(timeCells[3]).toHaveTextContent("12 days");
-		expect(timeCells[4]).toHaveTextContent("7 days");
 	});
 
 	describe("Service Level Expectation (SLE) functionality", () => {
 		test("renders without styling when no SLE is provided", () => {
 			render(<WorkItemsDialog {...defaultProps} />);
 
-			const ageCells = screen.getAllByText(/\d+ days/);
+			const ageCells = screen.getAllByTestId("additionalColumnContent");
 
 			// Verify no cells have bold styling or color styling
 			for (const cell of ageCells) {
@@ -347,7 +317,7 @@ describe("WorkItemsDialog Component", () => {
 		test("applies risky color to items above SLE", () => {
 			render(<WorkItemsDialog {...defaultProps} sle={10} />);
 
-			const ageCells = screen.getAllByText(/\d+ days/);
+			const ageCells = screen.getAllByTestId("additionalColumnContent");
 
 			// First cell (20 days) should have risky color and be bold
 			expect(ageCells[0]).toHaveStyle("color: rgb(244, 67, 54)"); // RGB equivalent of red
@@ -357,7 +327,7 @@ describe("WorkItemsDialog Component", () => {
 		test("applies realistic color to items at SLE", () => {
 			render(<WorkItemsDialog {...defaultProps} sle={20} />);
 
-			const ageCells = screen.getAllByText(/\d+ days/);
+			const ageCells = screen.getAllByTestId("additionalColumnContent");
 
 			// First cell (20 days) should have realistic color and be bold
 			expect(ageCells[0]).not.toHaveStyle("color: rgb(255, 0, 0)");
@@ -370,7 +340,7 @@ describe("WorkItemsDialog Component", () => {
 			render(<WorkItemsDialog {...defaultProps} sle={10} />);
 
 			// Find the cell with '5 days' text which is between 50% and 70% of SLE=10
-			const fiveDaysCell = screen.getByText("5 days");
+			const fiveDaysCell = screen.getByText("5");
 
 			// Should have realistic color (5 is 50% of 10, but we're testing with a real item)
 			expect(fiveDaysCell).not.toHaveStyle("color: rgb(255, 0, 0)");
@@ -383,7 +353,7 @@ describe("WorkItemsDialog Component", () => {
 			render(<WorkItemsDialog {...defaultProps} sle={10} />);
 
 			// Find the cell with '2 days' text which is below 50% of SLE=10
-			const twoDaysCell = screen.getByText("2 days");
+			const twoDaysCell = screen.getByText("2");
 
 			// Should have certain color
 			expect(twoDaysCell).toHaveStyle("color: rgb(56, 142, 60)"); // RGB equivalent of green
@@ -393,10 +363,16 @@ describe("WorkItemsDialog Component", () => {
 		test("applies colors correctly with cycleTime metric", () => {
 			// With SLE of 10, items with cycle times of 15, 10, and 5 should have appropriate colors
 			render(
-				<WorkItemsDialog {...defaultProps} timeMetric="cycleTime" sle={10} />,
+				<WorkItemsDialog
+					{...defaultProps}
+					additionalColumnTitle="Cycle Time"
+					additionalColumnDescription="days"
+					additionalColumnContent={(item) => item.cycleTime}
+					sle={10}
+				/>,
 			);
 
-			const cycleTimeCells = screen.getAllByText(/\d+ days/);
+			const cycleTimeCells = screen.getAllByTestId("additionalColumnContent");
 
 			// 15 days should be risky
 			expect(cycleTimeCells[0]).toHaveStyle("color: rgb(244, 67, 54)"); // RGB equivalent of red
@@ -460,7 +436,7 @@ describe("WorkItemsDialog Component", () => {
 			expect(screen.queryByText("Blocked")).not.toBeInTheDocument();
 
 			// Check that blocked icons are in the same cell as time values
-			const timeCells = screen.getAllByText(/\d+ days/);
+			const timeCells = screen.getAllByTestId("additionalColumnContent");
 			const blockedTimeCells = timeCells.filter((cell) => {
 				// Check if this cell contains a blocked icon
 				const parent = cell.closest("td");
@@ -475,17 +451,19 @@ describe("WorkItemsDialog Component", () => {
 				<WorkItemsDialog
 					{...defaultProps}
 					items={mockBlockedWorkItems}
-					timeMetric="age"
+					additionalColumnTitle="Work Item Age"
+					additionalColumnDescription="days"
+					additionalColumnContent={(item) => item.workItemAge}
 				/>,
 			);
 
 			// Items should be sorted by age in descending order
-			const timeCells = screen.getAllByText(/\d+ days/);
+			const timeCells = screen.getAllByTestId("additionalColumnContent");
 
 			// First should be 15 days (blocked), then 10 days (blocked), then 5 days (not blocked)
-			expect(timeCells[0]).toHaveTextContent("15 days");
-			expect(timeCells[1]).toHaveTextContent("10 days");
-			expect(timeCells[2]).toHaveTextContent("5 days");
+			expect(timeCells[0]).toHaveTextContent("15");
+			expect(timeCells[1]).toHaveTextContent("10");
+			expect(timeCells[2]).toHaveTextContent("5");
 		});
 
 		test("blocked icon works with different time metrics", () => {
@@ -493,7 +471,9 @@ describe("WorkItemsDialog Component", () => {
 				<WorkItemsDialog
 					{...defaultProps}
 					items={mockBlockedWorkItems}
-					timeMetric="cycleTime"
+					additionalColumnTitle="Cycle Time"
+					additionalColumnDescription="days"
+					additionalColumnContent={(item) => item.cycleTime}
 				/>,
 			);
 
@@ -503,23 +483,6 @@ describe("WorkItemsDialog Component", () => {
 
 			// Check column header
 			expect(screen.getByText("Cycle Time")).toBeInTheDocument();
-		});
-
-		test("blocked icon works with ageCycleTime metric", () => {
-			render(
-				<WorkItemsDialog
-					{...defaultProps}
-					items={mockBlockedWorkItems}
-					timeMetric="ageCycleTime"
-				/>,
-			);
-
-			// Should still show blocked icons
-			const blockIcons = screen.getAllByTestId("BlockIcon");
-			expect(blockIcons).toHaveLength(2);
-
-			// Check column header
-			expect(screen.getByText("Work Item Age/Cycle Time")).toBeInTheDocument();
 		});
 
 		test("blocked icon appears with SLE coloring", () => {
@@ -535,7 +498,7 @@ describe("WorkItemsDialog Component", () => {
 			expect(blockIcons).toHaveLength(2);
 
 			// Time values should still have SLE coloring
-			const timeCells = screen.getAllByText(/\d+ days/);
+			const timeCells = screen.getAllByTestId("additionalColumnContent");
 			expect(timeCells[0]).toHaveStyle("font-weight: 700"); // Bold due to SLE
 		});
 	});

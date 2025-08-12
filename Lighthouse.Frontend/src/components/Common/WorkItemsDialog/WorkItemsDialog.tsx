@@ -27,14 +27,14 @@ import {
 	riskyColor,
 } from "../../../utils/theme/colors";
 
-export type TimeMetric = "age" | "cycleTime" | "ageCycleTime";
-
 interface WorkItemsDialogProps {
 	title: string;
 	items: IWorkItem[];
 	open: boolean;
 	onClose: () => void;
-	timeMetric?: TimeMetric;
+	additionalColumnTitle: string;
+	additionalColumnDescription: string;
+	additionalColumnContent: (workItem: IWorkItem) => number;
 	sle?: number;
 }
 
@@ -43,68 +43,33 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	items,
 	open,
 	onClose,
-	timeMetric = "age",
+	additionalColumnTitle,
+	additionalColumnDescription,
+	additionalColumnContent,
 	sle,
 }) => {
 	const { getTerm } = useTerminology();
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
-	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
-	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 
 	const sortedItems = [...items].sort((a, b) => {
-		if (timeMetric === "ageCycleTime") {
-			// For combined mode, sort by state category first (active items before done)
-			if (a.stateCategory !== b.stateCategory) {
-				if (a.stateCategory === "Done") return 1;
-				if (b.stateCategory === "Done") return -1;
-			}
-
-			// Then sort by the appropriate time metric for each category
-			if (a.stateCategory === "Done" && b.stateCategory === "Done") {
-				return b.cycleTime - a.cycleTime;
-			}
-			return b.workItemAge - a.workItemAge;
-		}
-
-		// Original sorting for non-combined modes
-		if (timeMetric === "age") {
-			return b.workItemAge - a.workItemAge;
-		}
-		return b.cycleTime - a.cycleTime;
+		return additionalColumnContent(b) - additionalColumnContent(a);
 	});
 
-	const formatTime = (days: number) => {
-		return `${days} days`;
-	};
-
-	const getTimeColumnName = () => {
-		if (timeMetric === "age") return workItemAgeTerm;
-		if (timeMetric === "cycleTime") return cycleTimeTerm;
-		return `${workItemAgeTerm}/${cycleTimeTerm}`;
-	};
-
-	const getTimeValue = (item: IWorkItem) => {
-		if (timeMetric === "age") return item.workItemAge;
-		if (timeMetric === "cycleTime") return item.cycleTime;
-		// For combined mode, use cycle time for "Done" items and age for others
-		return item.stateCategory === "Done" ? item.cycleTime : item.workItemAge;
-	};
-
-	const getTimeColor = (timeValue: number) => {
+	const getColumnColor = (value: number) => {
 		if (!sle) return undefined;
 
 		const seventyPercentSLE = sle * 0.7;
 		const fiftyPercentSLE = sle * 0.5;
 
 		// Using updated forecast colors with better contrast
-		if (timeValue > sle) {
+		if (value > sle) {
 			return riskyColor; // Enhanced red
 		}
-		if (timeValue >= seventyPercentSLE) {
+		if (value >= seventyPercentSLE) {
 			return realisticColor; // Enhanced orange
 		}
-		if (timeValue >= fiftyPercentSLE) {
+		if (value >= fiftyPercentSLE) {
 			return confidentColor; // Enhanced light green
 		}
 		return certainColor; // Enhanced green
@@ -130,7 +95,16 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 								<TableCell>Name</TableCell>
 								<TableCell>Type</TableCell>
 								<TableCell>State</TableCell>
-								<TableCell>{getTimeColumnName()}</TableCell>
+								<TableCell>
+									{additionalColumnTitle}
+
+									<Typography
+										variant="caption"
+										sx={{ ml: 1, fontStyle: "italic" }}
+									>
+										({additionalColumnDescription})
+									</Typography>
+								</TableCell>
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -182,15 +156,18 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 									<TableCell>
 										<Typography
 											variant="body2"
+											data-testid="additionalColumnContent"
 											sx={{
-												color: getTimeColor(getTimeValue(item)),
+												color: getColumnColor(additionalColumnContent(item)),
 												fontWeight: sle ? "bold" : "normal",
 												padding: "4px 8px",
 												borderRadius: 1,
 												display: "inline-flex",
 												alignItems: "center",
 												backgroundColor: (theme) => {
-													const timeColor = getTimeColor(getTimeValue(item));
+													const timeColor = getColumnColor(
+														additionalColumnContent(item),
+													);
 													return timeColor
 														? hexToRgba(
 																timeColor ?? theme.palette.text.primary,
@@ -206,17 +183,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 												},
 											}}
 										>
-											{formatTime(getTimeValue(item))}
-											{timeMetric === "ageCycleTime" && (
-												<Typography
-													variant="caption"
-													sx={{ ml: 1, fontStyle: "italic" }}
-												>
-													{item.stateCategory === "Done"
-														? `(${cycleTimeTerm})`
-														: `(${workItemAgeTerm})`}
-												</Typography>
-											)}
+											{additionalColumnContent(item)}
 											{item.isBlocked && (
 												<Tooltip
 													title={`This ${workItemTerm} is ${blockedTerm}`}

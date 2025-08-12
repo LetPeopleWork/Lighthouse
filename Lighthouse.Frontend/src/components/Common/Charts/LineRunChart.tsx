@@ -37,6 +37,8 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
+	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
+	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
 	const handleLineClick = (dataIndex: number) => {
 		const items = chartData.workItemsPerUnitOfTime[dataIndex] || [];
@@ -180,7 +182,11 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				timeMetric="ageCycleTime"
+				additionalColumnTitle={`${workItemAgeTerm}/${cycleTimeTerm}`}
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) =>
+					item.cycleTime > 0 ? item.cycleTime : item.workItemAge
+				}
 			/>
 		</>
 	);

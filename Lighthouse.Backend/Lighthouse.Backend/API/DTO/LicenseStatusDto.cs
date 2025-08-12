@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.API.DTO
 
             if (HasLicense)
             {
+                LicenseNumber = licenseInfo.LicenseNumber;
                 Name = licenseInfo.Name;
                 Email = licenseInfo.Email;
                 Organization = licenseInfo.Organization;
@@ -28,6 +29,8 @@ namespace Lighthouse.Backend.API.DTO
         public string? Email { get; }
         
         public string? Organization { get; }
+
+        public string? LicenseNumber { get; }
         
         public DateTime? ExpiryDate { get; }
 

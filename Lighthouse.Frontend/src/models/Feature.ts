@@ -7,6 +7,7 @@ import type { IWorkItem, StateCategory } from "./WorkItem";
 export interface IFeature extends IWorkItem {
 	lastUpdated: Date;
 	isUsingDefaultFeatureSize: boolean;
+	size: number;
 	remainingWork: { [key: number]: number };
 	totalWork: { [key: number]: number };
 	milestoneLikelihood: { [key: number]: number };
@@ -64,6 +65,7 @@ export class Feature implements IFeature {
 
 	cycleTime!: number;
 	workItemAge!: number;
+	size!: number;
 
 	getRemainingWorkForTeam(id: number): number {
 		return this.getWorkForTeam(id, this.remainingWork);

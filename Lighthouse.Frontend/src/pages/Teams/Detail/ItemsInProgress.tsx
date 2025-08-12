@@ -1,7 +1,9 @@
 import { Card, CardContent, Chip, Typography } from "@mui/material";
 import { useState } from "react";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface ItemsInProgressProps {
 	title: string;
@@ -18,6 +20,9 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 }) => {
 	const [open, setOpen] = useState(false);
 	const count = items.length;
+
+	const { getTerm } = useTerminology();
+	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 
 	const getChipColor = () => {
 		if (idealWip == null) return "default";
@@ -55,7 +60,9 @@ const ItemsInProgress: React.FC<ItemsInProgressProps> = ({
 				items={items}
 				open={open}
 				onClose={handleClose}
-				timeMetric="age"
+				additionalColumnTitle={workItemAgeTerm}
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.workItemAge}
 				sle={sle}
 			/>
 		</>

@@ -475,7 +475,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
-				timeMetric="age"
+				additionalColumnTitle={workItemAgeTerm}
+				additionalColumnDescription="days"
+				additionalColumnContent={(item) => item.workItemAge}
 			/>
 		</>
 	) : (

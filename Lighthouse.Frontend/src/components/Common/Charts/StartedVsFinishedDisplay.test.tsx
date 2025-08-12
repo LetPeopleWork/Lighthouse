@@ -275,28 +275,6 @@ describe("FlowInformationDisplay component", () => {
 		expect(screen.getByTestId("dialog-items-count")).toBeInTheDocument();
 	});
 
-	it("should use ageCycleTime metric for the dialog", () => {
-		render(
-			<StartedVsFinishedDisplay
-				startedItems={mockStartedItems}
-				closedItems={mockClosedItems}
-			/>,
-		);
-
-		// Open the dialog
-		const card = screen
-			.getByText("Started vs. Closed Work Items")
-			.closest("div");
-		if (card) {
-			fireEvent.click(card);
-		}
-
-		// Check dialog is using the correct time metric
-		expect(screen.getByTestId("dialog-time-metric")).toHaveTextContent(
-			"ageCycleTime",
-		);
-	});
-
 	it("should handle empty data gracefully", () => {
 		render(<StartedVsFinishedDisplay startedItems={null} closedItems={null} />);
 

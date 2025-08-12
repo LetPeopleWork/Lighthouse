@@ -290,10 +290,6 @@ describe("CycleTimePercentiles component", () => {
 
 		// Verify dialog is opened
 		expect(screen.getByTestId("mock-dialog")).toBeInTheDocument();
-		expect(screen.getByTestId("mock-dialog")).toHaveAttribute(
-			"data-metric",
-			"cycleTime",
-		);
 	});
 
 	it("should not open the dialog when clicking on the SLE chip", () => {
