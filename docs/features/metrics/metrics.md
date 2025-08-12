@@ -237,3 +237,28 @@ If you enable the trend lines, the start and end points of both areas will be co
 1. Making the lines parallel - this means you control your WIP well. If the lines are not parallel, you either start more than you finish or finish more than you start.
 2. Bring the lines closer together - this means you will decrease your Cycle Time.
 3. Increase the *angle* of the lines - this means you will increase your Throughput.
+
+## Feature Size
+
+|--------------|-------------------------|
+| **Applies to** | Projects |
+| **Flow Metric** | Cycle Time, Throughput |
+| **Affected by Filtering** | Yes |
+
+This chart is showing you the size of your done Features over the selected time range on a scatter plot.
+It combines the *Cycle Time* of those Features with it's size, where the size is shown on the x-axis and the Cycle Time is shown on the y-axis.
+
+{: .note}
+With size we mean how many child items were below this Feature
+
+It will also indicate the 50%, 70%, 85%, and 95% lines that will tell you:
+- 50% of all items had **at least** this many child items
+- 85% of all items had **at least** this many child items
+
+![Feature Size](../../assets/features/metrics/featuresize.png)
+
+The assumption would be that *the bigger a Feature, the longer it would take to complete*.
+
+As usual, you can:
+- Toggle lines on/off by clicking on the entry on top of the chart
+- See more details by clicking on a bubble
