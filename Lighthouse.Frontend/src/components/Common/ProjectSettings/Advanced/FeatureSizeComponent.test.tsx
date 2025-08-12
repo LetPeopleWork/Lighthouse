@@ -136,9 +136,7 @@ describe("FeatureSizeComponent", () => {
 		expect(
 			screen.getByLabelText(/Feature Size Percentile/i),
 		).toBeInTheDocument();
-		expect(
-			screen.getByLabelText(/History in Days/i),
-		).toBeInTheDocument();
+		expect(screen.getByLabelText(/History in Days/i)).toBeInTheDocument();
 	});
 
 	it("calls onProjectSettingsChange with correct arguments when defaultWorkItemPercentile changes", () => {
