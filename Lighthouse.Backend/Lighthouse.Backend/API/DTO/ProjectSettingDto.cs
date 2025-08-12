@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.API.DTO
             UsePercentileToCalculateDefaultAmountOfWorkItems = project.UsePercentileToCalculateDefaultAmountOfWorkItems;
             DefaultAmountOfWorkItemsPerFeature = project.DefaultAmountOfWorkItemsPerFeature;
             DefaultWorkItemPercentile = project.DefaultWorkItemPercentile;
-            HistoricalFeaturesWorkItemQuery = project.HistoricalFeaturesWorkItemQuery;
+            PercentileHistoryInDays = project.PercentileHistoryInDays;
             SizeEstimateField = project.SizeEstimateField;
             OverrideRealChildCountStates = project.OverrideRealChildCountStates;
 
@@ -43,7 +43,8 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public int DefaultWorkItemPercentile { get; set; }
 
-        public string HistoricalFeaturesWorkItemQuery { get; set; }
+        [JsonRequired]
+        public int? PercentileHistoryInDays { get; set; }
 
         [JsonRequired]
         public int DefaultAmountOfWorkItemsPerFeature { get; set; }

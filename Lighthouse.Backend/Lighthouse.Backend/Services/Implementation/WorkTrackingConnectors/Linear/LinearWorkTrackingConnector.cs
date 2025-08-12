@@ -148,11 +148,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return $"{orderIndex}";
         }
 
-        public Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
-        {
-            return Task.FromResult(new Dictionary<string, int>());
-        }
-
         public Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
         {
             return Task.FromResult(new List<string>());

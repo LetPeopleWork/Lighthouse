@@ -2,12 +2,12 @@
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Build.Framework;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
 using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkTrackingConnector> workTrackingConnectorMock;
+        private Mock<IProjectMetricsService> projectMetricsServiceMock;
 
         private int idCounter = 0;
         private List<WorkItem> workItems;
@@ -27,6 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workTrackingConnectorMock = new Mock<IWorkTrackingConnector>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
+            projectMetricsServiceMock = new Mock<IProjectMetricsService>();
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
 
@@ -221,9 +223,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team = CreateTeam();
             var project = CreateProject(team);
 
-
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
-            project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
+            project.PercentileHistoryInDays = 90;
             project.DefaultWorkItemPercentile = percentile;
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
@@ -232,9 +233,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
-            var itemCounter = 0;
-            var historicalFeatureSize = childItemCount.ToDictionary(x => $"{itemCounter++}", x => x);
-            workTrackingConnectorMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(historicalFeatureSize);
+            var features = new List<Feature>();
+
+            for (var index = 0; index < childItemCount.Length; index++)
+            {
+                var feature = new Feature
+                {
+                    Id = index
+                };
+
+                var remainingWork = childItemCount[index];
+                feature.AddOrUpdateWorkForTeam(team, remainingWork, remainingWork);
+
+                features.Add(feature);
+            }
+
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(features);
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
@@ -254,7 +269,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var project = CreateProject(team);
 
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
-            project.HistoricalFeaturesWorkItemQuery = "[System.Tags] CONTAINS 'This Team'";
+            project.PercentileHistoryInDays = 45;
             project.DefaultWorkItemPercentile = 80;
             project.DefaultAmountOfWorkItemsPerFeature = 12;
 
@@ -263,7 +278,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
             workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
-            workTrackingConnectorMock.Setup(x => x.GetHistoricalFeatureSize(project)).ReturnsAsync(new Dictionary<string, int>());
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new List<Feature>());
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
@@ -986,7 +1002,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorMock.Object);
 
-            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object);
+            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object);
         }
     }
 }

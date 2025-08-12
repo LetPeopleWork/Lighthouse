@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.API
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = projectSetting.UsePercentileToCalculateDefaultAmountOfWorkItems;
             project.DefaultAmountOfWorkItemsPerFeature = projectSetting.DefaultAmountOfWorkItemsPerFeature;
             project.DefaultWorkItemPercentile = projectSetting.DefaultWorkItemPercentile;
-            project.HistoricalFeaturesWorkItemQuery = projectSetting.HistoricalFeaturesWorkItemQuery;
+            project.PercentileHistoryInDays = projectSetting.PercentileHistoryInDays;
             project.SizeEstimateField = projectSetting.SizeEstimateField;
             project.OverrideRealChildCountStates = projectSetting.OverrideRealChildCountStates;
 

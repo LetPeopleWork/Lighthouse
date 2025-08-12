@@ -85,37 +85,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return features;
         }
 
-        public async Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
-        {
-            var historicalFeatureSize = new Dictionary<string, int>();
-
-            logger.LogInformation("Getting Child Items for Features in Project {Project} for Work Item Types {WorkItemTypes} and Query '{Query}'", project.Name, string.Join(", ", project.WorkItemTypes), project.HistoricalFeaturesWorkItemQuery);
-
-            var witClient = GetClientService(project.WorkTrackingSystemConnection);
-
-            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.HistoricalFeaturesWorkItemQuery);
-            var features = await GetWorkItemReferencesByQuery(witClient, query);
-
-            foreach (var featureId in features.Select(f => f.Id.ToString()))
-            {
-                historicalFeatureSize.Add(featureId, 0);
-
-                foreach (var team in project.Teams)
-                {
-                    var totalItems = await GetRelatedWorkItems(team, featureId);
-                    historicalFeatureSize[featureId] += totalItems;
-                }
-            }
-
-            var emptyFeatures = historicalFeatureSize.Where(kvp => kvp.Value <= 0).Select(kvp => kvp.Key).ToList();
-            foreach (var featureId in emptyFeatures)
-            {
-                historicalFeatureSize.Remove(featureId);
-            }
-
-            return historicalFeatureSize;
-        }
-
         public async Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
         {
             logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Additional Items Query '{Query}'", team.Name, string.Join(", ", team.WorkItemTypes), additionalQuery);

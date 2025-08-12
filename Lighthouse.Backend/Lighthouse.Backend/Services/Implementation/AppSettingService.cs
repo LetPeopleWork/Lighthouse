@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 UsePercentileToCalculateDefaultAmountOfWorkItems = bool.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems).Value),
                 DefaultAmountOfWorkItemsPerFeature = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature).Value),
                 DefaultWorkItemPercentile = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingDefaultWorkItemPercentile).Value),
-                HistoricalFeaturesWorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery).Value,
+                PercentileHistoryInDays = int.Parse(GetSettingByKey(AppSettingKeys.ProjectSettingPercentileHistoryInDays).Value),
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
                 DoneStates = doneStates,
@@ -236,9 +236,9 @@ namespace Lighthouse.Backend.Services.Implementation
             defaultWorkItemPercentile.Value = defaultProjectSetting.DefaultWorkItemPercentile.ToString();
             repository.Update(defaultWorkItemPercentile);
 
-            var historicalFeaturesWorkItemQuery = GetSettingByKey(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery);
-            historicalFeaturesWorkItemQuery.Value = defaultProjectSetting.HistoricalFeaturesWorkItemQuery;
-            repository.Update(historicalFeaturesWorkItemQuery);
+            var percentileHistoryInDays = GetSettingByKey(AppSettingKeys.ProjectSettingPercentileHistoryInDays);
+            percentileHistoryInDays.Value = defaultProjectSetting.PercentileHistoryInDays.ToString();
+            repository.Update(percentileHistoryInDays);
 
             var sizeEstimateField = GetSettingByKey(AppSettingKeys.ProjectSettingSizeEstimateField);
             sizeEstimateField.Value = defaultProjectSetting.SizeEstimateField;

@@ -589,22 +589,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(isValid, Is.False);
         }
 
-        [Test]
-        public async Task GetChildItemsForFeaturesInProject_GivenCorrectQuery_ReturnsCorrectNumberOfItems()
-        {
-            var subject = CreateSubject();
-            var team = CreateTeam("project = LGHTHSDMO");
-            var project = CreateProject("project = LGHTHSDMO", team);
-
-            project.Features.Add(new Feature(team, 10));
-
-            project.HistoricalFeaturesWorkItemQuery = "project = LGHTHSDMO";
-
-            var childItems = await subject.GetHistoricalFeatureSize(project);
-
-            Assert.That(childItems.Values, Is.EquivalentTo(new List<int> { 8, 7, 7, 5, 9, 8, 8, 11, 6, 8 }));
-        }
-
         private Team CreateTeam(string query)
         {
             var team = new Team

@@ -361,10 +361,6 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<string>("FeatureOwnerField")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("HistoricalFeaturesWorkItemQuery")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -378,6 +374,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<string>("ParentOverrideField")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("PercentileHistoryInDays")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("ServiceLevelExpectationProbability")
                         .HasColumnType("INTEGER");

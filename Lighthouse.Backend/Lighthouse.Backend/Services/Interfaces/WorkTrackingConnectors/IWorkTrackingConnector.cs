@@ -20,8 +20,6 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
         string GetAdjacentOrderIndex(IEnumerable<string> existingItemsOrder, RelativeOrder relativeOrder);
 
-        Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project);
-
         Task<bool> ValidateConnection(WorkTrackingSystemConnection connection);
 
         Task<bool> ValidateTeamSettings(Team team);

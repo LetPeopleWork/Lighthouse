@@ -47,6 +47,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase(AppSettingKeys.TeamSettingBlockedTags, "")]
         [TestCase(AppSettingKeys.ProjectSettingBlockedStates, "")]
         [TestCase(AppSettingKeys.ProjectSettingBlockedTags, "")]
+        [TestCase(AppSettingKeys.ProjectSettingPercentileHistoryInDays, "90")]
         public void AddsDefaultAppSettingsIfMissing(string key, string expectedValue)
         {
             var subject = CreateSubject();

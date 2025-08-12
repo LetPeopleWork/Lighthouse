@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 15, Key = AppSettingKeys.ProjectSettingSizeEstimateField, Value = "" });
             AddIfNotExists(new AppSetting { Id = 16, Key = AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, Value = $"{false}" });
             AddIfNotExists(new AppSetting { Id = 17, Key = AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, Value = "85" });
-            AddIfNotExists(new AppSetting { Id = 18, Key = AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, Value = string.Empty });
 
             AddIfNotExists(new AppSetting { Id = 19, Key = AppSettingKeys.ProjectSettingToDoStates, Value = "New,Proposed,To Do" });
             AddIfNotExists(new AppSetting { Id = 20, Key = AppSettingKeys.ProjectSettingDoingStates, Value = "Active,Resolved,In Progress,Committed" });
@@ -70,6 +69,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 40, Key = AppSettingKeys.ProjectSettingBlockedStates, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 41, Key = AppSettingKeys.ProjectSettingBlockedTags, Value = string.Empty });
 
+            AddIfNotExists(new AppSetting { Id = 42, Key = AppSettingKeys.ProjectSettingPercentileHistoryInDays, Value = "90" });
+
             SaveSync();
         }
 
@@ -79,6 +80,15 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             if (existingDefault == null)
             {
                 Add(defaultAppSetting);
+            }
+        }
+
+        private void RemoveIfExists(AppSetting defaultAppSetting)
+        {
+            var existingDefault = GetByPredicate((appSetting) => appSetting.Key == defaultAppSetting.Key);
+            if (existingDefault != null)
+            {
+                Remove(defaultAppSetting);
             }
         }
     }

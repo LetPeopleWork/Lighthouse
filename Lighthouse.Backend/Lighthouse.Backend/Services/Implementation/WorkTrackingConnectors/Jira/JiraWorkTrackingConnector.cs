@@ -71,35 +71,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return await CreateFeaturesFromIssues(project, issues);
         }
 
-        public async Task<Dictionary<string, int>> GetHistoricalFeatureSize(Project project)
-        {
-            var historicalFeatureSize = new Dictionary<string, int>();
-
-            logger.LogInformation("Getting Child Items for Features in Project {Project} for Work Item Types {WorkItemTypes} and Query '{Query}'", project.Name, string.Join(", ", project.WorkItemTypes), project.HistoricalFeaturesWorkItemQuery);
-
-            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.HistoricalFeaturesWorkItemQuery);
-            var issues = await GetIssuesByQuery(project, query);
-
-            foreach (var issueKey in issues.Select(i => i.Key))
-            {
-                historicalFeatureSize.Add(issueKey, 0);
-
-                foreach (var team in project.Teams)
-                {
-                    var totalItems = await GetRelatedWorkItems(team, issueKey);
-                    historicalFeatureSize[issueKey] += totalItems;
-                }
-            }
-
-            var emptyFeatures = historicalFeatureSize.Where(kvp => kvp.Value <= 0).Select(kvp => kvp.Key).ToList();
-            foreach (var featureId in emptyFeatures)
-            {
-                historicalFeatureSize.Remove(featureId);
-            }
-
-            return historicalFeatureSize;
-        }
-
         public async Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery)
         {
             logger.LogInformation("Getting Work Items for Team {TeamName}, Item Types {WorkItemTypes} and Unaprented Items Query '{Query}'", team.Name, string.Join(", ", team.WorkItemTypes), additionalQuery);
@@ -331,41 +302,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             };
 
             return workItem;
-        }
-
-        private async Task<int> GetRelatedWorkItems(Team team, string relatedWorkItemId)
-        {
-            // Jira does not support all operators for custom fields (depending on the type), so we try to use a "match", followed by a "fuzzy match" if the first one fails
-            var parentFieldName = "parent";
-            var operators = new[] { "=" };
-
-            if (!string.IsNullOrEmpty(team.ParentOverrideField))
-            {
-                parentFieldName = team.ParentOverrideField;
-                operators = ["=", "~"];
-            }
-
-            foreach (var customFieldOperator in operators)
-            {
-                var parentClause = $"AND {parentFieldName}{customFieldOperator}{relatedWorkItemId}";
-
-                var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)} {parentClause}";
-
-                try
-                {
-                    var issues = (await GetIssuesByQuery(team, query, parentFieldName)).Select(i => i.Key).ToList();
-
-                    logger.LogInformation("Found following issues that are related to {FeatureId}: {RelatedKeys}", relatedWorkItemId, string.Join(", ", issues));
-
-                    return issues.Count;
-                }
-                catch (HttpRequestException exception)
-                {
-                    logger.LogInformation(exception, "Failed to get related work items with operator {Operator}", customFieldOperator);
-                }
-            }
-
-            return 0;
         }
 
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, string? additionalRelatedField = null, int? maxResultsOverride = null)

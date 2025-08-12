@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "15",
                 AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
-                AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.ProjectSettingPercentileHistoryInDays, "55",
                 AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size",
                 AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.AreaPath",
                 AppSettingKeys.ProjectSettingTags, "tag1,tag2",
@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(settings.UsePercentileToCalculateDefaultAmountOfWorkItems, Is.True);
                 Assert.That(settings.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(15));
                 Assert.That(settings.DefaultWorkItemPercentile, Is.EqualTo(85));
-                Assert.That(settings.HistoricalFeaturesWorkItemQuery, Is.EqualTo("[System.TeamProject] = \"MyProject\""));
+                Assert.That(settings.PercentileHistoryInDays, Is.EqualTo(55));
                 Assert.That(settings.SizeEstimateField, Is.EqualTo("Microsoft.VSTS.Scheduling.Size"));
                 Assert.That(settings.FeatureOwnerField, Is.EqualTo("System.AreaPath"));
 
@@ -314,7 +314,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "False",
                 AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "10",
                 AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "85",
-                AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "[System.TeamProject] = \"MyProject\"",
+                AppSettingKeys.ProjectSettingPercentileHistoryInDays, "17",
                 AppSettingKeys.ProjectSettingSizeEstimateField, "Microsoft.VSTS.Scheduling.Size",
                 AppSettingKeys.ProjectSettingsFeatureOwnerField, "System.Tags",
                 AppSettingKeys.ProjectSettingTags, "tag1,tag2",
@@ -340,7 +340,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 UsePercentileToCalculateDefaultAmountOfWorkItems = true,
                 DefaultAmountOfWorkItemsPerFeature = 22,
                 DefaultWorkItemPercentile = 75,
-                HistoricalFeaturesWorkItemQuery = "project = MyJiraProject",
+                PercentileHistoryInDays = 42,
                 SizeEstimateField = "customfield_10037",
                 FeatureOwnerField = "labels",
                 Tags = ["tag3", "tag4"],
@@ -364,7 +364,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingUsePercentileToCalculateDefaultAmountOfWorkItems, "True");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultAmountOfWorkItemsPerFeature, "22");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingDefaultWorkItemPercentile, "75");
-            VerifyUpdateCalled(AppSettingKeys.ProjectSettingHistoricalFeaturesWorkItemQuery, "project = MyJiraProject");
+            VerifyUpdateCalled(AppSettingKeys.ProjectSettingPercentileHistoryInDays, "42");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingSizeEstimateField, "customfield_10037");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingsFeatureOwnerField, "labels");
             VerifyUpdateCalled(AppSettingKeys.ProjectSettingTags, "tag3,tag4");

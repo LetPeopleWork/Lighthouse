@@ -24,7 +24,7 @@
 
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; } = false;
 
-        public string HistoricalFeaturesWorkItemQuery { get; set; } = string.Empty;
+        public int? PercentileHistoryInDays { get; set; } = 90;
 
         public int DefaultWorkItemPercentile { get; set; } = 85;
 

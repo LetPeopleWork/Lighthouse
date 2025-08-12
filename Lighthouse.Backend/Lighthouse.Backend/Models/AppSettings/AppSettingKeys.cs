@@ -70,6 +70,8 @@
 
         public const string ProjectSettingHistoricalFeaturesWorkItemQuery = "DefaultProjectSetting:HistoricalFeaturesWorkItemQuery";
 
+        public const string ProjectSettingPercentileHistoryInDays = "DefaultProjectSetting:PercentileHistoryInDays";
+
         public const string ProjectSettingSizeEstimateField = "DefaultProjectSetting:SizeEstimateField";
 
         public const string ProjectSettingsFeatureOwnerField = "DefaultProjectSetting:FeatureOwnerField";

@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -14,14 +15,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
         private readonly IRepository<Feature> featureRepository;
         private readonly IWorkItemRepository workItemRepository;
+        private readonly IProjectMetricsService projectMetricsService;
 
         public WorkItemService(
-            ILogger<WorkItemService> logger, IWorkTrackingConnectorFactory workTrackingConnectorFactory, IRepository<Feature> featureRepository, IWorkItemRepository workItemRepository)
+            ILogger<WorkItemService> logger, IWorkTrackingConnectorFactory workTrackingConnectorFactory, IRepository<Feature> featureRepository, IWorkItemRepository workItemRepository, IProjectMetricsService projectMetricsService)
         {
             this.logger = logger;
             this.workTrackingConnectorFactory = workTrackingConnectorFactory;
             this.featureRepository = featureRepository;
             this.workItemRepository = workItemRepository;
+            this.projectMetricsService = projectMetricsService;
         }
 
         public async Task UpdateFeaturesForProject(Project project)        
@@ -97,7 +100,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             defaultWorkItemsBasedOnPercentile.Remove(project.Id);
 
             RefreshRemainingWork(project);
-            await ExtrapolateNotBrokenDownFeatures(project);
+            ExtrapolateNotBrokenDownFeatures(project);
 
             await featureRepository.Save();
 
@@ -128,7 +131,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private async Task ExtrapolateNotBrokenDownFeatures(Project project)
+        private void ExtrapolateNotBrokenDownFeatures(Project project)
         {
             foreach (var feature in project.GetFeaturesToOverrideWithDefaultSize())
             {
@@ -144,7 +147,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
                 feature.IsUsingDefaultFeatureSize = true;
 
-                var remainingWork = await GetExtrapolatedRemainingWork(project, workItemService, feature);
+                var remainingWork = GetExtrapolatedRemainingWork(project, workItemService, feature);
 
                 AssignExtrapolatedWorkToTeams(project, feature, remainingWork);
 
@@ -187,17 +190,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private async Task<int> GetExtrapolatedRemainingWork(Project project, IWorkTrackingConnector workItemService, Feature feature)
+        private int GetExtrapolatedRemainingWork(Project project, IWorkTrackingConnector workItemService, Feature feature)
         {
             if (feature.EstimatedSize > 0)
             {
                 return feature.EstimatedSize;
             }
 
-            return await GetDefaultRemainingWork(project, workItemService);
+            return GetDefaultRemainingWork(project, workItemService);
         }
 
-        private async Task<int> GetDefaultRemainingWork(Project project, IWorkTrackingConnector workItemService)
+        private int GetDefaultRemainingWork(Project project, IWorkTrackingConnector workItemService)
         {
             if (defaultWorkItemsBasedOnPercentile.TryGetValue(project.Id, out var defaultItems))
             {
@@ -209,15 +212,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             if (project.UsePercentileToCalculateDefaultAmountOfWorkItems)
             {
                 logger.LogInformation("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
-                var historicalFeatureSize = await workItemService.GetHistoricalFeatureSize(project);
 
-                logger.LogInformation("Features had following number of child items: {ChildItems}", string.Join(",", historicalFeatureSize.Values));
+                /* Use ProjectMetricsService to Get Values */
+                var endDate = DateTime.UtcNow;
 
-                if (historicalFeatureSize.Count != 0)
+                var historyInDays = project.PercentileHistoryInDays ?? 90;
+                var startDate = DateTime.UtcNow.AddDays(-historyInDays);
+                var closedFeatures = projectMetricsService.GetCycleTimeDataForProject(project, startDate, endDate);
+
+                var historicalFeatureSize = closedFeatures.Where(f => f.Size > 0).Select(f => f.Size);
+
+                logger.LogInformation("Features had following number of child items: {ChildItems}", string.Join(",", historicalFeatureSize));
+
+                if (historicalFeatureSize.Any())
                 {
-                    defaultItems = PercentileCalculator.CalculatePercentile(historicalFeatureSize.Values.ToList(), project.DefaultWorkItemPercentile);
+                    defaultItems = PercentileCalculator.CalculatePercentile(historicalFeatureSize.ToList(), project.DefaultWorkItemPercentile);
 
-                    logger.LogInformation("{Percentile} Percentile Based on Query {Query} is {DefaultItems}", project.DefaultWorkItemPercentile, project.HistoricalFeaturesWorkItemQuery, defaultItems);
+                    logger.LogInformation("{Percentile} Percentile Based on Last {Days} days is {DefaultItems}", project.DefaultWorkItemPercentile, project.PercentileHistoryInDays, defaultItems);
                 }
             }
 
