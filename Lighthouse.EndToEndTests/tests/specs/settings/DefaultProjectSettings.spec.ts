@@ -104,8 +104,7 @@ testWithRestoredDefaultSettings(
 		const newDoneState = "DONE";
 		const newUnparentedWorkItemQuery = "Can I have some more?";
 		const newFeatureSizePercentile = 77;
-		const newHistoricalFeatureWorkItemQuery =
-			"What would the elder features think about this?";
+		const newPercentileHistoryInDays = 97;
 		const newSizeEstimateField = "CUSTOMSIZEFIELD";
 		const newSizeOverrideState = "OVERRIDE";
 		const newFeatureOwnerField = "labels";
@@ -149,9 +148,11 @@ testWithRestoredDefaultSettings(
 			await projectSettingsPage.setHistoricalFeatureSizePercentile(
 				newFeatureSizePercentile,
 			);
-			await projectSettingsPage.setHistoricalFeatureSizeQuery(
-				newHistoricalFeatureWorkItemQuery,
+
+			await projectSettingsPage.setPercentileHistoryInDays(
+				newPercentileHistoryInDays,
 			);
+
 			await projectSettingsPage.setSizeEstimateField(newSizeEstimateField);
 			await projectSettingsPage.addSizeOverrideState(newSizeOverrideState);
 
@@ -200,11 +201,9 @@ testWithRestoredDefaultSettings(
 				await projectSettings.getHistoricalFeatureSizePercentile();
 			expect(percentile).toBe(newFeatureSizePercentile);
 
-			const historicalFeatureSizeQuery =
-				await projectSettings.getHistoricalFeatureSizeQuery();
-			expect(historicalFeatureSizeQuery).toBe(
-				newHistoricalFeatureWorkItemQuery,
-			);
+			const percentileHistoryInDays =
+				await projectSettings.getPercentileHistoryInDays();
+			expect(percentileHistoryInDays).toBe(newPercentileHistoryInDays);
 
 			const sizeEstimateField = await projectSettings.getSizeEstimateField();
 			expect(sizeEstimateField).toBe(newSizeEstimateField);

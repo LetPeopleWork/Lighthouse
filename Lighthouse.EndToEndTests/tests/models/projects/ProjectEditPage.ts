@@ -62,16 +62,15 @@ export class ProjectEditPage extends BaseEditPage<ProjectDetailPage> {
 		return Number(featureSizePercentile);
 	}
 
-	async setHistoricalFeatureSizeQuery(query: string): Promise<void> {
-		await this.page.getByLabel("Historical Features Work Item").fill(query);
+	async setPercentileHistoryInDays(days: number): Promise<void> {
+		await this.page.getByLabel("History in Days").fill(`${days}`);
 	}
 
-	async getHistoricalFeatureSizeQuery(): Promise<string> {
-		return (
-			(await this.page
-				.getByLabel("Historical Features Work Item")
-				.inputValue()) ?? "0"
-		);
+	async getPercentileHistoryInDays(): Promise<number> {
+		const percentileHistoryInDays =
+			(await this.page.getByLabel("History in Days").inputValue()) ?? "0";
+
+		return Number(percentileHistoryInDays);
 	}
 
 	async setSizeEstimateField(sizeEstimateField: string): Promise<void> {
