@@ -14,8 +14,8 @@ const testData = [
 		expectedFeatures: [
 			{
 				name: "Speedy note-taking",
-				inProgress: true,
-				defaultSize: false,
+				inProgress: false,
+				defaultSize: true,
 				involvedTeams: [0],
 			},
 			{
@@ -27,7 +27,7 @@ const testData = [
 			{
 				name: "Lightweight chat interface",
 				inProgress: false,
-				defaultSize: false,
+				defaultSize: true,
 				involvedTeams: [0],
 			},
 			{
@@ -96,7 +96,7 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 					}
 
 					if (feature.defaultSize) {
-						const defaultSizeIcon = projectDetailPage.getFeatureIsDefaultSize();
+						const defaultSizeIcon = projectDetailPage.getFeatureIsDefaultSize(feature.name);
 						await expect(defaultSizeIcon).toBeVisible();
 					}
 

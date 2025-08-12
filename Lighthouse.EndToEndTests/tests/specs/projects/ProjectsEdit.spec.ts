@@ -81,6 +81,7 @@ testWithData(
 
 		await test.step("Each state category should have at least one state", async () => {
 			await projectEditPage.removeState("New");
+			await projectEditPage.removeState("Planned");
 			await expect(projectEditPage.validateButton).toBeDisabled();
 
 			await projectEditPage.addState("Backlog", "To Do");

@@ -22,10 +22,11 @@ export class ProjectDetailPage {
 		return inProgressIcon;
 	}
 
-	getFeatureIsDefaultSize(): Locator {
-		const defaultSizeIcon = this.page.getByLabel(
-			"No child Work Items were found for",
-		);
+	getFeatureIsDefaultSize(featureName: string): Locator {
+		const defaultSizeIcon = this.page
+			.getByRole('cell')
+			.filter({ hasText: featureName })
+			.getByLabel("No child Work Items were found for");
 		return defaultSizeIcon;
 	}
 

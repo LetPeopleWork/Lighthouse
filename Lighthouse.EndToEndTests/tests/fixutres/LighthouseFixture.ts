@@ -90,7 +90,7 @@ async function generateTestData(
 	);
 
 	const adoStates = {
-		toDo: ["New"],
+		toDo: ["New", "Planned"],
 		doing: ["Active", "Resolved"],
 		done: ["Closed"],
 	};
@@ -103,11 +103,11 @@ async function generateTestData(
 	const historicalDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
 	const historicalDateString = historicalDate.toISOString().slice(0, 10);
 
-	const team1 = await createTeam(
+	const lighthouseDevTeam = await createTeam(
 		request,
 		generateRandomName(),
 		adoConnection.id,
-		`[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers" AND ([System.State] <> "Closed"  OR [System.Parent] <> "" OR [System.ChangedDate] >= "${historicalDateString}")`,
+		`[System.TeamProject] = "Lighthouse"`,
 		["User Story", "Bug"],
 		adoStates,
 		["Azure DevOps"],
@@ -133,7 +133,7 @@ async function generateTestData(
 
 	const teamsToProcess: ModelIdentifier[] = [];
 	if (teamsToUpdate.includes(0)) {
-		teamsToProcess.push(team1);
+		teamsToProcess.push(lighthouseDevTeam);
 	}
 
 	if (teamsToUpdate.includes(1)) {
@@ -149,9 +149,9 @@ async function generateTestData(
 	const project1 = await createProject(
 		request,
 		generateRandomName(),
-		[team1],
+		[lighthouseDevTeam],
 		adoConnection.id,
-		'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"',
+		'[System.TeamProject] = "Lighthouse"',
 		["Epic"],
 		adoStates,
 		["Azure DevOps"],
@@ -159,9 +159,9 @@ async function generateTestData(
 	const project2 = await createProject(
 		request,
 		generateRandomName(),
-		[team1, team2],
+		[lighthouseDevTeam, team2],
 		adoConnection.id,
-		'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release Codename Daniel"',
+		'[System.TeamProject] = "Lighthouse Demo"',
 		["Epic"],
 		adoStates,
 		["Azure DevOps"],
@@ -179,7 +179,7 @@ async function generateTestData(
 
 	return {
 		projects: [project1, project2, project3],
-		teams: [team1, team2, team3],
+		teams: [lighthouseDevTeam, team2, team3],
 		connections: [adoConnection, jiraConnection],
 	};
 }

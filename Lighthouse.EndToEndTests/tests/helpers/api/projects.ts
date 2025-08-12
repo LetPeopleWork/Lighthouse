@@ -51,3 +51,7 @@ export async function createProject(
 	});
 	return response.json();
 }
+
+export async function updateProject(api: APIRequestContext, projectId: number) {
+	await api.post(`/api/projects/refresh/${projectId}`);
+}

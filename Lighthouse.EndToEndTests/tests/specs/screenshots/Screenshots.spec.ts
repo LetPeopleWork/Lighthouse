@@ -16,6 +16,7 @@ import {
 	takePageScreenshot,
 } from "../../helpers/screenshots";
 import type { OverviewPage } from "../../models/overview/OverviewPage";
+import { updateProject } from "../../helpers/api/projects";
 
 const updateWorkTrackingSystems = async (
 	overviewPage: OverviewPage,
@@ -62,7 +63,7 @@ const updateTeams = async (
 	overviewPage: OverviewPage,
 	teams: ModelIdentifier[],
 ) => {
-	const teamNames = ["The A-Team", "Dawg Pound", "Team HecKING"];
+	const teamNames = ["Lighthouse Dev", "Dawg Pound", "Team HecKING"];
 
 	for (const team of teams) {
 		const teamPage = await overviewPage.lightHousePage.goToTeams();
@@ -88,7 +89,7 @@ const updateProjects = async (
 	overviewPage: OverviewPage,
 	projects: ModelIdentifier[],
 ) => {
-	const projectNames = ["MadHdP", "2025.01", "Project 1886"];
+	const projectNames = ["Lighhtouse", "2025.01", "Project 1886"];
 
 	for (const project of projects) {
 		const projectPage = await overviewPage.lightHousePage.goToProjects();
@@ -107,6 +108,8 @@ const updateProjects = async (
 
 		await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();
 	}
+
+	await updateProject(api, projects[0].id)
 };
 
 test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
@@ -359,7 +362,7 @@ testWithData(
 		await deleteTeamDialog.cancel();
 
 		// Team Detail Page
-		const teamDetailPage = await teamsPage.goToTeam(testData.teams[2].name);
+		const teamDetailPage = await teamsPage.goToTeam(testData.teams[0].name);
 		await teamDetailPage.forecast(10);
 		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
@@ -465,7 +468,7 @@ testWithData(
 		const projectsPage = await overviewPage.lightHousePage.goToProjects();
 		await takePageScreenshot(projectsPage.page, "features/projects.png");
 
-		// Team Deletion Dialog
+		// Project Deletion Dialog
 		const deleteProjectDialog = await projectsPage.deleteProject(
 			testData.projects[0],
 		);
@@ -480,7 +483,7 @@ testWithData(
 
 		// Project Detail Page
 		const projectDetailPage = await projectsPage.goToProject(
-			testData.projects[1],
+			testData.projects[0],
 		);
 		await takePageScreenshot(
 			projectDetailPage.page,
