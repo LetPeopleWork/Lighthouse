@@ -10,14 +10,8 @@ const testData = [
 	{
 		name: "Azure DevOps",
 		index: 1,
-		involvedTeams: [0, 1],
+		involvedTeams: [1],
 		expectedFeatures: [
-			{
-				name: "Speedy note-taking",
-				inProgress: false,
-				defaultSize: true,
-				involvedTeams: [0],
-			},
 			{
 				name: "Instant status monitoring for real-time insights",
 				inProgress: false,
@@ -25,16 +19,10 @@ const testData = [
 				involvedTeams: [1],
 			},
 			{
-				name: "Lightweight chat interface",
-				inProgress: false,
-				defaultSize: true,
-				involvedTeams: [0],
-			},
-			{
 				name: "Intuitive content filtering",
 				inProgress: false,
 				defaultSize: true,
-				involvedTeams: [0, 1],
+				involvedTeams: [1],
 			},
 		],
 	},
@@ -150,10 +138,10 @@ testWithData(
 	},
 );
 
-testWithUpdatedTeams([0, 1])(
+testWithUpdatedTeams([3])(
 	"should include milestones and WIP in feature calculation",
 	async ({ testData, overviewPage }) => {
-		const project = testData.projects[1];
+		const project = testData.projects[2];
 
 		const projectsPage = await overviewPage.lightHousePage.goToProjects();
 		const projectDetailPage = await projectsPage.goToProject(project);
@@ -178,7 +166,7 @@ testWithUpdatedTeams([0, 1])(
 
 			const lastUpdatedTimeForFeature =
 				await projectDetailPage.getLastUpdatedDateForFeature(
-					"Speedy note-taking",
+					"Majestic Moments",
 				);
 			expectDateToBeRecent(lastUpdatedTimeForFeature);
 		});
@@ -218,7 +206,7 @@ testWithUpdatedTeams([0, 1])(
 
 			const lastUpdatedTimeForFeature =
 				await projectDetailPage.getLastUpdatedDateForFeature(
-					"Speedy note-taking",
+					"Majestic Moments",
 				);
 			expectDateToBeRecent(lastUpdatedTimeForFeature);
 		});

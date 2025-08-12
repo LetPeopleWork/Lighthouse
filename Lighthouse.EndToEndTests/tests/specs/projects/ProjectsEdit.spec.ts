@@ -9,7 +9,7 @@ import { deleteWorkTrackingSystemConnectionByName } from "../../helpers/api/work
 import { generateRandomName } from "../../helpers/names";
 
 const newProjectConfigurations = [
-	{ name: "Azure DevOps", index: 0, involvedTeams: [0, 1] },
+	{ name: "Azure DevOps", index: 0, involvedTeams: [1] },
 	{ name: "Jira", index: 2, involvedTeams: [2] },
 ];
 
