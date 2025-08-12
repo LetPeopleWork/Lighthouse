@@ -513,6 +513,13 @@ testWithData(
 			5,
 			1000,
 		);
+
+		await projectDetailPage.goToMetrics();
+
+		await takeElementScreenshot(
+			projectDetailPage.featureSizeWidget,
+			"features/metrics/featuresize.png",
+		);
 	},
 );
 

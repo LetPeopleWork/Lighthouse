@@ -110,6 +110,10 @@ export class ProjectDetailPage {
 		return this.page.getByRole("button", { name: "Edit Project" });
 	}
 
+	get featureSizeWidget(): Locator {
+		return this.page.locator("div:nth-child(10) > .MuiPaper-root");
+	}
+
 	get projectId(): number {
 		const url = new URL(this.page.url());
 		const projectId = url.pathname.split("/").pop() ?? "0";
