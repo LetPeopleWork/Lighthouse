@@ -157,6 +157,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetSizePercentilesForProject_ReturnsCorrectPercentileValues()
+        {
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            var feature1 = features[0];
+            var feature2 = features[1];
+
+            var team = new Team();
+            feature1.AddOrUpdateWorkForTeam(team, 3, 5);
+            feature2.AddOrUpdateWorkForTeam(team, 3, 15);
+
+            var result = subject.GetSizePercentilesForProject(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Count.EqualTo(4));
+                Assert.That(result[0].Percentile, Is.EqualTo(50));
+                Assert.That(result[1].Percentile, Is.EqualTo(70));
+                Assert.That(result[2].Percentile, Is.EqualTo(85));
+                Assert.That(result[3].Percentile, Is.EqualTo(95));
+            };
+        }
+
+        [Test]
+        public void GetSizePercentilesForProject_NoClosedItems_ReturnsEmpty()
+        {
+            var startDate = new DateTime(2077, 1, 1);
+            var endDate = new DateTime(2077, 1, 31);
+
+            var result = subject.GetSizePercentilesForProject(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Count.EqualTo(0));
+            };
+        }
+
+        [Test]
         public void GetCycleTimeDataForProject_ReturnsClosedFeatures()
         {
             var startDate = new DateTime(2023, 1, 1);

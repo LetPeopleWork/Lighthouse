@@ -493,6 +493,24 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 		];
 	}
 
+	async getSizePercentiles(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPercentileValue[]> {
+		console.log(
+			`Getting Size Percentiles for Project ${projectId} between ${startDate} - ${endDate}`,
+		);
+		await delay();
+
+		return [
+			{ percentile: 50, value: 8 },
+			{ percentile: 70, value: 12 },
+			{ percentile: 85, value: 18 },
+			{ percentile: 95, value: 25 },
+		];
+	}
+
 	async getCycleTimeData(
 		id: number,
 		startDate: Date,

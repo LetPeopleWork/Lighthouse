@@ -93,6 +93,18 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        [HttpGet("sizePercentiles")]
+        public ActionResult<IEnumerable<PercentileValue>> GetSizePercentiles(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest("Start date must be before end date.");
+            }
+
+            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+                projectMetricsService.GetSizePercentilesForProject(project, startDate, endDate));
+        }
+
         [HttpGet("multiitemforecastpredictabilityscore")]
         public ActionResult<ForecastPredictabilityScore> GetMultiItemForecastPredictabilityScore(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

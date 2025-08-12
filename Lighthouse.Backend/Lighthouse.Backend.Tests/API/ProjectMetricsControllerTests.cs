@@ -226,6 +226,37 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetSizePercentiles_WithValidInput_ReturnsOk()
+        {
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            var percentiles = new List<PercentileValue>
+            {
+                new PercentileValue(50, 3),
+                new PercentileValue(70, 4),
+                new PercentileValue(85, 5),
+                new PercentileValue(95, 6)
+            };
+
+            projectMetricsService.Setup(x => x.GetSizePercentilesForProject(project, startDate, endDate))
+                .Returns(percentiles);
+
+            var result = subject.GetSizePercentiles(1, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = result.Result as OkObjectResult;
+                var returnedPercentiles = okResult?.Value as IEnumerable<PercentileValue>;
+
+                Assert.That(returnedPercentiles?.Count(), Is.EqualTo(4));
+            }
+            ;
+        }
+
+        [Test]
         public void GetMultiItemForecastPredictabilityScore_ProjectIdDoesNotExist_ReturnsNotFound()
         {
             var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now);

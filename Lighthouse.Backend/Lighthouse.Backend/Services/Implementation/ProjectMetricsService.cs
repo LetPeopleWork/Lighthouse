@@ -123,6 +123,27 @@ namespace Lighthouse.Backend.Services.Implementation
             return GetFeaturesClosedInDateRange(project, startDate, endDate).ToList();
         }
 
+        public IEnumerable<PercentileValue> GetSizePercentilesForProject(Project project, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Size Percentiles for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
+
+            var closedFeaturesInDateRange = GetFeaturesClosedInDateRange(project, startDate, endDate);
+            var sizes = closedFeaturesInDateRange.Select(f => f.Size).Where(s => s > 0).ToList();
+
+            if (sizes.Count == 0)
+            {
+                logger.LogDebug("No closed features found in the specified date range for Project {ProjectName}", project.Name);
+                return [];
+            }
+
+            return [
+                new PercentileValue(50, PercentileCalculator.CalculatePercentile(sizes, 50)),
+                new PercentileValue(70, PercentileCalculator.CalculatePercentile(sizes, 70)),
+                new PercentileValue(85, PercentileCalculator.CalculatePercentile(sizes, 85)),
+                new PercentileValue(95, PercentileCalculator.CalculatePercentile(sizes, 95))
+            ];
+        }
+
         public void InvalidateProjectMetrics(Project project)
         {
             InvalidateMetrics(project, logger);

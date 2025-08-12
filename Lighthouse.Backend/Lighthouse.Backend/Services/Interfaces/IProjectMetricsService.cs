@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Services.Interfaces
         IEnumerable<Feature> GetInProgressFeaturesForProject(Project project);
 
         IEnumerable<PercentileValue> GetCycleTimePercentilesForProject(Project project, DateTime startDate, DateTime endDate);
+
+        IEnumerable<PercentileValue> GetSizePercentilesForProject(Project project, DateTime startDate, DateTime endDate);
         
         IEnumerable<Feature> GetCycleTimeDataForProject(Project project, DateTime startDate, DateTime endDate);
 

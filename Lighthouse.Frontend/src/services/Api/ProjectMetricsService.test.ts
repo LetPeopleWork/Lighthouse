@@ -173,6 +173,31 @@ describe("ProjectMetricsService", () => {
 		});
 	});
 
+	describe("getSizePercentilesForProject", () => {
+		it("should call the correct API endpoint and return percentile values", async () => {
+			// Arrange
+			const mockPercentiles: IPercentileValue[] = [
+				{ percentile: 50, value: 5 },
+				{ percentile: 85, value: 10 },
+				{ percentile: 95, value: 15 },
+			];
+			mockGet.mockResolvedValueOnce({ data: mockPercentiles });
+
+			// Act
+			const result = await service.getSizePercentiles(
+				projectId,
+				startDate,
+				endDate,
+			);
+
+			// Assert
+			expect(mockGet).toHaveBeenCalledWith(
+				`/projects/${projectId}/metrics/sizePercentiles?startDate=2023-01-01&endDate=2023-01-31`,
+			);
+			expect(result).toEqual(mockPercentiles);
+		});
+	});
+
 	describe("getCycleTimeDataForProject", () => {
 		it("should call the correct API endpoint and process features correctly", async () => {
 			const feature1 = new Feature();

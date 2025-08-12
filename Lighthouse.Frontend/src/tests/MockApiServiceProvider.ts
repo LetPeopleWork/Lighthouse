@@ -138,6 +138,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getCycleTimeData: vi.fn().mockResolvedValue([]),
 		getCycleTimePercentiles: vi.fn().mockResolvedValue([]),
 		getMultiItemForecastPredictabilityScore: vi.fn(),
+		getSizePercentiles: vi.fn(),
 	};
 };
 

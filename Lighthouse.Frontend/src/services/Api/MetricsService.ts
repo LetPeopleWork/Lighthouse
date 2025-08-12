@@ -48,7 +48,13 @@ export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
 	getFeaturesInProgress(teamId: number): Promise<IWorkItem[]>;
 }
 
-export interface IProjectMetricsService extends IMetricsService<IFeature> {}
+export interface IProjectMetricsService extends IMetricsService<IFeature> {
+	getSizePercentiles(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPercentileValue[]>;
+}
 
 export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	extends BaseApiService
