@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
 import { TeamEditPage } from "./TeamEditPage";
 import { WorkItemsInProgressDialog } from "./WorkItemsInProgressDialog";

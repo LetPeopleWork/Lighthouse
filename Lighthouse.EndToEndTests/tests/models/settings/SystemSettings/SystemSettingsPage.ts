@@ -180,6 +180,6 @@ export class SystemSettingsPage {
 	}
 
 	get terminologyConfiguration(): Locator {
-		return this.page.getByText('Terminology ConfigurationUse');
+		return this.page.getByText("Terminology ConfigurationUse");
 	}
 }

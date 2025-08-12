@@ -1,23 +1,21 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import type { APIRequestContext } from "@playwright/test";
 import { TestConfig } from "../../../playwright.config";
 import {
-	type ModelIdentifier,
 	expect,
+	type ModelIdentifier,
 	test,
 	testWithData,
 } from "../../fixutres/LighthouseFixture";
 import { updateTeam } from "../../helpers/api/teams";
-
 import {
 	takeDialogScreenshot,
 	takeDialogScreenshot as takeElementScreenshot,
 	takePageScreenshot,
 } from "../../helpers/screenshots";
 import type { OverviewPage } from "../../models/overview/OverviewPage";
-
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 
 const updateWorkTrackingSystems = async (
 	overviewPage: OverviewPage,
@@ -220,7 +218,8 @@ test("Take @screenshot of licensing", async ({ overviewPage }) => {
 	if (toolbarBoundingBox) {
 		// Calculate the right third of the toolbar
 		const rightThirdWidth = toolbarBoundingBox.width / 3;
-		const rightThirdX = toolbarBoundingBox.x + (toolbarBoundingBox.width * 2 / 3);
+		const rightThirdX =
+			toolbarBoundingBox.x + (toolbarBoundingBox.width * 2) / 3;
 
 		// Take screenshot of only the right third of the toolbar
 		await overviewPage.page.screenshot({
@@ -229,8 +228,8 @@ test("Take @screenshot of licensing", async ({ overviewPage }) => {
 				x: rightThirdX,
 				y: toolbarBoundingBox.y,
 				width: rightThirdWidth,
-				height: toolbarBoundingBox.height
-			}
+				height: toolbarBoundingBox.height,
+			},
 		});
 	}
 

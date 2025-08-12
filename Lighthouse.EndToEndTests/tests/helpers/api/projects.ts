@@ -34,7 +34,7 @@ export async function createProject(
 			unparentedItemsQuery: "",
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,
 			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
+			percentileHistoryInDays: 90,
 			defaultAmountOfWorkItemsPerFeature: 10,
 			sizeEstimateField: "",
 			owningTeam: null,

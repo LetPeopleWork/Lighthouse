@@ -166,7 +166,7 @@ for (const {
 } of newTeamConfigurations) {
 	testWithData(
 		`should allow to create a new team for ${name}`,
-		async ({ testData, overviewPage, request }) => {
+		async ({ testData, overviewPage }) => {
 			let teamsPage = await overviewPage.lightHousePage.goToTeams();
 			const newTeamPage = await teamsPage.addNewTeam();
 

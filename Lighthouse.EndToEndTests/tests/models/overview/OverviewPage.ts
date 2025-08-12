@@ -36,9 +36,10 @@ export class OverviewPage {
 		return new TeamDetailPage(this.page);
 	}
 
-	async getTeamsForProject(project: { name: string; id: number }): Promise<
-		string[]
-	> {
+	async getTeamsForProject(project: {
+		name: string;
+		id: number;
+	}): Promise<string[]> {
 		const projectCard = await this.getProjectCard(project);
 		const teamLinks = await projectCard.getByRole("link").allTextContents();
 		return teamLinks;
@@ -61,18 +62,23 @@ export class OverviewPage {
 		return projectLink;
 	}
 
-	async showLicenseTooltip() : Promise<void> {
-		await this.page.getByTestId('license-status-button').hover();
-		await this.page.getByText('License valid - Click for').waitFor({ state: 'visible' });
+	async showLicenseTooltip(): Promise<void> {
+		await this.page.getByTestId("license-status-button").hover();
+		await this.page
+			.getByText("License valid - Click for")
+			.waitFor({ state: "visible" });
 	}
 
-	async showLicensingInformation() : Promise<Locator> {
-		await this.page.getByTestId('license-status-button').click();
+	async showLicensingInformation(): Promise<Locator> {
+		await this.page.getByTestId("license-status-button").click();
 
-		return this.page.locator('div').filter({ hasText: /Licensed to:/ }).nth(1);
+		return this.page
+			.locator("div")
+			.filter({ hasText: /Licensed to:/ })
+			.nth(1);
 	}
 
-	get toolbar() : Locator {
-		return this.page.getByText('LighthouseOverviewTeamsProjectsSettings');
+	get toolbar(): Locator {
+		return this.page.getByText("LighthouseOverviewTeamsProjectsSettings");
 	}
 }

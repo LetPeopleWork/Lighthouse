@@ -240,7 +240,7 @@ const newTeamConfigurations = [
 for (const teamConfiguration of newTeamConfigurations) {
 	testWithUpdatedTeams(teamConfiguration.involvedTeams)(
 		`should allow to create a project team for ${teamConfiguration.name}`,
-		async ({ testData, overviewPage, request }) => {
+		async ({ testData, overviewPage }) => {
 			let projectPage = await overviewPage.lightHousePage.goToProjects();
 			const newProjectPage = await projectPage.addNewProject();
 
