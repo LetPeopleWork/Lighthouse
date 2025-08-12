@@ -2,7 +2,7 @@ import { expect, testWithData } from "../../fixutres/LighthouseFixture";
 import { expectDateToBeRecent } from "../../helpers/dates";
 
 const testData = [
-	{ name: "Azure DevOps", index: 0, expectedFeaturesInProgress: 1 },
+	{ name: "Azure DevOps", index: 1, expectedFeaturesInProgress: 2 },
 	{ name: "Jira", index: 2, expectedFeaturesInProgress: 2 },
 ];
 

@@ -212,7 +212,7 @@ const newTeamConfigurations = [
 	{
 		name: "AzureDevOps",
 		workTrackingSystemIndex: 0,
-		involvedTeams: [0],
+		involvedTeams: [1],
 		projectConfiguration: {
 			validWorkItemTypes: ["Epic"],
 			invalidWorkItemTypes: ["Feature"],
@@ -226,7 +226,7 @@ const newTeamConfigurations = [
 				'[System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"',
 			invalidQuery:
 				'[System.TeamProject] = "Lighthouse Demo" AND [System.AreaPath] = "Lighthouse Demo\\Binary Blazers"',
-			involvedTeams: [0],
+			involvedTeams: [1],
 		},
 		workTrackingSystemOptions: [
 			{
