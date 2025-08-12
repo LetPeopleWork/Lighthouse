@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import type { IFeature } from "../../../models/Feature";
 import {
 	ForecastPredictabilityScore,
 	type IForecastPredictabilityScore,
@@ -75,6 +76,26 @@ vi.mock("../../../components/Common/Charts/CycleTimeScatterPlotChart", () => ({
 		</div>
 	),
 }));
+
+vi.mock(
+	"../../../components/Common/Charts/FeatureSizeScatterPlotChart",
+	() => ({
+		default: ({
+			sizeDataPoints,
+			sizePercentileValues,
+		}: {
+			sizeDataPoints: IFeature[];
+			sizePercentileValues?: IPercentileValue[];
+		}) => (
+			<div data-testid="feature-size-scatter-plot">
+				<div data-testid="size-data-points-count">{sizeDataPoints.length}</div>
+				<div data-testid="size-percentile-values-count">
+					{sizePercentileValues?.length || 0}
+				</div>
+			</div>
+		),
+	}),
+);
 
 vi.mock("../../../components/Common/Charts/CycleTimePercentiles", () => ({
 	default: ({ percentileValues }: { percentileValues: IPercentileValue[] }) => (
@@ -299,7 +320,13 @@ describe("BaseMetricsView component", () => {
 	];
 
 	// Mock metrics service
-	const mockMetricsService: IMetricsService<IWorkItem> = {
+	const mockMetricsService: IMetricsService<IWorkItem> & {
+		getSizePercentiles?: (
+			id: number,
+			startDate: Date,
+			endDate: Date,
+		) => Promise<IPercentileValue[]>;
+	} = {
 		getThroughput: vi.fn().mockResolvedValue(mockItemsCompletedData),
 		getStartedItems: vi.fn().mockResolvedValue(mockStartedItemsData),
 		getWorkInProgressOverTime: vi
@@ -318,6 +345,11 @@ describe("BaseMetricsView component", () => {
 				new Map([]),
 			),
 		),
+		getSizePercentiles: vi.fn().mockResolvedValue([
+			{ percentile: 50, value: 5 },
+			{ percentile: 85, value: 10 },
+			{ percentile: 95, value: 15 },
+		]),
 	};
 
 	// Create two types of entities to test with
@@ -416,6 +448,9 @@ describe("BaseMetricsView component", () => {
 			).toBeInTheDocument();
 			expect(screen.getByTestId("cycle-time-scatter-plot")).toBeInTheDocument();
 			expect(
+				screen.getByTestId("feature-size-scatter-plot"),
+			).toBeInTheDocument();
+			expect(
 				screen.getByTestId("line-run-chart-Features In Progress Over Time"),
 			).toBeInTheDocument();
 			expect(screen.getByTestId("started-vs-finished")).toBeInTheDocument();
@@ -430,6 +465,37 @@ describe("BaseMetricsView component", () => {
 		expect(screen.getByTestId("service-level-expectation")).toHaveTextContent(
 			"85:14",
 		);
+	});
+
+	it("passes size percentile values to FeatureSizeScatterPlotChart when using Project entity", async () => {
+		render(
+			<BaseMetricsView
+				entity={mockProject}
+				metricsService={mockMetricsService}
+				title="Features"
+				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		// Wait for component to load and getSizePercentiles to be called
+		await waitFor(() => {
+			expect(mockMetricsService.getSizePercentiles).toHaveBeenCalledWith(
+				mockProject.id,
+				expect.any(Date),
+				expect.any(Date),
+			);
+		});
+
+		// Check that FeatureSizeScatterPlotChart receives the size percentile values
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("feature-size-scatter-plot"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("size-percentile-values-count"),
+			).toHaveTextContent("3");
+		});
 	});
 
 	it("renders all components correctly with Team entity", async () => {

@@ -17,7 +17,10 @@ import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
-import type { IMetricsService } from "../../../services/Api/MetricsService";
+import type {
+	IMetricsService,
+	IProjectMetricsService,
+} from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
 import ItemsInProgress from "../../Teams/Detail/ItemsInProgress";
@@ -56,6 +59,11 @@ export const BaseMetricsView = <
 	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
 		[],
 	);
+
+	const [sizePercentileValues, setSizePercentileValues] = useState<
+		IPercentileValue[]
+	>([]);
+
 	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
 	const [predictabilityData, setPredictabilityData] =
 		useState<IForecastPredictabilityScore | null>(null);
@@ -173,6 +181,29 @@ export const BaseMetricsView = <
 	}, [entity, metricsService, startDate, endDate, cycleTimeTerm]);
 
 	useEffect(() => {
+		const fetchSizePercentileData = async (
+			projectMetricsService: IProjectMetricsService,
+		) => {
+			try {
+				const percentiles = await projectMetricsService.getSizePercentiles(
+					entity.id,
+					startDate,
+					endDate,
+				);
+				setSizePercentileValues(percentiles);
+			} catch (error) {
+				console.error(`Error fetching Size Percentile Data:`, error);
+			}
+		};
+
+		if (metricsService as unknown as IProjectMetricsService) {
+			fetchSizePercentileData(
+				metricsService as unknown as IProjectMetricsService,
+			);
+		}
+	}, [metricsService, entity, startDate, endDate]);
+
+	useEffect(() => {
 		if (
 			entity.serviceLevelExpectationProbability > 0 &&
 			entity.serviceLevelExpectationRange > 0
@@ -254,17 +285,6 @@ export const BaseMetricsView = <
 				/>
 			</Grid>
 
-			{
-				// Only show this for Projects --> Items are Features
-				(cycleTimeData as IFeature[]).length > 0 && (
-					<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
-						<FeatureSizeScatterPlotChart
-							sizeDataPoints={cycleTimeData as IFeature[]}
-						/>
-					</Grid>
-				)
-			}
-
 			<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
 				<WorkItemAgingChart
 					inProgressItems={inProgressItems}
@@ -309,6 +329,18 @@ export const BaseMetricsView = <
 					/>
 				)}
 			</Grid>
+
+			{
+				// Only show this for Projects --> Items are Features
+				(cycleTimeData as IFeature[]).length > 0 && (
+					<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
+						<FeatureSizeScatterPlotChart
+							sizeDataPoints={cycleTimeData as IFeature[]}
+							sizePercentileValues={sizePercentileValues}
+						/>
+					</Grid>
+				)
+			}
 		</Grid>
 	);
 };

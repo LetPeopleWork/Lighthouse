@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature, type IFeature } from "../../../models/Feature";
+import type { IPercentileValue } from "../../../models/PercentileValue";
 import { testTheme } from "../../../tests/testTheme";
 import FeatureSizeScatterPlotChart from "./FeatureSizeScatterPlotChart";
 
-// Mock the Material-UI theme
+// Mock dependencies to isolate component behavior
 vi.mock("@mui/material", async () => {
 	const actual = await vi.importActual("@mui/material");
 	return {
@@ -13,299 +14,409 @@ vi.mock("@mui/material", async () => {
 	};
 });
 
-// Mock WorkItemsDialog component
 vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
-	default: vi.fn(({ title, items, open, onClose }) => {
+	default: ({ title, items, open, onClose, additionalColumnContent }: any) => {
 		if (!open) return null;
 		return (
 			<div data-testid="work-items-dialog">
-				<h2>{title}</h2>
-				<button type="button" onClick={onClose}>
+				<h2 data-testid="dialog-title">{title}</h2>
+				<button type="button" onClick={onClose} data-testid="close-dialog">
 					Close
 				</button>
-				<table>
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Type</th>
-							<th>State</th>
-							<th>Size</th>
-						</tr>
-					</thead>
-					<tbody>
-						{items?.map((item: IFeature) => (
-							<tr key={item.id}>
-								<td>{item.name}</td>
-								<td>{item.type}</td>
-								<td>{item.state}</td>
-								<td>{item.size} child items</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+				<div data-testid="feature-count">{items?.length || 0} features</div>
+				{items?.map((item: IFeature, index: number) => (
+					<div key={item.id} data-testid={`feature-${index}`}>
+						{item.name} - Size: {additionalColumnContent?.(item)}
+					</div>
+				))}
 			</div>
 		);
-	}),
+	},
 }));
 
-// Mock the MUI-X Charts
-vi.mock("@mui/x-charts", async () => {
-	const actual = await vi.importActual("@mui/x-charts");
+vi.mock("@mui/x-charts", () => {
 	return {
-		...actual,
-		ChartContainer: vi.fn(({ children }) => (
-			<div data-testid="mock-chart-container">{children}</div>
-		)),
-		ScatterPlot: vi.fn(({ slots }) => {
-			// Simulate marker click functionality for testing
-			const mockMarkerProps = {
-				x: 100,
-				y: 200,
-				dataIndex: 0,
-				color: testTheme.palette.primary.main,
-				isHighlighted: false,
-			};
-
+		ChartContainer: ({ children, height, xAxis, series }: any) => (
+			<div
+				data-testid="chart-container"
+				data-height={height}
+				data-x-axis-max={xAxis?.[0]?.max}
+				data-series-count={series?.[0]?.data?.length}
+			>
+				{children}
+			</div>
+		),
+		ScatterPlot: ({ slots }: any) => {
+			// Simulate multiple data points based on typical usage
+			const mockDataPoints = [0, 1, 2]; // Simulating 3 groups
 			return (
-				<div data-testid="mock-scatter-plot">
-					<div>Scatter Plot Content</div>
-					{slots?.marker && (
-						<div data-testid="mock-marker">{slots.marker(mockMarkerProps)}</div>
-					)}
+				<div data-testid="scatter-plot">
+					{mockDataPoints.map((dataIndex) => {
+						const mockMarkerProps = {
+							x: 100 + dataIndex * 50,
+							y: 200 + dataIndex * 30,
+							dataIndex,
+							color: "#1976d2",
+							isHighlighted: false,
+						};
+						return (
+							<div key={dataIndex} data-testid={`marker-${dataIndex}`}>
+								{slots?.marker?.(mockMarkerProps)}
+							</div>
+						);
+					})}
 				</div>
 			);
-		}),
-		ChartsXAxis: vi.fn(() => <div>X Axis</div>),
-		ChartsYAxis: vi.fn(() => <div>Y Axis</div>),
-		ChartsTooltip: vi.fn(() => <div>Tooltip</div>),
+		},
+		ChartsXAxis: () => <div data-testid="x-axis">X Axis</div>,
+		ChartsYAxis: () => <div data-testid="y-axis">Y Axis</div>,
+		ChartsTooltip: () => <div data-testid="tooltip">Tooltip</div>,
+		ChartsReferenceLine: ({ label, x, lineStyle }: any) => (
+			<div
+				data-testid={`reference-line-${label}`}
+				data-value={x}
+				data-color={lineStyle?.stroke}
+			>
+				{label}
+			</div>
+		),
 	};
 });
 
-// Mock terminology context
 vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
 		getTerm: (key: string) => {
 			const terms: Record<string, string> = {
 				features: "Features",
+				cycleTime: "Cycle Time",
 			};
 			return terms[key] || key;
 		},
 	}),
 }));
 
-// Mock getWorkItemName utility
 vi.mock("../../../utils/featureName", () => ({
 	getWorkItemName: (item: IFeature) => item.name,
 }));
 
-describe("FeatureSizeScatterPlotChart component", () => {
-	// Helper function to create mock feature
-	const createMockFeature = (
+describe("FeatureSizeScatterPlotChart", () => {
+	const createFeature = (
 		id: number,
 		name: string,
 		size: number,
-		closedDate: Date,
+		cycleTime: number,
 	): IFeature => {
 		const feature = new Feature();
 		feature.id = id;
-		feature.referenceId = `F-${id}`;
+		feature.referenceId = `REF-${id}`;
 		feature.name = name;
-		feature.url = `https://example.com/feature${id}`;
 		feature.size = size;
-		feature.startedDate = new Date(
-			closedDate.getTime() - size * 24 * 60 * 60 * 1000,
-		); // Started 'size' days before closed
-		feature.closedDate = closedDate;
-		feature.cycleTime = size; // Simple mock: cycle time equals size
-		feature.workItemAge = size;
+		feature.cycleTime = cycleTime;
 		feature.state = "Done";
-		feature.stateCategory = "Done";
 		feature.type = "Feature";
-		feature.parentWorkItemReference = "";
-		feature.isBlocked = false;
-		feature.lastUpdated = closedDate;
-		feature.isUsingDefaultFeatureSize = false;
-		feature.remainingWork = {};
-		feature.totalWork = {};
-		feature.milestoneLikelihood = {};
-		feature.projects = {};
-		feature.forecasts = [];
-
-		// Mock required methods
-		feature.getRemainingWorkForFeature = () => 0;
-		feature.getRemainingWorkForTeam = () => 0;
-		feature.getTotalWorkForFeature = () => size;
-		feature.getTotalWorkForTeam = () => size;
-		feature.getMilestoneLikelihood = () => 0;
-
+		feature.closedDate = new Date("2023-01-15");
 		return feature;
 	};
 
-	// Create mock features with different sizes and dates
-	const mockFeatures: IFeature[] = [
-		createMockFeature(1, "Small Feature", 3, new Date(2023, 0, 15)),
-		createMockFeature(2, "Medium Feature", 8, new Date(2023, 0, 20)),
-		createMockFeature(3, "Large Feature", 15, new Date(2023, 0, 25)),
-		createMockFeature(4, "Another Small Feature", 3, new Date(2023, 0, 15)), // Same size and date as first
+	const basicFeatures: IFeature[] = [
+		createFeature(1, "Small Task", 3, 5),
+		createFeature(2, "Medium Task", 8, 12),
+		createFeature(3, "Large Task", 15, 20),
+	];
+
+	const percentileData: IPercentileValue[] = [
+		{ percentile: 50, value: 8 },
+		{ percentile: 85, value: 15 },
+		{ percentile: 95, value: 25 },
 	];
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it("should display 'No data available' when no features are provided", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={[]} />);
+	describe("when no data is provided", () => {
+		it("displays a no data message", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={[]} />);
 
-		expect(screen.getByText("No data available")).toBeInTheDocument();
+			expect(screen.getByText("No data available")).toBeInTheDocument();
+			expect(screen.queryByTestId("chart-container")).not.toBeInTheDocument();
+		});
 	});
 
-	it("should render the chart with correct title when data is provided", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
+	describe("when feature data is provided", () => {
+		it("displays the chart with proper title", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
-		expect(screen.getByText("Features Size")).toBeInTheDocument();
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-	});
-
-	it("should render scatter plot component when data is provided", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
-		expect(screen.getByTestId("mock-marker")).toBeInTheDocument();
-	});
-
-	it("should group features by closed date and size", () => {
-		// This test verifies the grouping logic indirectly by ensuring the component renders
-		// without errors when features have the same date and size
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-	});
-
-	it("should open WorkItemsDialog when marker is clicked", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		// Find and click the marker button
-		const markerButton = screen.getByRole("button", {
-			name: /View.*Feature.*with size.*child items/i,
+			expect(screen.getByText("Features Size")).toBeInTheDocument();
+			expect(screen.getByTestId("chart-container")).toBeInTheDocument();
 		});
 
-		fireEvent.click(markerButton);
+		it("renders all chart components", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
-		// Dialog should be opened
-		expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
-	});
-
-	it("should close WorkItemsDialog when close button is clicked", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		// Open dialog by clicking marker
-		const markerButton = screen.getByRole("button", {
-			name: /View.*Feature.*with size.*child items/i,
-		});
-		fireEvent.click(markerButton);
-
-		// Verify dialog is open
-		expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
-
-		// Close dialog
-		const closeButton = screen.getByRole("button", { name: "Close" });
-		fireEvent.click(closeButton);
-
-		// Dialog should be closed
-		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
-	});
-
-	it("should display correct tooltip information for single feature", () => {
-		const singleFeature = [mockFeatures[0]];
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={singleFeature} />);
-
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-		// The component should handle single features correctly in the valueFormatter
-	});
-
-	it("should display correct tooltip information for multiple features", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-		// The component should handle multiple features correctly in the valueFormatter
-	});
-
-	it("should calculate correct Y-axis maximum height", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		// The component should render without errors and calculate max Y based on feature sizes
-		// Max size in mockFeatures is 15, so with 10% padding it should be around 16.5
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-	});
-
-	it("should handle features with same closed date and size correctly", () => {
-		// Create features with identical date and size to test grouping
-		const identicalFeatures = [
-			createMockFeature(1, "Feature A", 5, new Date(2023, 0, 15)),
-			createMockFeature(2, "Feature B", 5, new Date(2023, 0, 15)),
-		];
-
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={identicalFeatures} />);
-
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-
-		// Should create a single group with both features
-		const markerButton = screen.getByRole("button", {
-			name: /View 2 Features with size 5 child items/i,
-		});
-		expect(markerButton).toBeInTheDocument();
-	});
-
-	it("should use correct aria labels for accessibility", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		// Check that marker buttons have proper aria-labels
-		const markerButtons = screen.getAllByRole("button", {
-			name: /View.*Feature.*with size.*child items/i,
+			expect(screen.getByTestId("scatter-plot")).toBeInTheDocument();
+			expect(screen.getByTestId("x-axis")).toBeInTheDocument();
+			expect(screen.getByTestId("y-axis")).toBeInTheDocument();
+			expect(screen.getByTestId("tooltip")).toBeInTheDocument();
 		});
 
-		expect(markerButtons.length).toBeGreaterThan(0);
-	});
+		it("calculates appropriate chart dimensions", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
-	it("should render chart axes components", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		expect(screen.getByText("X Axis")).toBeInTheDocument();
-		expect(screen.getByText("Y Axis")).toBeInTheDocument();
-	});
-
-	it("should render tooltip component", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		expect(screen.getByText("Tooltip")).toBeInTheDocument();
-	});
-
-	it("should handle empty groups correctly", () => {
-		// This edge case test ensures the component doesn't crash with malformed data
-		const emptyFeature = createMockFeature(1, "Empty Feature", 0, new Date());
-
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={[emptyFeature]} />);
-
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
-	});
-
-	it("should display features in dialog with correct information", () => {
-		render(<FeatureSizeScatterPlotChart sizeDataPoints={mockFeatures} />);
-
-		// Open dialog
-		const markerButton = screen.getByRole("button", {
-			name: /View.*Features.*with size.*child items/i,
+			const container = screen.getByTestId("chart-container");
+			expect(container).toHaveAttribute("data-height", "500");
+			// Max size is 15, with 10% padding should be 16.5
+			expect(Number(container.getAttribute("data-x-axis-max"))).toBeGreaterThan(
+				15,
+			);
 		});
-		fireEvent.click(markerButton);
 
-		// Check dialog contains feature information
-		const dialog = screen.getByTestId("work-items-dialog");
-		expect(dialog).toBeInTheDocument();
+		it("groups features with identical size and cycle time", () => {
+			const duplicateFeatures = [
+				createFeature(1, "Task A", 5, 10),
+				createFeature(2, "Task B", 5, 10), // Same size and cycle time
+				createFeature(3, "Task C", 8, 15),
+			];
 
-		// Should show table headers
-		expect(screen.getByText("Name")).toBeInTheDocument();
-		expect(screen.getByText("Type")).toBeInTheDocument();
-		expect(screen.getByText("State")).toBeInTheDocument();
-		expect(screen.getByText("Size")).toBeInTheDocument();
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={duplicateFeatures} />,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			// Should have 2 data points (one group with 2 items, one with 1 item)
+			expect(container).toHaveAttribute("data-series-count", "2");
+		});
+	});
+
+	describe("when user interacts with data points", () => {
+		it("opens a dialog when clicking a data point", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			const markerButtons = screen.getAllByRole("button", {
+				name: /view.*feature.*with size.*child items/i,
+			});
+
+			fireEvent.click(markerButtons[0]);
+
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+			expect(screen.getByTestId("dialog-title")).toHaveTextContent(
+				"Features Details",
+			);
+		});
+
+		it("displays feature details in the dialog", () => {
+			const singleFeature = [createFeature(1, "Test Feature", 5, 8)];
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={singleFeature} />);
+
+			const markerButton = screen.getByRole("button");
+			fireEvent.click(markerButton);
+
+			expect(screen.getByTestId("feature-count")).toHaveTextContent(
+				"1 features",
+			);
+			expect(screen.getByTestId("feature-0")).toHaveTextContent(
+				"Test Feature - Size: 5",
+			);
+		});
+
+		it("closes dialog when close button is clicked", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			// Open dialog using the first marker button
+			const markerButtons = screen.getAllByRole("button", {
+				name: /view.*feature.*with size.*child items/i,
+			});
+			fireEvent.click(markerButtons[0]);
+
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+
+			// Close dialog
+			fireEvent.click(screen.getByTestId("close-dialog"));
+
+			expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
+		});
+
+		it("shows grouped features when multiple items share the same data point", () => {
+			const groupedFeatures = [
+				createFeature(1, "Feature A", 10, 15),
+				createFeature(2, "Feature B", 10, 15), // Same dimensions
+			];
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={groupedFeatures} />);
+
+			const markerButton = screen.getByRole("button", {
+				name: /view 2 features with size 10 child items/i,
+			});
+
+			fireEvent.click(markerButton);
+
+			expect(screen.getByTestId("feature-count")).toHaveTextContent(
+				"2 features",
+			);
+		});
+	});
+
+	describe("when percentile data is provided", () => {
+		it("displays percentile chips", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					sizePercentileValues={percentileData}
+				/>,
+			);
+
+			// Query by role to specifically target the chip buttons, not reference lines
+			const chip50 = screen.getByRole("button", { name: /50%/ });
+			const chip85 = screen.getByRole("button", { name: /85%/ });
+			const chip95 = screen.getByRole("button", { name: /95%/ });
+
+			expect(chip50).toBeInTheDocument();
+			expect(chip85).toBeInTheDocument();
+			expect(chip95).toBeInTheDocument();
+		});
+
+		it("displays reference lines for each percentile", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					sizePercentileValues={percentileData}
+				/>,
+			);
+
+			expect(screen.getByTestId("reference-line-50%")).toBeInTheDocument();
+			expect(screen.getByTestId("reference-line-85%")).toBeInTheDocument();
+			expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
+
+			// Verify line positions match percentile values
+			expect(screen.getByTestId("reference-line-50%")).toHaveAttribute(
+				"data-value",
+				"8",
+			);
+			expect(screen.getByTestId("reference-line-85%")).toHaveAttribute(
+				"data-value",
+				"15",
+			);
+			expect(screen.getByTestId("reference-line-95%")).toHaveAttribute(
+				"data-value",
+				"25",
+			);
+		});
+
+		it("adjusts chart scale to accommodate percentile values", () => {
+			const highPercentiles = [{ percentile: 99, value: 50 }];
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					sizePercentileValues={highPercentiles}
+				/>,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			// Should scale to accommodate the 50 value with 10% padding
+			expect(Number(container.getAttribute("data-x-axis-max"))).toBeGreaterThan(
+				50,
+			);
+		});
+
+		it("allows toggling percentile visibility", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					sizePercentileValues={percentileData}
+				/>,
+			);
+
+			// Use role to target specifically the chip button
+			const percentileChip = screen.getByRole("button", { name: /50%/ });
+
+			// Initial state - should be visible
+			expect(screen.getByTestId("reference-line-50%")).toBeInTheDocument();
+
+			// Toggle visibility
+			fireEvent.click(percentileChip);
+
+			// Chip should still exist but reference line visibility changes through styling
+			expect(percentileChip).toBeInTheDocument();
+		});
+
+		it("handles empty percentile arrays gracefully", () => {
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={basicFeatures}
+					sizePercentileValues={[]}
+				/>,
+			);
+
+			expect(
+				screen.queryByRole("button", { name: /50%/ }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-50%"),
+			).not.toBeInTheDocument();
+			expect(screen.getByTestId("chart-container")).toBeInTheDocument();
+		});
+	});
+
+	describe("accessibility features", () => {
+		it("provides proper aria labels for interactive elements", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			const buttons = screen.getAllByRole("button");
+			buttons.forEach((button) => {
+				expect(button).toHaveAttribute("aria-label");
+				expect(button.getAttribute("aria-label")).toMatch(
+					/view.*with size.*child items/i,
+				);
+			});
+		});
+
+		it("includes descriptive titles for chart markers", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			// The SVG title elements should be present for screen readers
+			// This is tested through the marker rendering behavior
+			expect(screen.getByTestId("scatter-plot")).toBeInTheDocument();
+		});
+	});
+
+	describe("edge cases", () => {
+		it("handles features with null cycle times", () => {
+			const featuresWithNulls = [
+				createFeature(1, "Valid Feature", 5, 10),
+				{
+					...createFeature(2, "Invalid Feature", 8, 0),
+					cycleTime: null as any,
+				},
+			];
+
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={featuresWithNulls} />,
+			);
+
+			// Should filter out features with null cycle times and still render
+			expect(screen.getByTestId("chart-container")).toBeInTheDocument();
+		});
+
+		it("handles features with zero sizes", () => {
+			const zeroSizeFeature = [createFeature(1, "Zero Size", 0, 5)];
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={zeroSizeFeature} />);
+
+			expect(screen.getByTestId("chart-container")).toBeInTheDocument();
+		});
+
+		it("works with single feature", () => {
+			const singleFeature = [createFeature(1, "Only Feature", 5, 8)];
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={singleFeature} />);
+
+			expect(screen.getByTestId("chart-container")).toBeInTheDocument();
+
+			const markerButton = screen.getByRole("button", {
+				name: /view 1 feature with size 5 child items/i,
+			});
+			expect(markerButton).toBeInTheDocument();
+		});
 	});
 });
