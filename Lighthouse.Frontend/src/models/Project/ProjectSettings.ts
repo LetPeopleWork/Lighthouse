@@ -13,7 +13,7 @@ export interface IProjectSettings extends IBaseSettings {
 	usePercentileToCalculateDefaultAmountOfWorkItems: boolean;
 	defaultAmountOfWorkItemsPerFeature: number;
 	defaultWorkItemPercentile: number;
-	historicalFeaturesWorkItemQuery: string;
+	percentileHistoryInDays: number;
 	sizeEstimateField?: string;
 	featureOwnerField?: string;
 }

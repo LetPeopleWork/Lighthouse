@@ -14,7 +14,7 @@ describe("FeatureSizeComponent", () => {
 	initialSettings.usePercentileToCalculateDefaultAmountOfWorkItems = false;
 	initialSettings.defaultAmountOfWorkItemsPerFeature = 10;
 	initialSettings.defaultWorkItemPercentile = 85;
-	initialSettings.historicalFeaturesWorkItemQuery = "Historical Feature Query";
+	initialSettings.percentileHistoryInDays = 90;
 	initialSettings.sizeEstimateField = "";
 
 	const mockOnProjectSettingsChange = vi.fn();
@@ -137,7 +137,7 @@ describe("FeatureSizeComponent", () => {
 			screen.getByLabelText(/Feature Size Percentile/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getByLabelText(/Historical Features Work Item Query/i),
+			screen.getByLabelText(/History in Days/i),
 		).toBeInTheDocument();
 	});
 

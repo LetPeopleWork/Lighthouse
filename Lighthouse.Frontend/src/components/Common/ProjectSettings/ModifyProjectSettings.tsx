@@ -300,10 +300,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 				const hasValidName = projectSettings.name !== "";
 				const hasValidDefaultAmountOfFeatures =
 					projectSettings.defaultAmountOfWorkItemsPerFeature !== undefined;
-				const hasValidHistoricalWorkItemQuery =
+				const hasValidPercentileOptions =
 					!projectSettings.usePercentileToCalculateDefaultAmountOfWorkItems ||
 					(projectSettings.defaultWorkItemPercentile > 0 &&
-						projectSettings.historicalFeaturesWorkItemQuery !== "");
+						projectSettings.percentileHistoryInDays >= 30);
 				const hasValidAmountOfWorkItemTypes =
 					projectSettings.workItemTypes.length > 0;
 				const hasAllNecessaryStates =
@@ -315,7 +315,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 				isFormValid =
 					hasValidName &&
 					hasValidDefaultAmountOfFeatures &&
-					hasValidHistoricalWorkItemQuery &&
+					hasValidPercentileOptions &&
 					hasValidAmountOfWorkItemTypes &&
 					hasAllNecessaryStates &&
 					(modifyDefaultSettings ||

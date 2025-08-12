@@ -26,11 +26,9 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 	const { suggestionService } = useContext(ApiServiceContext);
 
 	const { getTerm } = useTerminology();
-	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
-	const queryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
 
 	useEffect(() => {
 		const fetchStates = async () => {
@@ -127,15 +125,19 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 					</Grid>
 					<Grid size={{ xs: 12 }}>
 						<TextField
-							label={`Historical ${featuresTerm} ${workItemTerm} ${queryTerm}`}
+							label={`History in Days`}
+							type="number"
 							fullWidth
-							multiline
-							rows={4}
 							margin="normal"
-							value={projectSettings?.historicalFeaturesWorkItemQuery || ""}
+							value={projectSettings?.percentileHistoryInDays || "90"}
+							slotProps={{
+								htmlInput: {
+									min: 30,
+								},
+							}}
 							onChange={(e) =>
 								onProjectSettingsChange(
-									"historicalFeaturesWorkItemQuery",
+									"percentileHistoryInDays",
 									e.target.value,
 								)
 							}

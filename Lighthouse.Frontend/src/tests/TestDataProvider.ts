@@ -57,7 +57,7 @@ export function createMockProjectSettings(): IProjectSettings {
 		usePercentileToCalculateDefaultAmountOfWorkItems: false,
 		defaultAmountOfWorkItemsPerFeature: 15,
 		defaultWorkItemPercentile: 85,
-		historicalFeaturesWorkItemQuery: "",
+		percentileHistoryInDays: 90,
 		workTrackingSystemConnectionId: 1,
 		sizeEstimateField: "EstimatedSize",
 		toDoStates: ["New"],

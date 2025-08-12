@@ -27,7 +27,7 @@ import {
 	riskyColor,
 } from "../../../utils/theme/colors";
 
-interface WorkItemsDialogProps {
+export interface WorkItemsDialogProps {
 	title: string;
 	items: IWorkItem[];
 	open: boolean;

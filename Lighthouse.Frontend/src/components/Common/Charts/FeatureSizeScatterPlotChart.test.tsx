@@ -15,7 +15,7 @@ vi.mock("@mui/material", async () => {
 });
 
 vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
-	default: ({ title, items, open, onClose, additionalColumnContent }: any) => {
+	default: vi.fn(({ title, items, open, onClose }) => {
 		if (!open) return null;
 		return (
 			<div data-testid="work-items-dialog">
@@ -26,17 +26,41 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
 				<div data-testid="feature-count">{items?.length || 0} features</div>
 				{items?.map((item: IFeature, index: number) => (
 					<div key={item.id} data-testid={`feature-${index}`}>
-						{item.name} - Size: {additionalColumnContent?.(item)}
+						{item.name} - Size: {item.size}
 					</div>
 				))}
 			</div>
 		);
-	},
+	}),
 }));
 
 vi.mock("@mui/x-charts", () => {
+	interface ChartContainerProps {
+		children: React.ReactNode;
+		height: number;
+		xAxis?: Array<{ max?: number }>;
+		series?: Array<{ data?: unknown[] }>;
+	}
+
+	interface ScatterPlotProps {
+		slots?: {
+			marker?: (props: {
+				x: number;
+				y: number;
+				dataIndex: number;
+				color: string;
+				isHighlighted: boolean;
+			}) => React.ReactNode;
+		};
+	}
+
 	return {
-		ChartContainer: ({ children, height, xAxis, series }: any) => (
+		ChartContainer: ({
+			children,
+			height,
+			xAxis,
+			series,
+		}: ChartContainerProps) => (
 			<div
 				data-testid="chart-container"
 				data-height={height}
@@ -46,7 +70,7 @@ vi.mock("@mui/x-charts", () => {
 				{children}
 			</div>
 		),
-		ScatterPlot: ({ slots }: any) => {
+		ScatterPlot: ({ slots }: ScatterPlotProps) => {
 			// Simulate multiple data points based on typical usage
 			const mockDataPoints = [0, 1, 2]; // Simulating 3 groups
 			return (
@@ -71,7 +95,15 @@ vi.mock("@mui/x-charts", () => {
 		ChartsXAxis: () => <div data-testid="x-axis">X Axis</div>,
 		ChartsYAxis: () => <div data-testid="y-axis">Y Axis</div>,
 		ChartsTooltip: () => <div data-testid="tooltip">Tooltip</div>,
-		ChartsReferenceLine: ({ label, x, lineStyle }: any) => (
+		ChartsReferenceLine: ({
+			label,
+			x,
+			lineStyle,
+		}: {
+			label: string;
+			x: number;
+			lineStyle?: { stroke: string };
+		}) => (
 			<div
 				data-testid={`reference-line-${label}`}
 				data-value={x}
@@ -386,7 +418,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 				createFeature(1, "Valid Feature", 5, 10),
 				{
 					...createFeature(2, "Invalid Feature", 8, 0),
-					cycleTime: null as any,
+					cycleTime: null as unknown as number,
 				},
 			];
 

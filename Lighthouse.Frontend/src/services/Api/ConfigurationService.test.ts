@@ -186,7 +186,7 @@ describe("ConfigurationService", () => {
 					usePercentileToCalculateDefaultAmountOfWorkItems: false,
 					defaultAmountOfWorkItemsPerFeature: 0,
 					defaultWorkItemPercentile: 0,
-					historicalFeaturesWorkItemQuery: "",
+					percentileHistoryInDays: 90,
 					workItemQuery: "",
 					workItemTypes: [],
 					toDoStates: [],

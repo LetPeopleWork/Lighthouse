@@ -462,10 +462,10 @@ describe("ModifyProjectSettings", () => {
 		{ invalidValue: "Work Item Query", workItemQuery: "" },
 		{ invalidValue: "Involved Teams", involvedTeams: [] },
 		{
-			invalidValue: "Missing Historical Features Work Item Query",
+			invalidValue: "Missing Historical Days",
 			usePercentileToCalculateDefaultAmountOfWorkItems: true,
 			defaultWorkItemPercentile: 80,
-			historicalFeaturesWorkItemQuery: "",
+			percentileHistoryInDays: null,
 		},
 		{
 			invalidValue: "Missing Default Work Item Percentile",
