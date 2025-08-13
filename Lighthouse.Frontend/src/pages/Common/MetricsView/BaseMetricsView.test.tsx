@@ -320,37 +320,43 @@ describe("BaseMetricsView component", () => {
 	];
 
 	// Mock metrics service
-	const mockMetricsService: IMetricsService<IWorkItem> & {
-		getSizePercentiles?: (
-			id: number,
-			startDate: Date,
-			endDate: Date,
-		) => Promise<IPercentileValue[]>;
-	} = {
-		getThroughput: vi.fn().mockResolvedValue(mockItemsCompletedData),
-		getStartedItems: vi.fn().mockResolvedValue(mockStartedItemsData),
-		getWorkInProgressOverTime: vi
-			.fn()
-			.mockResolvedValue(mockItemsInProgressData),
-		getInProgressItems: vi.fn().mockResolvedValue(mockInProgressItems),
-		getCycleTimeData: vi.fn().mockResolvedValue(mockCycleTimeData),
-		getCycleTimePercentiles: vi.fn().mockResolvedValue(mockPercentileValues),
-		getMultiItemForecastPredictabilityScore: vi.fn().mockResolvedValue(
-			new ForecastPredictabilityScore(
-				[
-					{ percentile: 50, value: 10 },
-					{ percentile: 85, value: 15 },
-				],
-				0.73,
-				new Map([]),
+	function createMockMetricsService<
+		T extends IWorkItem | IFeature = IWorkItem,
+	>() {
+		return {
+			getThroughput: vi.fn().mockResolvedValue(mockItemsCompletedData),
+			getStartedItems: vi.fn().mockResolvedValue(mockStartedItemsData),
+			getWorkInProgressOverTime: vi
+				.fn()
+				.mockResolvedValue(mockItemsInProgressData),
+			getInProgressItems: vi.fn().mockResolvedValue(mockInProgressItems),
+			getCycleTimeData: vi.fn().mockResolvedValue(mockCycleTimeData),
+			getCycleTimePercentiles: vi.fn().mockResolvedValue(mockPercentileValues),
+			getMultiItemForecastPredictabilityScore: vi.fn().mockResolvedValue(
+				new ForecastPredictabilityScore(
+					[
+						{ percentile: 50, value: 10 },
+						{ percentile: 85, value: 15 },
+					],
+					0.73,
+					new Map([]),
+				),
 			),
-		),
-		getSizePercentiles: vi.fn().mockResolvedValue([
-			{ percentile: 50, value: 5 },
-			{ percentile: 85, value: 10 },
-			{ percentile: 95, value: 15 },
-		]),
-	};
+			getSizePercentiles: vi.fn().mockResolvedValue([
+				{ percentile: 50, value: 5 },
+				{ percentile: 85, value: 10 },
+				{ percentile: 95, value: 15 },
+			]),
+		} as IMetricsService<T> & {
+			getSizePercentiles?: (
+				id: number,
+				startDate: Date,
+				endDate: Date,
+			) => Promise<IPercentileValue[]>;
+		};
+	}
+
+	const mockMetricsService = createMockMetricsService<IWorkItem>();
 
 	// Create two types of entities to test with
 	const mockProject = (() => {
@@ -379,10 +385,20 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("renders all components correctly with Project entity", async () => {
+		const projectMetricsService = createMockMetricsService<IFeature>();
+
+		const mockFeatureData = mockCycleTimeData.map((item) => ({
+			...item,
+			size: 5, // example size value
+		}));
+		projectMetricsService.getCycleTimeData = vi
+			.fn()
+			.mockResolvedValue(mockFeatureData);
+
 		render(
 			<BaseMetricsView
 				entity={mockProject}
-				metricsService={mockMetricsService}
+				metricsService={projectMetricsService}
 				title="Features"
 				defaultDateRange={90}
 				doingStates={["To Do", "In Progress", "Review"]}
@@ -394,36 +410,40 @@ describe("BaseMetricsView component", () => {
 
 		// Check all service calls are made
 		await waitFor(() => {
-			expect(mockMetricsService.getThroughput).toHaveBeenCalledWith(
+			expect(projectMetricsService.getThroughput).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
 				expect.any(Date),
 			);
-			expect(mockMetricsService.getInProgressItems).toHaveBeenCalledWith(
+			expect(projectMetricsService.getInProgressItems).toHaveBeenCalledWith(
 				mockProject.id,
 			);
-			expect(mockMetricsService.getWorkInProgressOverTime).toHaveBeenCalledWith(
-				mockProject.id,
-				expect.any(Date),
-				expect.any(Date),
-			);
-			expect(mockMetricsService.getCycleTimeData).toHaveBeenCalledWith(
+			expect(
+				projectMetricsService.getWorkInProgressOverTime,
+			).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
 				expect.any(Date),
 			);
-			expect(mockMetricsService.getCycleTimePercentiles).toHaveBeenCalledWith(
-				mockProject.id,
-				expect.any(Date),
-				expect.any(Date),
-			);
-			expect(mockMetricsService.getStartedItems).toHaveBeenCalledWith(
+			expect(projectMetricsService.getCycleTimeData).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
 				expect.any(Date),
 			);
 			expect(
-				mockMetricsService.getMultiItemForecastPredictabilityScore,
+				projectMetricsService.getCycleTimePercentiles,
+			).toHaveBeenCalledWith(
+				mockProject.id,
+				expect.any(Date),
+				expect.any(Date),
+			);
+			expect(projectMetricsService.getStartedItems).toHaveBeenCalledWith(
+				mockProject.id,
+				expect.any(Date),
+				expect.any(Date),
+			);
+			expect(
+				projectMetricsService.getMultiItemForecastPredictabilityScore,
 			).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
@@ -468,10 +488,20 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("passes size percentile values to FeatureSizeScatterPlotChart when using Project entity", async () => {
+		const projectMetricsService = createMockMetricsService<IFeature>();
+
+		const mockFeatureData = mockCycleTimeData.map((item) => ({
+			...item,
+			size: 5, // example size value
+		}));
+		projectMetricsService.getCycleTimeData = vi
+			.fn()
+			.mockResolvedValue(mockFeatureData);
+
 		render(
 			<BaseMetricsView
 				entity={mockProject}
-				metricsService={mockMetricsService}
+				metricsService={projectMetricsService}
 				title="Features"
 				defaultDateRange={30}
 				doingStates={["To Do", "In Progress", "Review"]}
@@ -480,7 +510,7 @@ describe("BaseMetricsView component", () => {
 
 		// Wait for component to load and getSizePercentiles to be called
 		await waitFor(() => {
-			expect(mockMetricsService.getSizePercentiles).toHaveBeenCalledWith(
+			expect(projectMetricsService.getSizePercentiles).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
 				expect.any(Date),
