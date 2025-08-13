@@ -198,7 +198,7 @@ testWithUpdatedTeams([3])(
 		});
 
 		await test.step("Change in Feature WIP recalculates Forecasts", async () => {
-			const team = testData.teams[0];
+			const team = testData.teams[2];
 
 			await projectDetailPage.toggleFeatureWIPConfiguration();
 
