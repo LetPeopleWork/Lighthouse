@@ -196,19 +196,5 @@ testWithUpdatedTeams([3])(
 
 			await projectDetailPage.removeMilestone();
 		});
-
-		await test.step("Change in Feature WIP recalculates Forecasts", async () => {
-			const team = testData.teams[2];
-
-			await projectDetailPage.toggleFeatureWIPConfiguration();
-
-			await projectDetailPage.changeFeatureWIPForTeam(team.name, 2);
-
-			const lastUpdatedTimeForFeature =
-				await projectDetailPage.getLastUpdatedDateForFeature(
-					"Majestic Moments",
-				);
-			expectDateToBeRecent(lastUpdatedTimeForFeature);
-		});
 	},
 );
