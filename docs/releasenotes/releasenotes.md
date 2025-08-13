@@ -26,6 +26,9 @@ On project level, you can now see how big your features are in size (in terms of
 
 **This feature will be available in the community edition of Lighthouse**
 
+### ⚠️ Breaking Changes ⚠️
+As part of this change, we also simplified the configuration of the default feature size. For this, we **removed** the possibility to add your own query to filter for Features that should be used in the calculation. Instead, you can now specify a time (in days) that should looked back to fetch historical data that then is used for the percentile calculation.
+
 ## Improvements
 - New Releases are now highlighted with a dialog as soon as it is detected (don't worry, you can disable that behaviour if it's annoying)
 - Update of various third party libraries

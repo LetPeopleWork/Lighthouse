@@ -122,13 +122,10 @@ If no child items are defined, it will fall back to the estimation. If no field 
 The easiest way is to define a fix number, for example 10 items. You can base this number on your historical data or just go with your gut.
 
 ## Historical Feature Size
-Instead of a default size, you can also chose to let Lighthouse calculate your historical feature size. If you do so, you have to define a percentile and a query.
+Instead of a default size, you can also chose to let Lighthouse calculate your historical feature size. If you do so, you have to define a percentile and a time range.
 
 The percentile is a number between 50 and 100. If you chose for example 80, it means that it uses the size that 80% of your Features had. If you go for 50, it uses the size that at least 50% of your features had.
-The features that are used for this calculation are based on the query you specify. The query will match the same [Work Item Types](#work-item-types) that you defined above (so no need to filter this again). Apart from that, you are free to filter however you want.
-
-{: .recommendation}
-We suggest that you filter based on a date. So for example you look at the last 180 days. That will make the system "self-learning" as you use a sliding window and not a fixed set of features.
+The features that are used for this calculation are based on the closed features within the specified time range. So this will be a sliding window, that adjusts over time.
 
 ## Estimated Size
 On top of the default size, which will be similar for any feature, you can also specify a field that would include an estimate. This allows you to use the default size for features you have not looked at at all, while providing more details for some things that you may have started to refine, but have no child items yet.
