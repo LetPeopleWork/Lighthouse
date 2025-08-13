@@ -332,7 +332,7 @@ export const BaseMetricsView = <
 
 			{
 				// Only show this for Projects --> Items are Features
-				(cycleTimeData as IFeature[]).length > 0 && (
+				cycleTimeData.length > 0 && "size" in cycleTimeData[0] && (
 					<Grid size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }}>
 						<FeatureSizeScatterPlotChart
 							sizeDataPoints={cycleTimeData as IFeature[]}
