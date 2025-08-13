@@ -65,12 +65,27 @@ jobs:
           Database__Provider: sqlite
           Database__ConnectionString: 'Data Source=lighthouse.db'
 
+      - name: Write private key to file
+        run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
+
+      - name: Generate license for E2E Tests
+        run: |
+          python Scripts/generate_license.py private_key.pem license.json "1886" "Tim Lighthouse" "tim.lighthouse@letpeople.work" "Let People Work GmbH" "$(date -d '+45 days' '+%Y-%m-%d')"
+
       - name: Wait for Lighthouse to start
         run: |
           echo "Waiting for server to be ready..."
           timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5001; do sleep 1; done'
           echo "Server is ready!"
-      
+     
+      - name: Upload license to Lighthouse
+        run: |
+          echo "Uploading license file..."
+          curl --insecure -X POST \
+            -F "file=@license.json" \
+            https://localhost:5001/api/license/import
+          echo "License uploaded successfully!"
+          
       - name: Recreating Screenshot using Playwright
         run: npm run screenshots
         shell: bash
