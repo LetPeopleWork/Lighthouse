@@ -125,4 +125,11 @@ jobs:
                 documentation
                 automated pr
             draft: false
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-screenshots
+          path: ./Lighthouse.EndToEndTests/playwright-report/
+          retention-days: 30
             
