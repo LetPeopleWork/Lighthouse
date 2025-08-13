@@ -4,10 +4,14 @@ layout: home
 nav_order: 95
 ---
 
+<!--
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
+-->
+
+# Lighthouse v25.8.13.702
 
 ## Licensing
 With this version, Lighthouse has integrated [Licensing](https://docs.lighthouse.letpeople.work/licensing/licensing.html). Licenses are needed for various premium features, and in order to:
@@ -39,7 +43,7 @@ Special Thanks to everyone who contributed their feedback to this release:
 
 A huge thank you goes out also to the [Let People Work Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A) that was actively providing feedback on our licensing plans. Your input was immensly helpful and supported us finding a path forward that should lead to a win-win situation, so that both we as a company and the broader community can profit!
  
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.27.1729...v25.7.27.1729)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.27.1729...v25.8.13.702)
 
 # Lighthouse v25.7.27.1729
 
