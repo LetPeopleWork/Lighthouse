@@ -219,14 +219,12 @@ export const BaseMetricsView = <
 
 	return (
 		<Grid container spacing={2}>
-			<Grid size={{ xs: 12 }}>
-				<DashboardHeader
-					startDate={startDate}
-					endDate={endDate}
-					onStartDateChange={(date) => date && setStartDate(date)}
-					onEndDateChange={(date) => date && setEndDate(date)}
-				/>
-			</Grid>
+			<DashboardHeader
+				startDate={startDate}
+				endDate={endDate}
+				onStartDateChange={(date) => date && setStartDate(date)}
+				onEndDateChange={(date) => date && setEndDate(date)}
+			/>
 
 			<Dashboard
 				items={((): DashboardItem[] => {
@@ -248,11 +246,29 @@ export const BaseMetricsView = <
 								}
 							/>
 						),
-						variant: "small",
+						// place top-left (row 1, first of 4 columns)
+						colStart: 1,
+						colSpan: 3,
+						rowStart: 1,
+						rowSpan: 1,
 					});
 
 					if (additionalItems && additionalItems.length > 0) {
-						items.push(...additionalItems);
+						// Map additional items into the left column of row 2 by default
+						// (e.g. "Features being worked on"). If an additional item already
+						// specifies placement, keep it as-is.
+						const mapped = additionalItems.map((it) =>
+							typeof it.colStart === "number" || typeof it.rowStart === "number"
+								? it
+								: {
+										...it,
+										colStart: it.colStart ?? 1,
+										colSpan: it.colSpan ?? 3,
+										rowStart: it.rowStart ?? 2,
+									},
+						);
+
+						items.push(...mapped);
 					}
 
 					items.push({
@@ -264,7 +280,11 @@ export const BaseMetricsView = <
 								idealWip={0}
 							/>
 						),
-						variant: "small",
+						// top-right (4th column)
+						colStart: 10,
+						colSpan: 3,
+						rowStart: 1,
+						rowSpan: 1,
 					});
 
 					items.push({
@@ -276,7 +296,11 @@ export const BaseMetricsView = <
 								items={cycleTimeData}
 							/>
 						),
-						variant: "small",
+						// place in top row, second column and span two rows
+						colStart: 4,
+						colSpan: 3,
+						rowStart: 1,
+						rowSpan: 2,
 					});
 
 					items.push({
@@ -287,7 +311,11 @@ export const BaseMetricsView = <
 								closedItems={throughputData}
 							/>
 						),
-						variant: "small",
+						// place in top row, third column and span two rows
+						colStart: 7,
+						colSpan: 3,
+						rowStart: 1,
+						rowSpan: 2,
 					});
 
 					items.push({
@@ -301,7 +329,11 @@ export const BaseMetricsView = <
 								predictabilityData={predictabilityData}
 							/>
 						) : null,
-						variant: "large",
+						// place as left half on row 3 (6 cols)
+						colStart: 1,
+						colSpan: 6,
+						rowStart: 3,
+						rowSpan: 4,
 					});
 
 					items.push({
@@ -313,7 +345,11 @@ export const BaseMetricsView = <
 								serviceLevelExpectation={serviceLevelExpectation}
 							/>
 						),
-						variant: "large",
+						// right half of row 3
+						colStart: 7,
+						colSpan: 6,
+						rowStart: 3,
+						rowSpan: 2,
 					});
 
 					items.push({
@@ -326,7 +362,11 @@ export const BaseMetricsView = <
 								doingStates={doingStates}
 							/>
 						),
-						variant: "large",
+						// left half of row 4
+						colStart: 1,
+						colSpan: 6,
+						rowStart: 4,
+						rowSpan: 2,
 					});
 
 					items.push({
@@ -340,7 +380,11 @@ export const BaseMetricsView = <
 								wipLimit={entity.systemWIPLimit}
 							/>
 						) : null,
-						variant: "large",
+						// right half of row 4
+						colStart: 7,
+						colSpan: 6,
+						rowStart: 4,
+						rowSpan: 2,
 					});
 
 					items.push({
@@ -367,7 +411,11 @@ export const BaseMetricsView = <
 									]}
 								/>
 							) : null,
-						variant: "large",
+						// simplified CFD as left half of row 5
+						colStart: 1,
+						colSpan: 6,
+						rowStart: 5,
+						rowSpan: 2,
 					});
 
 					// Feature size chart only when features are present
@@ -380,7 +428,6 @@ export const BaseMetricsView = <
 									sizePercentileValues={sizePercentileValues}
 								/>
 							),
-							variant: "large",
 						});
 					}
 

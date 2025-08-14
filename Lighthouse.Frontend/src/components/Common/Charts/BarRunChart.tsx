@@ -177,7 +177,7 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 									},
 								},
 							]}
-							height={500}
+							// height is controlled by parent card/grid; allow flexible sizing
 						/>
 					</Box>
 				)}

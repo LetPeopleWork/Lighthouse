@@ -192,8 +192,10 @@ const FeatureSizeScatterPlotChart: React.FC<
 			: `Selected ${featuresTerm}`;
 	return sizeDataPoints.length > 0 ? (
 		<>
-			<Card sx={{ p: 2, borderRadius: 2 }}>
-				<CardContent>
+			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+				<CardContent
+					sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+				>
 					<Typography variant="h6">
 						{featuresTerm} {sizeTerm}
 					</Typography>
@@ -236,7 +238,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 						</Stack>
 					)}
 					<ChartContainer
-						height={500}
+						sx={{ flex: 1, minHeight: 0 }}
 						xAxis={[
 							{
 								id: "sizeAxis",

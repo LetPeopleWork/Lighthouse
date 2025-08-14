@@ -1,19 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, test, vi } from "vitest";
-
-// Mock Grid from MUI so we can inspect the props passed to it.
-vi.mock("@mui/material", () => {
-	return {
-		Grid: ({
-			children,
-			...props
-		}: React.PropsWithChildren<Record<string, unknown>>) => (
-			<div data-testid="grid" data-props={JSON.stringify(props)}>
-				{children}
-			</div>
-		),
-	};
-});
+import { describe, expect, test } from "vitest";
 
 import Dashboard from "./Dashboard";
 
@@ -34,63 +20,53 @@ describe("Dashboard", () => {
 		expect(screen.queryByText("Item B")).toBeNull();
 	});
 
-	test("applies default sizes for variants and accepts custom size", () => {
+	test("applies default width/height for variants and accepts custom width", () => {
 		render(
 			<Dashboard
 				items={[
-					{ id: "small", node: <div>Small</div>, variant: "small" },
-					{ id: "large", node: <div>Large</div>, variant: "large" },
-					{ id: "custom", node: <div>Custom</div>, size: { xs: 2, sm: 3 } },
+					{ id: "small", node: <div>Small</div>, colSpan: 3 },
+					{ id: "large", node: <div>Large</div>, colSpan: 6 },
+					{ id: "custom", node: <div>Custom</div>, colSpan: 6, rowSpan: 3 },
 				]}
 			/>,
 		);
 
-		const allGrids = screen.getAllByTestId("grid");
-		// first grid is the container; item grids have a `size` prop in our mock
-		const itemGrids = allGrids.filter(
-			(g) => JSON.parse(g.getAttribute("data-props") || "{}").size,
+		// find all item containers by presence of data-colspan attribute
+		const itemContainers = Array.from(
+			document.querySelectorAll("[data-colspan]"),
 		);
-		expect(itemGrids).toHaveLength(3);
+		expect(itemContainers).toHaveLength(3);
 
-		const smallProps = JSON.parse(
-			itemGrids[0].getAttribute("data-props") || "{}",
-		);
-		const largeProps = JSON.parse(
-			itemGrids[1].getAttribute("data-props") || "{}",
-		);
-		const customProps = JSON.parse(
-			itemGrids[2].getAttribute("data-props") || "{}",
-		);
+		const small = itemContainers[0];
+		const large = itemContainers[1];
+		const custom = itemContainers[2];
 
-		// defaultSmall: { xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }
-		expect(smallProps.size).toEqual({ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 });
+		// small uses colSpan 3, large 6
+		expect(small.getAttribute("data-colspan")).toBe("3");
+		expect(large.getAttribute("data-colspan")).toBe("6");
 
-		// defaultLarge: { xs: 12, sm: 12, md: 12, lg: 9, xl: 6 }
-		expect(largeProps.size).toEqual({ xs: 12, sm: 12, md: 12, lg: 9, xl: 6 });
-
-		expect(customProps.size).toEqual({ xs: 2, sm: 3 });
+		// custom rowSpan is honored
+		expect(custom.getAttribute("data-rowspan")).toBe("3");
 	});
 
-	test("preserves item order and renders grids in the same sequence as items array", () => {
+	test("preserves item order and renders items in the same sequence as items array", () => {
 		render(
 			<Dashboard
 				items={[
-					{ id: "first", node: <div>First</div>, variant: "small" },
-					{ id: "second", node: <div>Second</div>, variant: "small" },
-					{ id: "third", node: <div>Third</div>, variant: "small" },
+					{ id: "first", node: <div>First</div>, colSpan: 3 },
+					{ id: "second", node: <div>Second</div>, colSpan: 3 },
+					{ id: "third", node: <div>Third</div>, colSpan: 3 },
 				]}
 			/>,
 		);
 
-		const allGrids = screen.getAllByTestId("grid");
-		const itemGrids = allGrids.filter(
-			(g) => JSON.parse(g.getAttribute("data-props") || "{}").size,
+		const itemContainers = Array.from(
+			document.querySelectorAll("[data-colspan]"),
 		);
-		expect(itemGrids).toHaveLength(3);
+		expect(itemContainers).toHaveLength(3);
 
-		// Ensure DOM order matches the items order (skip container grid)
-		expect(itemGrids[0]).toHaveTextContent("First");
-		expect(itemGrids[1]).toHaveTextContent("Second");
-		expect(itemGrids[2]).toHaveTextContent("Third");
+		expect(itemContainers[0]).toHaveTextContent("First");
+		expect(itemContainers[1]).toHaveTextContent("Second");
+		expect(itemContainers[2]).toHaveTextContent("Third");
 	});
 });

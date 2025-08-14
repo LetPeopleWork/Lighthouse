@@ -107,7 +107,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 									/>
 								</Box>
 							)}
-							<Box sx={{ position: "relative" }}>
+							<Box sx={{ position: "relative", flex: 1, minHeight: 0 }}>
 								<LineChart
 									onAxisClick={(_event, params) =>
 										handleLineClick(params?.dataIndex ?? -1)
@@ -155,7 +155,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 											},
 										},
 									]}
-									height={500}
+									// height controlled by parent; allow flexible sizing
 								>
 									{wipLimitVisible &&
 										wipLimit !== undefined &&

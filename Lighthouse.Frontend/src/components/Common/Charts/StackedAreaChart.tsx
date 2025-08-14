@@ -121,8 +121,10 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 	const series = showTrend ? [...areaSeries, ...lineSeries] : areaSeries;
 
 	return (
-		<Card sx={{ p: 2, borderRadius: 2 }}>
-			<CardContent>
+		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+			<CardContent
+				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+			>
 				<Typography variant="h6">{title}</Typography>
 				<FormControlLabel
 					control={
@@ -146,7 +148,7 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 						},
 					]}
 					series={series}
-					height={500}
+					// height controlled by parent card/grid
 					slotProps={{
 						legend: {
 							direction: "horizontal",

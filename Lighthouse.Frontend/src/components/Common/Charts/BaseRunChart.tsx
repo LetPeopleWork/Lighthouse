@@ -38,15 +38,19 @@ const BaseRunChart: React.FC<BaseRunChartProps> = ({
 	});
 
 	return chartData?.history > 0 ? (
-		<Card sx={{ p: 2, borderRadius: 2 }}>
-			<CardContent>
+		// Make the card fill the available height so chart children can grow
+		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+			<CardContent
+				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+			>
 				<Typography variant="h6">{title}</Typography>
 				{displayTotal && (
 					<Typography variant="h6">
 						Total: {chartData.total} {workItemsTerm}
 					</Typography>
 				)}
-				{children(data)}
+				{/* Ensure the chart area grows to fill the CardContent */}
+				<div style={{ flex: 1, minHeight: 0 }}>{children(data)}</div>
 			</CardContent>
 		</Card>
 	) : (

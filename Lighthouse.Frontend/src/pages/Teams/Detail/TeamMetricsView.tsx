@@ -65,7 +65,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		}
 	}, [team]);
 
-	const renderTeamSpecificContent = () => (
+	const renderFeaturesTeamWorksOn = () => (
 		<ItemsInProgress
 			title={`${featuresTerm} being Worked On:`}
 			items={inProgressFeatures}
@@ -74,7 +74,10 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	);
 
 	const additionalItems: DashboardItem[] = [
-		{ id: "teamSpecific", node: renderTeamSpecificContent() },
+		{
+			id: "featuresTeamWorksOn",
+			node: renderFeaturesTeamWorksOn(),
+		},
 	];
 
 	return (

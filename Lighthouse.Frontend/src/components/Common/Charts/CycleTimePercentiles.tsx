@@ -288,7 +288,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 					p: 1,
 					borderRadius: 2,
 					cursor: "pointer",
-					height: "230px",
+					height: "100%",
 					display: "flex",
 					flexDirection: "column",
 				}}
