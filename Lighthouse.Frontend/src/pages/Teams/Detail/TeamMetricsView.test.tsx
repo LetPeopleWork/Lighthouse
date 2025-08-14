@@ -14,7 +14,7 @@ interface BaseMetricsViewProps {
 	entity: { name: string };
 	title: string;
 	defaultDateRange: number;
-	renderAdditionalComponents?: () => React.ReactNode;
+	additionalItems?: Array<{ id: string; node: React.ReactNode }>;
 }
 
 vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
@@ -22,15 +22,15 @@ vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
 		entity,
 		title,
 		defaultDateRange,
-		renderAdditionalComponents,
+		additionalItems,
 	}: BaseMetricsViewProps) => (
 		<div data-testid="base-metrics-view">
 			<div data-testid="entity-name">{entity.name}</div>
 			<div data-testid="metrics-title">{title}</div>
 			<div data-testid="default-date-range">{defaultDateRange}</div>
-			{renderAdditionalComponents && (
+			{additionalItems && additionalItems.length > 0 && (
 				<div data-testid="additional-components">
-					{renderAdditionalComponents()}
+					{additionalItems.map((it) => it.node)}
 				</div>
 			)}
 		</div>

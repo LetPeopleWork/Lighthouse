@@ -1,5 +1,4 @@
 import { Grid } from "@mui/material";
-import type React from "react";
 import { useEffect, useState } from "react";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
@@ -35,7 +34,7 @@ export interface BaseMetricsViewProps<
 	metricsService: IMetricsService<T>;
 	title: string;
 	defaultDateRange?: number;
-	renderAdditionalComponents?: () => React.ReactNode;
+	additionalItems?: DashboardItem[];
 	doingStates: string[];
 }
 
@@ -47,7 +46,7 @@ export const BaseMetricsView = <
 	metricsService,
 	title,
 	defaultDateRange = 30,
-	renderAdditionalComponents,
+	additionalItems = [],
 	doingStates,
 }: BaseMetricsViewProps<T, E>) => {
 	const [throughputData, setThroughputData] = useState<RunChartData | null>(
@@ -252,11 +251,9 @@ export const BaseMetricsView = <
 						variant: "small",
 					});
 
-					// additional components passthrough
-					items.push({
-						id: "additional",
-						node: renderAdditionalComponents?.(),
-					});
+					if (additionalItems && additionalItems.length > 0) {
+						items.push(...additionalItems);
+					}
 
 					items.push({
 						id: "blocked",

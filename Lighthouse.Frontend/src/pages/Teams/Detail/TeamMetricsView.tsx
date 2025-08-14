@@ -6,6 +6,7 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
+import type { DashboardItem } from "../../Common/MetricsView/Dashboard";
 import ItemsInProgress from "./ItemsInProgress";
 
 interface TeamMetricsViewProps {
@@ -72,13 +73,17 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		/>
 	);
 
+	const additionalItems: DashboardItem[] = [
+		{ id: "teamSpecific", node: renderTeamSpecificContent() },
+	];
+
 	return (
 		<BaseMetricsView
 			entity={team}
 			metricsService={teamMetricsService}
 			title={workItemsTerm}
 			defaultDateRange={dateRange}
-			renderAdditionalComponents={renderTeamSpecificContent}
+			additionalItems={additionalItems}
 			doingStates={doingStates}
 		/>
 	);

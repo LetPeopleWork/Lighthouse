@@ -794,7 +794,9 @@ describe("BaseMetricsView component", () => {
 				entity={mockProject}
 				metricsService={mockMetricsService}
 				title="Features"
-				renderAdditionalComponents={additionalComponent}
+				additionalItems={[
+					{ id: "additional-test", node: additionalComponent() },
+				]}
 				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
