@@ -3,6 +3,8 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
+using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -19,6 +21,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private readonly int requestTimeoutInSeconds = 100;
         
         private static string rankFieldName = string.Empty;
+
+        private static readonly SocketsHttpHandler SharedHandler = new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+            MaxConnectionsPerServer = 100,
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            EnableMultipleHttp2Connections = true,
+            KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always,
+            KeepAlivePingDelay = TimeSpan.FromSeconds(30),
+            KeepAlivePingTimeout = TimeSpan.FromSeconds(10)
+        };
+
+        private static readonly ConcurrentDictionary<string, HttpClient> ClientCache = new();
 
         public JiraWorkTrackingConnector(
             ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
@@ -385,16 +401,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private HttpClient GetJiraRestClient(WorkTrackingSystemConnection connection)
         {
-            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
+            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
             var username = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Username);
             var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
             var apiToken = cryptoService.Decrypt(encryptedApiToken);
+            var key = $"{url}|{encryptedApiToken}";
 
-            var client = new HttpClient
+            var client = ClientCache.GetOrAdd(key, _ =>
             {
-                BaseAddress = new Uri(url.TrimEnd('/')),
-                Timeout = TimeSpan.FromSeconds(requestTimeoutInSeconds),
-            };
+                var c = new HttpClient(SharedHandler)
+                {
+                    BaseAddress = new Uri(url),
+                    Timeout = TimeSpan.FromSeconds(requestTimeoutInSeconds)
+                };
+                return c;
+            });
 
             if (!string.IsNullOrEmpty(username))
             {

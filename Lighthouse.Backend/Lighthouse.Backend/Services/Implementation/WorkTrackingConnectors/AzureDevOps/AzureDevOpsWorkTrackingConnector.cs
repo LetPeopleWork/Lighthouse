@@ -6,7 +6,8 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-
+using System.Collections.Concurrent;
+using System.Net;
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 using LighthouseWorkItem = Lighthouse.Backend.Models.WorkItem;
 
@@ -19,6 +20,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private readonly ILogger<AzureDevOpsWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
+
+        private static readonly ConcurrentDictionary<string, VssConnection> ConnectionCache = new();
+        private static readonly ConcurrentDictionary<string, WorkItemTrackingHttpClient> ClientCache = new();
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> OrgLimiters = new();
+
+        private SemaphoreSlim GetLimiter(string url) => OrgLimiters.GetOrAdd(new Uri(url).Host, _ => new SemaphoreSlim(6));
 
         public AzureDevOpsWorkTrackingConnector(ILogger<AzureDevOpsWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
         {
@@ -223,50 +230,99 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return features;
         }
 
-        private async Task<int> GetRelatedWorkItems(Team team, string relatedWorkItemId)
-        {
-            var witClient = GetClientService(team.WorkTrackingSystemConnection);
-            var allItemsQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)} {PrepareRelatedItemQuery(relatedWorkItemId, team.ParentOverrideField)}";
-
-            var totalWorkItems = await GetWorkItemReferencesByQuery(witClient, allItemsQuery);
-
-            return totalWorkItems.Count();
-        }
-
         private async Task<IEnumerable<AdoWorkItem>> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query, params string[] additionalFields)
         {
-            var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
-            var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
+            try
+            {
+                var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
+                var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
 
-            var adoWorkItems = await GetAdoWorkItemsById(workItemReferences.Select(wi => wi.Id), workItemQueryOwner, additionalFields);
+                if (!workItemReferences.Any())
+                    return Array.Empty<AdoWorkItem>();
 
-            return adoWorkItems;
+                return await GetAdoWorkItemsById(workItemReferences.Select(wi => wi.Id), workItemQueryOwner, additionalFields);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to fetch ADO work items for query '{Query}'", query);
+                return Array.Empty<AdoWorkItem>();
+            }
+        }
+
+        private async Task<T> ExecuteWithThrottle<T>(WorkItemTrackingHttpClient witClient, string url, Func<Task<T>> action)
+        {
+            var limiter = GetLimiter(url);
+            await limiter.WaitAsync();
+            try
+            {
+                return await ExecuteWithRetry(action);
+            }
+            finally
+            {
+                limiter.Release();
+            }
+        }
+
+        private static bool IsRateLimited(VssServiceException ex)
+        {
+            var msg = ex.Message ?? string.Empty;
+            return msg.Contains("Rate limits", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("exceeding usage of resource 'Concurrency'", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static async Task<T> ExecuteWithRetry<T>(Func<Task<T>> action)
+        {
+            var delay = TimeSpan.FromSeconds(1);
+            for (var attempt = 0; attempt < 6; attempt++)
+            {
+                try
+                {
+                    return await action();
+                }
+                catch (VssServiceException ex) when (IsRateLimited(ex))
+                {
+                    await Task.Delay(delay + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 250)));
+                    delay = TimeSpan.FromSeconds(Math.Min(30, delay.TotalSeconds * 2));
+                }
+                catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable)
+                {
+                    await Task.Delay(delay + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 250)));
+                    delay = TimeSpan.FromSeconds(Math.Min(30, delay.TotalSeconds * 2));
+                }
+            }
+            return await action();
         }
 
         private async Task<IEnumerable<WorkItemBase>> ConvertAdoWorkItemToLighthouseWorkItemBase(IEnumerable<AdoWorkItem> adoWorkItems, IWorkItemQueryOwner workItemQueryOwner)
         {
-            var tasks = adoWorkItems.Select(async adoWorkItem =>
+            var throttler = new SemaphoreSlim(8);
+            var tasks = adoWorkItems.Select(async wi =>
             {
-                var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItem(adoWorkItem, workItemQueryOwner);
-                return workItemBase;
+                await throttler.WaitAsync();
+                try { return await ConvertAdoWorkItemToLighthouseWorkItem(wi, workItemQueryOwner); }
+                finally { throttler.Release(); }
             });
-
-            var workItems = await Task.WhenAll(tasks);
-
-            return workItems;
+            return await Task.WhenAll(tasks);
         }
 
         private async Task<IEnumerable<WorkItemReference>> GetWorkItemReferencesByQuery(WorkItemTrackingHttpClient witClient, string query)
         {
             try
             {
-                var queryResult = await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
-                return queryResult.WorkItems;
+                var result = await ExecuteWithThrottle(witClient, witClient.BaseAddress!.ToString(),
+                    () => witClient.QueryByWiqlAsync(new Wiql { Query = query }));
+
+                return result.WorkItems ?? Array.Empty<WorkItemReference>();
             }
             catch (VssServiceException ex)
             {
                 logger.LogError(ex, "Error while querying Work Items with Query '{Query}'", query);
-                return [];
+                return Array.Empty<WorkItemReference>();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unexpected error while querying Work Items with Query '{Query}'", query);
+                return Array.Empty<WorkItemReference>();
             }
         }
 
@@ -299,13 +355,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private async Task<IEnumerable<AdoWorkItem>> GetWorkItemsInChunks(IEnumerable<int> workItemIds, WorkItemTrackingHttpClient witClient, WorkItemExpand expand, IEnumerable<string> fields)
         {
+            var url = witClient.BaseAddress!.ToString();
             var workItems = new List<AdoWorkItem>();
 
             foreach (var chunk in workItemIds.Chunk(maxChunkSize))
             {
-                logger.LogDebug("Fetching chunk of Work Item IDs: {ChunkIds}", string.Join(",", chunk));
-                var chunkWorkItems = await witClient.GetWorkItemsAsync(chunk, fields, expand: expand);
-                workItems.AddRange(chunkWorkItems);
+                var result = await ExecuteWithThrottle(witClient, url, () => witClient.GetWorkItemsAsync(chunk, fields, expand: expand));
+                workItems.AddRange(result);
             }
 
             return workItems;
@@ -337,21 +393,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId)
         {
             var witClient = GetClientService(workItemQueryOwner.WorkTrackingSystemConnection);
-
             DateTime? startedDate = null;
             DateTime? closedDate = null;
 
             if (stateCategory == StateCategories.Done)
             {
-                startedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoingStates, workItemQueryOwner.DoneStates);
-                closedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoneStates, []);
+                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, workItemQueryOwner.DoingStates, workItemQueryOwner.DoneStates);
+                closedDate = await GetStateTransitionDateThrottled(witClient, workItemId, workItemQueryOwner.DoneStates, []);
             }
             else if (stateCategory == StateCategories.Doing)
             {
-                startedDate = await GetStateTransitionDate(witClient, workItemId, workItemQueryOwner.DoingStates, workItemQueryOwner.DoneStates);
+                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, workItemQueryOwner.DoingStates, workItemQueryOwner.DoneStates);
             }
 
-            // It can happen that no started date is set if an item is created directly in closed state. Assume that the closed date is the started date in this case.
             if (startedDate == null && closedDate != null)
             {
                 startedDate = closedDate;
@@ -360,41 +414,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (startedDate, closedDate);
         }
 
-        private static async Task<DateTime?> GetStateTransitionDate(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> targetStates, List<string> statesToIgnore)
+        private async Task<DateTime?> GetStateTransitionDateThrottled(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> targetStates, List<string> statesToIgnore)
         {
+            if (!workItemId.HasValue) return null;
+
+            var revisions = await ExecuteWithThrottle(witClient, witClient.BaseAddress!.ToString(), () => witClient.GetRevisionsAsync(workItemId.Value));
             var movedToStateCategory = new List<DateTime>();
-
             var previousState = string.Empty;
-
-            if (!workItemId.HasValue)
-            {
-                return null;
-            }
-
-            var revisions = await witClient.GetRevisionsAsync(workItemId.Value);
 
             foreach (var revision in revisions)
             {
-                if (RevisionWasChangingState(revision, out (string state, DateTime changedDate) result))
+                if (RevisionWasChangingState(revision, out var result))
                 {
                     var isRelevantCategory = targetStates.IsItemInList(result.state) && !targetStates.IsItemInList(previousState) && !statesToIgnore.IsItemInList(previousState);
-
-                    if (isRelevantCategory)
-                    {
-                        movedToStateCategory.Add(result.changedDate);
-                    }
-
+                    if (isRelevantCategory) movedToStateCategory.Add(result.changedDate);
                     previousState = result.state;
                 }
             }
 
-            var lastTransitionDate = movedToStateCategory.OrderByDescending(date => date).FirstOrDefault();
-            if (lastTransitionDate == default)
-            {
-                return null;
-            }
-
-            return DateTime.SpecifyKind(lastTransitionDate, DateTimeKind.Utc);
+            var last = movedToStateCategory.OrderByDescending(d => d).FirstOrDefault();
+            return last == default ? null : DateTime.SpecifyKind(last, DateTimeKind.Utc);
         }
 
         private static bool RevisionWasChangingState(AdoWorkItem revision, out (string state, DateTime changedDate) result)
@@ -568,37 +607,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return query;
         }
 
-        private static string PrepareRelatedItemQuery(string relatedItemId, string? parentOverrideField)
-        {
-            var additionalRelatedFieldQuery = string.Empty;
-            if (!string.IsNullOrEmpty(parentOverrideField))
-            {
-                additionalRelatedFieldQuery = $"OR [{parentOverrideField}] = '{relatedItemId}'";
-            }
-
-            return $"AND ([System.Parent] = '{relatedItemId}' {additionalRelatedFieldQuery})";
-        }
-
         private WorkItemTrackingHttpClient GetClientService(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             var url = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
             var encryptedPersonalAccessToken = workTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
-
             var personalAccessToken = cryptoService.Decrypt(encryptedPersonalAccessToken);
+            var key = $"{url}|{personalAccessToken}";
 
-            var connection = CreateConnection(url, personalAccessToken);
-            var witClient = connection.GetClient<WorkItemTrackingHttpClient>();
+            var connection = ConnectionCache.GetOrAdd(key, _ =>
+            {
+                var c = CreateConnection(url, personalAccessToken);
+                c.Settings.SendTimeout = TimeSpan.FromSeconds(requestTimeoutInSeconds);
+                return c;
+            });
 
-            connection.Settings.SendTimeout = TimeSpan.FromSeconds(requestTimeoutInSeconds);
-
-            return witClient;
+            return ClientCache.GetOrAdd(key, _ => connection.GetClient<WorkItemTrackingHttpClient>());
         }
 
         private static VssConnection CreateConnection(string azureDevOpsUrl, string personalAccessToken)
         {
             var azureDevOpsUri = new Uri(azureDevOpsUrl);
             var credentials = new VssBasicCredential(personalAccessToken, string.Empty);
-
             return new VssConnection(azureDevOpsUri, credentials);
         }
     }

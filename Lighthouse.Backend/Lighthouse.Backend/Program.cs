@@ -1,37 +1,38 @@
-using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Factories;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Data;
-using System.Globalization;
-using Serilog;
-using System.Text.Json.Serialization;
-using Serilog.Settings.Configuration;
+using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.MCP;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
-using Lighthouse.Backend.Services.Interfaces.Update;
-using System.Collections.Concurrent;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Options;
+using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Forecast;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
-using Lighthouse.Backend.Services.Interfaces.TeamData;
+using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.TeamData;
-using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
-using Lighthouse.Backend.Services.Implementation.WorkItems;
-using Lighthouse.Backend.Services.Interfaces.WorkItems;
-using Lighthouse.Backend.MCP;
-using ModelContextProtocol.Protocol;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
-using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.TeamData;
+using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Options;
+using ModelContextProtocol.Protocol;
+using Serilog;
+using Serilog.Settings.Configuration;
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend
 {
@@ -133,20 +134,20 @@ namespace Lighthouse.Backend
         private static void ConfigureServices(WebApplicationBuilder builder)
         {
             builder.Services
-                                 .AddCors(options =>
-                                 {
-                                     options.AddPolicy("AllowAll",
-                                         builder =>
-                                         {
-                                             builder.AllowAnyOrigin()
-                                                    .AllowAnyMethod()
-                                                    .AllowAnyHeader();
-                                         });
-                                 })
-                                .AddControllers().AddJsonOptions(options =>
-                                {
-                                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                                });
+                .AddCors(options =>
+                {
+                    options.AddPolicy("AllowAll",
+                      builder =>
+                      {
+                          builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                      });
+                })
+                .AddControllers().AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                });
 
             // Add Swagger services
             builder.Services.AddEndpointsApiExplorer();
@@ -157,10 +158,24 @@ namespace Lighthouse.Backend
                  .AddJsonProtocol(options =>
                  {
                      options.PayloadSerializerOptions.Converters
-                        .Add(new JsonStringEnumConverter());
+                      .Add(new JsonStringEnumConverter());
                  });
 
-            builder.Services.AddHttpClient();
+            builder.Services.ConfigureAll<HttpClientFactoryOptions>(o =>
+            {
+                o.HandlerLifetime = TimeSpan.FromMinutes(2);
+            });
+
+            builder.Services
+            .AddHttpClient("Default")
+            .ConfigurePrimaryHttpMessageHandler(sp => new SocketsHttpHandler
+            {
+                PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+                MaxConnectionsPerServer = 100,
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                EnableMultipleHttp2Connections = true
+            });
         }
 
         private static void ConfigureOptionalServices(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
