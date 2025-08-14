@@ -9,7 +9,6 @@ import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
-import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
@@ -24,6 +23,7 @@ import type {
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
 import ItemsInProgress from "../../Teams/Detail/ItemsInProgress";
+import DashboardHeader from "./DashboardHeader";
 
 export interface BaseMetricsViewProps<
 	T extends IWorkItem | IFeature,
@@ -218,8 +218,8 @@ export const BaseMetricsView = <
 
 	return (
 		<Grid container spacing={2}>
-			<Grid size={{ xs: 12, sm: 8, md: 6, lg: 4, xl: 3 }}>
-				<DateRangeSelector
+			<Grid size={{ xs: 12 }}>
+				<DashboardHeader
 					startDate={startDate}
 					endDate={endDate}
 					onStartDateChange={(date) => date && setStartDate(date)}

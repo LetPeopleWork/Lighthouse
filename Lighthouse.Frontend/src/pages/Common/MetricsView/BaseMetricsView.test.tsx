@@ -405,8 +405,11 @@ describe("BaseMetricsView component", () => {
 			/>,
 		);
 
-		// Check DateRangeSelector is rendered
-		expect(screen.getByTestId("date-range-selector")).toBeInTheDocument();
+		// Open header date-range popover and check DateRangeSelector is rendered
+		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+		expect(
+			await screen.findByTestId("date-range-selector"),
+		).toBeInTheDocument();
 
 		// Check all service calls are made
 		await waitFor(() => {
@@ -539,8 +542,11 @@ describe("BaseMetricsView component", () => {
 			/>,
 		);
 
-		// Check DateRangeSelector is rendered
-		expect(screen.getByTestId("date-range-selector")).toBeInTheDocument();
+		// Open header date-range popover and check DateRangeSelector is rendered
+		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+		expect(
+			await screen.findByTestId("date-range-selector"),
+		).toBeInTheDocument();
 
 		// Check all service calls are made
 		await waitFor(() => {
@@ -589,6 +595,9 @@ describe("BaseMetricsView component", () => {
 		// Reset mock call counts
 		vi.clearAllMocks();
 
+		// Open date-range popover then change start date
+		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+		await screen.findByTestId("start-date");
 		// Change start date
 		fireEvent.click(screen.getByTestId("change-start-date"));
 
@@ -628,6 +637,9 @@ describe("BaseMetricsView component", () => {
 		// Reset mock call counts
 		vi.clearAllMocks();
 
+		// Open date-range popover then change end date
+		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+		await screen.findByTestId("start-date");
 		// Change end date
 		fireEvent.click(screen.getByTestId("change-end-date"));
 
@@ -648,7 +660,7 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
-	it("initializes with the specified default date range", () => {
+	it("initializes with the specified default date range", async () => {
 		render(
 			<BaseMetricsView
 				entity={mockProject}
@@ -659,6 +671,9 @@ describe("BaseMetricsView component", () => {
 			/>,
 		);
 
+		// Open the date-range popover to access the mocked selector
+		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+		await screen.findByTestId("date-range-selector");
 		const startDateElement = screen.getByTestId("start-date");
 		const endDateElement = screen.getByTestId("end-date");
 
@@ -683,7 +698,7 @@ describe("BaseMetricsView component", () => {
 		expect(endDate.getFullYear()).toBe(today.getFullYear());
 	});
 
-	it("falls back to default date range of 30 days when not specified", () => {
+	it("falls back to default date range of 30 days when not specified", async () => {
 		render(
 			<BaseMetricsView
 				entity={mockProject}
@@ -694,6 +709,9 @@ describe("BaseMetricsView component", () => {
 			/>,
 		);
 
+		// Open the date-range popover to access the mocked selector
+		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+		await screen.findByTestId("date-range-selector");
 		const startDateElement = screen.getByTestId("start-date");
 		const endDateElement = screen.getByTestId("end-date");
 
@@ -756,8 +774,11 @@ describe("BaseMetricsView component", () => {
 			);
 		});
 
-		// The component should still render the container structure
-		expect(screen.getByTestId("date-range-selector")).toBeInTheDocument();
+		// The component should still render the container structure; open popover and check
+		fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+		expect(
+			await screen.findByTestId("date-range-selector"),
+		).toBeInTheDocument();
 		expect(screen.getByTestId("cycle-time-scatter-plot")).toBeInTheDocument();
 
 		consoleSpy.mockRestore();
@@ -904,6 +925,9 @@ describe("BaseMetricsView component", () => {
 			// Reset mock call counts
 			vi.clearAllMocks();
 
+			// Open date-range popover then change start date
+			fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+			await screen.findByTestId("start-date");
 			// Change start date
 			fireEvent.click(screen.getByTestId("change-start-date"));
 
@@ -943,6 +967,9 @@ describe("BaseMetricsView component", () => {
 			// Reset mock call counts
 			vi.clearAllMocks();
 
+			// Open date-range popover then change end date
+			fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+			await screen.findByTestId("start-date");
 			// Change end date
 			fireEvent.click(screen.getByTestId("change-end-date"));
 

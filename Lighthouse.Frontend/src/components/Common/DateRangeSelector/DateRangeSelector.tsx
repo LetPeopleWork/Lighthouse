@@ -1,4 +1,4 @@
-import { Box, Card, Stack, Typography, useTheme } from "@mui/material";
+import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -51,97 +51,85 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 
 	return (
 		<LocalizationProvider dateAdapter={AdapterDateFns}>
-			<Card
-				elevation={1}
+			<Box
 				sx={{
+					p: { xs: 1.5, sm: 2 },
+					display: "flex",
+					flexDirection: "column",
+					gap: 2,
 					width: "100%",
-					m: 2,
-					borderRadius: 2,
-					p: 1,
-					overflow: "visible",
 				}}
 			>
-				<Box
-					sx={{
-						p: { xs: 1.5, sm: 2 },
-						display: "flex",
-						flexDirection: "column",
-						gap: 2,
-					}}
-				>
-					<Stack spacing={1}>
-						<Typography
-							variant="subtitle2"
-							color="text.primary"
-							fontWeight="medium"
-						>
-							Start Date
-						</Typography>
-						<DatePicker
-							value={startDate}
-							onChange={(newValue) =>
-								onStartDateChange(newValue as Date | null)
-							}
-							format={localDateFormat}
-							sx={{
-								width: "100%",
-								"& .MuiInputBase-root": {
-									borderColor: theme.palette.primary.main,
-								},
-							}}
-							slotProps={{
-								textField: {
-									size: "small",
-									fullWidth: true,
-								},
-								day: {
-									sx: {
-										"&.Mui-selected": {
-											backgroundColor: theme.palette.primary.main,
-										},
+				<Stack spacing={1}>
+					<Typography
+						variant="subtitle2"
+						color="text.primary"
+						fontWeight="medium"
+					>
+						Start Date
+					</Typography>
+					<DatePicker
+						value={startDate}
+						onChange={(newValue) => onStartDateChange(newValue as Date | null)}
+						format={localDateFormat}
+						sx={{
+							width: "100%",
+							"& .MuiInputBase-root": {
+								borderColor: theme.palette.primary.main,
+							},
+						}}
+						slotProps={{
+							textField: {
+								size: "small",
+								fullWidth: true,
+							},
+							day: {
+								sx: {
+									"&.Mui-selected": {
+										backgroundColor: theme.palette.primary.main,
 									},
 								},
-							}}
-							maxDate={endDate}
-						/>
-					</Stack>
+							},
+						}}
+						maxDate={endDate}
+					/>
+				</Stack>
 
-					<Stack spacing={1}>
-						<Typography
-							variant="subtitle2"
-							color="text.primary"
-							fontWeight="medium"
-						>
-							End Date
-						</Typography>
-						<DatePicker
-							value={endDate}
-							onChange={(newValue) => onEndDateChange(newValue as Date | null)}
-							format={localDateFormat}
-							sx={{
-								width: "100%",
-								"& .MuiInputBase-root": {
-									borderColor: theme.palette.primary.main,
-								},
-							}}
-							slotProps={{
-								textField: {
-									size: "small",
-									fullWidth: true,
-								},
-								day: {
-									sx: {
-										"&.Mui-selected": {
-											backgroundColor: theme.palette.primary.main,
-										},
+				<Stack spacing={1}>
+					<Typography
+						variant="subtitle2"
+						color="text.primary"
+						fontWeight="medium"
+					>
+						End Date
+					</Typography>
+					<DatePicker
+						value={endDate}
+						onChange={(newValue) => onEndDateChange(newValue as Date | null)}
+						format={localDateFormat}
+						sx={{
+							width: "100%",
+							"& .MuiInputBase-root": {
+								borderColor: theme.palette.primary.main,
+							},
+						}}
+						slotProps={{
+							textField: {
+								size: "small",
+								fullWidth: true,
+							},
+							day: {
+								sx: {
+									"&.Mui-selected": {
+										backgroundColor: theme.palette.primary.main,
 									},
 								},
-							}}
-							minDate={startDate}
-						/>
-					</Stack>
-				</Box>
-			</Card>
+							},
+						}}
+						minDate={startDate}
+					/>
+				</Stack>
+			</Box>
 		</LocalizationProvider>
 	);
 };
