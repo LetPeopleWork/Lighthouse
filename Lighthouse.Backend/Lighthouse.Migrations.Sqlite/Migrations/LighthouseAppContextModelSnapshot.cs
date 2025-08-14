@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<string>("Discriminator")
                         .IsRequired()
-                        .HasMaxLength(34)
+                        .HasMaxLength(13)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("TotalTrials")
@@ -192,58 +192,6 @@ namespace Lighthouse.Backend.Migrations
                     b.HasIndex("ForecastId");
 
                     b.ToTable("IndividualSimulationResult");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.History.FeatureHistoryEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("FeatureId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("FeatureReferenceId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateOnly>("Snapshot")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FeatureReferenceId", "Snapshot");
-
-                    b.ToTable("FeatureHistory");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.History.FeatureWorkHistoryEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("FeatureHistoryEntryId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("RemainingWorkItems")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TotalWorkItems")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FeatureHistoryEntryId");
-
-                    b.ToTable("FeatureWorkHistoryEntry");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.LicenseInformation", b =>
@@ -684,33 +632,6 @@ namespace Lighthouse.Backend.Migrations
                     b.HasDiscriminator().HasValue("WhenForecast");
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.History.WhenForecastHistoryEntry", b =>
-                {
-                    b.HasBaseType("Lighthouse.Backend.Models.Forecast.ForecastBase");
-
-                    b.Property<int>("FeatureHistoryEntryId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("NumberOfItems")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasIndex("FeatureHistoryEntryId");
-
-                    b.ToTable("ForecastBase", t =>
-                        {
-                            t.Property("NumberOfItems")
-                                .HasColumnName("WhenForecastHistoryEntry_NumberOfItems");
-
-                            t.Property("TeamId")
-                                .HasColumnName("WhenForecastHistoryEntry_TeamId");
-                        });
-
-                    b.HasDiscriminator().HasValue("WhenForecastHistoryEntry");
-                });
-
             modelBuilder.Entity("FeatureProject", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Feature", null)
@@ -754,17 +675,6 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Forecast");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.History.FeatureWorkHistoryEntry", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.History.FeatureHistoryEntry", "FeatureHistoryEntry")
-                        .WithMany("FeatureWork")
-                        .HasForeignKey("FeatureHistoryEntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("FeatureHistoryEntry");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Milestone", b =>
@@ -861,17 +771,6 @@ namespace Lighthouse.Backend.Migrations
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.History.WhenForecastHistoryEntry", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.History.FeatureHistoryEntry", "FeatureHistoryEntry")
-                        .WithMany("Forecasts")
-                        .HasForeignKey("FeatureHistoryEntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("FeatureHistoryEntry");
-                });
-
             modelBuilder.Entity("Lighthouse.Backend.Models.Feature", b =>
                 {
                     b.Navigation("FeatureWork");
@@ -882,13 +781,6 @@ namespace Lighthouse.Backend.Migrations
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.ForecastBase", b =>
                 {
                     b.Navigation("SimulationResults");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.History.FeatureHistoryEntry", b =>
-                {
-                    b.Navigation("FeatureWork");
-
-                    b.Navigation("Forecasts");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Project", b =>

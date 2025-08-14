@@ -323,11 +323,6 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	);
 
 	await takeElementScreenshot(
-		systemSettings.dataRetentionSettings,
-		"settings/dataretention.png",
-	);
-
-	await takeElementScreenshot(
 		systemSettings.optionalFeatures,
 		"settings/optionalfeatures.png",
 	);

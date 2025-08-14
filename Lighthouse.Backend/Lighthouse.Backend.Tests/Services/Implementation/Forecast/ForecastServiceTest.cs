@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     public class ForecastServiceTest
     {
         private Mock<IRepository<Feature>> featureRepositoryMock;
-        private Mock<IFeatureHistoryService> featureHistoryServiceMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         private int idCounter = 0;
@@ -24,7 +23,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         public void Setup()
         {
             featureRepositoryMock = new Mock<IRepository<Feature>>();
-            featureHistoryServiceMock = new Mock<IFeatureHistoryService>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
         }
 
@@ -502,25 +500,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
-        [Test]
-        public async Task UpdateForecastsForProject_ArchivesFeatures()
-        {
-            var subject = CreateSubjectWithPersistentThroughput();
-
-            var team = CreateTeam(1, [1]);
-
-            var feature1 = SetupFeature(team, 35);
-            var feature2 = SetupFeature(team, 20);
-
-            SetupFeatures(feature1, feature2);
-
-            var project = CreateProject(feature1, feature2);
-
-            await subject.UpdateForecastsForProject(project);
-
-            featureHistoryServiceMock.Verify(x => x.ArchiveFeatures(It.Is<IEnumerable<Feature>>(features => features.Contains(feature1) && features.Contains(feature2))));
-        }
-
         private Feature SetupFeature(Team team, int remainingItems)
         {
             return SetupFeature([(team, remainingItems, remainingItems)]);
@@ -544,12 +523,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private ForecastService CreateSubjectWithPersistentThroughput()
         {
-            return new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, featureHistoryServiceMock.Object);
+            return new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object);
         }
 
         private ForecastService CreateSubjectWithRealThroughput()
         {
-            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, featureHistoryServiceMock.Object);
+            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)

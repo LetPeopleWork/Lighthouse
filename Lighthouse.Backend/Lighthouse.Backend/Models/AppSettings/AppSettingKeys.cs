@@ -86,8 +86,6 @@
 
         public const string ProjectSettingBlockedTags = "DefaultProjectSetting:BlockedTags";
 
-        public const string CleanUpDataHistorySettingsMaxStorageTimeInDays = "CleanUpDataHistorySettings:MaxStorageTimeInDays";
-
         public const string WorkTrackingSystemSettingsOverrideRequestTimeout = "WorkTrackingSystemSettings:OverrideRequestTimeout";
 
         public const string WorkTrackingSystemSettingsRequestTimeoutInSeconds = "WorkTrackingSystemSettings:RequestTimeoutInSeconds";

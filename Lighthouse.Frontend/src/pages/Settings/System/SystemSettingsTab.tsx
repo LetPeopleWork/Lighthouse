@@ -2,8 +2,6 @@ import BiotechIcon from "@mui/icons-material/Biotech";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
-import Container from "@mui/material/Container";
-import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -11,14 +9,12 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
-import type { IDataRetentionSettings } from "../../../models/AppSettings/DataRetentionSettings";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -28,10 +24,6 @@ import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import ImportConfigurationDialog from "./ImportConfiguration/ImportConfigurationDialog";
 
 const SystemSettingsTab: React.FC = () => {
-	// Data Retention state
-	const [dataRetentionSettings, setDataRetentionSettings] =
-		useState<IDataRetentionSettings | null>(null);
-
 	// Optional Features state
 	const [optionalFeatures, setOptionalFeatures] = useState<IOptionalFeature[]>(
 		[],
@@ -45,40 +37,12 @@ const SystemSettingsTab: React.FC = () => {
 		null,
 	);
 
-	const {
-		settingsService,
-		optionalFeatureService,
-		configurationService,
-		licensingService,
-	} = useContext(ApiServiceContext);
-
-	// Data Retention functions
-	const fetchDataRetentionSettings = useCallback(async () => {
-		const loadedSettings = await settingsService.getDataRetentionSettings();
-		setDataRetentionSettings(loadedSettings);
-	}, [settingsService]);
-
-	const updateDataRetentionSettings = async () => {
-		if (dataRetentionSettings == null) {
-			return;
-		}
-
-		await settingsService.updateDataRetentionSettings(dataRetentionSettings);
-	};
+	const { optionalFeatureService, configurationService, licensingService } =
+		useContext(ApiServiceContext);
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
-	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
-
-	const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (dataRetentionSettings) {
-			setDataRetentionSettings({
-				...dataRetentionSettings,
-				maxStorageTimeInDays: Number.parseInt(event.target.value, 10),
-			});
-		}
-	};
 
 	// Optional Features functions
 	const fetchOptionalFeatures = useCallback(async () => {
@@ -131,10 +95,9 @@ const SystemSettingsTab: React.FC = () => {
 	};
 
 	useEffect(() => {
-		fetchDataRetentionSettings();
 		fetchOptionalFeatures();
 		fetchLicenseStatus();
-	}, [fetchDataRetentionSettings, fetchOptionalFeatures, fetchLicenseStatus]);
+	}, [fetchOptionalFeatures, fetchLicenseStatus]);
 
 	return (
 		<Box sx={{ mb: 4 }}>
@@ -225,37 +188,6 @@ const SystemSettingsTab: React.FC = () => {
 			</InputGroup>
 			<InputGroup title={`${featureTerm} Refresh`}>
 				<RefreshSettingUpdater title={featureTerm} settingName="Feature" />
-			</InputGroup>
-
-			<InputGroup title="Data Retention Settings" initiallyExpanded={true}>
-				<Container maxWidth={false}>
-					<Grid container spacing={3}>
-						<Grid size={{ xs: 12 }}>
-							<TextField
-								label="Maximum Data Retention Time (Days)"
-								type="number"
-								value={dataRetentionSettings?.maxStorageTimeInDays ?? ""}
-								onChange={handleInputChange}
-								fullWidth
-								slotProps={{
-									htmlInput: {
-										min: 30,
-									},
-								}}
-								helperText={`After this many days the archived data for ${featuresTerm} is removed.`}
-								data-testid="data-retention-days-input"
-							/>
-						</Grid>
-						<Grid size={{ xs: 12 }}>
-							<ActionButton
-								buttonVariant="contained"
-								onClickHandler={updateDataRetentionSettings}
-								buttonText="Update Data Retention Settings"
-								data-testid="update-data-retention-button"
-							/>
-						</Grid>
-					</Grid>
-				</Container>
 			</InputGroup>
 		</Box>
 	);

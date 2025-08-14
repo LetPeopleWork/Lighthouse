@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
                 existingLicense.Name = item.Name;
                 existingLicense.Email = item.Email;
+                existingLicense.LicenseNumber = item.LicenseNumber;
                 existingLicense.Organization = item.Organization;
                 existingLicense.ExpiryDate = item.ExpiryDate;
                 existingLicense.Signature = item.Signature;

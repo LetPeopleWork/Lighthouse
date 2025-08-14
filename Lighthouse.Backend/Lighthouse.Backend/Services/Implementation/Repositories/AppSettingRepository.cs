@@ -43,8 +43,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddIfNotExists(new AppSetting { Id = 24, Key = AppSettingKeys.TeamSettingDoneStates, Value = "Done,Closed" });
 
             AddIfNotExists(new AppSetting { Id = 25, Key = AppSettingKeys.ProjectSettingOverrideRealChildCountStates, Value = string.Empty });
-
-            AddIfNotExists(new AppSetting { Id = 26, Key = AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, Value = "90" });
                         
             AddIfNotExists(new AppSetting { Id = 27, Key = AppSettingKeys.ProjectSettingsFeatureOwnerField, Value = string.Empty });
             AddIfNotExists(new AppSetting { Id = 28, Key = AppSettingKeys.TeamSettingAutomaticallyAdjustFeatureWIP, Value = $"{false}" });

@@ -11,7 +11,6 @@ using System.Globalization;
 using Serilog;
 using System.Text.Json.Serialization;
 using Serilog.Settings.Configuration;
-using Lighthouse.Backend.Models.History;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Collections.Concurrent;
@@ -192,7 +191,6 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IWorkItemRepository, WorkItemRepository>();
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
-            builder.Services.AddScoped<IRepository<FeatureHistoryEntry>, FeatureHistoryRepository>();
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
             builder.Services.AddScoped<IRepository<TerminologyEntry>, TerminologyRepository>();
             builder.Services.AddScoped<IRepository<LicenseInformation>, LicenseInformationRepository>();
@@ -209,7 +207,6 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IAppSettingService, AppSettingService>();
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
-            builder.Services.AddScoped<IFeatureHistoryService, FeatureHistoryService>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             builder.Services.AddScoped<IProjectMetricsService, ProjectMetricsService>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
@@ -231,9 +228,6 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IProjectUpdater, ProjectUpdater>();
 
             builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
-
-            builder.Services.AddHostedService<DataRetentionService>();
-
 
             builder.Services.AddSingleton<ICryptoService, CryptoService>();
             builder.Services.AddSingleton<IGitHubService, GitHubService>();

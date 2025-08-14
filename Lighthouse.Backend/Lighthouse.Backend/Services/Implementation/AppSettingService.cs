@@ -271,23 +271,6 @@ namespace Lighthouse.Backend.Services.Implementation
             await repository.Save();
         }
 
-        public DataRetentionSettings GetDataRetentionSettings()
-        {
-            return new DataRetentionSettings
-            {
-                MaxStorageTimeInDays = int.Parse(GetSettingByKey(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays).Value)
-            };
-        }
-
-        public async Task UpdateDataRetentionSettings(DataRetentionSettings cleanUpDataHistorySettings)
-        {
-            var maxStorageTimeInDays = GetSettingByKey(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays);
-            maxStorageTimeInDays.Value = cleanUpDataHistorySettings.MaxStorageTimeInDays.ToString();
-            repository.Update(maxStorageTimeInDays);
-
-            await repository.Save();
-        }
-
         public WorkTrackingSystemSettings GetWorkTrackingSystemSettings()
         {
             return new WorkTrackingSystemSettings

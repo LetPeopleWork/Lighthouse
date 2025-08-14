@@ -72,20 +72,6 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
-        [HttpGet("DataRetentionSettings")]
-        public ActionResult<DataRetentionSettings> GetDataRetentionSettings()
-        {
-            var settings = appSettingService.GetDataRetentionSettings();
-            return Ok(settings);
-        }
-
-        [HttpPut("DataRetentionSettings")]
-        public async Task<ActionResult> UpdateDataRetentionSettings(DataRetentionSettings dataRetentionSettings)
-        {
-            await appSettingService.UpdateDataRetentionSettings(dataRetentionSettings);
-            return Ok();
-        }
-
         [HttpGet("WorkTrackingSystemSettings")]
         public ActionResult<WorkTrackingSystemSettings> GetWorkTrackingSystemSettings()
         {

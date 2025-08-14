@@ -1,6 +1,5 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDataRetentionSettings } from "../../models/AppSettings/DataRetentionSettings";
 import {
 	type IRefreshSettings,
 	RefreshSettings,
@@ -139,39 +138,6 @@ describe("SettingsService", () => {
 		expect(mockedAxios.put).toHaveBeenCalledWith(
 			"/appsettings/defaultprojectsettings",
 			mockProjectSettings,
-		);
-	});
-
-	it("should get data retention settings", async () => {
-		const mockResponse: IDataRetentionSettings = {
-			maxStorageTimeInDays: 30,
-		};
-
-		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
-
-		const dataRetentionSettings =
-			await settingsService.getDataRetentionSettings();
-
-		expect(dataRetentionSettings).toEqual(mockResponse);
-		expect(mockedAxios.get).toHaveBeenCalledWith(
-			"/appsettings/dataRetentionSettings",
-		);
-	});
-
-	it("should update data retention settings", async () => {
-		const mockDataRetentionSettings: IDataRetentionSettings = {
-			maxStorageTimeInDays: 45,
-		};
-
-		mockedAxios.put.mockResolvedValueOnce({});
-
-		await settingsService.updateDataRetentionSettings(
-			mockDataRetentionSettings,
-		);
-
-		expect(mockedAxios.put).toHaveBeenCalledWith(
-			"/appsettings/dataRetentionSettings",
-			mockDataRetentionSettings,
 		);
 	});
 });

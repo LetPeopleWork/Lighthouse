@@ -95,28 +95,6 @@ export class SystemSettingsPage {
 			.click();
 	}
 
-	async setMaximumDataRetentionTime(maxDays: number): Promise<void> {
-		await this.page
-			.getByRole("spinbutton", { name: "Maximum Data Retention Time (" })
-			.fill(`${maxDays}`);
-	}
-
-	async getMaximumDataRetentionTime(): Promise<number> {
-		const maxRetentionInput = this.page.getByRole("spinbutton", {
-			name: /Maximum Data Retention Time/,
-		});
-
-		await maxRetentionInput.waitFor({ state: "visible" });
-
-		const value = (await maxRetentionInput.inputValue()) ?? "0";
-		return Number(value);
-	}
-	async updateDataRetentionSettings(): Promise<void> {
-		await this.page
-			.getByRole("button", { name: "Update Data Retention Settings" })
-			.click();
-	}
-
 	async clickImportConfigurationButton(): Promise<void> {
 		await this.page.getByTestId("import-configuration-button").click();
 	}
@@ -159,12 +137,6 @@ export class SystemSettingsPage {
 
 	get featureRefreshSettings(): Locator {
 		return this.page.getByText("Feature RefreshInterval (");
-	}
-
-	get dataRetentionSettings(): Locator {
-		return this.page.getByText(
-			"Data Retention SettingsMaximum Data Retention Time (Days)Maximum Data Retention",
-		);
 	}
 
 	get optionalFeatures(): Locator {

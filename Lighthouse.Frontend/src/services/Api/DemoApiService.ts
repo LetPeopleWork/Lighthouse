@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import { LoremIpsum } from "lorem-ipsum";
-import type { IDataRetentionSettings } from "../../models/AppSettings/DataRetentionSettings";
 import {
 	type IRefreshSettings,
 	RefreshSettings,
@@ -578,10 +577,6 @@ export class DemoApiService
 {
 	private readonly subscribers: Map<string, (status: IUpdateStatus) => void> =
 		new Map();
-
-	private dataRetentionSettings: IDataRetentionSettings = {
-		maxStorageTimeInDays: 90,
-	};
 
 	private projectSettings: IProjectSettings[] = [
 		{
@@ -1639,18 +1634,6 @@ export class DemoApiService
 	): Promise<void> {
 		console.log(`Updating ${projecSettings.name} Team Settings`);
 		await delay();
-	}
-
-	async getDataRetentionSettings(): Promise<IDataRetentionSettings> {
-		await delay();
-		return this.dataRetentionSettings;
-	}
-
-	async updateDataRetentionSettings(
-		dataRetentionSettings: IDataRetentionSettings,
-	): Promise<void> {
-		await delay();
-		this.dataRetentionSettings = dataRetentionSettings;
 	}
 
 	generateThroughput(): number[] {

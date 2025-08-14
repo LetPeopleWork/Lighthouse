@@ -35,6 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             {
                 Assert.That(savedLicense.Name, Is.EqualTo(licenseInfo.Name));
                 Assert.That(savedLicense.Email, Is.EqualTo(licenseInfo.Email));
+                Assert.That(savedLicense.LicenseNumber, Is.EqualTo(licenseInfo.LicenseNumber));
                 Assert.That(savedLicense.Organization, Is.EqualTo(licenseInfo.Organization));
                 Assert.That(savedLicense.ExpiryDate, Is.EqualTo(licenseInfo.ExpiryDate));
                 Assert.That(savedLicense.Signature, Is.EqualTo(licenseInfo.Signature));
@@ -64,6 +65,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             licenseInfo.Email = "newemail@test.com";
             licenseInfo.Organization = "LetPeopleWork AG";
             licenseInfo.ExpiryDate = DateTime.Now.AddYears(2);
+            licenseInfo.LicenseNumber = "1886";
             licenseInfo.Signature = "HoppGC!";
             subject.Add(licenseInfo);
             await subject.Save();
@@ -74,6 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             {
                 Assert.That(savedLicense.Name, Is.EqualTo(licenseInfo.Name));
                 Assert.That(savedLicense.Email, Is.EqualTo(licenseInfo.Email));
+                Assert.That(savedLicense.LicenseNumber, Is.EqualTo(licenseInfo.LicenseNumber));
                 Assert.That(savedLicense.Organization, Is.EqualTo(licenseInfo.Organization));
                 Assert.That(savedLicense.ExpiryDate, Is.EqualTo(licenseInfo.ExpiryDate));
                 Assert.That(savedLicense.Signature, Is.EqualTo(licenseInfo.Signature));

@@ -27,13 +27,7 @@ const mockUpdateFeature = vi.fn();
 mockOptionalFeatureService.getAllFeatures = mockGetAllFeatures;
 mockOptionalFeatureService.updateFeature = mockUpdateFeature;
 
-const mockGetDataRetentionSettings = vi.fn();
-const mockUpdateDataRetentionSettings = vi.fn();
-
 const mockSettingsService: ISettingsService = createMockSettingsService();
-mockSettingsService.getDataRetentionSettings = mockGetDataRetentionSettings;
-mockSettingsService.updateDataRetentionSettings =
-	mockUpdateDataRetentionSettings;
 
 const mockExportConfiguration = vi.fn();
 
@@ -112,10 +106,6 @@ describe("SystemSettingsTab Component", () => {
 			},
 		]);
 
-		mockGetDataRetentionSettings.mockResolvedValue({
-			maxStorageTimeInDays: 30,
-		});
-
 		mockGetLicenseStatus.mockResolvedValue({
 			hasLicense: true,
 			isValid: true,
@@ -143,59 +133,6 @@ describe("SystemSettingsTab Component", () => {
 	afterEach(() => {
 		vi.clearAllMocks();
 		vi.restoreAllMocks();
-	});
-
-	it("should fetch and display the data retention settings", async () => {
-		const mockData = { maxStorageTimeInDays: 30 };
-		mockGetDataRetentionSettings.mockResolvedValue(Promise.resolve(mockData));
-
-		renderWithMockApiProvider();
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
-
-		expect(screen.getByDisplayValue("30")).toBeInTheDocument();
-	});
-
-	it("should handle input changes", async () => {
-		const mockData = { maxStorageTimeInDays: 30 };
-		mockGetDataRetentionSettings.mockResolvedValue(Promise.resolve(mockData));
-
-		renderWithMockApiProvider();
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
-
-		fireEvent.change(
-			await screen.findByLabelText("Maximum Data Retention Time (Days)"),
-			{ target: { value: "60" } },
-		);
-
-		expect(screen.getByDisplayValue("60")).toBeInTheDocument();
-	});
-
-	it("should call updateSettings with new values when button is clicked", async () => {
-		const mockData = { maxStorageTimeInDays: 30 };
-		const updatedData = { maxStorageTimeInDays: 60 };
-		mockGetDataRetentionSettings.mockResolvedValue(Promise.resolve(mockData));
-		mockUpdateDataRetentionSettings.mockResolvedValue(Promise.resolve());
-
-		renderWithMockApiProvider();
-
-		await waitFor(() =>
-			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-		);
-
-		fireEvent.change(
-			await screen.findByLabelText("Maximum Data Retention Time (Days)"),
-			{ target: { value: updatedData.maxStorageTimeInDays.toString() } },
-		);
-
-		fireEvent.click(screen.getByText(/Update Data Retention Settings/));
-
-		expect(mockUpdateDataRetentionSettings).toHaveBeenCalledWith(updatedData);
 	});
 
 	it("should fetch and display optional features", async () => {
@@ -266,9 +203,6 @@ describe("SystemSettingsTab Component", () => {
 	});
 
 	it("should call exportConfiguration when Export Configuration button is clicked", async () => {
-		mockGetDataRetentionSettings.mockResolvedValue({
-			maxStorageTimeInDays: 30,
-		});
 		mockGetAllFeatures.mockResolvedValue([
 			{
 				id: 1,
@@ -295,9 +229,6 @@ describe("SystemSettingsTab Component", () => {
 	});
 
 	it("should open the import configuration dialog when Import Configuration button is clicked", async () => {
-		mockGetDataRetentionSettings.mockResolvedValue({
-			maxStorageTimeInDays: 30,
-		});
 		mockGetAllFeatures.mockResolvedValue([
 			{
 				id: 1,

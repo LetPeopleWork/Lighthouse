@@ -21,10 +21,6 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         Task UpdateDefaultProjectSettings(ProjectSettingDto defaultProjectSetting);
 
-        DataRetentionSettings GetDataRetentionSettings();
-
-        Task UpdateDataRetentionSettings(DataRetentionSettings cleanUpDataHistorySettings);
-
         WorkTrackingSystemSettings GetWorkTrackingSystemSettings();
 
         Task UpdateWorkTrackingSystemSettings(WorkTrackingSystemSettings workTrackingSystemSettings);

@@ -200,16 +200,6 @@ Each refresh type contains three different settings. All settings are specified 
 | Refresh After (Minutes) | The time after which a refresh will be triggered if the last one was more than this time ago. |
 | Start Delay (Minutes) | The delay before the background task is started when the application starts. This can be useful as you may not want to trigger updates just after startup. |
 
-## Data Retention
-Lighthouse stores Feature data in order to process/visualize it later on. The data includes the forecast for this feature, how many items were pending and how many were done, and which teams were involved.
-
-This settings allows you to define how many entries you want to keep. Older entries will be deleted from Lighthouse permanently.
-
-![Data Retention](../../assets/settings/dataretention.png)
-
-{: .note}
-Setting this to a lower number can help you save space, especially if you have many projects in one Lighthouse instance.
-
 # Default Team Settings
 To simplify [Team Creation](../teams/edit.html), you can adjust the default values that are used when you create a new team. While not all settings can be changed, you preconfigure many different settings to make the creation process smoother.
 

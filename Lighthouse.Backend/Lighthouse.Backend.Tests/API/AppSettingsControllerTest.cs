@@ -162,42 +162,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetDataRetentionSettings_ReturnsSettings()
-        {
-            var settings = new DataRetentionSettings { MaxStorageTimeInDays = 12 };
-            appSettingServiceMock.Setup(x => x.GetDataRetentionSettings()).Returns(settings);
-
-            var subject = CreateSubject();
-
-            var result = subject.GetDataRetentionSettings();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-
-                var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.EqualTo(settings));
-            };
-        }
-
-        [Test]
-        public async Task UpdateDataRetentionSettings_UpdatesSettings()
-        {
-            var settings = new DataRetentionSettings { MaxStorageTimeInDays = 1337 };
-
-            var subject = CreateSubject();
-
-            var result = await subject.UpdateDataRetentionSettings(settings);
-
-            using (Assert.EnterMultipleScope())
-            {
-                appSettingServiceMock.Verify(x => x.UpdateDataRetentionSettings(settings), Times.Once);
-                Assert.That(result, Is.InstanceOf<OkResult>());
-            };
-        }
-
-        [Test]
         public void GetWorkTrackingSystemSettings_ReturnsSettings()
         {
             var settings = new WorkTrackingSystemSettings { OverrideRequestTimeout = true, RequestTimeoutInSeconds = 300 };

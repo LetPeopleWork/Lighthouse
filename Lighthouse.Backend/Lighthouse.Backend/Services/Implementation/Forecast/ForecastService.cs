@@ -16,20 +16,17 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private readonly ILogger<ForecastService> logger;
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IRepository<Feature> featureRepository;
-        private readonly IFeatureHistoryService featureHistoryService;
 
         public ForecastService(
             IRandomNumberService randomNumberService,
             ILogger<ForecastService> logger,
             ITeamMetricsService teamMetricsService,
-            IRepository<Feature> featureRepository,
-            IFeatureHistoryService featureHistoryService)
+            IRepository<Feature> featureRepository)
         {
             this.randomNumberService = randomNumberService;
             this.logger = logger;
             this.teamMetricsService = teamMetricsService;
             this.featureRepository = featureRepository;
-            this.featureHistoryService = featureHistoryService;
         }
 
         public HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast)
@@ -92,8 +89,6 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             await ForecastFeatures(features);
 
             await featureRepository.Save();
-
-            await ArchiveFeatures(features);
         }
 
         private async Task ForecastFeatures(IEnumerable<Feature> features)
@@ -250,11 +245,6 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         {
             var randomDay = randomNumberService.GetRandomNumber(throughput.History);
             return throughput.GetCountOnDay(randomDay);
-        }
-
-        private async Task ArchiveFeatures(IEnumerable<Feature> features)
-        {
-            await featureHistoryService.ArchiveFeatures(features);
         }
     }
 }

@@ -386,31 +386,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetCleanUpDataHistorySettings_ReturnsCorrectSettings()
-        {
-            SetupRepositoryForKeys(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, "42");
-
-            var service = CreateService();
-
-            var settings = service.GetDataRetentionSettings();
-
-            Assert.That(settings.MaxStorageTimeInDays, Is.EqualTo(42));
-        }
-
-        [Test]
-        public async Task UpdateCleanUpDataHistorySettings_UpdatesCorrectlyAsync()
-        {
-            SetupRepositoryForKeys(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, "60");
-
-            var service = CreateService();
-
-            var cleanUpDataHistorySettings = new DataRetentionSettings { MaxStorageTimeInDays = 42 };
-            await service.UpdateDataRetentionSettings(cleanUpDataHistorySettings);
-
-            VerifyUpdateCalled(AppSettingKeys.CleanUpDataHistorySettingsMaxStorageTimeInDays, "42");
-        }
-
-        [Test]
         public void GetWorkTrackingSystemSettings_ReturnsCorrectSettings()
         {
             SetupRepositoryForKeys(

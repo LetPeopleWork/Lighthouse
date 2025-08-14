@@ -1,4 +1,3 @@
-import type { IDataRetentionSettings } from "../../models/AppSettings/DataRetentionSettings";
 import type { IRefreshSettings } from "../../models/AppSettings/RefreshSettings";
 import type { IWorkTrackingSystemSettings } from "../../models/AppSettings/WorkTrackingSystemSettings";
 import type { IProjectSettings } from "../../models/Project/ProjectSettings";
@@ -15,10 +14,6 @@ export interface ISettingsService {
 	updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void>;
 	getDefaultProjectSettings(): Promise<IProjectSettings>;
 	updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void>;
-	getDataRetentionSettings(): Promise<IDataRetentionSettings>;
-	updateDataRetentionSettings(
-		dataRetentionSettings: IDataRetentionSettings,
-	): Promise<void>;
 	getWorkTrackingSystemSettings(): Promise<IWorkTrackingSystemSettings>;
 	updateWorkTrackingSystemSettings(
 		workTrackingSystemSettings: IWorkTrackingSystemSettings,
@@ -95,27 +90,6 @@ export class SettingsService
 			await this.apiService.put<IProjectSettings>(
 				"/appsettings/defaultprojectsettings",
 				projecSettings,
-			);
-		});
-	}
-
-	async getDataRetentionSettings(): Promise<IDataRetentionSettings> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IDataRetentionSettings>(
-				"/appsettings/dataRetentionSettings",
-			);
-
-			return response.data;
-		});
-	}
-
-	async updateDataRetentionSettings(
-		dataRetentionSettings: IDataRetentionSettings,
-	): Promise<void> {
-		this.withErrorHandling(async () => {
-			await this.apiService.put<IDataRetentionSettings>(
-				"/appsettings/dataRetentionSettings",
-				dataRetentionSettings,
 			);
 		});
 	}
