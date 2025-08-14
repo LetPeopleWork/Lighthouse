@@ -214,7 +214,7 @@ namespace Lighthouse.Backend.API
                 {
                     Id = milestone.Id,
                     Name = milestone.Name,
-                    Date = milestone.Date,
+                    Date = DateTime.SpecifyKind(milestone.Date, DateTimeKind.Utc),
                     Project = project,
                     ProjectId = project.Id,
                 });

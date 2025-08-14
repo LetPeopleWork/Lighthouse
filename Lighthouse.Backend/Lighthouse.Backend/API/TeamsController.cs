@@ -177,8 +177,8 @@ namespace Lighthouse.Backend.API
             team.FeatureWIP = teamSetting.FeatureWIP;
             team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;
             team.ThroughputHistory = teamSetting.ThroughputHistory;
-            team.ThroughputHistoryStartDate = teamSetting.ThroughputHistoryStartDate;
-            team.ThroughputHistoryEndDate = teamSetting.ThroughputHistoryEndDate;
+            team.ThroughputHistoryStartDate = teamSetting.ThroughputHistoryStartDate.HasValue ? DateTime.SpecifyKind(teamSetting.ThroughputHistoryStartDate.Value, DateTimeKind.Utc) : null;
+            team.ThroughputHistoryEndDate = teamSetting.ThroughputHistoryEndDate.HasValue ? DateTime.SpecifyKind(teamSetting.ThroughputHistoryEndDate.Value, DateTimeKind.Utc) : null;
             team.WorkItemTypes = teamSetting.WorkItemTypes;
             team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
             team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
