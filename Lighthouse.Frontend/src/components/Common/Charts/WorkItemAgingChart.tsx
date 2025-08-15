@@ -246,8 +246,10 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 
 	return inProgressItems.length > 0 ? (
 		<>
-			<Card sx={{ p: 2, borderRadius: 2 }}>
-				<CardContent>
+			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+				<CardContent
+					sx={{ display: "flex", flexDirection: "column", height: "100%" }}
+				>
 					<Typography variant="h6">{workItemTerm} Aging</Typography>
 
 					<Stack
@@ -316,7 +318,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 					</Stack>
 
 					<ChartContainer
-						height={500}
+						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[
 							{
 								id: "stateAxis",

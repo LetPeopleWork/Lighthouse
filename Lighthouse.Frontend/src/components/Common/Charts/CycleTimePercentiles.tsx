@@ -131,7 +131,16 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 
 		return (
 			<CardContent
-				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+				sx={{
+					height: "100%",
+					display: "flex",
+					flexDirection: "column",
+					flex: "1 1 auto",
+					p: 1,
+					boxSizing: "border-box",
+					overflow: "hidden",
+					minHeight: 0, // allow children to shrink
+				}}
 			>
 				<Box
 					display="flex"
@@ -139,7 +148,13 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 					alignItems="center"
 					mb={2}
 				>
-					<Typography variant="h6">{serviceLevelExpectationTerm}</Typography>
+					<Typography
+						variant="h6"
+						sx={{ minWidth: 0, overflowWrap: "anywhere" }}
+						style={{ fontSize: "clamp(0.65rem, 1.8vw, 0.95rem)" }}
+					>
+						{serviceLevelExpectationTerm}
+					</Typography>
 					<IconButton onClick={(e) => handleFlip(e)} size="small">
 						<ArrowBackIcon fontSize="small" />
 					</IconButton>
@@ -150,8 +165,14 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 					flexDirection="column"
 					alignItems="center"
 					justifyContent="center"
+					sx={{ px: 1, textAlign: "center", minWidth: 0 }}
 				>
-					<Typography variant="body2" color="text.secondary" mb={1}>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						mb={1}
+						sx={{ fontSize: "clamp(0.55rem, 1.2vw, 0.75rem)" }}
+					>
 						Target:
 					</Typography>
 					<Typography
@@ -161,10 +182,10 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 						sx={{
 							fontStyle: "italic",
 							fontWeight: "bold",
+							fontSize: "clamp(0.6rem, 1.4vw, 0.85rem)",
 						}}
 					>
-						{`${serviceLevelExpectation.percentile}% of all ${workItemsTerm} are done
-						within ${formatDays(serviceLevelExpectation.value)} or less`}
+						{`${serviceLevelExpectation.percentile}% of all ${workItemsTerm} are done within ${formatDays(serviceLevelExpectation.value)} or less`}
 					</Typography>
 
 					{stats.totalItems > 0 ? (
@@ -174,18 +195,26 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 							alignItems="center"
 							justifyContent="center"
 							mt={2}
+							sx={{ minWidth: 0 }}
 						>
-							<Typography variant="body2" color="text.secondary" mb={1}>
+							<Typography
+								variant="body2"
+								color="text.secondary"
+								mb={1}
+								sx={{ fontSize: "clamp(0.55rem, 1.2vw, 0.75rem)" }}
+							>
 								Actual:
 							</Typography>
 
 							<Typography
 								variant="body1"
 								fontWeight="bold"
-								sx={{ color: titleColor }}
+								sx={{
+									color: titleColor,
+									fontSize: "clamp(0.75rem, 1.8vw, 1rem)",
+								}}
 							>
-								{`${stats.percentageWithinSLE.toFixed(1)}% of all ${workItemsTerm} completed
-								within ${sleTerm} target`}
+								{`${stats.percentageWithinSLE.toFixed(1)}% of all ${workItemsTerm} completed within ${sleTerm} target`}
 							</Typography>
 						</Box>
 					) : (
@@ -194,6 +223,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 							align="center"
 							color="text.secondary"
 							mt={4}
+							sx={{ fontSize: "clamp(0.65rem, 1.4vw, 0.95rem)" }}
 						>
 							{`No completed ${workItemsTerm} available to analyze`}
 						</Typography>
@@ -206,10 +236,25 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 	const renderPercentileContent = () => {
 		return (
 			<CardContent
-				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+				sx={{
+					height: "100%",
+					display: "flex",
+					flexDirection: "column",
+					flex: "1 1 auto",
+					p: 1,
+					boxSizing: "border-box",
+					overflow: "hidden",
+					minHeight: 0,
+				}}
 			>
 				<Box display="flex" justifyContent="space-between" alignItems="center">
-					<Typography variant="h6" gutterBottom>
+					<Typography
+						variant="h6"
+						gutterBottom
+						sx={{ minWidth: 0, overflow: "hidden" }}
+						noWrap
+						style={{ fontSize: "clamp(0.9rem, 1.8vw, 1rem)" }}
+					>
 						{`${cycleTimeTerm} Percentiles`}
 					</Typography>
 					{serviceLevelExpectation && (
@@ -226,55 +271,77 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 								"&:hover": { opacity: 0.9 },
 								// Add a subtle elevation for better visibility in dark mode
 								boxShadow: theme.customShadows.subtle,
+								"& .MuiChip-label": {
+									fontSize: "clamp(0.6rem, 1.0vw, 0.8rem)",
+								},
 							}}
 						/>
 					)}
 				</Box>
 				{percentileValues.length > 0 ? (
-					<Table size="small">
-						<TableBody>
-							{percentileValues
-								.slice()
-								.sort((a, b) => b.percentile - a.percentile)
-								.map((item) => {
-									const forecastLevel = getForecastLevel(item.percentile);
-									const IconComponent = forecastLevel.IconComponent;
+					/* Use a flexed box for the table so it shrinks to available space instead of causing scrolling */
+					<Box sx={{ overflow: "hidden", flex: "1 1 auto", minHeight: 0 }}>
+						<Table size="small" sx={{ height: "100%", tableLayout: "fixed" }}>
+							<TableBody>
+								{percentileValues
+									.slice()
+									.sort((a, b) => b.percentile - a.percentile)
+									.map((item) => {
+										const forecastLevel = getForecastLevel(item.percentile);
+										const IconComponent = forecastLevel.IconComponent;
 
-									return (
-										<TableRow key={item.percentile}>
-											<TableCell sx={{ border: 0, padding: "4px 0" }}>
-												<Typography
-													variant="body2"
-													sx={{ display: "flex", alignItems: "center" }}
+										return (
+											<TableRow key={item.percentile}>
+												<TableCell sx={{ border: 0, padding: "2px 0" }}>
+													<Typography
+														variant="body2"
+														sx={{ display: "flex", alignItems: "center" }}
+													>
+														<IconComponent
+															fontSize="small"
+															sx={{
+																color: forecastLevel.color,
+																mr: 1,
+																fontSize: "clamp(0.8rem, 1.4vw, 1rem)",
+															}}
+														/>
+														{item.percentile}th
+													</Typography>
+												</TableCell>
+												<TableCell
+													align="right"
+													sx={{ border: 0, padding: "2px 0" }}
 												>
-													<IconComponent
-														fontSize="small"
-														sx={{ color: forecastLevel.color, mr: 1 }}
-													/>
-													{item.percentile}th
-												</Typography>
-											</TableCell>
-											<TableCell
-												align="right"
-												sx={{ border: 0, padding: "4px 0" }}
-											>
-												<Typography
-													variant="body1"
-													fontWeight="bold"
-													sx={{ color: forecastLevel.color }}
-												>
-													{formatDays(item.value)}
-												</Typography>
-											</TableCell>
-										</TableRow>
-									);
-								})}
-						</TableBody>
-					</Table>
+													<Typography
+														variant="body1"
+														fontWeight="bold"
+														sx={{ color: forecastLevel.color }}
+														style={{
+															fontSize: "clamp(0.85rem, 1.8vw, 0.95rem)",
+														}}
+													>
+														{formatDays(item.value)}
+													</Typography>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+							</TableBody>
+						</Table>
+					</Box>
 				) : (
-					<Typography variant="body2" color="text.secondary">
-						No data available
-					</Typography>
+					<Box
+						sx={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							flex: "1 1 auto",
+						}}
+					>
+						<Typography variant="body2" color="text.secondary">
+							No data available
+						</Typography>
+					</Box>
 				)}
 			</CardContent>
 		);
@@ -284,13 +351,16 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 		<>
 			<Card
 				sx={{
-					m: 2,
-					p: 1,
+					m: 0,
+					p: 0,
 					borderRadius: 2,
 					cursor: "pointer",
 					height: "100%",
+					width: "100%",
 					display: "flex",
 					flexDirection: "column",
+					boxSizing: "border-box",
+					overflow: "hidden",
 				}}
 				onClick={handleOpenDialog}
 			>

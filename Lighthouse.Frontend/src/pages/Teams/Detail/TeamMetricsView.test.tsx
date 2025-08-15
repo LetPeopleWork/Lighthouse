@@ -30,7 +30,36 @@ vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
 			<div data-testid="default-date-range">{defaultDateRange}</div>
 			{additionalItems && additionalItems.length > 0 && (
 				<div data-testid="additional-components">
-					{additionalItems.map((it) => it.node)}
+					{additionalItems.map((it) => {
+						// If the item provides a React node, render it. Otherwise
+						// treat it as an InProgressEntry-like object and render
+						// a simple items-in-progress structure so tests can assert
+						// against it (matches production which may pass data)
+						const entry = it as {
+							node?: React.ReactNode;
+							id?: string | number;
+							title?: string;
+							items?: Array<unknown>;
+							idealWip?: number;
+						};
+
+						return entry.node ? (
+							entry.node
+						) : (
+							<div
+								data-testid="items-in-progress"
+								key={entry.id || entry.title}
+							>
+								<div data-testid="items-title">{entry.title}</div>
+								<div data-testid="items-count">
+									{(entry.items || []).length}
+								</div>
+								{entry.idealWip !== undefined && (
+									<div data-testid="ideal-wip">{entry.idealWip}</div>
+								)}
+							</div>
+						);
+					})}
 				</div>
 			)}
 		</div>
@@ -200,7 +229,9 @@ describe("TeamMetricsView component", () => {
 		setupTest(team);
 
 		// Assert
-		expect(screen.getByTestId("default-date-range")).toHaveTextContent("30");
+		await waitFor(() => {
+			expect(screen.getByTestId("default-date-range")).toHaveTextContent("30");
+		});
 	});
 
 	it("should use days since throughputStartDate as date range when team is not using fixed dates", async () => {
@@ -219,6 +250,8 @@ describe("TeamMetricsView component", () => {
 		setupTest(team);
 
 		// Assert
-		expect(screen.getByTestId("default-date-range")).toHaveTextContent("45");
+		await waitFor(() => {
+			expect(screen.getByTestId("default-date-range")).toHaveTextContent("45");
+		});
 	});
 });

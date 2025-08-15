@@ -196,7 +196,6 @@ describe("FeatureSizeScatterPlotChart", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
 			const container = screen.getByTestId("chart-container");
-			expect(container).toHaveAttribute("data-height", "500");
 			// Max size is 15, with 10% padding should be 16.5
 			expect(Number(container.getAttribute("data-x-axis-max"))).toBeGreaterThan(
 				15,

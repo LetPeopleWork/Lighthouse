@@ -2,52 +2,115 @@ import { Box, useMediaQuery, useTheme } from "@mui/material";
 import type React from "react";
 
 /**
- * Dashboard item width is provided as a single `width` number expressed in
- * logical columns (baseColumns). The dashboard scales this to a 12-column grid.
- * Example: with baseColumns=4, a width of 1 becomes 3 (out of 12).
+ * Dashboard item with standardized sizing based on 12-column grid
  */
 export interface DashboardItem {
 	id?: string | number;
 	node: React.ReactNode | null | undefined;
-	/** explicit column start (1-based) in the 12-column grid. If provided, will be used instead of flow placement */
-	// ... existing fields below
-	colStart?: number;
-	rowStart?: number;
-	/** explicit column span in 12-column grid (1..12). */
-	colSpan?: number;
-	/** explicit row span. */
-	rowSpan?: number;
+	priority?: number;
+	size?: "small" | "medium" | "large" | "xlarge";
+	minWidth?: number;
 }
 
 interface DashboardProps {
 	items: DashboardItem[];
-	/** spacing measured in theme spacing units (default 2 -> 16px) */
 	spacing?: number;
+	baseRowHeight?: number;
+	allowVerticalStacking?: boolean;
 }
 
-// callers provide spans directly in 12-grid units (optimized for desktop)
+const Dashboard: React.FC<DashboardProps> = ({
+	items,
+	spacing = 2,
+	baseRowHeight = 100,
+	allowVerticalStacking = true,
+}) => {
+	const visibleItems = items
+		.filter((it) => it.node != null)
+		.sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
 
-const Dashboard: React.FC<DashboardProps> = ({ items, spacing = 2 }) => {
-	const visibleOriginal = items.filter((it) => it.node != null);
-
-	// preserve original relative order
-	const visible = visibleOriginal;
-
-	// spacing: MUI spacing unit is 8px by default
-	const gapPx = spacing * 8;
-
-	// determine the active column count based on breakpoints. callers provide
-	// sizes assuming the largest (12) grid; on smaller screens we scale down
-	// to 8 or 4 columns so items "break" / stack appropriately.
 	const theme = useTheme();
+	const isXlUp = useMediaQuery(theme.breakpoints.up("xl"));
+	const isLgUp = useMediaQuery(theme.breakpoints.up("lg"));
 	const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
 	const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
-	// Use a 12-column layout on desktop (md+), 8 columns for tablet (sm..md),
-	// and a minimum 4-column layout on the smallest screens (<sm).
-	const columns = isMdUp ? 12 : isSmUp ? 8 : 4;
 
-	// (colspan calculation handled per-item below so tests can assert canonical
-	// 12-grid values via data attributes while CSS uses a scaled span)
+	// More granular responsive column counts
+	const columns = isXlUp ? 12 : isLgUp ? 10 : isMdUp ? 8 : isSmUp ? 6 : 4;
+	const gapPx = spacing * 8;
+
+	// Get responsive size configuration
+	const getResponsiveSize = (
+		size: string = "medium",
+		availableColumns: number,
+	) => {
+		// Define sizes for different breakpoints
+		const sizeConfigs = {
+			small: {
+				xl: { colSpan: 3, rowSpan: 1 },
+				lg: { colSpan: 2, rowSpan: 1 },
+				md: { colSpan: 2, rowSpan: 1 },
+				sm: { colSpan: 3, rowSpan: 1 },
+				xs: { colSpan: 4, rowSpan: 1 },
+			},
+			medium: {
+				xl: { colSpan: 4, rowSpan: 2 },
+				lg: { colSpan: 5, rowSpan: 2 },
+				md: { colSpan: 4, rowSpan: 2 },
+				sm: { colSpan: 6, rowSpan: 2 },
+				xs: { colSpan: 4, rowSpan: 2 },
+			},
+			large: {
+				xl: { colSpan: 6, rowSpan: 5 },
+				lg: { colSpan: 5, rowSpan: 5 },
+				md: { colSpan: 8, rowSpan: 4 },
+				sm: { colSpan: 6, rowSpan: 4 },
+				xs: { colSpan: 4, rowSpan: 3 },
+			},
+			xlarge: {
+				xl: { colSpan: 12, rowSpan: 4 },
+				lg: { colSpan: 10, rowSpan: 4 },
+				md: { colSpan: 8, rowSpan: 4 },
+				sm: { colSpan: 6, rowSpan: 4 },
+				xs: { colSpan: 4, rowSpan: 4 },
+			},
+		};
+
+		const sizeConfig =
+			sizeConfigs[size as keyof typeof sizeConfigs] || sizeConfigs.medium;
+
+		// Determine current breakpoint
+		let currentBreakpoint: keyof typeof sizeConfig;
+		if (isXlUp) currentBreakpoint = "xl";
+		else if (isLgUp) currentBreakpoint = "lg";
+		else if (isMdUp) currentBreakpoint = "md";
+		else if (isSmUp) currentBreakpoint = "sm";
+		else currentBreakpoint = "xs";
+
+		const targetSize = sizeConfig[currentBreakpoint];
+
+		// Ensure we don't exceed available columns
+		return {
+			colSpan: Math.min(availableColumns, targetSize.colSpan),
+			rowSpan: targetSize.rowSpan,
+		};
+	};
+
+	// Calculate if an item should be hidden on very small screens
+	const shouldHideItem = (item: DashboardItem, index: number) => {
+		if (!allowVerticalStacking && !isSmUp) {
+			// On very small screens, only show high-priority items
+			const priority = item.priority ?? 999;
+			const visibleCount = Math.floor(columns / 2); // Show roughly half the items
+			return priority > 50 || index >= visibleCount;
+		}
+		return false;
+	};
+
+	// Filter items based on screen size if needed
+	const displayItems = allowVerticalStacking
+		? visibleItems
+		: visibleItems.filter((item, index) => !shouldHideItem(item, index));
 
 	return (
 		<Box
@@ -57,75 +120,51 @@ const Dashboard: React.FC<DashboardProps> = ({ items, spacing = 2 }) => {
 				gridTemplateColumns: `repeat(${columns}, 1fr)`,
 				gap: `${gapPx}px`,
 				alignItems: "start",
-				// make rows a consistent unit so row spans work predictably
-				gridAutoRows: "minmax(80px, auto)",
-				// allow dense packing so smaller items fill gaps when possible
-				gridAutoFlow: "row dense",
+				gridAutoRows: `${baseRowHeight}px`,
+				gridAutoFlow: "row",
 				width: "100%",
+				// Add some padding on very small screens
+				px: isSmUp ? 0 : 1,
 			}}
 		>
-			{visible.map((item, index) => {
+			{displayItems.map((item, index) => {
 				const key = item.id ?? index;
 
-				// compute canonical 12-grid colspan for tests / data attributes
-				// default canonical 12-grid span is 3 columns (1 logical width)
-				const colSpan12 = Math.max(
-					1,
-					Math.min(12, Math.round(item.colSpan ?? 3)),
-				);
-
-				// scaled colspan for current breakpoint
-				let colSpan = Math.max(
-					1,
-					Math.min(columns, Math.round((colSpan12 * columns) / 12)),
-				);
-
-				// On the smallest layout (4 columns) prefer to collapse wide items
-				// to full-width for readability. Also collapse when scaled would
-				// otherwise occupy most of the row (threshold).
-				const collapseThreshold = Math.ceil(columns / 1.5);
-				const forceStack = columns === 4 || colSpan >= collapseThreshold;
-				if (forceStack) {
-					colSpan = columns;
-				}
-				const rowSpan = item.rowSpan ?? 1;
-
-				// If caller provided explicit start positions (expressed against a
-				// 12-column grid) scale them down to the active `columns` so the
-				// placement remains approximately where expected on smaller screens.
-				const gridColumn =
-					// when collapsed, ignore provided colStart and let the item
-					// span the full width so it flows naturally
-					forceStack
-						? `span ${colSpan}`
-						: typeof item.colStart === "number"
-							? `${Math.max(1, Math.min(columns, Math.round(((item.colStart - 1) * columns) / 12) + 1))} / span ${colSpan}`
-							: `span ${colSpan}`;
-
-				const gridRow =
-					// similarly, when stacked ignore explicit rowStart
-					forceStack
-						? `span ${rowSpan}`
-						: typeof item.rowStart === "number"
-							? `${item.rowStart} / span ${rowSpan}`
-							: `span ${rowSpan}`;
+				// Get responsive size
+				const { colSpan, rowSpan } = getResponsiveSize(item.size, columns);
 
 				return (
 					<Box
 						key={String(key)}
-						data-colspan={colSpan12}
+						data-testid={`dashboard-item-${key}`}
+						data-size={item.size || "medium"}
+						data-colspan={colSpan}
 						data-rowspan={rowSpan}
 						sx={{
-							gridColumn,
-							gridRow,
+							gridColumn: `span ${colSpan}`,
+							gridRow: `span ${rowSpan}`,
 							width: "100%",
+							height: "100%",
 							display: "flex",
 							flexDirection: "column",
-							minHeight: 0,
-							overflow: "visible",
+							overflow: "hidden",
+							transition: "all 0.2s ease-in-out",
+							minHeight: `${baseRowHeight * rowSpan + gapPx * (rowSpan - 1)}px`,
 						}}
 					>
-						{item.node}
+						<Box
+							sx={{
+								width: "100%",
+								height: "100%",
+								overflow: "auto",
+								display: "flex",
+								flexDirection: "column",
+								// Add some internal padding for better spacing
+								p: 1,
+							}}
+						>
+							{item.node}
+						</Box>
 					</Box>
 				);
 			})}

@@ -151,17 +151,26 @@ vi.mock(
 
 vi.mock("../../Teams/Detail/ItemsInProgress", () => ({
 	default: ({
-		title,
-		items,
-		idealWip,
+		entries,
 	}: {
-		title: string;
-		items: IWorkItem[];
-		idealWip: number;
+		entries: Array<{
+			title: string;
+			items: IWorkItem[];
+			idealWip?: number;
+			sle?: number;
+		}>;
 	}) => (
-		<div data-testid={`items-in-progress-${title}`}>
-			<div data-testid={`items-count-${title}`}>{items.length}</div>
-			<div data-testid={`ideal-wip-${title}`}>{idealWip}</div>
+		<div data-testid={`items-in-progress-container`}>
+			{entries.map((entry) => (
+				<div key={entry.title} data-testid={`items-in-progress-${entry.title}`}>
+					<div data-testid={`items-count-${entry.title}`}>
+						{entry.items?.length ?? 0}
+					</div>
+					<div data-testid={`ideal-wip-${entry.title}`}>
+						{entry.idealWip ?? ""}
+					</div>
+				</div>
+			))}
 		</div>
 	),
 }));
@@ -785,28 +794,33 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("renders additional components when provided", async () => {
-		const additionalComponent = () => (
-			<div data-testid="additional-component">Extra Content</div>
-		);
+		const additionalEntry = {
+			title: "Additional Test:",
+			items: mockInProgressItems,
+			idealWip: 5,
+		};
 
 		render(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={mockMetricsService}
 				title="Features"
-				additionalItems={[
-					{ id: "additional-test", node: additionalComponent() },
-				]}
+				additionalItems={[additionalEntry]}
 				doingStates={["To Do", "In Progress", "Review"]}
 			/>,
 		);
 
-		// Check that the additional component is rendered
+		// Check that the additional entry is rendered inside the ItemsInProgress mock
 		await waitFor(() => {
-			expect(screen.getByTestId("additional-component")).toBeInTheDocument();
-			expect(screen.getByTestId("additional-component")).toHaveTextContent(
-				"Extra Content",
-			);
+			expect(
+				screen.getByTestId("items-in-progress-Additional Test:"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("items-count-Additional Test:"),
+			).toHaveTextContent("2");
+			expect(
+				screen.getByTestId("ideal-wip-Additional Test:"),
+			).toHaveTextContent("5");
 		});
 	});
 

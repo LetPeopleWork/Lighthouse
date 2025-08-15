@@ -2,11 +2,13 @@ import {
 	Box,
 	Card,
 	CardContent,
+	Chip,
 	Table,
 	TableBody,
 	TableCell,
 	TableRow,
 	Typography,
+	useTheme,
 } from "@mui/material";
 import { useState } from "react";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
@@ -31,10 +33,10 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	closedItems,
 }) => {
 	const [dialogOpen, setDialogOpen] = useState(false);
+	const theme = useTheme();
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
@@ -108,40 +110,27 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 
 	const getDifferenceText = (): {
 		text: string;
-		tip: string;
 		color: string;
 	} => {
 		const difference = calculateDifference();
 		const color = getDifferenceColor(difference);
-		let tip = "";
-
-		if (isTotalDifferenceLessThanTwo() || difference <= 5) {
-			tip = "Good job!";
-		} else if (difference <= 15) {
-			tip = "Observe and take action if needed!";
-		} else {
-			tip = `Reflect on ${wipTerm} control!`;
-		}
 
 		if (isTotalDifferenceLessThanTwo() || difference <= 5) {
 			return {
-				text: `You are keeping a steady ${wipTerm}`,
-				tip,
+				text: `Steady`,
 				color,
 			};
 		}
 
 		if (startedTotal > closedTotal) {
 			return {
-				text: `You are starting more ${workItemsTerm} than you close`,
-				tip,
+				text: `Starting More`,
 				color,
 			};
 		}
 
 		return {
-			text: `You are closing more ${workItemsTerm} than you start`,
-			tip,
+			text: `Closing More`,
 			color,
 		};
 	};
@@ -151,87 +140,148 @@ const StartedVsFinishedDisplay: React.FC<StartedVsFinishedDisplayProps> = ({
 	return (
 		<>
 			<Card
-				sx={{ m: 2, p: 1, borderRadius: 2, cursor: "pointer" }}
+				sx={{
+					m: 0,
+					p: 0,
+					borderRadius: 2,
+					cursor: "pointer",
+					height: "100%",
+					width: "100%",
+					display: "flex",
+					flexDirection: "column",
+					boxSizing: "border-box",
+					overflow: "hidden",
+				}}
 				onClick={handleOpenDialog}
 			>
-				<CardContent>
-					<Typography variant="h6" gutterBottom>
-						{`Started vs. Closed ${workItemsTerm}`}
-					</Typography>
-					<Table size="small">
-						<TableBody>
-							<TableRow>
-								<TableCell sx={{ border: 0, padding: "4px 0", width: "20%" }}>
-									<Typography
-										variant="body2"
-										sx={{ cursor: "pointer" }}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOpenDialog();
-										}}
-									>
-										Started:
-									</Typography>
-								</TableCell>
-								<TableCell sx={{ border: 0, padding: "4px 0" }}>
-									<Box
-										sx={{ display: "flex", justifyContent: "space-between" }}
-									>
-										<Typography variant="body1">
-											<strong>{startedTotal}</strong> items (total)
-										</Typography>
-										<Typography variant="body1">
-											<strong>{formatNumber(startedAverage)}</strong> items (per
-											day)
-										</Typography>
-									</Box>
-								</TableCell>
-							</TableRow>
-							<TableRow>
-								<TableCell sx={{ border: 0, padding: "4px 0", width: "20%" }}>
-									<Typography
-										variant="body2"
-										sx={{ cursor: "pointer" }}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOpenDialog();
-										}}
-									>
-										Closed:
-									</Typography>
-								</TableCell>
-								<TableCell sx={{ border: 0, padding: "4px 0" }}>
-									<Box
-										sx={{ display: "flex", justifyContent: "space-between" }}
-									>
-										<Typography variant="body1">
-											<strong>{closedTotal}</strong> items (total)
-										</Typography>
-										<Typography variant="body1">
-											<strong>{formatNumber(closedAverage)}</strong> items (per
-											day)
-										</Typography>
-									</Box>
-								</TableCell>
-							</TableRow>
-						</TableBody>
-					</Table>
-
+				<CardContent
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						flex: "1 1 auto",
+						justifyContent: "space-between",
+						p: 2,
+						boxSizing: "border-box",
+						overflow: "hidden",
+						minHeight: 0, // allow children to shrink inside flex container
+					}}
+				>
+					<Box
+						display="flex"
+						justifyContent="space-between"
+						alignItems="center"
+					>
+						<Typography
+							variant="h6"
+							gutterBottom
+							style={{ fontSize: "clamp(1rem, 2.2vw, 1.15rem)" }}
+						>
+							{`Started vs. Closed ${workItemsTerm}`}
+						</Typography>
+						<Chip
+							label={differenceInfo.text}
+							size="small"
+							sx={{
+								backgroundColor: differenceInfo.color,
+								color: "#ffffff",
+								fontWeight: "bold",
+								boxShadow: theme.customShadows?.subtle,
+								"& .MuiChip-label": {
+									fontSize: "clamp(0.65rem, 1.2vw, 0.9rem)",
+								},
+							}}
+						/>
+					</Box>
 					<Box
 						sx={{
-							mt: 1,
-							p: 1,
-							backgroundColor: `${differenceInfo.color}20`,
-							borderLeft: `4px solid ${differenceInfo.color}`,
-							borderRadius: 1,
+							flexGrow: 1,
+							display: "flex",
+							flexDirection: "column",
+							justifyContent: "center",
 						}}
 					>
-						<Typography variant="body2" sx={{ fontWeight: "medium" }}>
-							{differenceInfo.text}
-						</Typography>
-						<Typography variant="caption" sx={{ display: "block", mt: 0.5 }}>
-							{differenceInfo.tip}
-						</Typography>
+						<Table size="small">
+							<TableBody>
+								<TableRow>
+									<TableCell sx={{ border: 0, padding: "4px 0", width: "20%" }}>
+										<Typography
+											variant="body2"
+											sx={{
+												cursor: "pointer",
+												minWidth: 0,
+												overflow: "hidden",
+											}}
+											noWrap
+											onClick={(e) => {
+												e.stopPropagation();
+												handleOpenDialog();
+											}}
+											style={{ fontSize: "clamp(0.8rem, 1.8vw, 0.95rem)" }}
+										>
+											Started:
+										</Typography>
+									</TableCell>
+									<TableCell sx={{ border: 0, padding: "4px 0" }}>
+										<Box
+											sx={{ display: "flex", justifyContent: "space-between" }}
+										>
+											<Typography
+												variant="body1"
+												style={{ fontSize: "clamp(0.9rem, 2.2vw, 1rem)" }}
+											>
+												<strong>{startedTotal}</strong> items (total)
+											</Typography>
+											<Typography
+												variant="body1"
+												style={{ fontSize: "clamp(0.9rem, 2.2vw, 1rem)" }}
+											>
+												<strong>{formatNumber(startedAverage)}</strong> items
+												(per day)
+											</Typography>
+										</Box>
+									</TableCell>
+								</TableRow>
+								<TableRow>
+									<TableCell sx={{ border: 0, padding: "4px 0", width: "20%" }}>
+										<Typography
+											variant="body2"
+											sx={{
+												cursor: "pointer",
+												minWidth: 0,
+												overflow: "hidden",
+											}}
+											noWrap
+											onClick={(e) => {
+												e.stopPropagation();
+												handleOpenDialog();
+											}}
+											style={{ fontSize: "clamp(0.8rem, 1.8vw, 0.95rem)" }}
+										>
+											Closed:
+										</Typography>
+									</TableCell>
+									<TableCell sx={{ border: 0, padding: "4px 0" }}>
+										<Box
+											sx={{ display: "flex", justifyContent: "space-between" }}
+										>
+											<Typography
+												variant="body1"
+												style={{ fontSize: "clamp(0.9rem, 2.2vw, 1rem)" }}
+											>
+												<strong>{closedTotal}</strong> items (total)
+											</Typography>
+											<Typography
+												variant="body1"
+												style={{ fontSize: "clamp(0.9rem, 2.2vw, 1rem)" }}
+											>
+												<strong>{formatNumber(closedAverage)}</strong> items
+												(per day)
+											</Typography>
+										</Box>
+									</TableCell>
+								</TableRow>
+							</TableBody>
+						</Table>
 					</Box>
 				</CardContent>
 			</Card>

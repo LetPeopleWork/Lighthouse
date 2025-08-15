@@ -238,7 +238,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 						</Stack>
 					)}
 					<ChartContainer
-						sx={{ flex: 1, minHeight: 0 }}
+						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[
 							{
 								id: "sizeAxis",

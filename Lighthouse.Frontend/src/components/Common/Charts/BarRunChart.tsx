@@ -105,7 +105,14 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 				displayTotal={displayTotal}
 			>
 				{(data) => (
-					<Box sx={{ position: "relative" }}>
+					<Box
+						sx={{
+							position: "relative",
+							height: "100%",
+							display: "flex",
+							flexDirection: "column",
+						}}
+					>
 						{/* Predictability Chip */}
 						{predictabilityData && (
 							<Chip
@@ -129,56 +136,59 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 								}}
 							/>
 						)}
-						<BarChart
-							onAxisClick={(_event, params) =>
-								handleBarClick(params?.dataIndex ?? -1)
-							}
-							onItemClick={(_event, params) =>
-								handleBarClick(params?.dataIndex ?? -1)
-							}
-							dataset={data.map((item, index) => ({
-								day: item.day,
-								value: item.value,
-								index: index,
-							}))}
-							yAxis={[
-								{
-									min: 0,
-									valueFormatter: (value: number | null) => {
-										return value !== null && Number.isInteger(value)
-											? value.toString()
-											: "";
+						<Box sx={{ flex: 1, minHeight: 0 }}>
+							<BarChart
+								style={{ height: "100%", width: "100%" }}
+								onAxisClick={(_event, params) =>
+									handleBarClick(params?.dataIndex ?? -1)
+								}
+								onItemClick={(_event, params) =>
+									handleBarClick(params?.dataIndex ?? -1)
+								}
+								dataset={data.map((item, index) => ({
+									day: item.day,
+									value: item.value,
+									index: index,
+								}))}
+								yAxis={[
+									{
+										min: 0,
+										valueFormatter: (value: number | null) => {
+											return value !== null && Number.isInteger(value)
+												? value.toString()
+												: "";
+										},
 									},
-								},
-							]}
-							xAxis={[{ scaleType: "band", dataKey: "day" }]}
-							series={[
-								{
-									dataKey: "value",
-									color: theme.palette.primary.main,
-									valueFormatter: (
-										_value: number | null,
-										params: { dataIndex: number },
-									) => {
-										const index = params?.dataIndex ?? 0;
-										const numberOfClosedItems =
-											chartData.workItemsPerUnitOfTime[index]?.length ?? 0;
+								]}
+								xAxis={[{ scaleType: "band", dataKey: "day" }]}
+								series={[
+									{
+										dataKey: "value",
+										color: theme.palette.primary.main,
+										valueFormatter: (
+											_value: number | null,
+											params: { dataIndex: number },
+										) => {
+											const index = params?.dataIndex ?? 0;
+											const numberOfClosedItems =
+												chartData.workItemsPerUnitOfTime[index]?.length ?? 0;
 
-										if (numberOfClosedItems === 1) {
-											const item = chartData.workItemsPerUnitOfTime[index][0];
-											return `${getWorkItemName(item)} (Click for details)`;
-										}
+											if (numberOfClosedItems === 1) {
+												const item = chartData.workItemsPerUnitOfTime[index][0];
+												return `${getWorkItemName(item)} (Click for details)`;
+											}
 
-										if (numberOfClosedItems > 0) {
-											return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
-										}
+											if (numberOfClosedItems > 0) {
+												return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
+											}
 
-										return `No Closed ${workItemsTerm}`;
+											return `No Closed ${workItemsTerm}`;
+										},
 									},
-								},
-							]}
-							// height is controlled by parent card/grid; allow flexible sizing
-						/>
+								]}
+								// height is controlled by parent card/grid; allow flexible sizing
+							/>
+						</Box>
 					</Box>
 				)}
 			</BaseRunChart>

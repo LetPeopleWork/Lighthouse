@@ -73,7 +73,14 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 					const yValues = data.map((item) => item.value);
 
 					return (
-						<>
+						<Box
+							sx={{
+								position: "relative",
+								display: "flex",
+								flexDirection: "column",
+								height: "100%",
+							}}
+						>
 							{/* Legend below title, above chart, right-aligned */}
 							{wipLimit !== undefined && wipLimit >= 1 && (
 								<Box
@@ -172,7 +179,7 @@ const LineRunChart: React.FC<LineRunChartProps> = ({
 										)}
 								</LineChart>
 							</Box>
-						</>
+						</Box>
 					);
 				}}
 			</BaseRunChart>

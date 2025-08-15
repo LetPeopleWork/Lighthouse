@@ -312,10 +312,7 @@ describe("FlowInformationDisplay component", () => {
 				/>,
 			);
 
-			expect(
-				screen.getByText("You are keeping a steady WIP"),
-			).toBeInTheDocument();
-			expect(screen.getByText("Good job!")).toBeInTheDocument();
+			expect(screen.getByText("Steady")).toBeInTheDocument();
 		});
 
 		it("should show 'confident' indicator when total difference is less than 2.0 (even if average difference is high)", () => {
@@ -339,10 +336,7 @@ describe("FlowInformationDisplay component", () => {
 				/>,
 			);
 
-			expect(
-				screen.getByText("You are keeping a steady WIP"),
-			).toBeInTheDocument();
-			expect(screen.getByText("Good job!")).toBeInTheDocument();
+			expect(screen.getByText("Steady")).toBeInTheDocument();
 		});
 
 		it("should NOT show 'confident' indicator when total difference is more than 2.0 even if average difference is small", () => {
@@ -366,12 +360,7 @@ describe("FlowInformationDisplay component", () => {
 				/>,
 			);
 
-			expect(
-				screen.getByText("You are starting more Work Items than you close"),
-			).toBeInTheDocument();
-			expect(
-				screen.getByText("Observe and take action if needed!"),
-			).toBeInTheDocument();
+			expect(screen.getByText("Starting More")).toBeInTheDocument();
 		});
 
 		it("should show 'good' indicator when started and closed are within 5%", () => {
@@ -394,10 +383,7 @@ describe("FlowInformationDisplay component", () => {
 				/>,
 			);
 
-			expect(
-				screen.getByText("You are keeping a steady WIP"),
-			).toBeInTheDocument();
-			expect(screen.getByText("Good job!")).toBeInTheDocument();
+			expect(screen.getByText("Steady")).toBeInTheDocument();
 		});
 
 		it("should show 'caution' indicator when difference is between 5% and 10%", () => {
@@ -422,12 +408,7 @@ describe("FlowInformationDisplay component", () => {
 			);
 
 			// Since 45 vs 42 means started > closed
-			expect(
-				screen.getByText("You are starting more Work Items than you close"),
-			).toBeInTheDocument();
-			expect(
-				screen.getByText("Observe and take action if needed!"),
-			).toBeInTheDocument();
+			expect(screen.getByText("Starting More")).toBeInTheDocument();
 		});
 
 		it("should show 'bad' indicator when difference is more than 15%", () => {
@@ -450,10 +431,7 @@ describe("FlowInformationDisplay component", () => {
 				/>,
 			);
 
-			expect(
-				screen.getByText("You are starting more Work Items than you close"),
-			).toBeInTheDocument();
-			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
+			expect(screen.getByText("Starting More")).toBeInTheDocument();
 		});
 
 		it("should show appropriate message when closing more than starting", () => {
@@ -476,10 +454,7 @@ describe("FlowInformationDisplay component", () => {
 				/>,
 			);
 
-			expect(
-				screen.getByText("You are closing more Work Items than you start"),
-			).toBeInTheDocument();
-			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
+			expect(screen.getByText("Closing More")).toBeInTheDocument();
 		});
 
 		it("should handle zero values properly", () => {
@@ -501,10 +476,7 @@ describe("FlowInformationDisplay component", () => {
 				/>,
 			);
 
-			expect(
-				screen.getByText("You are closing more Work Items than you start"),
-			).toBeInTheDocument();
-			expect(screen.getByText("Reflect on WIP control!")).toBeInTheDocument();
+			expect(screen.getByText("Closing More")).toBeInTheDocument();
 		});
 	});
 });

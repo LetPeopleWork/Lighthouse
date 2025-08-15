@@ -21,7 +21,9 @@ import type {
 } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
-import ItemsInProgress from "../../Teams/Detail/ItemsInProgress";
+import ItemsInProgress, {
+	type InProgressEntry,
+} from "../../Teams/Detail/ItemsInProgress";
 import type { DashboardItem } from "./Dashboard";
 import Dashboard from "./Dashboard";
 import DashboardHeader from "./DashboardHeader";
@@ -34,7 +36,7 @@ export interface BaseMetricsViewProps<
 	metricsService: IMetricsService<T>;
 	title: string;
 	defaultDateRange?: number;
-	additionalItems?: DashboardItem[];
+	additionalItems?: InProgressEntry[];
 	doingStates: string[];
 }
 
@@ -217,6 +219,167 @@ export const BaseMetricsView = <
 		}
 	}, [entity]);
 
+	const dashboardItems: DashboardItem[] = (() => {
+		const items: DashboardItem[] = [];
+
+		const inProgressEntries: InProgressEntry[] = [
+			{
+				title: `${title} in Progress:`,
+				items: inProgressItems,
+				sle:
+					entity.serviceLevelExpectationRange > 0
+						? entity.serviceLevelExpectationRange
+						: undefined,
+				idealWip: entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
+			},
+			{
+				title: `${blockedTerm}:`,
+				items: inProgressItems.filter((item) => item.isBlocked),
+				idealWip: 0,
+			},
+		];
+
+		if (additionalItems && additionalItems.length > 0) {
+			additionalItems.forEach((item) => {
+				inProgressEntries.push(item);
+			});
+		}
+
+		items.push({
+			id: "itemsInProgress",
+			priority: 1,
+			size: "medium",
+			node: <ItemsInProgress entries={inProgressEntries} />,
+		});
+
+		items.push({
+			id: "percentiles",
+			priority: 2,
+			size: "medium",
+			node: (
+				<CycleTimePercentiles
+					percentileValues={percentileValues}
+					serviceLevelExpectation={serviceLevelExpectation}
+					items={cycleTimeData}
+				/>
+			),
+		});
+
+		items.push({
+			id: "startedVsFinished",
+			priority: 3,
+			size: "medium",
+			node: (
+				<StartedVsFinishedDisplay
+					startedItems={startedItems}
+					closedItems={throughputData}
+				/>
+			),
+		});
+
+		items.push({
+			id: "throughput",
+			priority: 10,
+			size: "large",
+			node: throughputData ? (
+				<BarRunChart
+					title={`${title} Completed`}
+					startDate={startDate}
+					chartData={throughputData}
+					displayTotal={true}
+					predictabilityData={predictabilityData}
+				/>
+			) : null,
+		});
+
+		items.push({
+			id: "cycleScatter",
+			priority: 11,
+			size: "large",
+			node: (
+				<CycleTimeScatterPlotChart
+					cycleTimeDataPoints={cycleTimeData}
+					percentileValues={percentileValues}
+					serviceLevelExpectation={serviceLevelExpectation}
+				/>
+			),
+		});
+
+		items.push({
+			id: "aging",
+			priority: 12,
+			size: "large",
+			node: (
+				<WorkItemAgingChart
+					inProgressItems={inProgressItems}
+					percentileValues={percentileValues}
+					serviceLevelExpectation={serviceLevelExpectation}
+					doingStates={doingStates}
+				/>
+			),
+		});
+
+		items.push({
+			id: "wipOverTime",
+			priority: 13,
+			size: "large",
+			node: wipOverTimeData ? (
+				<LineRunChart
+					title={`${title} In Progress Over Time`}
+					startDate={startDate}
+					chartData={wipOverTimeData}
+					displayTotal={false}
+					wipLimit={entity.systemWIPLimit}
+				/>
+			) : null,
+		});
+
+		items.push({
+			id: "stacked",
+			priority: 14,
+			size: "large",
+			node:
+				throughputData && startedItems ? (
+					<StackedAreaChart
+						title="Simplified Cumulative Flow Diagram"
+						startDate={startDate}
+						areas={[
+							{
+								index: 1,
+								title: "Doing",
+								area: startedItems,
+								color: appColors.primary.light,
+								startOffset: wipOverTimeData?.getValueOnDay(0) ?? 0,
+							},
+							{
+								index: 2,
+								title: "Done",
+								area: throughputData,
+								color: appColors.secondary.light,
+							},
+						]}
+					/>
+				) : null,
+		});
+
+		// Feature size chart (conditional)
+		if (cycleTimeData.length > 0 && "size" in cycleTimeData[0]) {
+			items.push({
+				id: "featureSize",
+				priority: 15,
+				size: "large", // Use standardized large size
+				node: (
+					<FeatureSizeScatterPlotChart
+						sizeDataPoints={cycleTimeData as IFeature[]}
+						sizePercentileValues={sizePercentileValues}
+					/>
+				),
+			});
+		}
+
+		return items;
+	})();
+
 	return (
 		<Grid container spacing={2}>
 			<DashboardHeader
@@ -226,214 +389,7 @@ export const BaseMetricsView = <
 				onEndDateChange={(date) => date && setEndDate(date)}
 			/>
 
-			<Dashboard
-				items={((): DashboardItem[] => {
-					const items: DashboardItem[] = [];
-
-					items.push({
-						id: "inProgress",
-						node: (
-							<ItemsInProgress
-								title={`${title} in Progress:`}
-								items={inProgressItems}
-								sle={
-									entity.serviceLevelExpectationRange > 0
-										? entity.serviceLevelExpectationRange
-										: undefined
-								}
-								idealWip={
-									entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined
-								}
-							/>
-						),
-						// place top-left (row 1, first of 4 columns)
-						colStart: 1,
-						colSpan: 3,
-						rowStart: 1,
-						rowSpan: 1,
-					});
-
-					if (additionalItems && additionalItems.length > 0) {
-						// Map additional items into the left column of row 2 by default
-						// (e.g. "Features being worked on"). If an additional item already
-						// specifies placement, keep it as-is.
-						const mapped = additionalItems.map((it) =>
-							typeof it.colStart === "number" || typeof it.rowStart === "number"
-								? it
-								: {
-										...it,
-										colStart: it.colStart ?? 1,
-										colSpan: it.colSpan ?? 3,
-										rowStart: it.rowStart ?? 2,
-									},
-						);
-
-						items.push(...mapped);
-					}
-
-					items.push({
-						id: "blocked",
-						node: (
-							<ItemsInProgress
-								title={`${blockedTerm}:`}
-								items={inProgressItems.filter((item) => item.isBlocked)}
-								idealWip={0}
-							/>
-						),
-						// top-right (4th column)
-						colStart: 10,
-						colSpan: 3,
-						rowStart: 1,
-						rowSpan: 1,
-					});
-
-					items.push({
-						id: "percentiles",
-						node: (
-							<CycleTimePercentiles
-								percentileValues={percentileValues}
-								serviceLevelExpectation={serviceLevelExpectation}
-								items={cycleTimeData}
-							/>
-						),
-						// place in top row, second column and span two rows
-						colStart: 4,
-						colSpan: 3,
-						rowStart: 1,
-						rowSpan: 2,
-					});
-
-					items.push({
-						id: "startedVsFinished",
-						node: (
-							<StartedVsFinishedDisplay
-								startedItems={startedItems}
-								closedItems={throughputData}
-							/>
-						),
-						// place in top row, third column and span two rows
-						colStart: 7,
-						colSpan: 3,
-						rowStart: 1,
-						rowSpan: 2,
-					});
-
-					items.push({
-						id: "throughput",
-						node: throughputData ? (
-							<BarRunChart
-								title={`${title} Completed`}
-								startDate={startDate}
-								chartData={throughputData}
-								displayTotal={true}
-								predictabilityData={predictabilityData}
-							/>
-						) : null,
-						// place as left half on row 3 (6 cols)
-						colStart: 1,
-						colSpan: 6,
-						rowStart: 3,
-						rowSpan: 4,
-					});
-
-					items.push({
-						id: "cycleScatter",
-						node: (
-							<CycleTimeScatterPlotChart
-								cycleTimeDataPoints={cycleTimeData}
-								percentileValues={percentileValues}
-								serviceLevelExpectation={serviceLevelExpectation}
-							/>
-						),
-						// right half of row 3
-						colStart: 7,
-						colSpan: 6,
-						rowStart: 3,
-						rowSpan: 2,
-					});
-
-					items.push({
-						id: "aging",
-						node: (
-							<WorkItemAgingChart
-								inProgressItems={inProgressItems}
-								percentileValues={percentileValues}
-								serviceLevelExpectation={serviceLevelExpectation}
-								doingStates={doingStates}
-							/>
-						),
-						// left half of row 4
-						colStart: 1,
-						colSpan: 6,
-						rowStart: 4,
-						rowSpan: 2,
-					});
-
-					items.push({
-						id: "wipOverTime",
-						node: wipOverTimeData ? (
-							<LineRunChart
-								title={`${title} In Progress Over Time`}
-								startDate={startDate}
-								chartData={wipOverTimeData}
-								displayTotal={false}
-								wipLimit={entity.systemWIPLimit}
-							/>
-						) : null,
-						// right half of row 4
-						colStart: 7,
-						colSpan: 6,
-						rowStart: 4,
-						rowSpan: 2,
-					});
-
-					items.push({
-						id: "stacked",
-						node:
-							throughputData && startedItems ? (
-								<StackedAreaChart
-									title="Simplified Cumulative Flow Diagram"
-									startDate={startDate}
-									areas={[
-										{
-											index: 1,
-											title: "Doing",
-											area: startedItems,
-											color: appColors.primary.light,
-											startOffset: wipOverTimeData?.getValueOnDay(0) ?? 0,
-										},
-										{
-											index: 2,
-											title: "Done",
-											area: throughputData,
-											color: appColors.secondary.light,
-										},
-									]}
-								/>
-							) : null,
-						// simplified CFD as left half of row 5
-						colStart: 1,
-						colSpan: 6,
-						rowStart: 5,
-						rowSpan: 2,
-					});
-
-					// Feature size chart only when features are present
-					if (cycleTimeData.length > 0 && "size" in cycleTimeData[0]) {
-						items.push({
-							id: "featureSize",
-							node: (
-								<FeatureSizeScatterPlotChart
-									sizeDataPoints={cycleTimeData as IFeature[]}
-									sizePercentileValues={sizePercentileValues}
-								/>
-							),
-						});
-					}
-
-					return items;
-				})()}
-			/>
+			<Dashboard items={dashboardItems} />
 		</Grid>
 	);
 };

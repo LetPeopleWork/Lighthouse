@@ -6,8 +6,7 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
-import type { DashboardItem } from "../../Common/MetricsView/Dashboard";
-import ItemsInProgress from "./ItemsInProgress";
+import type { InProgressEntry } from "./ItemsInProgress";
 
 interface TeamMetricsViewProps {
 	team: Team;
@@ -65,20 +64,11 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		}
 	}, [team]);
 
-	const renderFeaturesTeamWorksOn = () => (
-		<ItemsInProgress
-			title={`${featuresTerm} being Worked On:`}
-			items={inProgressFeatures}
-			idealWip={team.featureWip > 0 ? team.featureWip : undefined}
-		/>
-	);
-
-	const additionalItems: DashboardItem[] = [
-		{
-			id: "featuresTeamWorksOn",
-			node: renderFeaturesTeamWorksOn(),
-		},
-	];
+	const featuresBeingWorkedOn: InProgressEntry = {
+		title: `${featuresTerm} being Worked On:`,
+		items: inProgressFeatures,
+		idealWip: team.featureWip > 0 ? team.featureWip : undefined,
+	};
 
 	return (
 		<BaseMetricsView
@@ -86,7 +76,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			metricsService={teamMetricsService}
 			title={workItemsTerm}
 			defaultDateRange={dateRange}
-			additionalItems={additionalItems}
+			additionalItems={[featuresBeingWorkedOn]}
 			doingStates={doingStates}
 		/>
 	);

@@ -210,7 +210,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		<>
 			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
 				<CardContent
-					sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+					sx={{ display: "flex", flexDirection: "column", height: "100%" }}
 				>
 					<Typography variant="h6">{cycleTimeTerm}</Typography>
 
@@ -280,7 +280,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					</Stack>
 
 					<ChartContainer
-						sx={{ flex: 1, minHeight: 0 }}
+						sx={{ flex: 1, minHeight: 0, height: "100%" }}
 						xAxis={[
 							{
 								id: "timeAxis",

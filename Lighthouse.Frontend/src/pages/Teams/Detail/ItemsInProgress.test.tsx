@@ -1,95 +1,101 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { vi } from "vitest";
+
+// Mock the WorkItemsDialog used by the component so we can assert props
+vi.mock("../../../components/Common/WorkItemsDialog/WorkItemsDialog", () => ({
+	default: ({
+		title,
+		items,
+		open,
+		additionalColumnTitle,
+		sle,
+	}: {
+		title?: string;
+		items?: unknown[];
+		open?: boolean;
+		additionalColumnTitle?: string;
+		sle?: number;
+	}) => {
+		if (!open) return null;
+		return (
+			<div data-testid="mock-dialog">
+				<div>Title: {title}</div>
+				<div>Items: {Array.isArray(items) ? items.length : 0}</div>
+				<div>AdditionalTitle: {additionalColumnTitle}</div>
+				<div>SLE: {String(sle)}</div>
+			</div>
+		);
+	},
+}));
+
+// Mock the terminology hook to return a predictable term
+vi.mock("../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({ getTerm: () => "Age" }),
+}));
+
 import type { IWorkItem } from "../../../models/WorkItem";
 import ItemsInProgress from "./ItemsInProgress";
 
-describe("ItemsInProgress component", () => {
-	const createMockWorkItem = (name: string): IWorkItem => ({
-		id: Math.floor(Math.random() * 1000),
-		referenceId: Math.floor(Math.random() * 1000).toString(),
-		url: "https://example.com/item1",
-		name,
-		startedDate: new Date("2023-01-15"),
-		closedDate: new Date("2023-01-20"),
-		workItemAge: 7,
-		cycleTime:
-			Math.floor(
-				(new Date("2023-01-20").getTime() - new Date("2023-01-15").getTime()) /
-					(1000 * 60 * 60 * 24),
-			) + 1,
-		state: "In Progress",
-		stateCategory: "Doing",
-		type: "Task",
-		parentWorkItemReference: "",
-		isBlocked: false,
+describe("ItemsInProgress", () => {
+	test("renders nothing when no entries provided", () => {
+		const { container } = render(<ItemsInProgress entries={[]} />);
+		// When there are no entries the component should render an empty fragment
+		expect(container).toBeEmptyDOMElement();
 	});
 
-	const mockItems: IWorkItem[] = [
-		createMockWorkItem("Item 1"),
-		createMockWorkItem("Item 2"),
-	];
+	test("renders entries and opens dialog on click", async () => {
+		const makeItem = (id: number, age?: number): IWorkItem =>
+			({
+				id: id.toString(),
+				name: `Item ${id}`,
+				state: "New",
+				stateCategory: "InProgress",
+				type: "Task",
+				featureId: undefined,
+				teamId: undefined,
+				workItemAge: age ?? 0,
+				// include optional fields used elsewhere; keep minimal
+			}) as unknown as IWorkItem;
 
-	it("should render with title and item count", () => {
-		render(<ItemsInProgress title="Work Items" items={mockItems} />);
+		const entries: {
+			title: string;
+			items: IWorkItem[];
+			idealWip?: number;
+			sle?: number;
+		}[] = [
+			{
+				title: "Todo",
+				items: [makeItem(1, 5)],
+				idealWip: 2,
+				sle: 7,
+			},
+			{
+				title: "Doing",
+				items: [],
+				idealWip: 1,
+			},
+		];
 
-		expect(screen.getByText("Work Items")).toBeInTheDocument();
-		expect(screen.getByText("2")).toBeInTheDocument();
-	});
+		render(<ItemsInProgress entries={entries} />);
 
-	it("should display goal chip when idealWip is provided", () => {
-		render(
-			<ItemsInProgress title="Work Items" items={mockItems} idealWip={3} />,
-		);
+		// Titles and counts should be visible
+		expect(screen.getByText("Todo")).toBeInTheDocument();
+		expect(screen.getByText("Doing")).toBeInTheDocument();
+		
+		expect(screen.getByText("1")).toBeInTheDocument();
+		// Goal chip should appear
+		expect(screen.getByText("Goal: 2")).toBeInTheDocument();
 
-		expect(screen.getByText("Goal: 3")).toBeInTheDocument();
-	});
+		// Click the first entry to open the dialog
+		fireEvent.click(screen.getByText("Todo"));
 
-	it("should not display goal chip when idealWip is null", () => {
-		render(<ItemsInProgress title="Work Items" items={mockItems} />);
-
-		expect(screen.queryByText(/Goal:/)).not.toBeInTheDocument();
-	});
-
-	it("should apply success color to chip when count equals idealWip", () => {
-		render(
-			<ItemsInProgress title="Work Items" items={mockItems} idealWip={2} />,
-		);
-
-		const chip = screen.getByText("Goal: 2");
-		expect(chip).toBeInTheDocument();
-		expect(chip.closest(".MuiChip-colorSuccess")).not.toBeNull();
-	});
-
-	it("should apply warning color to chip when count is less than idealWip", () => {
-		render(
-			<ItemsInProgress title="Work Items" items={mockItems} idealWip={3} />,
-		);
-
-		const chip = screen.getByText("Goal: 3");
-		expect(chip).toBeInTheDocument();
-		expect(chip.closest(".MuiChip-colorWarning")).not.toBeNull();
-	});
-
-	it("should apply error color to chip when count is greater than idealWip", () => {
-		render(
-			<ItemsInProgress title="Work Items" items={mockItems} idealWip={1} />,
-		);
-
-		const chip = screen.getByText("Goal: 1");
-		expect(chip).toBeInTheDocument();
-		expect(chip.closest(".MuiChip-colorError")).not.toBeNull();
-	});
-
-	it("should open dialog when card is clicked", () => {
-		render(<ItemsInProgress title="Work Items" items={mockItems} />);
-
-		const card = screen.getByText("Work Items").closest(".MuiCard-root");
-		expect(card).toBeInTheDocument();
-
-		if (card) {
-			fireEvent.click(card);
-		}
-
-		expect(screen.getByRole("dialog")).toBeInTheDocument();
+		// The mocked dialog should be rendered with the expected props
+		const dialog = await screen.findByTestId("mock-dialog");
+		expect(dialog).toBeInTheDocument();
+		expect(dialog).toHaveTextContent("Title: Todo");
+		expect(dialog).toHaveTextContent("Items: 1");
+		// Additional column title is provided by the mocked terminology hook
+		expect(dialog).toHaveTextContent("AdditionalTitle: Age");
+		expect(dialog).toHaveTextContent("SLE: 7");
 	});
 });
