@@ -81,7 +81,7 @@ describe("ItemsInProgress", () => {
 		// Titles and counts should be visible
 		expect(screen.getByText("Todo")).toBeInTheDocument();
 		expect(screen.getByText("Doing")).toBeInTheDocument();
-		
+
 		expect(screen.getByText("1")).toBeInTheDocument();
 		// Goal chip should appear
 		expect(screen.getByText("Goal: 2")).toBeInTheDocument();

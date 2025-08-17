@@ -113,9 +113,10 @@ export class ProjectDetailPage {
 
 	get featureSizeWidget(): Locator {
 		return this.page
-			.getByTestId('dashboard-item-featureSize')
-			.locator('div')
-			.filter({ hasText: 'Features Size50%70%85%95%50%' }).nth(1)
+			.getByTestId("dashboard-item-featureSize")
+			.locator("div")
+			.filter({ hasText: "Features Size50%70%85%95%50%" })
+			.nth(1);
 	}
 
 	get projectId(): number {

@@ -87,6 +87,8 @@ export const BaseMetricsView = <
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
+	const dashboardId = `${"getFeaturesInProgress" in metricsService ? "Team" : "Project"}_${entity.id}`;
+
 	useEffect(() => {
 		const fetchPredictabilityData = async () => {
 			try {
@@ -387,9 +389,10 @@ export const BaseMetricsView = <
 				endDate={endDate}
 				onStartDateChange={(date) => date && setStartDate(date)}
 				onEndDateChange={(date) => date && setEndDate(date)}
+				dashboardId={dashboardId}
 			/>
 
-			<Dashboard items={dashboardItems} />
+			<Dashboard items={dashboardItems} dashboardId={dashboardId} />
 		</Grid>
 	);
 };

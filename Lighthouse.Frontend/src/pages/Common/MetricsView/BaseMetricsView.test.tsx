@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import {
@@ -234,6 +235,79 @@ vi.mock("../../../components/Common/Charts/WorkItemAgingChart", () => ({
 	),
 }));
 
+// Mock DashboardHeader and Dashboard to capture dashboardId prop
+vi.mock("./DashboardHeader", () => ({
+	default: ({
+		startDate,
+		endDate,
+		onStartDateChange,
+		onEndDateChange,
+		dashboardId,
+	}: {
+		startDate: Date;
+		endDate: Date;
+		onStartDateChange: (d: Date | null) => void;
+		onEndDateChange: (d: Date | null) => void;
+		dashboardId: string;
+	}) => (
+		<div>
+			<div data-testid="dashboard-header">{dashboardId}</div>
+			<button type="button" data-testid="dashboard-date-range-toggle">
+				Toggle
+			</button>
+			{/* Inline the mocked DateRangeSelector structure so tests can interact with it */}
+			<div data-testid="date-range-selector">
+				<span data-testid="start-date">{startDate.toISOString()}</span>
+				<span data-testid="end-date">{endDate.toISOString()}</span>
+				<button
+					type="button"
+					data-testid="change-start-date"
+					onClick={() => {
+						const newDate = new Date(startDate);
+						newDate.setDate(newDate.getDate() - 30);
+						onStartDateChange(newDate);
+					}}
+				>
+					Change Start Date
+				</button>
+				<button
+					type="button"
+					data-testid="change-end-date"
+					onClick={() => {
+						const newDate = new Date(endDate);
+						newDate.setDate(newDate.getDate() - 30);
+						onEndDateChange(newDate);
+					}}
+				>
+					Change End Date
+				</button>
+			</div>
+		</div>
+	),
+}));
+
+vi.mock("./Dashboard", () => ({
+	default: ({
+		items,
+		dashboardId,
+	}: {
+		items?: Array<{ id: string | number; node: ReactNode }>;
+		dashboardId: string;
+	}) => (
+		<div>
+			<div data-testid="dashboard-component">{dashboardId}</div>
+			{items?.map((it) => (
+				<div
+					key={String(it.id)}
+					data-testid={`dashboard-item-${String(it.id)}`}
+				>
+					{it.node}
+				</div>
+			))}
+		</div>
+	),
+}));
+
 describe("BaseMetricsView component", () => {
 	// Create RunChartData with correct properties
 	const mockItemsCompletedData: RunChartData = new RunChartData(
@@ -241,6 +315,60 @@ describe("BaseMetricsView component", () => {
 		2, // history
 		8, // total
 	);
+
+	it("passes correct dashboardId for Project entity", async () => {
+		const projectMetricsService = createMockMetricsService<IFeature>();
+		// Ensure project service does NOT have getFeaturesInProgress
+		delete (projectMetricsService as unknown as Record<string, unknown>)
+			.getFeaturesInProgress;
+
+		render(
+			<BaseMetricsView
+				entity={mockProject}
+				metricsService={projectMetricsService}
+				title="Features"
+				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		// The mocked DashboardHeader/Dashboard render the dashboardId text
+		await waitFor(() => {
+			expect(screen.getByTestId("dashboard-header")).toHaveTextContent(
+				`Project_${mockProject.id}`,
+			);
+			expect(screen.getByTestId("dashboard-component")).toHaveTextContent(
+				`Project_${mockProject.id}`,
+			);
+		});
+	});
+
+	it("passes correct dashboardId for Team entity (metricsService has getFeaturesInProgress)", async () => {
+		const teamMetricsService = createMockMetricsService<IFeature>();
+		// Add getFeaturesInProgress to simulate a team service
+		(
+			teamMetricsService as unknown as Record<string, unknown>
+		).getFeaturesInProgress = vi.fn().mockResolvedValue([]);
+
+		render(
+			<BaseMetricsView
+				entity={mockTeam}
+				metricsService={teamMetricsService}
+				title="Work Items"
+				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("dashboard-header")).toHaveTextContent(
+				`Team_${mockTeam.id}`,
+			);
+			expect(screen.getByTestId("dashboard-component")).toHaveTextContent(
+				`Team_${mockTeam.id}`,
+			);
+		});
+	});
 
 	const mockItemsInProgressData: RunChartData = new RunChartData(
 		generateWorkItemMapForRunChart([2, 4]),

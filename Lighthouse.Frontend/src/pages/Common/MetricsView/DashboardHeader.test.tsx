@@ -73,6 +73,7 @@ describe("DashboardHeader", () => {
 				endDate={end}
 				onStartDateChange={onStart}
 				onEndDateChange={onEnd}
+				dashboardId="Team_1337"
 			/>,
 		);
 
@@ -117,6 +118,7 @@ describe("DashboardHeader", () => {
 				endDate={end}
 				onStartDateChange={onStart}
 				onEndDateChange={onEnd}
+				dashboardId="Team_1337"
 			/>,
 		);
 
@@ -127,5 +129,76 @@ describe("DashboardHeader", () => {
 		expect(
 			screen.getByTestId("dashboard-date-range-toggle"),
 		).toBeInTheDocument();
+	});
+
+	it("toggles edit mode, persists to localStorage and dispatches event", async () => {
+		setMatchMedia(false);
+
+		const onStart = vi.fn();
+		const onEnd = vi.fn();
+
+		const { default: DashboardHeader } = await import("./DashboardHeader");
+
+		const start = new Date(2025, 6, 15);
+		const end = new Date(2025, 7, 14);
+		const dashboardId = "test-dashboard-1";
+
+		// ensure clean state
+		localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:edit`);
+
+		const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+
+		render(
+			<DashboardHeader
+				startDate={start}
+				endDate={end}
+				onStartDateChange={onStart}
+				onEndDateChange={onEnd}
+				dashboardId={dashboardId}
+			/>,
+		);
+
+		const toggle = screen.getByTestId("dashboard-edit-toggle");
+		expect(toggle).toBeInTheDocument();
+		// initial state not pressed
+		expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+		// enable edit mode
+		fireEvent.click(toggle);
+
+		// persisted
+		expect(
+			localStorage.getItem(`lighthouse:dashboard:${dashboardId}:edit`),
+		).toBe("1");
+
+		// toggle reflect state
+		expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+		// dispatch event called with expected payload
+		expect(dispatchSpy).toHaveBeenCalled();
+		const lastCall = dispatchSpy.mock.calls[dispatchSpy.mock.calls.length - 1];
+		const evt = lastCall ? lastCall[0] : undefined;
+		expect(evt).toBeInstanceOf(CustomEvent);
+		expect((evt as CustomEvent).detail).toMatchObject({
+			dashboardId: dashboardId,
+			isEditing: true,
+		});
+
+		// disable edit mode
+		fireEvent.click(toggle);
+		expect(
+			localStorage.getItem(`lighthouse:dashboard:${dashboardId}:edit`),
+		).toBe("0");
+
+		const lastCall2 = dispatchSpy.mock.calls[dispatchSpy.mock.calls.length - 1];
+		const evt2 = lastCall2 ? lastCall2[0] : undefined;
+		expect((evt2 as CustomEvent).detail).toMatchObject({
+			dashboardId: dashboardId,
+			isEditing: false,
+		});
+
+		// cleanup
+		dispatchSpy.mockRestore();
+		localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:edit`);
 	});
 });

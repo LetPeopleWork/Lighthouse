@@ -1,5 +1,19 @@
-import { Box, useMediaQuery, useTheme } from "@mui/material";
-import type React from "react";
+import HideSourceIcon from "@mui/icons-material/HideSource";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import {
+	Box,
+	IconButton,
+	Tooltip,
+	Typography,
+	useMediaQuery,
+	useTheme,
+} from "@mui/material";
+import React from "react";
+import {
+	appColors,
+	getColorWithOpacity,
+	getContrastText,
+} from "../../../utils/theme/colors";
 
 /**
  * Dashboard item with standardized sizing based on 12-column grid
@@ -17,6 +31,7 @@ interface DashboardProps {
 	spacing?: number;
 	baseRowHeight?: number;
 	allowVerticalStacking?: boolean;
+	dashboardId: string;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -24,6 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 	spacing = 2,
 	baseRowHeight = 100,
 	allowVerticalStacking = true,
+	dashboardId,
 }) => {
 	const visibleItems = items
 		.filter((it) => it.node != null)
@@ -112,6 +128,103 @@ const Dashboard: React.FC<DashboardProps> = ({
 		? visibleItems
 		: visibleItems.filter((item, index) => !shouldHideItem(item, index));
 
+	// Edit mode and hidden items state (per-user, per-dashboard stored in localStorage)
+	const [isEditing, setIsEditing] = React.useState<boolean>(false);
+	const [hiddenIds, setHiddenIds] = React.useState<Record<string, boolean>>(
+		() => ({}),
+	);
+
+	// storage is per-browser per-dashboard (no per-user)
+
+	React.useEffect(() => {
+		// load hidden ids
+		try {
+			const key = `lighthouse:dashboard:${dashboardId}:hidden`;
+			const raw = localStorage.getItem(key);
+			if (raw) {
+				const parsed = JSON.parse(raw) as string[];
+				const map: Record<string, boolean> = {};
+				parsed.forEach((id) => {
+					map[String(id)] = true;
+				});
+				setHiddenIds(map);
+			}
+		} catch {
+			// ignore
+		}
+
+		// read edit mode initial value
+		try {
+			const editKey = `lighthouse:dashboard:${dashboardId}:edit`;
+			const v = localStorage.getItem(editKey) === "1";
+			setIsEditing(v);
+		} catch {
+			// ignore
+		}
+
+		// subscribe to edit mode events
+		const handler = (ev: Event) => {
+			const detail = (ev as CustomEvent)?.detail as
+				| { dashboardId?: string; userId?: string; isEditing?: boolean }
+				| undefined;
+			if (!detail) return;
+			if (detail.dashboardId === dashboardId) {
+				setIsEditing(!!detail.isEditing);
+			}
+		};
+
+		window.addEventListener(
+			"lighthouse:dashboard:edit-mode-changed",
+			handler as EventListener,
+		);
+		return () =>
+			window.removeEventListener(
+				"lighthouse:dashboard:edit-mode-changed",
+				handler as EventListener,
+			);
+	}, [dashboardId]);
+
+	// overlay colors using centralized color helpers
+	// stronger overlay in dark mode using brand light color for better visibility
+	const overlayColorHidden = getColorWithOpacity(
+		appColors.primary.light,
+		theme.palette.mode === "dark" ? 0.56 : 0.14,
+	);
+	const overlayColorEdit = getColorWithOpacity(
+		appColors.primary.main,
+		theme.palette.mode === "dark" ? 0.08 : 0.03,
+	);
+	const overlayBorder =
+		theme.palette.mode === "dark"
+			? getColorWithOpacity(appColors.primary.light, 0.6)
+			: theme.palette.divider;
+	const hiddenLabelColor = getContrastText(appColors.primary.light);
+
+	const persistHidden = (nextMap: Record<string, boolean>) => {
+		try {
+			const key = `lighthouse:dashboard:${dashboardId}:hidden`;
+			const arr = Object.keys(nextMap);
+			localStorage.setItem(key, JSON.stringify(arr));
+		} catch {
+			// ignore
+		}
+	};
+
+	const hideItem = (id: string | number) => {
+		const key = String(id);
+		const next: Record<string, boolean> = { ...hiddenIds, [key]: true };
+		setHiddenIds(next);
+		persistHidden(next);
+	};
+
+	const showItem = (id: string | number) => {
+		const key = String(id);
+		const next: Record<string, boolean> = { ...hiddenIds };
+		delete next[key];
+		setHiddenIds(next);
+		persistHidden(next);
+	};
+
 	return (
 		<Box
 			component="section"
@@ -132,6 +245,10 @@ const Dashboard: React.FC<DashboardProps> = ({
 
 				// Get responsive size
 				const { colSpan, rowSpan } = getResponsiveSize(item.size, columns);
+
+				// hide item when not editing and it's in hidden list
+				const isHidden = hiddenIds[String(key)];
+				if (!isEditing && isHidden) return null;
 
 				return (
 					<Box
@@ -161,8 +278,79 @@ const Dashboard: React.FC<DashboardProps> = ({
 								flexDirection: "column",
 								// Add some internal padding for better spacing
 								p: 1,
+								position: "relative",
 							}}
 						>
+							{/* edit controls overlay and interaction blocker */}
+							{isEditing && (
+								<>
+									{/* full-area overlay that captures pointer events to block underlying widget interactions and gives a visual cue */}
+									<Box
+										aria-hidden
+										sx={{
+											position: "absolute",
+											inset: 0,
+											zIndex: 4,
+											backgroundColor: isHidden
+												? overlayColorHidden
+												: overlayColorEdit,
+											border: `1px dashed ${overlayBorder}`,
+											pointerEvents: "auto",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+										}}
+									>
+										{isHidden ? (
+											<Box sx={{ pointerEvents: "none", textAlign: "center" }}>
+												<Typography
+													variant="subtitle2"
+													sx={{ color: hiddenLabelColor, fontWeight: 700 }}
+												>
+													Hidden
+												</Typography>
+											</Box>
+										) : (
+											<Box
+												sx={{
+													position: "absolute",
+													left: 6,
+													top: 6,
+													pointerEvents: "none",
+												}}
+											/>
+										)}
+									</Box>
+
+									{/* control buttons sit above the blocker */}
+									<Box
+										sx={{ position: "absolute", top: 6, right: 6, zIndex: 10 }}
+									>
+										{isHidden ? (
+											<Tooltip title="Show widget">
+												<IconButton
+													size="small"
+													onClick={() => showItem(key)}
+													data-testid={`dashboard-item-show-${key}`}
+												>
+													<VisibilityIcon fontSize="small" />
+												</IconButton>
+											</Tooltip>
+										) : (
+											<Tooltip title="Hide widget">
+												<IconButton
+													size="small"
+													onClick={() => hideItem(key)}
+													data-testid={`dashboard-item-hide-${key}`}
+												>
+													<HideSourceIcon fontSize="small" />
+												</IconButton>
+											</Tooltip>
+										)}
+									</Box>
+								</>
+							)}
+
 							{item.node}
 						</Box>
 					</Box>

@@ -137,7 +137,7 @@ export class TeamDetailPage {
 		return this.page
 			.getByTestId("dashboard-item-throughput")
 			.locator("div")
-			.filter({ hasText: 'Predictability Score' })
+			.filter({ hasText: "Predictability Score" })
 			.nth(1);
 	}
 

@@ -1,4 +1,6 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import DoneIcon from "@mui/icons-material/Done";
+import EditIcon from "@mui/icons-material/Edit";
 import {
 	Box,
 	ButtonBase,
@@ -8,6 +10,8 @@ import {
 	useMediaQuery,
 	useTheme,
 } from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
 import { format } from "date-fns";
 import React from "react";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
@@ -17,6 +21,8 @@ export interface DashboardHeaderProps {
 	endDate: Date;
 	onStartDateChange: (date: Date | null) => void;
 	onEndDateChange: (date: Date | null) => void;
+	// Identifier used to scope edit/hidden widget state (required)
+	dashboardId: string;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -24,16 +30,43 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 	endDate,
 	onStartDateChange,
 	onEndDateChange,
+	dashboardId,
 }) => {
 	const theme = useTheme();
 	const isNarrow = useMediaQuery(theme.breakpoints.down("sm"));
 	const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+	const [isEditing, setIsEditing] = React.useState<boolean>(() => {
+		try {
+			const key = `lighthouse:dashboard:${dashboardId}:edit`;
+			return localStorage.getItem(key) === "1";
+		} catch {
+			return false;
+		}
+	});
 
 	const open = Boolean(anchorEl);
 
 	const handleOpen = (e: React.MouseEvent<HTMLElement>) =>
 		setAnchorEl(e.currentTarget);
 	const handleClose = () => setAnchorEl(null);
+
+	const editStorageKey = `lighthouse:dashboard:${dashboardId}:edit`;
+
+	const toggleEdit = () => {
+		const next = !isEditing;
+		setIsEditing(next);
+		try {
+			localStorage.setItem(editStorageKey, next ? "1" : "0");
+		} catch {
+			// ignore storage errors
+		}
+		// notify other components in this window
+		window.dispatchEvent(
+			new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
+				detail: { dashboardId: dashboardId, isEditing: next },
+			}),
+		);
+	};
 
 	const formatDate = (d: Date) => format(d, "dd MMM yyyy");
 
@@ -88,8 +121,22 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 				</Tooltip>
 			</Box>
 
-			{/* Right side placeholder for future additions */}
-			<Box sx={{ minWidth: 32 }} />
+			{/* Right side: edit toggle */}
+			<Stack direction="row" alignItems="center" spacing={1}>
+				<IconButton
+					size="small"
+					color={isEditing ? "primary" : "default"}
+					onClick={toggleEdit}
+					aria-pressed={isEditing}
+					data-testid="dashboard-edit-toggle"
+				>
+					{isEditing ? (
+						<DoneIcon fontSize="small" />
+					) : (
+						<EditIcon fontSize="small" />
+					)}
+				</IconButton>
+			</Stack>
 
 			<Popover
 				open={open}
