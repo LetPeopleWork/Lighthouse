@@ -24,7 +24,7 @@ export class ProjectDetailPage {
 
 	getFeatureIsDefaultSize(featureName: string): Locator {
 		const defaultSizeIcon = this.page
-			.getByRole('cell')
+			.getByRole("cell")
 			.filter({ hasText: featureName })
 			.getByLabel("No child Work Items were found for");
 		return defaultSizeIcon;
@@ -112,7 +112,10 @@ export class ProjectDetailPage {
 	}
 
 	get featureSizeWidget(): Locator {
-		return this.page.locator("div:nth-child(10) > .MuiPaper-root");
+		return this.page
+			.getByTestId('dashboard-item-featureSize')
+			.locator('div')
+			.filter({ hasText: 'Features Size50%70%85%95%50%' }).nth(1)
 	}
 
 	get projectId(): number {

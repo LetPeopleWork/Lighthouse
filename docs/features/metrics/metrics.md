@@ -43,50 +43,25 @@ Following a brief overview over the various metric widgets that are available in
 | **Flow Metric** | WIP, Work Item Age |
 | **Affected by Filtering** | No |
 
-This widget shows the total number of items in progress **right now**, based on the Work Items that are in a *Doing* state as per your configuration. If a *System WIP Limit* is specified for the Team or Project, this is visualized as well on the Widget and colored accordingly.
+This widget shows details to the items in progress.
 
 ![Work Items In Progress](../../assets/features/metrics/workitemsinprogress.png)
 
+First, you will see the total number of items in progress **right now**, based on the Work Items that are in a *Doing* state as per your configuration. If a *System WIP Limit* is specified for the Team or Project, this is visualized as well on the Widget and colored accordingly.
 These are all the items that match your *Work Item Query* and are in a *Doing State*. You can see the total number of items in progress right now. If you want to know more details, you click on the widget, you can see the specific work items in progress, together with their *Work Item Age*.
+
+Then you will also see the number of the Features that are currently being worked on. With a click on it will reveal more details. The teams [Feature WIP](../teams/edit.html#feature-wip) is visualized as a *Goal* on the widget.
+
+{: .note}
+The number being shown here is based on the parent items that are currently *in progress*. It **does not** matter whether your Feature is in a *To Do*, *Doing*, or *Done* state. If you work on an item that links to a feature, that feature is being worked on, and it will show up here. Thus this metric is not available for *Projects*, but only for *Teams*.
+
+Lastly, you can see the number of items that are currently blocked. The *Goal* is always set to 0.
+
 
 ![WIP Details](../../assets/features/metrics/workitemsinprogress_dialog.png)
 
 {: .important}
 This widget is **not affected** by the date filtering. It always shows the **current** Work In Progress.
-
-## Features being Worked On
-
-|--------------|-------------------------|
-| **Applies to** | Teams |
-| **Flow Metric** | WIP, Work Item Age |
-| **Affected by Filtering** | No |
-
-![Feature WIP](../../assets/features/metrics/featuresinprogress.png)
-
-This widget shows the Features that are currently being worked on. As with the [Work in Progress](#work-in-progress), it shows the total, and with a click on it will reveal more details. The teams [Feature WIP](../teams/edit.html#feature-wip) is visualized as a *Goal* on the widget.
-
-Similar to the Work in Progress widget, it is **not affected** by the date selection.
-
-![Feature WIP Details](../../assets/features/metrics/featuresinprogress_dialog.png)
-
-{: .note}
-The number being shown here is based on the parent items that are currently *in progress*. It **does not** matter whether your Feature is in a *To Do*, *Doing*, or *Done* state. If you work on an item that links to a feature, that feature is being worked on, and it will show up here. Thus this widget is not available for *Projects*, but only for *Teams*.
-
-
-## Blocked Items
-
-|--------------|-------------------------|
-| **Applies to** | Teams and Projects |
-| **Flow Metric** | WIP |
-| **Affected by Filtering** | No |
-
-![Blocked Items](../../assets/features/metrics/blockedItems.png)
-
-This widget shows the items that are currently blocked. As with the [Work in Progress](#work-in-progress), it shows the total, and with a click on it will reveal more details. The *Goal* is always set to 0.
-
-Similar to the Work in Progress widget, it is **not affected** by the date selection.
-
-![Blocked Items Details](../../assets/features/metrics/blockedItems_dialog.png)
 
 ## WIP Over Time
 

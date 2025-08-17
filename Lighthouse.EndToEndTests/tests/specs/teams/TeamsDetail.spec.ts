@@ -2,11 +2,11 @@ import { expect, testWithData } from "../../fixutres/LighthouseFixture";
 import { expectDateToBeRecent } from "../../helpers/dates";
 
 const testData = [
-	{ name: "Azure DevOps", index: 1, expectedFeaturesInProgress: 2 },
-	{ name: "Jira", index: 2, expectedFeaturesInProgress: 2 },
+	{ name: "Azure DevOps", index: 1 },
+	{ name: "Jira", index: 2 },
 ];
 
-for (const { index, name, expectedFeaturesInProgress } of testData) {
+for (const { index, name } of testData) {
 	testWithData(
 		`should update Team Data for ${name} team on click`,
 		async ({ testData, overviewPage }) => {
@@ -33,17 +33,13 @@ for (const { index, name, expectedFeaturesInProgress } of testData) {
 			await teamDetailPage.page.waitForTimeout(300);
 
 			await expect(teamDetailPage.workItemsInProgressWidget).toBeVisible();
-			await expect(teamDetailPage.cycleTimeScatterplotWidget).toBeVisible();
-			await expect(teamDetailPage.throughputRunChartWidget).toBeVisible();
-			await expect(teamDetailPage.wipOverTimeWidget).toBeVisible();
 			await expect(teamDetailPage.cycleTimePercentileWidget).toBeVisible();
-			await expect(teamDetailPage.featuresInProgressWidget).toBeVisible();
-
-			const actualFeaturesInProgress =
-				await teamDetailPage.getFeaturesInProgress();
-			expect(actualFeaturesInProgress).toBeGreaterThanOrEqual(
-				expectedFeaturesInProgress,
-			);
+			await expect(teamDetailPage.startedVsClosedWidget).toBeVisible();
+			await expect(teamDetailPage.throughputRunChartWidget).toBeVisible();
+			await expect(teamDetailPage.cycleTimeScatterplotWidget).toBeVisible();
+			await expect(teamDetailPage.workItemAgingChart).toBeVisible();
+			await expect(teamDetailPage.wipOverTimeWidget).toBeVisible();
+			await expect(teamDetailPage.simplifiedCfdWidget).toBeVisible();
 		},
 	);
 }

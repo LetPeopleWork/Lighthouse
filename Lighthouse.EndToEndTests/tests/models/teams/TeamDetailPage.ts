@@ -60,32 +60,10 @@ export class TeamDetailPage {
 		return getLastUpdatedDateFromText(lastUpdatedText);
 	}
 
-	async getFeaturesInProgress(): Promise<number> {
-		const featuresInProgressText = await this.page
-			.getByText(/Features being Worked On:(\d+)/)
-			.first()
-			.innerText();
-
-		// Extract just the number after "Features being Worked On:"
-		const regex = /Features being Worked On:\s*(\d+)/;
-		const match = regex.exec(featuresInProgressText);
-		const count = match ? Number.parseInt(match[1], 10) : 0;
-
-		return count;
-	}
-
 	async openWorkItemsInProgressDialog(): Promise<WorkItemsInProgressDialog> {
-		await this.workItemsInProgressWidget.click();
-		return new WorkItemsInProgressDialog(this.page);
-	}
-
-	async openFeaturesInProgressDialog(): Promise<WorkItemsInProgressDialog> {
-		await this.featuresInProgressWidget.click();
-		return new WorkItemsInProgressDialog(this.page);
-	}
-
-	async openBlockedItemsDialog(): Promise<WorkItemsInProgressDialog> {
-		await this.blockedItemsWidget.click();
+		await this.workItemsInProgressWidget
+			.getByRole("heading", { name: "Work Items in Progress:" })
+			.click();
 		return new WorkItemsInProgressDialog(this.page);
 	}
 
@@ -133,29 +111,58 @@ export class TeamDetailPage {
 
 	get cycleTimePercentileWidget(): Locator {
 		return this.page
+			.getByTestId("dashboard-item-percentiles")
 			.locator("div")
-			.filter({ hasText: /^Cycle Time Percentiles.*$/ })
-			.nth(1);
+			.filter({ hasText: /^Cycle Time PercentilesSLE:.*$/ })
+			.first();
 	}
 
 	get cycleTimeScatterplotWidget(): Locator {
-		return this.page.locator("div:nth-child(6) > .MuiPaper-root");
+		return this.page
+			.getByTestId("dashboard-item-cycleScatter")
+			.locator("div")
+			.filter({ hasText: /^Cycle Time50%70%85%95%Service.*$/ })
+			.nth(1);
 	}
 
 	get throughputRunChartWidget(): Locator {
-		return this.page.locator("div:nth-child(5) > .MuiPaper-root");
+		return this.page
+			.getByTestId("dashboard-item-throughput")
+			.locator("div")
+			.filter({ hasText: /^Work Items CompletedTotal:.*$/ })
+			.nth(1);
+	}
+
+	get predictabilityScoreChartWidget(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-throughput")
+			.locator("div")
+			.filter({ hasText: 'Predictability Score' })
+			.nth(1);
 	}
 
 	get wipOverTimeWidget(): Locator {
-		return this.page.locator("div:nth-child(8) > .MuiPaper-root");
+		return this.page
+			.getByTestId("dashboard-item-wipOverTime")
+			.locator("div")
+			.filter({ hasText: /^Work Items In Progress Over.*$/ })
+			.nth(1);
 	}
 
 	get workItemAgingChart(): Locator {
-		return this.page.locator("div:nth-child(7) > .MuiPaper-root");
+		return this.page
+			.getByTestId("dashboard-item-aging")
+			.locator("div")
+			.filter({ hasText: /^Work Item Aging50%70%85%95%.*$/ })
+			.nth(1);
 	}
 
 	get simplifiedCfdWidget(): Locator {
-		return this.page.locator("div:nth-child(9) > .MuiPaper-root");
+		return this.page
+			.getByTestId("dashboard-item-stacked")
+			.locator("div")
+			.filter({ hasText: "Simplified Cumulative Flow" })
+			.nth(1);
 	}
 
 	get sleWidgetButton(): Locator {
@@ -176,26 +183,17 @@ export class TeamDetailPage {
 
 	get workItemsInProgressWidget(): Locator {
 		return this.page
+			.getByTestId("dashboard-item-itemsInProgress")
 			.locator("div")
 			.filter({ hasText: /^Work Items in Progress:.*$/ })
 			.first();
 	}
 
-	get featuresInProgressWidget(): Locator {
-		return this.page
-			.locator("div")
-			.filter({ hasText: /^Features being Worked On:.*$/ })
-			.first();
-	}
-
-	get blockedItemsWidget(): Locator {
-		return this.page
-			.locator("div")
-			.filter({ hasText: /^Blocked:.*$/ })
-			.first();
-	}
-
 	get startedVsClosedWidget(): Locator {
-		return this.page.locator("div:nth-child(4) > .MuiPaper-root");
+		return this.page
+			.getByTestId("dashboard-item-startedVsFinished")
+			.locator("div")
+			.filter({ hasText: "Started vs. Closed Work" })
+			.first();
 	}
 }
