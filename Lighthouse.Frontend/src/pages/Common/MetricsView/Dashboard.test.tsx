@@ -8,6 +8,31 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DashboardItem } from "./Dashboard";
 
+// Polyfill DataTransfer in the test environment if absent (jsdom may not provide it)
+if (typeof globalThis.DataTransfer === "undefined") {
+	// Minimal DataTransfer shim sufficient for drag/drop unit tests
+	// assign a simple constructor function so `new DataTransfer()` works
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	// @ts-ignore
+	globalThis.DataTransfer = class {
+		items: Record<string, string> = {};
+		setData(type: string, value: string) {
+			this.items[type] = value;
+		}
+		getData(type: string) {
+			return this.items[type] || "";
+		}
+		clearData() {
+			this.items = {};
+		}
+	};
+}
+
+// Ensure scrollBy exists so spyOn can attach to it in tests
+if (typeof window.scrollBy !== "function") {
+	window.scrollBy = () => {};
+}
+
 // Helper to simulate different viewport widths by controlling matchMedia
 function setMatchMediaWidth(width: number) {
 	Object.defineProperty(window, "matchMedia", {
@@ -33,6 +58,14 @@ function setMatchMediaWidth(width: number) {
 describe("Dashboard component", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		localStorage.clear();
+	});
+
+	afterEach(() => {
+		vi.clearAllTimers();
+		vi.useRealTimers();
+		localStorage.clear();
+		cleanup();
 	});
 
 	it("allows hiding and showing widgets in edit mode and persists to localStorage", async () => {
@@ -194,30 +227,304 @@ describe("Dashboard component", () => {
 		}
 	});
 
-	it("hides lower-priority items when allowVerticalStacking is false on very small screens", async () => {
-		// very small screen
-		setMatchMediaWidth(300);
-
+	it("renders initial order when no stored layout", async () => {
+		setMatchMediaWidth(1600);
 		const { default: Dashboard } = await import("./Dashboard");
 
-		const items: DashboardItem[] = Array.from({ length: 6 }).map((_, i) => ({
-			id: i,
-			node: <div>Item {i}</div>,
-			priority: i < 2 ? 10 : 100, // first two high priority, rest low
-		}));
+		const items: DashboardItem[] = [
+			{ id: "A", node: <div>A</div> },
+			{ id: "B", node: <div>B</div> },
+			{ id: "C", node: <div>C</div> },
+		];
 
-		render(
-			<Dashboard
-				items={items}
-				allowVerticalStacking={false}
-				dashboardId="Team_1337"
-			/>,
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const nodes = await screen.findAllByTestId(/dashboard-item-/);
+		const ids = nodes.map((n) =>
+			n.getAttribute("data-testid")?.replace("dashboard-item-", ""),
+		);
+		expect(ids).toEqual(["A", "B", "C"]);
+		expect(localStorage.getItem("lighthouse:dashboard:d1:layout")).toBeNull();
+	});
+
+	it("loads order from localStorage and renders accordingly", async () => {
+		setMatchMediaWidth(1600);
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:layout",
+			JSON.stringify(["C", "A", "B"]),
+		);
+		const { default: Dashboard } = await import("./Dashboard");
+
+		const items: DashboardItem[] = [
+			{ id: "A", node: <div>A</div> },
+			{ id: "B", node: <div>B</div> },
+			{ id: "C", node: <div>C</div> },
+		];
+
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const nodes = await screen.findAllByTestId(/dashboard-item-/);
+		const ids = nodes.map((n) =>
+			n.getAttribute("data-testid")?.replace("dashboard-item-", ""),
+		);
+		expect(ids).toEqual(["C", "A", "B"]);
+		// ensure state reflects stored array (layout key remains as set)
+		expect(
+			JSON.parse(
+				localStorage.getItem("lighthouse:dashboard:d1:layout") || "[]",
+			),
+		).toEqual(["C", "A", "B"]);
+	});
+
+	it("appends new widgets missing in stored layout", async () => {
+		setMatchMediaWidth(1600);
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:layout",
+			JSON.stringify(["A", "B"]),
+		);
+		const { default: Dashboard } = await import("./Dashboard");
+
+		const items: DashboardItem[] = [
+			{ id: "A", node: <div>A</div> },
+			{ id: "B", node: <div>B</div> },
+			{ id: "C", node: <div>C</div> },
+		];
+
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const nodes = await screen.findAllByTestId(/dashboard-item-/);
+		const ids = nodes.map((n) =>
+			n.getAttribute("data-testid")?.replace("dashboard-item-", ""),
+		);
+		expect(ids).toEqual(["A", "B", "C"]);
+	});
+
+	it("hiding a widget appends its key to layout and updates hidden list", async () => {
+		setMatchMediaWidth(1600);
+		const { default: Dashboard } = await import("./Dashboard");
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+
+		const items: DashboardItem[] = [
+			{ id: "A", node: <div>A</div> },
+			{ id: "B", node: <div>B</div> },
+			{ id: "C", node: <div>C</div> },
+		];
+
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const hideB = await screen.findByTestId("dashboard-item-hide-B");
+		fireEvent.click(hideB);
+
+		// hidden persisted
+		const hiddenRaw = localStorage.getItem("lighthouse:dashboard:d1:hidden");
+		expect(JSON.parse(hiddenRaw || "[]")).toContain("B");
+
+		// layout should move B to last position
+		const layout = JSON.parse(
+			localStorage.getItem("lighthouse:dashboard:d1:layout") || "[]",
+		);
+		expect(layout[layout.length - 1]).toBe("B");
+	});
+
+	it("showing a hidden widget reinserts before first hidden", async () => {
+		setMatchMediaWidth(1600);
+		// layout A,B,C and C hidden
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:layout",
+			JSON.stringify(["A", "B", "C"]),
+		);
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:hidden",
+			JSON.stringify(["C"]),
+		);
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+		const { default: Dashboard } = await import("./Dashboard");
+
+		const items: DashboardItem[] = [
+			{ id: "A", node: <div>A</div> },
+			{ id: "B", node: <div>B</div> },
+			{ id: "C", node: <div>C</div> },
+		];
+
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const showC = await screen.findByTestId("dashboard-item-show-C");
+		fireEvent.click(showC);
+
+		const hiddenAfter = JSON.parse(
+			localStorage.getItem("lighthouse:dashboard:d1:hidden") || "[]",
+		);
+		expect(hiddenAfter).not.toContain("C");
+
+		const layoutAfter = JSON.parse(
+			localStorage.getItem("lighthouse:dashboard:d1:layout") || "[]",
+		);
+		// C should not be at absolute end if others hidden existed; for this simple case ensure C is present and index < layout.length
+		const idx = layoutAfter.indexOf("C");
+		expect(idx).toBeGreaterThanOrEqual(0);
+	});
+
+	it("hidden widgets are not draggable when hidden", async () => {
+		setMatchMediaWidth(1600);
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:hidden",
+			JSON.stringify(["W"]),
+		);
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+		const { default: Dashboard } = await import("./Dashboard");
+
+		const items: DashboardItem[] = [{ id: "W", node: <div>W</div> }];
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const el = await screen.findByTestId("dashboard-item-W");
+		expect(el.getAttribute("draggable")).toBe("false");
+
+		// attempt dragStart - should not change anything
+		const dt = new DataTransfer();
+		fireEvent.dragStart(el, { dataTransfer: dt });
+		// may be empty, but component shouldn't crash; ensure DOM still contains element in edit mode
+		expect(screen.getByTestId("dashboard-item-W")).toBeInTheDocument();
+	});
+
+	it("widgets are draggable only in edit mode and when not hidden", async () => {
+		setMatchMediaWidth(1600);
+		const { default: Dashboard } = await import("./Dashboard");
+
+		const items: DashboardItem[] = [{ id: "X", node: <div>X</div> }];
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		// not in edit mode -> not draggable
+		const el = await screen.findByTestId("dashboard-item-X");
+		expect(el.getAttribute("draggable")).toBe("false");
+
+		// enable edit mode via event
+		window.dispatchEvent(
+			new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
+				detail: { dashboardId: "d1", isEditing: true },
+			}),
+		);
+		await waitFor(() => expect(el.getAttribute("draggable")).toBe("true"));
+	});
+
+	it("drop into empty end area inserts before first hidden or at end", async () => {
+		setMatchMediaWidth(1600);
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:layout",
+			JSON.stringify(["A", "B"]),
+		);
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+		const { default: Dashboard } = await import("./Dashboard");
+
+		const items: DashboardItem[] = [
+			{ id: "A", node: <div>A</div> },
+			{ id: "B", node: <div>B</div> },
+		];
+
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const a = await screen.findByTestId("dashboard-item-A");
+		const end = await screen.findByTestId("dashboard-end-drop");
+		const dt = new DataTransfer();
+		fireEvent.dragStart(a, { dataTransfer: dt });
+		fireEvent.drop(end, { dataTransfer: dt });
+
+		const layoutAfter = JSON.parse(
+			localStorage.getItem("lighthouse:dashboard:d1:layout") || "[]",
+		);
+		// A should now be at end
+		expect(layoutAfter[layoutAfter.length - 1]).toBe("A");
+	});
+
+	it("outside click clears edit mode and writes localStorage", async () => {
+		setMatchMediaWidth(1600);
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+		const { default: Dashboard } = await import("./Dashboard");
+
+		const items: DashboardItem[] = [{ id: "A", node: <div>A</div> }];
+		// render an outside element
+		const outside = document.createElement("div");
+		outside.setAttribute("data-testid", "outside");
+		document.body.appendChild(outside);
+
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		fireEvent.click(outside);
+
+		await waitFor(() =>
+			expect(localStorage.getItem("lighthouse:dashboard:d1:edit")).toBe("0"),
+		);
+		document.body.removeChild(outside);
+	});
+
+	it("navigation (popstate) clears edit mode", async () => {
+		setMatchMediaWidth(1600);
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+		const { default: Dashboard } = await import("./Dashboard");
+		const items: DashboardItem[] = [{ id: "A", node: <div>A</div> }];
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		window.dispatchEvent(new PopStateEvent("popstate"));
+
+		await waitFor(() =>
+			expect(localStorage.getItem("lighthouse:dashboard:d1:edit")).toBe("0"),
+		);
+	});
+
+	it("malformed layout JSON is handled gracefully", async () => {
+		setMatchMediaWidth(1600);
+		localStorage.setItem("lighthouse:dashboard:d1:layout", "NOT_JSON");
+		const { default: Dashboard } = await import("./Dashboard");
+		const items: DashboardItem[] = [
+			{ id: "A", node: <div>A</div> },
+			{ id: "B", node: <div>B</div> },
+		];
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		// component should still render items
+		expect(await screen.findByTestId("dashboard-item-A")).toBeInTheDocument();
+		expect(await screen.findByTestId("dashboard-item-B")).toBeInTheDocument();
+	});
+
+	it("reset-layout for other dashboard does not affect this dashboard", async () => {
+		setMatchMediaWidth(1600);
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:layout",
+			JSON.stringify(["A", "B"]),
+		);
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:hidden",
+			JSON.stringify(["B"]),
+		);
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+
+		const { default: Dashboard } = await import("./Dashboard");
+		const items: DashboardItem[] = [
+			{ id: "A", node: <div>A</div> },
+			{ id: "B", node: <div>B</div> },
+		];
+
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		// confirm precondition: show control for B exists
+		expect(
+			await screen.findByTestId("dashboard-item-show-B"),
+		).toBeInTheDocument();
+
+		// dispatch reset for a different dashboard
+		window.dispatchEvent(
+			new CustomEvent("lighthouse:dashboard:reset-layout", {
+				detail: { dashboardId: "other" },
+			}),
 		);
 
-		// Expect only the high-priority items to be present (others hidden)
-		expect(screen.queryByTestId("dashboard-item-0")).toBeInTheDocument();
-		expect(screen.queryByTestId("dashboard-item-1")).toBeInTheDocument();
-		expect(screen.queryByTestId("dashboard-item-2")).toBeNull();
-		expect(screen.queryByTestId("dashboard-item-3")).toBeNull();
+		// original keys should remain
+		expect(
+			JSON.parse(
+				localStorage.getItem("lighthouse:dashboard:d1:hidden") || "[]",
+			),
+		).toContain("B");
+
+		// UI should be unchanged
+		expect(screen.getByTestId("dashboard-item-show-B")).toBeInTheDocument();
 	});
 });

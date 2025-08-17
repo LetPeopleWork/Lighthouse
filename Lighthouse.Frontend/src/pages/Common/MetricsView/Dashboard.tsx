@@ -30,7 +30,6 @@ interface DashboardProps {
 	items: DashboardItem[];
 	spacing?: number;
 	baseRowHeight?: number;
-	allowVerticalStacking?: boolean;
 	dashboardId: string;
 }
 
@@ -38,13 +37,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 	items,
 	spacing = 2,
 	baseRowHeight = 100,
-	allowVerticalStacking = true,
 	dashboardId,
 }) => {
-	const visibleItems = items
-		.filter((it) => it.node != null)
-		.sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
-
 	const theme = useTheme();
 	const isXlUp = useMediaQuery(theme.breakpoints.up("xl"));
 	const isLgUp = useMediaQuery(theme.breakpoints.up("lg"));
@@ -52,13 +46,27 @@ const Dashboard: React.FC<DashboardProps> = ({
 	const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
 
 	// More granular responsive column counts
-	const columns = isXlUp ? 12 : isLgUp ? 10 : isMdUp ? 8 : isSmUp ? 6 : 4;
+	let columns = 4;
+	if (isXlUp) columns = 12;
+	else if (isLgUp) columns = 10;
+	else if (isMdUp) columns = 8;
+	else if (isSmUp) columns = 6;
 	const gapPx = spacing * 8;
+
+	// ordering state (persisted per-dashboard)
+	const [order, setOrder] = React.useState<string[]>(() => []);
+	const draggingIdRef = React.useRef<string | null>(null);
+	const [dragOverId, setDragOverId] = React.useState<string | null>(null);
+
+	const rootRef = React.useRef<HTMLElement | null>(null);
+
+	// auto-scroll state for dragging
+	const autoScrollRef = React.useRef<number | null>(null);
 
 	// Get responsive size configuration
 	const getResponsiveSize = (
-		size: string = "medium",
 		availableColumns: number,
+		size: string = "medium",
 	) => {
 		// Define sizes for different breakpoints
 		const sizeConfigs = {
@@ -112,21 +120,39 @@ const Dashboard: React.FC<DashboardProps> = ({
 		};
 	};
 
-	// Calculate if an item should be hidden on very small screens
-	const shouldHideItem = (item: DashboardItem, index: number) => {
-		if (!allowVerticalStacking && !isSmUp) {
-			// On very small screens, only show high-priority items
-			const priority = item.priority ?? 999;
-			const visibleCount = Math.floor(columns / 2); // Show roughly half the items
-			return priority > 50 || index >= visibleCount;
+	// persist order to localStorage
+	const persistOrder = (next: string[]) => {
+		try {
+			const key = `lighthouse:dashboard:${dashboardId}:layout`;
+			localStorage.setItem(key, JSON.stringify(next));
+		} catch {
+			// ignore
 		}
-		return false;
 	};
 
-	// Filter items based on screen size if needed
-	const displayItems = allowVerticalStacking
-		? visibleItems
-		: visibleItems.filter((item, index) => !shouldHideItem(item, index));
+	React.useEffect(() => {
+		const allKeys = items.map((it, idx) => String(it.id ?? idx));
+		try {
+			const key = `lighthouse:dashboard:${dashboardId}:layout`;
+			const raw = localStorage.getItem(key);
+			let stored: string[] | null = null;
+			if (raw) {
+				stored = JSON.parse(raw) as string[];
+			}
+			let initial: string[] = [];
+			if (stored && Array.isArray(stored)) {
+				// ensure we only keep keys that still exist
+				initial = stored.filter((k) => allKeys.includes(k));
+			}
+			// append any missing keys (new widgets)
+			allKeys.forEach((k) => {
+				if (!initial.includes(k)) initial.push(k);
+			});
+			setOrder(initial);
+		} catch {
+			setOrder(allKeys);
+		}
+	}, [dashboardId, items]);
 
 	// Edit mode and hidden items state (per-user, per-dashboard stored in localStorage)
 	const [isEditing, setIsEditing] = React.useState<boolean>(false);
@@ -134,10 +160,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 		() => ({}),
 	);
 
-	// storage is per-browser per-dashboard (no per-user)
-
+	// FIXED: stable dependencies and proper cleanup
 	React.useEffect(() => {
-		// load hidden ids
 		try {
 			const key = `lighthouse:dashboard:${dashboardId}:hidden`;
 			const raw = localStorage.getItem(key);
@@ -173,16 +197,57 @@ const Dashboard: React.FC<DashboardProps> = ({
 			}
 		};
 
+		// listen for reset-layout event to clear stored settings and reset UI
+		const resetHandler = (ev: Event) => {
+			const detail = (ev as CustomEvent)?.detail as
+				| { dashboardId?: string }
+				| undefined;
+			if (!detail) return;
+			if (detail.dashboardId !== dashboardId) return;
+
+			try {
+				const keys = [
+					`lighthouse:dashboard:${dashboardId}:layout`,
+					`lighthouse:dashboard:${dashboardId}:hidden`,
+					`lighthouse:dashboard:${dashboardId}:edit`,
+				];
+				keys.forEach((k) => localStorage.removeItem(k));
+			} catch {
+				// ignore
+			}
+
+			// reset internal state to defaults - calculate from items directly
+			const allKeys = items
+				.filter((it) => it.node != null)
+				.sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))
+				.map((it, idx) => String(it.id ?? idx));
+			setOrder(allKeys);
+			setHiddenIds({});
+			setIsEditing(false);
+		};
+
 		window.addEventListener(
 			"lighthouse:dashboard:edit-mode-changed",
 			handler as EventListener,
 		);
-		return () =>
+
+		window.addEventListener(
+			"lighthouse:dashboard:reset-layout",
+			resetHandler as EventListener,
+		);
+
+		// FIXED: Cleanup both event listeners
+		return () => {
 			window.removeEventListener(
 				"lighthouse:dashboard:edit-mode-changed",
 				handler as EventListener,
 			);
-	}, [dashboardId]);
+			window.removeEventListener(
+				"lighthouse:dashboard:reset-layout",
+				resetHandler as EventListener,
+			);
+		};
+	}, [dashboardId, items]); // Use items instead of visibleItems
 
 	// overlay colors using centralized color helpers
 	// stronger overlay in dark mode using brand light color for better visibility
@@ -215,6 +280,14 @@ const Dashboard: React.FC<DashboardProps> = ({
 		const next: Record<string, boolean> = { ...hiddenIds, [key]: true };
 		setHiddenIds(next);
 		persistHidden(next);
+
+		// move to end of order so hidden items stay at the bottom
+		setOrder((prev) => {
+			const without = prev.filter((k) => k !== key);
+			const nextOrder = [...without, key];
+			persistOrder(nextOrder);
+			return nextOrder;
+		});
 	};
 
 	const showItem = (id: string | number) => {
@@ -223,10 +296,216 @@ const Dashboard: React.FC<DashboardProps> = ({
 		delete next[key];
 		setHiddenIds(next);
 		persistHidden(next);
+
+		// when showing, move the item into the non-hidden area (before first hidden)
+		setOrder((prev) => {
+			const without = prev.filter((k) => k !== key);
+			// find index of first currently hidden item
+			const firstHiddenIndex = without.findIndex((k) => !!next[k]);
+			let insertAt = without.length;
+			if (firstHiddenIndex >= 0) insertAt = firstHiddenIndex;
+			const nextOrder = [
+				...without.slice(0, insertAt),
+				key,
+				...without.slice(insertAt),
+			];
+			persistOrder(nextOrder);
+			return nextOrder;
+		});
 	};
+
+	// derive ordered list with hidden items forced to the end for rendering and operations
+	const { orderedKeys: orderedItems, keyToItem } = React.useMemo(() => {
+		// map keys -> item
+		const keyToItem: Record<string, DashboardItem> = {};
+		items.forEach((it, idx) => {
+			const k = String(it.id ?? idx);
+			keyToItem[k] = it;
+		});
+
+		// start from stored order, keep only existing keys
+		const storedOrder = order.filter((k) => keyToItem[k]);
+
+		// any missing keys append
+		items.forEach((it, idx) => {
+			const k = String(it.id ?? idx);
+			if (!storedOrder.includes(k)) storedOrder.push(k);
+		});
+
+		// split into non-hidden and hidden
+		const nonHidden: string[] = [];
+		const hidden: string[] = [];
+		storedOrder.forEach((k) => {
+			if (hiddenIds[k]) hidden.push(k);
+			else nonHidden.push(k);
+		});
+		return { orderedKeys: [...nonHidden, ...hidden], keyToItem };
+	}, [order, items, hiddenIds]);
+
+	// drag handlers
+	const onDragStart = (ev: React.DragEvent, id: string) => {
+		draggingIdRef.current = id;
+		ev.dataTransfer.setData("text/plain", id);
+		ev.dataTransfer.effectAllowed = "move";
+	};
+
+	const onDragOverItem = (ev: React.DragEvent, id: string) => {
+		ev.preventDefault();
+		setDragOverId(id);
+
+		// auto-scroll when near viewport top/bottom
+		const y = ev.clientY;
+		const threshold = 120;
+		const scrollAmount = 24;
+		if (y < threshold) {
+			// scroll up
+			if (!autoScrollRef.current) {
+				autoScrollRef.current = window.setInterval(() => {
+					window.scrollBy({ top: -scrollAmount, left: 0 });
+				}, 50);
+			}
+		} else if (y > window.innerHeight - threshold) {
+			// scroll down
+			if (!autoScrollRef.current) {
+				autoScrollRef.current = window.setInterval(() => {
+					window.scrollBy({ top: scrollAmount, left: 0 });
+				}, 50);
+			}
+		} else if (autoScrollRef.current) {
+			clearInterval(autoScrollRef.current);
+			autoScrollRef.current = null;
+		}
+	};
+
+	const onDropOnItem = (ev: React.DragEvent, targetId: string) => {
+		ev.preventDefault();
+		const dragged =
+			draggingIdRef.current ?? ev.dataTransfer.getData("text/plain");
+		if (!dragged || dragged === targetId) return;
+		// don't allow moving hidden widgets or dropping onto hidden widgets area
+		if (hiddenIds[dragged]) return;
+		if (hiddenIds[targetId]) {
+			// drop before the first hidden item (i.e., at boundary)
+			const firstHidden = orderedItems.findIndex((k) => hiddenIds[k]);
+			const idx = firstHidden >= 0 ? firstHidden : orderedItems.length;
+			setOrder((prev) => {
+				const without = prev.filter((k) => k !== dragged);
+				const nextOrder = [
+					...without.slice(0, idx),
+					dragged,
+					...without.slice(idx),
+				];
+				persistOrder(nextOrder);
+				return nextOrder;
+			});
+			setDragOverId(null);
+			return;
+		}
+
+		setOrder((prev) => {
+			const without = prev.filter((k) => k !== dragged);
+			const targetIndex = without.indexOf(targetId);
+			const insertAt = targetIndex >= 0 ? targetIndex : without.length;
+			const nextOrder = [
+				...without.slice(0, insertAt),
+				dragged,
+				...without.slice(insertAt),
+			];
+			persistOrder(nextOrder);
+			return nextOrder;
+		});
+		setDragOverId(null);
+	};
+
+	const onDragEnd = () => {
+		draggingIdRef.current = null;
+		setDragOverId(null);
+
+		if (autoScrollRef.current) {
+			clearInterval(autoScrollRef.current);
+			autoScrollRef.current = null;
+		}
+	};
+
+	// drop into empty space / end-area
+	const onDropAtEnd = (ev: React.DragEvent) => {
+		ev.preventDefault();
+		const dragged =
+			draggingIdRef.current ?? ev.dataTransfer.getData("text/plain");
+		if (!dragged) return;
+		if (hiddenIds[dragged]) return;
+		// insert before first hidden or at end
+		const firstHidden = orderedItems.findIndex((k) => hiddenIds[k]);
+		const idx = firstHidden >= 0 ? firstHidden : orderedItems.length;
+		setOrder((prev) => {
+			const without = prev.filter((k) => k !== dragged);
+			const nextOrder = [
+				...without.slice(0, idx),
+				dragged,
+				...without.slice(idx),
+			];
+			persistOrder(nextOrder);
+			return nextOrder;
+		});
+		setDragOverId(null);
+	};
+
+	// leave edit mode when clicking outside or navigating away
+	React.useEffect(() => {
+		if (!rootRef.current) return;
+		const onDocClick = (ev: MouseEvent) => {
+			if (!isEditing) return;
+			const target = ev.target as Node | null;
+			if (!target) return;
+			if (!rootRef.current) return;
+			if (!rootRef.current.contains(target)) {
+				try {
+					const editKey = `lighthouse:dashboard:${dashboardId}:edit`;
+					localStorage.setItem(editKey, "0");
+					window.dispatchEvent(
+						new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
+							detail: { dashboardId, isEditing: false },
+						}),
+					);
+				} catch {
+					// ignore
+				}
+				setIsEditing(false);
+			}
+		};
+
+		const onNav = () => {
+			if (!isEditing) return;
+			try {
+				const editKey = `lighthouse:dashboard:${dashboardId}:edit`;
+				localStorage.setItem(editKey, "0");
+				window.dispatchEvent(
+					new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
+						detail: { dashboardId, isEditing: false },
+					}),
+				);
+			} catch {
+				// ignore
+			}
+			setIsEditing(false);
+		};
+
+		document.addEventListener("click", onDocClick, true);
+		window.addEventListener("popstate", onNav);
+		window.addEventListener("beforeunload", onNav);
+
+		return () => {
+			document.removeEventListener("click", onDocClick, true);
+			window.removeEventListener("popstate", onNav);
+			window.removeEventListener("beforeunload", onNav);
+		};
+	}, [isEditing, dashboardId]);
 
 	return (
 		<Box
+			ref={(el: HTMLElement | null) => {
+				rootRef.current = el;
+			}}
 			component="section"
 			sx={{
 				display: "grid",
@@ -240,15 +519,19 @@ const Dashboard: React.FC<DashboardProps> = ({
 				px: isSmUp ? 0 : 1,
 			}}
 		>
-			{displayItems.map((item, index) => {
-				const key = item.id ?? index;
+			{orderedItems.map((k) => {
+				const item = keyToItem[k];
+				if (!item) return null;
+				const key = k;
 
 				// Get responsive size
-				const { colSpan, rowSpan } = getResponsiveSize(item.size, columns);
+				const { colSpan, rowSpan } = getResponsiveSize(columns, item.size);
 
 				// hide item when not editing and it's in hidden list
 				const isHidden = hiddenIds[String(key)];
 				if (!isEditing && isHidden) return null;
+
+				const isDragTarget = dragOverId === key;
 
 				return (
 					<Box
@@ -257,6 +540,11 @@ const Dashboard: React.FC<DashboardProps> = ({
 						data-size={item.size || "medium"}
 						data-colspan={colSpan}
 						data-rowspan={rowSpan}
+						draggable={isEditing && !isHidden}
+						onDragStart={(e) => onDragStart(e, key)}
+						onDragOver={(e) => onDragOverItem(e, key)}
+						onDrop={(e) => onDropOnItem(e, key)}
+						onDragEnd={onDragEnd}
 						sx={{
 							gridColumn: `span ${colSpan}`,
 							gridRow: `span ${rowSpan}`,
@@ -267,6 +555,9 @@ const Dashboard: React.FC<DashboardProps> = ({
 							overflow: "hidden",
 							transition: "all 0.2s ease-in-out",
 							minHeight: `${baseRowHeight * rowSpan + gapPx * (rowSpan - 1)}px`,
+							outline: isDragTarget
+								? `2px dashed ${theme.palette.primary.main}`
+								: undefined,
 						}}
 					>
 						<Box
@@ -356,6 +647,28 @@ const Dashboard: React.FC<DashboardProps> = ({
 					</Box>
 				);
 			})}
+
+			{/* end drop target to allow dropping into empty space */}
+			{isEditing && (
+				<Box
+					data-testid="dashboard-end-drop"
+					onDragOver={(e) => {
+						e.preventDefault();
+						setDragOverId("END");
+					}}
+					onDrop={onDropAtEnd}
+					sx={{
+						gridColumn: `1 / span ${columns}`,
+						height: 24,
+						width: "100%",
+						border:
+							dragOverId === "END"
+								? `2px dashed ${theme.palette.primary.main}`
+								: undefined,
+						opacity: 0.001, // almost invisible but catch events
+					}}
+				/>
+			)}
 		</Box>
 	);
 };

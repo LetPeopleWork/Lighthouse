@@ -1,6 +1,7 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import DoneIcon from "@mui/icons-material/Done";
 import EditIcon from "@mui/icons-material/Edit";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import {
 	Box,
 	ButtonBase,
@@ -68,6 +69,35 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 		);
 	};
 
+	const resetLayout = () => {
+		try {
+			const keys = [
+				`lighthouse:dashboard:${dashboardId}:layout`,
+				`lighthouse:dashboard:${dashboardId}:hidden`,
+				`lighthouse:dashboard:${dashboardId}:edit`,
+			];
+			keys.forEach((k) => localStorage.removeItem(k));
+		} catch {
+			// ignore storage errors
+		}
+
+		// notify other components in this window to reset their state
+		window.dispatchEvent(
+			new CustomEvent("lighthouse:dashboard:reset-layout", {
+				detail: { dashboardId: dashboardId },
+			}),
+		);
+
+		// also ensure edit mode is turned off everywhere
+		window.dispatchEvent(
+			new CustomEvent("lighthouse:dashboard:edit-mode-changed", {
+				detail: { dashboardId: dashboardId, isEditing: false },
+			}),
+		);
+
+		setIsEditing(false);
+	};
+
 	const formatDate = (d: Date) => format(d, "dd MMM yyyy");
 
 	return (
@@ -123,19 +153,31 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
 			{/* Right side: edit toggle */}
 			<Stack direction="row" alignItems="center" spacing={1}>
-				<IconButton
-					size="small"
-					color={isEditing ? "primary" : "default"}
-					onClick={toggleEdit}
-					aria-pressed={isEditing}
-					data-testid="dashboard-edit-toggle"
-				>
-					{isEditing ? (
-						<DoneIcon fontSize="small" />
-					) : (
-						<EditIcon fontSize="small" />
-					)}
-				</IconButton>
+				<Tooltip title={isEditing ? "Leave Edit" : "Enter Edit Mode"}>
+					<IconButton
+						size="small"
+						color={isEditing ? "primary" : "default"}
+						onClick={toggleEdit}
+						aria-pressed={isEditing}
+						data-testid="dashboard-edit-toggle"
+					>
+						{isEditing ? (
+							<DoneIcon fontSize="small" />
+						) : (
+							<EditIcon fontSize="small" />
+						)}
+					</IconButton>
+				</Tooltip>
+
+				<Tooltip title="Reset layout">
+					<IconButton
+						size="small"
+						onClick={resetLayout}
+						data-testid="dashboard-reset-layout"
+					>
+						<RestartAltIcon fontSize="small" />
+					</IconButton>
+				</Tooltip>
 			</Stack>
 
 			<Popover

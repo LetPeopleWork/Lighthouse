@@ -202,3 +202,84 @@ describe("DashboardHeader", () => {
 		localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:edit`);
 	});
 });
+
+it("resets layout, clears localStorage and dispatches reset events", async () => {
+	setMatchMedia(false);
+
+	const onStart = vi.fn();
+	const onEnd = vi.fn();
+
+	const { default: DashboardHeader } = await import("./DashboardHeader");
+
+	const start = new Date(2025, 6, 15);
+	const end = new Date(2025, 7, 14);
+	const dashboardId = "reset-dashboard-1";
+
+	// populate localStorage keys that resetLayout should remove
+	localStorage.setItem(
+		`lighthouse:dashboard:${dashboardId}:layout`,
+		JSON.stringify({ widgets: [] }),
+	);
+	localStorage.setItem(
+		`lighthouse:dashboard:${dashboardId}:hidden`,
+		JSON.stringify({}),
+	);
+	localStorage.setItem(`lighthouse:dashboard:${dashboardId}:edit`, "1");
+
+	const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+
+	render(
+		<DashboardHeader
+			startDate={start}
+			endDate={end}
+			onStartDateChange={onStart}
+			onEndDateChange={onEnd}
+			dashboardId={dashboardId}
+		/>,
+	);
+
+	const reset = screen.getByTestId("dashboard-reset-layout");
+	expect(reset).toBeInTheDocument();
+
+	// click to reset
+	fireEvent.click(reset);
+
+	// localStorage keys should be removed
+	expect(
+		localStorage.getItem(`lighthouse:dashboard:${dashboardId}:layout`),
+	).toBeNull();
+	expect(
+		localStorage.getItem(`lighthouse:dashboard:${dashboardId}:hidden`),
+	).toBeNull();
+	expect(
+		localStorage.getItem(`lighthouse:dashboard:${dashboardId}:edit`),
+	).toBeNull();
+
+	// events dispatched: reset-layout and edit-mode-changed
+	expect(dispatchSpy).toHaveBeenCalled();
+
+	const calls = dispatchSpy.mock.calls.map((c) => c[0]);
+
+	const resetEvt = calls.find(
+		(e) => (e as CustomEvent).type === "lighthouse:dashboard:reset-layout",
+	);
+	expect(resetEvt).toBeDefined();
+	expect((resetEvt as CustomEvent).detail).toMatchObject({
+		dashboardId: dashboardId,
+	});
+
+	const editEvt = calls.find(
+		(e) => (e as CustomEvent).type === "lighthouse:dashboard:edit-mode-changed",
+	);
+	expect(editEvt).toBeDefined();
+	expect((editEvt as CustomEvent).detail).toMatchObject({
+		dashboardId: dashboardId,
+		isEditing: false,
+	});
+
+	// cleanup
+	dispatchSpy.mockRestore();
+	localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:layout`);
+	localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:hidden`);
+	localStorage.removeItem(`lighthouse:dashboard:${dashboardId}:edit`);
+});
