@@ -13,7 +13,7 @@ if (typeof globalThis.DataTransfer === "undefined") {
 	// Minimal DataTransfer shim sufficient for drag/drop unit tests
 	// assign a simple constructor function so `new DataTransfer()` works
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-ignore
+	// @ts-expect-error
 	globalThis.DataTransfer = class {
 		items: Record<string, string> = {};
 		setData(type: string, value: string) {

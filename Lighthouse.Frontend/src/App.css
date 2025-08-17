@@ -47,12 +47,13 @@ html {
 	position: relative;
 }
 
-.nav-item:hover {
-	border-bottom: 2px solid var(--primary-color) !important;
+/* Increase specificity to avoid using !important */
+.toolbar .nav-item:hover {
+	border-bottom: 2px solid var(--primary-color);
 }
 
-.nav-item.nav-dark:hover {
-	border-bottom: 2px solid #ffffff !important;
+.toolbar .nav-item.nav-dark:hover {
+	border-bottom: 2px solid #ffffff;
 }
 
 /* Content area styles */

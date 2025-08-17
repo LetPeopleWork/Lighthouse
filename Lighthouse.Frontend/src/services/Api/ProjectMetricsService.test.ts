@@ -15,7 +15,7 @@ describe("ProjectMetricsService", () => {
 
 	beforeEach(() => {
 		service = new ProjectMetricsService();
-		// @ts-ignore - Mocking private field
+		// @ts-expect-error - Mocking private field
 		service.apiService = { get: mockGet };
 	});
 

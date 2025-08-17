@@ -101,7 +101,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 				`lighthouse:dashboard:${dashboardId}:hidden`,
 				`lighthouse:dashboard:${dashboardId}:edit`,
 			];
-			keys.forEach((k) => localStorage.removeItem(k));
+			keys.forEach((k) => {
+				localStorage.removeItem(k);
+			});
 		} catch {
 			// ignore storage errors
 		}

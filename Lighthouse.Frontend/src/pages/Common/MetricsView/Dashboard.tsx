@@ -256,7 +256,9 @@ const Dashboard: React.FC<DashboardProps> = ({
 					`lighthouse:dashboard:${dashboardId}:edit`,
 					`lighthouse:dashboard:${dashboardId}:sizes`,
 				];
-				keys.forEach((k) => localStorage.removeItem(k));
+				keys.forEach((k) => {
+					localStorage.removeItem(k);
+				});
 			} catch {
 				// ignore
 			}

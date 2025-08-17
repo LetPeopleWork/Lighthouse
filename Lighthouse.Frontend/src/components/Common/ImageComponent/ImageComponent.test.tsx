@@ -5,7 +5,7 @@ import ImageComponent from "./ImageComponent";
 describe("ImageComponent", () => {
 	// Mock the Image constructor and its onload event
 	beforeEach(() => {
-		// @ts-ignore - mock Image constructor
+		// @ts-expect-error - mock Image constructor
 		global.Image = class {
 			src = "";
 			width = 0;
