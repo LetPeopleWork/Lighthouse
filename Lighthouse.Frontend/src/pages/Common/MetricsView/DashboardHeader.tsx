@@ -45,6 +45,31 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 		}
 	});
 
+	// keep local edit state in sync with events dispatched by other components
+	React.useEffect(() => {
+		const handler = (ev: Event) => {
+			const detail = (ev as CustomEvent)?.detail as
+				| { dashboardId?: string; isEditing?: boolean }
+				| undefined;
+			if (!detail) return;
+			if (detail.dashboardId === dashboardId) {
+				setIsEditing(!!detail.isEditing);
+			}
+		};
+
+		window.addEventListener(
+			"lighthouse:dashboard:edit-mode-changed",
+			handler as EventListener,
+		);
+
+		return () => {
+			window.removeEventListener(
+				"lighthouse:dashboard:edit-mode-changed",
+				handler as EventListener,
+			);
+		};
+	}, [dashboardId]);
+
 	const open = Boolean(anchorEl);
 
 	const handleOpen = (e: React.MouseEvent<HTMLElement>) =>

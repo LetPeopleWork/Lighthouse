@@ -1,4 +1,7 @@
+import AddIcon from "@mui/icons-material/Add";
 import HideSourceIcon from "@mui/icons-material/HideSource";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import RemoveIcon from "@mui/icons-material/Remove";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
 	Box,
@@ -67,6 +70,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 	const getResponsiveSize = (
 		availableColumns: number,
 		size: string = "medium",
+		key?: string,
 	) => {
 		// Define sizes for different breakpoints
 		const sizeConfigs = {
@@ -114,10 +118,32 @@ const Dashboard: React.FC<DashboardProps> = ({
 		const targetSize = sizeConfig[currentBreakpoint];
 
 		// Ensure we don't exceed available columns
-		return {
+		const base = {
 			colSpan: Math.min(availableColumns, targetSize.colSpan),
 			rowSpan: targetSize.rowSpan,
 		};
+
+		// apply user overrides if present
+		if (key) {
+			const override = sizesMap[String(key)];
+			if (override) {
+				return {
+					colSpan: Math.max(1, Math.min(availableColumns, override.colSpan)),
+					rowSpan: Math.max(1, Math.min(12, override.rowSpan)),
+				};
+			}
+		}
+
+		return base;
+	};
+
+	const persistSizes = (next: Record<string, SizeOverride>) => {
+		try {
+			const key = `lighthouse:dashboard:${dashboardId}:sizes`;
+			localStorage.setItem(key, JSON.stringify(next));
+		} catch {
+			// ignore
+		}
 	};
 
 	// persist order to localStorage
@@ -160,6 +186,12 @@ const Dashboard: React.FC<DashboardProps> = ({
 		() => ({}),
 	);
 
+	// per-widget size overrides stored per-dashboard in localStorage
+	type SizeOverride = { colSpan: number; rowSpan: number };
+	const [sizesMap, setSizesMap] = React.useState<Record<string, SizeOverride>>(
+		() => ({}),
+	);
+
 	// FIXED: stable dependencies and proper cleanup
 	React.useEffect(() => {
 		try {
@@ -182,6 +214,18 @@ const Dashboard: React.FC<DashboardProps> = ({
 			const editKey = `lighthouse:dashboard:${dashboardId}:edit`;
 			const v = localStorage.getItem(editKey) === "1";
 			setIsEditing(v);
+		} catch {
+			// ignore
+		}
+
+		// read sizes overrides
+		try {
+			const sizesKey = `lighthouse:dashboard:${dashboardId}:sizes`;
+			const rawSizes = localStorage.getItem(sizesKey);
+			if (rawSizes) {
+				const parsed = JSON.parse(rawSizes) as Record<string, SizeOverride>;
+				setSizesMap(parsed || {});
+			}
 		} catch {
 			// ignore
 		}
@@ -210,6 +254,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 					`lighthouse:dashboard:${dashboardId}:layout`,
 					`lighthouse:dashboard:${dashboardId}:hidden`,
 					`lighthouse:dashboard:${dashboardId}:edit`,
+					`lighthouse:dashboard:${dashboardId}:sizes`,
 				];
 				keys.forEach((k) => localStorage.removeItem(k));
 			} catch {
@@ -224,6 +269,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 			setOrder(allKeys);
 			setHiddenIds({});
 			setIsEditing(false);
+			setSizesMap({});
 		};
 
 		window.addEventListener(
@@ -524,8 +570,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 				if (!item) return null;
 				const key = k;
 
-				// Get responsive size
-				const { colSpan, rowSpan } = getResponsiveSize(columns, item.size);
+				// Get responsive size (allow per-widget overrides via sizesMap)
+				const { colSpan, rowSpan } = getResponsiveSize(columns, item.size, key);
 
 				// hide item when not editing and it's in hidden list
 				const isHidden = hiddenIds[String(key)];
@@ -613,31 +659,165 @@ const Dashboard: React.FC<DashboardProps> = ({
 										)}
 									</Box>
 
-									{/* control buttons sit above the blocker */}
+									{/* combined control box in upper-right (opaque background) */}
 									<Box
-										sx={{ position: "absolute", top: 6, right: 6, zIndex: 10 }}
+										sx={{
+											position: "absolute",
+											top: 6,
+											right: 6,
+											zIndex: 12,
+											pointerEvents: "auto",
+											backgroundColor: theme.palette.background.paper,
+											border: `1px solid ${overlayBorder}`,
+											borderRadius: 1,
+											p: 0.5,
+											display: "flex",
+											flexDirection: "column",
+											gap: 0.5,
+											alignItems: "center",
+											boxShadow: 1,
+										}}
 									>
-										{isHidden ? (
-											<Tooltip title="Show widget">
+										<Box
+											sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+										>
+											<Tooltip title="Decrease width">
 												<IconButton
 													size="small"
-													onClick={() => showItem(key)}
-													data-testid={`dashboard-item-show-${key}`}
+													onClick={() => {
+														const k = String(key);
+														const prev = sizesMap[k] || { colSpan, rowSpan };
+														const next = {
+															...sizesMap,
+															[k]: {
+																...prev,
+																colSpan: Math.max(1, prev.colSpan - 1),
+															},
+														};
+														setSizesMap(next);
+														persistSizes(next);
+													}}
+													data-testid={`dashboard-item-col-dec-${key}`}
 												>
-													<VisibilityIcon fontSize="small" />
+													<RemoveIcon fontSize="small" />
 												</IconButton>
 											</Tooltip>
-										) : (
-											<Tooltip title="Hide widget">
+											<Typography variant="caption">
+												Width: {colSpan}
+											</Typography>
+											<Tooltip title="Increase width">
 												<IconButton
 													size="small"
-													onClick={() => hideItem(key)}
-													data-testid={`dashboard-item-hide-${key}`}
+													onClick={() => {
+														const k = String(key);
+														const prev = sizesMap[k] || { colSpan, rowSpan };
+														const next = {
+															...sizesMap,
+															[k]: {
+																...prev,
+																colSpan: Math.min(columns, prev.colSpan + 1),
+															},
+														};
+														setSizesMap(next);
+														persistSizes(next);
+													}}
+													data-testid={`dashboard-item-col-inc-${key}`}
 												>
-													<HideSourceIcon fontSize="small" />
+													<AddIcon fontSize="small" />
 												</IconButton>
 											</Tooltip>
-										)}
+										</Box>
+
+										<Box
+											sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+										>
+											<Tooltip title="Decrease height">
+												<IconButton
+													size="small"
+													onClick={() => {
+														const k = String(key);
+														const prev = sizesMap[k] || { colSpan, rowSpan };
+														const next = {
+															...sizesMap,
+															[k]: {
+																...prev,
+																rowSpan: Math.max(1, prev.rowSpan - 1),
+															},
+														};
+														setSizesMap(next);
+														persistSizes(next);
+													}}
+													data-testid={`dashboard-item-row-dec-${key}`}
+												>
+													<RemoveIcon fontSize="small" />
+												</IconButton>
+											</Tooltip>
+											<Typography variant="caption">
+												Height: {rowSpan}
+											</Typography>
+											<Tooltip title="Increase height">
+												<IconButton
+													size="small"
+													onClick={() => {
+														const k = String(key);
+														const prev = sizesMap[k] || { colSpan, rowSpan };
+														const next = {
+															...sizesMap,
+															[k]: {
+																...prev,
+																rowSpan: Math.min(12, prev.rowSpan + 1),
+															},
+														};
+														setSizesMap(next);
+														persistSizes(next);
+													}}
+													data-testid={`dashboard-item-row-inc-${key}`}
+												>
+													<AddIcon fontSize="small" />
+												</IconButton>
+											</Tooltip>
+										</Box>
+
+										<Box sx={{ display: "flex", gap: 0.5 }}>
+											<Tooltip title="Reset size to default">
+												<IconButton
+													size="small"
+													onClick={() => {
+														const k = String(key);
+														if (!sizesMap[k]) return;
+														const next = { ...sizesMap };
+														delete next[k];
+														setSizesMap(next);
+														persistSizes(next);
+													}}
+													data-testid={`dashboard-item-size-reset-${key}`}
+												>
+													<RefreshIcon fontSize="small" />
+												</IconButton>
+											</Tooltip>
+
+											{isHidden ? (
+												<Tooltip title="Show widget">
+													<IconButton
+														size="small"
+														onClick={() => showItem(key)}
+														data-testid={`dashboard-item-show-${key}`}
+													>
+														<VisibilityIcon fontSize="small" />
+													</IconButton>
+												</Tooltip>
+											) : (
+												<Tooltip title="Hide widget">
+													<IconButton
+														size="small"
+														onClick={() => hideItem(key)}
+														data-testid={`dashboard-item-hide-${key}`}
+													>
+														<HideSourceIcon fontSize="small" />
+													</IconButton>
+												</Tooltip>
+											)}
+										</Box>
 									</Box>
 								</>
 							)}

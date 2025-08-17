@@ -527,4 +527,99 @@ describe("Dashboard component", () => {
 		// UI should be unchanged
 		expect(screen.getByTestId("dashboard-item-show-B")).toBeInTheDocument();
 	});
+
+	it("allows resizing (col/row) and persists overrides to localStorage", async () => {
+		setMatchMediaWidth(1600);
+
+		// enable edit mode before importing so component initializes in edit state
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+		const { default: Dashboard } = await import("./Dashboard");
+
+		const items: DashboardItem[] = [
+			{ id: "R", node: <div>R</div>, size: "medium" },
+		];
+
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const el = await screen.findByTestId("dashboard-item-R");
+
+		// defaults for medium @ xl in the component
+		expect(Number(el.getAttribute("data-colspan"))).toBe(4);
+		expect(Number(el.getAttribute("data-rowspan"))).toBe(2);
+
+		const colInc = screen.getByTestId("dashboard-item-col-inc-R");
+		const colDec = screen.getByTestId("dashboard-item-col-dec-R");
+		const rowInc = screen.getByTestId("dashboard-item-row-inc-R");
+		const rowDec = screen.getByTestId("dashboard-item-row-dec-R");
+
+		// increase column -> should update attribute and persist
+		fireEvent.click(colInc);
+		await waitFor(() =>
+			expect(Number(el.getAttribute("data-colspan"))).toBe(5),
+		);
+
+		// decrease column -> back to default
+		fireEvent.click(colDec);
+		await waitFor(() =>
+			expect(Number(el.getAttribute("data-colspan"))).toBe(4),
+		);
+
+		// increase row -> should update attribute
+		fireEvent.click(rowInc);
+		await waitFor(() =>
+			expect(Number(el.getAttribute("data-rowspan"))).toBe(3),
+		);
+
+		// decrease row -> back to default
+		fireEvent.click(rowDec);
+		await waitFor(() =>
+			expect(Number(el.getAttribute("data-rowspan"))).toBe(2),
+		);
+
+		// verify persisted sizes
+		const sizesRaw = localStorage.getItem("lighthouse:dashboard:d1:sizes");
+		expect(sizesRaw).not.toBeNull();
+		const sizes = JSON.parse(sizesRaw || "{}");
+		expect(sizes).toHaveProperty("R");
+		expect(sizes.R.colSpan).toBe(4);
+		expect(sizes.R.rowSpan).toBe(2);
+	});
+
+	it("reset size control removes override and restores default sizing", async () => {
+		setMatchMediaWidth(1600);
+
+		// pre-populate an explicit override for this widget
+		localStorage.setItem(
+			"lighthouse:dashboard:d1:sizes",
+			JSON.stringify({ R: { colSpan: 2, rowSpan: 1 } }),
+		);
+		localStorage.setItem("lighthouse:dashboard:d1:edit", "1");
+
+		const { default: Dashboard } = await import("./Dashboard");
+		const items: DashboardItem[] = [
+			{ id: "R", node: <div>R</div>, size: "medium" },
+		];
+
+		// ensure prior renders are cleared
+		cleanup();
+		render(<Dashboard items={items} dashboardId="d1" />);
+
+		const el = await screen.findByTestId("dashboard-item-R");
+		// should reflect persisted override initially
+		expect(Number(el.getAttribute("data-colspan"))).toBe(2);
+		expect(Number(el.getAttribute("data-rowspan"))).toBe(1);
+
+		const resetBtn = screen.getByTestId("dashboard-item-size-reset-R");
+		fireEvent.click(resetBtn);
+
+		await waitFor(() => {
+			// sizes entry should be removed
+			const sizesRaw = localStorage.getItem("lighthouse:dashboard:d1:sizes");
+			const sizes = JSON.parse(sizesRaw || "{}");
+			expect(sizes).not.toHaveProperty("R");
+			// and UI should reflect default for medium @ xl
+			expect(Number(el.getAttribute("data-colspan"))).toBe(4);
+			expect(Number(el.getAttribute("data-rowspan"))).toBe(2);
+		});
+	});
 });
