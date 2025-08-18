@@ -9,7 +9,28 @@ nav_order: 95
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
--->
+ -->
+
+# Lighthouse v25.8.18.910
+
+## Customizable Dashboard
+The Metrics Dashboard now allows you to customize it to your needs:
+- Show/Hide Widgets
+- Resize
+- Rearrange
+
+![Customizable Dashboard](./ConfigurableDashboard.png)
+
+See the documentation for more information.
+
+## Performance Improvements
+Various adjustements/fine tunigs for increasing performance. A significant increase in speed should be observable if you are running the containerized version. The standard install should also profit from the improvements.
+
+## Other Improvements
+- Date Range selection for Metrics has been adjusted to fit the new style and is now in the "Dashboard Header"
+- Update of various third party libraries
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.8.13.702...v25.8.18.910)
 
 # Lighthouse v25.8.13.702
 
