@@ -1,6 +1,6 @@
 name: Generate and Verify License
 # Include the unique GitHub run number both in the run name and passed to the script as the license number
-run-name: "License #${{ github.run_number }}: ${{ inputs.name || 'Trial User' }} (${{ inputs.email || 'trial@lighthouse.com' }}) - ${{ inputs.organization || 'Trial Organization' }}"
+run-name: "License #${{ github.run_number }}"
 on:
   workflow_dispatch:
     inputs:
