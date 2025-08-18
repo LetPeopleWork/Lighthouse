@@ -131,7 +131,7 @@ When you click on the predictability chip in the Throughput Run Chart, you'll se
 
 ![Predictability Score](https://github.com/LetPeopleWork/Lighthouse/blob/main/docs/assets/features/metrics/predictabilityscore.png?raw=true)
 
-Please check the [docs](https://docs.lighthouse.letpeople.work/features/metrics/metrics.html#predictability-score) for more information on how this works and how you can potentially use it!
+Please check the [docs](https://docs.lighthouse.letpeople.work/metrics/metrics.html#predictability-score) for more information on how this works and how you can potentially use it!
 
  
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.7.1834...v25.7.14.809)
@@ -315,7 +315,7 @@ Export will download a *.json* file that contains all the settings from your Wor
 
 If you click on Import, you'll get an import dialog that will lead you through the process step by step.
 
-You can find the full documentation for the features in the [docs](https://docs.lighthouse.letpeople.work/features/settings/settings.html#lighthouse-configuration).
+You can find the full documentation for the features in the [docs](https://docs.lighthouse.letpeople.work/settings/settings.html#lighthouse-configuration).
  
 ## Bug Fixes
 - Items that haved an Age/Cycle Time exactly at SLE are displayed red instead of orange

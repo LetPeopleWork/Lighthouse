@@ -1,8 +1,7 @@
 ---
 title: AI Integration
-parent: Features
 layout: home
-nav_order: 5
+nav_order: 40
 ---
 
 If you're using AI clients like Claude or Copilot, you can configure Lighthouse as a resource for those clients to get data from. Read on to learn how.
@@ -27,7 +26,7 @@ The MCP Feature is not enabled by default. In order to do so, go to the Settings
 {: .note}
 You need to restart Lighthouse for the change to take effect.
 
-![MCP Feature](../../assets/settings/optionalfeatures.png)
+![MCP Feature](./assets/settings/optionalfeatures.png)
 
 # Connect to Lighthouse MCP Server
 Once the MCP Server is enabled and you restarted Lighthouse, you can add it as MCP Server to your LLM. How to do this varies by LLM, so it's best to check the configuration of your tool.

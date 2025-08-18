@@ -1,8 +1,8 @@
 ---
 title: Teams
-parent: Features
 layout: home
-nav_order: 2
+has_children: true
+nav_order: 10
 ---
 
 The *Team Overview* page shows you all teams that are defined. As the name suggests, to give you an overview over everything that is going on. You can do the following things from this page:
@@ -10,7 +10,7 @@ The *Team Overview* page shows you all teams that are defined. As the name sugge
 - TOC
 {:toc}
 
-![Team Overview](../../assets/features/teams.png)
+![Team Overview](../assets/features/teams.png)
 
 # Gain an Overview
 The overview, as the name suggests, shows you a rough overview over all the teams. You can see which teams are defined, how many Features they are contributing to (based on the the features in all defined projects), how many work items they working on in total and how many items were already closed.
@@ -27,7 +27,7 @@ If you want to modify the settings of an existing team, click on the 🖊️ ico
 # Delete a Team
 If you want to delete a team, you can click on the 🗑️ icon on the right side of the team. This will permantenly delete this team.
 
-![Team Deletion](../../assets/features/teams_delete.png)
+![Team Deletion](../assets/features/teams_delete.png)
 
 {: .important}
 Deleting a team will remove it from Lighthouse with no functionality to undo this change. This will also remove the team from all the involved projects. Ideally you make sure that this team is not involved in any projects before you delete it.

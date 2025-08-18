@@ -1,8 +1,7 @@
 ---
 title: Team Details
-parent: Teams
-grand_parent: Features
 layout: home
+parent: Teams
 nav_order: 1
 ---
 
@@ -17,7 +16,7 @@ In the [Metrics Tab](../metrics/metrics.html), you can see various charts for Me
 {: .note}
 You can directly go to the team detail page if you bookmark the specific URL. Even if the team name changes, the URL will stay the same.
 
-![Team Details](../../assets/features/teamdetail.png)
+![Team Details](../assets/features/teamdetail.png)
 
 # General Team Information and Actions
 On top you can see general team information, which includes the Team name, an indication if a [fixed Throughput](./edit.html#throughput-start-and-end-date) is used, and when it was the last time this team was updated.
@@ -68,7 +67,7 @@ In the progress column, you can see how many items are done and how many are pen
 If a team is working solo on a feature, both bars will show the same numbers. If not, this means at least one other team is involved in this feature.
 
 ### Feature Forecasts
-For each Feature you will see the forecasted completion date. You'll get [four different probabilities](../overview/overview.html#projected-completion), from *Certain* to *Risky*.
+For each Feature you will see the forecasted completion date. You'll get [four different probabilities](../index.html#projected-completion), from *Certain* to *Risky*.
 
 {: .note}
 The completion dates of each feature will take into account **all teams** that are involved, not just the one you are currently looking at.
@@ -77,7 +76,6 @@ The completion dates of each feature will take into account **all teams** that a
 Based on the team's [throughput](#metrics), you can run [Monte Carlo Simulations](../../concepts/montecarlosimulations.html) to answer two important questions for many teams and organizations.
 
 Both questions will be answered with a forecast, which means you'll get multiple results that vary in probability, from certain (95% likelihood) to risky (50% likelihood).
-Additionally, you'll also get the likelihood of closing the specified number of items by the set target date.
 
 ### When
 The first question is: When will 'x' items be done? If you have a certain number of items (e.g., remaining for a feature, part of the sprint goal, etc.), you might want to know when you can expect them to be completed.

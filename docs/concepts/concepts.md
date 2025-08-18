@@ -1,7 +1,7 @@
 ---
 title: Concepts
 layout: home
-nav_order: 4
+nav_order: 60
 has_children: true
 ---
 
@@ -12,7 +12,7 @@ Lighthouse currently works with [Jira](./worktrackingsystems/jira.html) and [Azu
 - TOC
 {:toc}
 
-Once you're done with the basics, check out the detailed description of the [Features](../features/features.html).
+Once you're done with the basics, check out the detailed description of the product areas such as [Teams](../teams/teams.html) and [Projects](../projects/projects.html).
 
 # Overview
 Lighthouse has a few basic components that you need to be aware of:
@@ -67,7 +67,7 @@ It often make sense to use the same team definition that you have in your enviro
 Most often also the team level items are something like *User Stories* and *Bugs*. However again, you can define what types should be included in this defintion. You may change this to other types. If you are looking to forecast completion dates of Epics, you may want to check out the use of [Projects](#projects).
 
 {: .note}
-> You need at least one team, and then you can start making use of Lighthouse. Check [Features](../features/features.html) for a description of all features of Lighthouse.
+> You need at least one team, and then you can start making use of Lighthouse. See [Teams](../teams/teams.html) and [Projects](../projects/projects.html) for details on product areas.
 
 # Projects
 
@@ -76,7 +76,7 @@ Most often also the team level items are something like *User Stories* and *Bugs
 
 Projects allow to scale your forecasts beyond the team level. When you need to answer when your collection of *Features* will be done, defining a project is the way to go.
 
-Refer to [Features](../features/features.html) to get more details on how to fine-tune and configure Projects.
+Refer to [Projects](../projects/projects.html) to get more details on how to fine-tune and configure Projects.
 
 # Forecast
 All of the above is done so that in the end we can run forecasts. Lighthouse is using *Monte Carlo Simulations* to run *How Many* (can be done for a specific team) as well as *When* forecasts. See [How Lighthouse Forecasts](./howlighthouseforecasts.html) for more details.

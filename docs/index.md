@@ -15,11 +15,11 @@ You can use it with a single team for doing manual "When" and "How Many" forecas
 Lighthouse is provided free of charge as open-source software by [Let People Work](https://letpeople.work). If you want to learn more about the tool, what we can offer you and your company, or just want to chat, [please reach out](https://letpeople.work#contact).
 
 ## Documentation Structure
-The documentation is structure into various chapters. In [Installation](./installation/installation.html) you can find information about how to get started with setting up Lighthouse.
+The documentation is structured into chapters. In [Installation](./installation/installation.html) you can find information about how to get started with setting up Lighthouse.
 
 Under [Configuration](./installation/configuration.html) you'll find all options that are supported. This includes various ways of how to configure Lighthouse itself, as well as how you can connect to Work Tracking Systems like Jira and Azure DevOps.
 
-[Concepts](./concepts/concepts.html) guides you with your first steps in Lighthouse, while [Features](./features/features.html) details the different features and how you can use them.
+[Concepts](./concepts/concepts.html) guides you with your first steps in Lighthouse. For specific product areas see the top-level sections: [Teams](./teams/teams.html), [Projects](./projects/projects.html), [Metrics](./metrics/metrics.html), [AI Integration](./aiintegration.html), and [Settings](./settings/settings.html).
 
 In [FAQ](./faq/faq.html) you find frequently asked questions.
 

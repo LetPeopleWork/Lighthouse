@@ -69,7 +69,7 @@ Now that we've covered the basics, let's look at how Lighthouse is forecasting. 
 We'll look into how Lighthouse is running *When* forecasts for projects. The *How Many* and *When* on Team level are the basic operations that are also covered in the above mentioned blog post.
 
 ## Teams, Features, and Projects
-Forecasts will always be made for specific *Teams*. The forecast will calculate *When* a certain number of *Work Items* will be done. Those *Work Items* are automatically fetched based on the Team Backlog (see [Team Work Item Query](../features/teams/edit.html#work-item-query)) and that belong to a specific *Feature* of a *Project* (based on the [Project Work Item Query](../features/projects/edit.html#work-item-query)). 
+Forecasts will always be made for specific *Teams*. The forecast will calculate *When* a certain number of *Work Items* will be done. Those *Work Items* are automatically fetched based on the Team Backlog (see [Team Work Item Query](../teams/edit.html#work-item-query)) and that belong to a specific *Feature* of a *Project* (based on the [Project Work Item Query](../projects/edit.html#work-item-query)). 
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -111,7 +111,7 @@ That means, if you really want to ignore everything else, just remove all other 
 Because Lighthouse works this way, this is also the reason why the order is so important. In the above image, you can see that *Feature 1* is ordered above *Feature 2*, which itself is above *Feature 3*. That means that Lighthouse assume we first focus all our efforts on *Feature 1* (assuming a [Feature WIP of 1](#the-impact-of-feature-wip)), then on *Feature 2*, and only then on *Feature 3*. If you forecast *Project 2*, the forecast will take into account that *Feature 1* and *Feature 2* must be done before that.
 
 {: .recommendation}
-The [Feature View](../features/teams/detail.html#features) in the Teams Detail Page will show you **all** Features the team is contributing towards in their order.
+The [Feature View](../teams/detail.html#features) in the Teams Detail Page will show you **all** Features the team is contributing towards in their order.
 
 ## The Impact of Feature WIP
 By default, Lighthouse will assume that your Teams will work on one Feature at a time (*Feature WIP* = 1). In other words, this means that the forecast will check how many items can be done, and assume all those items will contribute to the first feature. So the Features will be done *in sequence*:
@@ -144,7 +144,7 @@ flowchart LR
 In simple terms this means, the higher the *Feature WIP*, the more focus goes away from the highest priority item (*Feature 1*) and the earlier we start on less important things (*Feature 2* and following). So instead of getting the most important thing early, we get everything later. This is contradicting with our ambition to continuously deliver value in small batches.
 
 {: .recommendation}
-We **highly** recommend to keeping your Feature WIP as low as possible. Lighthouse can help you make the effects of a high Feature WIP transparent. It also is able to automatically adjust the Feature WIP based on your work in progress. See the [Team Settings](../features/teams/edit.html#feature-wip) for more details.
+We **highly** recommend to keeping your Feature WIP as low as possible. Lighthouse can help you make the effects of a high Feature WIP transparent. It also is able to automatically adjust the Feature WIP based on your work in progress. See the [Team Settings](../teams/edit.html#feature-wip) for more details.
 
 ## Example Scenarios
 So let's go through some scenarios to look at what happens when Lighthouse forecasts.
@@ -153,7 +153,7 @@ So let's go through some scenarios to look at what happens when Lighthouse forec
 For simplicity, we'll talk only about Teams and Features. As you learned above, this is tied to Projects. However, when it comes to forecasting we just care about the Features in Order, independent of which Projects they are in. To simplify this a bit, we'll skip the Projects in the examples.
 
 ### 1 Team - 1 Feature
-The most basic case is if we have a single team, working on a single Feature. This equals a simple *When* forecast. We take the remaining Work Items for this Feature (all items that belong to this Feature that are [Not Done](../features/teams/edit.html#states)).
+The most basic case is if we have a single team, working on a single Feature. This equals a simple *When* forecast. We take the remaining Work Items for this Feature (all items that belong to this Feature that are [Not Done](../teams/edit.html#states)).
 
 <!-- TODO: Add Flow Charts -->
 
