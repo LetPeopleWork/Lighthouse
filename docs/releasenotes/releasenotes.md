@@ -19,7 +19,7 @@ The Metrics Dashboard now allows you to customize it to your needs:
 - Resize
 - Rearrange
 
-![Customizable Dashboard](./ConfigurableDashboard.png)
+![Customizable Dashboard](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/ConfigurableDashboard.png)
 
 See the documentation for more information.
 
