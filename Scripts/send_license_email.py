@@ -4,6 +4,7 @@ Send license file via Mailgun SMTP
 """
 import os
 import smtplib
+import zipfile
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
@@ -53,12 +54,13 @@ def send_license_email():
                     </ul>
                 </div>
                 
-                <p>Your Premium License file is attached to this email as <code>license.json</code>.</p>
+                <p>Your Premium License file is attached to this email as <code>lighthouse-license.zip</code>.</p>
                 
                 <h3 style="color: #495057;">Next Steps:</h3>
                 <ol>
-                    <li>Download the attached <code>license.json</code> file</li>
-                    <li>Upload the license through the license dialog in Lighthouse</li>
+                    <li>Download the attached <code>lighthouse-license.zip</code> file</li>
+                    <li>Unzip the file to extract <code>license.json</code></li>
+                    <li>Upload the license.json file through the license dialog in Lighthouse</li>
                 </ol>
                 
                 <div style="background-color: #e8f4fd; border: 1px solid #bee5eb; border-radius: 5px; padding: 15px; margin: 20px 0;">
@@ -122,11 +124,12 @@ Premium License Details:
 - Organization: {organization}
 - Email: {recipient_email}
 
-Your Premium License file is attached to this email as license.json. Please save this file in a secure location as you'll need it to activate your Lighthouse software.
+Your Premium License file is attached to this email as lighthouse-license.zip. Please save this file in a secure location as you'll need it to activate your Lighthouse software.
 
 Next Steps:
-1. Download the attached license.json file
-2. Upload the license through the license dialog in Lighthouse
+1. Download the attached lighthouse-license.zip file
+2. Unzip the file to extract license.json
+3. Upload the license.json file through the license dialog in Lighthouse
 
 Key License Terms:
 - License is valid from right now, until the mentioned expiry date
@@ -160,12 +163,17 @@ This email was sent from an automated system. Please do not reply to this email 
     msg.attach(text_part)
     msg.attach(html_part)
 
-    # Attach the license file
-    with open("license.json", "rb") as f:
-        license_data = f.read()
+    # Create a zip file containing the license
+    zip_filename = "lighthouse-license.zip"
+    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write("license.json")
 
-    attachment = MIMEApplication(license_data, _subtype="json")
-    attachment.add_header("Content-Disposition", "attachment", filename="license.json")
+    # Attach the zip file
+    with open(zip_filename, "rb") as f:
+        zip_data = f.read()
+
+    attachment = MIMEApplication(zip_data, _subtype="zip")
+    attachment.add_header("Content-Disposition", "attachment", filename=zip_filename)
     msg.attach(attachment)
 
     # Send the email via Mailgun SMTP

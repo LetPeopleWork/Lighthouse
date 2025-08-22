@@ -82,11 +82,16 @@ jobs:
       - name: Verify license
         run: python Scripts/verify_license.py public_key.pem license.json
 
+      - name: Create license zip file
+        run: |
+          zip lighthouse-license.zip license.json
+          ls -la lighthouse-license.zip
+
       - name: Upload license as artifact
         uses: actions/upload-artifact@v4
         with:
           name: license
-          path: license.json
+          path: lighthouse-license.zip
 
       - name: Send license via email
         run: python Scripts/send_license_email.py
