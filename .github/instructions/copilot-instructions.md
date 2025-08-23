@@ -124,6 +124,38 @@ https://www.conventionalcommits.org
 *   Suggested workflow states: New → Active → Resolved → Closed/Done.
 *   User should control final validation and closure of work items after testing and CI verification.
 
+#### Azure DevOps: Implementation-plan & Story handling rules
+
+- When working from an implementation plan, always reference the Azure DevOps elements by their IDs and roles (for example: Epic 2251, Story 3016).  Use the epic and story IDs/titles in plans, commits, PRs and comments so work traces back to Azure DevOps.
+- While implementing a story, update the corresponding Azure DevOps story frequently: set the work item state to reflect progress and add short comments documenting important events (what you started, key design choices, where code was pushed, CI results, and handoff notes).
+- Use the following state-transition convention for stories:
+  - "Started working" → set state to Active.
+  - When the item is ready and code has been pushed (PR opened or branch pushed) → set state to Resolved.
+  - After the CI/build is green and the user or product owner verifies the change → set state to Closed.
+
+Notes:
+- Make short, factual comments on stories at these milestone events: start of work, PR/branch push, CI pass/fail, and user acceptance.
+- Prefer explicit references (e.g., "PR #123 - implements Story 3016") in commits and PR descriptions so Azure DevOps can link work items automatically.
+- If CI is failing for unrelated reasons, leave a comment explaining the blocker and do not move the story to Closed until build green and user acceptance are recorded.
+
+#### Azure DevOps: Implementation Plans & Story Updates
+*   When authoring or updating an implementation plan, always reference the Azure DevOps elements it describes (Epic IDs and Child Story IDs).  Include the Epic ID (e.g., "Epic 2251") and explicit Story IDs for each child story in the plan's header or Child Stories Analysis section.
+*   Keep the implementation plan aligned with Azure DevOps: any changes to scope, acceptance criteria, or tasks in the plan should be mirrored as comments or field updates on the corresponding Azure DevOps Epic/Story work items.
+*   While working on individual stories, update the corresponding Azure DevOps story regularly: change the state to reflect progress and add short comments describing the current activity (for example: "Started working: investigating X", "Code pushed: PR #123 created on branch feature/xyz").
+*   Do not leave work items stale; make at least one state or comment update per active work session on a story.
+
+#### Required Story State Workflow
+Follow this explicit, minimal state progression when updating Azure DevOps work items while implementing a story:
+
+- "Started working" (informal comment) → set work item State = Active.
+- "Item ready, code pushed" (add comment with PR/branch link) → set work item State = Resolved.
+- After CI/build is green and automated checks pass (add comment: "Build green: CI passed on PR #..."), and the user has verified the behavior → set work item State = Closed.
+
+Notes:
+*   Always include useful comments when changing states (timestamp, brief summary, PR or build link) so reviewers and stakeholders can follow progress from Azure DevOps alone.
+*   Do not close an item without explicit user acceptance; a CI-green build alone should not close the work item unless a user/owner has confirmed acceptance in a comment.
+*   If an implementation step requires finer-grained tracking (for example, code review or QA verification), add comments or sub-tasks rather than inventing new global states.
+
 
 # Context
 
@@ -146,3 +178,4 @@ The tools are located in the `src/tools.ts` file.
 
 Ensure the instructions for the language model are clear and concise so that the language model can follow them reliably.
 The prompts are located in the `src/prompts.ts` file.
+
