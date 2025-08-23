@@ -2,7 +2,7 @@
 
 **Epic ID**: 2251  
 **Epic Title**: Support CSV as Datasource for Lighthouse  
-**Status**: Planned  
+**Status**: In Progress  
 **Created**: August 23, 2025  
 **Tags**: Community, Premium  
 
@@ -21,34 +21,6 @@ Consultants may want to use Lighthouse for data analysis but may not be allowed 
 - Support consulting and analysis use cases
 
 ## Child Stories Analysis
-
-### Story 3016: Add CSV as Work Tracking Connector Option
-**Priority**: High (Foundation)  
-**Effort**: Medium  
-
-**Requirements**:
-- CSV connector is a single, built-in system connector (not instantiable like Jira/ADO)
-- Always available in work tracking system selection (no "create connection" step)
-- No authentication/connection configuration UI or endpoints required
-- Users select existing CSV connector directly, cannot create multiple CSV "connections"
-
-**Implementation Tasks**:
-- [ ] Add `CSV = 4` to `WorkTrackingSystems` enum
-- [ ] Update `WorkTrackingConnectorFactory` to handle CSV case with singleton pattern
-- [ ] Create `CsvWorkTrackingConnector` class implementing `IWorkTrackingConnector`
-- [ ] Modify `WorkTrackingSystemConnectionsController.GetSupportedWorkTrackingSystems()` to always include CSV
-- [ ] Update frontend to show CSV as built-in option (no "Add Connection" button for CSV)
-- [ ] Ensure CSV bypasses connection creation workflow entirely
-- [ ] Block any attempts to create multiple CSV connection instances
-
-**Acceptance Criteria**:
-- CSV appears as a built-in option in work tracking system dropdowns
-- CSV requires no connection configuration step or UI
-- CSV option is always available without any setup process
-- Users cannot create multiple CSV "connections" - only one CSV connector exists per system
-- CSV selection skips connection configuration entirely
-
----
 
 ### Story 3017: Extend WorkTrackingOptions with support for various methods
 **Priority**: High (Foundation)  

@@ -91,6 +91,13 @@ namespace Lighthouse.Backend.API
                 return BadRequest("CSV is a built-in work tracking connector and does not support connection records.");
             }
 
+            // Additional check: prevent editing CSV connections by ID
+            var existingConnectionCheck = repository.GetById(id);
+            if (existingConnectionCheck?.WorkTrackingSystem == WorkTrackingSystems.Csv)
+            {
+                return BadRequest("CSV is a built-in work tracking connector and cannot be modified.");
+            }
+
             return await this.GetEntityByIdAnExecuteAction(repository, id, async existingConnection =>
             {
                 existingConnection.Name = updatedConnection.Name;
@@ -114,6 +121,13 @@ namespace Lighthouse.Backend.API
             if (!repository.Exists(id))
             {
                 return NotFound();
+            }
+
+            // Prevent deletion of CSV built-in connector
+            var existingConnection = repository.GetById(id);
+            if (existingConnection?.WorkTrackingSystem == WorkTrackingSystems.Csv)
+            {
+                return BadRequest("CSV is a built-in work tracking connector and cannot be deleted.");
             }
 
             repository.Remove(id);

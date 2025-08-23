@@ -202,6 +202,23 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdateWorkTrackingSystemConnection_ExistingCsvConnection_ReturnsBadRequest()
+        {
+            var existingCsvConnection = new WorkTrackingSystemConnection { Id = 12, Name = "CSV", WorkTrackingSystem = WorkTrackingSystems.Csv };
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingCsvConnection);
+
+            var subject = CreateSubject();
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Modified CSV", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+            }
+        }
+
+        [Test]
         public async Task UpdateWorkTrackingSystemConnection_ConnectionExists_SavesChangesAsync()
         {
             var existingConnection = new WorkTrackingSystemConnection { Name = "Boring Old Name" };
@@ -281,7 +298,28 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = result as NotFoundResult;
 
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
+        }
+
+        [Test]
+        public async Task DeleteWorkTrackingSystemConnection_CsvConnection_ReturnsBadRequest()
+        {
+            var csvConnection = new WorkTrackingSystemConnection { Id = 12, Name = "CSV", WorkTrackingSystem = WorkTrackingSystems.Csv };
+            repositoryMock.Setup(x => x.Exists(12)).Returns(true);
+            repositoryMock.Setup(x => x.GetById(12)).Returns(csvConnection);
+
+            var subject = CreateSubject();
+
+            var result = await subject.DeleteWorkTrackingSystemConnectionAsync(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            }
+
+            // Verify that Remove and Save were never called
+            repositoryMock.Verify(x => x.Remove(12), Times.Never);
+            repositoryMock.Verify(x => x.Save(), Times.Never);
         }
 
         [Test]
@@ -306,7 +344,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.True);
-            };
+            }
         }
 
         [Test]
@@ -323,7 +361,7 @@ namespace Lighthouse.Backend.Tests.API
             var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
             connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "Key", Value = "SecretValue", IsSecret = true });            
 
-            var result = await subject.ValidateConnection(connectionDto);
+            await subject.ValidateConnection(connectionDto);
 
             workTrackingConnectorServiceMock.Verify(x => x.ValidateConnection(It.Is<WorkTrackingSystemConnection>(c => c.Options.Single().Value == "EncryptedSecret")));
         }

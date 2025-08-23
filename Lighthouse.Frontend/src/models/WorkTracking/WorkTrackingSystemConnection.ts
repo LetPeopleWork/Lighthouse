@@ -1,6 +1,6 @@
 import type { IWorkTrackingSystemOption } from "./WorkTrackingSystemOption";
 
-export type WorkTrackingSystemType = "Jira" | "AzureDevOps" | "Linear";
+export type WorkTrackingSystemType = "Jira" | "AzureDevOps" | "Linear" | "Csv";
 
 export interface IWorkTrackingSystemConnection {
 	id: number | null;

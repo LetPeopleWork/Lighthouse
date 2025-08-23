@@ -67,6 +67,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.That(storedOption.Value, Is.Not.EqualTo(optionValue));
         }
 
+        [Test]
+        public void Constructor_SeedsCsvConnection_WhenNotExists()
+        {
+            // Ensure no CSV connection exists initially
+            var existingCsvConnections = DatabaseContext.WorkTrackingSystemConnections
+                .Where(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv)
+                .ToList();
+            
+            foreach (var connection in existingCsvConnections)
+            {
+                DatabaseContext.WorkTrackingSystemConnections.Remove(connection);
+            }
+            DatabaseContext.SaveChanges();
+
+            // Creating the repository should trigger seeding
+            _ = CreateSubject();
+
+            var csvConnection = DatabaseContext.WorkTrackingSystemConnections
+                .SingleOrDefault(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv);
+
+            Assert.That(csvConnection, Is.Not.Null);
+            Assert.That(csvConnection.Name, Is.EqualTo("CSV"));
+            Assert.That(csvConnection.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Csv));
+        }
+
+        [Test]
+        public void Constructor_DoesNotDuplicateCsvConnection_WhenAlreadyExists()
+        {
+            // First, create a repository to seed the CSV connection
+            _ = CreateSubject();
+
+            // Count CSV connections after first seeding
+            var csvConnectionsAfterFirst = DatabaseContext.WorkTrackingSystemConnections
+                .Where(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv)
+                .ToList();
+
+            // Create another repository instance
+            _ = CreateSubject();
+
+            // Count CSV connections after second repository creation
+            var csvConnectionsAfterSecond = DatabaseContext.WorkTrackingSystemConnections
+                .Where(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv)
+                .ToList();
+
+            Assert.That(csvConnectionsAfterFirst.Count, Is.EqualTo(1));
+            Assert.That(csvConnectionsAfterSecond.Count, Is.EqualTo(1));
+            Assert.That(csvConnectionsAfterFirst.Single().Id, Is.EqualTo(csvConnectionsAfterSecond.Single().Id));
+        }
+
         private WorkTrackingSystemConnectionRepository CreateSubject()
         {
             return new WorkTrackingSystemConnectionRepository(DatabaseContext, Mock.Of<ILogger<WorkTrackingSystemConnectionRepository>>());

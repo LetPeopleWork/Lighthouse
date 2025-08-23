@@ -8,7 +8,13 @@ import ConnectionDetailTable from "./ConnectionDetailTable";
 describe("ConnectionDetailTable", () => {
 	const mockConnections: IWorkTrackingSystemConnection[] = [
 		new WorkTrackingSystemConnection("Jira", "Jira", [], 1),
-		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], 1),
+		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], 2),
+	];
+
+	const mockConnectionsWithCsv: IWorkTrackingSystemConnection[] = [
+		new WorkTrackingSystemConnection("Jira", "Jira", [], 1),
+		new WorkTrackingSystemConnection("CSV", "Csv", [], 2),
+		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], 3),
 	];
 
 	const mockOnEditConnectionButtonClicked = vi.fn();
@@ -66,5 +72,84 @@ describe("ConnectionDetailTable", () => {
 
 		expect(mockHandleDeleteConnection).toHaveBeenCalledTimes(1);
 		expect(mockHandleDeleteConnection).toHaveBeenCalledWith(mockConnections[0]);
+	});
+
+	it("should hide edit and delete buttons for CSV connections", () => {
+		render(
+			<ConnectionDetailTable
+				workTrackingSystemConnections={mockConnectionsWithCsv}
+				onEditConnectionButtonClicked={mockOnEditConnectionButtonClicked}
+				handleDeleteConnection={mockHandleDeleteConnection}
+			/>,
+		);
+
+		expect(screen.getByText("CSV")).toBeInTheDocument();
+
+		// Should have 2 edit buttons (for Jira and ADO, but not CSV)
+		const editButtons = screen.getAllByTestId("EditIcon");
+		expect(editButtons).toHaveLength(2);
+
+		// Should have 2 delete buttons (for Jira and ADO, but not CSV)
+		const deleteButtons = screen.getAllByTestId("DeleteIcon");
+		expect(deleteButtons).toHaveLength(2);
+	});
+
+	// Note: The following tests verify the component can handle CSV connections,
+	// but in practice CSV connections are filtered out at the parent component level
+
+	it("should render edit and delete buttons for non-CSV connections when CSV is present", () => {
+		render(
+			<ConnectionDetailTable
+				workTrackingSystemConnections={mockConnectionsWithCsv}
+				onEditConnectionButtonClicked={mockOnEditConnectionButtonClicked}
+				handleDeleteConnection={mockHandleDeleteConnection}
+			/>,
+		);
+
+		// Find the Jira connection row and verify it has buttons
+		const jiraRow = screen.getByText("Jira").closest("tr");
+		expect(jiraRow).toBeInTheDocument();
+
+		// The Jira row should have edit and delete buttons
+		const editButtons = screen.getAllByTestId("EditIcon");
+		const deleteButtons = screen.getAllByTestId("DeleteIcon");
+
+		// Click on the first edit button (should be Jira since CSV buttons are hidden)
+		fireEvent.click(editButtons[0]);
+		expect(mockOnEditConnectionButtonClicked).toHaveBeenCalledWith(
+			mockConnectionsWithCsv[0],
+		); // Jira connection
+
+		// Click on the first delete button (should be Jira since CSV buttons are hidden)
+		fireEvent.click(deleteButtons[0]);
+		expect(mockHandleDeleteConnection).toHaveBeenCalledWith(
+			mockConnectionsWithCsv[0],
+		); // Jira connection
+	});
+
+	it("should display CSV connection name but without action buttons", () => {
+		render(
+			<ConnectionDetailTable
+				workTrackingSystemConnections={mockConnectionsWithCsv}
+				onEditConnectionButtonClicked={mockOnEditConnectionButtonClicked}
+				handleDeleteConnection={mockHandleDeleteConnection}
+			/>,
+		);
+
+		// CSV should be displayed in the table
+		expect(screen.getByText("CSV")).toBeInTheDocument();
+
+		// Find the CSV row
+		const csvRow = screen.getByText("CSV").closest("tr");
+		expect(csvRow).toBeInTheDocument();
+
+		// The CSV row should not contain any buttons
+		// We can verify this by checking that the actions cell is empty or contains no buttons
+		const csvActionsCell = csvRow?.querySelector("td:nth-child(2)");
+		expect(csvActionsCell).toBeInTheDocument();
+
+		// The CSV actions cell should not contain any IconButton elements
+		const csvIconButtons = csvActionsCell?.querySelectorAll("button");
+		expect(csvIconButtons).toHaveLength(0);
 	});
 });
