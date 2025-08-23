@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
@@ -31,6 +32,10 @@ namespace Lighthouse.Backend.Tests.Factories
             serviceProviderMock
             .Setup(x => x.GetService(typeof(JiraWorkTrackingConnector)))
             .Returns(new JiraWorkTrackingConnector(Mock.Of<ILexoRankService>(), Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object));
+
+            serviceProviderMock
+            .Setup(x => x.GetService(typeof(global::Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv.CsvWorkTrackingConnector)))
+            .Returns(new global::Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv.CsvWorkTrackingConnector());
         }
 
         [Test]
@@ -62,6 +67,16 @@ namespace Lighthouse.Backend.Tests.Factories
             var workItemService2 = subject.GetWorkTrackingConnector(WorkTrackingSystems.AzureDevOps);
 
             Assert.That(workItemService2, Is.EqualTo(workItemService1));
+        }
+
+        [Test]
+        public void CreateWorkItemService_GivenCsv_ReturnsCsvWorkItemService()
+        {
+            var subject = CreateSubject();
+
+            var workItemService = subject.GetWorkTrackingConnector(WorkTrackingSystems.Csv);
+
+            Assert.That(workItemService, Is.InstanceOf<CsvWorkTrackingConnector>());
         }
 
         private WorkTrackingConnectorFactory CreateSubject()

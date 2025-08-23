@@ -14,6 +14,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -234,6 +235,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<JiraWorkTrackingConnector>();
             builder.Services.AddScoped<LinearWorkTrackingConnector>();
+            builder.Services.AddScoped<CsvWorkTrackingConnector>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdater>();

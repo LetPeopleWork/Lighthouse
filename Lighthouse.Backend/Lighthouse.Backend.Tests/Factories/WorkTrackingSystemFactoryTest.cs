@@ -29,6 +29,19 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
+        public void CreateOptionsForWorkTrackingSystem_GivenCsv_ReturnsNoOptions()
+        {
+            var subject = CreateSubject();
+
+            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(connection.Options, Has.Count.EqualTo(0));
+            };
+        }
+
+        [Test]
         public void CreateOptionsForWorkTrackingSystem_GivenAzureDevOps_ReturnsCorrectOptions()
         {
             var subject = CreateSubject();

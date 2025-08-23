@@ -41,9 +41,16 @@ namespace Lighthouse.Backend.Factories
                     return GetOptionsForJira();
                 case WorkTrackingSystems.Linear:
                     return GetOptionsForLinear();
+                    case WorkTrackingSystems.Csv:
+                        return GetOptionsForCsv();
                 default:
                     throw new NotSupportedException("Selected Work Tracking System is Not Supported");
             }
+        }
+
+        private List<WorkTrackingSystemConnectionOption> GetOptionsForCsv()
+        {
+            return new List<WorkTrackingSystemConnectionOption>();
         }
 
         private List<WorkTrackingSystemConnectionOption> GetOptionsForJira()

@@ -40,6 +40,11 @@ namespace Lighthouse.Backend.API
 
             foreach (WorkTrackingSystems system in Enum.GetValues<WorkTrackingSystems>())
             {
+                if (system == WorkTrackingSystems.Csv)
+                {
+                    continue;
+                }
+
                 if (!isLinearIntegrationEnabled && system == WorkTrackingSystems.Linear)
                 {
                     continue;
@@ -63,6 +68,11 @@ namespace Lighthouse.Backend.API
         [HttpPost]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> CreateNewWorkTrackingSystemConnectionAsync([FromBody] WorkTrackingSystemConnectionDto newConnection)
         {
+            if (newConnection.WorkTrackingSystem == WorkTrackingSystems.Csv)
+            {
+                return BadRequest("CSV is a built-in work tracking connector and does not support creating connection records.");
+            }
+
             newConnection.Id = 0;
             var connection = CreateConnectionFromDto(newConnection);
 
@@ -76,6 +86,11 @@ namespace Lighthouse.Backend.API
         [HttpPut("{id}")]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(int id, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
         {
+            if (updatedConnection.WorkTrackingSystem == WorkTrackingSystems.Csv)
+            {
+                return BadRequest("CSV is a built-in work tracking connector and does not support connection records.");
+            }
+
             return await this.GetEntityByIdAnExecuteAction(repository, id, async existingConnection =>
             {
                 existingConnection.Name = updatedConnection.Name;

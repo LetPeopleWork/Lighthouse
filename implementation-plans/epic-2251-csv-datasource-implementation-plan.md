@@ -645,6 +645,8 @@ ALTER TABLE Projects ADD COLUMN CsvImportRecordCount INT NULL;
 |------|---------|---------|---------|
 | 2025-08-23 | 1.0 | Initial implementation plan created | GitHub Copilot |
 
+| 2025-08-23 | 1.1 | Started Story 3016: added CSV enum, connector skeleton, factory wiring, and DI registration | GitHub Copilot |
+
 ---
 
 **Next Steps**:

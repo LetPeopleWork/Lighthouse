@@ -38,18 +38,20 @@ namespace Lighthouse.Backend.Tests.API
             cryptoServiceMock.Setup(x => x.Decrypt(It.IsAny<string>())).Returns((string input) => { return input; });
 
             linearIntegreationPreviewFeature = new OptionalFeature { Enabled = true, Id = 12, Key = OptionalFeatureKeys.LinearIntegrationKey };
+
+            workTrackingSystemsFactoryMock.Setup(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns((WorkTrackingSystems s) => new WorkTrackingSystemConnection { WorkTrackingSystem = s });
         }
 
         [Test]
         [TestCase(WorkTrackingSystems.Jira, WorkTrackingSystems.AzureDevOps, WorkTrackingSystems.Linear)]
         public void GetSupportedWorkTrackingSystems_ReturnsDefaultSystemsFromFactory(params WorkTrackingSystems[] workTrackingSystems)
         {
-            var subject = CreateSubject();
-
             foreach (var workTrackingSystem in workTrackingSystems)
             {
                 workTrackingSystemsFactoryMock.Setup(x => x.CreateDefaultConnectionForWorkTrackingSystem(workTrackingSystem)).Returns(new WorkTrackingSystemConnection());
             }
+
+            var subject = CreateSubject();
 
             var result = subject.GetSupportedWorkTrackingSystemConnections();
 
@@ -62,10 +64,24 @@ namespace Lighthouse.Backend.Tests.API
 
                 var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
 
-                Assert.That(supportedSystems?.Count(), Is.EqualTo(workTrackingSystems.Length));
-            };
+                // CSV is a built-in connector and is excluded from the supported list
+                Assert.That(supportedSystems?.Count(), Is.EqualTo(Enum.GetValues<WorkTrackingSystems>().Length - 1));
+            }
 
-            workTrackingSystemsFactoryMock.Verify(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>()), Times.Exactly(workTrackingSystems.Length));
+            workTrackingSystemsFactoryMock.Verify(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>()), Times.Exactly(Enum.GetValues<WorkTrackingSystems>().Length - 1));
+        }
+
+        [Test]
+        public void GetSupportedWorkTrackingSystems_ExcludesCsvBuiltin()
+        {
+            var subject = CreateSubject();
+
+            var result = subject.GetSupportedWorkTrackingSystemConnections();
+
+            var okResult = result.Result as OkObjectResult;
+            var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
+
+            Assert.That(supportedSystems?.Any(s => s.WorkTrackingSystem == WorkTrackingSystems.Csv), Is.False);
         }
 
         [Test]
@@ -75,8 +91,6 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            workTrackingSystemsFactoryMock.Setup(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>())).Returns(new WorkTrackingSystemConnection());
-
             var result = subject.GetSupportedWorkTrackingSystemConnections();
 
             using (Assert.EnterMultipleScope())
@@ -88,8 +102,10 @@ namespace Lighthouse.Backend.Tests.API
 
                 var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
 
-                Assert.That(supportedSystems?.Count(), Is.EqualTo(2));
-            };
+                // CSV excluded and Linear disabled
+                var expected = Enum.GetValues<WorkTrackingSystems>().Length - 2;
+                Assert.That(supportedSystems?.Count(), Is.EqualTo(expected));
+            }
         }
 
         [Test]
@@ -115,7 +131,7 @@ namespace Lighthouse.Backend.Tests.API
                 var connections = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
 
                 Assert.That(connections?.Count(), Is.EqualTo(expectedConnections.Count));
-            };
+            }
         }
 
         [Test]
@@ -145,11 +161,44 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(connection.Options, Has.Count.EqualTo(1));
                 Assert.That(connection.Options.Single().Key, Is.EqualTo("MyKey"));
                 Assert.That(connection.Options.Single().Value, Is.EqualTo("MyValue"));
-                Assert.That(connection.Options.Single().IsSecret, Is.EqualTo(false));
-            };
+                Assert.That(connection.Options.Single().IsSecret, Is.False);
+            }
 
             repositoryMock.Verify(x => x.Add(It.IsAny<WorkTrackingSystemConnection>()));
             repositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        public async Task CreateNewWorkTrackingSystemConnection_GivenCsv_ReturnsBadRequest()
+        {
+            var newConnectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Name = "CSV",
+                WorkTrackingSystem = WorkTrackingSystems.Csv,
+            };
+
+            var subject = CreateSubject();
+
+            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+            }
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_GivenCsv_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "CSV", WorkTrackingSystem = WorkTrackingSystems.Csv };
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+            }
         }
 
         [Test]
@@ -176,7 +225,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(connection.Name, Is.EqualTo("Fancy New Name"));
                 Assert.That(connection.Options, Has.Count.EqualTo(1));
                 Assert.That(connection.Options.Single().Value, Is.EqualTo("Nobody expects the Spanish Inquisition"));
-            };
+            }
 
             repositoryMock.Verify(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()));
             repositoryMock.Verify(x => x.Save());
@@ -195,7 +244,7 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = result.Result as NotFoundResult;
 
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
         }
 
         [Test]
@@ -213,7 +262,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result as OkResult;
 
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-            };
+            }
 
             repositoryMock.Verify(x => x.Remove(12));
             repositoryMock.Verify(x => x.Save());
@@ -256,7 +305,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
 
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-                Assert.That(okResult.Value, Is.EqualTo(true));
+                Assert.That(okResult.Value, Is.True);
             };
         }
 
