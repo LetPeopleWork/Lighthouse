@@ -20,6 +20,7 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 				},
 				{ key: "apiToken", value: "12345", isSecret: true, isOptional: false },
 			],
+			"Query",
 			1,
 		),
 		new WorkTrackingSystemConnection(
@@ -34,6 +35,7 @@ describe("ModifyTrackingSystemConnectionDialog", () => {
 				},
 				{ key: "apiToken", value: "67890", isSecret: true, isOptional: false },
 			],
+			"Query",
 			2,
 		),
 	];

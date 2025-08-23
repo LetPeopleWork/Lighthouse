@@ -54,6 +54,7 @@ describe("ImportSettingsStep", () => {
 			{
 				id: 1,
 				name: "Work Tracking System 1",
+				dataSourceType: "Query",
 				workTrackingSystem: "AzureDevOps",
 				options: [],
 			},
@@ -337,6 +338,7 @@ describe("ImportSettingsStep", () => {
 				{
 					id: 1,
 					name: "Work Tracking System 1",
+					dataSourceType: "Query",
 					workTrackingSystem: "AzureDevOps",
 					options: [
 						{

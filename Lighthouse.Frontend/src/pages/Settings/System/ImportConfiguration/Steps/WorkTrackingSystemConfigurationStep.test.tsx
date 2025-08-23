@@ -26,6 +26,7 @@ describe("WorkTrackingSystemConfigurationStep", () => {
 		{
 			id: 1,
 			name: "Azure DevOps",
+			dataSourceType: "Query",
 			workTrackingSystem: "AzureDevOps",
 			options: [
 				{

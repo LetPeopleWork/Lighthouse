@@ -7,14 +7,14 @@ import ConnectionDetailTable from "./ConnectionDetailTable";
 
 describe("ConnectionDetailTable", () => {
 	const mockConnections: IWorkTrackingSystemConnection[] = [
-		new WorkTrackingSystemConnection("Jira", "Jira", [], 1),
-		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], 2),
+		new WorkTrackingSystemConnection("Jira", "Jira", [], "Query", 1),
+		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], "Query", 2),
 	];
 
 	const mockConnectionsWithCsv: IWorkTrackingSystemConnection[] = [
-		new WorkTrackingSystemConnection("Jira", "Jira", [], 1),
-		new WorkTrackingSystemConnection("CSV", "Csv", [], 2),
-		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], 3),
+		new WorkTrackingSystemConnection("Jira", "Jira", [], "Query", 1),
+		new WorkTrackingSystemConnection("CSV", "Csv", [], "File", 2),
+		new WorkTrackingSystemConnection("ADO", "AzureDevOps", [], "Query", 3),
 	];
 
 	const mockOnEditConnectionButtonClicked = vi.fn();

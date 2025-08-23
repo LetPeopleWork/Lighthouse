@@ -39,6 +39,7 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 1,
+					dataSourceType: "Query",
 					name: "Azure DevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
@@ -69,6 +70,7 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 1,
+					dataSourceType: "Query",
 					name: "Azure DevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
@@ -78,6 +80,7 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 2,
+					dataSourceType: "Query",
 					name: "GitHub",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
@@ -115,6 +118,7 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 1,
+					dataSourceType: "Query",
 					name: "Azure DevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
@@ -143,6 +147,7 @@ describe("ImportSummaryStep", () => {
 			{
 				entity: {
 					id: 1,
+					dataSourceType: "Query",
 					name: "Azure DevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],
@@ -412,6 +417,7 @@ describe("ImportSummaryStep", () => {
 				{
 					entity: {
 						id: 1,
+						dataSourceType: "Query",
 						name: "Azure DevOps",
 						workTrackingSystem: "AzureDevOps",
 						options: [],

@@ -90,6 +90,7 @@ vi.mock("../WorkTrackingSystems/WorkTrackingSystemComponent", () => ({
 						name: "New System",
 						options: [],
 						workTrackingSystem: "Jira",
+						dataSourceType: "Query",
 					})
 				}
 			>
@@ -172,8 +173,20 @@ describe("ModifyProjectSettings", () => {
 	const mockValidateProjectSettings = vi.fn();
 
 	const workTrackingSystems: IWorkTrackingSystemConnection[] = [
-		{ id: 1, name: "System 1", options: [], workTrackingSystem: "Jira" },
-		{ id: 2, name: "System 2", options: [], workTrackingSystem: "AzureDevOps" },
+		{
+			id: 1,
+			name: "System 1",
+			options: [],
+			workTrackingSystem: "Jira",
+			dataSourceType: "Query",
+		},
+		{
+			id: 2,
+			name: "System 2",
+			options: [],
+			workTrackingSystem: "AzureDevOps",
+			dataSourceType: "Query",
+		},
 	];
 
 	const teams: ITeam[] = [

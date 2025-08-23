@@ -105,6 +105,7 @@ export class WorkTrackingSystemService
 			workTrackingSystemConnection.name,
 			workTrackingSystemConnection.workTrackingSystem,
 			workTrackingSystemConnection.options,
+			workTrackingSystemConnection.dataSourceType,
 			workTrackingSystemConnection.id,
 		);
 	}

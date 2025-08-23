@@ -145,6 +145,7 @@ describe("ConfigurationService", () => {
 			workTrackingSystems: [
 				{
 					id: 1,
+					dataSourceType: "Query",
 					name: "AzureDevOps",
 					workTrackingSystem: "AzureDevOps",
 					options: [],

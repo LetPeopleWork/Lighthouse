@@ -40,18 +40,12 @@ Consultants may want to use Lighthouse for data analysis but may not be allowed 
 - [ ] Modify `ModifyTeamSettings.tsx` for conditional field rendering based on connector type
 - [ ] Modify `ModifyProjectSettings.tsx` for conditional field rendering based on connector type
 - [ ] Update validation logic to check appropriate fields based on data source type
-- [ ] Hide "Create Connection" buttons for non-configurable connectors (CSV only)
 - [ ] Hide query fields for CSV systems, show file upload fields instead
 - [ ] Keep query fields visible for Jira/ADO/Linear systems
-- [ ] Implement different UI flows: Connection Selection (Jira/ADO/Linear) vs Direct Selection (CSV)
 
 **Acceptance Criteria**:
 - Query fields hidden when CSV is selected, file upload fields shown instead
-- CSV appears as direct selection option without "Create Connection" workflow
-- Jira/ADO/Linear require connection creation/selection before team/project setup
 - Validation only applies to visible/relevant fields based on connector type
-- UI clearly distinguishes between configurable and built-in connectors
-- CSV selection immediately shows file upload interface
 
 ---
 

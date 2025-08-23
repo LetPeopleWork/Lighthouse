@@ -106,6 +106,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 			const settings: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
 				name,
+				dataSourceType: selectedWorkTrackingSystem.dataSourceType,
 				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
 				options: selectedOptions,
 			};
@@ -121,6 +122,7 @@ const ModifyTrackingSystemConnectionDialog: React.FC<
 			const updatedSystem: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
 				name: name,
+				dataSourceType: selectedWorkTrackingSystem.dataSourceType,
 				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
 				options: selectedOptions,
 			};

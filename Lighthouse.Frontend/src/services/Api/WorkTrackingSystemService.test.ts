@@ -25,6 +25,7 @@ describe("WorkTrackingSystemService", () => {
 		const mockResponse: IWorkTrackingSystemConnection[] = [
 			{
 				id: 2,
+				dataSourceType: "Query",
 				name: "Jira",
 				workTrackingSystem: "Jira",
 				options: [
@@ -55,6 +56,7 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
+				"Query",
 				2,
 			),
 		]);
@@ -66,6 +68,7 @@ describe("WorkTrackingSystemService", () => {
 	it("should validate work tracking system connection", async () => {
 		const mockConnection: IWorkTrackingSystemConnection = {
 			id: 1,
+			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			options: [
@@ -95,6 +98,7 @@ describe("WorkTrackingSystemService", () => {
 		const mockResponse: IWorkTrackingSystemConnection[] = [
 			{
 				id: 2,
+				dataSourceType: "Query",
 				name: "Azure DevOps",
 				workTrackingSystem: "AzureDevOps",
 				options: [
@@ -125,6 +129,7 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
+				"Query",
 				2,
 			),
 		]);
@@ -136,6 +141,7 @@ describe("WorkTrackingSystemService", () => {
 	it("should add a new work tracking system connection", async () => {
 		const newConnection: IWorkTrackingSystemConnection = {
 			id: 0,
+			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			options: [
@@ -172,6 +178,7 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
+				"Query",
 				3,
 			),
 		);
@@ -184,6 +191,7 @@ describe("WorkTrackingSystemService", () => {
 	it("should update a work tracking system connection", async () => {
 		const updatedConnection: IWorkTrackingSystemConnection = {
 			id: 1,
+			dataSourceType: "Query",
 			name: "Jira",
 			workTrackingSystem: "Jira",
 			options: [
@@ -215,6 +223,7 @@ describe("WorkTrackingSystemService", () => {
 						isOptional: false,
 					},
 				],
+				"Query",
 				1,
 			),
 		);

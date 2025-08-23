@@ -1160,6 +1160,7 @@ export class DemoApiService
 						isOptional: false,
 					},
 				],
+				"Query",
 				null,
 			),
 			new WorkTrackingSystemConnection(
@@ -1170,6 +1171,7 @@ export class DemoApiService
 					{ key: "Username", value: "", isSecret: false, isOptional: true },
 					{ key: "Api Token", value: "", isSecret: true, isOptional: false },
 				],
+				"Query",
 				null,
 			),
 		];
@@ -1198,6 +1200,7 @@ export class DemoApiService
 						isOptional: false,
 					},
 				],
+				"Query",
 				12,
 			),
 			new WorkTrackingSystemConnection(
@@ -1218,6 +1221,7 @@ export class DemoApiService
 					},
 					{ key: "Api Token", value: "", isSecret: true, isOptional: false },
 				],
+				"Query",
 				42,
 			),
 		];

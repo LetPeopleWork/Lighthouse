@@ -7,15 +7,16 @@ namespace Lighthouse.Backend.API.DTO
     public class WorkTrackingSystemConnectionDto
     {
         public WorkTrackingSystemConnectionDto()
-        {            
+        {
         }
+
 
         public WorkTrackingSystemConnectionDto(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             Id = workTrackingSystemConnection.Id;
             Name = workTrackingSystemConnection.Name;
             WorkTrackingSystem = workTrackingSystemConnection.WorkTrackingSystem;
-
+            DataSourceType = workTrackingSystemConnection.DataSourceType;
             Options.AddRange(workTrackingSystemConnection.Options.Select(o => new WorkTrackingSystemConnectionOptionDto(o)));
         }
 
@@ -28,5 +29,7 @@ namespace Lighthouse.Backend.API.DTO
         public WorkTrackingSystems WorkTrackingSystem { get; set; }
 
         public List<WorkTrackingSystemConnectionOptionDto> Options { get; set; } = [];
+
+        public DataSourceType DataSourceType { get; } = DataSourceType.Query;
     }
 }

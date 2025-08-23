@@ -82,6 +82,7 @@ describe("ImportStep", () => {
 		{
 			id: 1,
 			name: "Azure DevOps",
+			dataSourceType: "Query",
 			workTrackingSystem: "AzureDevOps",
 			options: [
 				{
