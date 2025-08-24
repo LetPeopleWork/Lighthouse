@@ -12,10 +12,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("invalid-missing-required.csv", false)]
         [TestCase("invalid-not-csv.csv", false)]
         [TestCase("invalid-wrong-csv.csv", false)]
-        [TestCase("valid-all-optional.csv", true)]
-        [TestCase("valid-required-only.csv", true)]
-        [TestCase("valid-with-optional.csv", true)]
-        public async Task Validate_ChecksIfValidCsv(string csvFileName, bool expectedResult)
+        [TestCase("team-valid-all-optional.csv", true)]
+        [TestCase("team-valid-required-only.csv", true)]
+        [TestCase("team-valid-with-optional.csv", true)]
+        public async Task ValidateTeam_ChecksIfValidCsv(string csvFileName, bool expectedResult)
         {
             var subject = CreateSubject();
             var team = new Team
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetWorkItemsForTeam_NoOptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();
-            var team = CreateTeam("valid-required-only.csv");
+            var team = CreateTeam("team-valid-required-only.csv");
 
             var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
 
@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetWorkItemsForTeam_OptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();
-            var team = CreateTeam("valid-all-optional.csv");
+            var team = CreateTeam("team-valid-all-optional.csv");
 
             var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
 
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetWorkItemsForTeam_SomeOptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();
-            var team = CreateTeam("valid-with-optional.csv");
+            var team = CreateTeam("team-valid-with-optional.csv");
 
             var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
 
@@ -86,7 +86,82 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private void VerifyRequiredWorkItemFields(WorkItem workItem, string referenceId, string name, string state, StateCategories stateCategory, string type, DateTime startedDate, DateTime? closedDate)
+        [Test]
+        [TestCase("empty-file.txt", false)]
+        [TestCase("invalid-missing-required.csv", false)]
+        [TestCase("invalid-not-csv.csv", false)]
+        [TestCase("invalid-wrong-csv.csv", false)]
+        [TestCase("project-valid-required-only.csv", true)]
+        [TestCase("project-valid-all-optional.csv", true)]
+        [TestCase("project-valid-with-optional.csv", true)]
+        public async Task ValidateProject_ChecksIfValidCsv(string csvFileName, bool expectedResult)
+        {
+            var subject = CreateSubject();
+            var project = new Project
+            {
+                WorkItemQuery = LoadCsvFile(csvFileName),
+            };
+
+            var isValid = await subject.ValidateProjectSettings(project);
+
+            Assert.That(isValid, Is.EqualTo(expectedResult));
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_NoOptionalRows_LoadsCorrect()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project-valid-required-only.csv");
+
+            var features = (await subject.GetFeaturesForProject(project)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                VerifyRequiredWorkItemFields(features[0], "EPIC-001", "Epic Title", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 20, 9, 15, 0), new DateTime(2025, 01, 25));
+                VerifyRequiredWorkItemFields(features[1], "EPIC-002", "Feature Title", "Done", StateCategories.Done, "Feature", new DateTime(2025, 01, 12), new DateTime(2025, 01, 18, 14, 45, 0));
+                VerifyRequiredWorkItemFields(features[2], "EPIC-003", "Database cleanup Container", "To Do", StateCategories.ToDo, "Epic", new DateTime(2025, 01, 25), null);
+                VerifyRequiredWorkItemFields(features[3], "EPIC-004", "Refactor auth module", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 30), new DateTime(2025, 02, 05));
+                VerifyRequiredWorkItemFields(features[4], "EPIC-005", "Improve logging", "Done", StateCategories.Done, "Epic", new DateTime(2025, 01, 22), new DateTime(2025, 01, 28));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_OptionalRows_LoadsCorrect()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project-valid-all-optional.csv");
+
+            var features = (await subject.GetFeaturesForProject(project)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15), ["frontend", "feature"], "https://system.com/item/1", "1", 8, "Frontend Team");
+                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10), ["critical"], string.Empty, "2", 3, string.Empty);
+                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20), ["maintenance", "blocked"], string.Empty, "3", 1, "Frontend Team");
+                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28), ["backend", "security"], "https://system.com/item/4", "4", 5, "Backend Team");
+                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20), [], string.Empty, "5", 2, string.Empty);
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_SomeOptionalRows_LoadsCorrect()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project-valid-with-optional.csv");
+
+            var features = (await subject.GetFeaturesForProject(project)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15), ["frontend", "feature"], "https://system.com/item/1", "1", 8, "Frontend Team");
+                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10), ["critical", "bug"], "https://system.com/item/2", "2", 3, "Platform Team");
+                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20), ["maintenance", "blocked"], string.Empty, "3", 1, "Operations");
+                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28), ["backend", "security"], "https://system.com/item/4", "4", 5, "Backend Team");
+                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20), [], "https://system.com/item/5", "5", 2, "Backend Team");
+            }
+        }
+
+        private void VerifyRequiredWorkItemFields(WorkItemBase workItem, string referenceId, string name, string state, StateCategories stateCategory, string type, DateTime startedDate, DateTime? closedDate)
         {
             using (Assert.EnterMultipleScope())
             {
@@ -100,7 +175,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private void VerifyOptionalWorkItemFields(WorkItem workItem, DateTime? createdDate, string? parentReferenceId, string[] tags, string? url)
+        private void VerifyOptionalWorkItemFields(WorkItemBase workItem, DateTime? createdDate, string? parentReferenceId, string[] tags, string? url)
         {
             using (Assert.EnterMultipleScope())
             {
@@ -112,6 +187,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 {
                     Assert.That(workItem.Tags, Does.Contain(tag));
                 }
+            }
+        }
+
+        private void VerifyOptionalFeatureFields(Feature feature, DateTime? createdDate, string[] tags, string? url, string order, int estimatedSize, string owningTeam)
+        {
+            VerifyOptionalWorkItemFields(feature, createdDate, string.Empty, tags, url);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.EstimatedSize, Is.EqualTo(estimatedSize));
+                Assert.That(feature.OwningTeam, Is.EqualTo(owningTeam));
+                Assert.That(feature.Order, Is.EqualTo(order));
             }
         }
 
@@ -133,6 +219,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             };
 
             return team;
+        }
+
+        private Project CreateProject(string csvFile)
+        {
+            var project = new Project
+            {
+                Id = 1886,
+                WorkItemQuery = LoadCsvFile(csvFile),
+                ToDoStates = new List<string> { "To Do" },
+                DoingStates = new List<string> { "In Progress" },
+                DoneStates = new List<string> { "Done" },
+            };
+
+            return project;
         }
 
         private CsvWorkTrackingConnector CreateSubject()

@@ -4,6 +4,8 @@ namespace Lighthouse.Backend.Models
 {
     public interface IWorkItemQueryOwner : IWorkTrackingSystemOptionsOwner, IEntity
     {
+        string Name { get; set; }
+
         string WorkItemQuery { get; set; }
 
         List<string> WorkItemTypes { get; set; }

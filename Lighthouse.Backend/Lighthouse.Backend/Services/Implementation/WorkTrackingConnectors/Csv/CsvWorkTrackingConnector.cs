@@ -10,6 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
     {
         private const string CsvDelimiter = ",";
 
+        // Common Required Columns
         private const string IdHeader = "ID";
         private const string NameHeader = "Name";
         private const string StateHeader = "State";
@@ -17,10 +18,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private const string StartedDateHeader = "StartedDate";
         private const string ClosedDateHeader = "ClosedDate";
 
+        // Common Optional Columns
         private const string CreatedDateHeader = "CreatedDate";
         private const string ParentReferenceIdHeader = "ParentReferenceId";
         private const string TagsHeader = "Tags";
         private const string UrlHeader = "Url";
+        private const string OrderHeader = "Order";
+
+        // Feature Optional Columns
+        private const string OwningTeamHeader = "OwningTeam";
+        private const string EstimatedSizeHeader = "EstimatedSize";
 
         private readonly ILogger<CsvWorkTrackingConnector> logger;
 
@@ -52,7 +59,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<List<Feature>> GetFeaturesForProject(Project project)
         {
-            return Task.FromResult(new List<Feature>());
+            var features = new List<Feature>();
+
+            using var csv = ReadCsv(project.WorkItemQuery);
+
+            while (csv.Read())
+            {
+                var workItemBase = CreateWorkItemBaseForRow(csv, project);
+                var feature = new Feature(workItemBase);
+
+                var owningTeam = csv.GetField(OwningTeamHeader)?.Trim() ?? string.Empty;
+                var estimatedSizeString = csv.GetField(EstimatedSizeHeader)?.Trim();
+                var estimatedSize = 0;
+
+                if (!string.IsNullOrEmpty(estimatedSizeString) && int.TryParse(estimatedSizeString, out var parsedEstimatedSize))
+                {
+                    estimatedSize = parsedEstimatedSize;
+                }
+
+                feature.EstimatedSize = estimatedSize;
+                feature.OwningTeam = owningTeam;
+
+                features.Add(feature);
+            }
+
+            return Task.FromResult(features);
         }
 
         public Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds)
@@ -88,7 +119,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<bool> ValidateTeamSettings(Team team)
         {
-            var csvContent = team.WorkItemQuery;
+            return ValidateCsv(team);
+        }
+
+        public Task<bool> ValidateProjectSettings(Project project)
+        {
+            return ValidateCsv(project);
+        }
+
+        private Task<bool> ValidateCsv(IWorkItemQueryOwner owner)
+        {
+            var csvContent = owner.WorkItemQuery;
 
             if (string.IsNullOrEmpty(csvContent))
             {
@@ -103,14 +144,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             }
             catch
             {
-                logger.LogInformation("Could not read CSV for team {TeamName} - Validation failed", team.Name);
+                logger.LogInformation("Could not read CSV for {Name} - Validation failed", owner.Name);
                 return Task.FromResult(true);
             }
-        }
-
-        public Task<bool> ValidateProjectSettings(Project project)
-        {
-            return Task.FromResult(true);
         }
 
         private WorkItemBase CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
@@ -127,6 +163,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var parentReferenceId = csv.GetField(ParentReferenceIdHeader)?.Trim() ?? string.Empty;
             var tags = csv.GetField(TagsHeader)?.Split('|').Select(x => x.Trim()) ?? [];
             var url = csv.GetField(UrlHeader)?.Trim() ?? string.Empty;
+            var order = csv.GetField(OrderHeader)?.Trim() ?? $"{orderCounter++}";
 
             var workItemBase = new WorkItemBase
             {
@@ -141,7 +178,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 ParentReferenceId = parentReferenceId,
                 Tags = [.. tags],
                 Url = url,
-                Order = $"{orderCounter++}",
+                Order = order,
             };
 
             return workItemBase;

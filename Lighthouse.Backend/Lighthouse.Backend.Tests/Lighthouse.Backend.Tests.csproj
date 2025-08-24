@@ -57,13 +57,22 @@
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\invalid-wrong-csv.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\valid-all-optional.csv">
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\project-valid-all-optional.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\valid-required-only.csv">
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-all-optional.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\valid-with-optional.csv">
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\project-valid-required-only.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-required-only.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\project-valid-with-optional.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-with-optional.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
