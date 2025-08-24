@@ -34,8 +34,8 @@ namespace Lighthouse.Backend.Tests.Factories
             .Returns(new JiraWorkTrackingConnector(Mock.Of<ILexoRankService>(), Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new FakeCryptoService(), appSettingsServiceMock.Object));
 
             serviceProviderMock
-            .Setup(x => x.GetService(typeof(global::Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv.CsvWorkTrackingConnector)))
-            .Returns(new global::Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv.CsvWorkTrackingConnector());
+            .Setup(x => x.GetService(typeof(CsvWorkTrackingConnector)))
+            .Returns(new CsvWorkTrackingConnector(Mock.Of<ILogger<CsvWorkTrackingConnector>>()));
         }
 
         [Test]

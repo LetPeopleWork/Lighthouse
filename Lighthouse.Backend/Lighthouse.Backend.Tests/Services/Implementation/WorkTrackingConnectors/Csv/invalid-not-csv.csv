@@ -1,0 +1,7 @@
+This file is intentionally not a CSV.
+It contains plain English paragraphs and no structured CSV data.
+Use this to test how the system handles uploads that are not CSV at all.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus imperdiet, nulla et dictum interdum,
+nisi lorem egestas odio, vitae scelerisque enim ligula venenatis dolor. Maecenas nisl est, ultrices nec
+congue eget, auctor vitae massa.

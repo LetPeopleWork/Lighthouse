@@ -45,6 +45,27 @@
 	  <None Update="Services\Implementation\Licensing\valid_license.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\empty-file.txt">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\invalid-missing-required.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\invalid-not-csv.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\invalid-wrong-csv.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\valid-all-optional.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\valid-required-only.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\valid-with-optional.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 
