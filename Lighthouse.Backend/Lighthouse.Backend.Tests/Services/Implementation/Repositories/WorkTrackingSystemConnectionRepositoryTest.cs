@@ -27,8 +27,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             var foundConnection = subject.GetById(connection.Id);
 
-            Assert.That(foundConnection, Is.EqualTo(connection));
-            Assert.That(foundConnection.Options, Is.EquivalentTo(new List<WorkTrackingSystemConnectionOption> { workTrackingOption }));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(foundConnection, Is.EqualTo(connection));
+                Assert.That(foundConnection.Options, Is.EquivalentTo(new List<WorkTrackingSystemConnectionOption> { workTrackingOption }));
+            }
         }
 
         [Test]
@@ -74,7 +77,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var existingCsvConnections = DatabaseContext.WorkTrackingSystemConnections
                 .Where(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv)
                 .ToList();
-            
+
             foreach (var connection in existingCsvConnections)
             {
                 DatabaseContext.WorkTrackingSystemConnections.Remove(connection);
@@ -87,9 +90,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var csvConnection = DatabaseContext.WorkTrackingSystemConnections
                 .SingleOrDefault(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv);
 
-            Assert.That(csvConnection, Is.Not.Null);
-            Assert.That(csvConnection.Name, Is.EqualTo("CSV"));
-            Assert.That(csvConnection.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Csv));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(csvConnection, Is.Not.Null);
+                Assert.That(csvConnection.Name, Is.EqualTo("CSV"));
+                Assert.That(csvConnection.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Csv));
+                Assert.That(csvConnection.DataSourceType, Is.EqualTo(DataSourceType.File));
+            }
         }
 
         [Test]
@@ -110,10 +117,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var csvConnectionsAfterSecond = DatabaseContext.WorkTrackingSystemConnections
                 .Where(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv)
                 .ToList();
-
-            Assert.That(csvConnectionsAfterFirst.Count, Is.EqualTo(1));
-            Assert.That(csvConnectionsAfterSecond.Count, Is.EqualTo(1));
-            Assert.That(csvConnectionsAfterFirst.Single().Id, Is.EqualTo(csvConnectionsAfterSecond.Single().Id));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(csvConnectionsAfterFirst.Count, Is.EqualTo(1));
+                Assert.That(csvConnectionsAfterSecond.Count, Is.EqualTo(1));
+                Assert.That(csvConnectionsAfterFirst.Single().Id, Is.EqualTo(csvConnectionsAfterSecond.Single().Id));
+            }
         }
 
         private WorkTrackingSystemConnectionRepository CreateSubject()

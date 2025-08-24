@@ -34,7 +34,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 var csvWorkTrackingConnection = new WorkTrackingSystemConnection
                 {
                     Name = "CSV",
-                    WorkTrackingSystem = WorkTrackingSystems.Csv
+                    WorkTrackingSystem = WorkTrackingSystems.Csv,
+                    DataSourceType = DataSourceType.File,
                 };
 
                 Add(csvWorkTrackingConnection);
