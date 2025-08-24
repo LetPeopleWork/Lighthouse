@@ -95,6 +95,36 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void ExportConfiguration_WithWorkTrackingSystem_ExcludesCsvSystemInExport()
+        {
+            AddWorkTrackingSystemConnection();
+            var csvWorkTrackingSystem = new WorkTrackingSystemConnection
+            {
+                Id = 12,
+                Name = "CSV",
+                WorkTrackingSystem = WorkTrackingSystems.Csv
+            };
+            workTrackingSystems.Add(csvWorkTrackingSystem);
+
+            var subject = CreateSubject();
+
+            var response = subject.ExportConfiguration();
+
+            using (Assert.EnterMultipleScope())
+            {
+                var configuration = ParseExportResponse(response);
+                Assert.That(configuration.WorkTrackingSystems, Has.Count.EqualTo(1));
+
+                var exportedWorkTrackingSystem = configuration.WorkTrackingSystems[0];
+
+                Assert.That(exportedWorkTrackingSystem.Id, Is.EqualTo(1));
+                Assert.That(exportedWorkTrackingSystem.Name, Is.EqualTo("Test System"));
+                Assert.That(exportedWorkTrackingSystem.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Jira));
+                Assert.That(exportedWorkTrackingSystem.Options, Is.Empty);
+            };
+        }
+
+        [Test]
         public void ExportConfiguration_WithWorkTrackingSystem_IncludesSystemOptions()
         {
             var workTrackingSystem = AddWorkTrackingSystemConnection();
@@ -149,6 +179,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void ExportConfiguration_WithTeam_IncludesInExport()
         {
+            var workTrackingSystemConnection = AddWorkTrackingSystemConnection();
+
             var team = new Team
             {
                 Id = 1,
@@ -160,7 +192,7 @@ namespace Lighthouse.Backend.Tests.API
                 ToDoStates = new List<string> { "To Do", "New" },
                 DoingStates = new List<string> { "Analysis", "Active", "Testing" },
                 DoneStates = new List<string> { "Done", "Closed" },
-                WorkTrackingSystemConnectionId = 12,
+                WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id,
                 Tags = new List<string> { "Tag1", "Tag2" },
                 FeatureWIP = 3,
                 AutomaticallyAdjustFeatureWIP = true,
@@ -198,7 +230,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedTeam.DoneStates, Has.Count.EqualTo(2));
                 Assert.That(exportedTeam.DoneStates[0], Is.EqualTo("Done"));
                 Assert.That(exportedTeam.DoneStates[1], Is.EqualTo("Closed"));
-                Assert.That(exportedTeam.WorkTrackingSystemConnectionId, Is.EqualTo(12));
+                Assert.That(exportedTeam.WorkTrackingSystemConnectionId, Is.EqualTo(workTrackingSystemConnection.Id));
                 Assert.That(exportedTeam.Tags, Has.Count.EqualTo(2));
                 Assert.That(exportedTeam.Tags[0], Is.EqualTo("Tag1"));
                 Assert.That(exportedTeam.Tags[1], Is.EqualTo("Tag2"));
@@ -208,6 +240,45 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(exportedTeam.ServiceLevelExpectationRange, Is.EqualTo(14));
                 Assert.That(exportedTeam.SystemWIPLimit, Is.EqualTo(5));
             };
+        }
+
+        [Test]
+        public void ExportConfiguration_WithTeam_IgnoresIfUsesCsv()
+        {
+            var workTrackingSystem = new WorkTrackingSystemConnection
+            {
+                WorkTrackingSystem = WorkTrackingSystems.Csv,
+                Id = 12
+            };
+            workTrackingSystems.Add(workTrackingSystem);
+
+            var team = new Team
+            {
+                Id = 1,
+                Name = "CSV Team",
+                WorkItemQuery = "",
+                UseFixedDatesForThroughput = false,
+                ThroughputHistory = 63,
+                WorkItemTypes = new List<string> { "User Story", "Task" },
+                ToDoStates = new List<string> { "To Do", "New" },
+                DoingStates = new List<string> { "Analysis", "Active", "Testing" },
+                DoneStates = new List<string> { "Done", "Closed" },
+                WorkTrackingSystemConnectionId = 12,
+                Tags = new List<string> { "Tag1", "Tag2" },
+                FeatureWIP = 3,
+                AutomaticallyAdjustFeatureWIP = true,
+                ServiceLevelExpectationProbability = 73,
+                ServiceLevelExpectationRange = 14,
+                SystemWIPLimit = 5,
+            };
+
+            teams.Add(team);
+
+            var subject = CreateSubject();
+            var response = subject.ExportConfiguration();
+
+            var configuration = ParseExportResponse(response);
+            Assert.That(configuration.Teams, Has.Count.EqualTo(0));
         }
 
         [Test]
@@ -304,6 +375,62 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void ExportConfiguration_WithProject_IgnoresIfUsesCsv()
+        {
+            var workTrackingSystem = new WorkTrackingSystemConnection
+            {
+                WorkTrackingSystem = WorkTrackingSystems.Csv,
+                Id = 12
+            };
+            workTrackingSystems.Add(workTrackingSystem);
+
+            var team = new Team
+            {
+                Id = 1,
+                Name = "Test Team",
+                WorkTrackingSystemConnectionId = workTrackingSystem.Id
+            };
+            teams.Add(team);
+
+            var project = new Project
+            {
+                Id = 1,
+                Name = "Project A",
+                WorkItemQuery = "SELECT * FROM WorkItems WHERE ProjectId = 1",
+                WorkItemTypes = new List<string> { "Epic", "Feature" },
+                ToDoStates = new List<string> { "To Do", "New" },
+                DoingStates = new List<string> { "In Progress", "Testing" },
+                DoneStates = new List<string> { "Done", "Closed" },
+                WorkTrackingSystemConnectionId = workTrackingSystem.Id,
+                Tags = new List<string> { "ProjectTag1", "ProjectTag2" },
+                UnparentedItemsQuery = "SELECT * FROM UnparentedItems WHERE ProjectId = 1",
+                UsePercentileToCalculateDefaultAmountOfWorkItems = false,
+                DefaultAmountOfWorkItemsPerFeature = 14,
+                SizeEstimateField = "SizeEstimate",
+                OverrideRealChildCountStates = new List<string> { "In Progress", "Testing" },
+                OwningTeamId = team.Id,
+                OwningTeam = team,
+                FeatureOwnerField = "FeatureOwner",
+                ServiceLevelExpectationProbability = 85,
+                ServiceLevelExpectationRange = 21,
+                SystemWIPLimit = 1,
+            };
+
+            project.Milestones.Add(new Milestone { Id = 1, Name = "Milestone 1", Date = DateTime.UtcNow.AddDays(30) });
+
+            project.Teams.Add(team);
+
+            projects.Add(project);
+
+            var subject = CreateSubject();
+
+            var response = subject.ExportConfiguration();
+
+            var configuration = ParseExportResponse(response);
+            Assert.That(configuration.Projects, Has.Count.EqualTo(0));
+        }
+
+        [Test]
         public async Task DeleteConfiguration_RemovesExistingConfiguration()
         {
             var subject = CreateSubject();
@@ -323,6 +450,25 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Verify(x => x.Save(), Times.Once);
 
             workTrackingSystemRepositoryMock.Verify(x => x.Remove(workTrackingSystem.Id), Times.Once);
+            workTrackingSystemRepositoryMock.Verify(x => x.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task DeleteConfiguration_DoesNotRemoveCsvWorkTrackingSystemConnection()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystem = AddWorkTrackingSystemConnection();
+            workTrackingSystem.WorkTrackingSystem = WorkTrackingSystems.Csv;
+
+            var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            teams.Add(team);
+
+            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            projects.Add(project);
+
+            await subject.DeleteConfiguration();
+
+            workTrackingSystemRepositoryMock.Verify(x => x.Remove(workTrackingSystem.Id), Times.Never);
             workTrackingSystemRepositoryMock.Verify(x => x.Save(), Times.Once);
         }
 

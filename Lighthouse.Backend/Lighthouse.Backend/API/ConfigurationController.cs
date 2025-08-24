@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -38,11 +39,15 @@ namespace Lighthouse.Backend.API
         {
             logger.LogInformation("Starting configuration export.");
 
+            var workTrackingSystems = GetWorkTrackingSystems();
+            var teams = GetTeams(workTrackingSystems.Select(w => w.Id));
+            var projects = GetProjects(workTrackingSystems.Select(w => w.Id));
+
             var configurationExport = new ConfigurationExport
             {
-                WorkTrackingSystems = GetWorkTrackingSystems(),
-                Teams = GetTeams(),
-                Projects = GetProjects(),
+                WorkTrackingSystems = workTrackingSystems,
+                Teams = teams,
+                Projects = projects,
             };
 
             var file = SerializeConfigurationToFile(configurationExport);
@@ -173,7 +178,7 @@ namespace Lighthouse.Backend.API
         private async Task RemoveAllWorkTrackingSystems()
         {
             var workTrackingSystems = workTrackingSystemConnectionRepo.GetAll().ToList();
-            foreach (var workTrackingSystem in workTrackingSystems)
+            foreach (var workTrackingSystem in workTrackingSystems.Where(w => w.WorkTrackingSystem != WorkTrackingSystems.Csv))
             {
                 workTrackingSystemConnectionRepo.Remove(workTrackingSystem.Id);
             }
@@ -213,23 +218,27 @@ namespace Lighthouse.Backend.API
 
         private List<WorkTrackingSystemConnectionDto> GetWorkTrackingSystems()
         {
-            var workTrackingSystems = workTrackingSystemConnectionRepo.GetAll();
+            var workTrackingSystems = workTrackingSystemConnectionRepo.GetAll().Where(wts => wts.WorkTrackingSystem != WorkTrackingSystems.Csv);
 
             return workTrackingSystems.Select(wts => new WorkTrackingSystemConnectionDto(wts)).ToList();
         }
 
-        private List<TeamSettingDto> GetTeams()
+        private List<TeamSettingDto> GetTeams(IEnumerable<int> exportedWorkTrackingSystemIds)
         {
-            var teams = teamRepo.GetAll();
+            var teams = teamRepo.GetAll()
+                .Where(t => exportedWorkTrackingSystemIds.Contains(t.WorkTrackingSystemConnectionId));
 
             return teams
                 .Select(t => new TeamSettingDto(t))
                 .ToList();
         }
 
-        private List<ProjectSettingDto> GetProjects()
+        private List<ProjectSettingDto> GetProjects(IEnumerable<int> exportedWorkTrackingSystemIds)
         {
-            var projects = projectRepo.GetAll();
+            var projects = projectRepo.GetAll()
+                .Where(p => exportedWorkTrackingSystemIds.Contains(p.WorkTrackingSystemConnectionId));
+
+
             return projects
                 .Select(p => new ProjectSettingDto(p))
                 .ToList();
