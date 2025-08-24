@@ -95,12 +95,7 @@ export abstract class BaseEditPage<T> {
 	async selectWorkTrackingSystem(
 		workTrackingSystemName: string,
 	): Promise<void> {
-		const addButton = this.page.getByRole("button", {
-			name: "Add New Work Tracking System",
-		});
-		const combobox = addButton.locator(
-			'xpath=../preceding-sibling::*//div[@role="combobox"]',
-		);
+		const combobox = this.page.locator('.MuiSelect-select').first();
 		await combobox.click();
 
 		await this.page

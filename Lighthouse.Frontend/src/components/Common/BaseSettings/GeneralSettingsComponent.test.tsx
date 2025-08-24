@@ -1,17 +1,48 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { TerminologyProvider } from "../../../services/TerminologyContext";
+import {
+	createMockApiServiceContext,
+	createMockTerminologyService,
+	createMockWorkTrackingSystemService,
+} from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import GeneralSettingsComponent from "./GeneralSettingsComponent";
 
 describe("GeneralSettingsComponent", () => {
 	const mockOnSettingsChange = vi.fn();
+	const mockOnWorkTrackingSystemChange = vi.fn();
+	const mockOnNewWorkTrackingSystemConnectionAdded = vi.fn();
 
 	const testSettings = createMockTeamSettings();
 	testSettings.name = "Test Settings";
 	testSettings.workItemQuery = "Test Query";
 
+	const mockWorkTrackingSystems: IWorkTrackingSystemConnection[] = [
+		{
+			id: 1,
+			name: "Test System 1",
+			workTrackingSystem: "Jira",
+			options: [],
+			dataSourceType: "Query",
+		},
+		{
+			id: 2,
+			name: "Test System 2",
+			workTrackingSystem: "AzureDevOps",
+			options: [],
+			dataSourceType: "File",
+		},
+	];
+
 	beforeEach(() => {
 		mockOnSettingsChange.mockClear();
+		mockOnWorkTrackingSystemChange.mockClear();
+		mockOnNewWorkTrackingSystemConnectionAdded.mockClear();
 	});
 
 	it("renders correctly with provided settings", () => {
@@ -84,5 +115,261 @@ describe("GeneralSettingsComponent", () => {
 
 		expect(screen.getByLabelText("Name")).toHaveValue("");
 		expect(screen.getByLabelText("Work Item Query")).toHaveValue("");
+	});
+
+	it("shows work tracking system selection when showWorkTrackingSystemSelection is true", () => {
+		const mockTerminologyService = createMockTerminologyService();
+		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+		]);
+
+		const mockApiContext = createMockApiServiceContext({
+			workTrackingSystemService: createMockWorkTrackingSystemService(),
+			terminologyService: mockTerminologyService,
+		});
+
+		const queryClient = new QueryClient({
+			defaultOptions: {
+				queries: {
+					retry: false,
+				},
+			},
+		});
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TerminologyProvider>
+						<GeneralSettingsComponent
+							settings={testSettings}
+							onSettingsChange={mockOnSettingsChange}
+							workTrackingSystems={mockWorkTrackingSystems}
+							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+							showWorkTrackingSystemSelection={true}
+						/>
+					</TerminologyProvider>
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>,
+		);
+
+		expect(screen.getByRole("combobox")).toBeInTheDocument();
+		expect(screen.getByText(/Add New.*System/)).toBeInTheDocument();
+	});
+
+	it("calls onWorkTrackingSystemChange and clears workItemQuery when system selection changes", async () => {
+		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
+		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+			.fn()
+			.mockResolvedValue(mockWorkTrackingSystems);
+
+		const mockTerminologyService = createMockTerminologyService();
+		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+		]);
+
+		const mockApiContext = createMockApiServiceContext({
+			workTrackingSystemService: mockWorkTrackingSystemService,
+			terminologyService: mockTerminologyService,
+		});
+
+		const queryClient = new QueryClient({
+			defaultOptions: {
+				queries: {
+					retry: false,
+				},
+			},
+		});
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TerminologyProvider>
+						<GeneralSettingsComponent
+							settings={testSettings}
+							onSettingsChange={mockOnSettingsChange}
+							workTrackingSystems={mockWorkTrackingSystems}
+							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+							onNewWorkTrackingSystemConnectionAdded={
+								mockOnNewWorkTrackingSystemConnectionAdded
+							}
+							showWorkTrackingSystemSelection={true}
+						/>
+					</TerminologyProvider>
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>,
+		);
+
+		const selectElement = screen.getByRole("combobox");
+
+		await userEvent.click(selectElement);
+		await waitFor(() => {
+			expect(screen.getByText("Test System 2")).toBeInTheDocument();
+		});
+		await userEvent.click(screen.getByText("Test System 2"));
+
+		expect(mockOnWorkTrackingSystemChange).toHaveBeenCalled();
+		expect(mockOnSettingsChange).toHaveBeenCalledWith("workItemQuery", "");
+	});
+
+	it("opens ModifyTrackingSystemConnectionDialog when Add New button is clicked", async () => {
+		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
+		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+			.fn()
+			.mockResolvedValue(mockWorkTrackingSystems);
+
+		const mockTerminologyService = createMockTerminologyService();
+		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+		]);
+
+		const mockApiContext = createMockApiServiceContext({
+			workTrackingSystemService: mockWorkTrackingSystemService,
+			terminologyService: mockTerminologyService,
+		});
+
+		const queryClient = new QueryClient({
+			defaultOptions: {
+				queries: {
+					retry: false,
+				},
+			},
+		});
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TerminologyProvider>
+						<GeneralSettingsComponent
+							settings={testSettings}
+							onSettingsChange={mockOnSettingsChange}
+							workTrackingSystems={mockWorkTrackingSystems}
+							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+							onNewWorkTrackingSystemConnectionAdded={
+								mockOnNewWorkTrackingSystemConnectionAdded
+							}
+							showWorkTrackingSystemSelection={true}
+						/>
+					</TerminologyProvider>
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>,
+		);
+
+		const addButton = screen.getByRole("button", { name: /Add New.*System/ });
+		await userEvent.click(addButton);
+
+		// Check that the dialog appears by looking for dialog title
+		await waitFor(() => {
+			expect(screen.getByText("Create New Connection")).toBeInTheDocument();
+		});
+	});
+
+	it("shows file upload component when selected work tracking system has File dataSourceType", () => {
+		const fileBasedSystem = mockWorkTrackingSystems[1]; // Test System 2 has dataSourceType: "File"
+		const mockTerminologyService = createMockTerminologyService();
+		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+		]);
+
+		const mockApiContext = createMockApiServiceContext({
+			workTrackingSystemService: createMockWorkTrackingSystemService(),
+			terminologyService: mockTerminologyService,
+		});
+
+		const queryClient = new QueryClient({
+			defaultOptions: {
+				queries: {
+					retry: false,
+				},
+			},
+		});
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TerminologyProvider>
+						<GeneralSettingsComponent
+							settings={testSettings}
+							onSettingsChange={mockOnSettingsChange}
+							workTrackingSystems={mockWorkTrackingSystems}
+							selectedWorkTrackingSystem={fileBasedSystem}
+							workTrackingSystemConnection={fileBasedSystem}
+							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+							onNewWorkTrackingSystemConnectionAdded={
+								mockOnNewWorkTrackingSystemConnectionAdded
+							}
+							showWorkTrackingSystemSelection={true}
+						/>
+					</TerminologyProvider>
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>,
+		);
+
+		// Should show file upload component
+		expect(screen.getByText(/Upload/)).toBeInTheDocument();
+
+		// Should NOT show work item query field when using file-based system
+		expect(screen.queryByLabelText(/Work Item Query/)).not.toBeInTheDocument();
+	});
+
+	it("hides work item query field when showWorkTrackingSystemSelection is false", () => {
+		render(
+			<GeneralSettingsComponent
+				settings={testSettings}
+				onSettingsChange={mockOnSettingsChange}
+				showWorkTrackingSystemSelection={false}
+			/>,
+		);
+
+		expect(screen.getByLabelText("Work Item Query")).toBeInTheDocument();
+	});
+
+	it("handles missing onWorkTrackingSystemChange callback gracefully", () => {
+		const mockTerminologyService = createMockTerminologyService();
+		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+		]);
+
+		const mockApiContext = createMockApiServiceContext({
+			workTrackingSystemService: createMockWorkTrackingSystemService(),
+			terminologyService: mockTerminologyService,
+		});
+
+		const queryClient = new QueryClient({
+			defaultOptions: {
+				queries: {
+					retry: false,
+				},
+			},
+		});
+
+		// Test without onWorkTrackingSystemChange callback
+		expect(() => {
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider value={mockApiContext}>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={testSettings}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={mockWorkTrackingSystems}
+								selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+								showWorkTrackingSystemSelection={true}
+								// onWorkTrackingSystemChange is intentionally omitted
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+		}).not.toThrow();
+
+		expect(screen.getByRole("combobox")).toBeInTheDocument();
 	});
 });

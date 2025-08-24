@@ -28,14 +28,52 @@ vi.mock(
 		__esModule: true,
 		default: ({
 			onSettingsChange,
+			onWorkTrackingSystemChange,
+			onNewWorkTrackingSystemConnectionAdded,
+			showWorkTrackingSystemSelection,
 		}: {
 			onSettingsChange: (key: keyof ITeamSettings, value: string) => void;
+			onWorkTrackingSystemChange?: (
+				event: React.ChangeEvent<{ value: unknown }>,
+			) => void;
+			onNewWorkTrackingSystemConnectionAdded?: (
+				connection: IWorkTrackingSystemConnection,
+			) => void;
+			showWorkTrackingSystemSelection?: boolean;
 		}) => (
 			<div>
 				<div>GeneralInputsComponent</div>
 				<button type="button" onClick={() => onSettingsChange("name", "value")}>
 					Change General
 				</button>
+				{showWorkTrackingSystemSelection && (
+					<>
+						<button
+							type="button"
+							onClick={() =>
+								onWorkTrackingSystemChange?.({
+									target: { value: "System 1" },
+								} as React.ChangeEvent<{ value: unknown }>)
+							}
+						>
+							Change Work Tracking System
+						</button>
+						<button
+							type="button"
+							onClick={() =>
+								onNewWorkTrackingSystemConnectionAdded?.({
+									id: 1,
+									name: "New System",
+									options: [],
+									workTrackingSystem: "Linear",
+									dataSourceType: "Query",
+								})
+							}
+						>
+							Add New Work Tracking System
+						</button>
+					</>
+				)}
 			</div>
 		),
 	}),
@@ -71,49 +109,6 @@ vi.mock("../WorkItemTypes/WorkItemTypesComponent", () => ({
 				onClick={() => onRemoveWorkItemType("Existing Work Item")}
 			>
 				Remove Work Item
-			</button>
-		</div>
-	),
-}));
-
-vi.mock("../WorkTrackingSystems/WorkTrackingSystemComponent", () => ({
-	__esModule: true,
-	default: ({
-		onWorkTrackingSystemChange,
-		onNewWorkTrackingSystemConnectionAdded,
-	}: {
-		onWorkTrackingSystemChange: (
-			event: React.ChangeEvent<{ value: unknown }>,
-		) => void;
-		onNewWorkTrackingSystemConnectionAdded: (
-			connection: IWorkTrackingSystemConnection,
-		) => void;
-	}) => (
-		<div>
-			<div>WorkTrackingSystemComponent</div>
-			<button
-				type="button"
-				onClick={() =>
-					onWorkTrackingSystemChange({
-						target: { value: "System 1" },
-					} as React.ChangeEvent<{ value: unknown }>)
-				}
-			>
-				Change Work Tracking System
-			</button>
-			<button
-				type="button"
-				onClick={() =>
-					onNewWorkTrackingSystemConnectionAdded({
-						id: 1,
-						name: "New System",
-						options: [],
-						workTrackingSystem: "Linear",
-						dataSourceType: "Query",
-					})
-				}
-			>
-				Add New Work Tracking System
 			</button>
 		</div>
 	),
@@ -267,7 +262,7 @@ describe("ModifyTeamSettings", () => {
 		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
 		expect(screen.getByText("WorkItemTypesComponent")).toBeInTheDocument();
 		expect(screen.getByText("StatesList")).toBeInTheDocument();
-		expect(screen.getByText("WorkTrackingSystemComponent")).toBeInTheDocument();
+		expect(screen.getByText("Change Work Tracking System")).toBeInTheDocument();
 		expect(screen.getByText("AdvancedInputsComponent")).toBeInTheDocument();
 	});
 
@@ -309,7 +304,7 @@ describe("ModifyTeamSettings", () => {
 		fireEvent.click(screen.getByText("Change Work Tracking System"));
 		fireEvent.click(screen.getByText("Add New Work Tracking System"));
 
-		expect(screen.getByText("WorkTrackingSystemComponent")).toBeInTheDocument();
+		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
 	});
 
 	it("handles adding and removing tags", async () => {

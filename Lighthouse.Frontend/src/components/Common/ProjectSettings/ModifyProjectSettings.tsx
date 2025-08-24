@@ -17,7 +17,6 @@ import TagsComponent from "../Tags/TagsComponent";
 import TeamsList from "../TeamsList/TeamsList";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
-import WorkTrackingSystemComponent from "../WorkTrackingSystems/WorkTrackingSystemComponent";
 import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
 import OwnershipComponent from "./Advanced/OwnershipComponent";
 import UnparentedItemsComponent from "./Advanced/UnparentedItemsComponent";
@@ -312,6 +311,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 					projectSettings.doneStates.length > 0;
 				const hasValidInvolvedTeams = selectedTeams.length > 0;
 
+				// Check that workItemQuery is not empty (whether it's a query or CSV data)
+				const hasValidDataSource =
+					modifyDefaultSettings ||
+					(selectedWorkTrackingSystem !== null &&
+						(projectSettings?.workItemQuery ?? "") !== "");
+
 				isFormValid =
 					hasValidName &&
 					hasValidDefaultAmountOfFeatures &&
@@ -320,7 +325,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 					hasAllNecessaryStates &&
 					(modifyDefaultSettings ||
 						(hasValidInvolvedTeams &&
-							projectSettings?.workItemQuery !== "" &&
+							hasValidDataSource &&
 							selectedWorkTrackingSystem !== null));
 			}
 
@@ -375,6 +380,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<GeneralSettingsComponent
 							settings={projectSettings}
 							onSettingsChange={handleProjectSettingsChange}
+							workTrackingSystemConnection={selectedWorkTrackingSystem}
+							workTrackingSystems={workTrackingSystems}
+							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
+							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
+							onNewWorkTrackingSystemConnectionAdded={
+								handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
+							}
+							showWorkTrackingSystemSelection={!modifyDefaultSettings}
 						/>
 
 						<WorkItemTypesComponent
@@ -408,27 +421,19 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onReorderDoneStates={handleReorderDoneStates}
 						/>
 
-						{!modifyDefaultSettings && (
-							<WorkTrackingSystemComponent
-								workTrackingSystems={workTrackingSystems}
-								selectedWorkTrackingSystem={selectedWorkTrackingSystem}
-								onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
-								onNewWorkTrackingSystemConnectionAdded={
-									handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
-								}
-							/>
-						)}
-
 						<TagsComponent
 							tags={projectSettings?.tags || []}
 							onAddTag={handleAddTag}
 							onRemoveTag={handleRemoveTag}
 						/>
 
-						<UnparentedItemsComponent
-							projectSettings={projectSettings}
-							onProjectSettingsChange={handleProjectSettingsChange}
-						/>
+						{(selectedWorkTrackingSystem === null ||
+							selectedWorkTrackingSystem.dataSourceType === "Query") && (
+							<UnparentedItemsComponent
+								projectSettings={projectSettings}
+								onProjectSettingsChange={handleProjectSettingsChange}
+							/>
+						)}
 
 						<FeatureSizeComponent
 							projectSettings={projectSettings}

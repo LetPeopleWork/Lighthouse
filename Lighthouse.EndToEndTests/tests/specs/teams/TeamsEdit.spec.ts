@@ -215,6 +215,7 @@ for (const {
 				const workTrackingSystem =
 					testData.connections[workTrackingSystemIndex];
 				await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
+				await newTeamPage.setWorkItemQuery(teamConfiguration.validQuery);
 
 				// Now we have all default configuration set
 				await expect(newTeamPage.validateButton).toBeEnabled();

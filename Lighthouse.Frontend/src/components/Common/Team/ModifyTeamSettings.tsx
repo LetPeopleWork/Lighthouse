@@ -15,7 +15,6 @@ import StatesList from "../StatesList/StatesList";
 import TagsComponent from "../Tags/TagsComponent";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
-import WorkTrackingSystemComponent from "../WorkTrackingSystems/WorkTrackingSystemComponent";
 
 interface ModifyTeamSettingsProps {
 	title: string;
@@ -265,14 +264,19 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 					teamSettings.doneStates.length > 0;
 				const hasValidWorkItemTypes = teamSettings.workItemTypes.length > 0;
 
+				// Check that workItemQuery is not empty (whether it's a query or CSV data)
+				const hasValidDataSource =
+					modifyDefaultSettings ||
+					(selectedWorkTrackingSystem !== null &&
+						(teamSettings.workItemQuery ?? "") !== "");
+
 				areInputsValid =
 					hasValidName &&
 					hasValidThroughputHistory &&
 					hasValidFeatureWIP &&
 					hasAllNecessaryStates &&
 					hasValidWorkItemTypes &&
-					(modifyDefaultSettings || teamSettings?.workItemQuery !== "") &&
-					teamSettings?.workItemTypes.length > 0 &&
+					hasValidDataSource &&
 					(modifyDefaultSettings || selectedWorkTrackingSystem !== null);
 			}
 
@@ -331,6 +335,14 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						<GeneralSettingsComponent
 							settings={teamSettings}
 							onSettingsChange={handleTeamSettingsChange}
+							workTrackingSystemConnection={selectedWorkTrackingSystem}
+							workTrackingSystems={workTrackingSystems}
+							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
+							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
+							onNewWorkTrackingSystemConnectionAdded={
+								handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
+							}
+							showWorkTrackingSystemSelection={!modifyDefaultSettings}
 						/>
 
 						<ForecastSettingsComponent
@@ -361,17 +373,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onReorderDoneStates={handleReorderDoneStates}
 							isForTeam={true}
 						/>
-
-						{!modifyDefaultSettings && (
-							<WorkTrackingSystemComponent
-								workTrackingSystems={workTrackingSystems}
-								selectedWorkTrackingSystem={selectedWorkTrackingSystem}
-								onWorkTrackingSystemChange={handleWorkTrackingSystemChange}
-								onNewWorkTrackingSystemConnectionAdded={
-									handleOnNewWorkTrackingSystemConnectionAddedDialogClosed
-								}
-							/>
-						)}
 
 						<TagsComponent
 							tags={teamSettings?.tags || []}
