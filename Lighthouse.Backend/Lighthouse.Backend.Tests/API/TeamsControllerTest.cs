@@ -2,7 +2,9 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -22,6 +24,8 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ITeamUpdater> teamUpdateServiceMock;
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
+        private Mock<ILicenseService> licenseServiceMock;
+
         [SetUp]
         public void Setup()
         {
@@ -30,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepoMock = new Mock<IWorkItemRepository>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
-
+            licenseServiceMock = new Mock<ILicenseService>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
         }
@@ -51,7 +55,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(result.Projects, Has.Count.EqualTo(0));
                 Assert.That(result.Features, Has.Count.EqualTo(0));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -74,7 +79,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(result.Projects, Has.Count.EqualTo(1));
                 Assert.That(result.Features, Has.Count.EqualTo(1));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -98,7 +104,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(result.Projects, Has.Count.EqualTo(1));
                 Assert.That(result.Features, Has.Count.EqualTo(2));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -127,7 +134,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(result.Projects, Has.Count.EqualTo(2));
                 Assert.That(result.Features, Has.Count.EqualTo(3));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -165,7 +173,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(team1Results.Features, Has.Count.EqualTo(2));
                 Assert.That(team2Results.Features, Has.Count.EqualTo(1));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -217,7 +226,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(returnedTeamDto.Name, Is.EqualTo("Numero Uno"));
                 Assert.That(returnedTeamDto.Projects, Has.Count.EqualTo(2));
                 Assert.That(returnedTeamDto.Features, Has.Count.EqualTo(3));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -233,7 +243,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -276,7 +287,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(team.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(team.ServiceLevelExpectationRange));
                 Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(team.SystemWIPLimit));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -292,7 +304,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -356,6 +369,54 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.BlockedTags, Contains.Item("Customer Input Needed"));
             }
             ;
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task CreateTeam_GivenExistingTeamWithCSVWorkTrackingConnector_CanOnlyAddWithPremiumLicense(bool hasPremium)
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasPremium);
+
+            var csvWorkTrackingConnection = new WorkTrackingSystemConnection
+            {
+                Id = 1,
+                WorkTrackingSystem = WorkTrackingSystems.Csv,
+            };
+
+            workTrackingSystemConnectionRepositoryMock.Setup(x => x.GetAll()).Returns([csvWorkTrackingConnection]);
+
+            var existingTeam = new Team
+            {
+                Id = 1,
+                Name = "CSV",
+                WorkTrackingSystemConnection = csvWorkTrackingConnection
+            };
+
+            var newTeamSettings = new TeamSettingDto
+            {
+                Name = "New Team",
+                WorkTrackingSystemConnectionId = 1,
+            };
+
+            var subject = CreateSubject([existingTeam]);
+
+            var response = await subject.CreateTeam(newTeamSettings);
+
+            var expectedResponseType = hasPremium ? typeof(OkObjectResult) : typeof(ObjectResult);
+            var expectedStatusCode = hasPremium ? 200 : 403;
+            var expectedTimes = hasPremium ? Times.Once() : Times.Never();
+
+            teamRepositoryMock.Verify(x => x.Add(It.IsAny<Team>()), expectedTimes);
+            teamRepositoryMock.Verify(x => x.Save(), expectedTimes);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf(expectedResponseType));
+
+                var result = (ObjectResult)response.Result;
+                Assert.That(result.StatusCode, Is.EqualTo(expectedStatusCode));
+            }
         }
 
         [Test]
@@ -592,7 +653,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -612,7 +674,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(response, Is.InstanceOf<OkResult>());
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -629,7 +692,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
                 var value = notFoundObjectResult.Value;
                 Assert.That(value, Is.Null);
-            };
+            }
+            ;
         }
 
         [Test]
@@ -642,7 +706,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
             workTrackingSystemConnectionRepositoryMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
-            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);            
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
             workTrackingConnectorServiceMock.Setup(x => x.ValidateTeamSettings(It.IsAny<Team>())).ReturnsAsync(expectedResult);
 
             var subject = CreateSubject();
@@ -652,13 +716,14 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-                
+
                 var okObjectResult = response.Result as OkObjectResult;
                 Assert.That(okObjectResult.StatusCode, Is.EqualTo(200));
 
                 var value = okObjectResult.Value;
                 Assert.That(value, Is.EqualTo(expectedResult));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -666,7 +731,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var teamSettings = new TeamSettingDto { WorkTrackingSystemConnectionId = 1886 };
 
-            workTrackingSystemConnectionRepositoryMock.Setup(x => x.GetById(1886)).Returns((WorkTrackingSystemConnection)null);            
+            workTrackingSystemConnectionRepositoryMock.Setup(x => x.GetById(1886)).Returns((WorkTrackingSystemConnection)null);
 
             var subject = CreateSubject();
 
@@ -675,10 +740,11 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
-                
+
                 var notFoundObjectResult = response.Result as NotFoundResult;
                 Assert.That(notFoundObjectResult.StatusCode, Is.EqualTo(404));
-            };
+            }
+            ;
         }
 
         private Team CreateTeam(int id, string name)
@@ -709,7 +775,8 @@ namespace Lighthouse.Backend.Tests.API
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
 
-            return new TeamsController(teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object);
+            return new TeamsController(
+                teamRepositoryMock.Object, projectRepositoryMock.Object, featureRepositoryMock.Object, workTrackingSystemConnectionRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, workTrackingConnectorFactoryMock.Object, licenseServiceMock.Object);
         }
     }
 }

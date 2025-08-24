@@ -2,6 +2,7 @@ import type React from "react";
 import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
+import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
@@ -53,14 +54,16 @@ const EditProject: React.FC = () => {
 	};
 
 	return (
-		<ModifyProjectSettings
-			title={pageTitle}
-			getProjectSettings={getProjectSettings}
-			getWorkTrackingSystems={getWorkTrackingSystems}
-			getAllTeams={getAllTeams}
-			validateProjectSettings={validateProjectSettings}
-			saveProjectSettings={saveProjectSettings}
-		/>
+		<SnackbarErrorHandler>
+			<ModifyProjectSettings
+				title={pageTitle}
+				getProjectSettings={getProjectSettings}
+				getWorkTrackingSystems={getWorkTrackingSystems}
+				getAllTeams={getAllTeams}
+				validateProjectSettings={validateProjectSettings}
+				saveProjectSettings={saveProjectSettings}
+			/>
+		</SnackbarErrorHandler>
 	);
 };
 

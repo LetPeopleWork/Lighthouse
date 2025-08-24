@@ -1,6 +1,7 @@
 import type React from "react";
 import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -60,15 +61,17 @@ const EditTeamPage: React.FC = () => {
 	};
 
 	return (
-		<ModifyTeamSettings
-			title={pageTitle}
-			getWorkTrackingSystems={getWorkTrackingSystems}
-			getTeamSettings={getTeamSettings}
-			validateTeamSettings={validateTeamSettings}
-			saveTeamSettings={saveTeamSettings}
-			disableSave={!canSave}
-			saveTooltip={saveTooltip}
-		/>
+		<SnackbarErrorHandler>
+			<ModifyTeamSettings
+				title={pageTitle}
+				getWorkTrackingSystems={getWorkTrackingSystems}
+				getTeamSettings={getTeamSettings}
+				validateTeamSettings={validateTeamSettings}
+				saveTeamSettings={saveTeamSettings}
+				disableSave={!canSave}
+				saveTooltip={saveTooltip}
+			/>
+		</SnackbarErrorHandler>
 	);
 };
 

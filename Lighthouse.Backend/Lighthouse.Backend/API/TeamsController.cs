@@ -2,6 +2,8 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +21,7 @@ namespace Lighthouse.Backend.API
         private readonly IWorkItemRepository workItemRepository;
         private readonly ITeamUpdater teamUpdateService;
         private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
+        private readonly ILicenseService licenseService;
 
         public TeamsController(
             IRepository<Team> teamRepository,
@@ -27,7 +30,8 @@ namespace Lighthouse.Backend.API
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
             IWorkItemRepository workItemRepository,
             ITeamUpdater teamUpdateService,
-            IWorkTrackingConnectorFactory workTrackingConnectorFactory)
+            IWorkTrackingConnectorFactory workTrackingConnectorFactory,
+            ILicenseService licenseService)
         {
             this.teamRepository = teamRepository;
             this.projectRepository = projectRepository;
@@ -36,6 +40,7 @@ namespace Lighthouse.Backend.API
             this.workItemRepository = workItemRepository;
             this.teamUpdateService = teamUpdateService;
             this.workTrackingConnectorFactory = workTrackingConnectorFactory;
+            this.licenseService = licenseService;
         }
 
         [HttpGet]
@@ -100,6 +105,24 @@ namespace Lighthouse.Backend.API
             teamSetting.Id = 0;
             var newTeam = new Team();
             SyncTeamWithTeamSettings(newTeam, teamSetting);
+
+            if (!licenseService.CanUsePremiumFeatures())
+            {
+                var existingCsvTeams = teamRepository.GetAll()
+                    .Where(t => t.WorkTrackingSystemConnection.WorkTrackingSystem == WorkTrackingSystems.Csv);
+
+                var csvWorkTrackingSystems = workTrackingSystemConnectionRepository.GetAll()
+                    .Where(wts => wts.WorkTrackingSystem == WorkTrackingSystems.Csv)
+                    .Select(wts => wts.Id);
+
+                if (csvWorkTrackingSystems.Contains(teamSetting.WorkTrackingSystemConnectionId) && existingCsvTeams.Any())
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, new
+                    {
+                        Message = "Only 1 Team with the CSV Provider is allowed - Use the licensed version to get unlimited Teams."
+                    });
+                }
+            }
 
             teamRepository.Add(newTeam);
             await teamRepository.Save();

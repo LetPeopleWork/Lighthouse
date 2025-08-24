@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 {
                     context.Result = new ObjectResult("Access denied: premium features required")
                     {
-                        StatusCode = StatusCodes.Status403Forbidden
+                        StatusCode = StatusCodes.Status403Forbidden,
                     };
 
                     return Task.CompletedTask;
