@@ -135,11 +135,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15), ["frontend", "feature"], "https://system.com/item/1", "1", 8, "Frontend Team");
-                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10), ["critical"], string.Empty, "2", 3, string.Empty);
-                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20), ["maintenance", "blocked"], string.Empty, "3", 1, "Frontend Team");
-                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28), ["backend", "security"], "https://system.com/item/4", "4", 5, "Backend Team");
-                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20), [], string.Empty, "5", 2, string.Empty);
+                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15), ["frontend", "feature"], "https://system.com/item/1", 8, "Frontend Team");
+                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10), ["critical"], string.Empty, 3, string.Empty);
+                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20), ["maintenance", "blocked"], string.Empty, 1, "Frontend Team");
+                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28), ["backend", "security"], "https://system.com/item/4", 5, "Backend Team");
+                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20), [], string.Empty, 2, string.Empty);
             }
         }
 
@@ -153,11 +153,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15), ["frontend", "feature"], "https://system.com/item/1", "1", 8, "Frontend Team");
-                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10), ["critical", "bug"], "https://system.com/item/2", "2", 3, "Platform Team");
-                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20), ["maintenance", "blocked"], string.Empty, "3", 1, "Operations");
-                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28), ["backend", "security"], "https://system.com/item/4", "4", 5, "Backend Team");
-                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20), [], "https://system.com/item/5", "5", 2, "Backend Team");
+                VerifyOptionalFeatureFields(features[0], new DateTime(2025, 01, 15), ["frontend", "feature"], "https://system.com/item/1", 8, "Frontend Team");
+                VerifyOptionalFeatureFields(features[1], new DateTime(2025, 01, 10), ["critical", "bug"], "https://system.com/item/2", 3, "Platform Team");
+                VerifyOptionalFeatureFields(features[2], new DateTime(2025, 01, 20), ["maintenance", "blocked"], string.Empty, 1, "Operations");
+                VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28), ["backend", "security"], "https://system.com/item/4", 5, "Backend Team");
+                VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20), [], "https://system.com/item/5", 2, "Backend Team");
             }
         }
 
@@ -190,14 +190,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private void VerifyOptionalFeatureFields(Feature feature, DateTime? createdDate, string[] tags, string? url, string order, int estimatedSize, string owningTeam)
+        private void VerifyOptionalFeatureFields(Feature feature, DateTime? createdDate, string[] tags, string? url, int estimatedSize, string owningTeam)
         {
             VerifyOptionalWorkItemFields(feature, createdDate, string.Empty, tags, url);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.EstimatedSize, Is.EqualTo(estimatedSize));
                 Assert.That(feature.OwningTeam, Is.EqualTo(owningTeam));
-                Assert.That(feature.Order, Is.EqualTo(order));
             }
         }
 

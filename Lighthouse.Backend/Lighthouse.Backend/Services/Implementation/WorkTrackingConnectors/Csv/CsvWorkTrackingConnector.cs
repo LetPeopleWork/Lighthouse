@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private const string ParentReferenceIdHeader = "ParentReferenceId";
         private const string TagsHeader = "Tags";
         private const string UrlHeader = "Url";
-        private const string OrderHeader = "Order";
 
         // Feature Optional Columns
         private const string OwningTeamHeader = "OwningTeam";
@@ -163,7 +162,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var parentReferenceId = csv.GetField(ParentReferenceIdHeader)?.Trim() ?? string.Empty;
             var tags = csv.GetField(TagsHeader)?.Split('|').Select(x => x.Trim()) ?? [];
             var url = csv.GetField(UrlHeader)?.Trim() ?? string.Empty;
-            var order = csv.GetField(OrderHeader)?.Trim() ?? $"{orderCounter++}";
+            var order = $"{orderCounter++}";
 
             var workItemBase = new WorkItemBase
             {
