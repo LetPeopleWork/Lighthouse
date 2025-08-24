@@ -1,6 +1,6 @@
 ID,Name,State,Type,StartedDate,ClosedDate,CreatedDate,ParentReferenceId,Tags,Url
 ITEM-001,User Story Title,In Progress,User Story,2025-01-20,2025-01-25,2025-01-15,EPIC-001,frontend|feature,https://system.com/item/1
-ITEM-002,Bug Title,Done,Bug,2025-01-12,2025-01-18,2025-01-10,EPIC-002,bug|critical,https://system.com/item/2
-ITEM-003,Database cleanup task,To Do,Task,2025-01-25,,2025-01-20,,maintenance|backend,
+ITEM-002,Bug Title,Done,Bug,2025-01-12,2025-01-18,2025-01-10,,critical,
+ITEM-003,Database cleanup task,To Do,Task,2025-01-25,,2025-01-20,EPIC-001,maintenance|blocked,
 ITEM-004,Refactor auth module,In Progress,Task,2025-01-30,2025-02-05,2025-01-28,EPIC-003,backend|security,https://system.com/item/4
-ITEM-005,Improve logging,Done,Task,2025-01-22,2025-01-28,2025-01-20,EPIC-004,maintenance,https://system.com/item/5
+ITEM-005,Improve logging,Done,Task,2025-01-22,2025-01-28,2025-01-20,,,

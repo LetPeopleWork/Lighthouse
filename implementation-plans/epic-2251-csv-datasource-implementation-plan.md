@@ -124,44 +124,6 @@ Consultants may want to use Lighthouse for data analysis but may not be allowed 
 - Regular project limits (1 without premium) remain unchanged
 
 
-### Story 3023: Handle Data Loading for CSV Team
-**Priority**: High (Core Feature)  
-**Effort**: Large  
-
-**Requirements**:
-- Convert CSV data to standard Lighthouse work items using existing data models
-- Implement no-op refresh strategy (regular updates do nothing)
-- Complete data replacement approach (delete existing + import new)
-- Integration with existing work item storage and state management
-
-**Implementation Tasks**:
-- [ ] Implement `CsvWorkTrackingConnector.GetWorkItemsForTeam()` as no-op (returns empty/cached results)
-- [ ] Create CSV parsing logic to convert rows to standard `WorkItem` objects
-- [ ] Implement state mapping from CSV states to existing state categories (Todo, Doing, Done)
-- [ ] Implement complete data replacement workflow (delete all existing + import new work items)
-- [ ] Use existing work item creation APIs and data storage mechanisms
-- [ ] Add comprehensive error handling for malformed CSV data (fail-fast approach)
-- [ ] Integrate with existing team configuration (states, work item types, etc.)
-- [ ] Convert CSV dates to proper DateTime objects with timezone handling
-- [ ] Implement audit logging for data replacement operations
-
-**Data Import Strategy**:
-- Complete replacement model: delete all existing work items before importing new ones
-- Use existing state configuration and work item types from team settings
-- Allow team settings modification after import (states, work item types, etc.)
-- Map CSV states to configured state categories with user customization options
-
-**Acceptance Criteria**:
-- CSV data successfully converted to standard Lighthouse work items
-- State categories properly mapped to existing team configuration
-- Date fields correctly parsed and stored with proper timezone handling
-- Complete data replacement works reliably (old data deleted, new data imported)
-- Teams function identically to Jira/ADO teams after CSV import
-- Regular refresh operations complete without errors (but change no data)
-- Work items display correctly in all Lighthouse UI components
-
----
-
 ### Story 3024: Make sure Validate/Save works for Projects too
 **Priority**: Medium (Feature Extension)  
 **Effort**: Medium  

@@ -17,7 +17,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private const string StartedDateHeader = "StartedDate";
         private const string ClosedDateHeader = "ClosedDate";
 
+        private const string CreatedDateHeader = "CreatedDate";
+        private const string ParentReferenceIdHeader = "ParentReferenceId";
+        private const string TagsHeader = "Tags";
+        private const string UrlHeader = "Url";
+
         private readonly ILogger<CsvWorkTrackingConnector> logger;
+
+        private static int orderCounter = 0;
 
         private static readonly string[] requiredTeamColumns = [IdHeader, NameHeader, StateHeader, TypeHeader, StartedDateHeader, ClosedDateHeader];
 
@@ -28,8 +35,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
-            // CSV connector uses file uploads during team creation/edit - runtime refresh is a no-op.
-            return Task.FromResult(Enumerable.Empty<WorkItem>());
+            var workItems = new List<WorkItem>();
+
+            using var csv = ReadCsv(team.WorkItemQuery);
+
+            while (csv.Read())
+            {
+                var workItemBase = CreateWorkItemBaseForRow(csv, team);
+                var workItem = new WorkItem(workItemBase, team);
+
+                workItems.Add(workItem);
+            }
+
+            return Task.FromResult(workItems.AsEnumerable());
         }
 
         public Task<List<Feature>> GetFeaturesForProject(Project project)
@@ -65,7 +83,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
         {
-            // CSV is a built-in connector with no external connection to validate.
             return Task.FromResult(true);
         }
 
@@ -96,6 +113,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(true);
         }
 
+        private WorkItemBase CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
+        {
+            var referenceId = csv.GetField(IdHeader).Trim();
+            var name = csv.GetField(NameHeader).Trim();
+            var state = csv.GetField(StateHeader).Trim();
+            var type = csv.GetField(TypeHeader).Trim();
+            var startedDate = csv.GetField<DateTime?>(StartedDateHeader);
+            var closedDate = csv.GetField<DateTime?>(ClosedDateHeader);
+            var stateCategory = owner.MapStateToStateCategory(state);
+
+            var createdDate = csv.GetField<DateTime?>(CreatedDateHeader);
+            var parentReferenceId = csv.GetField(ParentReferenceIdHeader)?.Trim() ?? string.Empty;
+            var tags = csv.GetField(TagsHeader)?.Split('|').Select(x => x.Trim()) ?? [];
+            var url = csv.GetField(UrlHeader)?.Trim() ?? string.Empty;
+
+            var workItemBase = new WorkItemBase
+            {
+                ReferenceId = referenceId,
+                Name = name,
+                State = state,
+                StateCategory = stateCategory,
+                Type = type,
+                StartedDate = startedDate,
+                ClosedDate = closedDate,
+                CreatedDate = createdDate,
+                ParentReferenceId = parentReferenceId,
+                Tags = [.. tags],
+                Url = url,
+                Order = $"{orderCounter++}",
+            };
+
+            return workItemBase;
+        }
+
         private bool IsValidCsv(string csvContent)
         {
             using var reader = new StringReader(csvContent);
@@ -106,7 +157,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 return false;
             }
 
-            var csv = ReadCsv(csvContent);
+            using var csv = ReadCsv(csvContent);
             var header = csv.HeaderRecord ?? [];
             var missing = requiredTeamColumns.Except(header, StringComparer.OrdinalIgnoreCase).ToArray();
 
@@ -115,8 +166,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private CsvReader ReadCsv(string csvContent)
         {
-            var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = CsvDelimiter, IgnoreBlankLines = true };
-            using var csv = new CsvReader(new StringReader(csvContent), csvConfig);
+            var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = CsvDelimiter, IgnoreBlankLines = true, MissingFieldFound = null };
+            var csv = new CsvReader(new StringReader(csvContent), csvConfig);
 
             csv.Read();
             csv.ReadHeader();

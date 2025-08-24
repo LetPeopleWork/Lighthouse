@@ -238,18 +238,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
 
                 if (!workItemReferences.Any())
-                    return Array.Empty<AdoWorkItem>();
+                    return [];
 
                 return await GetAdoWorkItemsById(workItemReferences.Select(wi => wi.Id), workItemQueryOwner, additionalFields);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to fetch ADO work items for query '{Query}'", query);
-                return Array.Empty<AdoWorkItem>();
+                return [];
             }
         }
 
-        private async Task<T> ExecuteWithThrottle<T>(WorkItemTrackingHttpClient witClient, string url, Func<Task<T>> action)
+        private async Task<T> ExecuteWithThrottle<T>(string url, Func<Task<T>> action)
         {
             var limiter = GetLimiter(url);
             await limiter.WaitAsync();
@@ -309,20 +309,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             try
             {
-                var result = await ExecuteWithThrottle(witClient, witClient.BaseAddress!.ToString(),
+                var result = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(),
                     () => witClient.QueryByWiqlAsync(new Wiql { Query = query }));
 
-                return result.WorkItems ?? Array.Empty<WorkItemReference>();
+                return result.WorkItems ?? [];
             }
             catch (VssServiceException ex)
             {
                 logger.LogError(ex, "Error while querying Work Items with Query '{Query}'", query);
-                return Array.Empty<WorkItemReference>();
+                return [];
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Unexpected error while querying Work Items with Query '{Query}'", query);
-                return Array.Empty<WorkItemReference>();
+                return [];
             }
         }
 
@@ -360,7 +360,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             foreach (var chunk in workItemIds.Chunk(maxChunkSize))
             {
-                var result = await ExecuteWithThrottle(witClient, url, () => witClient.GetWorkItemsAsync(chunk, fields, expand: expand));
+                var result = await ExecuteWithThrottle(url, () => witClient.GetWorkItemsAsync(chunk, fields, expand: expand));
                 workItems.AddRange(result);
             }
 
@@ -418,7 +418,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             if (!workItemId.HasValue) return null;
 
-            var revisions = await ExecuteWithThrottle(witClient, witClient.BaseAddress!.ToString(), () => witClient.GetRevisionsAsync(workItemId.Value));
+            var revisions = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(), () => witClient.GetRevisionsAsync(workItemId.Value));
             var movedToStateCategory = new List<DateTime>();
             var previousState = string.Empty;
 
