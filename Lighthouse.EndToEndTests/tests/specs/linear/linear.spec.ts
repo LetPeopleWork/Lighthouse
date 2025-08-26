@@ -162,7 +162,7 @@ test("should be able to handle a team defined in Linear", async ({
 
 		await test.step("Select Work Tracking System", async () => {
 			await newProjectPage.selectWorkTrackingSystem(workTrackingSystem.name);
-			
+
 			await newProjectPage.setWorkItemQuery(newProject.name);
 
 			// Now we have all default configuration set

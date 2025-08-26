@@ -95,7 +95,7 @@ export abstract class BaseEditPage<T> {
 	async selectWorkTrackingSystem(
 		workTrackingSystemName: string,
 	): Promise<void> {
-		const combobox = this.page.locator('.MuiSelect-select').first();
+		const combobox = this.page.locator(".MuiSelect-select").first();
 		await combobox.click();
 
 		await this.page

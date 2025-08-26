@@ -305,7 +305,7 @@ for (const teamConfiguration of newTeamConfigurations) {
 				const workTrackingSystem =
 					testData.connections[teamConfiguration.workTrackingSystemIndex];
 				await newProjectPage.selectWorkTrackingSystem(workTrackingSystem.name);
-				
+
 				await newProjectPage.setWorkItemQuery(
 					teamConfiguration.projectConfiguration.validQuery,
 				);
