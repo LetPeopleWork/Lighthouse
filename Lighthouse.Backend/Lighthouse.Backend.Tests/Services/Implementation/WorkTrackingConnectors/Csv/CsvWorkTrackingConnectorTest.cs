@@ -1,4 +1,7 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -7,6 +10,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 {
     public class CsvWorkTrackingConnectorTest
     {
+        private WorkTrackingSystemFactory workTrackingSystemFactory;
+
+        [SetUp]
+        public void SetUp()
+        {
+            workTrackingSystemFactory = new WorkTrackingSystemFactory(Mock.Of<ILogger<WorkTrackingSystemFactory>>());
+        }
+
         [Test]
         [TestCase("empty-file.txt", false)]
         [TestCase("invalid-missing-required.csv", false)]
@@ -21,6 +32,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = new Team
             {
                 WorkItemQuery = LoadCsvFile(csvFileName),
+                WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
             var isValid = await subject.ValidateTeamSettings(team);
@@ -100,6 +112,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = new Project
             {
                 WorkItemQuery = LoadCsvFile(csvFileName),
+                WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
             var isValid = await subject.ValidateProjectSettings(project);
@@ -215,6 +228,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ToDoStates = new List<string> { "To Do" },
                 DoingStates = new List<string> { "In Progress" },
                 DoneStates = new List<string> { "Done" },
+                WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
             return team;
@@ -229,9 +243,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ToDoStates = new List<string> { "To Do" },
                 DoingStates = new List<string> { "In Progress" },
                 DoneStates = new List<string> { "Done" },
+                WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
             return project;
+        }
+
+        private WorkTrackingSystemConnection CreateCsvWorkTrackingConnection()
+        {
+            var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+            connection.Name = "CSV";
+
+            return connection;
         }
 
         private CsvWorkTrackingConnector CreateSubject()

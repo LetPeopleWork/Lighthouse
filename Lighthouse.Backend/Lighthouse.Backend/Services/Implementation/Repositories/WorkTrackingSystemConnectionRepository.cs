@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +9,14 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     public class WorkTrackingSystemConnectionRepository : RepositoryBase<WorkTrackingSystemConnection>
     {
         private readonly ILogger<WorkTrackingSystemConnectionRepository> logger;
+        private readonly IWorkTrackingSystemFactory workTrackingSystemFactory;
 
-        public WorkTrackingSystemConnectionRepository(LighthouseAppContext context, ILogger<WorkTrackingSystemConnectionRepository> logger) : base(context, (context) => context.WorkTrackingSystemConnections, logger)
+        public WorkTrackingSystemConnectionRepository(
+            LighthouseAppContext context, ILogger<WorkTrackingSystemConnectionRepository> logger, IWorkTrackingSystemFactory workTrackingSystemFactory)
+            : base(context, (context) => context.WorkTrackingSystemConnections, logger)
         {
             this.logger = logger;
+            this.workTrackingSystemFactory = workTrackingSystemFactory;
             SeedBuiltInConnections();
         }
 
@@ -31,12 +36,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             var csvConnection = GetByPredicate(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv);
             if (csvConnection == null)
             {
-                var csvWorkTrackingConnection = new WorkTrackingSystemConnection
-                {
-                    Name = "CSV",
-                    WorkTrackingSystem = WorkTrackingSystems.Csv,
-                    DataSourceType = DataSourceType.File,
-                };
+                var csvWorkTrackingConnection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+                csvWorkTrackingConnection.Name = "CSV";
 
                 Add(csvWorkTrackingConnection);
                 SaveSync();

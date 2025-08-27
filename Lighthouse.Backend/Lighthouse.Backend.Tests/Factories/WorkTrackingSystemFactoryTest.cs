@@ -29,19 +29,6 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
-        public void CreateOptionsForWorkTrackingSystem_GivenCsv_ReturnsNoOptions()
-        {
-            var subject = CreateSubject();
-
-            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(connection.Options, Has.Count.EqualTo(0));
-            };
-        }
-
-        [Test]
         public void CreateOptionsForWorkTrackingSystem_GivenAzureDevOps_ReturnsCorrectOptions()
         {
             var subject = CreateSubject();
@@ -86,9 +73,55 @@ namespace Lighthouse.Backend.Tests.Factories
             };
         }
 
+        [Test]
+        public void CreateOptionsForWorkTrackingSystem_GivenCsv_ReturnsCorrectOptions()
+        {
+            var subject = CreateSubject();
+
+            var connection = subject.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(connection.Options, Has.Count.EqualTo(13));
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.Delimiter), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.IdHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.NameHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.StateHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.TypeHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.StartedDateHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.ClosedDateHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.CreatedDateHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.ParentReferenceIdHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.TagsHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.UrlHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.OwningTeamHeader), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.EstimatedSizeHeader), Is.True);
+
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.Delimiter), Is.EqualTo(","));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.IdHeader), Is.EqualTo("ID"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.NameHeader), Is.EqualTo("Name"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.StateHeader), Is.EqualTo("State"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.TypeHeader), Is.EqualTo("Type"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.StartedDateHeader), Is.EqualTo("StartedDate"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.ClosedDateHeader), Is.EqualTo("ClosedDate"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.CreatedDateHeader), Is.EqualTo("CreatedDate"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.ParentReferenceIdHeader), Is.EqualTo("ParentReferenceId"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.TagsHeader), Is.EqualTo("Tags"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.UrlHeader), Is.EqualTo("Url"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.OwningTeamHeader), Is.EqualTo("OwningTeam"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.EstimatedSizeHeader), Is.EqualTo("EstimatedSize"));
+            }
+            ;
+        }
+
         private bool ContainsOption(IEnumerable<WorkTrackingSystemConnectionOption> options, string key, bool isSecret = false, bool isOptional = false)
         {
             return options.Any(option => option.Key == key && option.IsSecret == isSecret && option.IsOptional == isOptional);
+        }
+
+        private string GetOptionValue(IEnumerable<WorkTrackingSystemConnectionOption> options, string key)
+        {
+            return options.Single(o => o.Key == key).Value;
         }
 
         private WorkTrackingSystemFactory CreateSubject()

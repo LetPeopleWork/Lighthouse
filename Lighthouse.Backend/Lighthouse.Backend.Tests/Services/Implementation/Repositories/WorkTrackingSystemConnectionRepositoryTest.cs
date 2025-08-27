@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -47,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             subject.Add(connection);
             await subject.Save();
 
-            var storedOption = DatabaseContext.WorkTrackingSystemConnections.Include(w => w.Options).SelectMany(w => w.Options).Single();
+            var storedOption = DatabaseContext.WorkTrackingSystemConnections.Include(w => w.Options).SelectMany(w => w.Options).Single(o => o.Key == "NotSecret");
 
             Assert.That(storedOption.Value, Is.EqualTo(optionValue));
         }
@@ -65,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             subject.Add(connection);
             await subject.Save();
 
-            var storedOption = DatabaseContext.WorkTrackingSystemConnections.Include(w => w.Options).SelectMany(w => w.Options).Single();
+            var storedOption = DatabaseContext.WorkTrackingSystemConnections.Include(w => w.Options).SelectMany(w => w.Options).Single(o => o.Key == "secret");
 
             Assert.That(storedOption.Value, Is.Not.EqualTo(optionValue));
         }
@@ -119,15 +121,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 .ToList();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(csvConnectionsAfterFirst.Count, Is.EqualTo(1));
-                Assert.That(csvConnectionsAfterSecond.Count, Is.EqualTo(1));
+                Assert.That(csvConnectionsAfterFirst, Has.Count.EqualTo(1));
+                Assert.That(csvConnectionsAfterSecond, Has.Count.EqualTo(1));
                 Assert.That(csvConnectionsAfterFirst.Single().Id, Is.EqualTo(csvConnectionsAfterSecond.Single().Id));
             }
         }
 
-        private WorkTrackingSystemConnectionRepository CreateSubject()
+        private IRepository<WorkTrackingSystemConnection> CreateSubject()
         {
-            return new WorkTrackingSystemConnectionRepository(DatabaseContext, Mock.Of<ILogger<WorkTrackingSystemConnectionRepository>>());
+            return ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new ArgumentNullException("Could not resolve repository");
         }
     }
 }

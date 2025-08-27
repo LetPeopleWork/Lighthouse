@@ -1,38 +1,18 @@
 using CsvHelper;
 using CsvHelper.Configuration;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using System.Globalization;
+using System.Reflection.PortableExecutable;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 {
     public class CsvWorkTrackingConnector : IWorkTrackingConnector
     {
-        private const string CsvDelimiter = ",";
-
-        // Common Required Columns
-        private const string IdHeader = "ID";
-        private const string NameHeader = "Name";
-        private const string StateHeader = "State";
-        private const string TypeHeader = "Type";
-        private const string StartedDateHeader = "StartedDate";
-        private const string ClosedDateHeader = "ClosedDate";
-
-        // Common Optional Columns
-        private const string CreatedDateHeader = "CreatedDate";
-        private const string ParentReferenceIdHeader = "ParentReferenceId";
-        private const string TagsHeader = "Tags";
-        private const string UrlHeader = "Url";
-
-        // Feature Optional Columns
-        private const string OwningTeamHeader = "OwningTeam";
-        private const string EstimatedSizeHeader = "EstimatedSize";
-
         private readonly ILogger<CsvWorkTrackingConnector> logger;
 
         private static int orderCounter = 0;
-
-        private static readonly string[] requiredTeamColumns = [IdHeader, NameHeader, StateHeader, TypeHeader, StartedDateHeader, ClosedDateHeader];
 
         public CsvWorkTrackingConnector(ILogger<CsvWorkTrackingConnector> logger)
         {
@@ -43,7 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         {
             var workItems = new List<WorkItem>();
 
-            using var csv = ReadCsv(team.WorkItemQuery);
+            using var csv = ReadCsv(team);
 
             while (csv.Read())
             {
@@ -60,15 +40,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         {
             var features = new List<Feature>();
 
-            using var csv = ReadCsv(project.WorkItemQuery);
+            using var csv = ReadCsv(project);
 
             while (csv.Read())
             {
                 var workItemBase = CreateWorkItemBaseForRow(csv, project);
                 var feature = new Feature(workItemBase);
 
-                var owningTeam = csv.GetField(OwningTeamHeader)?.Trim() ?? string.Empty;
-                var estimatedSizeString = csv.GetField(EstimatedSizeHeader)?.Trim();
+                var owningTeam = csv.GetField(GetHeaderName(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
+                var estimatedSizeString = csv.GetField(GetHeaderName(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
                 var estimatedSize = 0;
 
                 if (!string.IsNullOrEmpty(estimatedSizeString) && int.TryParse(estimatedSizeString, out var parsedEstimatedSize))
@@ -137,7 +117,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             try
             {
-                var isValid = IsValidCsv(csvContent);
+                var isValid = IsValidCsv(owner);
 
                 return Task.FromResult(isValid);
             }
@@ -150,18 +130,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private WorkItemBase CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
         {
-            var referenceId = csv.GetField(IdHeader).Trim();
-            var name = csv.GetField(NameHeader).Trim();
-            var state = csv.GetField(StateHeader).Trim();
-            var type = csv.GetField(TypeHeader).Trim();
-            var startedDate = csv.GetField<DateTime?>(StartedDateHeader);
-            var closedDate = csv.GetField<DateTime?>(ClosedDateHeader);
+            var referenceId = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection ,CsvWorkTrackingOptionNames.IdHeader)).Trim();
+            var name = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
+            var state = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateHeader)).Trim();
+            var type = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TypeHeader)).Trim();
+            var startedDate = csv.GetField<DateTime?>(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StartedDateHeader));
+            var closedDate = csv.GetField<DateTime?>(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ClosedDateHeader));
             var stateCategory = owner.MapStateToStateCategory(state);
 
-            var createdDate = csv.GetField<DateTime?>(CreatedDateHeader);
-            var parentReferenceId = csv.GetField(ParentReferenceIdHeader)?.Trim() ?? string.Empty;
-            var tags = csv.GetField(TagsHeader)?.Split('|').Select(x => x.Trim()) ?? [];
-            var url = csv.GetField(UrlHeader)?.Trim() ?? string.Empty;
+            var createdDate = csv.GetField<DateTime?>(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.CreatedDateHeader));
+            var parentReferenceId = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ParentReferenceIdHeader))?.Trim() ?? string.Empty;
+            var tags = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader))?.Split('|').Select(x => x.Trim()) ?? [];
+            var url = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.UrlHeader))?.Trim() ?? string.Empty;
             var order = $"{orderCounter++}";
 
             var workItemBase = new WorkItemBase
@@ -183,32 +163,67 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return workItemBase;
         }
 
-        private bool IsValidCsv(string csvContent)
+        private bool IsValidCsv(IWorkItemQueryOwner owner)
         {
-            using var reader = new StringReader(csvContent);
-            var headerRow = reader.ReadLine();
-
-            if (!headerRow.Contains(CsvDelimiter))
+            var csvContent = owner.WorkItemQuery;
+            if (string.IsNullOrEmpty(csvContent))
             {
                 return false;
             }
 
-            using var csv = ReadCsv(csvContent);
+            using var reader = new StringReader(csvContent);
+            var headerRow = reader.ReadLine();
+
+            var delimiter = GetDelimiter(owner.WorkTrackingSystemConnection);
+
+            if (!headerRow.Contains(delimiter))
+            {
+                return false;
+            }
+
+            using var csv = ReadCsv(owner);
             var header = csv.HeaderRecord ?? [];
-            var missing = requiredTeamColumns.Except(header, StringComparer.OrdinalIgnoreCase).ToArray();
+
+
+            var requiredColumns = GetRequiredColumns(owner.WorkTrackingSystemConnection);
+            var missing = requiredColumns.Except(header, StringComparer.OrdinalIgnoreCase).ToArray();
 
             return missing.Length == 0;
         }
 
-        private CsvReader ReadCsv(string csvContent)
+        private CsvReader ReadCsv(IWorkItemQueryOwner owner)
         {
-            var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = CsvDelimiter, IgnoreBlankLines = true, MissingFieldFound = null };
-            var csv = new CsvReader(new StringReader(csvContent), csvConfig);
+            string delimiter = GetDelimiter(owner.WorkTrackingSystemConnection);
+            var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = delimiter, IgnoreBlankLines = true, MissingFieldFound = null };
+            var csv = new CsvReader(new StringReader(owner.WorkItemQuery), csvConfig);
 
             csv.Read();
             csv.ReadHeader();
 
             return csv;
+        }
+
+        private string[] GetRequiredColumns(WorkTrackingSystemConnection connection)
+        {
+            return [
+                GetHeaderName(connection, CsvWorkTrackingOptionNames.IdHeader),
+                GetHeaderName(connection, CsvWorkTrackingOptionNames.NameHeader),
+                GetHeaderName(connection, CsvWorkTrackingOptionNames.StateHeader),
+                GetHeaderName(connection, CsvWorkTrackingOptionNames.TypeHeader),
+                GetHeaderName(connection, CsvWorkTrackingOptionNames.StartedDateHeader),
+                GetHeaderName(connection, CsvWorkTrackingOptionNames.ClosedDateHeader)
+                ];
+        }
+
+
+        private string GetHeaderName(WorkTrackingSystemConnection connection, string headerKey)
+        {
+            return connection.Options.Single(o => o.Key == headerKey).Value;
+        }
+
+        private string GetDelimiter(WorkTrackingSystemConnection connection)
+        {
+            return connection.Options.Single(o => o.Key == CsvWorkTrackingOptionNames.Delimiter).Value;
         }
     }
 }

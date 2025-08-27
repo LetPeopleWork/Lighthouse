@@ -20,7 +20,8 @@ namespace Lighthouse.Backend.Factories
             var newConnection = new WorkTrackingSystemConnection
             {
                 Name = $"New {workTrackingSystem} Connection",
-                WorkTrackingSystem = workTrackingSystem
+                WorkTrackingSystem = workTrackingSystem,
+                DataSourceType = workTrackingSystem == WorkTrackingSystems.Csv ? DataSourceType.File : DataSourceType.Query,
             };
 
             var defaultOptions = CreateOptionsForWorkTrackingSystem(workTrackingSystem);
@@ -50,7 +51,74 @@ namespace Lighthouse.Backend.Factories
 
         private List<WorkTrackingSystemConnectionOption> GetOptionsForCsv()
         {
-            return new List<WorkTrackingSystemConnectionOption>();
+            return new List<WorkTrackingSystemConnectionOption>
+            {
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.Delimiter,
+                    Value = ",",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.IdHeader,
+                    Value = "ID",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.NameHeader,
+                    Value = "Name",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.StateHeader,
+                    Value = "State",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.TypeHeader,
+                    Value = "Type",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.StartedDateHeader,
+                    Value = "StartedDate",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.ClosedDateHeader,
+                    Value = "ClosedDate",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.CreatedDateHeader,
+                    Value = "CreatedDate",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.ParentReferenceIdHeader,
+                    Value = "ParentReferenceId",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.TagsHeader,
+                    Value = "Tags",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.UrlHeader,
+                    Value = "Url",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.OwningTeamHeader,
+                    Value = "OwningTeam",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.EstimatedSizeHeader,
+                    Value = "EstimatedSize",
+                },
+            };
         }
 
         private List<WorkTrackingSystemConnectionOption> GetOptionsForJira()
