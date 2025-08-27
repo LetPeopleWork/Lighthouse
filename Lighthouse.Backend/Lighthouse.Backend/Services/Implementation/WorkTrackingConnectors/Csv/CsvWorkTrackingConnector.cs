@@ -4,7 +4,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using System.Globalization;
-using System.Reflection.PortableExecutable;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 {
@@ -93,6 +92,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
         {
+            // TODO: Validate CSV Options
             return Task.FromResult(true);
         }
 
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private WorkItemBase CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
         {
-            var referenceId = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection ,CsvWorkTrackingOptionNames.IdHeader)).Trim();
+            var referenceId = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
             var name = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
             var state = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateHeader)).Trim();
             var type = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TypeHeader)).Trim();
@@ -197,10 +197,36 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = delimiter, IgnoreBlankLines = true, MissingFieldFound = null };
             var csv = new CsvReader(new StringReader(owner.WorkItemQuery), csvConfig);
 
+            ConfigureDateTimeParsing(csv);
+
             csv.Read();
             csv.ReadHeader();
 
             return csv;
+        }
+        private void ConfigureDateTimeParsing(CsvReader csv)
+        {
+            var options = csv.Context.TypeConverterOptionsCache.GetOptions<DateTime?>();
+            options.Formats =
+            [
+                "yyyy-MM-dd",
+                "yyyy-MM-ddTHH:mm:ss",
+                "yyyy-MM-ddTHH:mm:ssZ",
+                "yyyy-MM-ddTHH:mm:ss.fff",
+                "yyyy-MM-ddTHH:mm:ss.fffZ",
+                "yyyy-MM-dd HH:mm:ss",
+                "yyyy-MM-dd HH:mm:ss.fff",
+                "MM/dd/yyyy",
+                "MM/dd/yyyy HH:mm:ss",
+                "MM/dd/yyyy hh:mm:ss tt",
+                "dd.MM.yyyy",
+                "dd.MM.yyyy HH:mm:ss",
+                "yyyyMMdd",
+                "yyyyMMdd HHmmss",
+                "ddd, dd MMM yyyy HH:mm:ss 'GMT'",
+                "yyyy-MM-ddTHH:mm:ssK",
+                "yyyy-MM-ddTHH:mm:ss.fffK"
+            ];
         }
 
         private string[] GetRequiredColumns(WorkTrackingSystemConnection connection)
