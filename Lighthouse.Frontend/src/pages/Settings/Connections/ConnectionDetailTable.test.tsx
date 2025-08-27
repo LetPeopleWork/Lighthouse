@@ -74,26 +74,6 @@ describe("ConnectionDetailTable", () => {
 		expect(mockHandleDeleteConnection).toHaveBeenCalledWith(mockConnections[0]);
 	});
 
-	it("should hide edit and delete buttons for CSV connections", () => {
-		render(
-			<ConnectionDetailTable
-				workTrackingSystemConnections={mockConnectionsWithCsv}
-				onEditConnectionButtonClicked={mockOnEditConnectionButtonClicked}
-				handleDeleteConnection={mockHandleDeleteConnection}
-			/>,
-		);
-
-		expect(screen.getByText("CSV")).toBeInTheDocument();
-
-		// Should have 2 edit buttons (for Jira and ADO, but not CSV)
-		const editButtons = screen.getAllByTestId("EditIcon");
-		expect(editButtons).toHaveLength(2);
-
-		// Should have 2 delete buttons (for Jira and ADO, but not CSV)
-		const deleteButtons = screen.getAllByTestId("DeleteIcon");
-		expect(deleteButtons).toHaveLength(2);
-	});
-
 	// Note: The following tests verify the component can handle CSV connections,
 	// but in practice CSV connections are filtered out at the parent component level
 
@@ -127,7 +107,7 @@ describe("ConnectionDetailTable", () => {
 		); // Jira connection
 	});
 
-	it("should display CSV connection name but without action buttons", () => {
+	it("should display CSV connection name but with disabled delete button", () => {
 		render(
 			<ConnectionDetailTable
 				workTrackingSystemConnections={mockConnectionsWithCsv}
@@ -143,13 +123,15 @@ describe("ConnectionDetailTable", () => {
 		const csvRow = screen.getByText("CSV").closest("tr");
 		expect(csvRow).toBeInTheDocument();
 
-		// The CSV row should not contain any buttons
-		// We can verify this by checking that the actions cell is empty or contains no buttons
+		// The CSV row should contain the edit button and a disabled delete button
 		const csvActionsCell = csvRow?.querySelector("td:nth-child(2)");
 		expect(csvActionsCell).toBeInTheDocument();
 
-		// The CSV actions cell should not contain any IconButton elements
+		// The CSV actions cell should contain edit and IconButton elements
 		const csvIconButtons = csvActionsCell?.querySelectorAll("button");
-		expect(csvIconButtons).toHaveLength(0);
+		expect(csvIconButtons).toHaveLength(2);
+
+		expect(csvIconButtons?.[0]).not.toBeDisabled();
+		expect(csvIconButtons?.[1]).toBeDisabled();
 	});
 });

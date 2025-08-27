@@ -39,18 +39,17 @@ const ConnectionDetailTable: React.FC<ConnectionDetailTableProps> = ({
 						<TableRow key={system.id}>
 							<TableCell>{system.name}</TableCell>
 							<TableCell>
-								{system.workTrackingSystem !== "Csv" && (
-									<>
-										<IconButton
-											onClick={() => onEditConnectionButtonClicked(system)}
-										>
-											<EditIcon />
-										</IconButton>
-										<IconButton onClick={() => handleDeleteConnection(system)}>
-											<DeleteIcon />
-										</IconButton>
-									</>
-								)}
+								<IconButton
+									onClick={() => onEditConnectionButtonClicked(system)}
+								>
+									<EditIcon />
+								</IconButton>
+								<IconButton
+									onClick={() => handleDeleteConnection(system)}
+									disabled={system.dataSourceType === "File"}
+								>
+									<DeleteIcon />
+								</IconButton>
 							</TableCell>
 						</TableRow>
 					))}

@@ -122,11 +122,6 @@ const WorkTrackingSystemConnectionSettings: React.FC = () => {
 		initializeData();
 	}, [initializeData]);
 
-	// Filter out CSV connections from the settings UI (CSV is built-in and non-configurable)
-	const configurableConnections = workTrackingSystemConnections.filter(
-		(connection) => connection.workTrackingSystem !== "Csv",
-	);
-
 	return (
 		<>
 			<InputGroup title={"Work Tracking Systems"}>
@@ -148,7 +143,7 @@ const WorkTrackingSystemConnectionSettings: React.FC = () => {
 						</Grid>
 						<Grid size={{ xs: 12 }}>
 							<ConnectionDetailTable
-								workTrackingSystemConnections={configurableConnections}
+								workTrackingSystemConnections={workTrackingSystemConnections}
 								onEditConnectionButtonClicked={onEditConnectionButtonClicked}
 								handleDeleteConnection={handleDeleteConnection}
 							/>

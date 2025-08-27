@@ -77,7 +77,7 @@ describe("WorkTrackingSystemConnectionSettings", () => {
 		vi.clearAllMocks();
 	});
 
-	it("should filter out CSV connections from the settings UI", async () => {
+	it("should *not* filter out CSV connections from the settings UI", async () => {
 		const apiServiceContext = createMockApiServiceContext({
 			workTrackingSystemService: mockWorkTrackingSystemService,
 		});
@@ -98,8 +98,8 @@ describe("WorkTrackingSystemConnectionSettings", () => {
 		expect(screen.getByTestId("connection-Jira")).toBeInTheDocument();
 		expect(screen.getByTestId("connection-AzureDevOps")).toBeInTheDocument();
 
-		// Should NOT display CSV connection
-		expect(screen.queryByTestId("connection-Csv")).not.toBeInTheDocument();
+		// Should display CSV connection
+		expect(screen.queryByTestId("connection-Csv")).toBeInTheDocument();
 	});
 
 	it("should display Add Connection button", () => {
