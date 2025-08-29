@@ -13,13 +13,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     public class JiraWorkTrackingConnector : IWorkTrackingConnector
     {
+        private enum JiraDeployment { Unknown, Cloud, DataCenter }
+
         private readonly ILexoRankService lexoRankService;
         private readonly IIssueFactory issueFactory;
         private readonly ILogger<JiraWorkTrackingConnector> logger;
         private readonly ICryptoService cryptoService;
 
         private readonly int requestTimeoutInSeconds = 100;
-        
+
         private static string rankFieldName = string.Empty;
 
         private static readonly SocketsHttpHandler SharedHandler = new SocketsHttpHandler
@@ -35,6 +37,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         };
 
         private static readonly ConcurrentDictionary<string, HttpClient> ClientCache = new();
+        private static readonly ConcurrentDictionary<string, JiraDeployment> DeploymentCache = new();
 
         public JiraWorkTrackingConnector(
             ILexoRankService lexoRankService, IIssueFactory issueFactory, ILogger<JiraWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
@@ -56,7 +59,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var workItems = new List<WorkItem>();
 
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
-            
+
             var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery)}";
             var issues = await GetIssuesByQuery(team, query, team.ParentOverrideField);
 
@@ -123,9 +126,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     result = lexoRankService.GetLowerPriority(lowestRank);
                 }
             }
-
-            logger.LogInformation("Adjacent Order Index for issues {ExistingOrder} in order {RelativeOrder}: {Result}", string.Join(", ", existingItemsOrder), relativeOrder, result);
-
             return result;
         }
 
@@ -135,7 +135,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var client = GetJiraRestClient(connection);
                 var response = await client.GetAsync("rest/api/2/myself");
-
                 return response.IsSuccessStatusCode;
             }
             catch
@@ -149,10 +148,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             try
             {
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.WorkItemQuery);
-                
+
                 var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.WorkItemQuery);
                 var issues = await GetIssuesByQuery(team, workItemsQuery, team.ParentOverrideField, 10);
-
                 var totalItems = issues.Count();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Issues with specified Query settings", totalItems);
@@ -240,7 +238,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var jiraClient = GetJiraRestClient(project.WorkTrackingSystemConnection);
                 var issue = await GetIssueById(jiraClient, project, referenceId);
-
                 return issue.Fields.GetFieldValue(fieldName) ?? string.Empty;
             }
             catch
@@ -280,10 +277,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var response = await jiraClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
-            
+
             var responseBody = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonDocument.Parse(responseBody);
-            
+
             foreach (var field in jsonResponse.RootElement.EnumerateArray())
             {
                 if (field.GetProperty(JiraFieldNames.NamePropertyName).GetString() == JiraFieldNames.RankName)
@@ -316,7 +313,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 Tags = issue.Labels,
                 StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State),
             };
-
             return workItem;
         }
 
@@ -325,41 +321,45 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogDebug("Getting Issues by JQL Query: '{Query}'", jqlQuery);
             var client = GetJiraRestClient(workItemQueryOwner.WorkTrackingSystemConnection);
 
-            var issues = new List<Issue>();
+            var deployment = await GetDeploymentType(client, workItemQueryOwner.WorkTrackingSystemConnection);
             
+            var rankField = await GetRankField(client);
+
+            if (deployment == JiraDeployment.Cloud)
+            {
+                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField);
+            }
+
+            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField);
+        }
+
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, string? additionalRelatedField, int? maxResultsOverride, string rankField)
+        {
+            var issues = new List<Issue>();
             var startAt = 0;
             var maxResults = maxResultsOverride ?? 1000;
             var isLast = false;
-
-            // Properly encode the JQL query to handle special characters like ampersands
             var encodedJqlQuery = Uri.EscapeDataString(jqlQuery);
-
-            var rankField = await GetRankField(client);
 
             while (!isLast)
             {
                 var url = $"rest/api/latest/search?jql={encodedJqlQuery}&startAt={startAt}&maxResults={maxResults}&expand=changelog";
-
                 var response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
-
                 var responseBody = await response.Content.ReadAsStringAsync();
-                var jsonResponse = JsonDocument.Parse(responseBody);
+                using var jsonResponse = JsonDocument.Parse(responseBody);
 
-                // Max Results might differ - response will tell how many can be delivered max. Use this value.
-                var maxResultActual = jsonResponse.RootElement.GetProperty("maxResults").ToString();
-                var totalResultsActual = jsonResponse.RootElement.GetProperty("total").ToString();
+                var maxResultActual = jsonResponse.RootElement.GetProperty("maxResults").GetInt32();
+                var totalResultsActual = jsonResponse.RootElement.GetProperty("total").GetInt32();
 
-                maxResults = int.Parse(maxResultActual);
+                maxResults = maxResultActual;
                 startAt += maxResults;
-                isLast = maxResultsOverride.HasValue || int.Parse(totalResultsActual) < startAt;
+                isLast = maxResultsOverride.HasValue || totalResultsActual < startAt;
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, workItemQueryOwner, additionalRelatedField, rankField);
-
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, additionalRelatedField, rankField);
                     logger.LogDebug("Found Issue {Key}", issue.Key);
-
                     issues.Add(issue);
                 }
             }
@@ -367,36 +367,63 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return issues;
         }
 
-        private static string PrepareQuery(
-            IEnumerable<string> includedWorkItemTypes,
-            IEnumerable<string> includedStates,
-            string query)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, string? additionalRelatedField, int? maxResultsOverride, string rankField)
+        {
+            var issues = new List<Issue>();
+            string? nextPageToken = null;
+            var pageLimit = maxResultsOverride ?? 1000;
+            var pageCount = 0;
+
+            do
+            {
+                var query = new StringBuilder("rest/api/3/search/jql?");
+                query.Append("jql=").Append(Uri.EscapeDataString(jqlQuery));
+                query.Append("&expand=").Append(Uri.EscapeDataString("changelog"));
+                query.Append("&fields=").Append(Uri.EscapeDataString("*all"));
+                query.Append("&maxResults=").Append(pageLimit.ToString());
+
+                if (!string.IsNullOrEmpty(nextPageToken))
+                {
+                    query.Append("&nextPageToken=").Append(Uri.EscapeDataString(nextPageToken));
+                }
+
+                var response = await client.GetAsync(query.ToString());
+                if (!response.IsSuccessStatusCode)
+                { 
+                    return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                using var json = JsonDocument.Parse(body);
+
+                var issuesArray = json.RootElement.GetProperty("issues");
+
+                foreach (var jsonIssue in issuesArray.EnumerateArray())
+                {
+                    issues.Add(issueFactory.CreateIssueFromJson(jsonIssue, owner, additionalRelatedField, rankField));
+                }
+
+                nextPageToken = json.RootElement.TryGetProperty("nextPageToken", out var tokenEl) ? tokenEl.GetString() : null;
+                pageCount++;
+            }
+            while (!maxResultsOverride.HasValue && !string.IsNullOrEmpty(nextPageToken) && pageCount < 100);
+
+            return issues;
+        }
+
+        private static string PrepareQuery(IEnumerable<string> includedWorkItemTypes, IEnumerable<string> includedStates, string query)
         {
             var workItemsQuery = PrepareGenericQuery(includedWorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
             var stateQuery = PrepareGenericQuery(includedStates, JiraFieldNames.StatusFieldName, "OR", "=");
-
-
-            var jql = $"({query}) " +
-                $"{workItemsQuery} " +
-                $"{stateQuery} ";
-
+            var jql = $"({query}) {workItemsQuery} {stateQuery} ";
             return jql;
         }
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
-            var query = string.Join($" {queryOperator} ", options.Select(options => $"{fieldName} {queryComparison} \"{options}\""));
-
-            if (options.Any())
-            {
-                query = $"AND ({query}) ";
-            }
-            else
-            {
-                query = string.Empty;
-            }
-
-            return query;
+            var q = string.Join($" {queryOperator} ", options.Select(o => $"{fieldName} {queryComparison} \"{o}\""));
+            if (options.Any()) q = $"AND ({q}) "; else q = string.Empty;
+            return q;
         }
 
         private HttpClient GetJiraRestClient(WorkTrackingSystemConnection connection)
@@ -428,6 +455,49 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             return client;
+        }
+
+        private async Task<JiraDeployment> GetDeploymentType(HttpClient client, WorkTrackingSystemConnection connection)
+        {
+            var baseUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
+            
+            logger.LogDebug("Getting Deployment Type of Jira Instace for {Url}", baseUrl);
+            
+            if (DeploymentCache.TryGetValue(baseUrl, out var cached))
+            {
+                logger.LogDebug("Found Deployment Type in cache - {DeploymentType}", cached);
+                return cached;
+            }
+
+            try
+            {
+                var response = await client.GetAsync("rest/api/2/serverInfo");
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogDebug("Could not determine deployment type");
+                    DeploymentCache[baseUrl] = JiraDeployment.Unknown;
+                    return JiraDeployment.Unknown;
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                using var json = JsonDocument.Parse(body);
+
+                if (json.RootElement.TryGetProperty("deploymentType", out var dep) && string.Equals(dep.GetString(), "Cloud", StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.LogDebug("Found Deployment Type: {Type}", JiraDeployment.Cloud);
+                    DeploymentCache[baseUrl] = JiraDeployment.Cloud;
+                    return JiraDeployment.Cloud;
+                }
+
+                logger.LogDebug("Found Deployment Type: {Type}", JiraDeployment.DataCenter);
+                DeploymentCache[baseUrl] = JiraDeployment.DataCenter;
+                return JiraDeployment.DataCenter;
+            }
+            catch
+            {
+                DeploymentCache[baseUrl] = JiraDeployment.Unknown;
+                return JiraDeployment.Unknown;
+            }
         }
     }
 }
