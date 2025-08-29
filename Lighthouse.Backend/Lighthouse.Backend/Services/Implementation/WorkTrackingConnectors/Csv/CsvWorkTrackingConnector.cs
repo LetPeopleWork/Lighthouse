@@ -1,5 +1,6 @@
 using CsvHelper;
 using CsvHelper.Configuration;
+using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -27,9 +28,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             while (csv.Read())
             {
                 var workItemBase = CreateWorkItemBaseForRow(csv, team);
-                var workItem = new WorkItem(workItemBase, team);
 
-                workItems.Add(workItem);
+                if (workItemBase != null)
+                {
+                    var workItem = new WorkItem(workItemBase, team);
+
+                    workItems.Add(workItem);
+                }
             }
 
             return Task.FromResult(workItems.AsEnumerable());
@@ -44,21 +49,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             while (csv.Read())
             {
                 var workItemBase = CreateWorkItemBaseForRow(csv, project);
-                var feature = new Feature(workItemBase);
 
-                var owningTeam = csv.GetField(GetHeaderName(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
-                var estimatedSizeString = csv.GetField(GetHeaderName(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
-                var estimatedSize = 0;
-
-                if (!string.IsNullOrEmpty(estimatedSizeString) && int.TryParse(estimatedSizeString, out var parsedEstimatedSize))
+                if (workItemBase != null)
                 {
-                    estimatedSize = parsedEstimatedSize;
+                    var feature = new Feature(workItemBase);
+
+                    var owningTeam = csv.GetField(GetHeaderName(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
+                    var estimatedSizeString = csv.GetField(GetHeaderName(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
+                    var estimatedSize = 0;
+
+                    if (!string.IsNullOrEmpty(estimatedSizeString) && int.TryParse(estimatedSizeString, out var parsedEstimatedSize))
+                    {
+                        estimatedSize = parsedEstimatedSize;
+                    }
+
+                    feature.EstimatedSize = estimatedSize;
+                    feature.OwningTeam = owningTeam;
+
+                    features.Add(feature);
                 }
-
-                feature.EstimatedSize = estimatedSize;
-                feature.OwningTeam = owningTeam;
-
-                features.Add(feature);
             }
 
             return Task.FromResult(features);
@@ -128,7 +137,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             }
         }
 
-        private WorkItemBase CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
+        private WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
         {
             var referenceId = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
             var name = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
@@ -143,6 +152,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var tags = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader))?.Split('|').Select(x => x.Trim()) ?? [];
             var url = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.UrlHeader))?.Trim() ?? string.Empty;
             var order = $"{orderCounter++}";
+
+            if (!owner.AllStates.IsItemInList(state) || !owner.WorkItemTypes.IsItemInList(type))
+            {
+                return null;
+            }
 
             var workItemBase = new WorkItemBase
             {

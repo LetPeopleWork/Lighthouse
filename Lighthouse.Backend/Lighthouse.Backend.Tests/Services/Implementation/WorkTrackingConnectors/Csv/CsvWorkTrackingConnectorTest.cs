@@ -173,6 +173,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public async Task GetWorkItemsForTeam_WrongType_Ignores()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-required-only.csv");
+
+            team.WorkItemTypes.Remove("Task");
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            Assert.That(workItems, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_WrongState_Ignores()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-required-only.csv");
+
+            team.ToDoStates = new List<string> { "New" };
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            Assert.That(workItems, Has.Count.EqualTo(4));
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WrongType_Ignores()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project-valid-required-only.csv");
+
+            project.WorkItemTypes.Remove("Feature");
+
+            var features = (await subject.GetFeaturesForProject(project)).ToList();
+
+            Assert.That(features, Has.Count.EqualTo(4));
+        }
+
+        [Test]
+        public async Task TaskGetFeaturesForProject_WrongState_Ignores()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project-valid-required-only.csv");
+
+            project.ToDoStates = new List<string> { "New" };
+
+            var features = (await subject.GetFeaturesForProject(project)).ToList();
+
+            Assert.That(features, Has.Count.EqualTo(4));
+        }
+
         private void VerifyRequiredWorkItemFields(WorkItemBase workItem, string referenceId, string name, string state, StateCategories stateCategory, string type, DateTime startedDate, DateTime? closedDate)
         {
             using (Assert.EnterMultipleScope())
@@ -226,7 +278,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 WorkItemQuery = LoadCsvFile(csvFile),
                 ToDoStates = new List<string> { "To Do" },
                 DoingStates = new List<string> { "In Progress" },
-                DoneStates = new List<string> { "Done" },
+                DoneStates = new List<string> { "done" },
+                WorkItemTypes = new List<string> { "User Story", "bug", "Task" },
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
@@ -242,6 +295,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ToDoStates = new List<string> { "To Do" },
                 DoingStates = new List<string> { "In Progress" },
                 DoneStates = new List<string> { "Done" },
+                WorkItemTypes = new List<string> { "Feature", "Epic" },
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
             };
 
