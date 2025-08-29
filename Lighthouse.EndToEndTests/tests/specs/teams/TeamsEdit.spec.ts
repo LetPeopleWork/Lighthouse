@@ -122,7 +122,7 @@ const newTeamConfigurations = [
 		workTrackingSystemIndex: 1,
 		teamConfiguration: {
 			validWorkItemTypes: ["Story", "Bug"],
-			invalidWorkItemTypes: ["User Story", "Bug"],
+			invalidWorkItemTypes: ["User Story", "Bugs"],
 			validStates: { toDo: ["To Do"], doing: ["In Progress"], done: ["Done"] },
 			invalidStates: { toDo: ["New"], doing: ["Active"], done: ["Closed"] },
 			validQuery: 'project = "LGHTHSDMO" AND labels = "Lagunitas"',
