@@ -36,8 +36,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         private void SeedBuiltInConnections()
         {
-            var csvAdoConnection = GetByPredicate(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv && c.Name == AzureDevOpsCsvConnectionName);
-            if (csvAdoConnection == null)
+            if (!GetAll().Any())
             {
                 var csvWorkTrackingConnection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
                 csvWorkTrackingConnection.Name = AzureDevOpsCsvConnectionName;
