@@ -4,6 +4,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
     {
         public const string Delimiter = "Delimiter";
 
+        public const string DateTimeFormat = "Date Time Format";
+
+        public const string TagSeparator = "Tag Separator";
+
         // Common Required Columns
         public const string IdHeader = "ID Column";
 

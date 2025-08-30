@@ -86,18 +86,6 @@ namespace Lighthouse.Backend.API
         [HttpPut("{id}")]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> UpdateWorkTrackingSystemConnectionAsync(int id, [FromBody] WorkTrackingSystemConnectionDto updatedConnection)
         {
-            if (updatedConnection.WorkTrackingSystem == WorkTrackingSystems.Csv)
-            {
-                return BadRequest("CSV is a built-in work tracking connector and does not support connection records.");
-            }
-
-            // Additional check: prevent editing CSV connections by ID
-            var existingConnectionCheck = repository.GetById(id);
-            if (existingConnectionCheck?.WorkTrackingSystem == WorkTrackingSystems.Csv)
-            {
-                return BadRequest("CSV is a built-in work tracking connector and cannot be modified.");
-            }
-
             return await this.GetEntityByIdAnExecuteAction(repository, id, async existingConnection =>
             {
                 existingConnection.Name = updatedConnection.Name;

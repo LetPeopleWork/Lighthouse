@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -40,6 +41,59 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task ValidateConnection_ReturnsTrueIfAllOptionsAreFilledIn()
+        {
+            var subject = CreateSubject();
+
+            var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+
+            var isValid = await subject.ValidateConnection(connection);
+
+            Assert.That(isValid, Is.True);
+        }
+
+        [Test]
+        [TestCase(CsvWorkTrackingOptionNames.Delimiter)]
+        [TestCase(CsvWorkTrackingOptionNames.DateTimeFormat)]
+        [TestCase(CsvWorkTrackingOptionNames.IdHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.NameHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.StateHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.TypeHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.StartedDateHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.ClosedDateHeader)]
+        public async Task ValidateConnection_ReturnsFalseIfSingleRequiredOptionIsNotFilledIn(string optionKey)
+        {
+            var subject = CreateSubject();
+
+            var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+            var option = connection.Options.Single(o => o.Key == optionKey);
+            option.Value = string.Empty;
+
+            var isValid = await subject.ValidateConnection(connection);
+
+            Assert.That(isValid, Is.False);
+        }
+
+        [TestCase(CsvWorkTrackingOptionNames.CreatedDateHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.ParentReferenceIdHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.TagsHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.UrlHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.EstimatedSizeHeader)]
+        [TestCase(CsvWorkTrackingOptionNames.OwningTeamHeader)]
+        public async Task ValidateConnection_ReturnsTrueEvenIfOptionalOptionIsNotFilledIn(string optionKey)
+        {
+            var subject = CreateSubject();
+
+            var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+            var option = connection.Options.Single(o => o.Key == optionKey);
+            option.Value = string.Empty;
+
+            var isValid = await subject.ValidateConnection(connection);
+
+            Assert.That(isValid, Is.True);
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_NoOptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();
@@ -49,8 +103,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyRequiredWorkItemFields(workItems[0], "ITEM-001", "User Story Title", "In Progress", StateCategories.Doing, "User Story", new DateTime(2025, 01, 20, 9, 15, 0), new DateTime(2025, 01, 25));
-                VerifyRequiredWorkItemFields(workItems[1], "ITEM-002", "Bug Title", "Done", StateCategories.Done, "Bug", new DateTime(2025, 01, 12), new DateTime(2025, 01, 18, 14, 45, 0));
+                VerifyRequiredWorkItemFields(workItems[0], "ITEM-001", "User Story Title", "In Progress", StateCategories.Doing, "User Story", new DateTime(2025, 01, 20), new DateTime(2025, 01, 25));
+                VerifyRequiredWorkItemFields(workItems[1], "ITEM-002", "Bug Title", "Done", StateCategories.Done, "Bug", new DateTime(2025, 01, 12), new DateTime(2025, 01, 18));
                 VerifyRequiredWorkItemFields(workItems[2], "ITEM-003", "Database cleanup task", "To Do", StateCategories.ToDo, "Task", new DateTime(2025, 01, 25), null);
                 VerifyRequiredWorkItemFields(workItems[3], "ITEM-004", "Refactor auth module", "In Progress", StateCategories.Doing, "Task", new DateTime(2025, 01, 30), new DateTime(2025, 02, 05));
                 VerifyRequiredWorkItemFields(workItems[4], "ITEM-005", "Improve logging", "Done", StateCategories.Done, "Task", new DateTime(2025, 01, 22), new DateTime(2025, 01, 28));
@@ -129,8 +183,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                VerifyRequiredWorkItemFields(features[0], "EPIC-001", "Epic Title", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 20, 9, 15, 0), new DateTime(2025, 01, 25));
-                VerifyRequiredWorkItemFields(features[1], "EPIC-002", "Feature Title", "Done", StateCategories.Done, "Feature", new DateTime(2025, 01, 12), new DateTime(2025, 01, 18, 14, 45, 0));
+                VerifyRequiredWorkItemFields(features[0], "EPIC-001", "Epic Title", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 20), new DateTime(2025, 01, 25));
+                VerifyRequiredWorkItemFields(features[1], "EPIC-002", "Feature Title", "Done", StateCategories.Done, "Feature", new DateTime(2025, 01, 12), new DateTime(2025, 01, 18));
                 VerifyRequiredWorkItemFields(features[2], "EPIC-003", "Database cleanup Container", "To Do", StateCategories.ToDo, "Epic", new DateTime(2025, 01, 25), null);
                 VerifyRequiredWorkItemFields(features[3], "EPIC-004", "Refactor auth module", "In Progress", StateCategories.Doing, "Epic", new DateTime(2025, 01, 30), new DateTime(2025, 02, 05));
                 VerifyRequiredWorkItemFields(features[4], "EPIC-005", "Improve logging", "Done", StateCategories.Done, "Epic", new DateTime(2025, 01, 22), new DateTime(2025, 01, 28));
@@ -306,6 +360,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
             connection.Name = "CSV";
+
+            connection.Options.Single(o => o.Key == CsvWorkTrackingOptionNames.DateTimeFormat).Value = "yyyy-MM-dd";
+            connection.Options.Single(o => o.Key == CsvWorkTrackingOptionNames.TagSeparator).Value = "|";
 
             return connection;
         }

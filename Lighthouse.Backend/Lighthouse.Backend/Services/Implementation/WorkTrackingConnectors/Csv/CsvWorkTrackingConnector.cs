@@ -54,8 +54,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 {
                     var feature = new Feature(workItemBase);
 
-                    var owningTeam = csv.GetField(GetHeaderName(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
-                    var estimatedSizeString = csv.GetField(GetHeaderName(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
+                    var owningTeam = csv.GetField(GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
+                    var estimatedSizeString = csv.GetField(GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
                     var estimatedSize = 0;
 
                     if (!string.IsNullOrEmpty(estimatedSizeString) && int.TryParse(estimatedSizeString, out var parsedEstimatedSize))
@@ -101,8 +101,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<bool> ValidateConnection(WorkTrackingSystemConnection connection)
         {
-            // TODO: Validate CSV Options
-            return Task.FromResult(true);
+            var optionsEmpty = connection.Options.Where(o => !o.IsOptional).Any(o => string.IsNullOrEmpty(o.Value));
+            return Task.FromResult(!optionsEmpty);
         }
 
         public Task<bool> ValidateTeamSettings(Team team)
@@ -139,18 +139,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
         {
-            var referenceId = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
-            var name = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
-            var state = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateHeader)).Trim();
-            var type = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TypeHeader)).Trim();
-            var startedDate = csv.GetField<DateTime?>(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StartedDateHeader));
-            var closedDate = csv.GetField<DateTime?>(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ClosedDateHeader));
+            var referenceId = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
+            var name = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
+            var state = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateHeader)).Trim();
+            var type = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TypeHeader)).Trim();
+            var parentReferenceId = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ParentReferenceIdHeader))?.Trim() ?? string.Empty;
+            var url = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.UrlHeader))?.Trim() ?? string.Empty;
+
+            var startedDate = csv.GetField<DateTime?>(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StartedDateHeader));
+            var closedDate = csv.GetField<DateTime?>(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ClosedDateHeader));
+            var createdDate = csv.GetField<DateTime?>(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.CreatedDateHeader));
+
+            var tagSeperator = GetTagSeparator(owner.WorkTrackingSystemConnection);
+            var tags = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader))?.Split(tagSeperator).Select(x => x.Trim()) ?? [];
+
             var stateCategory = owner.MapStateToStateCategory(state);
 
-            var createdDate = csv.GetField<DateTime?>(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.CreatedDateHeader));
-            var parentReferenceId = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ParentReferenceIdHeader))?.Trim() ?? string.Empty;
-            var tags = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader))?.Split('|').Select(x => x.Trim()) ?? [];
-            var url = csv.GetField(GetHeaderName(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.UrlHeader))?.Trim() ?? string.Empty;
             var order = $"{orderCounter++}";
 
             if (!owner.AllStates.IsItemInList(state) || !owner.WorkItemTypes.IsItemInList(type))
@@ -211,59 +215,46 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = delimiter, IgnoreBlankLines = true, MissingFieldFound = null };
             var csv = new CsvReader(new StringReader(owner.WorkItemQuery), csvConfig);
 
-            ConfigureDateTimeParsing(csv);
+            var dateFormat = GetAdditionalDateTimeFormat(owner.WorkTrackingSystemConnection);
+            var options = csv.Context.TypeConverterOptionsCache.GetOptions<DateTime?>();
+            options.Formats = [dateFormat];
 
             csv.Read();
             csv.ReadHeader();
 
             return csv;
         }
-        private void ConfigureDateTimeParsing(CsvReader csv)
-        {
-            var options = csv.Context.TypeConverterOptionsCache.GetOptions<DateTime?>();
-            options.Formats =
-            [
-                "yyyy-MM-dd",
-                "yyyy-MM-ddTHH:mm:ss",
-                "yyyy-MM-ddTHH:mm:ssZ",
-                "yyyy-MM-ddTHH:mm:ss.fff",
-                "yyyy-MM-ddTHH:mm:ss.fffZ",
-                "yyyy-MM-dd HH:mm:ss",
-                "yyyy-MM-dd HH:mm:ss.fff",
-                "MM/dd/yyyy",
-                "MM/dd/yyyy HH:mm:ss",
-                "MM/dd/yyyy hh:mm:ss tt",
-                "dd.MM.yyyy",
-                "dd.MM.yyyy HH:mm:ss",
-                "yyyyMMdd",
-                "yyyyMMdd HHmmss",
-                "ddd, dd MMM yyyy HH:mm:ss 'GMT'",
-                "yyyy-MM-ddTHH:mm:ssK",
-                "yyyy-MM-ddTHH:mm:ss.fffK"
-            ];
-        }
 
         private string[] GetRequiredColumns(WorkTrackingSystemConnection connection)
         {
             return [
-                GetHeaderName(connection, CsvWorkTrackingOptionNames.IdHeader),
-                GetHeaderName(connection, CsvWorkTrackingOptionNames.NameHeader),
-                GetHeaderName(connection, CsvWorkTrackingOptionNames.StateHeader),
-                GetHeaderName(connection, CsvWorkTrackingOptionNames.TypeHeader),
-                GetHeaderName(connection, CsvWorkTrackingOptionNames.StartedDateHeader),
-                GetHeaderName(connection, CsvWorkTrackingOptionNames.ClosedDateHeader)
+                GetOptionByKey(connection, CsvWorkTrackingOptionNames.IdHeader),
+                GetOptionByKey(connection, CsvWorkTrackingOptionNames.NameHeader),
+                GetOptionByKey(connection, CsvWorkTrackingOptionNames.StateHeader),
+                GetOptionByKey(connection, CsvWorkTrackingOptionNames.TypeHeader),
+                GetOptionByKey(connection, CsvWorkTrackingOptionNames.StartedDateHeader),
+                GetOptionByKey(connection, CsvWorkTrackingOptionNames.ClosedDateHeader)
                 ];
         }
 
-
-        private string GetHeaderName(WorkTrackingSystemConnection connection, string headerKey)
+        private string GetOptionByKey(WorkTrackingSystemConnection connection, string key)
         {
-            return connection.Options.Single(o => o.Key == headerKey).Value;
+            return connection.Options.Single(o => o.Key == key).Value;
         }
 
         private string GetDelimiter(WorkTrackingSystemConnection connection)
         {
-            return connection.Options.Single(o => o.Key == CsvWorkTrackingOptionNames.Delimiter).Value;
+            return GetOptionByKey(connection, CsvWorkTrackingOptionNames.Delimiter);
+        }
+
+        private string GetAdditionalDateTimeFormat(WorkTrackingSystemConnection connection)
+        {
+            return GetOptionByKey(connection, CsvWorkTrackingOptionNames.DateTimeFormat);
+        }
+
+        private string GetTagSeparator(WorkTrackingSystemConnection connection)
+        {
+            return GetOptionByKey(connection, CsvWorkTrackingOptionNames.TagSeparator);
         }
     }
 }

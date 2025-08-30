@@ -188,37 +188,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateWorkTrackingSystemConnection_GivenCsv_ReturnsBadRequest()
-        {
-            var subject = CreateSubject();
-
-            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "CSV", WorkTrackingSystem = WorkTrackingSystems.Csv };
-            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
-            }
-        }
-
-        [Test]
-        public async Task UpdateWorkTrackingSystemConnection_ExistingCsvConnection_ReturnsBadRequest()
-        {
-            var existingCsvConnection = new WorkTrackingSystemConnection { Id = 12, Name = "CSV", WorkTrackingSystem = WorkTrackingSystems.Csv };
-            repositoryMock.Setup(x => x.GetById(12)).Returns(existingCsvConnection);
-
-            var subject = CreateSubject();
-
-            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Modified CSV", WorkTrackingSystem = WorkTrackingSystems.Jira };
-            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
-            }
-        }
-
-        [Test]
         public async Task UpdateWorkTrackingSystemConnection_ConnectionExists_SavesChangesAsync()
         {
             var existingConnection = new WorkTrackingSystemConnection { Name = "Boring Old Name" };

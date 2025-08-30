@@ -60,6 +60,16 @@ namespace Lighthouse.Backend.Factories
                 },
                 new WorkTrackingSystemConnectionOption
                 {
+                    Key = CsvWorkTrackingOptionNames.DateTimeFormat,
+                    Value = "dd.MM.yyyy HH:mm:ss",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.TagSeparator,
+                    Value = ";",
+                },
+                new WorkTrackingSystemConnectionOption
+                {
                     Key = CsvWorkTrackingOptionNames.IdHeader,
                     Value = "ID",
                 },
@@ -81,42 +91,48 @@ namespace Lighthouse.Backend.Factories
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.StartedDateHeader,
-                    Value = "StartedDate",
+                    Value = "Started Date",
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.ClosedDateHeader,
-                    Value = "ClosedDate",
+                    Value = "Closed Date",
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.CreatedDateHeader,
-                    Value = "CreatedDate",
+                    Value = "Created Date",
+                    IsOptional = true,
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.ParentReferenceIdHeader,
-                    Value = "ParentReferenceId",
+                    Value = "Parent Reference Id",
+                    IsOptional = true,
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.TagsHeader,
                     Value = "Tags",
+                    IsOptional = true,
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.UrlHeader,
                     Value = "Url",
+                    IsOptional = true,
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.OwningTeamHeader,
-                    Value = "OwningTeam",
+                    Value = "Owning Team",
+                    IsOptional = true,
                 },
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.EstimatedSizeHeader,
-                    Value = "EstimatedSize",
+                    Value = "Estimated Size",
+                    IsOptional = true,
                 },
             };
         }
