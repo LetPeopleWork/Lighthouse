@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.EstimatedSizeHeader, false, true), Is.True);
 
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.Delimiter), Is.EqualTo(","));
-                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.DateTimeFormat), Is.EqualTo("dd.MM.yyyy HH:mm:ss"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.DateTimeFormat), Is.EqualTo("yyyy-MM-dd HH:mm:ss"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.TagSeparator), Is.EqualTo(";"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.IdHeader), Is.EqualTo("ID"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.NameHeader), Is.EqualTo("Name"));

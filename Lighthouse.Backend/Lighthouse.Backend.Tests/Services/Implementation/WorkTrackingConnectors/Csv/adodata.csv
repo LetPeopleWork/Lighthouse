@@ -1,0 +1,118 @@
+﻿ID,Work Item Type,Title,State,Tags,Activated Date,Closed Date,Parent
+"2502","User Story","Initial Range for Team Metrics","Closed",,"7.6.2025 14:59:28","7.6.2025 16:49:19",
+"2503","User Story","Show Forecast Config in Team Header","Closed",,"7.6.2025 13:45:07","7.6.2025 15:22:31",
+"2504","User Story","Show a ""Warning Indication"" if Feature is worked on but not in Progress","Removed","Release Notes",,,
+"2505","User Story","Improve Docker Experience","Closed",,"7.6.2025 16:49:21","8.6.2025 13:57:04",
+"2506","Bug","Empty Chips are displayed if Teams/Projects have no tags","Closed",,"7.6.2025 13:31:26","7.6.2025 13:57:18",
+"2552","User Story","Text/Colours has too low contrats","Closed",,"15.6.2025 09:28:27","15.6.2025 10:59:13",
+"2553","Bug","Text for CT Scatterplot is not nicely wrapped","Closed",,"14.6.2025 09:14:15","14.6.2025 09:41:14",
+"2554","User Story","Display Items when clicking on Started vs. Closed Widget","Closed",,"14.6.2025 09:25:30","14.6.2025 11:42:17",
+"2555","User Story","Show closed items per date in TP Chart","Closed",,"14.6.2025 11:29:31","14.6.2025 15:15:42",
+"2556","User Story","Show which Items were in Progress per Day on WIP Run Chart","Closed",,"14.6.2025 14:23:38","14.6.2025 15:15:43",
+"2557","User Story","Show ID of Item in Charts","Closed","Rainman","15.6.2025 07:54:34","15.6.2025 09:28:26",
+"2558","User Story","Set a System WIP Limit for Teams and Projects","Closed","Settings","15.6.2025 12:41:17","16.6.2025 17:25:54",
+"2577","User Story","Rethink Dev Environment","Removed","Release Notes",,,
+"2578","User Story","Make timeout configurable for Requests","Closed","Gardena","15.6.2025 11:05:53","15.6.2025 12:41:16",
+"2579","Epic","Exporting of Data","New","Premium",,,
+"2587","Bug","System WIP in WIP Run Chart is over the button and can't be clicked","Closed",,"20.6.2025 12:48:58","20.6.2025 13:07:45",
+"2588","User Story","Add Link to Offering Obeya","Closed",,"23.6.2025 19:11:59","23.6.2025 19:41:27",
+"2608","Bug","Double Slash fails to open webpage","Closed","Jira","23.6.2025 18:53:25","23.6.2025 19:18:43",
+"2609","User Story","Validation of Project takes too long","Closed","Jira","23.6.2025 19:03:44","23.6.2025 19:26:12",
+"2612","Epic","Virtual Features","New","Community| Premium",,,
+"2627","User Story","Allow Parent Override for Features as well","Closed","Documentation","27.6.2025 15:14:58","27.6.2025 19:38:51","2379"
+"2628","User Story","Roll-Up Features under the same parent","Closed",,"28.6.2025 19:26:13","28.6.2025 20:40:05","2379"
+"2629","User Story","Add toggle to Projects to have flat or rolled-up Grouping","Closed",,"28.6.2025 19:32:34","28.6.2025 20:30:01","2379"
+"2630","Epic","Work Item Aging Chart","Closed","Documentation","29.6.2025 19:16:47","5.7.2025 15:01:51",
+"2637","Epic","Total Work Item Age Chart","New","Chart| Community",,,
+"2638","Epic","Blocked Items Chart","Closed","Chart| Documentation","6.7.2025 11:58:39","7.7.2025 20:50:52",
+"2639","Epic","Historic Feature Size Chart","Closed","Community| Documentation","11.8.2025 19:37:07","13.8.2025 12:05:40",
+"2640","User Story","Show ""Objective"" with correct details","Closed",,"29.6.2025 12:24:31","29.6.2025 15:14:24","2379"
+"2652","User Story","Allow to Reorder States for Teams and Projects","Closed",,"29.6.2025 19:25:16","30.6.2025 19:34:00","2630"
+"2653","User Story","Work Item Aging Chart","Closed",,"30.6.2025 18:51:40","30.6.2025 19:55:37","2630"
+"2654","User Story","Do not update data if no relevant things were changed in Team/Project Edit","Closed",,"29.6.2025 19:19:14","29.6.2025 19:38:22",
+"2655","User Story","Enable Auto-Update using Updateum","Closed",,"30.6.2025 21:13:25","30.6.2025 21:42:55","2253"
+"2683","Epic","Flow Consultant","Planned","Premium",,,
+"2691","User Story","Store Tags for Items","Closed",,"6.7.2025 11:58:44","6.7.2025 12:54:38","2638"
+"2692","User Story","Configure what Blocked means","Closed",,"6.7.2025 12:30:36","6.7.2025 14:43:01","2638"
+"2693","User Story","Add Blocked Items widget","Closed",,"6.7.2025 14:39:13","6.7.2025 20:45:04","2638"
+"2694","User Story","Show blocked items in Work Item Age Chart","Closed",,"6.7.2025 20:07:53","6.7.2025 20:45:03","2638"
+"2707","Epic","Metrics Page Customization","Closed","Community| Documentation| VibeCoded","14.8.2025 14:37:47","18.8.2025 20:06:42",
+"2708","Bug","Project Metrics cache is not invalidated after update","Closed",,"7.7.2025 18:48:52","7.7.2025 20:25:25",
+"2716","Bug","Validation hangs for Projects","Closed",,"7.7.2025 18:49:28","7.7.2025 18:49:28",
+"2740","Epic","Harmonize Language and make Configurable","Closed","Documentation","26.7.2025 12:01:07","29.7.2025 16:28:19",
+"2745","User Story","Predictability Score","Closed","Documentation","12.7.2025 12:04:23","14.7.2025 19:53:16",
+"2758","Epic","Demo Data in Lighthouse","Planned","Community| Premium",,,
+"2777","Epic","Extended MCP Support","New","Premium",,,
+"2785","User Story","Bug Reporting Improvements","Closed",,"19.7.2025 20:18:50","19.7.2025 20:43:55",
+"2786","User Story","Remove Demo Env","Closed",,"19.7.2025 19:10:15","19.7.2025 19:51:25",
+"2806","Bug","Handle Items 0 days Age/Cycle Time","Closed",,"26.7.2025 09:46:20","26.7.2025 10:50:06",
+"2816","Epic","Cycle Time vs. Estimate","New","Community",,,
+"2817","Bug","Log Verbosity Change not reflecting in UI when using Docker","Closed",,"26.7.2025 08:52:39","26.7.2025 10:14:04",
+"2818","User Story","Add Donation Button to Footer / Bug Reporting Dialog","Closed",,"26.7.2025 10:55:11","26.7.2025 11:29:44",
+"2819","User Story","Use Icons to indicate Forecast config, WIP, SLE","Closed",,"26.7.2025 10:32:06","26.7.2025 11:29:43",
+"2824","User Story","Load one item dynamically from Backend","Closed",,"26.7.2025 12:01:14","26.7.2025 15:52:37","2740"
+"2825","User Story","Add all items to override","Closed",,"27.7.2025 11:08:16","27.7.2025 16:35:10","2740"
+"2826","User Story","Make items configurable in frontend","Closed",,"26.7.2025 15:56:37","27.7.2025 11:13:36","2740"
+"2827","User Story","Add input about more items to translate (reach out)","Closed",,"27.7.2025 11:00:38","27.7.2025 11:21:42","2740"
+"2828","User Story","Extend Documentation","Closed",,"27.7.2025 16:35:21","27.7.2025 18:49:42","2740"
+"2829","Bug","States are Case Sensitive","Closed",,"27.7.2025 18:49:44","27.7.2025 19:53:21",
+"2851","Epic","Enable Licensing Infrastructure","Closed","Documentation","1.8.2025 15:18:52","13.8.2025 11:41:19",
+"2852","User Story","Import License","Closed",,"2.8.2025 12:20:11","3.8.2025 15:13:17","2851"
+"2853","User Story","Display License Information in Toolbar","Closed",,"3.8.2025 12:16:04","3.8.2025 15:13:19","2851"
+"2854","User Story","Handle tampering of license in Database","Closed",,"3.8.2025 13:52:37","3.8.2025 15:50:05","2851"
+"2855","User Story","Upload new License will override existing one","Closed",,"3.8.2025 13:52:34","3.8.2025 15:13:21","2851"
+"2856","User Story","Prevent more than 3 teams if you don't have a license","Closed","Documentation","5.8.2025 13:30:44","5.8.2025 16:24:49","2866"
+"2857","User Story","Prevent more than 1 Project if you don't have a license","Closed","Documentation","5.8.2025 15:05:54","5.8.2025 17:05:55","2866"
+"2858","User Story","Prevent Export/Import of Configuration if you don't have a License","Closed","Documentation","5.8.2025 10:16:19","5.8.2025 12:39:18","2866"
+"2859","User Story","Handle Payment for License","Closed",,"2.8.2025 12:20:31","3.8.2025 15:50:07","2851"
+"2860","User Story","License Terms and Conditions","Closed",,"4.8.2025 13:12:32","4.8.2025 16:56:46","2851"
+"2861","User Story","Update Website with detailed License Info and Payment","Closed",,"2.8.2025 12:20:39","4.8.2025 16:56:48","2851"
+"2862","User Story","Highlight New Release Better","Closed",,"5.8.2025 09:57:19","5.8.2025 10:41:41",
+"2866","Epic","Add Licensing Constraints","Closed","Documentation","5.8.2025 10:17:04","13.8.2025 11:41:27",
+"2867","User Story","Add Documentation for Licensing","Closed",,"5.8.2025 17:05:57","5.8.2025 21:19:46","2866"
+"2868","User Story","Update Documentation with Premium/Licensed Features","Removed",,,,"2866"
+"2869","User Story","Update Website with Premium/Licensed features and possibility to buy license","Removed",,,,"2866"
+"2870","User Story","Adjust E2E Tests","Closed",,"5.8.2025 12:02:27","5.8.2025 13:25:46","2866"
+"2938","User Story","Show Size of Features in Scatterplot","Closed",,"11.8.2025 19:43:13","12.8.2025 11:47:42","2639"
+"2939","User Story","Show Percentiles for Size","Closed",,"12.8.2025 11:12:20","12.8.2025 14:30:17","2639"
+"2940","User Story","Allow to Toggle To Do/Doing Items in Scatterplot","Removed",,,,"2639"
+"2941","User Story","Adjust Historic Feature Size Option Query with Number of Days","Closed","Documentation","12.8.2025 14:30:18","12.8.2025 19:40:30","2639"
+"2958","Bug","Fix showing Feature Size in Teams","Closed",,"13.8.2025 11:11:44","13.8.2025 12:05:47",
+"2959","User Story","Rotate License Key Pair","Closed",,"13.8.2025 12:10:02","13.8.2025 12:37:03",
+"2978","User Story","Remove Archiving of Features","Closed",,"14.8.2025 09:48:09","14.8.2025 10:12:02",
+"2979","Bug","Export from SQLite import to Postgres fails for some teams/projects","Closed",,"14.8.2025 10:01:38","14.8.2025 10:41:54",
+"2980","User Story","Investigate Performance Improvements","Closed",,"14.8.2025 12:08:10","14.8.2025 12:38:22",
+"2981","User Story","Move Date Range selection to the top away from the dashboard","Closed",,"14.8.2025 16:26:14","14.8.2025 16:42:04","2707"
+"2983","User Story","Create a uniform way to specify widgets and charts","Closed",,"14.8.2025 16:28:34","14.8.2025 17:15:44","2707"
+"2984","User Story","Allow to show additional widgets (team only, project only)","Closed",,"14.8.2025 16:59:17","14.8.2025 17:37:55","2707"
+"2985","User Story","Allow to resize widgets","Closed",,"17.8.2025 20:17:17","17.8.2025 20:59:13","2707"
+"2986","User Story","allow to re-arrange widgets","Closed",,"17.8.2025 19:11:11","17.8.2025 20:59:11","2707"
+"2987","User Story","Allow to show/hide widgets","Closed",,"17.8.2025 16:21:49","17.8.2025 17:26:13","2707"
+"2988","User Story","Use Grid View for Dashboard Items","Closed",,"14.8.2025 17:18:02","17.8.2025 16:21:44","2707"
+"2989","User Story","Adjust E2E Tests","Closed",,"17.8.2025 16:45:56","17.8.2025 16:45:56","2707"
+"3014","User Story","Adjust Icons for Features","New","Release Notes",,,
+"3015","Bug","Don't show ""Feature Goal"" if set to automatic","New","Release Notes",,,
+"3016","User Story","Add CSV as Work Tracking Connector Option","Closed",,"23.8.2025 10:15:19","24.8.2025 11:36:47","2251"
+"3017","User Story","Extend WorkTrackingOptions with support for various methods","Closed",,"23.8.2025 19:58:01","24.8.2025 14:40:50","2251"
+"3018","User Story","Choose Work Tracking System Type First","Closed",,"24.8.2025 11:28:15","24.8.2025 14:40:51","2251"
+"3019","User Story","Limit CSV Teams to 1 without Premium","Removed",,,,"2251"
+"3020","User Story","Limit CSV Projects to 1 without Premium","Closed",,"24.8.2025 19:30:18","24.8.2025 21:05:59","2251"
+"3021","User Story","Allow to upload file for CSV Teams as Datasource","Closed",,"24.8.2025 13:09:14","24.8.2025 14:40:54","2251"
+"3022","User Story","Handle Validate for CSV","Closed",,"24.8.2025 14:40:56","24.8.2025 16:00:01","2251"
+"3023","User Story","Handle Data Loading for CSV Team","Closed",,"24.8.2025 15:26:14","24.8.2025 17:02:49","2251"
+"3024","User Story","Make sure Validate/Save works for Projects too","Closed",,"24.8.2025 16:49:14","24.8.2025 19:26:39","2251"
+"3025","User Story","Auto-Generate and load CSV Teams on Demo Data Load","New",,,,"2758"
+"3026","User Story","Add Option to Settings to Load Demo Data","New",,,,"2758"
+"3027","User Story","Add Option to load to dashboards when no items are there","New",,,,"2758"
+"3028","User Story","Auto-Generate and load CSV Projects on Demo Data Load","New",,,,"2758"
+"3029","User Story","Create various scenarios for demo data","New",,,,"2758"
+"3030","Epic","Scenario Planning","New",,,,
+"3039","Epic","Auto-Update","New","Community",,,
+"3040","User Story","Update User Doc","New",,,,"2251"
+"3041","User Story","Extend E2E Tests with CSV Team and Project","Closed",,"26.8.2025 08:20:29","27.8.2025 17:34:41","2251"
+"3042","User Story","Update Website with Premium Feature Overview","New",,,,"2251"
+"3050","Bug","Blocked Items in WIA Chart don't have correct color on tooltip","New",,,,
+"3051","User Story","CSV Configuration Options","Active",,"27.8.2025 19:18:15",,"2251"
+"3052","User Story","Display Fetaure Ownership in Dialog","New",,,,
+"3053","User Story","Improve slow loading when you have many features","New",,,,
+"3059","User Story","Jira Endpoints","Resolved",,"29.8.2025 16:35:38",,

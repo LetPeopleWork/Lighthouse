@@ -3,19 +3,18 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Csv
 {
-    public class CsvWorkTrackingConnectorTest
+    public class CsvWorkTrackingConnectorTest : IntegrationTestBase
     {
-        private WorkTrackingSystemFactory workTrackingSystemFactory;
-
-        [SetUp]
-        public void SetUp()
+        public CsvWorkTrackingConnectorTest() : base(new TestWebApplicationFactory<Program>())
         {
-            workTrackingSystemFactory = new WorkTrackingSystemFactory(Mock.Of<ILogger<WorkTrackingSystemFactory>>());
         }
 
         [Test]
@@ -45,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+            var connection = GetWorkTrackingSystemFactory().CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
 
             var isValid = await subject.ValidateConnection(connection);
 
@@ -65,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+            var connection = GetWorkTrackingSystemFactory().CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
             var option = connection.Options.Single(o => o.Key == optionKey);
             option.Value = string.Empty;
 
@@ -84,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+            var connection = GetWorkTrackingSystemFactory().CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
             var option = connection.Options.Single(o => o.Key == optionKey);
             option.Value = string.Empty;
 
@@ -301,6 +300,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(features, Has.Count.EqualTo(4));
         }
 
+        [Test]
+        public async Task DefaultAzureDevOpsConnection_CanLoadAdoFile()
+        {
+            var subject = CreateSubject();
+            var adoCsvConnection = GetWorkTrackingSystemRepository().GetByPredicate(x => x.WorkTrackingSystem == WorkTrackingSystems.Csv && x.Name == "CSV Azure DevOps") ?? throw new ArgumentNullException("Azure DevOps CSV Connection");
+
+            var toDoStates = new List<string>{ "New" };
+            var doingStates = new List<string>{ "Active", "Resolved" };
+            var doneStaes = new List<string>{ "Closed" };
+
+            var team = CreateTeam("adodata.csv");
+            team.WorkTrackingSystemConnection = adoCsvConnection;
+            team.ToDoStates = toDoStates;
+            team.DoingStates = doingStates;
+            team.DoneStates = doneStaes;
+
+            var workItems = await subject.GetWorkItemsForTeam(team);
+            Assert.That(workItems.ToList(), Has.Count.EqualTo(95));
+
+            var project = CreateProject("adodata.csv");
+            project.ToDoStates = toDoStates;
+            project.DoingStates = doingStates;
+            project.DoneStates = doneStaes;
+
+            project.WorkTrackingSystemConnection = adoCsvConnection;
+            var features = await subject.GetFeaturesForProject(project);
+            Assert.That(features.ToList(), Has.Count.EqualTo(14));
+        }
+
         private void VerifyRequiredWorkItemFields(WorkItemBase workItem, string referenceId, string name, string state, StateCategories stateCategory, string type, DateTime startedDate, DateTime? closedDate)
         {
             using (Assert.EnterMultipleScope())
@@ -385,7 +413,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private WorkTrackingSystemConnection CreateCsvWorkTrackingConnection()
         {
-            var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
+            var connection = GetWorkTrackingSystemFactory().CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
 
             AdjustWorkTrackingSystemOption(connection, CsvWorkTrackingOptionNames.DateTimeFormat, "yyyy-MM-dd");
             AdjustWorkTrackingSystemOption(connection, CsvWorkTrackingOptionNames.TagSeparator, "|");
@@ -395,7 +423,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private CsvWorkTrackingConnector CreateSubject()
         {
-            return new CsvWorkTrackingConnector(Mock.Of<ILogger<CsvWorkTrackingConnector>>());
+            return ServiceProvider.GetService<CsvWorkTrackingConnector>() ?? throw new ArgumentNullException("Could not resolve Work Tracking Connector");
+        }
+
+        private IWorkTrackingSystemFactory GetWorkTrackingSystemFactory()
+        {
+            return ServiceProvider.GetService<IWorkTrackingSystemFactory>() ?? throw new ArgumentNullException("Could not resolve Work Tracking System Factory");
+        }
+
+        private IRepository<WorkTrackingSystemConnection> GetWorkTrackingSystemRepository()
+        {
+            return ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new ArgumentNullException("Coult not resolve Work Tracking System Connection Repo");
         }
     }
 }

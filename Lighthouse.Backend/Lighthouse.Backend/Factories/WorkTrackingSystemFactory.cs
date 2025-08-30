@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Factories
                 new WorkTrackingSystemConnectionOption
                 {
                     Key = CsvWorkTrackingOptionNames.DateTimeFormat,
-                    Value = "dd.MM.yyyy HH:mm:ss",
+                    Value = "yyyy-MM-dd HH:mm:ss",
                 },
                 new WorkTrackingSystemConnectionOption
                 {

@@ -1,12 +1,9 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
@@ -73,11 +70,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        public void Constructor_SeedsCsvConnection_WhenNotExists()
+        [TestCase("CSV Azure DevOps")]
+        public void Constructor_SeedsPreconfiguredCsvConnections_WhenNotExists(string connectionName)
         {
             // Ensure no CSV connection exists initially
             var existingCsvConnections = DatabaseContext.WorkTrackingSystemConnections
-                .Where(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv)
+                .Where(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv && c.Name == connectionName)
                 .ToList();
 
             foreach (var connection in existingCsvConnections)
@@ -90,12 +88,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             _ = CreateSubject();
 
             var csvConnection = DatabaseContext.WorkTrackingSystemConnections
-                .SingleOrDefault(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv);
+                .SingleOrDefault(c => c.WorkTrackingSystem == WorkTrackingSystems.Csv && c.Name == connectionName);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(csvConnection, Is.Not.Null);
-                Assert.That(csvConnection.Name, Is.EqualTo("CSV"));
+                Assert.That(csvConnection.Name, Is.EqualTo(connectionName));
                 Assert.That(csvConnection.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Csv));
                 Assert.That(csvConnection.DataSourceType, Is.EqualTo(DataSourceType.File));
             }

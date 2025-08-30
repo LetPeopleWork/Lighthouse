@@ -45,6 +45,9 @@
 	  <None Update="Services\Implementation\Licensing\valid_license.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\adodata.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\empty-file.txt">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
