@@ -134,6 +134,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task GetWorkItemsForTeam_OptionalRows_OptionalColumnHeaderMissing_IgnoresMissing()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-all-optional.csv");
+
+            AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.CreatedDateHeader, string.Empty);
+            AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader, string.Empty);
+            AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ParentReferenceIdHeader, string.Empty);
+
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                VerifyOptionalWorkItemFields(workItems[0], null, string.Empty, [], "https://system.com/item/1");
+                VerifyOptionalWorkItemFields(workItems[1], null, string.Empty, [], string.Empty);
+                VerifyOptionalWorkItemFields(workItems[2], null, string.Empty, [], string.Empty);
+                VerifyOptionalWorkItemFields(workItems[3], null, string.Empty, [], "https://system.com/item/4");
+                VerifyOptionalWorkItemFields(workItems[4], null, string.Empty, [], string.Empty);
+            }
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_SomeOptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();
@@ -356,13 +378,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return project;
         }
 
+        private void AdjustWorkTrackingSystemOption(WorkTrackingSystemConnection connection, string key, string value)
+        {
+            connection.Options.Single(o => o.Key == key).Value = value;
+        }
+
         private WorkTrackingSystemConnection CreateCsvWorkTrackingConnection()
         {
             var connection = workTrackingSystemFactory.CreateDefaultConnectionForWorkTrackingSystem(WorkTrackingSystems.Csv);
-            connection.Name = "CSV";
 
-            connection.Options.Single(o => o.Key == CsvWorkTrackingOptionNames.DateTimeFormat).Value = "yyyy-MM-dd";
-            connection.Options.Single(o => o.Key == CsvWorkTrackingOptionNames.TagSeparator).Value = "|";
+            AdjustWorkTrackingSystemOption(connection, CsvWorkTrackingOptionNames.DateTimeFormat, "yyyy-MM-dd");
+            AdjustWorkTrackingSystemOption(connection, CsvWorkTrackingOptionNames.TagSeparator, "|");
 
             return connection;
         }
