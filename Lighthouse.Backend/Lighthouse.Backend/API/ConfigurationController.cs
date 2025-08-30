@@ -178,7 +178,7 @@ namespace Lighthouse.Backend.API
         private async Task RemoveAllWorkTrackingSystems()
         {
             var workTrackingSystems = workTrackingSystemConnectionRepo.GetAll().ToList();
-            foreach (var workTrackingSystem in workTrackingSystems.Where(w => w.WorkTrackingSystem != WorkTrackingSystems.Csv))
+            foreach (var workTrackingSystem in workTrackingSystems)
             {
                 workTrackingSystemConnectionRepo.Remove(workTrackingSystem.Id);
             }
@@ -218,7 +218,7 @@ namespace Lighthouse.Backend.API
 
         private List<WorkTrackingSystemConnectionDto> GetWorkTrackingSystems()
         {
-            var workTrackingSystems = workTrackingSystemConnectionRepo.GetAll().Where(wts => wts.WorkTrackingSystem != WorkTrackingSystems.Csv);
+            var workTrackingSystems = workTrackingSystemConnectionRepo.GetAll();
 
             return workTrackingSystems.Select(wts => new WorkTrackingSystemConnectionDto(wts)).ToList();
         }

@@ -40,11 +40,6 @@ namespace Lighthouse.Backend.API
 
             foreach (WorkTrackingSystems system in Enum.GetValues<WorkTrackingSystems>())
             {
-                if (system == WorkTrackingSystems.Csv)
-                {
-                    continue;
-                }
-
                 if (!isLinearIntegrationEnabled && system == WorkTrackingSystems.Linear)
                 {
                     continue;
@@ -68,11 +63,6 @@ namespace Lighthouse.Backend.API
         [HttpPost]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> CreateNewWorkTrackingSystemConnectionAsync([FromBody] WorkTrackingSystemConnectionDto newConnection)
         {
-            if (newConnection.WorkTrackingSystem == WorkTrackingSystems.Csv)
-            {
-                return BadRequest("CSV is a built-in work tracking connector and does not support creating connection records.");
-            }
-
             newConnection.Id = 0;
             var connection = CreateConnectionFromDto(newConnection);
 
@@ -109,13 +99,6 @@ namespace Lighthouse.Backend.API
             if (!repository.Exists(id))
             {
                 return NotFound();
-            }
-
-            // Prevent deletion of CSV built-in connector
-            var existingConnection = repository.GetById(id);
-            if (existingConnection?.WorkTrackingSystem == WorkTrackingSystems.Csv)
-            {
-                return BadRequest("CSV is a built-in work tracking connector and cannot be deleted.");
             }
 
             repository.Remove(id);

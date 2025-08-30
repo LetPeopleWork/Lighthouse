@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [TestCase(WorkTrackingSystems.Jira, WorkTrackingSystems.AzureDevOps, WorkTrackingSystems.Linear)]
+        [TestCase(WorkTrackingSystems.Jira, WorkTrackingSystems.AzureDevOps, WorkTrackingSystems.Linear, WorkTrackingSystems.Csv)]
         public void GetSupportedWorkTrackingSystems_ReturnsDefaultSystemsFromFactory(params WorkTrackingSystems[] workTrackingSystems)
         {
             foreach (var workTrackingSystem in workTrackingSystems)
@@ -64,24 +64,10 @@ namespace Lighthouse.Backend.Tests.API
 
                 var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
 
-                // CSV is a built-in connector and is excluded from the supported list
-                Assert.That(supportedSystems?.Count(), Is.EqualTo(Enum.GetValues<WorkTrackingSystems>().Length - 1));
+                Assert.That(supportedSystems?.Count(), Is.EqualTo(Enum.GetValues<WorkTrackingSystems>().Length));
             }
 
-            workTrackingSystemsFactoryMock.Verify(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>()), Times.Exactly(Enum.GetValues<WorkTrackingSystems>().Length - 1));
-        }
-
-        [Test]
-        public void GetSupportedWorkTrackingSystems_ExcludesCsvBuiltin()
-        {
-            var subject = CreateSubject();
-
-            var result = subject.GetSupportedWorkTrackingSystemConnections();
-
-            var okResult = result.Result as OkObjectResult;
-            var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
-
-            Assert.That(supportedSystems?.Any(s => s.WorkTrackingSystem == WorkTrackingSystems.Csv), Is.False);
+            workTrackingSystemsFactoryMock.Verify(x => x.CreateDefaultConnectionForWorkTrackingSystem(It.IsAny<WorkTrackingSystems>()), Times.Exactly(Enum.GetValues<WorkTrackingSystems>().Length));
         }
 
         [Test]
@@ -102,8 +88,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 var supportedSystems = okResult.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
 
-                // CSV excluded and Linear disabled
-                var expected = Enum.GetValues<WorkTrackingSystems>().Length - 2;
+                var expected = Enum.GetValues<WorkTrackingSystems>().Length - 1;
                 Assert.That(supportedSystems?.Count(), Is.EqualTo(expected));
             }
         }
@@ -166,25 +151,6 @@ namespace Lighthouse.Backend.Tests.API
 
             repositoryMock.Verify(x => x.Add(It.IsAny<WorkTrackingSystemConnection>()));
             repositoryMock.Verify(x => x.Save());
-        }
-
-        [Test]
-        public async Task CreateNewWorkTrackingSystemConnection_GivenCsv_ReturnsBadRequest()
-        {
-            var newConnectionDto = new WorkTrackingSystemConnectionDto
-            {
-                Name = "CSV",
-                WorkTrackingSystem = WorkTrackingSystems.Csv,
-            };
-
-            var subject = CreateSubject();
-
-            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
-            }
         }
 
         [Test]
@@ -268,27 +234,6 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
             }
-        }
-
-        [Test]
-        public async Task DeleteWorkTrackingSystemConnection_CsvConnection_ReturnsBadRequest()
-        {
-            var csvConnection = new WorkTrackingSystemConnection { Id = 12, Name = "CSV", WorkTrackingSystem = WorkTrackingSystems.Csv };
-            repositoryMock.Setup(x => x.Exists(12)).Returns(true);
-            repositoryMock.Setup(x => x.GetById(12)).Returns(csvConnection);
-
-            var subject = CreateSubject();
-
-            var result = await subject.DeleteWorkTrackingSystemConnectionAsync(12);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
-            }
-
-            // Verify that Remove and Save were never called
-            repositoryMock.Verify(x => x.Remove(12), Times.Never);
-            repositoryMock.Verify(x => x.Save(), Times.Never);
         }
 
         [Test]

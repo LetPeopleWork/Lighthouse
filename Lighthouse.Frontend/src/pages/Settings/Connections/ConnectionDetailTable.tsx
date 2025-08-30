@@ -44,10 +44,7 @@ const ConnectionDetailTable: React.FC<ConnectionDetailTableProps> = ({
 								>
 									<EditIcon />
 								</IconButton>
-								<IconButton
-									onClick={() => handleDeleteConnection(system)}
-									disabled={system.dataSourceType === "File"}
-								>
+								<IconButton onClick={() => handleDeleteConnection(system)}>
 									<DeleteIcon />
 								</IconButton>
 							</TableCell>

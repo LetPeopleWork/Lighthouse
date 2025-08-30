@@ -74,10 +74,7 @@ describe("ConnectionDetailTable", () => {
 		expect(mockHandleDeleteConnection).toHaveBeenCalledWith(mockConnections[0]);
 	});
 
-	// Note: The following tests verify the component can handle CSV connections,
-	// but in practice CSV connections are filtered out at the parent component level
-
-	it("should render edit and delete buttons for non-CSV connections when CSV is present", () => {
+	it("should render edit and delete buttons for connections when CSV is present", () => {
 		render(
 			<ConnectionDetailTable
 				workTrackingSystemConnections={mockConnectionsWithCsv}
@@ -105,33 +102,5 @@ describe("ConnectionDetailTable", () => {
 		expect(mockHandleDeleteConnection).toHaveBeenCalledWith(
 			mockConnectionsWithCsv[0],
 		); // Jira connection
-	});
-
-	it("should display CSV connection name but with disabled delete button", () => {
-		render(
-			<ConnectionDetailTable
-				workTrackingSystemConnections={mockConnectionsWithCsv}
-				onEditConnectionButtonClicked={mockOnEditConnectionButtonClicked}
-				handleDeleteConnection={mockHandleDeleteConnection}
-			/>,
-		);
-
-		// CSV should be displayed in the table
-		expect(screen.getByText("CSV")).toBeInTheDocument();
-
-		// Find the CSV row
-		const csvRow = screen.getByText("CSV").closest("tr");
-		expect(csvRow).toBeInTheDocument();
-
-		// The CSV row should contain the edit button and a disabled delete button
-		const csvActionsCell = csvRow?.querySelector("td:nth-child(2)");
-		expect(csvActionsCell).toBeInTheDocument();
-
-		// The CSV actions cell should contain edit and IconButton elements
-		const csvIconButtons = csvActionsCell?.querySelectorAll("button");
-		expect(csvIconButtons).toHaveLength(2);
-
-		expect(csvIconButtons?.[0]).not.toBeDisabled();
-		expect(csvIconButtons?.[1]).toBeDisabled();
 	});
 });
