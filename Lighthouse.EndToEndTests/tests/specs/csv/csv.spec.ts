@@ -15,6 +15,31 @@ test("should be able to handle teams and projects defined via CSV", async ({
 	const newTeam = { id: 0, name: generateRandomName() };
 	const newProject = { id: 0, name: generateRandomName() };
 
+	const workTrackingSystem = {
+		name: generateRandomName(),
+	};
+
+	await test.step("Create CSV Connector", async () => {
+		const settingsPage = await overviewPage.lightHousePage.goToSettings();
+
+		const workTrackingSystemConnections =
+			await settingsPage.goToWorkTrackingSystems();
+		
+			const addWorkTrackingSystemConnectionDialog =
+			await workTrackingSystemConnections.addNewWorkTrackingSystem();
+
+		await addWorkTrackingSystemConnectionDialog.selectWorkTrackingSystem(
+			"Csv",
+		);
+
+		await addWorkTrackingSystemConnectionDialog.setConnectionName(
+			workTrackingSystem.name,
+		);
+
+		await addWorkTrackingSystemConnectionDialog.validate();
+		await addWorkTrackingSystemConnectionDialog.create();
+	})
+
 	await test.step("Create CSV Team with file upload", async () => {
 		// Generate CSV data with current date to ensure consistent 30-day metrics
 		teamCsvFile = createTeamCsvFile();
@@ -59,7 +84,7 @@ test("should be able to handle teams and projects defined via CSV", async ({
 		});
 
 		await test.step("Select CSV Work Tracking System", async () => {
-			await newTeamPage.selectWorkTrackingSystem("CSV");
+			await newTeamPage.selectWorkTrackingSystem(workTrackingSystem.name);
 
 			// CSV system should now show file upload component
 			await expect(csvUploadHelper.isFileUploadVisible()).resolves.toBe(true);
@@ -172,7 +197,7 @@ test("should be able to handle teams and projects defined via CSV", async ({
 		});
 
 		await test.step("Select CSV Work Tracking System", async () => {
-			await newProjectPage.selectWorkTrackingSystem("CSV");
+			await newProjectPage.selectWorkTrackingSystem(workTrackingSystem.name);
 
 			// CSV system should now show file upload component
 			await expect(csvUploadHelper.isFileUploadVisible()).resolves.toBe(true);

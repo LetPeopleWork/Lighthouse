@@ -125,7 +125,7 @@ namespace Lighthouse.Backend.Tests.API
             var newConnectionDto = new WorkTrackingSystemConnectionDto
             {
                 Name = "Test",
-                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                WorkTrackingSystem = WorkTrackingSystems.Csv,
             };
             newConnectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = "MyKey", Value = "MyValue", IsSecret = false });
 
@@ -142,7 +142,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var connection = okResult.Value as WorkTrackingSystemConnectionDto;
                 Assert.That(connection.Name, Is.EqualTo("Test"));
-                Assert.That(connection.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Jira));
+                Assert.That(connection.DataSourceType, Is.EqualTo(DataSourceType.File));
+                Assert.That(connection.WorkTrackingSystem, Is.EqualTo(WorkTrackingSystems.Csv));
                 Assert.That(connection.Options, Has.Count.EqualTo(1));
                 Assert.That(connection.Options.Single().Key, Is.EqualTo("MyKey"));
                 Assert.That(connection.Options.Single().Value, Is.EqualTo("MyValue"));

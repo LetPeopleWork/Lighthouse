@@ -25,7 +25,7 @@ export function generateTeamCsvData(baseDate: Date = new Date()): string {
 	// Format dates as YYYY-MM-DD
 	const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
-	return `ID,Name,State,Type,StartedDate,ClosedDate,CreatedDate,ParentReferenceId,Tags,Url
+	return `ID,Name,State,Type,Started Date,Closed Date,Created Date,Parent Reference Id,Tags,Url
 ITEM-001,Shopping cart functionality,Done,User Story,${formatDate(thirtyDaysAgo)},${formatDate(twentyDaysAgo)},${formatDate(thirtyDaysAgo)},EPIC-001,frontend|ecommerce,https://system.com/item/1
 ITEM-002,Product catalog display,Done,User Story,${formatDate(twentyDaysAgo)},${formatDate(fifteenDaysAgo)},${formatDate(thirtyDaysAgo)},EPIC-001,frontend|catalog,https://system.com/item/2
 ITEM-003,Checkout process optimization,Done,Task,${formatDate(twentyDaysAgo)},${formatDate(fifteenDaysAgo)},${formatDate(twentyDaysAgo)},EPIC-001,frontend|checkout,
@@ -69,7 +69,7 @@ export function generateProjectCsvData(baseDate: Date = new Date()): string {
 	// Format dates as YYYY-MM-DD
 	const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
-	return `ID,Name,State,Type,StartedDate,ClosedDate,OwningTeam,EstimatedSize,CreatedDate,Tags,Url
+	return `ID,Name,State,Type,Started Date,Closed Date,Owning Team,Estimated Size,Created Date,Tags,Url
 EPIC-001,E-commerce Platform Enhancement,Done,Epic,${formatDate(thirtyDaysAgo)},${formatDate(fifteenDaysAgo)},Frontend Team,21,${formatDate(thirtyDaysAgo)},frontend|ecommerce,https://system.com/item/epic1
 EPIC-002,User Authentication System,Done,Epic,${formatDate(twentyDaysAgo)},${formatDate(tenDaysAgo)},Backend Team,13,${formatDate(twentyDaysAgo)},backend|authentication,https://system.com/item/epic2
 EPIC-003,API Performance Optimization,In Progress,Epic,${formatDate(fifteenDaysAgo)},,Backend Team,18,${formatDate(twentyDaysAgo)},backend|performance,https://system.com/item/epic3
