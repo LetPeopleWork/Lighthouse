@@ -13,7 +13,7 @@ This page will give you an overview of the specifics to Azure DevOps when using 
 
 # Work Tracking System Connection
 To create a connection to an Azure DevOps system, you need two things:
-- The URL of your Jira Instance
+- The URL of your Azure DevOps Instance
 - A Personal Access Token (PAT)
   
   

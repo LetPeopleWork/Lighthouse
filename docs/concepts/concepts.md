@@ -7,7 +7,7 @@ has_children: true
 
 This section will give you a brief overview over how to set up Lighthouse with connections to your work tracking system, add teams and create projects.
 
-Lighthouse currently works with [Jira](./worktrackingsystems/jira.html) and [Azure DevOps](./worktrackingsystems/azuredevops.html), and in a preview version with [Linear](./worktrackingsystems/linear.html). Check out the dedicated subpages for details on how to configure it Lighthouse for the respective systems.
+Lighthouse currently works with [Jira](./worktrackingsystems/jira.html), [Azure DevOps](./worktrackingsystems/azuredevops.html), [CSV](./worktrackingsystems/csv.html) , and in a preview version with [Linear](./worktrackingsystems/linear.html). Check out the dedicated subpages for details on how to configure it Lighthouse for the respective systems.
 
 - TOC
 {:toc}

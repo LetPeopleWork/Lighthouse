@@ -1,7 +1,7 @@
 ---
 title: Linear
 layout: home
-nav_order: 3
+nav_order: 20
 parent: Work Tracking Systems
 grand_parent: Concepts
 ---

@@ -23,10 +23,19 @@ If the validation is ok, you are good to save the changes.
 # General Configuration
 The general information contains the name of your project. This can be anything that helps you identify it, for example the name of a specific release, customer project, or iteration you want to track.
 
+## Work Tracking System
+In order for Lighthouse to get the data it needs for forecasting, it needs to connect to your Work Tracking System. Work Tracking Systems are stored in the Lighthouse Settings and can be reused across Teams and Projects.
+
+When creating or modifying both Teams or Projects, you can either choose an existing connection or create a new one.
+
+Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/worktrackingsystems/jira.html#work-tracking-system-connection), [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#work-tracking-system-connection) or [Csv](../../concepts/worktrackingsystems/csv.html) for details.
+
 ## Work Item Query
 The Work Item Query is the query that is executed against your [Work Tracking System](../../concepts/concepts.html#work-tracking-system) to get the features relevant for the project. The specific syntax depends on the Work Tracking System you are using.
 
 See the [Jira](../../concepts/worktrackingsystems/jira.html#projects) and [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#projects) specific pages for details on the query.
+
+If you chose a file-based Work Tracking system (like CSV), you will see an upload dialog instead of a query, which will allow you to upload the datasource.
 
 # Work Item Types
 Independent of the [Work Item Query](#work-item-query), Lighthouse needs to know which item types your Features have. Thus you can define the item types that should be taken into account for this specific project.
@@ -64,13 +73,6 @@ For Jira, the common states are: *To Do* (To Do), *In Progress* (Doing), *Done* 
 
 {: .important}
 While Azure DevOps can handle if you specify states that don't exist, Jira will not execute a query with a state that is not in its system. That means for Jira you have make sure everything you mention does exist exactly as specified, as otherwise the [Validation](#validation-and-save) will fail.
-
-# Work Tracking System
-In order for Lighthouse to get the data it needs for forecasting, it needs to connect to your Work Tracking System. Work Tracking Systems are stored in the Lighthouse Settings and can be reused across Teams and Projects.
-
-When creating or modifying both Teams or Projects, you can either choose an existing connection or create a new one.
-
-Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/worktrackingsystems/jira.html#work-tracking-system-connection) and [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#work-tracking-system-connection) for details.
 
 # Tags
 Tags allow you to add any kind of additional information that may be helpful for you to identify this project. This may be a specific customer, a department, business unit, or tribe, or anything else that somehow might be useful. You can add as many tags as you want. Existing tags will be shown as proposal.
