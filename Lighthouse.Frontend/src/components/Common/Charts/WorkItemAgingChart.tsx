@@ -343,7 +343,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								id: "ageAxis",
 								scaleType: "linear",
 								label: `${workItemAgeTerm} (days)`,
-								min: 0,
+								min: 1,
 								max: getMaxYAxisHeight(),
 								valueFormatter: (value: number) => {
 									return Number.isInteger(value) ? value.toString() : "";

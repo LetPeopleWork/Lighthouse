@@ -296,7 +296,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								id: "cycleTimeAxis",
 								scaleType: "linear",
 								label: `${cycleTimeTerm} (days)`,
-								min: 0,
+								min: 1,
 								max: getMaxYAxisHeight(
 									percentiles,
 									serviceLevelExpectation,
