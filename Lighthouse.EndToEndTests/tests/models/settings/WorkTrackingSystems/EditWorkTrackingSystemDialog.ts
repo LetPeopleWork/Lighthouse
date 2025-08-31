@@ -35,7 +35,7 @@ export class EditWorkTrackingSystemDialog<
 	}
 
 	async setWorkTrackingSystemOption(optionName: string, optionValue: string) {
-		await this.page.getByLabel(optionName).fill(optionValue);
+		await this.page.getByLabel(optionName, { exact: true }).fill(optionValue);
 	}
 
 	async cancel(): Promise<T> {
@@ -52,6 +52,13 @@ export class EditWorkTrackingSystemDialog<
 		await this.createButton.click();
 
 		return this.createPageHandler(this.page);
+	}
+
+	async scrollToTop(): Promise<void> {
+		await this.page.keyboard.press("PageUp");
+		await this.page.evaluate(() => {
+			window.scrollTo({ top: 0, behavior: "auto" });
+		});
 	}
 
 	get validateButton(): Locator {

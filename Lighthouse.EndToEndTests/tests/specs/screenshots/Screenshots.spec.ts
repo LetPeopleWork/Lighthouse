@@ -513,6 +513,26 @@ const workTrackingSystemConfiguration = [
 			{ field: "Username", value: "benj@letpeople.work" },
 		],
 	},
+	{
+		workTrackingSystemName: "CSV",
+		workTrackingSystemOptions: [
+			{ field: "Delimiter", value: "," },
+			{ field: "Date Time Format", value: "yyyy-MM-dd HH:mm:ss" },
+			{ field: "Tag Separator", value: "|" },
+			{ field: "ID Column", value: "Key" },
+			{ field: "Name Column", value: "Summary" },
+			{ field: "State Column", value: "State" },
+			{ field: "Type Column", value: "Type" },
+			{ field: "Started Date Column", value: "Started Date" },
+			{ field: "Closed Date Column", value: "Closed Date" },
+			{ field: "Created Date Column", value: "Created Date" },
+			{ field: "Parent Reference Id Column", value: "Parent Key" },
+			{ field: "Tags Column", value: "Labels" },
+			{ field: "Url Column", value: "Url" },
+			{ field: "Owning Team Column", value: "Owning Team" },
+			{ field: "Estimated Size Column", value: "Estimated Size" },
+		],
+	},
 ];
 
 for (const {
@@ -542,13 +562,15 @@ for (const {
 			await workTrackingSystemDialog.selectWorkTrackingSystem(
 				workTrackingSystemName,
 			);
-
+			
 			for (const option of workTrackingSystemOptions) {
 				await workTrackingSystemDialog.setWorkTrackingSystemOption(
 					option.field,
 					option.value,
 				);
 			}
+
+			await workTrackingSystemDialog.scrollToTop();
 
 			await takeElementScreenshot(
 				workTrackingSystemDialog.page.getByRole("dialog"),
