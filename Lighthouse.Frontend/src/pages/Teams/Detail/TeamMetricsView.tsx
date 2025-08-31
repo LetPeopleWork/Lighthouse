@@ -17,6 +17,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
+	const [featureWip, setFeatureWip] = useState<number | undefined>(undefined);
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -36,6 +37,21 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 
 		fetchFeatures();
 	}, [team.id, teamMetricsService, featuresTerm]);
+
+	useEffect(() => {
+		const fetchFeatureWip = async () => {
+			const teamSetting = await teamService.getTeamSettings(team.id);
+
+			let idealFeatureWip: number | undefined;
+			if (!teamSetting.automaticallyAdjustFeatureWIP) {
+				idealFeatureWip = team.featureWip > 0 ? team.featureWip : undefined;
+			}
+
+			setFeatureWip(idealFeatureWip);
+		};
+
+		fetchFeatureWip();
+	}, [teamService, team]);
 
 	useEffect(() => {
 		const fetchTeamSettings = async () => {
@@ -67,7 +83,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const featuresBeingWorkedOn: InProgressEntry = {
 		title: `${featuresTerm} being Worked On:`,
 		items: inProgressFeatures,
-		idealWip: team.featureWip > 0 ? team.featureWip : undefined,
+		idealWip: featureWip,
 	};
 
 	return (

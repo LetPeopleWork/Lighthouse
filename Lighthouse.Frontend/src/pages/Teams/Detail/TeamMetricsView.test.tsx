@@ -156,6 +156,98 @@ describe("TeamMetricsView component", () => {
 		});
 	});
 
+	it("should set featureWip to real number if team.featureWip > 0 and auto-adjust is false", async () => {
+		const team = new Team();
+		team.id = 2;
+		team.name = "Team Wip Real";
+		team.featureWip = 5;
+
+		const mockTeamService = createMockTeamService();
+		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+			automaticallyAdjustFeatureWIP: false,
+			doingStates: ["In Progress"],
+		});
+
+		const mockContext = createMockApiServiceContext({
+			teamMetricsService: mockTeamMetricsService,
+			teamService: mockTeamService,
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockContext}>
+				<TeamMetricsView team={team} />
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			const idealWip = screen.getByTestId("ideal-wip");
+			expect(idealWip).toHaveTextContent("5");
+		});
+	});
+
+	it("should set featureWip to undefined if team.featureWip = 0 and auto-adjust is false", async () => {
+		const team = new Team();
+		team.id = 3;
+		team.name = "Team Wip Zero";
+		team.featureWip = 0;
+
+		const mockTeamService = createMockTeamService();
+		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+			automaticallyAdjustFeatureWIP: false,
+			doingStates: ["In Progress"],
+		});
+
+		const mockContext = createMockApiServiceContext({
+			teamMetricsService: mockTeamMetricsService,
+			teamService: mockTeamService,
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockContext}>
+				<TeamMetricsView team={team} />
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			// idealWip should not be rendered if undefined
+			const itemsInProgress = screen.getByTestId("items-in-progress");
+			expect(
+				itemsInProgress.querySelector("[data-testid='ideal-wip']"),
+			).toBeNull();
+		});
+	});
+
+	it("should set featureWip to undefined if team.featureWip > 0 but auto-adjust is true", async () => {
+		const team = new Team();
+		team.id = 4;
+		team.name = "Team Wip Auto";
+		team.featureWip = 7;
+
+		const mockTeamService = createMockTeamService();
+		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+			automaticallyAdjustFeatureWIP: true,
+			doingStates: ["In Progress"],
+		});
+
+		const mockContext = createMockApiServiceContext({
+			teamMetricsService: mockTeamMetricsService,
+			teamService: mockTeamService,
+		});
+
+		render(
+			<ApiServiceContext.Provider value={mockContext}>
+				<TeamMetricsView team={team} />
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			const itemsInProgress = screen.getByTestId("items-in-progress");
+			expect(
+				itemsInProgress.querySelector("[data-testid='ideal-wip']"),
+			).toBeNull();
+		});
+	});
+
 	it("should render items in progress with fetched features", async () => {
 		// Arrange
 		const team = new Team();
