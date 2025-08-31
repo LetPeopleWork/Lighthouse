@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -127,7 +128,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
         private IRepository<WorkTrackingSystemConnection> CreateSubject()
         {
-            return ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new ArgumentNullException("Could not resolve repository");
+            var repo = (WorkTrackingSystemConnectionRepository)ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new ArgumentNullException("Coult not resolve Work Tracking System Connection Repo");
+            repo.SeedBuiltInConnections();
+
+            return repo;
         }
     }
 }

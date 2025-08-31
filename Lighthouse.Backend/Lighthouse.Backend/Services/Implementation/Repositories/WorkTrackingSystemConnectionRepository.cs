@@ -9,6 +9,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
     public class WorkTrackingSystemConnectionRepository : RepositoryBase<WorkTrackingSystemConnection>
     {
+        private static bool seeded;
+
         private readonly ILogger<WorkTrackingSystemConnectionRepository> logger;
         private readonly IWorkTrackingSystemFactory workTrackingSystemFactory;
 
@@ -20,7 +22,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         {
             this.logger = logger;
             this.workTrackingSystemFactory = workTrackingSystemFactory;
-            SeedBuiltInConnections();
+
+            if (!seeded)
+            {
+                SeedBuiltInConnections();
+                seeded = true;
+            }
         }
 
         public override IEnumerable<WorkTrackingSystemConnection> GetAll()
@@ -34,7 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return GetAll().SingleOrDefault(t => t.Id == id);
         }
 
-        private void SeedBuiltInConnections()
+        internal void SeedBuiltInConnections()
         {
             if (!GetAll().Any())
             {

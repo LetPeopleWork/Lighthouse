@@ -18,10 +18,41 @@ vi.mock("./Steps/ImportSettingsStep", () => ({
 		<div data-testid="mock-import-settings-step">
 			<button
 				type="button"
+				data-testid="import-settings-next-with-wts-no-secrets"
+				onClick={() =>
+					props.onNext(
+						[
+							{
+								id: 1,
+								options: [
+									{ isSecret: false, name: "regular-option", value: "value" },
+								],
+							},
+						],
+						[],
+						[],
+						[],
+						[],
+						[],
+						new Map(),
+						new Map(),
+						false,
+					)
+				}
+			>
+				Next with WTS (No Secrets)
+			</button>
+			<button
+				type="button"
 				data-testid="import-settings-next-with-wts"
 				onClick={() =>
 					props.onNext(
-						[{ id: 1 }],
+						[
+							{
+								id: 1,
+								options: [{ isSecret: true, name: "secret1", value: "" }],
+							},
+						],
 						[],
 						[],
 						[],
@@ -205,6 +236,24 @@ describe("ImportConfigurationDialog Component", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("mock-import-step")).toBeInTheDocument();
 		});
+	});
+
+	it("should skip WorkTrackingSystemConfigurationStep when newWorkTrackingSystems have no secret options", async () => {
+		renderWithMockApiProvider();
+
+		fireEvent.click(
+			screen.getByTestId("import-settings-next-with-wts-no-secrets"),
+		);
+
+		// It should skip the WorkTrackingSystemConfigurationStep and go directly to Import step
+		await waitFor(() => {
+			expect(screen.getByTestId("mock-import-step")).toBeInTheDocument();
+		});
+
+		// Make sure we don't see the WorkTrackingSystemConfigurationStep
+		expect(
+			screen.queryByTestId("mock-work-tracking-system-config-step"),
+		).not.toBeInTheDocument();
 	});
 
 	it("should advance to ImportStep when WorkTrackingSystemConfigurationStep completes", async () => {

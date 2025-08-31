@@ -99,7 +99,14 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		setWorkTrackingSystemsIdMapping(workTrackingSystemsIdMapping);
 		setTeamIdMapping(teamIdMapping);
 
-		if (newWorkTrackingSys.length === 0) {
+		const secretOptionsCount = newWorkTrackingSys.reduce((count, system) => {
+			return (
+				count +
+				(system.options?.filter((option) => option.isSecret).length || 0)
+			);
+		}, 0);
+
+		if (secretOptionsCount === 0) {
 			setActiveStep((prevStep) => prevStep + 2);
 		} else {
 			handleNext();
