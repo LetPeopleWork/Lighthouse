@@ -11,6 +11,33 @@ Preview
 {: .label .label-blue }
  -->
 
+# Lighthouse v25.8.31.1120
+## CSV Support
+With this version it's possible to use CSV files as a base for Teams and Projects. While the recommendation is to use direct connections to your systems, this allows you to:
+- Try out Lighthouse with static data
+- Work around constraints in your environment if you don't have permissions for direct connections
+- Use Lighthouse even though your work tracking system is not yet supported
+
+You can find how to connect data with CSV as well as some examples on how to export CSV from common systems in the [documentation](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/csv.html).
+
+![CSV Connection](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/concepts/worktrackingsystem_CSV.png).
+
+In the free version, you can add one team that is based on CSV data. In the premium version, you get unlimited teams and projects through CSV.
+
+# Update Jira Endpoints
+Atlassian is retiring some of their API endpoints that were used by Lighthouse. This release changes to the still supported APIs and ensures Lighthouse keeps working as expected.
+
+**Important:** If you are using Jira, please make sure to upgrade to this version to ensure that Lighthouse will still be able to connect to your Jira Instances in future!
+
+## Other Improvements
+- Update of various third-party libraries
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.8.18.910...v25.8.31.1120)
+
 # Lighthouse v25.8.18.910
 
 ## Customizable Dashboard
