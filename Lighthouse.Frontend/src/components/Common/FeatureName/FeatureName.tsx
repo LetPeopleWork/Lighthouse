@@ -1,9 +1,9 @@
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import GppMaybeOutlinedIcon from "@mui/icons-material/GppMaybeOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
-import PauseCircleOutlineOutlinedIcon from "@mui/icons-material/PauseCircleOutlineOutlined";
-import PlayCircleFilledWhiteOutlinedIcon from "@mui/icons-material/PlayCircleFilledWhiteOutlined";
-import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
+import LoopOutlinedIcon from "@mui/icons-material/LoopOutlined";
 import { IconButton, Link, Tooltip } from "@mui/material";
 import React from "react";
 import type { IEntityReference } from "../../../models/EntityReference";
@@ -92,9 +92,9 @@ const FeatureName: React.FC<FeatureNameProps> = ({
 
 			<Tooltip title={`${featureTerm} State: ${stateCategory}`}>
 				<IconButton size="small" sx={{ ml: 1 }}>
-					{stateCategory === "ToDo" && <PauseCircleOutlineOutlinedIcon />}
-					{stateCategory === "Doing" && <PlayCircleFilledWhiteOutlinedIcon />}
-					{stateCategory === "Done" && <StopCircleOutlinedIcon />}
+					{stateCategory === "ToDo" && <AssignmentOutlinedIcon />}
+					{stateCategory === "Doing" && <LoopOutlinedIcon />}
+					{stateCategory === "Done" && <CheckCircleOutlinedIcon />}
 					{stateCategory === "Unknown" && <HelpOutlineOutlinedIcon />}
 				</IconButton>
 			</Tooltip>

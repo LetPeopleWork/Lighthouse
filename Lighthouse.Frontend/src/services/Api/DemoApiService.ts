@@ -1740,6 +1740,7 @@ export class DemoApiService
 		feature1.id = 0;
 		feature1.referenceId = "FTR-1";
 		feature1.state = "ToDo";
+		feature1.stateCategory = "ToDo";
 		feature1.projects = { 0: "Release 1.33.7" };
 		feature1.remainingWork = { 0: 10 };
 		feature1.totalWork = { 0: 15 };
@@ -1758,6 +1759,7 @@ export class DemoApiService
 		feature2.id = 1;
 		feature2.referenceId = "FTR-2";
 		feature2.state = "Doing";
+		feature2.stateCategory = "Doing";
 		feature2.projects = { 1: "Release 42" };
 		feature2.remainingWork = { 1: 5 };
 		feature2.totalWork = { 1: 5 };
@@ -1776,6 +1778,7 @@ export class DemoApiService
 		feature3.id = 2;
 		feature3.referenceId = "FTR-3";
 		feature3.state = "Done";
+		feature3.stateCategory = "Done";
 		feature3.projects = { 2: "Release Codename Daniel" };
 		feature3.remainingWork = { 2: 7, 1: 15 };
 		feature3.totalWork = { 2: 10, 1: 25 };
@@ -1794,6 +1797,7 @@ export class DemoApiService
 		feature4.id = 3;
 		feature4.referenceId = "FTR-4";
 		feature4.state = "Unknown";
+		feature4.stateCategory = "Unknown";
 		feature4.projects = { 2: "Release Codename Daniel", 1: "Release 1.33.7" };
 		feature4.remainingWork = { 2: 3, 1: 5 };
 		feature4.totalWork = { 2: 5, 1: 10 };
