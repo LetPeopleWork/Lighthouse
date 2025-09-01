@@ -8,6 +8,7 @@ export interface IFeature extends IWorkItem {
 	lastUpdated: Date;
 	isUsingDefaultFeatureSize: boolean;
 	size: number;
+	owningTeam: string;
 	remainingWork: { [key: number]: number };
 	totalWork: { [key: number]: number };
 	milestoneLikelihood: { [key: number]: number };
@@ -53,6 +54,8 @@ export class Feature implements IFeature {
 		toClassOnly: true,
 	})
 	forecasts!: IWhenForecast[];
+
+	owningTeam!: string;
 
 	url = "";
 	stateCategory: StateCategory = "Unknown";

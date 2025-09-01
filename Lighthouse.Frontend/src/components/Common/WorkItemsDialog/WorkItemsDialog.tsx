@@ -16,6 +16,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { IFeature } from "../../../models/Feature";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import {
@@ -51,6 +52,15 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	const { getTerm } = useTerminology();
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
+
+	// Check if items are Features with owning team
+	const isFeature = (item: IWorkItem): item is IFeature => {
+		return 'owningTeam' in item;
+	};
+
+	const hasOwningTeams = items.length > 0 && items.some(item => 
+		isFeature(item) && item.owningTeam && item.owningTeam.trim() !== ''
+	);
 
 	const sortedItems = [...items].sort((a, b) => {
 		return additionalColumnContent(b) - additionalColumnContent(a);
@@ -95,6 +105,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 								<TableCell>Name</TableCell>
 								<TableCell>Type</TableCell>
 								<TableCell>State</TableCell>
+								{hasOwningTeams && <TableCell>Owned by</TableCell>}
 								<TableCell>
 									{additionalColumnTitle}
 
@@ -153,6 +164,11 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 											variant="outlined"
 										/>
 									</TableCell>
+									{hasOwningTeams && (
+										<TableCell>
+											{isFeature(item) ? item.owningTeam : ''}
+										</TableCell>
+									)}
 									<TableCell>
 										<Typography
 											variant="body2"

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { IFeature } from "../../../models/Feature";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import {
 	certainColor,
@@ -134,6 +135,97 @@ const mockBlockedWorkItems: IWorkItem[] = [
 		parentWorkItemReference: "",
 		isBlocked: true,
 	},
+];
+
+// Mock Feature data for testing the "Owned by" column
+const mockFeatures: IFeature[] = [
+	{
+		id: 10,
+		name: "Feature with Team A",
+		state: "In Progress",
+		stateCategory: "Doing" as StateCategory,
+		type: "Feature",
+		referenceId: "FEAT-001",
+		url: "https://example.com/feature/10",
+		startedDate: new Date("2023-01-01"),
+		closedDate: new Date("2023-01-10"),
+		cycleTime: 10,
+		workItemAge: 5,
+		parentWorkItemReference: "",
+		isBlocked: false,
+		owningTeam: "Team Alpha",
+		lastUpdated: new Date("2023-01-15"),
+		isUsingDefaultFeatureSize: false,
+		size: 8,
+		remainingWork: { 1: 10, 2: 5 },
+		totalWork: { 1: 20, 2: 15 },
+		milestoneLikelihood: { 1: 0.85, 2: 0.92 },
+		projects: { 1: "Project A", 2: "Project B" },
+		forecasts: [],
+		getRemainingWorkForFeature: () => 15,
+		getRemainingWorkForTeam: (id: number) => id === 1 ? 10 : 5,
+		getTotalWorkForFeature: () => 35,
+		getTotalWorkForTeam: (id: number) => id === 1 ? 20 : 15,
+		getMilestoneLikelihood: (id: number) => id === 1 ? 0.85 : 0.92,
+	},
+	{
+		id: 11,
+		name: "Feature with Team B",
+		state: "New",
+		stateCategory: "ToDo" as StateCategory,
+		type: "Feature",
+		referenceId: "FEAT-002",
+		url: "https://example.com/feature/11",
+		startedDate: new Date("2023-02-01"),
+		closedDate: new Date("2023-02-10"),
+		cycleTime: 9,
+		workItemAge: 3,
+		parentWorkItemReference: "",
+		isBlocked: false,
+		owningTeam: "Team Beta",
+		lastUpdated: new Date("2023-02-15"),
+		isUsingDefaultFeatureSize: true,
+		size: 5,
+		remainingWork: { 3: 8 },
+		totalWork: { 3: 12 },
+		milestoneLikelihood: { 3: 0.75 },
+		projects: { 3: "Project C" },
+		forecasts: [],
+		getRemainingWorkForFeature: () => 8,
+		getRemainingWorkForTeam: (id: number) => id === 3 ? 8 : 0,
+		getTotalWorkForFeature: () => 12,
+		getTotalWorkForTeam: (id: number) => id === 3 ? 12 : 0,
+		getMilestoneLikelihood: (id: number) => id === 3 ? 0.75 : 0,
+	},
+	{
+		id: 12,
+		name: "Feature with no team",
+		state: "Active",
+		stateCategory: "Doing" as StateCategory,
+		type: "Feature",
+		referenceId: "FEAT-003",
+		url: null,
+		startedDate: new Date("2023-03-01"),
+		closedDate: new Date("2023-03-08"),
+		cycleTime: 7,
+		workItemAge: 12,
+		parentWorkItemReference: "",
+		isBlocked: false,
+		owningTeam: "",
+		lastUpdated: new Date("2023-03-15"),
+		isUsingDefaultFeatureSize: false,
+		size: 3,
+		remainingWork: {},
+		totalWork: {},
+		milestoneLikelihood: {},
+		projects: {},
+		forecasts: [],
+		getRemainingWorkForFeature: () => 0,
+		getRemainingWorkForTeam: () => 0,
+		getTotalWorkForFeature: () => 0,
+		getTotalWorkForTeam: () => 0,
+		getMilestoneLikelihood: () => 0,
+	}
 ];
 
 // Test scenarios
@@ -500,6 +592,87 @@ describe("WorkItemsDialog Component", () => {
 			// Time values should still have SLE coloring
 			const timeCells = screen.getAllByTestId("additionalColumnContent");
 			expect(timeCells[0]).toHaveStyle("font-weight: 700"); // Bold due to SLE
+		});
+	});
+
+	describe("Feature owning team functionality", () => {
+		test("displays 'Owned by' column for Features with owning teams", () => {
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={mockFeatures}
+					title="Features Dialog"
+					additionalColumnTitle="Work Item Age"
+					additionalColumnDescription="days"
+					additionalColumnContent={(item) => item.workItemAge}
+				/>,
+			);
+
+			// Check if the 'Owned by' column header is displayed
+			expect(screen.getByText("Owned by")).toBeInTheDocument();
+
+			// Check if owning teams are displayed
+			expect(screen.getByText("Team Alpha")).toBeInTheDocument();
+			expect(screen.getByText("Team Beta")).toBeInTheDocument();
+
+			// Feature with empty owningTeam should show empty cell
+			const rows = screen.getAllByRole("row");
+			expect(rows).toHaveLength(4); // Header + 3 data rows
+		});
+
+		test("does not display 'Owned by' column for regular WorkItems", () => {
+			render(<WorkItemsDialog {...defaultProps} />);
+
+			// Check if the 'Owned by' column header is NOT displayed
+			expect(screen.queryByText("Owned by")).not.toBeInTheDocument();
+
+			// Verify standard columns are present
+			expect(screen.getByText("ID")).toBeInTheDocument();
+			expect(screen.getByText("Name")).toBeInTheDocument();
+			expect(screen.getByText("Type")).toBeInTheDocument();
+			expect(screen.getByText("State")).toBeInTheDocument();
+		});
+
+		test("does not display 'Owned by' column when Features have no owning teams", () => {
+			const featuresWithoutTeams = mockFeatures.map(feature => ({
+				...feature,
+				owningTeam: ""
+			}));
+
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={featuresWithoutTeams}
+					title="Features without Teams"
+				/>,
+			);
+
+			// Check if the 'Owned by' column header is NOT displayed
+			expect(screen.queryByText("Owned by")).not.toBeInTheDocument();
+		});
+
+		test("displays 'Owned by' column when at least one Feature has an owning team", () => {
+			const mixedFeatures = [
+				mockFeatures[0], // Has "Team Alpha"
+				{
+					...mockFeatures[1],
+					owningTeam: ""  // Empty team
+				}
+			];
+
+			render(
+				<WorkItemsDialog
+					{...defaultProps}
+					items={mixedFeatures}
+					title="Mixed Features"
+				/>,
+			);
+
+			// Check if the 'Owned by' column header IS displayed
+			expect(screen.getByText("Owned by")).toBeInTheDocument();
+
+			// Check if the team is displayed for the feature that has it
+			expect(screen.getByText("Team Alpha")).toBeInTheDocument();
 		});
 	});
 });
