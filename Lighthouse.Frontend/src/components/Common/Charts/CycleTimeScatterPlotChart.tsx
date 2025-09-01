@@ -392,6 +392,13 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							sx={{
 								zIndex: 1200,
 								maxWidth: "400px",
+								// Hide the tooltip marker/dot
+								"& .MuiChartsTooltip-mark": {
+									display: "none",
+								},
+								"& .MuiChartsTooltip-markContainer": {
+									display: "none",
+								},
 								"& .MuiChartsTooltip-table": {
 									maxWidth: "100%",
 									wordBreak: "break-word",

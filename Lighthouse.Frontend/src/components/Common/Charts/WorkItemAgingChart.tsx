@@ -29,7 +29,6 @@ import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 interface ScatterMarkerProps {
 	x: number;
 	y: number;
-	color: string;
 	isHighlighted?: boolean;
 	dataIndex?: number;
 }
@@ -57,7 +56,9 @@ const ScatterMarker = (
 	if (!group) return null;
 
 	const bubbleSize = getBubbleSize(group.items.length);
-	const bubbleColor = group.hasBlockedItems ? errorColor : props.color;
+	const bubbleColor = group.hasBlockedItems
+		? errorColor
+		: theme.palette.primary.main;
 
 	const handleOpenWorkItems = () => {
 		if (group.items.length > 0) {
@@ -124,7 +125,6 @@ const groupWorkItems = (
 ): IGroupedWorkItem[] => {
 	const groups: Record<string, IGroupedWorkItem> = {};
 
-	// Create state index map from the provided doingStates order
 	const stateIndexMap: Record<string, number> = {};
 	for (let i = 0; i < doingStates.length; i++) {
 		stateIndexMap[doingStates[i]] = i;
@@ -135,8 +135,6 @@ const groupWorkItems = (
 
 		const age = getAgeInDays(item);
 		const stateIndex = stateIndexMap[item.state];
-
-		// Skip items that are not in the doing states
 		if (stateIndex === undefined) continue;
 
 		const key = `${item.state}-${age}`;
@@ -153,7 +151,6 @@ const groupWorkItems = (
 
 		groups[key].items.push(item);
 
-		// Update hasBlockedItems if this item is blocked
 		if (item.isBlocked) {
 			groups[key].hasBlockedItems = true;
 		}
@@ -227,7 +224,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		setDialogOpen(true);
 	};
 
-	// Calculate minimum Y-axis height based on percentiles and SLE
 	const getMaxYAxisHeight = () => {
 		const percentileMax =
 			percentileValues.length > 0
@@ -239,9 +235,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				? Math.max(...groupedDataPoints.map((g) => g.age))
 				: 0;
 
-		// Add some padding above the highest value
 		const maxValue = Math.max(percentileMax, sleMax, dataMax, 5);
-		return Math.ceil(maxValue * 1.1); // 10% padding
+		return Math.ceil(maxValue * 1.1);
 	};
 
 	return inProgressItems.length > 0 ? (
@@ -415,7 +410,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							/>
 						)}
 
-						{/* Vertical grid lines between states */}
 						{doingStates.slice(0, -1).map((stateName, index) => (
 							<ChartsReferenceLine
 								key={`vertical-grid-${stateName}`}
@@ -450,6 +444,13 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							sx={{
 								zIndex: 1200,
 								maxWidth: "400px",
+								// Hide the tooltip marker/dot
+								"& .MuiChartsTooltip-mark": {
+									display: "none",
+								},
+								"& .MuiChartsTooltip-markContainer": {
+									display: "none",
+								},
 								"& .MuiChartsTooltip-table": {
 									maxWidth: "100%",
 									wordBreak: "break-word",
