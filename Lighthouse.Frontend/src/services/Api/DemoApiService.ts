@@ -1741,7 +1741,7 @@ export class DemoApiService
 		feature1.referenceId = "FTR-1";
 		feature1.state = "ToDo";
 		feature1.stateCategory = "ToDo";
-		feature1.owningTeam = "Binary Blazers"
+		feature1.owningTeam = "Binary Blazers";
 		feature1.projects = { 0: "Release 1.33.7" };
 		feature1.remainingWork = { 0: 10 };
 		feature1.totalWork = { 0: 15 };
@@ -1761,7 +1761,7 @@ export class DemoApiService
 		feature2.referenceId = "FTR-2";
 		feature2.state = "Doing";
 		feature2.stateCategory = "Doing";
-		feature2.owningTeam = ""
+		feature2.owningTeam = "";
 		feature2.projects = { 1: "Release 42" };
 		feature2.remainingWork = { 1: 5 };
 		feature2.totalWork = { 1: 5 };
@@ -1781,7 +1781,7 @@ export class DemoApiService
 		feature3.referenceId = "FTR-3";
 		feature3.state = "Done";
 		feature3.stateCategory = "Done";
-		feature3.owningTeam = "Cyber Sultans"
+		feature3.owningTeam = "Cyber Sultans";
 		feature3.projects = { 2: "Release Codename Daniel" };
 		feature3.remainingWork = { 2: 7, 1: 15 };
 		feature3.totalWork = { 2: 10, 1: 25 };

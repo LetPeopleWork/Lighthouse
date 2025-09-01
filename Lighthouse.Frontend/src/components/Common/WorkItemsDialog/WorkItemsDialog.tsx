@@ -15,8 +15,8 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IFeature } from "../../../models/Feature";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import {
@@ -55,12 +55,15 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 
 	// Check if items are Features with owning team
 	const isFeature = (item: IWorkItem): item is IFeature => {
-		return 'owningTeam' in item;
+		return "owningTeam" in item;
 	};
 
-	const hasOwningTeams = items.length > 0 && items.some(item => 
-		isFeature(item) && item.owningTeam && item.owningTeam.trim() !== ''
-	);
+	const hasOwningTeams =
+		items.length > 0 &&
+		items.some(
+			(item) =>
+				isFeature(item) && item.owningTeam && item.owningTeam.trim() !== "",
+		);
 
 	const sortedItems = [...items].sort((a, b) => {
 		return additionalColumnContent(b) - additionalColumnContent(a);
@@ -166,7 +169,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 									</TableCell>
 									{hasOwningTeams && (
 										<TableCell>
-											{isFeature(item) ? item.owningTeam : ''}
+											{isFeature(item) ? item.owningTeam : ""}
 										</TableCell>
 									)}
 									<TableCell>

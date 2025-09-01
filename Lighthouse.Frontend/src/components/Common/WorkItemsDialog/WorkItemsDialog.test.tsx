@@ -163,10 +163,10 @@ const mockFeatures: IFeature[] = [
 		projects: { 1: "Project A", 2: "Project B" },
 		forecasts: [],
 		getRemainingWorkForFeature: () => 15,
-		getRemainingWorkForTeam: (id: number) => id === 1 ? 10 : 5,
+		getRemainingWorkForTeam: (id: number) => (id === 1 ? 10 : 5),
 		getTotalWorkForFeature: () => 35,
-		getTotalWorkForTeam: (id: number) => id === 1 ? 20 : 15,
-		getMilestoneLikelihood: (id: number) => id === 1 ? 0.85 : 0.92,
+		getTotalWorkForTeam: (id: number) => (id === 1 ? 20 : 15),
+		getMilestoneLikelihood: (id: number) => (id === 1 ? 0.85 : 0.92),
 	},
 	{
 		id: 11,
@@ -192,10 +192,10 @@ const mockFeatures: IFeature[] = [
 		projects: { 3: "Project C" },
 		forecasts: [],
 		getRemainingWorkForFeature: () => 8,
-		getRemainingWorkForTeam: (id: number) => id === 3 ? 8 : 0,
+		getRemainingWorkForTeam: (id: number) => (id === 3 ? 8 : 0),
 		getTotalWorkForFeature: () => 12,
-		getTotalWorkForTeam: (id: number) => id === 3 ? 12 : 0,
-		getMilestoneLikelihood: (id: number) => id === 3 ? 0.75 : 0,
+		getTotalWorkForTeam: (id: number) => (id === 3 ? 12 : 0),
+		getMilestoneLikelihood: (id: number) => (id === 3 ? 0.75 : 0),
 	},
 	{
 		id: 12,
@@ -225,7 +225,7 @@ const mockFeatures: IFeature[] = [
 		getTotalWorkForFeature: () => 0,
 		getTotalWorkForTeam: () => 0,
 		getMilestoneLikelihood: () => 0,
-	}
+	},
 ];
 
 // Test scenarios
@@ -634,9 +634,9 @@ describe("WorkItemsDialog Component", () => {
 		});
 
 		test("does not display 'Owned by' column when Features have no owning teams", () => {
-			const featuresWithoutTeams = mockFeatures.map(feature => ({
+			const featuresWithoutTeams = mockFeatures.map((feature) => ({
 				...feature,
-				owningTeam: ""
+				owningTeam: "",
 			}));
 
 			render(
@@ -656,8 +656,8 @@ describe("WorkItemsDialog Component", () => {
 				mockFeatures[0], // Has "Team Alpha"
 				{
 					...mockFeatures[1],
-					owningTeam: ""  // Empty team
-				}
+					owningTeam: "", // Empty team
+				},
 			];
 
 			render(
