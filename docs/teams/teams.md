@@ -5,15 +5,15 @@ has_children: true
 nav_order: 10
 ---
 
-The *Team Overview* page shows you all teams that are defined. As the name suggests, to give you an overview over everything that is going on. You can do the following things from this page:
+The *Overview* page shows you all teams that are defined. As the name suggests, to give you an overview over everything that is going on. You can do the following things from this page:
 
 - TOC
 {:toc}
 
-![Team Overview](../assets/features/teams.png)
+![Team Overview](../assets/features/overview.png)
 
 # Gain an Overview
-The overview, as the name suggests, shows you a rough overview over all the teams. You can see which teams are defined, how many Features they are contributing to (based on the the features in all defined projects), how many work items they working on in total and how many items were already closed.
+The overview, as the name suggests, shows you a rough overview over all the teams. You can see which teams are defined, and how many Features they are contributing to (based on the the features in all defined projects).
 
 # Create a new Team
 If you want to create a new team, click on the *Add New* button on top. That will bring you to the [Team Creation Page](./edit.html).

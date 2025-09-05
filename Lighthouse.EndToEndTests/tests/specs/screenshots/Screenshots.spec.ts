@@ -337,10 +337,6 @@ testWithData(
 		await updateTeams(request, overviewPage, testData.teams);
 		await updateProjects(request, overviewPage, testData.projects);
 
-		// Overview Page
-		const landingPage = await overviewPage.lightHousePage.goToOverview();
-		await takePageScreenshot(landingPage.page, "features/overview.png");
-
 		// Team Deletion Dialog
 		const deleteTeamDialog = await overviewPage.deleteTeam(
 			testData.teams[0].name,

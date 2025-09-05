@@ -10,10 +10,10 @@ Projects are an essential building block for using Lighthouse. You can use Proje
 - TOC
 {:toc}
 
-![Project Overview](../assets/features/projects.png)
+![Project Overview](../assets/features/overview.png)
 
 # Gain an Overview
-The overview, as the name suggests, shows you a rough overview over all the projects. You can see which projects are defined, how many Features are defined as part of this project, and how the project is progressing (in terms of work items closed).
+The overview, as the name suggests, shows you a rough overview over all the projects. You can see which projects are defined, and how many Features are defined as part of this project.
 
 # Create a new Project
 If you want to create a new project, click on the *Add New* button on top. That will bring you to the [Project Creation Page](./edit.html).
