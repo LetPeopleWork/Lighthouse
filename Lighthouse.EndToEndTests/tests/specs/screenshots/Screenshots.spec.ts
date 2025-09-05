@@ -338,7 +338,8 @@ testWithData(
 		await updateProjects(request, overviewPage, testData.projects);
 
 		// Team Deletion Dialog
-		const deleteTeamDialog = await overviewPage.deleteTeam(
+		const teamsPage = await overviewPage.lightHousePage.goToOverview();
+		const deleteTeamDialog = await teamsPage.deleteTeam(
 			testData.teams[0].name,
 		);
 		await takeElementScreenshot(
