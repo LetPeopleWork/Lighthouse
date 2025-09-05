@@ -10,6 +10,39 @@ nav_order: 95
 Preview
 {: .label .label-blue }
  -->
+ 
+# Lighthouse v25.9.5.1326
+{: .d-inline-block }
+Latest
+{: .label .label-green }
+
+## Rework of Overview
+We reworked the overview page as follows:
+- You can now see the Projects and Teams directly from the start page
+- Everything you could do on the dedicated *Teams Overview* and *Project Overview* pages (edit, delete, see details, add new) is possible from the main page now
+- Respective Team and Project Overviews were removed
+
+![Overview](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/overview.png)
+
+The summary cards for each project that were available before were removed. This was the consequence of an internal change to improve the responsiveness of Lighthouse (especially when having bigger projects). Please let us know if you were using the old Dashboard, as we're considering eventually bringing it back.
+
+## General Improvements
+- Cycle Time and Work Item Age Scatterplot start now with 1 on the y-axis (instead of 0 as before)
+- The icons displayed for the Feature states (*To Do*, *Doing*, *Done*) were adjusted to better indicate the respective state
+- When viewing details of Features, you will see now the respective *Feature Owner* if it was configured
+- Update of various third-party libraries
+
+## Bug Fixes
+- Feature Goal is not shown anymore in WIP Limited widget if you set it to *automatically adjust*
+- Blocked Items in Work Item Age Chart had a green bubble in the tooltip instead of a red one
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.8.31.1120...v25.9.5.1326)
+
 
 # Lighthouse v25.8.31.1120
 ## CSV Support
@@ -127,9 +160,6 @@ Special Thanks to everyone who contributed their feedback to this release:
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.7.26.915...v25.7.27.1729)
 
 # Lighthouse v25.7.26.915
-{: .d-inline-block }
-Latest
-{: .label .label-green }
 
 ## Improved Visual Indicators
 We've added visual icons to make configuration status more apparent:
