@@ -126,6 +126,6 @@ export class OverviewPage {
 	}
 
 	get toolbar(): Locator {
-		return this.page.getByText("LighthouseOverviewTeamsProjectsSettings");
+		return this.page.getByText("LighthouseOverviewSettings");
 	}
 }
