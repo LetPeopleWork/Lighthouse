@@ -14,8 +14,6 @@ describe("TeamsList", () => {
 			featureWip: 1,
 			remainingFeatures: 1,
 			lastUpdated: new Date(),
-			remainingWork: 1,
-			totalWork: 12,
 			useFixedDatesForThroughput: false,
 			throughputStartDate: new Date(
 				new Date().setDate(new Date().getDate() - [1].length),
@@ -34,8 +32,6 @@ describe("TeamsList", () => {
 			featureWip: 1,
 			remainingFeatures: 1,
 			lastUpdated: new Date(),
-			remainingWork: 1,
-			totalWork: 12,
 			useFixedDatesForThroughput: false,
 			throughputStartDate: new Date(
 				new Date().setDate(new Date().getDate() - [1].length),
@@ -54,8 +50,6 @@ describe("TeamsList", () => {
 			featureWip: 1,
 			remainingFeatures: 1,
 			lastUpdated: new Date(),
-			remainingWork: 1,
-			totalWork: 12,
 			useFixedDatesForThroughput: false,
 			throughputStartDate: new Date(
 				new Date().setDate(new Date().getDate() - [1].length),

@@ -12,14 +12,15 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { Fragment, useContext, useEffect, useState } from "react";
-import type { Feature, IFeature } from "../../../models/Feature";
+import type { IEntityReference } from "../../../models/EntityReference";
+import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
 
 export interface FeatureListBaseProps {
-	features: IFeature[];
+	featureReferences: IEntityReference[];
 	renderTableHeader: () => React.ReactNode;
 	renderTableRow: (feature: IFeature) => React.ReactNode;
 	contextId: number;
@@ -27,7 +28,7 @@ export interface FeatureListBaseProps {
 }
 
 const FeatureListBase: React.FC<FeatureListBaseProps> = ({
-	features,
+	featureReferences,
 	renderTableHeader,
 	renderTableRow,
 	contextId,
@@ -35,13 +36,15 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 }) => {
 	const theme = useTheme();
 	const { featureService } = useContext(ApiServiceContext);
+	const [features, setFeatures] = useState<IFeature[]>([]);
+
 	const [hideCompletedFeatures, setHideCompletedFeatures] =
 		useState<boolean>(false);
 	const [groupFeaturesByParent, setGroupFeaturesByParent] =
 		useState<boolean>(false);
-	const [parentFeatures, setParentFeatures] = useState<Record<string, Feature>>(
-		{},
-	);
+	const [parentFeatures, setParentFeatures] = useState<
+		Record<string, IFeature>
+	>({});
 	const [isLoadingParents, setIsLoadingParents] = useState<boolean>(false);
 
 	const baseKey = "lighthouse_hide_completed_features";
@@ -52,6 +55,17 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+
+	useEffect(() => {
+		const fetchFeatures = async () => {
+			const featureIds = featureReferences.map((fr) => fr.id);
+			const featureData = await featureService.getFeaturesByIds(featureIds);
+
+			setFeatures(featureData);
+		};
+
+		fetchFeatures();
+	}, [featureReferences, featureService]);
 
 	useEffect(() => {
 		const storedPreference = localStorage.getItem(storageKey);
@@ -211,10 +225,10 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 					setIsLoadingParents(true);
 					try {
 						const parentFeaturesList =
-							await featureService.getParentFeatures(uniqueParentIds);
+							await featureService.getFeaturesByReferences(uniqueParentIds);
 						// Convert array to a record object with referenceId as the key
 						const parentsMap = parentFeaturesList.reduce<
-							Record<string, Feature>
+							Record<string, IFeature>
 						>((acc, feature) => {
 							acc[feature.referenceId] = feature;
 							return acc;

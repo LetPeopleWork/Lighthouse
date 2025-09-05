@@ -8,9 +8,7 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Footer from "./components/App/Footer/Footer";
 import Header from "./components/App/Header/Header";
 import OverviewDashboard from "./pages/Overview/OverviewDashboard";
-import ProjectsOverview from "./pages/Projects/Overview/ProjectsOverview";
 import Settings from "./pages/Settings/Settings";
-import TeamsOverview from "./pages/Teams/Overview/TeamsOverview";
 import "./App.css";
 import DemoDialog from "./components/App/Demo/DemoDialog";
 import ProjectDetail from "./pages/Projects/Detail/ProjectDetail";
@@ -88,13 +86,11 @@ const App: React.FC = () => {
 								<Routes>
 									<Route path="/" element={<OverviewDashboard />} />
 									<Route path="/teams">
-										<Route index element={<TeamsOverview />} />
 										<Route path=":id" element={<TeamDetail />} />
 										<Route path="edit/:id" element={<EditTeam />} />
 										<Route path="new" element={<EditTeam />} />
 									</Route>
 									<Route path="/projects">
-										<Route index element={<ProjectsOverview />} />
 										<Route path=":id" element={<ProjectDetail />} />
 										<Route path="edit/:id" element={<EditProject />} />
 										<Route path="new" element={<EditProject />} />

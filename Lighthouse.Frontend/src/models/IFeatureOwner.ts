@@ -1,11 +1,10 @@
-import type { IFeature } from "./Feature";
-import type { IProgressable } from "./IProgressable";
+import type { IEntityReference } from "./EntityReference";
 
-export interface IFeatureOwner extends IProgressable {
+export interface IFeatureOwner {
 	name: string;
 	id: number;
 	lastUpdated: Date;
-	features: IFeature[];
+	features: IEntityReference[];
 	remainingFeatures: number;
 	tags: string[];
 	serviceLevelExpectationProbability: number;

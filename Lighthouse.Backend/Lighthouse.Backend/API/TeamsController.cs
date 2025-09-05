@@ -241,17 +241,11 @@ namespace Lighthouse.Backend.API
         {
             var teamDto = new TeamDto(team);
 
-            var teamProjects = allProjects.Where(p => p.Teams.Any(t => t.Id == team.Id)).ToList();
+            var projects = allProjects.Where(p => p.Teams.Any(t => t.Id == team.Id)).Select(t => new EntityReferenceDto(t.Id, t.Name));
+            var features = allFeatures.Where(f => f.FeatureWork.Exists(rw => rw.TeamId == team.Id)).Select(f => new EntityReferenceDto(f.Id, f.Name));
 
-            var features = new List<Feature>();
-
-            foreach (var feature in allFeatures.Where(f => f.FeatureWork.Exists(rw => rw.TeamId == team.Id)))
-            {
-                features.Add(feature);
-            }
-
-            teamDto.Projects.AddRange(teamProjects.Select(p => new ProjectDto(p)));
-            teamDto.Features.AddRange(features.Select(f => new FeatureDto(f)));
+            teamDto.Projects.AddRange(projects);
+            teamDto.Features.AddRange(features);
             return teamDto;
         }
     }

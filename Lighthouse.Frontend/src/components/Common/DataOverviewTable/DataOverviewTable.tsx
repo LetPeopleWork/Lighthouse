@@ -1,4 +1,3 @@
-import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
@@ -23,22 +22,16 @@ import {
 	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import ActionButton from "../ActionButton/ActionButton";
-import FilterBar from "../FilterBar/FilterBar";
-import ProgressIndicator from "../ProgressIndicator/ProgressIndicator";
+import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 
 interface DataOverviewTableProps<IFeatureOwner> {
 	data: IFeatureOwner[];
 	api: string;
 	title: string;
 	onDelete: (item: IFeatureOwner) => void;
-	initialFilterText?: string;
-	onFilterChange?: (filterText: string) => void;
-	disableAdd?: boolean;
-	addButtonTooltip?: string;
+	filterText: string;
 }
 
 const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
@@ -46,30 +39,17 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	api,
 	title,
 	onDelete,
-	initialFilterText = "",
-	onFilterChange,
-	disableAdd = false,
-	addButtonTooltip = "",
+	filterText,
 }) => {
-	const [filterText, setFilterText] = useState(initialFilterText);
-	const navigate = useNavigate();
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
-
-	useEffect(() => {
-		setFilterText(initialFilterText);
-	}, [initialFilterText]);
 
 	const filteredData = data
 		.filter((item) => isMatchingFilterText(item))
 		.sort((a, b) => a.name.localeCompare(b.name));
 
 	function isMatchingFilterText(item: IFeatureOwner) {
-		if (!filterText) {
-			return true;
-		}
-
 		const searchTerm = filterText.toLowerCase();
 
 		if (item.name.toLowerCase().includes(searchTerm)) {
@@ -82,17 +62,6 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 
 		return false;
 	}
-
-	const handleFilterTextChange = (newFilterText: string) => {
-		setFilterText(newFilterText);
-		if (onFilterChange) {
-			onFilterChange(newFilterText);
-		}
-	};
-
-	const handleRedirect = async () => {
-		navigate(`/${api}/new`);
-	};
 
 	return (
 		<Container maxWidth={false} sx={{ pb: 4 }}>
@@ -114,27 +83,9 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 						textTransform: "capitalize",
 					}}
 				>
-					{title} Overview
+					{title}
 				</Typography>
-
-				<Tooltip title={addButtonTooltip} arrow>
-					<span>
-						<ActionButton
-							buttonText={`Add New ${title}`}
-							startIcon={<AddIcon />}
-							onClickHandler={handleRedirect}
-							buttonVariant="contained"
-							disabled={disableAdd}
-						/>
-					</span>
-				</Tooltip>
 			</Box>
-
-			<FilterBar
-				filterText={filterText}
-				onFilterTextChange={handleFilterTextChange}
-				data-testid="filter-bar"
-			/>
 
 			{data.length === 0 ? (
 				<Fade in={true} timeout={800}>
@@ -183,8 +134,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 						}}
 						data-testid="no-items-message"
 					>
-						No {title} found matching the filter:{" "}
-						<strong>"{filterText}"</strong>
+						No {title} found matching the filter <strong>{filterText}</strong>
 					</Alert>
 				</Fade>
 			) : (
@@ -216,11 +166,6 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 										</Typography>
 									</TableCell>
 								)}
-								<TableCell>
-									<Typography variant="subtitle1" fontWeight="bold">
-										Progress
-									</Typography>
-								</TableCell>
 								{!isMobile && (
 									<TableCell sx={{ width: "20%" }}>
 										<Typography variant="subtitle1" fontWeight="bold">
@@ -228,6 +173,11 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 										</Typography>
 									</TableCell>
 								)}
+								<TableCell sx={{ width: "15%" }}>
+									<Typography variant="subtitle1" fontWeight="bold">
+										Last Updated
+									</Typography>
+								</TableCell>
 								<TableCell
 									sx={{ width: isMobile ? "25%" : "15%", textAlign: "right" }}
 								/>
@@ -271,9 +221,6 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 											</Typography>
 										</TableCell>
 									)}
-									<TableCell>
-										<ProgressIndicator progressableItem={item} title={""} />
-									</TableCell>
 									{!isMobile && (
 										<TableCell>
 											<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
@@ -292,6 +239,12 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 											</Box>
 										</TableCell>
 									)}
+									<TableCell>
+										<LocalDateTimeDisplay
+											utcDate={item.lastUpdated}
+											showTime={true}
+										/>
+									</TableCell>
 									<TableCell align="right">
 										<Box
 											sx={{

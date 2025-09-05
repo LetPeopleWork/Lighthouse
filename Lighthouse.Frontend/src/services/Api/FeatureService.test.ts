@@ -36,7 +36,7 @@ describe("FeatureService", () => {
 				isUsingDefaultFeatureSize: false,
 				owningTeam: "",
 				parentWorkItemReference: "",
-				projects: { 1: "Project A" },
+				projects: [{ id: 1, name: "Project A" }],
 				remainingWork: { 1: 5 },
 				totalWork: { 1: 10 },
 				milestoneLikelihood: { 1: 85.5 },
@@ -70,7 +70,7 @@ describe("FeatureService", () => {
 				lastUpdated: date,
 				isUsingDefaultFeatureSize: true,
 				parentWorkItemReference: "",
-				projects: { 1: "Project A" },
+				projects: [{ id: 1, name: "Project A" }],
 				remainingWork: { 1: 3 },
 				totalWork: { 1: 8 },
 				milestoneLikelihood: { 1: 90.2 },
@@ -97,11 +97,11 @@ describe("FeatureService", () => {
 
 		// Setup the mock to return our data
 		const expectedUrl =
-			"/features/parent?parentFeatureReferenceIds=FTR-1&parentFeatureReferenceIds=FTR-2";
+			"/features/references?featureReferences=FTR-1&featureReferences=FTR-2";
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
 		// Act
-		const features = await featureService.getParentFeatures(referenceIds);
+		const features = await featureService.getFeaturesByReferences(referenceIds);
 
 		// Assert
 		expect(features).toHaveLength(2);

@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { BrowserRouter, useNavigate } from "react-router-dom";
+import { render, screen } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import DataOverviewTable from "./DataOverviewTable";
@@ -20,10 +20,8 @@ const sampleData: IFeatureOwner[] = [
 	{
 		id: 1,
 		name: "Item 1",
-		remainingWork: 10,
 		remainingFeatures: 5,
 		features: [],
-		totalWork: 20,
 		tags: ["critical", "frontend"],
 		lastUpdated: new Date(),
 		serviceLevelExpectationProbability: 0,
@@ -33,10 +31,8 @@ const sampleData: IFeatureOwner[] = [
 	{
 		id: 2,
 		name: "Item 2",
-		remainingWork: 20,
 		remainingFeatures: 15,
 		features: [],
-		totalWork: 20,
 		tags: ["backend"],
 		lastUpdated: new Date(),
 		serviceLevelExpectationProbability: 0,
@@ -46,10 +42,8 @@ const sampleData: IFeatureOwner[] = [
 	{
 		id: 3,
 		name: "Another Item",
-		remainingWork: 30,
 		remainingFeatures: 25,
 		features: [],
-		totalWork: 33,
 		tags: [],
 		lastUpdated: new Date(),
 		serviceLevelExpectationProbability: 0,
@@ -66,6 +60,7 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText=""
 			/>,
 		);
 		expect(screen.getByTestId("table-container")).toBeInTheDocument();
@@ -78,6 +73,7 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText=""
 			/>,
 		);
 		for (const item of sampleData) {
@@ -135,6 +131,7 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText=""
 			/>,
 		);
 
@@ -154,19 +151,13 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText="Item"
 			/>,
 		);
-		const filterInput = screen.getByRole("textbox", { name: "" });
 
-		fireEvent.change(filterInput, { target: { value: "Item" } });
 		expect(screen.getByText("Item 1")).toBeInTheDocument();
 		expect(screen.getByText("Item 2")).toBeInTheDocument();
 		expect(screen.queryByText("Another Item")).toBeInTheDocument();
-
-		fireEvent.change(filterInput, { target: { value: "Another" } });
-		expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
-		expect(screen.queryByText("Item 2")).not.toBeInTheDocument();
-		expect(screen.getByText("Another Item")).toBeInTheDocument();
 	});
 
 	it("displays the custom message when no item matches filter", () => {
@@ -176,34 +167,11 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText="Non-existing Item"
 			/>,
 		);
-		const filterInput = screen.getByRole("textbox", { name: "" });
 
-		fireEvent.change(filterInput, { target: { value: "Non-existing Item" } });
 		expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
-	});
-
-	it('navigates to the new item page when "Add New" button is clicked', () => {
-		const navigate = vi.fn();
-		vi.mocked(useNavigate).mockReturnValue(navigate);
-
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-			/>,
-		);
-
-		// Find the button by startsWith to handle dynamic text
-		const addButton = screen.getByText((content) =>
-			content.startsWith("Add New"),
-		);
-		fireEvent.click(addButton);
-
-		expect(navigate).toHaveBeenCalledWith("/api/new");
 	});
 
 	it("initializes with provided filter text", () => {
@@ -214,35 +182,14 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
-				initialFilterText={initialFilterText}
+				filterText={initialFilterText}
 			/>,
 		);
-
-		const filterInput = screen.getByRole("textbox", { name: "" });
-		expect(filterInput).toHaveValue(initialFilterText);
 
 		// Verify only matching items are displayed
 		expect(screen.getByText("Item 1")).toBeInTheDocument();
 		expect(screen.getByText("Item 2")).toBeInTheDocument();
 		expect(screen.queryByText("Another Item")).toBeInTheDocument();
-	});
-
-	it("calls onFilterChange callback when filter changes", () => {
-		const onFilterChange = vi.fn();
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				api="api"
-				title="api"
-				onDelete={vi.fn()}
-				onFilterChange={onFilterChange}
-			/>,
-		);
-
-		const filterInput = screen.getByRole("textbox", { name: "" });
-		fireEvent.change(filterInput, { target: { value: "Test Filter" } });
-
-		expect(onFilterChange).toHaveBeenCalledWith("Test Filter");
 	});
 
 	it("displays tags as chips for each item", () => {
@@ -264,6 +211,7 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText=""
 			/>,
 		);
 
@@ -308,6 +256,7 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText=""
 			/>,
 		);
 
@@ -336,10 +285,8 @@ describe("DataOverviewTable", () => {
 			{
 				id: 1,
 				name: "Item with empty tag",
-				remainingWork: 10,
 				remainingFeatures: 5,
 				features: [],
-				totalWork: 20,
 				tags: ["valid-tag", "", "  ", "another-valid-tag"],
 				lastUpdated: new Date(),
 				serviceLevelExpectationProbability: 0,
@@ -354,6 +301,7 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText=""
 			/>,
 		);
 
@@ -371,12 +319,10 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText="critical"
 			/>,
 		);
-		const filterInput = screen.getByRole("textbox", { name: "" });
 
-		// Filter by "critical" tag
-		fireEvent.change(filterInput, { target: { value: "critical" } });
 		expect(screen.getByText("Item 1")).toBeInTheDocument(); // Item 1 has "critical" tag
 		expect(screen.queryByText("Item 2")).not.toBeInTheDocument(); // Item 2 doesn't have "critical" tag
 		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have "critical" tag
@@ -389,12 +335,10 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText="front"
 			/>,
 		);
-		const filterInput = screen.getByRole("textbox", { name: "" });
 
-		// Filter by partial tag match "front"
-		fireEvent.change(filterInput, { target: { value: "front" } });
 		expect(screen.getByText("Item 1")).toBeInTheDocument(); // Item 1 has "frontend" tag
 		expect(screen.queryByText("Item 2")).not.toBeInTheDocument(); // Item 2 doesn't have a tag containing "front"
 		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have tags
@@ -407,12 +351,10 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText="backend"
 			/>,
 		);
-		const filterInput = screen.getByRole("textbox", { name: "" });
 
-		// Filter by "backend" tag (none of the item names contain "backend")
-		fireEvent.change(filterInput, { target: { value: "backend" } });
 		expect(screen.queryByText("Item 1")).not.toBeInTheDocument(); // Item 1 doesn't have "backend" tag
 		expect(screen.getByText("Item 2")).toBeInTheDocument(); // Item 2 has "backend" tag
 		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have tags
@@ -425,70 +367,13 @@ describe("DataOverviewTable", () => {
 				title="api"
 				api="api"
 				onDelete={vi.fn()}
+				filterText="asdfasdfasdfasdf"
 			/>,
 		);
-		const filterInput = screen.getByRole("textbox", { name: "" });
 
-		// Filter by a string that doesn't match any name or tag
-		fireEvent.change(filterInput, { target: { value: "nonexistent" } });
 		expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
 		expect(screen.queryByText("Item 2")).not.toBeInTheDocument();
 		expect(screen.queryByText("Another Item")).not.toBeInTheDocument();
 		expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
-	});
-
-	describe("Add button restrictions", () => {
-		it("disables add button when disableAdd prop is true", () => {
-			renderWithRouter(
-				<DataOverviewTable
-					data={sampleData}
-					title="api"
-					api="api"
-					onDelete={vi.fn()}
-					disableAdd={true}
-				/>,
-			);
-
-			const addButton = screen.getByText((content) =>
-				content.startsWith("Add New"),
-			);
-			expect(addButton).toBeDisabled();
-		});
-
-		it("shows tooltip when addButtonTooltip prop is provided", () => {
-			const tooltipText = "Premium license required";
-			renderWithRouter(
-				<DataOverviewTable
-					data={sampleData}
-					title="api"
-					api="api"
-					onDelete={vi.fn()}
-					addButtonTooltip={tooltipText}
-				/>,
-			);
-
-			// Check that the tooltip is set as aria-label
-			expect(screen.getByLabelText(tooltipText)).toBeInTheDocument();
-		});
-
-		it("disables add button and shows tooltip when both props are provided", () => {
-			const tooltipText = "License restriction";
-			renderWithRouter(
-				<DataOverviewTable
-					data={sampleData}
-					title="api"
-					api="api"
-					onDelete={vi.fn()}
-					disableAdd={true}
-					addButtonTooltip={tooltipText}
-				/>,
-			);
-
-			const addButton = screen.getByText((content) =>
-				content.startsWith("Add New"),
-			);
-			expect(addButton).toBeDisabled();
-			expect(screen.getByLabelText(tooltipText)).toBeInTheDocument();
-		});
 	});
 });

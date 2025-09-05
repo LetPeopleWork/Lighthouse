@@ -56,8 +56,6 @@ describe("Header component", () => {
 		renderHeader();
 
 		expect(screen.getByText("Overview")).toBeInTheDocument();
-		expect(screen.getByText("Teams")).toBeInTheDocument();
-		expect(screen.getByText("Projects")).toBeInTheDocument();
 		expect(screen.getByText("Settings")).toBeInTheDocument();
 	});
 

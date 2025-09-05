@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API.DTO
 
             foreach (var project in feature.Projects)
             {
-                Projects.Add(project.Id, project.Name);
+                Projects.Add(new EntityReferenceDto(project.Id, project.Name));
 
                 foreach (var milestone in project.Milestones)
                 {
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public string OwningTeam { get; }
 
-        public Dictionary<int, string> Projects { get; } = new Dictionary<int, string>();
+        public List<EntityReferenceDto> Projects { get; } = new List<EntityReferenceDto>();
 
         public DateTime LastUpdated { get; }
 

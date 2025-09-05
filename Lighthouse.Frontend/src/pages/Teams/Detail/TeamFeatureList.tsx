@@ -99,9 +99,11 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				<ForecastInfoList title={""} forecasts={feature.forecasts} />
 			</TableCell>
 			<TableCell>
-				{Object.entries(feature.projects).map(([projectId, projectName]) => (
-					<div key={projectId}>
-						<StyledLink to={`/projects/${projectId}`}>{projectName}</StyledLink>
+				{feature.projects.map((project) => (
+					<div key={project.id}>
+						<StyledLink to={`/projects/${project.id}`}>
+							{project.name}
+						</StyledLink>
 					</div>
 				))}
 			</TableCell>
@@ -113,7 +115,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 
 	return (
 		<FeatureListBase
-			features={team.features}
+			featureReferences={team.features}
 			renderTableHeader={renderTableHeader}
 			renderTableRow={renderTableRow}
 			contextId={team.id}

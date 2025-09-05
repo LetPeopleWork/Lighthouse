@@ -1,6 +1,7 @@
 import { plainToInstance, Transform, Type } from "class-transformer";
 import "reflect-metadata";
 
+import type { IEntityReference } from "./EntityReference";
 import { type IWhenForecast, WhenForecast } from "./Forecasts/WhenForecast";
 import type { IWorkItem, StateCategory } from "./WorkItem";
 
@@ -12,7 +13,7 @@ export interface IFeature extends IWorkItem {
 	remainingWork: { [key: number]: number };
 	totalWork: { [key: number]: number };
 	milestoneLikelihood: { [key: number]: number };
-	projects: { [key: number]: string };
+	projects: IEntityReference[];
 	forecasts: IWhenForecast[];
 
 	getRemainingWorkForFeature(): number;
@@ -37,8 +38,7 @@ export class Feature implements IFeature {
 	parentWorkItemReference!: string;
 	isBlocked!: boolean;
 
-	@Type(() => DictionaryObject<string>)
-	projects: DictionaryObject<string> = {};
+	projects: IEntityReference[] = [];
 
 	@Type(() => DictionaryObject<number>)
 	remainingWork: DictionaryObject<number> = {};

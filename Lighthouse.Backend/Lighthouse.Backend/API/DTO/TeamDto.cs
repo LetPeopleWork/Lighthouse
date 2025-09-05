@@ -22,9 +22,9 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public int FeatureWip { get; set; }
 
-        public List<FeatureDto> Features { get; } = new List<FeatureDto>();
+        public List<EntityReferenceDto> Features { get; } = new List<EntityReferenceDto>();
 
-        public List<ProjectDto> Projects { get; } = new List<ProjectDto>();
+        public List<EntityReferenceDto> Projects { get; } = new List<EntityReferenceDto>();
 
         public bool UseFixedDatesForThroughput { get; }
 

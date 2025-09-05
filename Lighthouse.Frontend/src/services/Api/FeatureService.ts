@@ -1,22 +1,38 @@
-import type { Feature, IFeature } from "../../models/Feature";
+import type { IFeature } from "../../models/Feature";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IFeatureService {
-	getParentFeatures(parentFeatureReferenceIds: string[]): Promise<Feature[]>;
+	getFeaturesByIds(featureIds: number[]): Promise<IFeature[]>;
+	getFeaturesByReferences(featureReferences: string[]): Promise<IFeature[]>;
 }
 
 export class FeatureService extends BaseApiService implements IFeatureService {
-	async getParentFeatures(
-		parentFeatureReferenceIds: string[],
-	): Promise<Feature[]> {
+	getFeaturesByIds(featureIds: number[]): Promise<IFeature[]> {
 		return this.withErrorHandling(async () => {
 			const params = new URLSearchParams();
-			for (const id of parentFeatureReferenceIds) {
-				params.append("parentFeatureReferenceIds", id);
+			for (const id of featureIds) {
+				params.append("featureIds", `${id}`);
 			}
 
 			const response = await this.apiService.get<IFeature[]>(
-				`/features/parent?${params.toString()}`,
+				`/features/ids?${params.toString()}`,
+			);
+
+			return BaseApiService.deserializeFeatures(response.data);
+		});
+	}
+
+	async getFeaturesByReferences(
+		parentFeatureReferenceIds: string[],
+	): Promise<IFeature[]> {
+		return this.withErrorHandling(async () => {
+			const params = new URLSearchParams();
+			for (const id of parentFeatureReferenceIds) {
+				params.append("featureReferences", id);
+			}
+
+			const response = await this.apiService.get<IFeature[]>(
+				`/features/references?${params.toString()}`,
 			);
 
 			return BaseApiService.deserializeFeatures(response.data);

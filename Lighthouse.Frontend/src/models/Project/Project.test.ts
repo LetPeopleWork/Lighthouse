@@ -65,7 +65,7 @@ describe("Project Class", () => {
 			feature.stateCategory = "ToDo";
 			feature.lastUpdated = new Date("2023-07-10");
 			feature.isUsingDefaultFeatureSize = false;
-			feature.projects = { 1: name };
+			feature.projects = [{ id: 1, name: name }];
 			feature.remainingWork = { 1: 10, 2: 20 };
 			feature.totalWork = { 1: 10, 2: 20 };
 			feature.milestoneLikelihood = { 0: 88.7 };
@@ -91,7 +91,7 @@ describe("Project Class", () => {
 			feature.stateCategory = "Doing";
 			feature.lastUpdated = new Date("2023-07-09");
 			feature.isUsingDefaultFeatureSize = true;
-			feature.projects = { 1: name };
+			feature.projects = [{ id: 1, name: name }];
 			feature.remainingWork = { 1: 5, 2: 15 };
 			feature.totalWork = { 1: 5, 2: 15 };
 			feature.milestoneLikelihood = { 0: 54.3 };
@@ -129,11 +129,6 @@ describe("Project Class", () => {
 		expect(project.involvedTeams).toEqual(involvedTeams);
 		expect(project.lastUpdated).toBe(lastUpdated);
 		expect(project.features).toEqual(features);
-	});
-
-	it("should return correct total remaining work", () => {
-		const expectedRemainingWork = 10 + 20 + 5 + 15;
-		expect(project.remainingWork).toBe(expectedRemainingWork);
 	});
 
 	it("should return correct number of remaining features", () => {

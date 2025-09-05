@@ -24,8 +24,6 @@ describe("SystemWIPLimitDisplay", () => {
 		serviceLevelExpectationProbability: 0,
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit,
-		remainingWork: 0,
-		totalWork: 0,
 	});
 
 	it("should not render when hide prop is true", () => {

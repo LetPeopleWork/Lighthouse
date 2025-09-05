@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             foreach (var team in project.Teams)
             {
-                yield return new EntityReferenceDto(team);
+                yield return new EntityReferenceDto(team.Id, team.Name);
             }
         }
     }

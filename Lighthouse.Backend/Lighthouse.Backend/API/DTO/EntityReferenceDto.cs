@@ -1,5 +1,4 @@
-﻿using Lighthouse.Backend.Models;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -9,10 +8,10 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public EntityReferenceDto(Team team)
+        public EntityReferenceDto(int id, string name)
         {
-            Id = team.Id;
-            Name = team.Name;
+            Id = id;
+            Name = name;
         }
 
         [JsonRequired]

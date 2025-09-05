@@ -155,7 +155,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 
 	return (
 		<FeatureListBase
-			features={project.features}
+			featureReferences={project.features}
 			renderTableHeader={renderTableHeader}
 			renderTableRow={renderTableRow}
 			contextId={project.id}

@@ -287,9 +287,9 @@ namespace Lighthouse.Backend.Tests.API
                 SizeEstimateField = "NewField",
                 InvolvedTeams = new List<EntityReferenceDto>
                 {
-                    new EntityReferenceDto(existingTeam)
+                    new EntityReferenceDto(existingTeam.Id, existingTeam.Name)
                 },
-                OwningTeam = new EntityReferenceDto(existingTeam),
+                OwningTeam = new EntityReferenceDto(existingTeam.Id, existingTeam.Name),
                 FeatureOwnerField = "OwnerField",
                 ServiceLevelExpectationProbability = 95,
                 ServiceLevelExpectationRange = 5,

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
@@ -39,6 +39,9 @@ describe("FeatureListBase component", () => {
 		createFeature(3, "Feature 3", "Done"),
 	];
 
+	// Convert features to entity references for passing to the component
+	const featureReferences = features.map((f) => ({ id: f.id, name: f.name }));
+
 	// Mock localStorage before each test
 	let mockLocalStorage: { [key: string]: string } = {};
 
@@ -58,151 +61,228 @@ describe("FeatureListBase component", () => {
 		});
 	});
 
-	it("should render all features initially", () => {
+	it("should render all features initially", async () => {
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
 
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
-		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeInTheDocument();
+			expect(screen.getByText("Feature 2")).toBeInTheDocument();
+			expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		});
 	});
 
 	it("should hide completed features when toggle is activated", async () => {
 		const user = userEvent.setup();
+
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
 
-		// Verify all features are shown initially
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
-		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		// Wait for features to load and verify all features are shown initially
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeInTheDocument();
+			expect(screen.getByText("Feature 2")).toBeInTheDocument();
+			expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		});
 
 		// Find and activate the toggle
 		const toggle = screen.getByTestId("hide-completed-features-toggle");
 		await user.click(toggle);
 
 		// Verify completed feature is hidden
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
-		expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeInTheDocument();
+			expect(screen.getByText("Feature 2")).toBeInTheDocument();
+			expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+		});
 	});
 
 	it("should show all features again when toggle is turned off", async () => {
 		const user = userEvent.setup();
+
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
+
+		// Wait for features to load
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeInTheDocument();
+		});
 
 		// Find and activate the toggle
 		const toggle = screen.getByTestId("hide-completed-features-toggle");
 		await user.click(toggle);
 
 		// Verify completed feature is hidden
-		expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+		});
 
 		// Turn the toggle off again
 		await user.click(toggle);
 
 		// Verify all features are shown again
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
-		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeInTheDocument();
+			expect(screen.getByText("Feature 2")).toBeInTheDocument();
+			expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		});
 	});
 
 	it("should load the saved preference from localStorage on mount", async () => {
 		mockLocalStorage.lighthouse_hide_completed_features_project_1 = "true";
 
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
 
 		// Verify completed feature is hidden on initial render because of localStorage
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
-		expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
-
-		expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeInTheDocument();
+			expect(screen.getByText("Feature 2")).toBeInTheDocument();
+			expect(screen.queryByText("Feature 3")).not.toBeInTheDocument();
+		});
 	});
 
 	it("should use different storage keys for different contexts", async () => {
 		const user = userEvent.setup();
 
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		// Render with project context
 		const { unmount } = render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
+
+		// Wait for features to load
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeInTheDocument();
+		});
 
 		// Activate toggle for project context
 		const projectToggle = screen.getByTestId("hide-completed-features-toggle");
@@ -218,28 +298,34 @@ describe("FeatureListBase component", () => {
 
 		// Render with team context
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="team"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="team"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
+
+		// Wait for features to load
+		await waitFor(() => {
+			expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		});
 
 		// Verify the team context toggle starts unchecked (not affected by project setting)
 		expect(
 			screen.getByTestId("hide-completed-features-toggle"),
 		).not.toBeChecked();
-		expect(screen.getByText("Feature 3")).toBeInTheDocument();
 
 		// Activate toggle for team context
 		const teamToggle = screen.getByTestId("hide-completed-features-toggle");
@@ -259,56 +345,82 @@ describe("FeatureListBase component", () => {
 		);
 	});
 
-	it("should use default setting when no localStorage value exists", () => {
+	it("should use default setting when no localStorage value exists", async () => {
 		// No localStorage value is set
 
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={42}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={42}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
 
 		// Verify all features are shown by default (including completed ones)
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
-		expect(screen.getByText("Feature 3")).toBeInTheDocument();
-
-		// Verify the toggle is unchecked by default (by confirming all features are visible)
-		expect(screen.getByText("Feature 1")).toBeInTheDocument();
-		expect(screen.getByText("Feature 2")).toBeInTheDocument();
-		expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.getByText("Feature 1")).toBeInTheDocument();
+			expect(screen.getByText("Feature 2")).toBeInTheDocument();
+			expect(screen.getByText("Feature 3")).toBeInTheDocument();
+		});
 	});
 
-	it("should have the group features by parent toggle unchecked by default", () => {
+	it("should have the group features by parent toggle unchecked by default", async () => {
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
+
+		// Wait for the component to render
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("group-features-by-parent-toggle"),
+			).toBeInTheDocument();
+		});
 
 		const groupingToggle = screen.getByTestId(
 			"group-features-by-parent-toggle",
@@ -319,23 +431,42 @@ describe("FeatureListBase component", () => {
 
 	it("should update localStorage when group features by parent toggle is changed", async () => {
 		const user = userEvent.setup();
+
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
+
+		// Wait for the component to render
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("group-features-by-parent-toggle"),
+			).toBeInTheDocument();
+		});
 
 		// Find and activate the toggle
 		const groupingToggle = screen.getByTestId(
@@ -360,23 +491,41 @@ describe("FeatureListBase component", () => {
 	it("should load the saved grouping preference from localStorage on mount", async () => {
 		mockLocalStorage.lighthouse_group_features_by_parent_project_1 = "true";
 
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
+
+		// Wait for the component to render
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("group-features-by-parent-toggle"),
+			).toBeInTheDocument();
+		});
 
 		// Verify the toggle is checked based on localStorage value
 		const groupingToggle = screen.getByTestId(
@@ -389,24 +538,42 @@ describe("FeatureListBase component", () => {
 	it("should use different storage keys for different contexts for grouping feature", async () => {
 		const user = userEvent.setup();
 
+		// Setup mock feature service
+		const mockFeatureService = createMockFeatureService();
+		(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(features);
+
+		// Create mock API context
+		const mockContext = createMockApiServiceContext({
+			featureService: mockFeatureService,
+		});
+
 		// Render with project context
 		const { unmount } = render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="project"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="project"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
+
+		// Wait for the component to render
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("group-features-by-parent-toggle"),
+			).toBeInTheDocument();
+		});
 
 		// Activate grouping toggle for project context
 		const projectGroupingToggle = screen.getByTestId(
@@ -424,22 +591,31 @@ describe("FeatureListBase component", () => {
 
 		// Render with team context
 		render(
-			<FeatureListBase
-				features={features}
-				contextId={1}
-				contextType="team"
-				renderTableHeader={() => (
-					<tr>
-						<th>Name</th>
-					</tr>
-				)}
-				renderTableRow={(feature: IFeature) => (
-					<tr key={feature.id}>
-						<td>{feature.name}</td>
-					</tr>
-				)}
-			/>,
+			<ApiServiceContext.Provider value={mockContext}>
+				<FeatureListBase
+					featureReferences={featureReferences}
+					contextId={1}
+					contextType="team"
+					renderTableHeader={() => (
+						<tr>
+							<th>Name</th>
+						</tr>
+					)}
+					renderTableRow={(feature: IFeature) => (
+						<tr key={feature.id}>
+							<td>{feature.name}</td>
+						</tr>
+					)}
+				/>
+			</ApiServiceContext.Provider>,
 		);
+
+		// Wait for the component to render
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("group-features-by-parent-toggle"),
+			).toBeInTheDocument();
+		});
 
 		// Verify the team context toggle starts unchecked (not affected by project setting)
 		const teamGroupingToggle = screen.getByTestId(
@@ -477,6 +653,12 @@ describe("FeatureListBase component", () => {
 			createFeature(6, "Feature 6", "Done"), // No parent
 		];
 
+		// Convert features with parents to entity references for passing to the component
+		const featuresWithParentsReferences = featuresWithParents.map((f) => ({
+			id: f.id,
+			name: f.name,
+		}));
+
 		// Test for parent feature name display
 		it("should display parent feature names as clickable links when available", async () => {
 			const user = userEvent.setup();
@@ -494,8 +676,11 @@ describe("FeatureListBase component", () => {
 
 			// Setup mock feature service
 			const mockFeatureService = createMockFeatureService();
+			(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresWithParents,
+			);
 			const getParentFeaturesMock =
-				mockFeatureService.getParentFeatures as Mock;
+				mockFeatureService.getFeaturesByReferences as Mock;
 			getParentFeaturesMock.mockResolvedValue([mockParent100, mockParent200]);
 
 			// Create mock API context
@@ -507,7 +692,7 @@ describe("FeatureListBase component", () => {
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
 					<FeatureListBase
-						features={featuresWithParents}
+						featureReferences={featuresWithParentsReferences}
 						contextId={1}
 						contextType="project"
 						renderTableHeader={() => (
@@ -523,6 +708,13 @@ describe("FeatureListBase component", () => {
 					/>
 				</ApiServiceContext.Provider>,
 			);
+
+			// Wait for features to load
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("group-features-by-parent-toggle"),
+				).toBeInTheDocument();
+			});
 
 			// Activate grouping toggle
 			const groupingToggle = screen.getByTestId(
@@ -559,12 +751,15 @@ describe("FeatureListBase component", () => {
 
 			// Setup mock feature service with a delayed response
 			const mockFeatureService = createMockFeatureService();
+			(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresWithParents,
+			);
 			let resolvePromise: (value: Feature[]) => void = () => {};
 			const parentFeaturesPromise = new Promise<Feature[]>((resolve) => {
 				resolvePromise = resolve;
 			});
 			const getParentFeaturesMock =
-				mockFeatureService.getParentFeatures as Mock;
+				mockFeatureService.getFeaturesByReferences as Mock;
 			getParentFeaturesMock.mockReturnValue(parentFeaturesPromise);
 
 			// Create mock API context
@@ -576,7 +771,7 @@ describe("FeatureListBase component", () => {
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
 					<FeatureListBase
-						features={featuresWithParents}
+						featureReferences={featuresWithParentsReferences}
 						contextId={1}
 						contextType="project"
 						renderTableHeader={() => (
@@ -592,6 +787,13 @@ describe("FeatureListBase component", () => {
 					/>
 				</ApiServiceContext.Provider>,
 			);
+
+			// Wait for features to load
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("group-features-by-parent-toggle"),
+				).toBeInTheDocument();
+			});
 
 			// Activate grouping toggle
 			const groupingToggle = screen.getByTestId(
@@ -659,7 +861,7 @@ describe("FeatureListBase component", () => {
 
 			// Setup mock feature service
 			const mockFeatureService = createMockFeatureService();
-			(mockFeatureService.getParentFeatures as Mock).mockResolvedValue([
+			(mockFeatureService.getFeaturesByReferences as Mock).mockResolvedValue([
 				mockParent100,
 			]);
 
@@ -672,12 +874,21 @@ describe("FeatureListBase component", () => {
 			const filteredFeatures = featuresWithParents.filter(
 				(f) => f.parentWorkItemReference === "PARENT-100",
 			);
+			const filteredReferences = filteredFeatures.map((f) => ({
+				id: f.id,
+				name: f.name,
+			}));
+
+			// Setup getFeaturesByIds mock
+			(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(
+				filteredFeatures,
+			);
 
 			// Render with context provider
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
 					<FeatureListBase
-						features={filteredFeatures}
+						featureReferences={filteredReferences}
 						contextId={1}
 						contextType="project"
 						renderTableHeader={() => (
@@ -694,6 +905,13 @@ describe("FeatureListBase component", () => {
 				</ApiServiceContext.Provider>,
 			);
 
+			// Wait for features to load
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("group-features-by-parent-toggle"),
+				).toBeInTheDocument();
+			});
+
 			// Activate grouping toggle
 			const groupingToggle = screen.getByTestId(
 				"group-features-by-parent-toggle",
@@ -701,7 +919,14 @@ describe("FeatureListBase component", () => {
 			await user.click(groupingToggle);
 
 			// Wait for API call to complete
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			await waitFor(() => {
+				expect(
+					screen.getByText(
+						(content) =>
+							content.includes("PARENT-100") && content.includes("undefined"),
+					),
+				).toBeInTheDocument();
+			});
 
 			// Check that we fallback to showing PARENT-100 with undefined as name
 			const parentLink = screen.getByText(
@@ -725,6 +950,9 @@ describe("FeatureListBase component", () => {
 				createFeature(9, "Feature 9", "ToDo", "PARENT-200"),
 			];
 
+			const featuresWithOrderedParentsReferences =
+				featuresWithOrderedParents.map((f) => ({ id: f.id, name: f.name }));
+
 			// Create mock parent features in a specific order
 			const mockParent100 = new Feature();
 			mockParent100.name = "Parent Feature 100";
@@ -740,8 +968,11 @@ describe("FeatureListBase component", () => {
 
 			// Return parents in this specific order - this is the order we should see in the UI
 			const mockFeatureService = createMockFeatureService();
+			(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresWithOrderedParents,
+			);
 			const getParentFeaturesMock =
-				mockFeatureService.getParentFeatures as Mock;
+				mockFeatureService.getFeaturesByReferences as Mock;
 			getParentFeaturesMock.mockResolvedValue([
 				mockParent300,
 				mockParent100,
@@ -757,7 +988,7 @@ describe("FeatureListBase component", () => {
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
 					<FeatureListBase
-						features={featuresWithOrderedParents}
+						featureReferences={featuresWithOrderedParentsReferences}
 						contextId={1}
 						contextType="project"
 						renderTableHeader={() => (
@@ -773,6 +1004,13 @@ describe("FeatureListBase component", () => {
 					/>
 				</ApiServiceContext.Provider>,
 			);
+
+			// Wait for features to load
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("group-features-by-parent-toggle"),
+				).toBeInTheDocument();
+			});
 
 			// Activate grouping toggle
 			const groupingToggle = screen.getByTestId(
@@ -808,8 +1046,11 @@ describe("FeatureListBase component", () => {
 
 			// Setup mock feature service with error
 			const mockFeatureService = createMockFeatureService();
+			(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresWithParents,
+			);
 			const getParentFeaturesMock =
-				mockFeatureService.getParentFeatures as Mock;
+				mockFeatureService.getFeaturesByReferences as Mock;
 			getParentFeaturesMock.mockRejectedValue(
 				new Error("Failed to load parent features"),
 			);
@@ -828,7 +1069,7 @@ describe("FeatureListBase component", () => {
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
 					<FeatureListBase
-						features={featuresWithParents}
+						featureReferences={featuresWithParentsReferences}
 						contextId={1}
 						contextType="project"
 						renderTableHeader={() => (
@@ -845,6 +1086,13 @@ describe("FeatureListBase component", () => {
 				</ApiServiceContext.Provider>,
 			);
 
+			// Wait for features to load
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("group-features-by-parent-toggle"),
+				).toBeInTheDocument();
+			});
+
 			// Activate grouping toggle
 			const groupingToggle = screen.getByTestId(
 				"group-features-by-parent-toggle",
@@ -852,7 +1100,9 @@ describe("FeatureListBase component", () => {
 			await user.click(groupingToggle);
 
 			// Wait for API call to complete (it will fail)
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			await waitFor(() => {
+				expect(screen.getByText("Parent ID: PARENT-100")).toBeInTheDocument();
+			});
 
 			// Check that we still see the parent IDs as fallback
 			expect(screen.getByText("Parent ID: PARENT-100")).toBeInTheDocument();
@@ -874,13 +1124,16 @@ describe("FeatureListBase component", () => {
 
 			// Setup mock feature service
 			const mockFeatureService = createMockFeatureService();
+			(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresWithParents,
+			);
 			// Create a promise that won't resolve during the test
 			const parentFeaturesPromise = new Promise<Feature[]>(() => {
 				// This promise intentionally never resolves to keep the loading state
 			});
 
 			const getParentFeaturesMock =
-				mockFeatureService.getParentFeatures as Mock;
+				mockFeatureService.getFeaturesByReferences as Mock;
 			getParentFeaturesMock.mockReturnValue(parentFeaturesPromise);
 
 			// Create mock API context
@@ -892,7 +1145,7 @@ describe("FeatureListBase component", () => {
 			render(
 				<ApiServiceContext.Provider value={mockContext}>
 					<FeatureListBase
-						features={featuresWithParents}
+						featureReferences={featuresWithParentsReferences}
 						contextId={1}
 						contextType="project"
 						renderTableHeader={() => (
@@ -908,6 +1161,13 @@ describe("FeatureListBase component", () => {
 					/>
 				</ApiServiceContext.Provider>,
 			);
+
+			// Wait for features to load
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("group-features-by-parent-toggle"),
+				).toBeInTheDocument();
+			});
 
 			// Find and activate the grouping toggle
 			const groupingToggle = screen.getByTestId(
@@ -937,30 +1197,55 @@ describe("FeatureListBase component", () => {
 		it("should work with hide completed features toggle", async () => {
 			const user = userEvent.setup();
 
+			// Setup mock feature service
+			const mockFeatureService = createMockFeatureService();
+			(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresWithParents,
+			);
+
+			// Create mock API context
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
 			// Render the component
 			render(
-				<FeatureListBase
-					features={featuresWithParents}
-					contextId={1}
-					contextType="project"
-					renderTableHeader={() => (
-						<tr>
-							<th>Name</th>
-						</tr>
-					)}
-					renderTableRow={(feature: IFeature) => (
-						<tr data-testid={`feature-${feature.id}`} key={feature.id}>
-							<td>{feature.name}</td>
-						</tr>
-					)}
-				/>,
+				<ApiServiceContext.Provider value={mockContext}>
+					<FeatureListBase
+						featureReferences={featuresWithParentsReferences}
+						contextId={1}
+						contextType="project"
+						renderTableHeader={() => (
+							<tr>
+								<th>Name</th>
+							</tr>
+						)}
+						renderTableRow={(feature: IFeature) => (
+							<tr data-testid={`feature-${feature.id}`} key={feature.id}>
+								<td>{feature.name}</td>
+							</tr>
+						)}
+					/>
+				</ApiServiceContext.Provider>,
 			);
+
+			// Wait for features to load
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("group-features-by-parent-toggle"),
+				).toBeInTheDocument();
+			});
 
 			// Activate grouping toggle
 			const groupingToggle = screen.getByTestId(
 				"group-features-by-parent-toggle",
 			);
 			await user.click(groupingToggle);
+
+			// Wait for grouping to take effect
+			await waitFor(() => {
+				expect(screen.getByText("Feature 1")).toBeInTheDocument();
+			});
 
 			// Verify all features are shown initially
 			expect(screen.getByText("Feature 1")).toBeInTheDocument();
@@ -974,9 +1259,11 @@ describe("FeatureListBase component", () => {
 			await user.click(hideCompletedToggle);
 
 			// Verify completed features are hidden, but groups still show
-			expect(screen.getByText("Feature 1")).toBeInTheDocument(); // Feature with "In Progress" status
-			expect(screen.queryByText("Feature 3")).not.toBeInTheDocument(); // Completed feature with parent (hidden)
-			expect(screen.queryByText("Feature 6")).not.toBeInTheDocument(); // Completed feature without parent (hidden)
+			await waitFor(() => {
+				expect(screen.getByText("Feature 1")).toBeInTheDocument(); // Feature with "ToDo" status
+				expect(screen.queryByText("Feature 3")).not.toBeInTheDocument(); // Completed feature with parent (hidden)
+				expect(screen.queryByText("Feature 6")).not.toBeInTheDocument(); // Completed feature without parent (hidden)
+			});
 
 			// Parent headers should still be visible
 			expect(screen.getByText("Parent ID: PARENT-100")).toBeInTheDocument();
@@ -987,22 +1274,31 @@ describe("FeatureListBase component", () => {
 		it("should place features without parent in 'No Parent' group at the bottom", async () => {
 			const user = userEvent.setup();
 
+			const mockContext = createMockApiServiceContext({
+				featureService: createMockFeatureService(),
+			});
+			(mockContext.featureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresWithParents,
+			);
+
 			render(
-				<FeatureListBase
-					features={featuresWithParents}
-					contextId={1}
-					contextType="project"
-					renderTableHeader={() => (
-						<tr>
-							<th>Name</th>
-						</tr>
-					)}
-					renderTableRow={(feature: IFeature) => (
-						<tr data-testid={`feature-${feature.id}`} key={feature.id}>
-							<td>{feature.name}</td>
-						</tr>
-					)}
-				/>,
+				<ApiServiceContext.Provider value={mockContext}>
+					<FeatureListBase
+						featureReferences={featuresWithParentsReferences}
+						contextId={1}
+						contextType="project"
+						renderTableHeader={() => (
+							<tr>
+								<th>Name</th>
+							</tr>
+						)}
+						renderTableRow={(feature: IFeature) => (
+							<tr data-testid={`feature-${feature.id}`} key={feature.id}>
+								<td>{feature.name}</td>
+							</tr>
+						)}
+					/>
+				</ApiServiceContext.Provider>,
 			);
 
 			// Activate grouping toggle
@@ -1026,32 +1322,64 @@ describe("FeatureListBase component", () => {
 			// Set localStorage value before rendering
 			mockLocalStorage.lighthouse_group_features_by_parent_project_1 = "true";
 
-			render(
-				<FeatureListBase
-					features={featuresWithParents}
-					contextId={1}
-					contextType="project"
-					renderTableHeader={() => (
-						<tr>
-							<th>Name</th>
-						</tr>
-					)}
-					renderTableRow={(feature: IFeature) => (
-						<tr key={feature.id}>
-							<td>{feature.name}</td>
-						</tr>
-					)}
-				/>,
+			// Create mock parent features
+			const mockParent100 = new Feature();
+			mockParent100.name = "Parent Feature 100";
+			mockParent100.referenceId = "PARENT-100";
+			mockParent100.url = "https://example.com/parent-100";
+
+			const mockParent200 = new Feature();
+			mockParent200.name = "Parent Feature 200";
+			mockParent200.referenceId = "PARENT-200";
+			mockParent200.url = "https://example.com/parent-200";
+
+			const mockContext = createMockApiServiceContext({
+				featureService: createMockFeatureService(),
+			});
+			(mockContext.featureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresWithParents,
 			);
 
+			// Mock getFeaturesByReferences for parent features
+			const getParentFeaturesMock = mockContext.featureService
+				.getFeaturesByReferences as Mock;
+			getParentFeaturesMock.mockResolvedValue([mockParent100, mockParent200]);
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<FeatureListBase
+						featureReferences={featuresWithParentsReferences}
+						contextId={1}
+						contextType="project"
+						renderTableHeader={() => (
+							<tr>
+								<th>Name</th>
+							</tr>
+						)}
+						renderTableRow={(feature: IFeature) => (
+							<tr key={feature.id}>
+								<td>{feature.name}</td>
+							</tr>
+						)}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for features and parent features to load
+			await waitFor(() => {
+				expect(screen.getByText("Feature 1")).toBeInTheDocument();
+			});
+
 			// Parent group headers should be visible on initial render due to localStorage setting
-			expect(
-				screen.getByText("Loading parent Feature PARENT-100..."),
-			).toBeInTheDocument();
-			expect(
-				screen.getByText("Loading parent Feature PARENT-200..."),
-			).toBeInTheDocument();
-			expect(screen.getByText("No Parent")).toBeInTheDocument();
+			await waitFor(() => {
+				expect(
+					screen.getByText("PARENT-100: Parent Feature 100"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByText("PARENT-200: Parent Feature 200"),
+				).toBeInTheDocument();
+				expect(screen.getByText("No Parent")).toBeInTheDocument();
+			});
 
 			// Toggle should be checked
 			const groupingToggle = screen.getByTestId(

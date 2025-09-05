@@ -6,6 +6,7 @@ import {
 } from "../../models/AppSettings/RefreshSettings";
 import type { IWorkTrackingSystemSettings } from "../../models/AppSettings/WorkTrackingSystemSettings";
 import type { ConfigurationValidation } from "../../models/Configuration/ConfigurationValidation";
+import type { IEntityReference } from "../../models/EntityReference";
 import { Feature, type IFeature } from "../../models/Feature";
 import {
 	ForecastPredictabilityScore,
@@ -466,7 +467,10 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 		}
 
 		// Return the project's features that are in progress
-		const inProgressFeatures = project.features.filter(
+		const featuresOfProject = features.filter((f) =>
+			project.features.some((e) => e.id === f.id),
+		);
+		const inProgressFeatures = featuresOfProject.filter(
 			(feature) => feature.stateCategory !== "Doing",
 		);
 
@@ -529,7 +533,7 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 			const workItem = generateWorkItem(counter++);
 
 			// Create a feature based on the work item
-			const projects = {};
+			const projects: IEntityReference[] = [];
 			const remainingWork = {};
 			const totalWork = {};
 			const milestoneLikelihood = {};
@@ -892,9 +896,27 @@ export class DemoApiService
 		);
 	}
 
-	async getParentFeatures(
+	async getFeaturesByIds(featureIds: number[]): Promise<IFeature[]> {
+		console.log(
+			`Getting Feature Details for Features: ${featureIds.join(",")}`,
+		);
+
+		await delay();
+
+		const relevantFeatures: IFeature[] = [];
+
+		for (const feature of features) {
+			if (featureIds.some((f) => f === feature.id)) {
+				relevantFeatures.push(feature);
+			}
+		}
+
+		return relevantFeatures;
+	}
+
+	async getFeaturesByReferences(
 		parentFeatureReferenceIds: string[],
-	): Promise<Feature[]> {
+	): Promise<IFeature[]> {
 		console.log(
 			`Getting Parent Features for Reference IDs: ${parentFeatureReferenceIds.join(
 				", ",
@@ -1742,7 +1764,7 @@ export class DemoApiService
 		feature1.state = "ToDo";
 		feature1.stateCategory = "ToDo";
 		feature1.owningTeam = "Binary Blazers";
-		feature1.projects = { 0: "Release 1.33.7" };
+		feature1.projects = [{ id: 0, name: "Release 1.33.7" }];
 		feature1.remainingWork = { 0: 10 };
 		feature1.totalWork = { 0: 15 };
 		feature1.milestoneLikelihood = getMileStoneLikelihoods();
@@ -1762,7 +1784,7 @@ export class DemoApiService
 		feature2.state = "Doing";
 		feature2.stateCategory = "Doing";
 		feature2.owningTeam = "";
-		feature2.projects = { 1: "Release 42" };
+		feature2.projects = [{ id: 1, name: "Release 42" }];
 		feature2.remainingWork = { 1: 5 };
 		feature2.totalWork = { 1: 5 };
 		feature2.milestoneLikelihood = getMileStoneLikelihoods();
@@ -1782,7 +1804,7 @@ export class DemoApiService
 		feature3.state = "Done";
 		feature3.stateCategory = "Done";
 		feature3.owningTeam = "Cyber Sultans";
-		feature3.projects = { 2: "Release Codename Daniel" };
+		feature3.projects = [{ id: 2, name: "Release Codename Daniel" }];
 		feature3.remainingWork = { 2: 7, 1: 15 };
 		feature3.totalWork = { 2: 10, 1: 25 };
 		feature3.milestoneLikelihood = getMileStoneLikelihoods();
@@ -1802,7 +1824,10 @@ export class DemoApiService
 		feature4.state = "Unknown";
 		feature4.stateCategory = "Unknown";
 		feature4.owningTeam = "Lagunitas";
-		feature4.projects = { 2: "Release Codename Daniel", 1: "Release 1.33.7" };
+		feature4.projects = [
+			{ id: 2, name: "Release Codename Daniel" },
+			{ id: 1, name: "Release 1.33.7" },
+		];
 		feature4.remainingWork = { 2: 3, 1: 5 };
 		feature4.totalWork = { 2: 5, 1: 10 };
 		feature4.milestoneLikelihood = getMileStoneLikelihoods();

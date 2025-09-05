@@ -13,6 +13,43 @@ import {
 } from "../../../tests/MockApiServiceProvider";
 import TeamFeatureList from "./TeamFeatureList";
 
+vi.mock("../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => {
+			if (key === "feature") return "Feature";
+			return "Unknown";
+		},
+	}),
+}));
+
+vi.mock("../../../components/Common/FeatureName/FeatureName", () => ({
+	default: ({ name }: { name: string }) => (
+		<div data-testid="feature-name">{name}</div>
+	),
+}));
+
+vi.mock(
+	"../../../components/Common/ProgressIndicator/ProgressIndicator",
+	() => ({
+		default: ({ title }: { title: string }) => (
+			<div data-testid="progress-indicator">{title}</div>
+		),
+	}),
+);
+
+vi.mock("../../../components/Common/StyledLink/StyledLink", () => ({
+	default: ({ to, children }: { to: string; children: React.ReactNode }) => (
+		<a href={to} data-testid="styled-link">
+			{children}
+		</a>
+	),
+}));
+
+vi.mock("../../../utils/featureName", () => ({
+	getWorkItemName: (feature: { referenceId: string; name: string }) =>
+		`${feature.referenceId}: ${feature.name}`,
+}));
+
 vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
 	default: ({
 		title,
@@ -41,25 +78,44 @@ vi.mock(
 // Mock the FeatureListBase component to simplify testing
 vi.mock("../../../components/Common/FeaturesList/FeatureListBase", () => ({
 	default: ({
-		features,
+		featureReferences,
 		renderTableHeader,
 		renderTableRow,
 	}: {
-		features: Feature[];
+		featureReferences: { id: number; name: string }[];
 		renderTableHeader: () => React.ReactNode;
 		renderTableRow: (feature: Feature) => React.ReactNode;
-	}) => (
-		<div data-testid="feature-list-base">
-			<table>
-				<thead>{renderTableHeader()}</thead>
-				<tbody>
-					{features.map((feature: Feature) => (
-						<tr key={feature.id}>{renderTableRow(feature)}</tr>
-					))}
-				</tbody>
-			</table>
-		</div>
-	),
+	}) => {
+		// For testing, we'll create mock features from the references
+		const mockFeatures = featureReferences.map((ref) => {
+			const feature = new Feature();
+			feature.id = ref.id;
+			feature.name = ref.name;
+			feature.referenceId = `FTR-${ref.id}`;
+			feature.stateCategory = "ToDo";
+			feature.lastUpdated = new Date();
+			feature.isUsingDefaultFeatureSize = false;
+			feature.projects = [{ id: 0, name: "Test Project" }];
+			feature.remainingWork = { 1: 10 };
+			feature.totalWork = { 1: 10 };
+			feature.forecasts = [];
+			feature.url = "";
+			return feature;
+		});
+
+		return (
+			<div data-testid="feature-list-base">
+				<table>
+					<thead>{renderTableHeader()}</thead>
+					<tbody>
+						{mockFeatures.map((feature: Feature) => (
+							<tr key={feature.id}>{renderTableRow(feature)}</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		);
+	},
 }));
 
 const mockTeamMetricsService: ITeamMetricsService =
@@ -100,7 +156,7 @@ describe("TeamFeatureList component", () => {
 				feature.stateCategory = "ToDo";
 				feature.lastUpdated = new Date();
 				feature.isUsingDefaultFeatureSize = false;
-				feature.projects = { 0: "" };
+				feature.projects = [{ id: 0, name: "" }];
 				feature.remainingWork = { 1: 10 };
 				feature.totalWork = { 1: 10 };
 				feature.forecasts = [
@@ -125,7 +181,7 @@ describe("TeamFeatureList component", () => {
 				feature.stateCategory = "Doing";
 				feature.lastUpdated = new Date();
 				feature.isUsingDefaultFeatureSize = true;
-				feature.projects = { 0: "" };
+				feature.projects = [{ id: 0, name: "" }];
 				feature.remainingWork = { 1: 5 };
 				feature.totalWork = { 1: 10 };
 				feature.forecasts = [
@@ -150,7 +206,7 @@ describe("TeamFeatureList component", () => {
 				feature.stateCategory = "Done";
 				feature.lastUpdated = new Date();
 				feature.isUsingDefaultFeatureSize = false;
-				feature.projects = { 0: "" };
+				feature.projects = [{ id: 0, name: "" }];
 				feature.remainingWork = { 1: 0 };
 				feature.totalWork = { 1: 10 };
 				feature.forecasts = [
@@ -190,12 +246,10 @@ describe("TeamFeatureList component", () => {
 		// Verify the base component was used
 		expect(screen.getByTestId("feature-list-base")).toBeInTheDocument();
 
-		for (const feature of team.features) {
-			const featureNameElement = screen.getByText(
-				`${feature.referenceId}: ${feature.name}`,
-			);
-			expect(featureNameElement).toBeInTheDocument();
-		}
+		// Check for the feature names using the mocked format
+		expect(screen.getByText("FTR-1: Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("FTR-2: Feature 2")).toBeInTheDocument();
+		expect(screen.getByText("FTR-3: Feature 3")).toBeInTheDocument();
 
 		const forecastInfoListElements = screen.getAllByTestId((id) =>
 			id.startsWith("forecast-info-list-"),

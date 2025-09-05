@@ -25,7 +25,8 @@ namespace Lighthouse.Backend.API.DTO
 
             if (project.OwningTeam != null)
             {
-                OwningTeam = new EntityReferenceDto(project.OwningTeam);
+                var owningTeam = project.OwningTeam;
+                OwningTeam = new EntityReferenceDto(owningTeam.Id, owningTeam.Name);
             }
 
             FeatureOwnerField = project.FeatureOwnerField;

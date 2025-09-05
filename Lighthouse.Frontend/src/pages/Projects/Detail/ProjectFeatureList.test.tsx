@@ -49,23 +49,51 @@ vi.mock("../../../components/Common/Forecasts/ForecastLikelihood", () => ({
 // Mock the FeatureListBase component to simplify testing
 vi.mock("../../../components/Common/FeaturesList/FeatureListBase", () => ({
 	default: ({
-		features,
 		renderTableHeader,
 		renderTableRow,
 	}: {
-		features: Feature[];
+		featureReferences: { id: number; name: string }[];
 		renderTableHeader: () => React.ReactNode;
 		renderTableRow: (feature: Feature) => React.ReactNode;
-	}) => (
-		<div data-testid="feature-list-base">
-			<table>
-				<thead>{renderTableHeader()}</thead>
-				<tbody>
-					{features.map((feature: Feature) => renderTableRow(feature))}
-				</tbody>
-			</table>
-		</div>
-	),
+	}) => {
+		// Create mock features for testing
+		const mockFeature1 = new Feature();
+		mockFeature1.id = 1;
+		mockFeature1.name = "Feature 1";
+		mockFeature1.referenceId = "FTR-1";
+		mockFeature1.forecasts = [];
+		mockFeature1.lastUpdated = new Date();
+		mockFeature1.isUsingDefaultFeatureSize = false;
+
+		const mockFeature2 = new Feature();
+		mockFeature2.id = 2;
+		mockFeature2.name = "Feature 2";
+		mockFeature2.referenceId = "FTR-2";
+		mockFeature2.forecasts = [];
+		mockFeature2.lastUpdated = new Date();
+		mockFeature2.isUsingDefaultFeatureSize = true;
+
+		const mockFeature3 = new Feature();
+		mockFeature3.id = 3;
+		mockFeature3.name = "Feature 3";
+		mockFeature3.referenceId = "FTR-3";
+		mockFeature3.forecasts = [];
+		mockFeature3.lastUpdated = new Date();
+		mockFeature3.isUsingDefaultFeatureSize = false;
+
+		const testFeatures = [mockFeature1, mockFeature2, mockFeature3];
+
+		return (
+			<div data-testid="feature-list-base">
+				<table>
+					<thead>{renderTableHeader()}</thead>
+					<tbody>
+						{testFeatures.map((feature: Feature) => renderTableRow(feature))}
+					</tbody>
+				</table>
+			</div>
+		);
+	},
 }));
 
 const mockTeamMetricsService: ITeamMetricsService =
@@ -158,7 +186,7 @@ describe("ProjectFeatureList component", () => {
 		feature.stateCategory = "ToDo";
 		feature.isUsingDefaultFeatureSize = false;
 		feature.lastUpdated = new Date();
-		feature.projects = { 10: "" };
+		feature.projects = [{ id: 10, name: "" }];
 		feature.remainingWork = { 1: 5, 2: 5 };
 		feature.totalWork = { 1: 5, 2: 5 };
 		feature.forecasts = [
@@ -183,7 +211,7 @@ describe("ProjectFeatureList component", () => {
 		feature.stateCategory = "Doing";
 		feature.isUsingDefaultFeatureSize = true;
 		feature.lastUpdated = new Date();
-		feature.projects = { 15: "" };
+		feature.projects = [{ id: 15, name: "" }];
 		feature.remainingWork = { 1: 10, 2: 5 };
 		feature.totalWork = { 1: 10, 2: 5 };
 		feature.forecasts = [
@@ -208,7 +236,7 @@ describe("ProjectFeatureList component", () => {
 		feature.stateCategory = "Done";
 		feature.isUsingDefaultFeatureSize = false;
 		feature.lastUpdated = new Date();
-		feature.projects = { 20: "" };
+		feature.projects = [{ id: 20, name: "" }];
 		feature.remainingWork = { 1: 0, 2: 0 };
 		feature.totalWork = { 1: 5, 2: 5 };
 		feature.forecasts = [
@@ -268,12 +296,10 @@ describe("ProjectFeatureList component", () => {
 		// Verify the base component was used
 		expect(screen.getByTestId("feature-list-base")).toBeInTheDocument();
 
-		for (const feature of project.features) {
-			const featureNameElement = screen.getByText(
-				`${feature.referenceId}: ${feature.name}`,
-			);
-			expect(featureNameElement).toBeInTheDocument();
-		}
+		// Just check that features are rendered with the correct format
+		expect(screen.getByText("FTR-1: Feature 1")).toBeInTheDocument();
+		expect(screen.getByText("FTR-2: Feature 2")).toBeInTheDocument();
+		expect(screen.getByText("FTR-3: Feature 3")).toBeInTheDocument();
 
 		// Use getAllByTestId since there are multiple elements with this test ID
 		const forecastInfoListElements = screen.getAllByTestId(

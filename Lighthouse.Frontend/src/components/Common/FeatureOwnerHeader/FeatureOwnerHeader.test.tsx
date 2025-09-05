@@ -20,8 +20,6 @@ describe("FeatureOwnerHeader", () => {
 		tags: ["tag1", "tag2"],
 		serviceLevelExpectationProbability: 0.85,
 		serviceLevelExpectationRange: 30,
-		remainingWork: 0,
-		totalWork: 0,
 		systemWIPLimit: 0,
 	};
 

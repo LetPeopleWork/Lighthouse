@@ -108,7 +108,8 @@ export const createMockTeamService = (): ITeamService => {
 
 export const createMockFeatureService = (): IFeatureService => {
 	return {
-		getParentFeatures: vi.fn(),
+		getFeaturesByReferences: vi.fn(),
+		getFeaturesByIds: vi.fn(),
 	};
 };
 

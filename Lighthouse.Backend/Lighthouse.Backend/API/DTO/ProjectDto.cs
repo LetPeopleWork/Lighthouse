@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.API.DTO
 
             foreach (var feature in project.Features.OrderBy(f => f, new FeatureComparer()))
             {
-                Features.Add(new FeatureDto(feature));
+                Features.Add(new EntityReferenceDto(feature.Id, feature.Name));
             }
 
             foreach (var milestone in project.Milestones)
@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.API.DTO
             }
         }
 
-        public List<FeatureDto> Features { get; } = new List<FeatureDto>();
+        public List<EntityReferenceDto> Features { get; } = new List<EntityReferenceDto>();
 
         public List<EntityReferenceDto> InvolvedTeams { get; } = new List<EntityReferenceDto>();
 
