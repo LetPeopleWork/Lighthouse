@@ -104,7 +104,7 @@ test("should be able to handle a team defined in Linear", async ({
 			await expect(teamInfoPage.updateTeamDataButton).toBeEnabled();
 			newTeam.id = teamInfoPage.teamId;
 
-			const teamsPage = await overviewPage.lightHousePage.goToTeams();
+			const teamsPage = await overviewPage.lightHousePage.goToOverview();
 			await teamsPage.search(newTeam.name);
 			const teamLink = await teamsPage.getTeamLink(newTeam.name);
 			await expect(teamLink).toBeVisible();
@@ -117,7 +117,7 @@ test("should be able to handle a team defined in Linear", async ({
 			name: "My Demo Project",
 		};
 
-		const projectPage = await overviewPage.lightHousePage.goToProjects();
+		const projectPage = await overviewPage.lightHousePage.goToOverview();
 
 		const newProjectPage = await projectPage.addNewProject();
 		await test.step("Add general configuration", async () => {
@@ -183,7 +183,7 @@ test("should be able to handle a team defined in Linear", async ({
 			await expect(projectInfoPage.refreshFeatureButton).toBeDisabled();
 			newProject.id = projectInfoPage.projectId;
 
-			const projectPage = await overviewPage.lightHousePage.goToProjects();
+			const projectPage = await overviewPage.lightHousePage.goToOverview();
 			await projectPage.search(newProject.name);
 			const projectLink = await projectPage.getProjectLink(newProject);
 			await expect(projectLink).toBeVisible();

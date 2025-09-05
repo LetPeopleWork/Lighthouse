@@ -66,7 +66,7 @@ const updateTeams = async (
 	const teamNames = ["Lighthouse Team", "Dawg Pound", "Team HecKING"];
 
 	for (const team of teams) {
-		const teamPage = await overviewPage.lightHousePage.goToTeams();
+		const teamPage = await overviewPage.lightHousePage.goToOverview();
 		const editTeam = await teamPage.editTeam(team.name);
 
 		const newTeamName = teamNames[teams.indexOf(team)];
@@ -92,7 +92,7 @@ const updateProjects = async (
 	const projectNames = ["Lighthouse Project", "2025.01", "Project 1886"];
 
 	for (const project of projects) {
-		const projectPage = await overviewPage.lightHousePage.goToProjects();
+		const projectPage = await overviewPage.lightHousePage.goToOverview();
 		const editProject = await projectPage.editProject(project);
 
 		const newProjectName = projectNames[projects.indexOf(project)];
@@ -341,12 +341,10 @@ testWithData(
 		const landingPage = await overviewPage.lightHousePage.goToOverview();
 		await takePageScreenshot(landingPage.page, "features/overview.png");
 
-		// Teams Overview Page
-		const teamsPage = await overviewPage.lightHousePage.goToTeams();
-		await takePageScreenshot(teamsPage.page, "features/teams.png");
-
 		// Team Deletion Dialog
-		const deleteTeamDialog = await teamsPage.deleteTeam(testData.teams[0].name);
+		const deleteTeamDialog = await overviewPage.deleteTeam(
+			testData.teams[0].name,
+		);
 		await takeElementScreenshot(
 			deleteTeamDialog.page.getByRole("dialog"),
 			"features/teams_delete.png",
@@ -357,7 +355,7 @@ testWithData(
 		await deleteTeamDialog.cancel();
 
 		// Team Detail Page
-		const teamDetailPage = await teamsPage.goToTeam(testData.teams[0].name);
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
 		await teamDetailPage.forecast(10);
 		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
@@ -434,12 +432,10 @@ testWithData(
 			"features/metrics/simplifiedCFD.png",
 		);
 
-		// Project Overview Page
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-		await takePageScreenshot(projectsPage.page, "features/projects.png");
+		overviewPage.lightHousePage.goToOverview();
 
 		// Project Deletion Dialog
-		const deleteProjectDialog = await projectsPage.deleteProject(
+		const deleteProjectDialog = await overviewPage.deleteProject(
 			testData.projects[0],
 		);
 
@@ -452,7 +448,7 @@ testWithData(
 		await deleteProjectDialog.cancel();
 
 		// Project Detail Page
-		const projectDetailPage = await projectsPage.goToProject(
+		const projectDetailPage = await overviewPage.goToProject(
 			testData.projects[0],
 		);
 		await takePageScreenshot(
@@ -562,7 +558,7 @@ for (const {
 			await workTrackingSystemDialog.selectWorkTrackingSystem(
 				workTrackingSystemName,
 			);
-			
+
 			for (const option of workTrackingSystemOptions) {
 				await workTrackingSystemDialog.setWorkTrackingSystemOption(
 					option.field,

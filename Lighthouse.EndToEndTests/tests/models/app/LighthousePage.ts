@@ -1,10 +1,8 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { OverviewPage } from "../overview/OverviewPage";
 import { ProjectEditPage } from "../projects/ProjectEditPage";
-import { ProjectsPage } from "../projects/ProjectsPage";
 import { SettingsPage } from "../settings/SettingsPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
-import { TeamsPage } from "../teams/TeamsPage";
 
 export class LighthousePage {
 	readonly page: Page;
@@ -31,30 +29,6 @@ export class LighthousePage {
 	async createNewProject(): Promise<ProjectEditPage> {
 		await this.page.goto("/projects/new");
 		return new ProjectEditPage(this.page);
-	}
-
-	async goToTeams(): Promise<TeamsPage> {
-		await this.page.getByRole("link", { name: "Teams" }).click();
-
-		// Make sure the page has loaded by checking for a specific element
-		await expect(
-			this.page.getByRole("heading", { name: "Team Overview" }),
-		).toBeVisible();
-
-		return new TeamsPage(this.page);
-	}
-
-	async goToProjects(): Promise<ProjectsPage> {
-		await this.page
-			.getByRole("link", { name: "Projects", exact: true })
-			.click();
-
-		// Make sure the page has loaded by checking for a specific element
-		await expect(
-			this.page.getByRole("heading", { name: "Project Overview" }),
-		).toBeVisible();
-
-		return new ProjectsPage(this.page);
 	}
 
 	async goToSettings(): Promise<SettingsPage> {

@@ -53,8 +53,7 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 		async ({ testData, overviewPage }) => {
 			const project = testData.projects[index];
 
-			const projectPage = await overviewPage.lightHousePage.goToProjects();
-			const projectDetailPage = await projectPage.goToProject(project);
+			const projectDetailPage = await overviewPage.goToProject(project);
 
 			const involvedTeams: { [key: string]: string[] } = {};
 
@@ -111,7 +110,7 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 			await test.step("Expect Team Detail to List Features", async () => {
 				for (const [team, features] of Object.entries(involvedTeams)) {
 					const teamsOverviewPage =
-						await overviewPage.lightHousePage.goToTeams();
+						await overviewPage.lightHousePage.goToOverview();
 
 					const teamDetailPage = await teamsOverviewPage.goToTeam(team);
 
@@ -130,8 +129,7 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [project] = testData.projects;
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-		const projectDetailPage = await projectsPage.goToProject(project);
+		const projectDetailPage = await overviewPage.goToProject(project);
 
 		const projectEditPage = await projectDetailPage.editProject();
 		expect(projectEditPage.page.url()).toContain(
@@ -145,8 +143,7 @@ testWithUpdatedTeams([3])(
 	async ({ testData, overviewPage }) => {
 		const project = testData.projects[2];
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-		const projectDetailPage = await projectsPage.goToProject(project);
+		const projectDetailPage = await overviewPage.goToProject(project);
 
 		await projectDetailPage.refreshFeatures();
 		await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();

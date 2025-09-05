@@ -19,8 +19,7 @@ for (const { name, involvedTeams, index } of newProjectConfigurations) {
 		async ({ testData, overviewPage }) => {
 			const project = testData.projects[index];
 
-			const projectsPage = await overviewPage.lightHousePage.goToProjects();
-			const projectEditPage = await projectsPage.editProject(project);
+			const projectEditPage = await overviewPage.editProject(project);
 
 			await expect(projectEditPage.validateButton).toBeEnabled();
 			await expect(projectEditPage.saveButton).toBeDisabled();
@@ -39,8 +38,7 @@ testWithData(
 		const project = testData.projects[0];
 		const team = testData.teams[0];
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-		const projectEditPage = await projectsPage.editProject(project);
+		const projectEditPage = await overviewPage.editProject(project);
 
 		await expect(projectEditPage.validateButton).toBeEnabled();
 
@@ -146,8 +144,7 @@ testWithData(
 		const project = testData.projects[0];
 		const [team1, team2, team3] = testData.teams;
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-		const projectEditPage = await projectsPage.editProject(project);
+		const projectEditPage = await overviewPage.editProject(project);
 
 		await test.step("No Team is selected as Owner by Default", async () => {
 			await projectEditPage.toggleOwnershipSettings();
@@ -242,8 +239,7 @@ for (const teamConfiguration of newTeamConfigurations) {
 	testWithUpdatedTeams(teamConfiguration.involvedTeams)(
 		`should allow to create a project team for ${teamConfiguration.name}`,
 		async ({ testData, overviewPage }) => {
-			let projectPage = await overviewPage.lightHousePage.goToProjects();
-			const newProjectPage = await projectPage.addNewProject();
+			const newProjectPage = await overviewPage.addNewProject();
 
 			const newProject = {
 				id: 0,
@@ -390,9 +386,9 @@ for (const teamConfiguration of newTeamConfigurations) {
 				await expect(projectInfoPage.refreshFeatureButton).toBeDisabled();
 				newProject.id = projectInfoPage.projectId;
 
-				projectPage = await overviewPage.lightHousePage.goToProjects();
-				await projectPage.search(newProject.name);
-				const projectLink = await projectPage.getProjectLink(newProject);
+				await overviewPage.lightHousePage.goToOverview();
+				await overviewPage.search(newProject.name);
+				const projectLink = await overviewPage.getProjectLink(newProject);
 				await expect(projectLink).toBeVisible();
 			});
 		},
@@ -408,8 +404,7 @@ for (const teamConfiguration of newTeamConfigurations) {
 				"Expected to have projects initiatilized to prevent tutorial page from being displayed",
 			);
 
-			const projectsPage = await overviewPage.lightHousePage.goToProjects();
-			let newProjectPage = await projectsPage.addNewProject();
+			let newProjectPage = await overviewPage.addNewProject();
 
 			await test.step("Add Valid Configuration for new project", async () => {
 				await newProjectPage.setName(

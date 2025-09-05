@@ -24,13 +24,11 @@ test("should be able to handle teams and projects defined via CSV", async ({
 
 		const workTrackingSystemConnections =
 			await settingsPage.goToWorkTrackingSystems();
-		
-			const addWorkTrackingSystemConnectionDialog =
+
+		const addWorkTrackingSystemConnectionDialog =
 			await workTrackingSystemConnections.addNewWorkTrackingSystem();
 
-		await addWorkTrackingSystemConnectionDialog.selectWorkTrackingSystem(
-			"Csv",
-		);
+		await addWorkTrackingSystemConnectionDialog.selectWorkTrackingSystem("Csv");
 
 		await addWorkTrackingSystemConnectionDialog.setConnectionName(
 			workTrackingSystem.name,
@@ -38,7 +36,7 @@ test("should be able to handle teams and projects defined via CSV", async ({
 
 		await addWorkTrackingSystemConnectionDialog.validate();
 		await addWorkTrackingSystemConnectionDialog.create();
-	})
+	});
 
 	await test.step("Create CSV Team with file upload", async () => {
 		// Generate CSV data with current date to ensure consistent 30-day metrics
@@ -125,17 +123,16 @@ test("should be able to handle teams and projects defined via CSV", async ({
 			await expect(teamInfoPage.updateTeamDataButton).toBeEnabled();
 			newTeam.id = teamInfoPage.teamId;
 
-			const teamsPage = await overviewPage.lightHousePage.goToTeams();
+			const teamsPage = await overviewPage.lightHousePage.goToOverview();
 			await teamsPage.search(newTeam.name);
-			const teamLink = await teamsPage.getTeamLink(newTeam.name);
+			const teamLink = await overviewPage.getTeamLink(newTeam.name);
 			await expect(teamLink).toBeVisible();
 		});
 	});
 
 	await test.step("Wait for team metrics to load and verify", async () => {
 		// Navigate to team page and update team data to load CSV metrics
-		const teamsPage = await overviewPage.lightHousePage.goToTeams();
-		const teamInfoPage = await teamsPage.goToTeam(newTeam.name);
+		const teamInfoPage = await overviewPage.goToTeam(newTeam.name);
 		await teamInfoPage.updateTeamData();
 
 		// Wait for metrics to be calculated
@@ -153,8 +150,8 @@ test("should be able to handle teams and projects defined via CSV", async ({
 		// Generate CSV data with current date to ensure consistent 30-day metrics
 		projectCsvFile = createProjectCsvFile();
 
-		const projectPage = await overviewPage.lightHousePage.goToProjects();
-		const newProjectPage = await projectPage.addNewProject();
+		const projectsPage = await overviewPage.lightHousePage.goToOverview();
+		const newProjectPage = await projectsPage.addNewProject();
 		const csvUploadHelper = new CsvUploadHelper(newProjectPage.page);
 
 		await test.step("Add general configuration", async () => {
@@ -238,17 +235,15 @@ test("should be able to handle teams and projects defined via CSV", async ({
 			await expect(projectInfoPage.refreshFeatureButton).toBeEnabled();
 			newProject.id = projectInfoPage.projectId;
 
-			const projectPage = await overviewPage.lightHousePage.goToProjects();
-			await projectPage.search(newProject.name);
-			const projectLink = await projectPage.getProjectLink(newProject);
+			const projectsPage = await overviewPage.lightHousePage.goToOverview();
+			await projectsPage.search(newProject.name);
+			const projectLink = await overviewPage.getProjectLink(newProject);
 			await expect(projectLink).toBeVisible();
 		});
 	});
 
 	await test.step("Wait for project metrics to load and verify features", async () => {
-		// Navigate to project detail page
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-		const projectInfoPage = await projectsPage.goToProject(newProject);
+		const projectInfoPage = await overviewPage.goToProject(newProject);
 
 		// Refresh features to load CSV data
 		await projectInfoPage.refreshFeatures();
@@ -266,7 +261,7 @@ test("should be able to handle teams and projects defined via CSV", async ({
 
 	await test.step("Verify team shows project features correctly", async () => {
 		// Navigate to team detail page
-		const teamsPage = await overviewPage.lightHousePage.goToTeams();
+		const teamsPage = await overviewPage.lightHousePage.goToOverview();
 		const teamInfoPage = await teamsPage.goToTeam(newTeam.name);
 
 		// Verify team can be updated (basic validation that it works with CSV)

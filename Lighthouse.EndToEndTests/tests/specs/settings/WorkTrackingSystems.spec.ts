@@ -86,14 +86,12 @@ for (const {
 					workTrackingSystemsPage.getWorkTrackingSystem(wtsName);
 				await expect(savedWorkTrackingSystem).toBeVisible();
 
-				const newTeamPage = await (
-					await overviewPage.lightHousePage.goToTeams()
-				).addNewTeam();
+				const teamsPage = await overviewPage.lightHousePage.goToOverview();
+				const newTeamPage = await teamsPage.addNewTeam();
 				await newTeamPage.selectWorkTrackingSystem(wtsName);
 
-				const newProjectPage = await (
-					await overviewPage.lightHousePage.goToProjects()
-				).addNewProject();
+				const projectsPages = await overviewPage.lightHousePage.goToOverview();
+				const newProjectPage = await projectsPages.addNewProject();
 				await newProjectPage.selectWorkTrackingSystem(wtsName);
 			});
 
@@ -184,14 +182,12 @@ testWithData(
 				workTrackingSystemsPage.getWorkTrackingSystem(newName),
 			).toBeVisible();
 
-			const newTeamPage = await (
-				await overviewPage.lightHousePage.goToTeams()
-			).addNewTeam();
+			const teamsPage = await overviewPage.lightHousePage.goToOverview();
+			const newTeamPage = await teamsPage.addNewTeam();
 			await newTeamPage.selectWorkTrackingSystem(newName);
 
-			const newProjectPage = await (
-				await overviewPage.lightHousePage.goToProjects()
-			).addNewProject();
+			const projectsPage = await overviewPage.lightHousePage.goToOverview();
+			const newProjectPage = await projectsPage.addNewProject();
 			await newProjectPage.selectWorkTrackingSystem(newName);
 		});
 	},

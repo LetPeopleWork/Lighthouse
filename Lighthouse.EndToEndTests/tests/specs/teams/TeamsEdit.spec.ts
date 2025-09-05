@@ -15,8 +15,7 @@ for (const { name, index } of teamConfigurations) {
 		async ({ testData, overviewPage }) => {
 			const team = testData.teams[index];
 
-			const teamsPage = await overviewPage.lightHousePage.goToTeams();
-			const teamEditPage = await teamsPage.editTeam(team.name);
+			const teamEditPage = await overviewPage.editTeam(team.name);
 
 			await expect(teamEditPage.validateButton).toBeEnabled();
 			await expect(teamEditPage.saveButton).toBeDisabled();
@@ -34,8 +33,7 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const team = testData.teams[0];
 
-		const teamsPage = await overviewPage.lightHousePage.goToTeams();
-		const teamEditPage = await teamsPage.editTeam(team.name);
+		const teamEditPage = await overviewPage.editTeam(team.name);
 
 		await expect(teamEditPage.validateButton).toBeEnabled();
 
@@ -168,8 +166,7 @@ for (const {
 	testWithData(
 		`should allow to create a new team for ${name}`,
 		async ({ testData, overviewPage }) => {
-			let teamsPage = await overviewPage.lightHousePage.goToTeams();
-			const newTeamPage = await teamsPage.addNewTeam();
+			const newTeamPage = await overviewPage.addNewTeam();
 
 			const newTeam = { id: 0, name: `My New ${name} team` };
 
@@ -274,9 +271,10 @@ for (const {
 				await expect(teamInfoPage.updateTeamDataButton).toBeDisabled();
 				newTeam.id = teamInfoPage.teamId;
 
-				teamsPage = await overviewPage.lightHousePage.goToTeams();
-				await teamsPage.search(newTeam.name);
-				const teamLink = await teamsPage.getTeamLink(newTeam.name);
+				overviewPage.lightHousePage.goToOverview();
+
+				await overviewPage.search(newTeam.name);
+				const teamLink = await overviewPage.getTeamLink(newTeam.name);
 				await expect(teamLink).toBeVisible();
 			});
 		},

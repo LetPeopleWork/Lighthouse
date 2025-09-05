@@ -12,8 +12,7 @@ for (const { index, name } of testData) {
 		async ({ testData, overviewPage }) => {
 			const team = testData.teams[index];
 
-			const teamsPage = await overviewPage.lightHousePage.goToTeams();
-			const teamDetailPage = await teamsPage.goToTeam(team.name);
+			const teamDetailPage = await overviewPage.goToTeam(team.name);
 
 			await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
@@ -49,8 +48,7 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [team] = testData.teams;
 
-		const teamsPage = await overviewPage.lightHousePage.goToTeams();
-		const teamDetailPage = await teamsPage.goToTeam(team.name);
+		const teamDetailPage = await overviewPage.goToTeam(team.name);
 
 		const teamEditPage = await teamDetailPage.editTeam();
 		expect(teamEditPage.page.url()).toContain(`/teams/edit/${team.id}`);
@@ -62,8 +60,7 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const team = testData.teams[0];
 
-		const teamsPage = await overviewPage.lightHousePage.goToTeams();
-		const teamDetailPage = await teamsPage.goToTeam(team.name);
+		const teamDetailPage = await overviewPage.goToTeam(team.name);
 
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 

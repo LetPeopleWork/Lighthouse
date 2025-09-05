@@ -5,11 +5,9 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [project1, project2, project3] = testData.projects;
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-
-		const projectLink1 = await projectsPage.getProjectLink(project1);
-		const projectLink2 = await projectsPage.getProjectLink(project2);
-		const projectLink3 = await projectsPage.getProjectLink(project3);
+		const projectLink1 = await overviewPage.getProjectLink(project1);
+		const projectLink2 = await overviewPage.getProjectLink(project2);
+		const projectLink3 = await overviewPage.getProjectLink(project3);
 
 		await expect(projectLink1).toBeVisible();
 		await expect(projectLink2).toBeVisible();
@@ -22,33 +20,31 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [project1, project2] = testData.projects;
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-
 		await test.step(`Search for project ${project1.name}`, async () => {
-			await projectsPage.search(project1.name);
+			await overviewPage.search(project1.name);
 
-			const projectLink1 = await projectsPage.getProjectLink(project1);
-			const projectLink2 = await projectsPage.getProjectLink(project2);
+			const projectLink1 = await overviewPage.getProjectLink(project1);
+			const projectLink2 = await overviewPage.getProjectLink(project2);
 
 			await expect(projectLink1).toBeVisible();
 			await expect(projectLink2).not.toBeVisible();
 		});
 
 		await test.step(`Search for project ${project2.name}`, async () => {
-			await projectsPage.search(project2.name);
+			await overviewPage.search(project2.name);
 
-			const projectLink1 = await projectsPage.getProjectLink(project1);
-			const projectLink2 = await projectsPage.getProjectLink(project2);
+			const projectLink1 = await overviewPage.getProjectLink(project1);
+			const projectLink2 = await overviewPage.getProjectLink(project2);
 
 			await expect(projectLink1).not.toBeVisible();
 			await expect(projectLink2).toBeVisible();
 		});
 
 		await test.step("Search for not existing project", async () => {
-			await projectsPage.search("Jambalaya");
+			await overviewPage.search("Jambalaya");
 
-			const projectLink1 = await projectsPage.getProjectLink(project1);
-			const projectLink2 = await projectsPage.getProjectLink(project2);
+			const projectLink1 = await overviewPage.getProjectLink(project1);
+			const projectLink2 = await overviewPage.getProjectLink(project2);
 
 			await expect(projectLink1).not.toBeVisible();
 			await expect(projectLink2).not.toBeVisible();
@@ -61,9 +57,7 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [project1] = testData.projects;
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-
-		const projectDetailPage = await projectsPage.goToProject(project1);
+		const projectDetailPage = await overviewPage.goToProject(project1);
 		expect(projectDetailPage.page.url()).toContain(`/projects/${project1.id}`);
 	},
 );
@@ -73,9 +67,7 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [project1] = testData.projects;
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-
-		const projectDetailPage = await projectsPage.editProject(project1);
+		const projectDetailPage = await overviewPage.editProject(project1);
 		expect(projectDetailPage.page.url()).toContain(
 			`/projects/edit/${project1.id}`,
 		);
@@ -87,16 +79,14 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [project1] = testData.projects;
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-
 		await test.step(`Delete project ${project1.name}`, async () => {
-			const projectDeletionDialog = await projectsPage.deleteProject(project1);
+			const projectDeletionDialog = await overviewPage.deleteProject(project1);
 			await projectDeletionDialog.delete();
 		});
 
 		await test.step(`Search for project ${project1.name}`, async () => {
-			await projectsPage.search(project1.name);
-			const projectLink = await projectsPage.getProjectLink(project1);
+			await overviewPage.search(project1.name);
+			const projectLink = await overviewPage.getProjectLink(project1);
 
 			await expect(projectLink).not.toBeVisible();
 		});
@@ -108,17 +98,15 @@ testWithData(
 	async ({ testData, overviewPage }) => {
 		const [project1] = testData.projects;
 
-		const projectsPage = await overviewPage.lightHousePage.goToProjects();
-
 		await test.step(`Delete project ${project1.name}`, async () => {
-			const projectDeletionDialog = await projectsPage.deleteProject(project1);
+			const projectDeletionDialog = await overviewPage.deleteProject(project1);
 			await projectDeletionDialog.cancel();
 		});
 
 		await test.step(`Search for project ${project1.name}`, async () => {
-			await projectsPage.search(project1.name);
+			await overviewPage.search(project1.name);
 
-			const projectLink = await projectsPage.getProjectLink(project1);
+			const projectLink = await overviewPage.getProjectLink(project1);
 			await expect(projectLink).toBeVisible();
 		});
 	},
