@@ -9,6 +9,7 @@ import type React from "react";
 import { useState } from "react";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
+import ItemListManager from "../../../components/Common/ItemListManager/ItemListManager";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -21,6 +22,7 @@ interface NewItemForecasterProps {
 		targetDate: Date,
 		workItemTypes: string[],
 	) => Promise<void>;
+	onClearForecastResult?: () => void;
 	workItemTypes: string[];
 	isDisabled?: boolean;
 	disabledMessage?: string;
@@ -29,6 +31,7 @@ interface NewItemForecasterProps {
 const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 	newItemForecastResult,
 	onRunNewItemForecast,
+	onClearForecastResult,
 	workItemTypes,
 	isDisabled = false,
 	disabledMessage,
@@ -40,18 +43,55 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 	const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(
 		dayjs().add(30, "day"),
 	);
+	const [selectedWorkItemTypes, setSelectedWorkItemTypes] = useState<string[]>(
+		[],
+	);
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
+	// Wrapper functions to clear forecast results when parameters change
+	const handleStartDateChange = (value: unknown) => {
+		setStartDate(value as dayjs.Dayjs | null);
+		onClearForecastResult?.();
+	};
+
+	const handleEndDateChange = (value: unknown) => {
+		setEndDate(value as dayjs.Dayjs | null);
+		onClearForecastResult?.();
+	};
+
+	const handleTargetDateChange = (value: unknown) => {
+		setTargetDate(value as dayjs.Dayjs | null);
+		onClearForecastResult?.();
+	};
+
 	const handleRunForecast = async () => {
-		if (!targetDate || !startDate || !endDate) return;
+		if (
+			!targetDate ||
+			!startDate ||
+			!endDate ||
+			selectedWorkItemTypes.length === 0
+		)
+			return;
 
 		const start = startDate.toDate();
 		const end = endDate.toDate();
 		const target = targetDate.toDate();
 
-		await onRunNewItemForecast(start, end, target, workItemTypes);
+		await onRunNewItemForecast(start, end, target, selectedWorkItemTypes);
+	};
+
+	const handleAddWorkItemType = (type: string) => {
+		if (!selectedWorkItemTypes.includes(type)) {
+			setSelectedWorkItemTypes([...selectedWorkItemTypes, type]);
+			onClearForecastResult?.();
+		}
+	};
+
+	const handleRemoveWorkItemType = (type: string) => {
+		setSelectedWorkItemTypes(selectedWorkItemTypes.filter((t) => t !== type));
+		onClearForecastResult?.();
 	};
 
 	function getLocaleDateFormat(): string {
@@ -99,11 +139,9 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 							<Grid size={{ xs: 12 }}>
 								<LocalizationProvider dateAdapter={AdapterDayjs}>
 									<DatePicker
-										label="Start Date"
+										label="From"
 										value={startDate}
-										onChange={(value) =>
-											setStartDate(value as dayjs.Dayjs | null)
-										}
+										onChange={handleStartDateChange}
 										maxDate={endDate || undefined}
 										format={getLocaleDateFormat()}
 										sx={{ width: "100%" }}
@@ -114,11 +152,9 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 							<Grid size={{ xs: 12 }}>
 								<LocalizationProvider dateAdapter={AdapterDayjs}>
 									<DatePicker
-										label="End Date"
+										label="To"
 										value={endDate}
-										onChange={(value) =>
-											setEndDate(value as dayjs.Dayjs | null)
-										}
+										onChange={handleEndDateChange}
 										minDate={startDate || undefined}
 										maxDate={targetDate || undefined}
 										format={getLocaleDateFormat()}
@@ -128,11 +164,9 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 								</LocalizationProvider>
 							</Grid>
 						</Grid>
-					</Grid>
 
-					{/* Target Date Section */}
-					<Grid size={{ xs: 6 }}>
-						<Typography variant="h6" gutterBottom>
+						{/* Target Date Section */}
+						<Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
 							Target Date
 						</Typography>
 						<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -142,7 +176,7 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 							<DatePicker
 								label="Target Date"
 								value={targetDate}
-								onChange={(value) => setTargetDate(value as dayjs.Dayjs | null)}
+								onChange={handleTargetDateChange}
 								minDate={endDate || dayjs()}
 								format={getLocaleDateFormat()}
 								sx={{ width: "100%" }}
@@ -150,32 +184,58 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 							/>
 						</LocalizationProvider>
 					</Grid>
-				</Grid>
-			</Grid>
-			<Grid size={{ xs: 12 }}>
-				<Grid
-					container
-					spacing={2}
-					justifyContent="space-between"
-					alignItems="flex-start"
-				>
-					<Grid size={{ xs: 8 }}>
-						{newItemForecastResult && !isDisabled && (
-							<ForecastInfoList
-								title={`How many ${workItemsTerm} will you add until ${targetDate?.format("YYYY-MM-DD")}?`}
-								forecasts={newItemForecastResult.howManyForecasts}
-							/>
-						)}
-					</Grid>
-					<Grid
-						size={{ xs: 4 }}
-						sx={{ display: "flex", justifyContent: "flex-end" }}
-					>
-						<ActionButton
-							onClickHandler={handleRunForecast}
-							buttonText="Forecast"
-							disabled={isDisabled || !startDate || !endDate || !targetDate}
+
+					{/* Work Item Types Section */}
+					<Grid size={{ xs: 6 }}>
+						<Typography variant="h6" gutterBottom>
+							Work Item Types
+						</Typography>
+						<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+							Select the work item types to include in the forecast. At least
+							one type must be selected.
+						</Typography>
+						<ItemListManager
+							title="Work Item Type"
+							items={selectedWorkItemTypes}
+							onAddItem={handleAddWorkItemType}
+							onRemoveItem={handleRemoveWorkItemType}
+							suggestions={workItemTypes}
+							isLoading={false}
 						/>
+
+						{/* Forecast Button - Fixed Position */}
+						<Grid container sx={{ mt: 3, mb: 2 }}>
+							<Grid
+								size={{ xs: 12 }}
+								sx={{ display: "flex", justifyContent: "flex-end" }}
+							>
+								<ActionButton
+									onClickHandler={handleRunForecast}
+									buttonText="Forecast"
+									disabled={
+										isDisabled ||
+										!startDate ||
+										!endDate ||
+										!targetDate ||
+										selectedWorkItemTypes.length === 0
+									}
+								/>
+							</Grid>
+						</Grid>
+
+						{/* Forecast Results */}
+						<Grid container spacing={2}>
+							<Grid size={{ xs: 12 }}>
+								{newItemForecastResult &&
+									!isDisabled &&
+									selectedWorkItemTypes.length > 0 && (
+										<ForecastInfoList
+											title={`How many ${selectedWorkItemTypes.join(", ")} ${workItemsTerm} will you add until ${targetDate?.format("YYYY-MM-DD")}?`}
+											forecasts={newItemForecastResult.howManyForecasts}
+										/>
+									)}
+							</Grid>
+						</Grid>
 					</Grid>
 				</Grid>
 			</Grid>

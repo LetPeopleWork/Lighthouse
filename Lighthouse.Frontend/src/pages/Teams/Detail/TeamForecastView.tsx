@@ -107,6 +107,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 				<NewItemForecaster
 					newItemForecastResult={newItemForecastResult}
 					onRunNewItemForecast={onRunNewItemForecast}
+					onClearForecastResult={() => setNewItemForecastResult(null)}
 					workItemTypes={team.workItemTypes || []}
 					isDisabled={!canUseNewItemForecaster}
 					disabledMessage={newItemForecasterTooltip}
