@@ -68,7 +68,7 @@ public class LicenseGuardAttributeTest
         using (Assert.EnterMultipleScope())
         {
             Assert.That(context.Result, Is.InstanceOf<ObjectResult>());
-            Assert.That(((ObjectResult)context.Result).Value?.ToString(), Does.Contain("Access denied: premium features required"));
+            Assert.That(((ObjectResult)context.Result).Value?.ToString(), Does.Contain("Access Denied: Premium Features Required"));
             Assert.That(((ObjectResult)context.Result).StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
         }
     }

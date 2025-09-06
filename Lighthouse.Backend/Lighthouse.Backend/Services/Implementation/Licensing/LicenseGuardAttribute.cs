@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
             {
                 if (RequirePremium)
                 {
-                    context.Result = new ObjectResult("Access denied: Premium Features Required")
+                    context.Result = new ObjectResult("Access Denied: Premium Features Required")
                     {
                         StatusCode = StatusCodes.Status403Forbidden,
                     };
