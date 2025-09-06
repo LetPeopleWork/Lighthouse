@@ -337,8 +337,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.Name, Is.EqualTo(name));
                 Assert.That(workItem.Type, Is.EqualTo(type));
                 Assert.That(workItem.State, Is.EqualTo(state));
+                
                 Assert.That(workItem.StartedDate, Is.EqualTo(startedDate));
+                Assert.That(workItem.StartedDate?.Kind ?? DateTimeKind.Utc, Is.EqualTo(DateTimeKind.Utc));
+                
                 Assert.That(workItem.ClosedDate, Is.EqualTo(closedDate));
+                Assert.That(workItem.ClosedDate?.Kind ?? DateTimeKind.Utc, Is.EqualTo(DateTimeKind.Utc));
+
                 Assert.That(workItem.StateCategory, Is.EqualTo(stateCategory));
             }
         }
@@ -348,6 +353,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItem.CreatedDate, Is.EqualTo(createdDate));
+                Assert.That(workItem.CreatedDate?.Kind ?? DateTimeKind.Utc, Is.EqualTo(DateTimeKind.Utc));
+
                 Assert.That(workItem.ParentReferenceId, Is.EqualTo(parentReferenceId));
                 Assert.That(workItem.Url, Is.EqualTo(url));
 

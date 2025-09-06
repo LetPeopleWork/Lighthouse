@@ -146,9 +146,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var parentReferenceId = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ParentReferenceIdHeader))?.Trim() ?? string.Empty;
             var url = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.UrlHeader))?.Trim() ?? string.Empty;
 
-            var startedDate = csv.GetField<DateTime?>(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StartedDateHeader));
-            var closedDate = csv.GetField<DateTime?>(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ClosedDateHeader));
-            var createdDate = csv.GetField<DateTime?>(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.CreatedDateHeader));
+            var startedDate = ParseDateTime(csv, owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StartedDateHeader);
+            var closedDate = ParseDateTime(csv, owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ClosedDateHeader);
+            var createdDate = ParseDateTime(csv, owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.CreatedDateHeader);
 
             var tagSeperator = GetTagSeparator(owner.WorkTrackingSystemConnection);
             var tags = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader))?.Split(tagSeperator).Select(x => x.Trim()) ?? [];
@@ -179,6 +179,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             };
 
             return workItemBase;
+        }
+
+        private DateTime? ParseDateTime(CsvReader reader, WorkTrackingSystemConnection connection, string columnName)
+        {
+            var dateTime = reader.GetField<DateTime?>(GetOptionByKey(connection, columnName));
+
+            if (dateTime.HasValue)
+            {
+                dateTime = DateTime.SpecifyKind(dateTime.Value, DateTimeKind.Utc);
+            }
+
+            return dateTime;
         }
 
         private bool IsValidCsv(IWorkItemQueryOwner owner)
