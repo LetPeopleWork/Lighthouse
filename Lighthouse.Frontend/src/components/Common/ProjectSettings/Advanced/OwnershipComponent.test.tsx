@@ -23,6 +23,7 @@ describe("OwnershipComponent", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			workItemTypes: ["User Story", "Bug"],
 		},
 		{
 			id: 2,
@@ -39,6 +40,7 @@ describe("OwnershipComponent", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			workItemTypes: ["Task", "Feature"],
 		},
 	];
 

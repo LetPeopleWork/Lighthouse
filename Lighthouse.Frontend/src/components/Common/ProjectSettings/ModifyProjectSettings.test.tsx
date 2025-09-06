@@ -202,6 +202,7 @@ describe("ModifyProjectSettings", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			workItemTypes: ["User Story", "Bug"],
 		},
 		{
 			id: 2,
@@ -220,6 +221,7 @@ describe("ModifyProjectSettings", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			workItemTypes: ["Task", "Feature"],
 		},
 	];
 

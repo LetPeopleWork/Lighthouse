@@ -10,6 +10,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import ManualForecaster from "./ManualForecaster";
+import NewItemForecaster from "./NewItemForecaster";
 import TeamFeatureList from "./TeamFeatureList";
 
 interface TeamForecastViewProps {
@@ -24,12 +25,18 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const [manualForecastResult, setManualForecastResult] =
 		useState<ManualForecast | null>(null);
 
+	const [newItemTargetDate, setNewItemTargetDate] =
+		useState<dayjs.Dayjs | null>(dayjs().add(1, "month"));
+	const [newItemForecastResult, setNewItemForecastResult] =
+		useState<ManualForecast | null>(null);
+
 	const { forecastService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
 	const onRunManualForecast = async () => {
 		if (!team || !targetDate) {
@@ -52,6 +59,32 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		}
 	};
 
+	const onRunNewItemForecast = async () => {
+		if (!team || !newItemTargetDate) {
+			return;
+		}
+
+		try {
+			const startDate = dayjs().subtract(30, "day").toDate();
+			const endDate = dayjs().toDate();
+
+			const newItemForecast = await forecastService.runItemPrediction(
+				team.id,
+				startDate,
+				endDate,
+				newItemTargetDate.toDate(),
+				team.workItemTypes || [],
+			);
+			setNewItemForecastResult(newItemForecast);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Failed to run new item forecast. Please try again.";
+			showError(errorMessage);
+		}
+	};
+
 	return (
 		<Grid container spacing={3}>
 			<InputGroup title={featuresTerm}>
@@ -65,6 +98,14 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					onRemainingItemsChange={setRemainingItems}
 					onTargetDateChange={setTargetDate}
 					onRunManualForecast={onRunManualForecast}
+				/>
+			</InputGroup>
+			<InputGroup title={`New ${workItemsTerm} Creation Forecast`}>
+				<NewItemForecaster
+					targetDate={newItemTargetDate}
+					newItemForecastResult={newItemForecastResult}
+					onTargetDateChange={setNewItemTargetDate}
+					onRunNewItemForecast={onRunNewItemForecast}
 				/>
 			</InputGroup>
 		</Grid>

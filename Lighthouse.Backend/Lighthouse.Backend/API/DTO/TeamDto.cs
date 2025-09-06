@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.API.DTO
             var throughputSettings = team.GetThroughputSettings();
             ThroughputStartDate = throughputSettings.StartDate;
             ThroughputEndDate = throughputSettings.EndDate;
+
+            WorkItemTypes = team.WorkItemTypes;
         }
 
         [JsonRequired]
@@ -25,6 +27,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<EntityReferenceDto> Features { get; } = new List<EntityReferenceDto>();
 
         public List<EntityReferenceDto> Projects { get; } = new List<EntityReferenceDto>();
+
+        public List<string> WorkItemTypes { get; } = [];
 
         public bool UseFixedDatesForThroughput { get; }
 

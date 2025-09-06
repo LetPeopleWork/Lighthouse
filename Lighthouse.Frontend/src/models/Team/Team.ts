@@ -9,6 +9,7 @@ export interface ITeam extends IFeatureOwner {
 	useFixedDatesForThroughput: boolean;
 	throughputStartDate: Date;
 	throughputEndDate: Date;
+	workItemTypes: string[];
 }
 
 export class Team implements ITeam {
@@ -19,6 +20,7 @@ export class Team implements ITeam {
 	features: IEntityReference[] = [];
 
 	tags: string[] = [];
+	workItemTypes: string[] = [];
 
 	featureWip = 0;
 

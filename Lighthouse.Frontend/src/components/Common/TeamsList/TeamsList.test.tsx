@@ -23,6 +23,7 @@ describe("TeamsList", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			workItemTypes: ["User Story", "Bug"],
 		},
 		{
 			id: 2,
@@ -41,6 +42,7 @@ describe("TeamsList", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			workItemTypes: ["Task", "Feature"],
 		},
 		{
 			id: 3,
@@ -59,6 +61,7 @@ describe("TeamsList", () => {
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
+			workItemTypes: ["Epic", "User Story"],
 		},
 	];
 	const selectedTeams = [1, 3];

@@ -9,6 +9,7 @@ import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/Fe
 import ForecastConfiguration from "../../../components/Common/ForecastConfiguration/ForecastConfiguration";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
+import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { Team } from "../../../models/Team/Team";
@@ -121,87 +122,89 @@ const TeamDetail: React.FC = () => {
 	};
 
 	return (
-		<LoadingAnimation hasError={false} isLoading={isLoading}>
-			<Container maxWidth={false}>
-				{team && (
-					<Grid container spacing={3}>
-						<Grid size={{ xs: 12 }}>
-							<DetailHeader
-								leftContent={
-									<Stack spacing={1} direction="row">
-										<FeatureOwnerHeader featureOwner={team} />
+		<SnackbarErrorHandler>
+			<LoadingAnimation hasError={false} isLoading={isLoading}>
+				<Container maxWidth={false}>
+					{team && (
+						<Grid container spacing={3}>
+							<Grid size={{ xs: 12 }}>
+								<DetailHeader
+									leftContent={
+										<Stack spacing={1} direction="row">
+											<FeatureOwnerHeader featureOwner={team} />
 
-										<Stack
-											direction={{ xs: "column", sm: "row" }}
-											spacing={1}
-											alignItems={{ xs: "flex-start", sm: "center" }}
-										>
-											<ForecastConfiguration team={team} />
-											<ServiceLevelExpectation
-												featureOwner={team}
-												hide={activeView !== "forecast"}
-											/>
-											<SystemWIPLimitDisplay
-												featureOwner={team}
-												hide={activeView !== "forecast"}
-											/>
-										</Stack>
-									</Stack>
-								}
-								centerContent={
-									<Tabs
-										value={activeView}
-										onChange={handleViewChange}
-										aria-label="team view tabs"
-									>
-										<Tab label="Forecasts" value="forecast" />
-										<Tab label="Metrics" value="metrics" />
-									</Tabs>
-								}
-								rightContent={
-									<>
-										<Tooltip title={updateTeamDataTooltip} arrow>
-											<span>
-												<ActionButton
-													onClickHandler={onUpdateTeamData}
-													buttonText={`Update ${teamTerm} Data`}
-													maxHeight="40px"
-													minWidth="120px"
-													externalIsWaiting={isTeamUpdating}
-													disabled={!canUpdateTeamData}
+											<Stack
+												direction={{ xs: "column", sm: "row" }}
+												spacing={1}
+												alignItems={{ xs: "flex-start", sm: "center" }}
+											>
+												<ForecastConfiguration team={team} />
+												<ServiceLevelExpectation
+													featureOwner={team}
+													hide={activeView !== "forecast"}
 												/>
-											</span>
-										</Tooltip>
-										<Tooltip title={updateTeamSettingsTooltip} arrow>
-											<span>
-												<Button
-													variant="contained"
-													onClick={onEditTeam}
-													sx={{ maxHeight: "40px", minWidth: "120px" }}
-													disabled={!canUpdateTeamSettings}
-												>
-													{`Edit ${teamTerm}`}
-												</Button>
-											</span>
-										</Tooltip>
-									</>
-								}
-							/>
-						</Grid>
+												<SystemWIPLimitDisplay
+													featureOwner={team}
+													hide={activeView !== "forecast"}
+												/>
+											</Stack>
+										</Stack>
+									}
+									centerContent={
+										<Tabs
+											value={activeView}
+											onChange={handleViewChange}
+											aria-label="team view tabs"
+										>
+											<Tab label="Forecasts" value="forecast" />
+											<Tab label="Metrics" value="metrics" />
+										</Tabs>
+									}
+									rightContent={
+										<>
+											<Tooltip title={updateTeamDataTooltip} arrow>
+												<span>
+													<ActionButton
+														onClickHandler={onUpdateTeamData}
+														buttonText={`Update ${teamTerm} Data`}
+														maxHeight="40px"
+														minWidth="120px"
+														externalIsWaiting={isTeamUpdating}
+														disabled={!canUpdateTeamData}
+													/>
+												</span>
+											</Tooltip>
+											<Tooltip title={updateTeamSettingsTooltip} arrow>
+												<span>
+													<Button
+														variant="contained"
+														onClick={onEditTeam}
+														sx={{ maxHeight: "40px", minWidth: "120px" }}
+														disabled={!canUpdateTeamSettings}
+													>
+														{`Edit ${teamTerm}`}
+													</Button>
+												</span>
+											</Tooltip>
+										</>
+									}
+								/>
+							</Grid>
 
-						<Grid size={{ xs: 12 }}>
-							{activeView === "forecast" && team && (
-								<TeamForecastView team={team} />
-							)}
+							<Grid size={{ xs: 12 }}>
+								{activeView === "forecast" && team && (
+									<TeamForecastView team={team} />
+								)}
 
-							{activeView === "metrics" && team && (
-								<TeamMetricsView team={team} />
-							)}
+								{activeView === "metrics" && team && (
+									<TeamMetricsView team={team} />
+								)}
+							</Grid>
 						</Grid>
-					</Grid>
-				)}
-			</Container>
-		</LoadingAnimation>
+					)}
+				</Container>
+			</LoadingAnimation>
+		</SnackbarErrorHandler>
 	);
 };
 
