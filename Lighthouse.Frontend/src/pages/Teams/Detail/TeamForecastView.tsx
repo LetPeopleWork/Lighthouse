@@ -26,8 +26,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const [manualForecastResult, setManualForecastResult] =
 		useState<ManualForecast | null>(null);
 
-	const [newItemTargetDate, setNewItemTargetDate] =
-		useState<dayjs.Dayjs | null>(dayjs().add(1, "month"));
 	const [newItemForecastResult, setNewItemForecastResult] =
 		useState<ManualForecast | null>(null);
 
@@ -62,21 +60,23 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		}
 	};
 
-	const onRunNewItemForecast = async () => {
-		if (!team || !team.id || !newItemTargetDate || !canUseNewItemForecaster) {
+	const onRunNewItemForecast = async (
+		startDate: Date,
+		endDate: Date,
+		targetDate: Date,
+		workItemTypes: string[],
+	) => {
+		if (!team?.id || !canUseNewItemForecaster) {
 			return;
 		}
 
 		try {
-			const startDate = dayjs().subtract(30, "day").toDate();
-			const endDate = dayjs().toDate();
-
 			const newItemForecast = await forecastService.runItemPrediction(
 				team.id,
 				startDate,
 				endDate,
-				newItemTargetDate.toDate(),
-				team.workItemTypes || [],
+				targetDate,
+				workItemTypes,
 			);
 			setNewItemForecastResult(newItemForecast);
 		} catch (error) {
@@ -105,10 +105,9 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			</InputGroup>
 			<InputGroup title={`New ${workItemsTerm} Creation Forecast`}>
 				<NewItemForecaster
-					targetDate={newItemTargetDate}
 					newItemForecastResult={newItemForecastResult}
-					onTargetDateChange={setNewItemTargetDate}
 					onRunNewItemForecast={onRunNewItemForecast}
+					workItemTypes={team.workItemTypes || []}
 					isDisabled={!canUseNewItemForecaster}
 					disabledMessage={newItemForecasterTooltip}
 				/>

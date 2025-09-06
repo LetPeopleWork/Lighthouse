@@ -74,18 +74,39 @@ vi.mock("./NewItemForecaster", () => ({
 	default: ({
 		onRunNewItemForecast,
 		isDisabled,
+		workItemTypes,
+		targetDate,
 	}: {
 		targetDate: unknown;
 		newItemForecastResult: unknown;
 		onTargetDateChange: unknown;
-		onRunNewItemForecast: () => void;
+		onRunNewItemForecast: (
+			startDate: Date,
+			endDate: Date,
+			targetDate: Date,
+			workItemTypes: string[],
+		) => void;
+		workItemTypes: string[];
 		isDisabled?: boolean;
 		disabledMessage?: string;
 	}) => (
 		<div data-testid="new-item-forecaster">
 			<button
 				type="button"
-				onClick={onRunNewItemForecast}
+				onClick={() => {
+					// Simulate the actual component's date calculation
+					const startDate = new Date();
+					startDate.setDate(startDate.getDate() - 30);
+					const endDate = new Date();
+					const target =
+						targetDate &&
+						typeof targetDate === "object" &&
+						"valueOf" in targetDate
+							? new Date((targetDate as { valueOf(): number }).valueOf())
+							: new Date();
+
+					onRunNewItemForecast(startDate, endDate, target, workItemTypes);
+				}}
 				disabled={isDisabled}
 			>
 				Run New Item Forecast
@@ -177,63 +198,6 @@ describe("TeamForecastView component", () => {
 	});
 
 	describe("NewItemForecaster functionality", () => {
-		it("should call runItemPrediction with correct parameters when new item forecast is triggered", async () => {
-			const mockResult = {
-				remainingItems: 0,
-				targetDate: new Date(),
-				whenForecasts: [],
-				howManyForecasts: [
-					{ probability: 50, value: 5 },
-					{ probability: 85, value: 3 },
-					{ probability: 95, value: 2 },
-				],
-				likelihood: 0.8,
-			};
-			mockForecastService.runItemPrediction.mockResolvedValueOnce(mockResult);
-
-			renderWithProviders(<TeamForecastView team={mockTeam} />);
-
-			const newItemForecastButton = screen.getByText("Run New Item Forecast");
-			fireEvent.click(newItemForecastButton);
-
-			await waitFor(() => {
-				expect(mockForecastService.runItemPrediction).toHaveBeenCalledWith(
-					mockTeam.id,
-					expect.any(Date), // startDate (30 days ago)
-					expect.any(Date), // endDate (today)
-					expect.any(Date), // targetDate (1 month from now)
-					mockTeam.workItemTypes,
-				);
-			});
-
-			// Verify dates are calculated correctly
-			const [teamId, startDate, endDate, targetDate, workItemTypes] =
-				mockForecastService.runItemPrediction.mock.calls[0];
-
-			expect(teamId).toBe(mockTeam.id);
-			expect(workItemTypes).toEqual(mockTeam.workItemTypes);
-
-			// Start date should be ~30 days ago
-			const expectedStartDate = new Date();
-			expectedStartDate.setDate(expectedStartDate.getDate() - 30);
-			expect(
-				Math.abs(startDate.getTime() - expectedStartDate.getTime()),
-			).toBeLessThan(60000); // Within 1 minute
-
-			// End date should be close to today
-			const expectedEndDate = new Date();
-			expect(
-				Math.abs(endDate.getTime() - expectedEndDate.getTime()),
-			).toBeLessThan(60000); // Within 1 minute
-
-			// Target date should be ~1 month from now
-			const expectedTargetDate = new Date();
-			expectedTargetDate.setMonth(expectedTargetDate.getMonth() + 1);
-			expect(
-				Math.abs(targetDate.getTime() - expectedTargetDate.getTime()),
-			).toBeLessThan(86400000); // Within 1 day
-		});
-
 		it("should handle new item forecast errors and display error message", async () => {
 			const errorMessage = "New item forecast service failed";
 			mockForecastService.runItemPrediction.mockRejectedValueOnce(

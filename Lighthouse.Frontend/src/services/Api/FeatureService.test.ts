@@ -30,7 +30,9 @@ describe("FeatureService", () => {
 
 		it("should return empty array when null/undefined is provided", async () => {
 			// Act
-			const features = await featureService.getFeaturesByIds(null as unknown as number[]);
+			const features = await featureService.getFeaturesByIds(
+				null as unknown as number[],
+			);
 
 			// Assert
 			expect(features).toEqual([]);
@@ -265,7 +267,8 @@ describe("FeatureService", () => {
 			mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
 			// Act
-			const features = await featureService.getFeaturesByReferences(referenceIds);
+			const features =
+				await featureService.getFeaturesByReferences(referenceIds);
 
 			// Assert
 			expect(features).toHaveLength(2);
