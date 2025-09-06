@@ -104,6 +104,7 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateProject).toBe(true);
 			expect(result.current.canUpdateProjectData).toBe(true);
 			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canUseNewItemForecaster).toBe(true);
 			expect(result.current.teamCount).toBe(5);
 			expect(result.current.projectCount).toBe(2);
 			expect(result.current.createTeamTooltip).toBe("");
@@ -112,6 +113,7 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.createProjectTooltip).toBe("");
 			expect(result.current.updateProjectDataTooltip).toBe("");
 			expect(result.current.updateProjectSettingsTooltip).toBe("");
+			expect(result.current.newItemForecasterTooltip).toBe("");
 			expect(result.current.licenseStatus).toEqual(premiumLicense);
 		});
 	});
@@ -147,6 +149,7 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateProject).toBe(true);
 			expect(result.current.canUpdateProjectData).toBe(true);
 			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canUseNewItemForecaster).toBe(false);
 			expect(result.current.teamCount).toBe(2);
 			expect(result.current.projectCount).toBe(0);
 			expect(result.current.createTeamTooltip).toBe("");
@@ -155,6 +158,9 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.createProjectTooltip).toBe("");
 			expect(result.current.updateProjectDataTooltip).toBe("");
 			expect(result.current.updateProjectSettingsTooltip).toBe("");
+			expect(result.current.newItemForecasterTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
+			);
 		});
 
 		it("should block team creation when user has exactly 3 teams", async () => {
@@ -175,6 +181,7 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateProject).toBe(true);
 			expect(result.current.canUpdateProjectData).toBe(true);
 			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canUseNewItemForecaster).toBe(false);
 			expect(result.current.teamCount).toBe(3);
 			expect(result.current.projectCount).toBe(0);
 			expect(result.current.createTeamTooltip).toBe(
@@ -182,6 +189,9 @@ describe("useLicenseRestrictions", () => {
 			);
 			expect(result.current.updateTeamDataTooltip).toBe("");
 			expect(result.current.updateTeamSettingsTooltip).toBe("");
+			expect(result.current.newItemForecasterTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
+			);
 		});
 
 		it("should block all team operations when user has more than 3 teams", async () => {
@@ -213,6 +223,10 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.updateTeamSettingsTooltip).toBe(
 				"Free users can only update team settings for up to 3 teams. You currently have 5 teams. Please delete some teams or obtain a premium license.",
 			);
+			expect(result.current.canUseNewItemForecaster).toBe(false);
+			expect(result.current.newItemForecasterTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
+			);
 		});
 
 		it("should block project creation when user has exactly 1 project", async () => {
@@ -240,6 +254,10 @@ describe("useLicenseRestrictions", () => {
 			);
 			expect(result.current.updateProjectDataTooltip).toBe("");
 			expect(result.current.updateProjectSettingsTooltip).toBe("");
+			expect(result.current.canUseNewItemForecaster).toBe(false);
+			expect(result.current.newItemForecasterTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
+			);
 		});
 
 		it("should block all project operations when user has more than 1 project", async () => {
@@ -271,6 +289,10 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.updateProjectSettingsTooltip).toBe(
 				"Free users can only update project settings for up to 1 project. You currently have 2 projects. Please delete some projects or obtain a premium license.",
 			);
+			expect(result.current.canUseNewItemForecaster).toBe(false);
+			expect(result.current.newItemForecasterTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
+			);
 		});
 
 		it("should handle API errors gracefully", async () => {
@@ -295,6 +317,8 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.teamCount).toBe(0);
 			expect(result.current.projectCount).toBe(0);
 			expect(result.current.licenseStatus).toBe(null);
+			expect(result.current.canUseNewItemForecaster).toBe(true);
+			expect(result.current.newItemForecasterTooltip).toBe("");
 		});
 	});
 

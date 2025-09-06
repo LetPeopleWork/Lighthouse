@@ -4,6 +4,7 @@ import type React from "react";
 import { useContext, useState } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -32,6 +33,8 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 
 	const { forecastService } = useContext(ApiServiceContext);
 	const { showError } = useErrorSnackbar();
+	const { canUseNewItemForecaster, newItemForecasterTooltip } =
+		useLicenseRestrictions();
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -60,7 +63,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	};
 
 	const onRunNewItemForecast = async () => {
-		if (!team || !newItemTargetDate) {
+		if (!team || !team.id || !newItemTargetDate || !canUseNewItemForecaster) {
 			return;
 		}
 
@@ -106,6 +109,8 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					newItemForecastResult={newItemForecastResult}
 					onTargetDateChange={setNewItemTargetDate}
 					onRunNewItemForecast={onRunNewItemForecast}
+					isDisabled={!canUseNewItemForecaster}
+					disabledMessage={newItemForecasterTooltip}
 				/>
 			</InputGroup>
 		</Grid>

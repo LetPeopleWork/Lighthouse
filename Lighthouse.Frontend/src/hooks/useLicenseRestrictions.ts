@@ -9,6 +9,7 @@ interface LicenseRestrictions {
 	canCreateProject: boolean;
 	canUpdateProjectData: boolean;
 	canUpdateProjectSettings: boolean;
+	canUseNewItemForecaster: boolean;
 	teamCount: number;
 	projectCount: number;
 	licenseStatus: ILicenseStatus | null;
@@ -19,6 +20,7 @@ interface LicenseRestrictions {
 	createProjectTooltip: string;
 	updateProjectDataTooltip: string;
 	updateProjectSettingsTooltip: string;
+	newItemForecasterTooltip: string;
 }
 
 const MAX_TEAMS_WITHOUT_PREMIUM = 3;
@@ -70,6 +72,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 			canCreateProject: true,
 			canUpdateProjectData: true,
 			canUpdateProjectSettings: true,
+			canUseNewItemForecaster: true,
 			teamCount,
 			projectCount,
 			licenseStatus,
@@ -80,6 +83,31 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 			createProjectTooltip: "",
 			updateProjectDataTooltip: "",
 			updateProjectSettingsTooltip: "",
+			newItemForecasterTooltip: "",
+		};
+	}
+
+	// When license status is null (API error), be permissive and allow access
+	if (licenseStatus === null) {
+		return {
+			canCreateTeam: true,
+			canUpdateTeamData: true,
+			canUpdateTeamSettings: true,
+			canCreateProject: true,
+			canUpdateProjectData: true,
+			canUpdateProjectSettings: true,
+			canUseNewItemForecaster: true,
+			teamCount,
+			projectCount,
+			licenseStatus,
+			isLoading,
+			createTeamTooltip: "",
+			updateTeamDataTooltip: "",
+			updateTeamSettingsTooltip: "",
+			createProjectTooltip: "",
+			updateProjectDataTooltip: "",
+			updateProjectSettingsTooltip: "",
+			newItemForecasterTooltip: "",
 		};
 	}
 
@@ -117,6 +145,9 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 		? ""
 		: `Free users can only update project settings for up to ${MAX_PROJECTS_WITHOUT_PREMIUM} project. You currently have ${projectCount} project${projectPlural}. Please delete some projects or obtain a premium license.`;
 
+	const newItemForecasterTooltip =
+		"This feature requires a premium license. Please obtain a premium license to use new item forecasting.";
+
 	return {
 		canCreateTeam,
 		canUpdateTeamData,
@@ -124,6 +155,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 		canCreateProject,
 		canUpdateProjectData,
 		canUpdateProjectSettings,
+		canUseNewItemForecaster: false,
 		teamCount,
 		projectCount,
 		licenseStatus,
@@ -134,5 +166,6 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 		createProjectTooltip,
 		updateProjectDataTooltip,
 		updateProjectSettingsTooltip,
+		newItemForecasterTooltip,
 	};
 };

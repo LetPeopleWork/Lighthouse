@@ -24,6 +24,20 @@ vi.mock("../../../services/TerminologyContext", () => ({
 	}),
 }));
 
+// Mock the useLicenseRestrictions hook
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		canUseNewItemForecaster: true,
+		newItemForecasterTooltip: "",
+		isLoading: false,
+		licenseStatus: {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: true,
+		},
+	}),
+}));
+
 // Mock dependencies
 vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
 	default: ({
@@ -57,16 +71,23 @@ vi.mock("./ManualForecaster", () => ({
 }));
 
 vi.mock("./NewItemForecaster", () => ({
-	default: ({ 
-		onRunNewItemForecast 
-	}: { 
+	default: ({
+		onRunNewItemForecast,
+		isDisabled,
+	}: {
 		targetDate: unknown;
 		newItemForecastResult: unknown;
 		onTargetDateChange: unknown;
 		onRunNewItemForecast: () => void;
+		isDisabled?: boolean;
+		disabledMessage?: string;
 	}) => (
 		<div data-testid="new-item-forecaster">
-			<button type="button" onClick={onRunNewItemForecast}>
+			<button
+				type="button"
+				onClick={onRunNewItemForecast}
+				disabled={isDisabled}
+			>
 				Run New Item Forecast
 			</button>
 		</div>
@@ -108,7 +129,9 @@ describe("TeamForecastView component", () => {
 
 		expect(screen.getByText("Features")).toBeInTheDocument();
 		expect(screen.getByText("Team Forecast")).toBeInTheDocument();
-		expect(screen.getByText("New Work Items Creation Forecast")).toBeInTheDocument();
+		expect(
+			screen.getByText("New Work Items Creation Forecast"),
+		).toBeInTheDocument();
 		expect(screen.getByTestId("team-feature-list")).toBeInTheDocument();
 		expect(screen.getByTestId("manual-forecaster")).toBeInTheDocument();
 		expect(screen.getByTestId("new-item-forecaster")).toBeInTheDocument();
@@ -184,25 +207,31 @@ describe("TeamForecastView component", () => {
 			});
 
 			// Verify dates are calculated correctly
-			const [teamId, startDate, endDate, targetDate, workItemTypes] = 
+			const [teamId, startDate, endDate, targetDate, workItemTypes] =
 				mockForecastService.runItemPrediction.mock.calls[0];
-			
+
 			expect(teamId).toBe(mockTeam.id);
 			expect(workItemTypes).toEqual(mockTeam.workItemTypes);
-			
+
 			// Start date should be ~30 days ago
 			const expectedStartDate = new Date();
 			expectedStartDate.setDate(expectedStartDate.getDate() - 30);
-			expect(Math.abs(startDate.getTime() - expectedStartDate.getTime())).toBeLessThan(60000); // Within 1 minute
-			
+			expect(
+				Math.abs(startDate.getTime() - expectedStartDate.getTime()),
+			).toBeLessThan(60000); // Within 1 minute
+
 			// End date should be close to today
 			const expectedEndDate = new Date();
-			expect(Math.abs(endDate.getTime() - expectedEndDate.getTime())).toBeLessThan(60000); // Within 1 minute
-			
+			expect(
+				Math.abs(endDate.getTime() - expectedEndDate.getTime()),
+			).toBeLessThan(60000); // Within 1 minute
+
 			// Target date should be ~1 month from now
 			const expectedTargetDate = new Date();
 			expectedTargetDate.setMonth(expectedTargetDate.getMonth() + 1);
-			expect(Math.abs(targetDate.getTime() - expectedTargetDate.getTime())).toBeLessThan(86400000); // Within 1 day
+			expect(
+				Math.abs(targetDate.getTime() - expectedTargetDate.getTime()),
+			).toBeLessThan(86400000); // Within 1 day
 		});
 
 		it("should handle new item forecast errors and display error message", async () => {
@@ -223,7 +252,7 @@ describe("TeamForecastView component", () => {
 			expect(mockForecastService.runItemPrediction).toHaveBeenCalledWith(
 				mockTeam.id,
 				expect.any(Date),
-				expect.any(Date), 
+				expect.any(Date),
 				expect.any(Date),
 				mockTeam.workItemTypes,
 			);
@@ -241,24 +270,27 @@ describe("TeamForecastView component", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByText("Failed to run new item forecast. Please try again."),
+					screen.getByText(
+						"Failed to run new item forecast. Please try again.",
+					),
 				).toBeInTheDocument();
 			});
 		});
 
 		it("should not run new item forecast when team is missing", async () => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			renderWithProviders(<TeamForecastView team={null as any} />);
+			// Create a team with null properties but maintaining type safety
+			const nullTeam = {} as Team;
+			renderWithProviders(<TeamForecastView team={nullTeam} />);
 
 			// Check if the button exists before trying to click it
 			const newItemForecastButton = screen.queryByText("Run New Item Forecast");
-			
+
 			if (newItemForecastButton) {
 				fireEvent.click(newItemForecastButton);
 			}
 
 			// Wait a bit to ensure no async call is made
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			expect(mockForecastService.runItemPrediction).not.toHaveBeenCalled();
 		});
@@ -268,7 +300,7 @@ describe("TeamForecastView component", () => {
 			// For now, we assume the component handles this case internally
 			renderWithProviders(<TeamForecastView team={mockTeam} />);
 
-			// The component should have a default target date, so this test verifies 
+			// The component should have a default target date, so this test verifies
 			// that the service is called with the default date
 			const newItemForecastButton = screen.getByText("Run New Item Forecast");
 			fireEvent.click(newItemForecastButton);

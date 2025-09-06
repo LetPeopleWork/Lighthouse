@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Grid from "@mui/material/Grid";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -15,6 +16,8 @@ interface NewItemForecasterProps {
 	newItemForecastResult: ManualForecast | null;
 	onTargetDateChange: (date: dayjs.Dayjs | null) => void;
 	onRunNewItemForecast: () => Promise<void>;
+	isDisabled?: boolean;
+	disabledMessage?: string;
 }
 
 const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
@@ -22,6 +25,8 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 	newItemForecastResult,
 	onTargetDateChange,
 	onRunNewItemForecast,
+	isDisabled = false,
+	disabledMessage,
 }) => {
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -50,6 +55,13 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 
 	return (
 		<Grid container spacing={3}>
+			{isDisabled && disabledMessage && (
+				<Grid size={{ xs: 12 }}>
+					<Alert severity="info" sx={{ mb: 2 }}>
+						{disabledMessage}
+					</Alert>
+				</Grid>
+			)}
 			<Grid size={{ xs: 12 }}>
 				<Grid container spacing={2}>
 					<Grid size={{ xs: 6 }}>
@@ -63,6 +75,7 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 								minDate={dayjs()}
 								format={getLocaleDateFormat()}
 								sx={{ width: "100%" }}
+								disabled={isDisabled}
 							/>
 						</LocalizationProvider>
 					</Grid>
@@ -70,12 +83,13 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 						<ActionButton
 							onClickHandler={onRunNewItemForecast}
 							buttonText="Forecast"
+							disabled={isDisabled}
 						/>
 					</Grid>
 				</Grid>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
-				{newItemForecastResult && (
+				{newItemForecastResult && !isDisabled && (
 					<Grid container spacing={2}>
 						<Grid size={{ xs: 12 }}>
 							<ForecastInfoList
