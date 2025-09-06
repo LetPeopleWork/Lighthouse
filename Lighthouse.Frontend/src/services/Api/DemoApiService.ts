@@ -861,6 +861,29 @@ export class DemoApiService
 		await delay();
 	}
 
+	async runItemPrediction(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+		targetDate: Date,
+		workItemTypes: string[],
+	): Promise<ManualForecast> {
+		console.log(
+			`Running Item Prediction for Team ${teamId}: Start Date ${startDate}, End Date: ${endDate}, Target Date: ${targetDate}, Work Item Types: ${workItemTypes}`,
+		);
+
+		await delay();
+
+		const howManyForecasts = [
+			new HowManyForecast(50, 42),
+			new HowManyForecast(70, 31),
+			new HowManyForecast(85, 12),
+			new HowManyForecast(95, 7),
+		];
+
+		return new ManualForecast(0, targetDate, [], howManyForecasts);
+	}
+
 	async runManualForecast(
 		teamId: number,
 		remainingItems: number,

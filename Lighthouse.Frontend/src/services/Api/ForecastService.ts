@@ -12,6 +12,14 @@ export interface IForecastService {
 		remainingItems: number,
 		targetDate: Date,
 	): Promise<ManualForecast>;
+
+	runItemPrediction(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+		targetDate: Date,
+		workItemTypes: string[],
+	): Promise<ManualForecast>;
 }
 
 export class ForecastService
@@ -31,6 +39,28 @@ export class ForecastService
 					targetDate: targetDate,
 				},
 			);
+			return this.deserializeManualForecast(response.data);
+		});
+	}
+
+	async runItemPrediction(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+		targetDate: Date,
+		workItemTypes: string[],
+	): Promise<ManualForecast> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<IManualForecast>(
+				`/forecast/itemprediction/${teamId}`,
+				{
+					startDate: startDate,
+					endDate: endDate,
+					targetDate: targetDate,
+					workItemTypes: workItemTypes,
+				},
+			);
+
 			return this.deserializeManualForecast(response.data);
 		});
 	}
