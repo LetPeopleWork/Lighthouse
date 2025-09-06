@@ -201,10 +201,13 @@ export const BaseMetricsView = <
 			}
 		};
 
-		if (metricsService as unknown as IProjectMetricsService) {
-			fetchSizePercentileData(
-				metricsService as unknown as IProjectMetricsService,
-			);
+		// Check if the service has the getSizePercentiles method (only ProjectMetricsService has this)
+		if (
+			"getSizePercentiles" in metricsService &&
+			typeof (metricsService as IProjectMetricsService).getSizePercentiles ===
+				"function"
+		) {
+			fetchSizePercentileData(metricsService as IProjectMetricsService);
 		}
 	}, [metricsService, entity, startDate, endDate]);
 

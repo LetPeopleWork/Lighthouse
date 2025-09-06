@@ -9,6 +9,11 @@ export interface IFeatureService {
 export class FeatureService extends BaseApiService implements IFeatureService {
 	getFeaturesByIds(featureIds: number[]): Promise<IFeature[]> {
 		return this.withErrorHandling(async () => {
+			// Return empty array if no feature IDs are provided
+			if (!featureIds || featureIds.length === 0) {
+				return [];
+			}
+
 			const params = new URLSearchParams();
 			for (const id of featureIds) {
 				params.append("featureIds", `${id}`);
