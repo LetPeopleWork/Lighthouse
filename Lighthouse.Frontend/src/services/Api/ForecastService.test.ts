@@ -403,7 +403,9 @@ describe("ForecastService", () => {
 			const targetDate = new Date("2023-05-15");
 			const workItemTypes = ["Bug", "Feature"];
 
-			mockedAxios.post.mockRejectedValueOnce(new Error("Item prediction API error"));
+			mockedAxios.post.mockRejectedValueOnce(
+				new Error("Item prediction API error"),
+			);
 
 			await expect(
 				forecastService.runItemPrediction(

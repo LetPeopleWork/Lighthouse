@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import type React from "react";
 import { useContext, useState } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
+import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -24,6 +25,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		useState<ManualForecast | null>(null);
 
 	const { forecastService } = useContext(ApiServiceContext);
+	const { showError } = useErrorSnackbar();
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -42,7 +44,11 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			);
 			setManualForecastResult(manualForecast);
 		} catch (error) {
-			console.error("Error running manual forecast:", error);
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Failed to run manual forecast. Please try again.";
+			showError(errorMessage);
 		}
 	};
 
