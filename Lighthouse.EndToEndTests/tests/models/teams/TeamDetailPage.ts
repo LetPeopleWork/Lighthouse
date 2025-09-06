@@ -33,7 +33,7 @@ export class TeamDetailPage {
 			.getByLabel("Number of Work Items to Forecast")
 			.fill(`${howMany}`);
 		await this.page
-			.getByRole("button", { name: "Forecast", exact: true })
+			.getByRole('button', { name: 'Forecast' }).nth(1)
 			.click();
 
 		const likelihood =
