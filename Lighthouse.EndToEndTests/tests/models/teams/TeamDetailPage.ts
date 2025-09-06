@@ -44,6 +44,22 @@ export class TeamDetailPage {
 		return parsedLikelihood;
 	}
 
+	async forecastNewWorkItems(workItemsTypes: string[]){
+		for (const itemType of workItemsTypes){
+			await this.page
+				.getByRole('combobox', { name: 'New Work Item Type' })
+				.click();
+
+			await this.page.keyboard.insertText(itemType);
+
+			await this.page.keyboard.press('Enter');
+		}
+
+		await this.page
+			.getByRole('button', { name: 'Forecast' }).nth(2)
+			.click();
+	}
+
 	async goToMetrics(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Metrics" }).click();
 	}

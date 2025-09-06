@@ -356,6 +356,12 @@ testWithData(
 		await teamDetailPage.forecast(10);
 		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
+		await teamDetailPage.forecastNewWorkItems(['Bug']);
+		await takeElementScreenshot(
+			teamDetailPage.page.getByText('New Work Items Creation ForecastHistorical DataHistorical data that should be'),
+			"features/creationforecast.png"
+		)
+
 		// Go to Metrics Tab
 		await teamDetailPage.goToMetrics();
 
