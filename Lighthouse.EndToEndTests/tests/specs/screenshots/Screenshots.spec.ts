@@ -339,9 +339,7 @@ testWithData(
 
 		// Team Deletion Dialog
 		const teamsPage = await overviewPage.lightHousePage.goToOverview();
-		const deleteTeamDialog = await teamsPage.deleteTeam(
-			testData.teams[0].name,
-		);
+		const deleteTeamDialog = await teamsPage.deleteTeam(testData.teams[0].name);
 		await takeElementScreenshot(
 			deleteTeamDialog.page.getByRole("dialog"),
 			"features/teams_delete.png",
@@ -356,11 +354,13 @@ testWithData(
 		await teamDetailPage.forecast(10);
 		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
-		await teamDetailPage.forecastNewWorkItems(['Bug']);
+		await teamDetailPage.forecastNewWorkItems(["Bug"]);
 		await takeElementScreenshot(
-			teamDetailPage.page.getByText('New Work Items Creation ForecastHistorical DataHistorical data that should be'),
-			"features/creationforecast.png"
-		)
+			teamDetailPage.page.getByText(
+				"New Work Items Creation ForecastHistorical DataHistorical data that should be",
+			),
+			"features/creationforecast.png",
+		);
 
 		// Go to Metrics Tab
 		await teamDetailPage.goToMetrics();

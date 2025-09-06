@@ -92,9 +92,15 @@ testWithData(
 		// Wait for update to be done
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-		await teamDetailPage.forecastNewWorkItems(['Bug']);
+		await teamDetailPage.forecastNewWorkItems(["Bug"]);
 
-		await expect(teamDetailPage.page.getByText('How many Bug Work Items will')).toBeVisible();
-		await expect(teamDetailPage.page.locator('.MuiTypography-root > .MuiSvgIcon-root').first()).toBeVisible();
+		await expect(
+			teamDetailPage.page.getByText("How many Bug Work Items will"),
+		).toBeVisible();
+		await expect(
+			teamDetailPage.page
+				.locator(".MuiTypography-root > .MuiSvgIcon-root")
+				.first(),
+		).toBeVisible();
 	},
 );
