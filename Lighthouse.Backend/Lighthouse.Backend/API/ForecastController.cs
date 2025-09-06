@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -35,6 +36,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("itemprediction/{id}")]
+        [LicenseGuard(RequirePremium = true)]
         public ActionResult<ManualForecastDto> RunItemCreationPrediction(int id, [FromBody] ItemCreationPredictionInputDto input)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, id, team =>
