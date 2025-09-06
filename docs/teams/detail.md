@@ -88,3 +88,27 @@ Forecasts done on team-level are *on-demand*, meaning you have to trigger them a
 - How much will fit into the next Sprint (for example as preparation for a Sprint Planning)
 - When will this Feature most likely be done?
 - Will an additional feature fit for a release without having to move a target date?
+
+## New Work Item Predictions
+Apart from telling you how many items a team may close, the same forecasting can be applied to the creation of items.
+
+Based on a teams backlog, Lighthouse can predict how many *new items* will enter the backlog.
+
+{: .note}
+This forecast is based on the items creation date, independent of their state. So whenever you create a new item, it will be taken into account.
+
+The forecast looks at a given time frame that you can modify by changing the *Start* and *End Date*.
+Furthermore you can specify which *Work Item Types* you want to look at, and how far in the future you want to forecast.
+
+![New Work Item Predictions](../assets/features/creationforecast.png)
+
+This allows you to forecast a scenario like this one:
+*Based on the last 90 days, how many new bugs can we expect in the next 30 days?*
+
+The result will be a probabilistic one, where you get the usual percentiles:
+- 50% chance you will get 5 or more
+- 70% chance you will get 4 or more
+- 85% chance you will get 3 or more
+- 95% chance you will get 2 or more
+
+That may help you plan for the not plannable, as you can see that, based on your past, you will will have a good chance of 4 bug items making it into your backlog.
