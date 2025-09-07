@@ -6,6 +6,10 @@ import {
 } from "../../models/AppSettings/RefreshSettings";
 import type { IWorkTrackingSystemSettings } from "../../models/AppSettings/WorkTrackingSystemSettings";
 import type { ConfigurationValidation } from "../../models/Configuration/ConfigurationValidation";
+import type {
+	IDemoDataScenario,
+	IDemoDataService,
+} from "../../models/DemoData/IDemoData";
 import type { IEntityReference } from "../../models/EntityReference";
 import { Feature, type IFeature } from "../../models/Feature";
 import {
@@ -577,7 +581,8 @@ export class DemoApiService
 		IConfigurationService,
 		IFeatureService,
 		ITerminologyService,
-		ILicensingService
+		ILicensingService,
+		IDemoDataService
 {
 	private readonly subscribers: Map<string, (status: IUpdateStatus) => void> =
 		new Map();
@@ -1892,5 +1897,80 @@ export class DemoApiService
 		project3.tags = [];
 
 		projects = [project1, project2, project3];
+	}
+
+	// Demo Data Service Implementation
+	async getAvailableScenarios(): Promise<IDemoDataScenario[]> {
+		await delay();
+
+		return [
+			{
+				id: "small-startup",
+				title: "Small Startup",
+				description:
+					"A basic setup with minimal teams and projects, perfect for getting started",
+				numberOfTeams: 2,
+				numberOfProjects: 1,
+				isPremium: false,
+			},
+			{
+				id: "growing-company",
+				title: "Growing Company",
+				description:
+					"Medium-sized organization with multiple teams working on various projects",
+				numberOfTeams: 4,
+				numberOfProjects: 3,
+				isPremium: false,
+			},
+			{
+				id: "enterprise-basic",
+				title: "Enterprise Basic",
+				description:
+					"Large organization with many teams and complex project structures",
+				numberOfTeams: 8,
+				numberOfProjects: 5,
+				isPremium: true,
+			},
+			{
+				id: "mega-corporation",
+				title: "Mega Corporation",
+				description:
+					"Massive enterprise with extensive teams and numerous parallel projects",
+				numberOfTeams: 15,
+				numberOfProjects: 12,
+				isPremium: true,
+			},
+			{
+				id: "agile-transformation",
+				title: "Agile Transformation",
+				description:
+					"Organization in the middle of agile transformation with mixed methodologies",
+				numberOfTeams: 6,
+				numberOfProjects: 4,
+				isPremium: true,
+			},
+		];
+	}
+
+	async loadScenario(scenarioId: string): Promise<void> {
+		await delay();
+
+		// In a real implementation, this would load specific scenario data
+		// For demo purposes, we'll just recreate the current demo data
+		console.log(`Demo: Loading scenario ${scenarioId}`);
+		this.recreateTeams();
+		this.recreateProjects();
+		this.recreateFeatures();
+	}
+
+	async loadAllScenarios(): Promise<void> {
+		await delay();
+
+		// In a real implementation, this would load all scenarios combined
+		// For demo purposes, we'll just recreate the current demo data
+		console.log("Demo: Loading all scenarios");
+		this.recreateTeams();
+		this.recreateProjects();
+		this.recreateFeatures();
 	}
 }

@@ -1,4 +1,5 @@
 import ArticleIcon from "@mui/icons-material/Article";
+import DatasetIcon from "@mui/icons-material/Dataset";
 import FolderIcon from "@mui/icons-material/Folder";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -20,6 +21,7 @@ import { useTerminology } from "../../services/TerminologyContext";
 import WorkTrackingSystemConnectionSettings from "./Connections/WorkTrackingSystemConnectionSettings";
 import DefaultProjectSettings from "./DefaultProjectSettings/DefaultProjectSettings";
 import DefaultTeamSettings from "./DefaultTeamSettings/DefaultTeamSettings";
+import DemoDataSettings from "./DemoData/DemoDataSettings";
 import LogSettings from "./LogSettings/LogSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
 
@@ -59,6 +61,14 @@ const Settings: React.FC = () => {
 			panelTestId: "system-settings-panel",
 			icon: <SettingsSystemDaydreamIcon />,
 			component: <SystemSettingsTab />,
+		},
+		{
+			value: "25",
+			label: "Demo Data",
+			testId: "demo-data-tab",
+			panelTestId: "demo-data-panel",
+			icon: <DatasetIcon />,
+			component: <DemoDataSettings />,
 		},
 		{
 			value: "30",

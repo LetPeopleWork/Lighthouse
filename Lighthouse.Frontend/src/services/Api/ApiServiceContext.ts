@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import type { IDemoDataService } from "../../models/DemoData/IDemoData";
 import {
 	type IUpdateSubscriptionService,
 	UpdateSubscriptionService,
@@ -12,6 +13,7 @@ import {
 	DemoProjectMetricsService,
 	DemoTeamMetricsService,
 } from "./DemoApiService";
+import { DemoDataService } from "./DemoDataService";
 import { FeatureService, type IFeatureService } from "./FeatureService";
 import { ForecastService, type IForecastService } from "./ForecastService";
 import { type ILicensingService, LicensingService } from "./LicensingService";
@@ -60,6 +62,7 @@ export interface IApiServiceContext {
 	featureService: IFeatureService;
 	terminologyService: ITerminologyService;
 	licensingService: ILicensingService;
+	demoDataService: IDemoDataService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -83,6 +86,7 @@ const defaultServices: IApiServiceContext = {
 	featureService: new FeatureService(),
 	terminologyService: new TerminologyService(),
 	licensingService: new LicensingService(),
+	demoDataService: new DemoDataService(),
 };
 
 const useDelay: boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
@@ -107,6 +111,7 @@ const demoServices: IApiServiceContext = {
 	featureService: demoApiService,
 	terminologyService: demoApiService,
 	licensingService: demoApiService,
+	demoDataService: demoApiService,
 };
 
 export function getApiServices(): IApiServiceContext {
