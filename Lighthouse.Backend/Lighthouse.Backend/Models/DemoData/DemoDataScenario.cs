@@ -10,9 +10,13 @@ namespace Lighthouse.Backend.Models.DemoData
 
         public string Description { get; set; }
 
-        public int NumberOfTeams {  get; set; }
+        public List<string> Teams { get; } = new List<string>();
 
-        public int NumberOfProjects { get; set; }
+        public List<string> Projects { get; } = new List<string>();
+
+        public int NumberOfTeams => Teams.Count;
+
+        public int NumberOfProjects => Projects.Count;
 
         public bool IsPremium {  get; set; }
     }

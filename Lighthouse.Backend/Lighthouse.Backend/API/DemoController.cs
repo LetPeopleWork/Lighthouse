@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models.DemoData;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -8,48 +9,44 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class DemoController : ControllerBase
     {
+        private readonly IDemoDataService demoDataService;
+
+        public DemoController(IDemoDataService demoDataService)
+        {
+            this.demoDataService = demoDataService;
+        }
+
         [HttpGet("scenarios")]
         public ActionResult<List<DemoDataScenario>> GetScenarios()
         {
-            var scenarios = new List<DemoDataScenario>();
-
-            scenarios.Add(
-                new DemoDataScenario
-                {
-                    Id = 0,
-                    Title = "Free Scenario",
-                    Description = "Basic Scenario",
-                    NumberOfTeams = 1,
-                    NumberOfProjects = 1,
-                    IsPremium = false,
-                }
-                );
-
-            scenarios.Add(
-                new DemoDataScenario
-                {
-                    Id = 1,
-                    Title = "Premium Scenario",
-                    Description = "Advanced Scenario",
-                    NumberOfTeams = 3,
-                    NumberOfProjects = 2,
-                    IsPremium = true,
-                }
-                );
-
+            var scenarios = demoDataService.GetAllScenarios();
             return Ok(scenarios);
         }
 
         [HttpPost("scenarios/{id}/load")]
-        public ActionResult LoadScenario(int id)
+        public async Task<ActionResult> LoadScenario(int id)
         {
+            var scenarios = demoDataService.GetAllScenarios();
+
+            var scenario = scenarios.SingleOrDefault(scenario => scenario.Id == id);
+
+            if (scenario == null)
+            {
+                return NotFound();
+            }
+
+            await demoDataService.LoadScenarios([scenario]);
+
             return Ok();
         }
 
         [HttpPost("scenarios/load-all")]
         [LicenseGuard(RequirePremium = true)]
-        public ActionResult LoadAll()
+        public async Task<ActionResult> LoadAll()
         {
+            var scenarios = demoDataService.GetAllScenarios();
+            await demoDataService.LoadScenarios(scenarios.ToArray());
+
             return Ok();
         }
     }

@@ -231,6 +231,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ITerminologyService, TerminologyService>();
             builder.Services.AddScoped<ILicenseService, LicenseService>();
             builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
+            builder.Services.AddScoped<IDemoDataService, DemoDataService>();
 
             builder.Services.AddScoped<AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<JiraWorkTrackingConnector>();
