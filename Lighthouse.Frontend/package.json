@@ -55,7 +55,7 @@
     "cross-env": "^10.0.0",
     "jsdom": "^26.1.0",
     "typescript": "^5.9.2",
-    "vite": "^7.1.4",
+    "vite": "^7.1.5",
     "vite-plugin-pwa": "^1.0.3",
     "vitest": "^3.2.3",
     "vitest-sonar-reporter": "^2.0.4"
