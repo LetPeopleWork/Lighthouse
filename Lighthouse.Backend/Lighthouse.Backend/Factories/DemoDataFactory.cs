@@ -99,18 +99,12 @@ namespace Lighthouse.Backend.Factories
         public static string OldItems => "Team Gravity";
 
         public static string MoreClosedThanStarted => "Team Eclipse";
-
-        public static string ImprovedOverTime => "Team Ascent";
     }
 
     public static class DemoProjectNames
     {
         public static string EpicForecast => "Project Apollo";
 
-        public static string OverloadedWip => "Project Saturn";
-
-        public static string HiddenRisk => "Project Orion";
-
-        public static string LaunchAlignment => "Project Aurora";
+        public static string LaunchAlignment => "Project Orion";
     }
 }

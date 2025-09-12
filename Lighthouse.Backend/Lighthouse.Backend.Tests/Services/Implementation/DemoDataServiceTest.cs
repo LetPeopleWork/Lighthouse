@@ -28,13 +28,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             demoDataFactoryMock.Setup(x => x.CreateDemoWorkTrackingSystemConnection()).Returns(new WorkTrackingSystemConnection { Id = 18 });
             demoDataFactoryMock.Setup(x => x.CreateDemoTeam(It.IsAny<string>())).Returns(new Team { Id = 86 });
-            demoDataFactoryMock.Setup(x => x.CreateDemoProject(It.IsAny<string>())).Returns(new Project { Id = 42 });
+            demoDataFactoryMock.Setup(x => x.CreateDemoProject(It.IsAny<string>())).Returns(new Project { Id = 42, Name = "Projecto" });
         }
 
         [Test]
         [TestCase("When Will This Be Done?", 1, 1)]
-        [TestCase("Crash Override", 1, 1)]
-        [TestCase("Watermelon", 1, 1)]
+        [TestCase("Crash Override", 1, 0)]
         [TestCase("Product Launch", 2, 1)]
         public void LoadScenarios_ReturnsFreeScenarios(string scenarioName, int teams, int projects)
         {
@@ -203,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var demoTeam = new Team { Id = 12 };
             demoDataFactoryMock.Setup(x => x.CreateDemoTeam(It.IsAny<string>())).Returns(demoTeam);
 
-            var demoProject = new Project { Id = 1 };
+            var demoProject = new Project { Id = 1, Name = "Project64" };
             demoDataFactoryMock.Setup(x => x.CreateDemoProject(It.IsAny<string>())).Returns(demoProject);
 
             var expectedWorkTrackingConnection = new WorkTrackingSystemConnection { Id = 1 };
@@ -225,7 +224,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var demoTeam = new Team { Id = 12 };
             demoDataFactoryMock.Setup(x => x.CreateDemoTeam(It.IsAny<string>())).Returns(demoTeam);
 
-            var demoProject = new Project { Id = 1 };
+            var demoProject = new Project { Id = 1, Name = "Project64" };
             demoDataFactoryMock.Setup(x => x.CreateDemoProject(It.IsAny<string>())).Returns(demoProject);
 
             var expectedWorkTrackingConnection = new WorkTrackingSystemConnection { Id = 1 };

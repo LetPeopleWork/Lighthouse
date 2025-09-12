@@ -179,19 +179,20 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var overloadedTeams = CreatesScenario(1, "Crash Override", "We're super busy, but somehow everything is slow...");
             overloadedTeams.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);
-            overloadedTeams.Projects.Add(DemoProjectNames.OverloadedWip);
             freeScenarios.Add(overloadedTeams);
-
-            var waterMelon = CreatesScenario(2, "Watermelon", "Show the flaw over averages in forecasting");
-            waterMelon.Teams.Add(DemoTeamNames.GoodThroughput);
-            waterMelon.Projects.Add(DemoProjectNames.HiddenRisk);
-            freeScenarios.Add(waterMelon);
 
             var productLaunch = CreatesScenario(3, "Product Launch", "Shows how we can deal with fixed dates and use the power of forecasting to show what's possible");
             productLaunch.Teams.Add(DemoTeamNames.GoodThroughput);
-            productLaunch.Teams.Add(DemoTeamNames.ImprovedOverTime);
+            productLaunch.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);
             productLaunch.Projects.Add(DemoProjectNames.LaunchAlignment);
             freeScenarios.Add(productLaunch);
+
+            milestones.Add(DemoProjectNames.LaunchAlignment, new List<Milestone>
+            {
+                new Milestone { Name = "First Demo", Date = DateTime.Now.AddDays(7*4) },
+                new Milestone { Name = "Customer Presentation", Date = DateTime.Now.AddDays(7*6) },
+                new Milestone { Name = "Launch", Date = DateTime.Now.AddDays(7*8) },
+            });
 
             return freeScenarios;
         }
