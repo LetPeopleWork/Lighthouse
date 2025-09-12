@@ -9,6 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public DemoDataService()
         {
+            scenarios.Clear();
             scenarios.AddRange(GetFreeScenarios());
         }
 
