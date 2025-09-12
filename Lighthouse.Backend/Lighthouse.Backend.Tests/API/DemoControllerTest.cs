@@ -1,6 +1,9 @@
 ﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DemoData;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -12,12 +15,26 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IDemoDataService> demoDataServiceMock;
 
+        private Mock<IRepository<Team>> teamRepoMock;
+        private Mock<IRepository<Project>> projectRepoMock;
+        private Mock<ITeamUpdater> teamUpdaterMock;
+        private Mock<IProjectUpdater> projectUpdaterMock;
+
         private List<DemoDataScenario> scenarios;
 
         [SetUp]
         public void SetUp()
         {
             demoDataServiceMock = new Mock<IDemoDataService>();
+
+            teamRepoMock = new Mock<IRepository<Team>>();
+            projectRepoMock = new Mock<IRepository<Project>>();
+            teamUpdaterMock = new Mock<ITeamUpdater>();
+            projectUpdaterMock = new Mock<IProjectUpdater>();
+
+            teamRepoMock.Setup(x => x.GetAll()).Returns(new List<Team>());
+            projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Project>());
+
             scenarios = new List<DemoDataScenario>();
 
             demoDataServiceMock.Setup(x => x.GetAllScenarios()).Returns(scenarios);
@@ -106,6 +123,43 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task LoadScenario_UpdatesAllTeams()
+        {
+            var team1 = new Team { Id = 1 };
+            var team2 = new Team { Id = 2 };
+
+            teamRepoMock.Setup(x => x.GetAll()).Returns(new List<Team> { team1, team2 });
+
+            var scenario = CreateScenario("Una");
+
+            var subject = CreateSubject();
+
+            await subject.LoadScenario(scenario.Id);
+
+            teamUpdaterMock.Verify(x => x.TriggerUpdate(1));
+            teamUpdaterMock.Verify(x => x.TriggerUpdate(2));
+        }
+
+        [Test]
+        public async Task LoadScenario_UpdatesAllProjects()
+        {
+
+            var project1 = new Project { Id = 1 };
+            var project2 = new Project { Id = 2 };
+
+            projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Project> { project1, project2 });
+
+            var scenario = CreateScenario("Una");
+
+            var subject = CreateSubject();
+
+            await subject.LoadScenario(scenario.Id);
+
+            projectUpdaterMock.Verify(x => x.TriggerUpdate(1));
+            projectUpdaterMock.Verify(x => x.TriggerUpdate(2));
+        }
+
         private DemoDataScenario CreateScenario(string scenarioName)
         {
             var scenario = new DemoDataScenario
@@ -121,7 +175,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private DemoController CreateSubject()
         {
-            return new DemoController(demoDataServiceMock.Object);
+            return new DemoController(demoDataServiceMock.Object, teamRepoMock.Object, teamUpdaterMock.Object, projectRepoMock.Object, projectUpdaterMock.Object);
         }
     }
 }

@@ -1,6 +1,9 @@
-﻿using Lighthouse.Backend.Models.DemoData;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DemoData;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -10,10 +13,19 @@ namespace Lighthouse.Backend.API
     public class DemoController : ControllerBase
     {
         private readonly IDemoDataService demoDataService;
+        private readonly IRepository<Team> teamRepo;
+        private readonly ITeamUpdater teamUpdater;
+        private readonly IRepository<Project> projectRepo;
+        private readonly IProjectUpdater projectUpdater;
 
-        public DemoController(IDemoDataService demoDataService)
+        public DemoController(
+            IDemoDataService demoDataService, IRepository<Team> teamRepo, ITeamUpdater teamUpdater, IRepository<Project> projectRepo, IProjectUpdater projectUpdater)
         {
             this.demoDataService = demoDataService;
+            this.teamRepo = teamRepo;
+            this.teamUpdater = teamUpdater;
+            this.projectRepo = projectRepo;
+            this.projectUpdater = projectUpdater;
         }
 
         [HttpGet("scenarios")]
@@ -35,7 +47,7 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
-            await demoDataService.LoadScenarios([scenario]);
+            await LoadScenarios(scenario);
 
             return Ok();
         }
@@ -45,9 +57,34 @@ namespace Lighthouse.Backend.API
         public async Task<ActionResult> LoadAll()
         {
             var scenarios = demoDataService.GetAllScenarios();
-            await demoDataService.LoadScenarios(scenarios.ToArray());
+            await LoadScenarios(scenarios.ToArray());
 
             return Ok();
+        }
+
+        private async Task LoadScenarios(params DemoDataScenario[] scenarios)
+        {
+            await demoDataService.LoadScenarios(scenarios);
+            UpdateTeams();
+            UpdateProjects();
+        }
+
+        private void UpdateProjects()
+        {
+            var projects = projectRepo.GetAll().ToList();
+            foreach (var project in projects)
+            {
+                projectUpdater.TriggerUpdate(project.Id);
+            }
+        }
+
+        private void UpdateTeams()
+        {
+            var teams = teamRepo.GetAll().ToList();
+            foreach (var team in teams)
+            {
+                teamUpdater.TriggerUpdate(team.Id);
+            }
         }
     }
 }

@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var workTrackingSystemConnection = await AddDemoWorkTrackingSystemConnection();
             var addedTeams = await AddTeamsForScenarios(scenarios, workTrackingSystemConnection);
 
-            await AddProjectsForSceanrios(scenarios, addedTeams, workTrackingSystemConnection);
+            //await AddProjectsForSceanrios(scenarios, addedTeams, workTrackingSystemConnection);
         }
 
         private async Task AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenarios, List<Team> teams, WorkTrackingSystemConnection workTrackingSystemConnection)
