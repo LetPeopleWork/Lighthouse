@@ -15,15 +15,18 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo;
         private readonly IDemoDataFactory demoDataFactory;
 
+        private readonly Dictionary<string, List<Milestone>> milestones = new Dictionary<string, List<Milestone>>();
+
         public DemoDataService(
             IRepository<Project> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDemoDataFactory demoDataFactory)
         {
-            scenarios.Clear();
-            scenarios.AddRange(GetFreeScenarios());
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
             this.workTrackingSystemConnectionRepo = workTrackingSystemConnectionRepo;
             this.demoDataFactory = demoDataFactory;
+
+            scenarios.Clear();
+            scenarios.AddRange(GetFreeScenarios());
         }
 
         public IEnumerable<DemoDataScenario> GetAllScenarios()
@@ -38,7 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var workTrackingSystemConnection = await AddDemoWorkTrackingSystemConnection();
             var addedTeams = await AddTeamsForScenarios(scenarios, workTrackingSystemConnection);
 
-            //await AddProjectsForSceanrios(scenarios, addedTeams, workTrackingSystemConnection);
+            await AddProjectsForSceanrios(scenarios, addedTeams, workTrackingSystemConnection);
         }
 
         private async Task AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenarios, List<Team> teams, WorkTrackingSystemConnection workTrackingSystemConnection)
@@ -65,12 +68,28 @@ namespace Lighthouse.Backend.Services.Implementation
                 project.WorkTrackingSystemConnection = workTrackingSystemConnection;
                 project.WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id;
 
-                var teamsForProject = teams.Where(t => scenario.Projects.Contains(t.Name)).ToList();
+                AddMilestonesToProject(project);
+
+                var teamsForProject = teams.Where(t => scenario.Teams.Contains(t.Name)).ToList();
                 project.UpdateTeams(teamsForProject);
 
                 projectRepository.Add(project);
 
                 addedProjects.Add(projectName);
+            }
+        }
+
+        private void AddMilestonesToProject(Project project)
+        {
+            if (milestones.ContainsKey(project.Name))
+            {
+                var milestonesForProject = milestones[project.Name];
+                foreach (var milestone in milestonesForProject)
+                {
+                    milestone.Project = project;
+                    milestone.ProjectId = project.Id;
+                    project.Milestones.Add(milestone);
+                }
             }
         }
 
@@ -82,7 +101,7 @@ namespace Lighthouse.Backend.Services.Implementation
             foreach (var teamName in teamNames)
             {
                 var team = demoDataFactory.CreateDemoTeam(teamName);
-                
+
                 team.WorkTrackingSystemConnection = workTrackingSystemConnection;
                 team.WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id;
 
@@ -154,6 +173,9 @@ namespace Lighthouse.Backend.Services.Implementation
             whenWillItBeDone.Teams.Add(DemoTeamNames.GoodThroughput);
             whenWillItBeDone.Projects.Add(DemoProjectNames.EpicForecast);
             freeScenarios.Add(whenWillItBeDone);
+
+            // One Milestone in 7 weeks
+            milestones.Add(DemoProjectNames.EpicForecast, new List<Milestone> { new Milestone { Name = "Important Customer Meeting", Date = DateTime.Now.AddDays(7 * 7) } });
 
             var overloadedTeams = CreatesScenario(1, "Crash Override", "We're super busy, but somehow everything is slow...");
             overloadedTeams.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);

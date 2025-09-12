@@ -24,9 +24,8 @@ namespace Lighthouse.Backend.Factories
                 DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Verification" },
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "Epic" },
+                WorkItemQuery = ParseCsv(name)
             };
-
-            demoProject.WorkItemQuery = ParseCsv(name);
 
             return demoProject;
         }
@@ -42,9 +41,8 @@ namespace Lighthouse.Backend.Factories
                 DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Verification" },
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
+                WorkItemQuery = ParseCsv(name)
             };
-
-            demoTeam.WorkItemQuery = ParseCsv(name);
 
             return demoTeam;
         }

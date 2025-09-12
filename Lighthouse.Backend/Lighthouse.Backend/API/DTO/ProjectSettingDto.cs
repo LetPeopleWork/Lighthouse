@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];
 
-        public string UnparentedItemsQuery { get; set; }
+        public string? UnparentedItemsQuery { get; set; }
 
         [JsonRequired]
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; }
