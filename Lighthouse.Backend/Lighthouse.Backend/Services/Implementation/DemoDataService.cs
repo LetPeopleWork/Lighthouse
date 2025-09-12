@@ -1,5 +1,8 @@
-﻿using Lighthouse.Backend.Models.DemoData;
+﻿using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DemoData;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -7,10 +10,20 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private static readonly List<DemoDataScenario> scenarios = new List<DemoDataScenario>();
 
-        public DemoDataService()
+        private readonly IRepository<Project> projectRepository;
+        private readonly IRepository<Team> teamRepository;
+        private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo;
+        private readonly IDemoDataFactory demoDataFactory;
+
+        public DemoDataService(
+            IRepository<Project> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDemoDataFactory demoDataFactory)
         {
             scenarios.Clear();
             scenarios.AddRange(GetFreeScenarios());
+            this.projectRepository = projectRepository;
+            this.teamRepository = teamRepository;
+            this.workTrackingSystemConnectionRepo = workTrackingSystemConnectionRepo;
+            this.demoDataFactory = demoDataFactory;
         }
 
         public IEnumerable<DemoDataScenario> GetAllScenarios()
@@ -18,9 +31,119 @@ namespace Lighthouse.Backend.Services.Implementation
             return scenarios;
         }
 
-        public Task LoadScenarios(params DemoDataScenario[] scenarios)
+        public async Task LoadScenarios(params DemoDataScenario[] scenarios)
         {
-            return Task.CompletedTask;
+            await ClearExistingData();
+
+            var workTrackingSystemConnection = await AddDemoWorkTrackingSystemConnection();
+            var addedTeams = await AddTeamsForScenarios(scenarios, workTrackingSystemConnection);
+
+            await AddProjectsForSceanrios(scenarios, addedTeams, workTrackingSystemConnection);
+        }
+
+        private async Task AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenarios, List<Team> teams, WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            var addedProjects = new List<string>();
+
+            foreach (var scenario in scenarios)
+            {
+                AddProjectsForScenario(teams, workTrackingSystemConnection, addedProjects, scenario);
+            }
+
+            await projectRepository.Save();
+        }
+
+        private void AddProjectsForScenario(List<Team> teams, WorkTrackingSystemConnection workTrackingSystemConnection, List<string> addedProjects, DemoDataScenario scenario)
+        {
+            var projectNames = scenario.Projects.Distinct();
+
+            var notAddedProjects = projectNames.Where(p => !addedProjects.Contains(p)).ToList();
+
+            foreach (var projectName in notAddedProjects)
+            {
+                var project = demoDataFactory.CreateDemoProject(projectName);
+                project.WorkTrackingSystemConnection = workTrackingSystemConnection;
+                project.WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id;
+
+                var teamsForProject = teams.Where(t => scenario.Projects.Contains(t.Name)).ToList();
+                project.UpdateTeams(teamsForProject);
+
+                projectRepository.Add(project);
+
+                addedProjects.Add(projectName);
+            }
+        }
+
+        private async Task<List<Team>> AddTeamsForScenarios(IEnumerable<DemoDataScenario> scenarios, WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            var teams = new List<Team>();
+            var teamNames = scenarios.SelectMany(s => s.Teams).Distinct();
+
+            foreach (var teamName in teamNames)
+            {
+                var team = demoDataFactory.CreateDemoTeam(teamName);
+                
+                team.WorkTrackingSystemConnection = workTrackingSystemConnection;
+                team.WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id;
+
+                teams.Add(team);
+
+                teamRepository.Add(team);
+            }
+
+            await teamRepository.Save();
+
+            return teams;
+        }
+
+        private async Task<WorkTrackingSystemConnection> AddDemoWorkTrackingSystemConnection()
+        {
+            var demoWorkTrackingSystemConnection = demoDataFactory.CreateDemoWorkTrackingSystemConnection();
+            workTrackingSystemConnectionRepo.Add(demoWorkTrackingSystemConnection);
+
+            await workTrackingSystemConnectionRepo.Save();
+
+            return demoWorkTrackingSystemConnection;
+        }
+
+        private async Task ClearExistingData()
+        {
+            await ClearProjects();
+            await ClearTeams();
+            await ClearWorkTrackingSystemConnections();
+        }
+
+        private async Task ClearWorkTrackingSystemConnections()
+        {
+            var connections = workTrackingSystemConnectionRepo.GetAll();
+            foreach (var connection in connections)
+            {
+                workTrackingSystemConnectionRepo.Remove(connection.Id);
+            }
+
+            await workTrackingSystemConnectionRepo.Save();
+        }
+
+        private async Task ClearTeams()
+        {
+            var teams = teamRepository.GetAll();
+            foreach (var team in teams)
+            {
+                teamRepository.Remove(team.Id);
+            }
+
+            await teamRepository.Save();
+        }
+
+        private async Task ClearProjects()
+        {
+            var projects = projectRepository.GetAll();
+            foreach (var project in projects)
+            {
+                projectRepository.Remove(project.Id);
+            }
+
+            await projectRepository.Save();
         }
 
         private List<DemoDataScenario> GetFreeScenarios()
@@ -60,34 +183,6 @@ namespace Lighthouse.Backend.Services.Implementation
                 Description = description,
                 IsPremium = false,
             };
-        }
-
-        private static class DemoTeamNames
-        {
-            public static string GoodThroughput => "Team Zenith";
-
-            public static string ConstantlyIncreasingWip => "Team Voyager";
-
-            public static string SpikedThroughput => "Team Pulsar";
-
-            public static string CleanupHappened => "Team Comet";
-
-            public static string OldItems => "Team Gravity";
-
-            public static string MoreClosedThanStarted => "Team Eclipse";
-
-            public static string ImprovedOverTime => "Team Ascent";
-        }
-
-        private static class DemoProjectNames
-        {
-            public static string EpicForecast => "Project Apollo";
-
-            public static string OverloadedWip => "Project Saturn";
-
-            public static string HiddenRisk => "Project Orion";
-
-            public static string LaunchAlignment => "Project Aurora";
         }
     }
 }

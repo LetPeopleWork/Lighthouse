@@ -215,6 +215,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
             builder.Services.AddScoped<IIssueFactory, IssueFactory>();
             builder.Services.AddScoped<IWorkTrackingSystemFactory, WorkTrackingSystemFactory>();
+            builder.Services.AddScoped<IDemoDataFactory, DemoDataFactory>();
 
             // Services
             builder.Services.AddScoped<ILexoRankService, LexoRankService>();
