@@ -24,7 +24,11 @@ namespace Lighthouse.Backend.Tests.Models
                 Assert.That(settings.StartDate, Is.EqualTo(expectedStartDate));
                 Assert.That(settings.EndDate, Is.EqualTo(expectedEndDate));
                 Assert.That(settings.NumberOfDays, Is.EqualTo(expectedNumberOfDays));
-            };
+
+                Assert.That(settings.StartDate.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(settings.EndDate.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
+            ;
         }
 
         [Test]
@@ -48,6 +52,9 @@ namespace Lighthouse.Backend.Tests.Models
                 Assert.That(settings.StartDate, Is.EqualTo(startDate));
                 Assert.That(settings.EndDate, Is.EqualTo(endDate));
                 Assert.That(settings.NumberOfDays, Is.EqualTo(expectedNumberOfDays));
+
+                Assert.That(settings.StartDate.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(settings.EndDate.Kind, Is.EqualTo(DateTimeKind.Utc));
             };
         }
     }

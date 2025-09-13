@@ -33,7 +33,7 @@
                 numberOfDays = (endDate - startDate).Days + 1;
             }
 
-            return new ThroughputSettings(startDate, endDate, numberOfDays);
+            return new ThroughputSettings(DateTime.SpecifyKind(startDate, DateTimeKind.Utc), DateTime.SpecifyKind(endDate, DateTimeKind.Utc), numberOfDays);
         }
     }
 }
