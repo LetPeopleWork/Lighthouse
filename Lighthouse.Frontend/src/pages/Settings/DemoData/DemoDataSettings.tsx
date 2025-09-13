@@ -154,15 +154,6 @@ const DemoDataSettings: React.FC = () => {
 								>
 									{scenario.description}
 								</Typography>
-
-								<Stack spacing={1}>
-									<Typography variant="body2">
-										<strong>Teams:</strong> {scenario.numberOfTeams}
-									</Typography>
-									<Typography variant="body2">
-										<strong>Projects:</strong> {scenario.numberOfProjects}
-									</Typography>
-								</Stack>
 							</CardContent>
 
 							<CardActions sx={{ p: 2 }}>

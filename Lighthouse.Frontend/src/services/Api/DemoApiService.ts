@@ -1909,8 +1909,6 @@ export class DemoApiService
 				title: "Small Startup",
 				description:
 					"A basic setup with minimal teams and projects, perfect for getting started",
-				numberOfTeams: 2,
-				numberOfProjects: 1,
 				isPremium: false,
 			},
 			{
@@ -1918,8 +1916,6 @@ export class DemoApiService
 				title: "Growing Company",
 				description:
 					"Medium-sized organization with multiple teams working on various projects",
-				numberOfTeams: 4,
-				numberOfProjects: 3,
 				isPremium: false,
 			},
 			{
@@ -1927,8 +1923,6 @@ export class DemoApiService
 				title: "Enterprise Basic",
 				description:
 					"Large organization with many teams and complex project structures",
-				numberOfTeams: 8,
-				numberOfProjects: 5,
 				isPremium: true,
 			},
 			{
@@ -1936,8 +1930,6 @@ export class DemoApiService
 				title: "Mega Corporation",
 				description:
 					"Massive enterprise with extensive teams and numerous parallel projects",
-				numberOfTeams: 15,
-				numberOfProjects: 12,
 				isPremium: true,
 			},
 			{
@@ -1945,8 +1937,6 @@ export class DemoApiService
 				title: "Agile Transformation",
 				description:
 					"Organization in the middle of agile transformation with mixed methodologies",
-				numberOfTeams: 6,
-				numberOfProjects: 4,
 				isPremium: true,
 			},
 		];

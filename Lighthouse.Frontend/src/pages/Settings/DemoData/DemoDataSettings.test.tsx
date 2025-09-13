@@ -104,16 +104,12 @@ describe("DemoDataSettings", () => {
 				id: "small-startup",
 				title: "Small Startup",
 				description: "A basic setup with minimal teams and projects",
-				numberOfTeams: 2,
-				numberOfProjects: 1,
 				isPremium: false,
 			},
 			{
 				id: "enterprise-basic",
 				title: "Enterprise Basic",
 				description: "Large organization with many teams",
-				numberOfTeams: 8,
-				numberOfProjects: 5,
 				isPremium: true,
 			},
 		];
@@ -130,15 +126,6 @@ describe("DemoDataSettings", () => {
 			expect(screen.getByText("Small Startup")).toBeInTheDocument();
 			expect(screen.getByText("Enterprise Basic")).toBeInTheDocument();
 		});
-
-		// Text is split across elements due to bold formatting, and there are multiple scenarios
-		expect(screen.getAllByText("Teams:")).toHaveLength(2);
-		expect(screen.getAllByText("Projects:")).toHaveLength(2);
-		// Check for specific numbers from the scenarios
-		expect(screen.getByText("2")).toBeInTheDocument(); // Small Startup teams
-		expect(screen.getByText("1")).toBeInTheDocument(); // Small Startup projects
-		expect(screen.getByText("8")).toBeInTheDocument(); // Enterprise Basic teams
-		expect(screen.getByText("5")).toBeInTheDocument(); // Enterprise Basic projects
 		expect(screen.getByText("Premium")).toBeInTheDocument();
 	});
 
@@ -149,8 +136,6 @@ describe("DemoDataSettings", () => {
 				id: "small-startup",
 				title: "Small Startup",
 				description: "A basic setup",
-				numberOfTeams: 2,
-				numberOfProjects: 1,
 				isPremium: false,
 			},
 		];
@@ -198,8 +183,6 @@ describe("DemoDataSettings", () => {
 				id: "enterprise-basic",
 				title: "Enterprise Basic",
 				description: "Premium scenario",
-				numberOfTeams: 8,
-				numberOfProjects: 5,
 				isPremium: true,
 			},
 		];

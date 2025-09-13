@@ -376,4 +376,34 @@ describe("DataOverviewTable", () => {
 		expect(screen.queryByText("Another Item")).not.toBeInTheDocument();
 		expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
 	});
+
+	it("shows demo data link when no data is available", () => {
+		renderWithRouter(
+			<DataOverviewTable
+				data={[]}
+				title="Test Items"
+				api="api"
+				onDelete={vi.fn()}
+				filterText=""
+			/>,
+		);
+
+		expect(screen.getByTestId("empty-items-message")).toBeInTheDocument();
+
+		// Check that the demo data link is present and has correct href
+		const demoDataLink = screen.getByText("Load Demo Data");
+		expect(demoDataLink).toBeInTheDocument();
+		expect(demoDataLink.closest("a")).toHaveAttribute(
+			"href",
+			"/settings?tab=demodata",
+		);
+
+		// Check that the documentation link is also present
+		const docLink = screen.getByText("Check the documentation");
+		expect(docLink).toBeInTheDocument();
+		expect(docLink.closest("a")).toHaveAttribute(
+			"href",
+			"https://docs.lighthouse.letpeople.work",
+		);
+	});
 });

@@ -100,7 +100,24 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 						data-testid="empty-items-message"
 					>
 						<Typography variant="body1">
-							No {title} Defined.{" "}
+							No {title} found.{" "}
+							<MuiLink
+								component={Link}
+								to="/settings?tab=demodata"
+								style={{
+									color: theme.palette.primary.main,
+									textDecoration: "none",
+									fontWeight: 500,
+								}}
+								sx={{
+									"&:hover": {
+										textDecoration: "underline",
+									},
+								}}
+							>
+								Load Demo Data
+							</MuiLink>{" "}
+							or{" "}
 							<MuiLink
 								href="https://docs.lighthouse.letpeople.work"
 								target="_blank"

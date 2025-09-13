@@ -25,16 +25,12 @@ describe("DemoDataService", () => {
 					id: "small-startup",
 					title: "Small Startup",
 					description: "A basic setup with minimal teams and projects",
-					numberOfTeams: 2,
-					numberOfProjects: 1,
 					isPremium: false,
 				},
 				{
 					id: "enterprise-basic",
 					title: "Enterprise Basic",
 					description: "A mid-sized organization with multiple teams",
-					numberOfTeams: 8,
-					numberOfProjects: 5,
 					isPremium: true,
 				},
 			];

@@ -14,10 +14,6 @@ namespace Lighthouse.Backend.Models.DemoData
 
         public List<string> Projects { get; } = new List<string>();
 
-        public int NumberOfTeams => Teams.Count;
-
-        public int NumberOfProjects => Projects.Count;
-
         public bool IsPremium {  get; set; }
     }
 }

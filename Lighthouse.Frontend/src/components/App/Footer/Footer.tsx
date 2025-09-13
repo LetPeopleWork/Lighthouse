@@ -2,7 +2,6 @@ import CallIcon from "@mui/icons-material/Call";
 import EmailIcon from "@mui/icons-material/Email";
 import ForumIcon from "@mui/icons-material/Forum";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import {
 	Box,
@@ -68,11 +67,6 @@ const Footer: React.FC = () => {
 								link="https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A"
 								icon={ForumIcon}
 								tooltip="Join our Slack Community"
-							/>
-							<ExternalLinkButton
-								link="https://miro.com/app/board/uXjVItmYi5c=/?share_link_id=330450244368"
-								icon={ShoppingCartIcon}
-								tooltip="See our Offering"
 							/>
 							<ExternalLinkButton
 								link="https://ko-fi.com/letpeoplework"

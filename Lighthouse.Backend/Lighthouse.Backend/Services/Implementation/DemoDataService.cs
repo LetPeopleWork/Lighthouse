@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class DemoDataService : IDemoDataService
     {
-        private static readonly List<DemoDataScenario> scenarios = new List<DemoDataScenario>();
+        private readonly List<DemoDataScenario> scenarios = new List<DemoDataScenario>();
 
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Team> teamRepository;
@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Services.Implementation
             this.workTrackingSystemConnectionRepo = workTrackingSystemConnectionRepo;
             this.demoDataFactory = demoDataFactory;
 
-            scenarios.Clear();
             scenarios.AddRange(GetFreeScenarios());
         }
 
@@ -169,7 +168,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var freeScenarios = new List<DemoDataScenario>();
 
-            var whenWillItBeDone = CreatesScenario(0, "When Will This Be Done?", "One Team, a set of Epics, and the question: When can we get it?");
+            var whenWillItBeDone = CreatesScenario(0, "When Will This Be Done?", "One Team, one project with a a set of Epics, and the question: When can we get it?");
             whenWillItBeDone.Teams.Add(DemoTeamNames.GoodThroughput);
             whenWillItBeDone.Projects.Add(DemoProjectNames.EpicForecast);
             freeScenarios.Add(whenWillItBeDone);
@@ -177,11 +176,11 @@ namespace Lighthouse.Backend.Services.Implementation
             // One Milestone in 7 weeks
             milestones.Add(DemoProjectNames.EpicForecast, new List<Milestone> { new Milestone { Name = "Important Customer Meeting", Date = DateTime.Now.AddDays(7 * 7) } });
 
-            var overloadedTeams = CreatesScenario(1, "Crash Override", "We're super busy, but somehow everything is slow...");
+            var overloadedTeams = CreatesScenario(1, "Too Much WIP", "A team that is super busy, but progress is slow.");
             overloadedTeams.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);
             freeScenarios.Add(overloadedTeams);
 
-            var productLaunch = CreatesScenario(3, "Product Launch", "Shows how we can deal with fixed dates and use the power of forecasting to show what's possible");
+            var productLaunch = CreatesScenario(3, "Product Launch", "Two teams, one product they work on together. When can we launch?");
             productLaunch.Teams.Add(DemoTeamNames.GoodThroughput);
             productLaunch.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);
             productLaunch.Projects.Add(DemoProjectNames.LaunchAlignment);
@@ -189,9 +188,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
             milestones.Add(DemoProjectNames.LaunchAlignment, new List<Milestone>
             {
-                new Milestone { Name = "First Demo", Date = DateTime.Now.AddDays(7*4) },
-                new Milestone { Name = "Customer Presentation", Date = DateTime.Now.AddDays(7*6) },
-                new Milestone { Name = "Launch", Date = DateTime.Now.AddDays(7*8) },
+                new Milestone { Name = "First Demo", Date = DateTime.Now.AddDays(7*2) },
+                new Milestone { Name = "Customer Presentation", Date = DateTime.Now.AddDays(7*4) },
+                new Milestone { Name = "Launch", Date = DateTime.Now.AddDays(7*6) },
             });
 
             return freeScenarios;

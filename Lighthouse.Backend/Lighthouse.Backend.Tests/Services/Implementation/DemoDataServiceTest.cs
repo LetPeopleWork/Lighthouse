@@ -32,10 +32,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [TestCase("When Will This Be Done?", 1, 1)]
-        [TestCase("Crash Override", 1, 0)]
-        [TestCase("Product Launch", 2, 1)]
-        public void LoadScenarios_ReturnsFreeScenarios(string scenarioName, int teams, int projects)
+        [TestCase("When Will This Be Done?", "One Team, one project with a a set of Epics, and the question: When can we get it?")]
+        [TestCase("Too Much WIP", "A team that is super busy, but progress is slow.")]
+        [TestCase("Product Launch", "Two teams, one product they work on together. When can we launch?")]
+        public void LoadScenarios_ReturnsFreeScenarios(string scenarioName, string description)
         {
             var subject = CreateSubject();
 
@@ -45,9 +45,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 var scenario = scenarios.SingleOrDefault(x => x.Title == scenarioName);
                 Assert.That(scenario, Is.Not.Null);
+                Assert.That(scenario.Description, Is.EqualTo(description));
                 Assert.That(scenario.IsPremium, Is.False);
-                Assert.That(scenario.NumberOfTeams, Is.EqualTo(teams));
-                Assert.That(scenario.NumberOfProjects, Is.EqualTo(projects));
             }
         }
 

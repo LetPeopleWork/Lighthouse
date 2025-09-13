@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import WorkTrackingSystemConnectionSettings from "./Connections/WorkTrackingSystemConnectionSettings";
@@ -30,6 +31,7 @@ const Settings: React.FC = () => {
 	const [mounted, setMounted] = useState(false);
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+	const location = useLocation();
 
 	const { getTerm } = useTerminology();
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
@@ -39,7 +41,26 @@ const Settings: React.FC = () => {
 
 	useEffect(() => {
 		setMounted(true);
-	}, []);
+
+		// Check for tab query parameter
+		const searchParams = new URLSearchParams(location.search);
+		const tabParam = searchParams.get("tab");
+
+		// Map tab names to values
+		const tabMapping: { [key: string]: string } = {
+			demodata: "25",
+			"demo-data": "25",
+			system: "20",
+			teams: "30",
+			projects: "40",
+			logs: "99",
+			connections: "10",
+		};
+
+		if (tabParam && tabMapping[tabParam.toLowerCase()]) {
+			setValue(tabMapping[tabParam.toLowerCase()]);
+		}
+	}, [location.search]);
 
 	const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
 		setValue(newValue);
