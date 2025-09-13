@@ -43,6 +43,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdateAllProjects_AsNonPremiumUser_Returns403()
+        {
+            var response = await Client.PostAsync("/api/teams/update-all", null);
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
+        }
+
+        [Test]
         public async Task UpdateTeam_AsNonPremiumUser_Returns403()
         {
             await SetupTeams(4);

@@ -10,6 +10,7 @@ interface LicenseRestrictions {
 	canUpdateProjectData: boolean;
 	canUpdateProjectSettings: boolean;
 	canUseNewItemForecaster: boolean;
+	canUpdateAllTeamsAndProjects: boolean;
 	teamCount: number;
 	projectCount: number;
 	licenseStatus: ILicenseStatus | null;
@@ -21,6 +22,7 @@ interface LicenseRestrictions {
 	updateProjectDataTooltip: string;
 	updateProjectSettingsTooltip: string;
 	newItemForecasterTooltip: string;
+	updateAllTeamsAndProjectsTooltip: string;
 }
 
 const MAX_TEAMS_WITHOUT_PREMIUM = 3;
@@ -73,6 +75,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 			canUpdateProjectData: true,
 			canUpdateProjectSettings: true,
 			canUseNewItemForecaster: true,
+			canUpdateAllTeamsAndProjects: true,
 			teamCount,
 			projectCount,
 			licenseStatus,
@@ -84,6 +87,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 			updateProjectDataTooltip: "",
 			updateProjectSettingsTooltip: "",
 			newItemForecasterTooltip: "",
+			updateAllTeamsAndProjectsTooltip: "",
 		};
 	}
 
@@ -97,6 +101,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 			canUpdateProjectData: true,
 			canUpdateProjectSettings: true,
 			canUseNewItemForecaster: true,
+			canUpdateAllTeamsAndProjects: true,
 			teamCount,
 			projectCount,
 			licenseStatus,
@@ -108,6 +113,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 			updateProjectDataTooltip: "",
 			updateProjectSettingsTooltip: "",
 			newItemForecasterTooltip: "",
+			updateAllTeamsAndProjectsTooltip: "",
 		};
 	}
 
@@ -148,6 +154,9 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 	const newItemForecasterTooltip =
 		"This feature requires a premium license. Please obtain a premium license to use new item forecasting.";
 
+	const updateAllTeamsAndProjectsTooltip =
+		"This feature requires a premium license. Please obtain a premium license to update all teams and projects.";
+
 	return {
 		canCreateTeam,
 		canUpdateTeamData,
@@ -156,6 +165,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 		canUpdateProjectData,
 		canUpdateProjectSettings,
 		canUseNewItemForecaster: false,
+		canUpdateAllTeamsAndProjects: false,
 		teamCount,
 		projectCount,
 		licenseStatus,
@@ -167,5 +177,6 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 		updateProjectDataTooltip,
 		updateProjectSettingsTooltip,
 		newItemForecasterTooltip,
+		updateAllTeamsAndProjectsTooltip,
 	};
 };

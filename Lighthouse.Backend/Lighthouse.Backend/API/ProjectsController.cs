@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("refresh-all")]
-        [LicenseGuard(CheckProjectConstraint = true)]
+        [LicenseGuard(RequirePremium = true)]
         public ActionResult UpdateAllProjects()
         {
             var projects = projectRepository.GetAll();

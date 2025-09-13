@@ -1,4 +1,5 @@
 import AddIcon from "@mui/icons-material/Add";
+import UpdateIcon from "@mui/icons-material/Update";
 import { Box, Container, Tooltip, Typography } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -24,6 +25,7 @@ const OverviewDashboard: React.FC = () => {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
 	const [selectedItem, setSelectedItem] = useState<Project | Team | null>(null);
 	const [deleteType, setDeleteType] = useState<"project" | "team" | null>(null);
+	const [isUpdatingAll, setIsUpdatingAll] = useState<boolean>(false);
 
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -40,6 +42,8 @@ const OverviewDashboard: React.FC = () => {
 		createProjectTooltip,
 		canCreateTeam,
 		createTeamTooltip,
+		canUpdateAllTeamsAndProjects,
+		updateAllTeamsAndProjectsTooltip,
 	} = useLicenseRestrictions();
 
 	const fetchData = useCallback(async () => {
@@ -125,6 +129,19 @@ const OverviewDashboard: React.FC = () => {
 		navigate("/teams/new");
 	};
 
+	const handleUpdateAll = async () => {
+		try {
+			setIsUpdatingAll(true);
+			await teamService.updateAllTeamData();
+			await projectService.refreshFeaturesForAllProjects();
+		} catch (error) {
+			console.error("Error updating all teams and projects:", error);
+			setHasError(true);
+		} finally {
+			setIsUpdatingAll(false);
+		}
+	};
+
 	return (
 		<LoadingAnimation isLoading={isLoading} hasError={hasError}>
 			<Container maxWidth={false}>
@@ -170,6 +187,18 @@ const OverviewDashboard: React.FC = () => {
 									onClickHandler={handleAddTeam}
 									buttonVariant="contained"
 									disabled={!canCreateTeam}
+								/>
+							</span>
+						</Tooltip>
+						<Tooltip title={updateAllTeamsAndProjectsTooltip} arrow>
+							<span>
+								<ActionButton
+									buttonText="Update All"
+									startIcon={<UpdateIcon />}
+									onClickHandler={handleUpdateAll}
+									buttonVariant="outlined"
+									disabled={!canUpdateAllTeamsAndProjects}
+									externalIsWaiting={isUpdatingAll}
 								/>
 							</span>
 						</Tooltip>

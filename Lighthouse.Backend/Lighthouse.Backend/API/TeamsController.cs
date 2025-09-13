@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("update-all")]
-        [LicenseGuard(CheckTeamConstraint = true)]
+        [LicenseGuard(RequirePremium = true)]
         public ActionResult UpdateAllTeams()
         {
             var teams = teamRepository.GetAll();
