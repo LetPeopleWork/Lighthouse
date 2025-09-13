@@ -90,6 +90,20 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        [HttpPost("update-all")]
+        [LicenseGuard(CheckTeamConstraint = true)]
+        public ActionResult UpdateAllTeams()
+        {
+            var teams = teamRepository.GetAll();
+
+            foreach (var team in teams)
+            {
+                UpdateTeamData(team.Id);
+            }
+
+            return Ok();
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTeam(int id)
         {

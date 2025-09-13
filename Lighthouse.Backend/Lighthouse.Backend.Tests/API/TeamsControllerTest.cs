@@ -696,6 +696,27 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void UpdateAllTeamData_TriggersUpdateOfAllTeams()
+        {
+            var expectedTeam = new Team { Id = 12 };
+            teamRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(expectedTeam);
+
+            var subject = CreateSubject([expectedTeam, expectedTeam, expectedTeam]);
+
+            var response = subject.UpdateAllTeams();
+
+            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(expectedTeam.Id), Times.Exactly(3));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response, Is.InstanceOf<OkResult>());
+                var okResult = response as OkResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+            }
+            ;
+        }
+
+        [Test]
         [TestCase(true)]
         [TestCase(false)]
         public async Task ValidateTeamSettings_GivenTeamSettings_ReturnsResultFromWorkItemService(bool expectedResult)

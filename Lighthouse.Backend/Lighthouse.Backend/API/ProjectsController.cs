@@ -67,6 +67,20 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        [HttpPost("refresh-all")]
+        [LicenseGuard(CheckProjectConstraint = true)]
+        public ActionResult UpdateAllProjects()
+        {
+            var projects = projectRepository.GetAll();
+
+            foreach (var project in projects)
+            {
+                UpdateFeaturesForProject(project.Id);
+            }
+
+            return Ok();
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProject(int id)
         {

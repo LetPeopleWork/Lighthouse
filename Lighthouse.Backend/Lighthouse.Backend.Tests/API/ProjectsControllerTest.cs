@@ -16,8 +16,8 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Project>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
 
-        private Mock<IProjectUpdater> workItemCollectorServiceMock;
-        
+        private Mock<IProjectUpdater> projectUpdaterMock;
+
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             projectRepoMock = new Mock<IRepository<Project>>();
             teamRepoMock = new Mock<IRepository<Team>>();
-            workItemCollectorServiceMock = new Mock<IProjectUpdater>();
+            projectUpdaterMock = new Mock<IProjectUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
         }
@@ -67,7 +67,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(projectDto.Id, Is.EqualTo(testProject.Id));
                 Assert.That(projectDto.Name, Is.EqualTo(testProject.Name));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -82,7 +83,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -103,8 +105,38 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
-                workItemCollectorServiceMock.Verify(x => x.TriggerUpdate(testProject.Id));
-            };
+                projectUpdaterMock.Verify(x => x.TriggerUpdate(testProject.Id));
+            }
+            ;
+        }
+
+        [Test]
+        public void UpdateAllProjectData_TriggersUpdateOfAllProjects()
+        {
+            var testProjects = GetTestProjects();
+
+            projectRepoMock.Setup(x => x.GetAll()).Returns(testProjects);
+            foreach (var project in testProjects)
+            {
+                projectRepoMock.Setup(x => x.GetById(project.Id)).Returns(project);
+            }
+
+            var subject = CreateSubject();
+
+            var response = subject.UpdateAllProjects();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response, Is.InstanceOf<OkResult>());
+                var okResult = response as OkResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                foreach (var testProject in testProjects)
+                {
+                    projectUpdaterMock.Verify(x => x.TriggerUpdate(testProject.Id), Times.Once);
+                }
+            }
+            ;
         }
 
         [Test]
@@ -167,7 +199,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(project.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(project.DefaultAmountOfWorkItemsPerFeature));
                 Assert.That(projectSettingDto.WorkTrackingSystemConnectionId, Is.EqualTo(project.WorkTrackingSystemConnectionId));
-            };
+            }
+            ;
         }
 
 
@@ -184,7 +217,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -319,7 +353,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Name, Is.EqualTo(updatedProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(updatedProjectSettings.WorkItemTypes));
                 Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(updatedProjectSettings.Milestones.Count));
-                
+
                 for (int i = 0; i < updatedProjectSettings.Milestones.Count; i++)
                 {
                     Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(updatedProjectSettings.Milestones[i].Id));
@@ -366,7 +400,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var notFoundResult = result.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -395,7 +430,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 var value = okObjectResult.Value;
                 Assert.That(value, Is.EqualTo(expectedResult));
-            };
+            }
+            ;
         }
 
         [Test]
@@ -423,7 +459,7 @@ namespace Lighthouse.Backend.Tests.API
             return new ProjectsController(
                 projectRepoMock.Object,
                 teamRepoMock.Object,
-                workItemCollectorServiceMock.Object,
+                projectUpdaterMock.Object,
                 workTrackingConnectorFactoryMock.Object,
                 workTrackingSystemConnectionRepoMock.Object
             );
