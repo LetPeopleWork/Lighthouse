@@ -11,10 +11,45 @@ Preview
 {: .label .label-blue }
  -->
  
-# Lighthouse v25.9.5.1326
+# Lighthouse v25.9.13.1420
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## New Work Item Prediction [**Premium Only**]
+Based on the created items, Lighthouse can now also forecast the arrival of work in your process:
+
+![Work Item Creation Forecast](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/creationforecast.png)
+
+This may be useful if you want to know how many new bugs you could expect within the next 4 weeks.
+You can find the functionality in the *Team Forecast View*.
+
+More details available in the [documentation](https://docs.lighthouse.letpeople.work/teams/detail.html#new-work-item-predictions).
+
+## Demo Data
+In order to support onboarding as well as various teaching scenarios, Lighthouse now includes various predefined scenarios with teams and projects.
+
+![Demo Data](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/demodata.png)
+
+There are 3 basic scenarios available in all editions, and additional scenarios available for everyone with a *Premium License*.
+
+You can find more details on the scenarios in the [documentation](https://docs.lighthouse.letpeople.work/settings/demodata.html).
+
+## Continuous Improvements & Bug Fixes
+- Dates used for forecasting were off by one after re-opening team edit pages. While it should not have had an effect on the forecast, the UI will now display the proper dates
+- The overview dashboard now features a button to *Update All* teams and projects [**Premium Only**]
+- Update of various third-party libraries
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.9.5.1326...v25.9.13.1420)
+
+# Lighthouse v25.9.5.1326
 
 ## Rework of Overview
 We reworked the overview page as follows:
