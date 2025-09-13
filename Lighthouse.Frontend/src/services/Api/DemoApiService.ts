@@ -860,6 +860,14 @@ export class DemoApiService
 		this.notifyAboutUpdate("Team", teamId, "Completed");
 	}
 
+	async updateAllTeamData(): Promise<void> {
+		console.log(`Updating all team data`);
+
+		for (const team of teams) {
+			await this.updateTeamData(team.id);
+		}
+	}
+
 	async updateForecast(teamId: number): Promise<void> {
 		console.log(`Updating Forecast for Team ${teamId}`);
 
@@ -1112,6 +1120,14 @@ export class DemoApiService
 		}
 
 		this.notifyAboutUpdate("Features", id, "Completed");
+	}
+
+	async refreshFeaturesForAllProjects(): Promise<void> {
+		console.log("Updating Features for all projects");
+
+		for (const project of projects) {
+			await this.refreshFeaturesForProject(project.id);
+		}
 	}
 
 	async refreshForecastsForProject(id: number): Promise<void> {

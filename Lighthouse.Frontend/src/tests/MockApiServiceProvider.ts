@@ -90,6 +90,7 @@ export const createMockProjectService = (): IProjectService => {
 		getProject: vi.fn(),
 		refreshFeaturesForProject: vi.fn(),
 		refreshForecastsForProject: vi.fn(),
+		refreshFeaturesForAllProjects: vi.fn(),
 		validateProjectSettings: vi.fn(),
 	};
 };
@@ -104,6 +105,7 @@ export const createMockTeamService = (): ITeamService => {
 		updateTeam: vi.fn(),
 		createTeam: vi.fn(),
 		updateTeamData: vi.fn(),
+		updateAllTeamData: vi.fn(),
 	};
 };
 

@@ -113,6 +113,14 @@ describe("ProjectService", () => {
 		expect(mockedAxios.post).toHaveBeenCalledWith("/projects/refresh/1");
 	});
 
+	it("should refresh features for all projects", async () => {
+		mockedAxios.post.mockResolvedValueOnce({});
+
+		await projectService.refreshFeaturesForAllProjects();
+
+		expect(mockedAxios.post).toHaveBeenCalledWith("/projects/refresh-all");
+	});
+
 	it("should refresh forecasts for a project by id", async () => {
 		const project = new Project();
 		project.name = "Project 1";

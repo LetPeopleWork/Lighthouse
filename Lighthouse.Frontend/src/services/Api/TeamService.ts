@@ -11,6 +11,7 @@ export interface ITeamService {
 	updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
 	createTeam(teamSettings: ITeamSettings): Promise<ITeamSettings>;
 	updateTeamData(teamId: number): Promise<void>;
+	updateAllTeamData(): Promise<void>;
 }
 
 export class TeamService extends BaseApiService implements ITeamService {
@@ -88,6 +89,12 @@ export class TeamService extends BaseApiService implements ITeamService {
 	async updateTeamData(teamId: number): Promise<void> {
 		this.withErrorHandling(async () => {
 			await this.apiService.post<ITeam>(`/teams/${teamId}`);
+		});
+	}
+
+	async updateAllTeamData(): Promise<void> {
+		this.withErrorHandling(async () => {
+			await this.apiService.post(`/teams/update-all`);
 		});
 	}
 

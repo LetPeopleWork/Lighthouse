@@ -10,6 +10,7 @@ export interface IProjectService {
 	updateProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
 	createProject(projectSettings: IProjectSettings): Promise<IProjectSettings>;
 	refreshFeaturesForProject(id: number): Promise<void>;
+	refreshFeaturesForAllProjects(): Promise<void>;
 	refreshForecastsForProject(id: number): Promise<void>;
 	validateProjectSettings(projectSettings: IProjectSettings): Promise<boolean>;
 }
@@ -71,6 +72,12 @@ export class ProjectService extends BaseApiService implements IProjectService {
 	async refreshFeaturesForProject(id: number): Promise<void> {
 		await this.withErrorHandling(async () => {
 			await this.apiService.post<IProject>(`/projects/refresh/${id}`);
+		});
+	}
+
+	async refreshFeaturesForAllProjects(): Promise<void> {
+		await this.withErrorHandling(async () => {
+			await this.apiService.post(`/projects/refresh-all`);
 		});
 	}
 

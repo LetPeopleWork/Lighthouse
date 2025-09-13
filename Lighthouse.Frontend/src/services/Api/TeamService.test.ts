@@ -137,6 +137,14 @@ describe("TeamService", () => {
 		expect(mockedAxios.post).toHaveBeenCalledWith("/teams/1");
 	});
 
+	it("should update throughput for all teams", async () => {
+		mockedAxios.post.mockResolvedValueOnce({});
+
+		await teamService.updateAllTeamData();
+
+		expect(mockedAxios.post).toHaveBeenCalledWith("/teams/update-all");
+	});
+
 	it("should update forecast for a team", async () => {
 		mockedAxios.post.mockResolvedValueOnce({});
 
