@@ -94,11 +94,9 @@ namespace Lighthouse.Backend.Factories
 
         public static string SpikedThroughput => "Team Pulsar";
 
-        public static string CleanupHappened => "Team Comet";
-
         public static string OldItems => "Team Gravity";
 
-        public static string MoreClosedThanStarted => "Team Eclipse";
+        public static string PartTimeWork => "Team Lightspeed";
     }
 
     public static class DemoProjectNames

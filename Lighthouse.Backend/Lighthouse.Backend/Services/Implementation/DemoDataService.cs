@@ -207,6 +207,12 @@ namespace Lighthouse.Backend.Services.Implementation
             scrumTeam.Teams.Add(DemoTeamNames.SpikedThroughput);
             premiumScenarios.Add(scrumTeam);
 
+            var itsNotAlwaysWhatItSeems = CreatesScenario(11, "It's Not Always What It Seems", "Two teams that look a certain way on first glance. Explore all Flow Metrics to get a full picture and don't draw conclusions before.");
+            itsNotAlwaysWhatItSeems.IsPremium = true;
+            itsNotAlwaysWhatItSeems.Teams.Add(DemoTeamNames.OldItems);
+            itsNotAlwaysWhatItSeems.Teams.Add(DemoTeamNames.PartTimeWork);
+            premiumScenarios.Add(itsNotAlwaysWhatItSeems);
+
             return premiumScenarios;
         }
 

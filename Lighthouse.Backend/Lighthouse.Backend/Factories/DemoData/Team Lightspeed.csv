@@ -1,0 +1,104 @@
+ID,Type,Name,State,Tags,StartedDate,ClosedDate,Parent
+2502,User Story,Initial Range for Team Metrics,Done,,{-99},{-99},
+2503,User Story,Show Forecast Config in Team Header,Done,,{-99},{-99},
+2505,User Story,Improve Docker Experience,Done,,{-99},{-98},
+2506,Bug,Empty Chips are displayed if Teams/Projects have no tags,Done,,{-99},{-99},
+2552,User Story,Text/Colours has too low contrats,Done,,{-90},{-90},
+2553,Bug,Text for CT Scatterplot is not nicely wrapped,Done,,{-91},{-91},
+2554,User Story,Display Items when clicking on Started vs. Closed Widget,Done,,{-91},{-91},
+2555,User Story,Show closed items per date in TP Chart,Done,,{-91},{-91},
+2556,User Story,Show which Items were in Progress per Day on WIP Run Chart,Done,,{-91},{-91},
+2557,User Story,Show ID of Item in Charts,Done,Rainman,{-90},{-90},
+2558,User Story,Set a System WIP Limit for Teams and Projects,Done,Settings,{-90},{-89},
+2578,User Story,Make timeout configurable for Requests,Done,,{-90},{-90},
+2587,Bug,System WIP in WIP Run Chart is over the button and can't be clicked,Done,,{-85},{-85},
+2588,User Story,Add Link to Offering Obeya,Done,,{-82},{-82},
+2608,Bug,Double Slash fails to open webpage,Done,Jira,{-82},{-82},
+2609,User Story,Validation of Project takes too long,Done,Jira,{-82},{-82},
+2627,User Story,Allow Parent Override for Features as well,Done,Documentation,{-78},{-78},2379
+2628,User Story,Roll-Up Features under the same parent,Done,,{-77},{-77},2379
+2629,User Story,Add toggle to Projects to have flat or rolled-up Grouping,Done,,{-77},{-77},2379
+2640,User Story,Show Objective with correct details,Done,,{-76},{-76},2379
+2652,User Story,Allow to Reorder States for Teams and Projects,Done,,{-76},{-75},2630
+2653,User Story,Work Item Aging Chart,Done,,{-75},{-75},2630
+2654,User Story,Do not update data if no relevant things were changed in Team/Project Edit,Done,,{-76},{-76},
+2655,User Story,Enable Auto-Update using Updateum,Done,,{-75},{-75},2253
+2691,User Story,Store Tags for Items,Done,,{-69},{-69},2638
+2692,User Story,Configure what Blocked means,Done,,{-69},{-69},2638
+2693,User Story,Add Blocked Items widget,Done,,{-69},{-69},2638
+2694,User Story,Show blocked items in Work Item Age Chart,Done,,{-69},{-69},2638
+2708,Bug,Project Metrics cache is not invalidated after update,Done,,{-68},{-68},
+2716,Bug,Validation hangs for Projects,Done,,{-68},{-68},
+2745,User Story,Predictability Score,Done,Documentation,{-63},{-61},
+2785,User Story,Bug Reporting Improvements,Done,,{-56},{-56},
+2786,User Story,Remove Demo Env,Done,,{-56},{-56},
+2806,Bug,Handle Items 0 days Age/Cycle Time,Done,,{-49},{-49},
+2817,Bug,Log Verbosity Change not reflecting in UI when using Docker,Done,,{-49},{-49},
+2818,User Story,Add Donation Button to Footer / Bug Reporting Dialog,Done,,{-49},{-49},
+2819,User Story,Use Icons to indicate Forecast config WIP and SLE,Done,,{-49},{-49},
+2824,User Story,Load one item dynamically from Backend,Done,,{-49},{-48},2740
+2825,User Story,Add all items to override,Done,,{-48},{-47},2740
+2826,User Story,Make items configurable in frontend,Done,,{-49},{-48},2740
+2827,User Story,Add input about more items to translate (reach out),Done,,{-48},{-48},2740
+2828,User Story,Extend Documentation,Done,,{-47},{-47},2740
+2829,Bug,States are Case Sensitive,Done,,{-47},{-47},
+2852,User Story,Import License,Done,,{-42},{-41},2851
+2853,User Story,Display License Information in Toolbar,Done,,{-41},{-41},2851
+2854,User Story,Handle tampering of license in Database,Done,,{-41},{-41},2851
+2855,User Story,Upload new License will override existing one,Done,,{-41},{-41},2851
+2856,User Story,Prevent more than 3 teams if you don't have a license,Done,Documentation,{-39},{-39},2866
+2857,User Story,Prevent more than 1 Project if you don't have a license,Done,Documentation,{-39},{-39},2866
+2858,User Story,Prevent Export/Import of Configuration if you don't have a License,Done,Documentation,{-39},{-39},2866
+2859,User Story,Handle Payment for License,Done,,{-42},{-41},2851
+2860,User Story,License Terms and Conditions,Done,,{-38},{-38},2851
+2861,User Story,Update Website with detailed License Info and Payment,Done,,{-42},{-38},2851
+2862,User Story,Highlight New Release Better,Done,,{-39},{-39},
+2867,User Story,Add Documentation for Licensing,Done,,{-39},{-39},2866
+2870,User Story,Adjust E2E Tests,Done,,{-39},{-39},2866
+2938,User Story,Show Size of Features in Scatterplot,Done,,{-33},{-32},2639
+2939,User Story,Show Percentiles for Size,Done,,{-32},{-32},2639
+2941,User Story,Adjust Historic Feature Size Option Query with Number of Days,Done,Documentation,{-32},{-32},2639
+2958,Bug,Fix showing Feature Size in Teams,Done,,{-31},{-31},
+2959,User Story,Rotate License Key Pair,Done,,{-31},{-31},
+2978,User Story,Remove Archiving of Features,Done,,{-30},{-30},
+2979,Bug,Export from SQLite import to Postgres fails for some teams/projects,Done,,{-30},{-30},
+2980,User Story,Investigate Performance Improvements,Done,,{-30},{-30},
+2981,User Story,Move Date Range selection to the top away from the dashboard,Done,,{-30},{-30},2707
+2983,User Story,Create a uniform way to specify widgets and charts,Done,,{-30},{-29},2707
+2984,User Story,Allow to show additional widgets (team only, project only),Done,,{-29},{-29},2707
+2985,User Story,Allow to resize widgets,Done,,{-27},{-27},2707
+2986,User Story,allow to re-arrange widgets,Done,,{-27},{-27},2707
+2987,User Story,Allow to show/hide widgets,Done,,{-27},{-27},2707
+2988,User Story,Use Grid View for Dashboard Items,Done,,{-30},{-27},2707
+2989,User Story,Adjust E2E Tests,Done,,{-27},{-27},2707
+3014,User Story,Adjust Icons for Features,Done,,{-13},{-13},
+3015,Bug,Dont show Feature Goal if set to automatic,Done,,{-13},{-13},
+3016,User Story,Add CSV as Work Tracking Connector Option,Done,,{-21},{-20},2251
+3017,User Story,Extend WorkTrackingOptions with support for various methods,Done,,{-21},{-20},2251
+3018,User Story,Choose Work Tracking System Type First,Done,,{-20},{-20},2251
+3020,User Story,Limit CSV Projects to 1 without Premium,Done,,{-20},{-20},2251
+3021,User Story,Allow to upload file for CSV Teams as Datasource,Done,,{-20},{-20},2251
+3022,User Story,Handle Validate for CSV,Done,,{-20},{-19},2251
+3023,User Story,Handle Data Loading for CSV Team,Done,,{-20},{-19},2251
+3024,User Story,Make sure Validate/Save works for Projects too,Done,,{-20},{-19},2251
+3026,User Story,Add Option to Settings to Load Demo Data,Done,,{-6},{-6},2758
+3027,User Story,Add Option to load to dashboards when no items are there,Done,,{0},{0},2758
+3029,User Story,Create various scenarios for demo data,Done,,{-7},{-6},2758
+3040,User Story,Update User Doc,Done,,{-13},{-13},2251
+3041,User Story,Extend E2E Tests with CSV Team and Project,Done,,{-18},{-17},2251
+3042,User Story,Update Website with Premium Feature Overview,Done,,{-13},{-13},2251
+3050,Bug,Blocked Items in WIA Chart dont have correct color on tooltip,Done,,{-12},{-12},
+3051,User Story,CSV Configuration Options,Done,,{-17},{-13},2251
+3052,User Story,Display Fetaure Ownership in Dialog,Done,,{-12},{-12},
+3053,User Story,Improve slow loading when you have many features,Done,Documentation,{-8},{-8},
+3059,User Story,Jira Endpoints,Done,,{-15},{-15},
+3071,User Story,Make CSV Connections add/removable,Done,,{-14},{-13},2251
+3073,Bug,CT and WIA Chart should start at 1 not 0,Done,,{-13},{-13},
+3122,User Story,Limit to Premium Users Only,Done,,{-7},{-7},1818
+3123,User Story,Allow Forecasting of New items,Done,,{-7},{-7},1818
+3124,User Story,Choose Date Range,Done,,{-7},{-7},1818
+3125,User Story,Choose Item Types,Done,,{-7},{-7},1818
+3133,User Story,Add Free Use Cases,Done,,{-4},{-1},2758
+3134,User Story,Add Premium Use Cases,Implementation,,{0},,2758
+3162,User Story,Rework Dashboard,Backlog,Release Notes,,,
+3163,User Story,Update All,Backlog,Release Notes,,,

@@ -52,6 +52,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         [Test]
         [TestCase("Flow in Scrum", "A team that is focusing on delivering at the end of their Sprint. What does it do to their flow?")]
+        [TestCase("It's Not Always What It Seems", "Two teams that look a certain way on first glance. Explore all Flow Metrics to get a full picture and don't draw conclusions before.")]
         public void LoadScenarios_ReturnsPremiumScenarios(string scenarioName, string description)
         {
             var subject = CreateSubject();
