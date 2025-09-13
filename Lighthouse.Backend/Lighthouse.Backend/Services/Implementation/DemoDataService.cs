@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation
             this.demoDataFactory = demoDataFactory;
 
             scenarios.AddRange(GetFreeScenarios());
+            scenarios.AddRange(GetPremiumScenarios());
         }
 
         public IEnumerable<DemoDataScenario> GetAllScenarios()
@@ -180,7 +181,7 @@ namespace Lighthouse.Backend.Services.Implementation
             overloadedTeams.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);
             freeScenarios.Add(overloadedTeams);
 
-            var productLaunch = CreatesScenario(3, "Product Launch", "Two teams, one product they work on together. When can we launch?");
+            var productLaunch = CreatesScenario(2, "Product Launch", "Two teams, one product they work on together. When can we launch?");
             productLaunch.Teams.Add(DemoTeamNames.GoodThroughput);
             productLaunch.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);
             productLaunch.Projects.Add(DemoProjectNames.LaunchAlignment);
@@ -194,6 +195,19 @@ namespace Lighthouse.Backend.Services.Implementation
             });
 
             return freeScenarios;
+        }
+
+        private List<DemoDataScenario> GetPremiumScenarios()
+        {
+            var premiumScenarios = new List<DemoDataScenario>();
+
+            var scrumTeam = CreatesScenario(10, "Flow in Scrum", "A team that is focusing on delivering at the end of their Sprint. What does it do to their flow?");
+            scrumTeam.IsPremium = true;
+
+            scrumTeam.Teams.Add(DemoTeamNames.SpikedThroughput);
+            premiumScenarios.Add(scrumTeam);
+
+            return premiumScenarios;
         }
 
         private DemoDataScenario CreatesScenario(int id, string title, string description)

@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Factories
                 var targetDate = today.AddDays(daysOffset);
 
                 return targetDate.ToString("yyyy-MM-dd");
-            });
+            }, RegexOptions.None, TimeSpan.FromSeconds(1));
         }
     }
 

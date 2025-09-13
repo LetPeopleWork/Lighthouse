@@ -51,6 +51,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        [TestCase("Flow in Scrum", "A team that is focusing on delivering at the end of their Sprint. What does it do to their flow?")]
+        public void LoadScenarios_ReturnsPremiumScenarios(string scenarioName, string description)
+        {
+            var subject = CreateSubject();
+
+            var scenarios = subject.GetAllScenarios();
+
+            using (Assert.EnterMultipleScope())
+            {
+                var scenario = scenarios.SingleOrDefault(x => x.Title == scenarioName);
+                Assert.That(scenario, Is.Not.Null);
+                Assert.That(scenario.Description, Is.EqualTo(description));
+                Assert.That(scenario.IsPremium, Is.True);
+            }
+        }
+
+        [Test]
         public async Task LoadScenario_RemovesExistingProjects()
         {
             var projects = new List<Project>
