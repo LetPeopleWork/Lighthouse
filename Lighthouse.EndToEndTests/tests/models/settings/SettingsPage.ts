@@ -4,6 +4,7 @@ import { TeamEditPage } from "../teams/TeamEditPage";
 import { LogsPage } from "./Logs/LogsPage";
 import { SystemSettingsPage } from "./SystemSettings/SystemSettingsPage";
 import { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystems/WorkTrackingSystemsSettingsPage";
+import { DemoDataPage } from "../teams/DemoDataPage";
 
 export class SettingsPage {
 	page: Page;
@@ -16,6 +17,12 @@ export class SettingsPage {
 		await this.page.getByTestId("work-tracking-tab").click();
 
 		return new WorkTrackingSystemsSettingsPage(this.page);
+	}
+
+	async goToDemoData(): Promise<DemoDataPage>{
+		await this.page.getByTestId("demo-data-tab").click();
+
+		return new DemoDataPage(this.page);
 	}
 
 	async goToDefaultTeamSettings(): Promise<TeamEditPage> {
