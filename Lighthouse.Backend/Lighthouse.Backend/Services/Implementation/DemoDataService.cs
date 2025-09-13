@@ -213,6 +213,42 @@ namespace Lighthouse.Backend.Services.Implementation
             itsNotAlwaysWhatItSeems.Teams.Add(DemoTeamNames.PartTimeWork);
             premiumScenarios.Add(itsNotAlwaysWhatItSeems);
 
+            var projectDependencies = CreatesScenario(12, "Dependencies", "Explore a project where we have Epics with multiple Teams involved.");
+            projectDependencies.IsPremium = true;
+
+            projectDependencies.Teams.Add(DemoTeamNames.GoodThroughput);
+            projectDependencies.Teams.Add(DemoTeamNames.PartTimeWork);
+            projectDependencies.Teams.Add(DemoTeamNames.OldItems);
+
+            projectDependencies.Projects.Add(DemoProjectNames.ProjectWithDependencies);
+
+            // Milestone 6 weeks in Future
+            milestones.Add(DemoProjectNames.ProjectWithDependencies, new List<Milestone> 
+            {
+                new Milestone { Name = "Release", Date = DateTime.Now.AddDays(7*6) },
+            });
+
+            premiumScenarios.Add(projectDependencies);
+
+            var quarterlyPlanning = CreatesScenario(13, "Quarterly Planning", "See how a Quarterly Planning could look like for a Team that uses Monte Carlo Forecasts");
+            quarterlyPlanning.IsPremium = true;
+
+            quarterlyPlanning.Teams.Add(DemoTeamNames.GoodThroughput);
+            quarterlyPlanning.Projects.Add(DemoProjectNames.QuarterlyPlanning);
+
+            premiumScenarios.Add(quarterlyPlanning);
+
+            // Milestones for every Sprint (2 weeks)
+            milestones.Add(DemoProjectNames.QuarterlyPlanning, new List<Milestone>
+            {
+                new Milestone { Name = "Sprint 1", Date = DateTime.Now.AddDays(7*2) },
+                new Milestone { Name = "Sprint 2", Date = DateTime.Now.AddDays(7*4) },
+                new Milestone { Name = "Sprint 3", Date = DateTime.Now.AddDays(7*6) },
+                new Milestone { Name = "Sprint 4", Date = DateTime.Now.AddDays(7*8) },
+                new Milestone { Name = "Sprint 5", Date = DateTime.Now.AddDays(7*10) },
+                new Milestone { Name = "Quarterly Demo", Date = DateTime.Now.AddDays(7*12) },
+            });
+
             return premiumScenarios;
         }
 

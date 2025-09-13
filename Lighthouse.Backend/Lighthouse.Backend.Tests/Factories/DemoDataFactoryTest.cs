@@ -37,6 +37,10 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
+        [TestCase("Team Gravity")]
+        [TestCase("Team Lightspeed")]
+        [TestCase("Team Pulsar")]
+        [TestCase("Team Voyager")]
         [TestCase("Team Zenith")]
         public void CreateDemoTeam_CreatesTeamWithCorrectSettings(string teamName)
         {
@@ -75,6 +79,9 @@ namespace Lighthouse.Backend.Tests.Factories
 
         [Test]
         [TestCase("Project Apollo")]
+        [TestCase("Project NeuroLink City")]
+        [TestCase("Project Ocean Explorer")]
+        [TestCase("Project Orion")]
         public void CreateDemoProject_CreatesProjectWithCorrectSettings(string projectName)
         {
             var subject = CreateSubject();

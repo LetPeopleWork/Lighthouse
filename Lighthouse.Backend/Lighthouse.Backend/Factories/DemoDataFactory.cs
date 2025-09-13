@@ -104,5 +104,9 @@ namespace Lighthouse.Backend.Factories
         public static string EpicForecast => "Project Apollo";
 
         public static string LaunchAlignment => "Project Orion";
+
+        public static string ProjectWithDependencies => "Project Ocean Explorer";
+
+        public static string QuarterlyPlanning => "Project NeuroLink City";
     }
 }
