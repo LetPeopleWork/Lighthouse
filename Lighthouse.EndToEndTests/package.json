@@ -23,7 +23,7 @@
     "@types/node": "^24.5.1",
     "cross-env": "^10.0.0",
     "typescript": "^5.9.2",
-    "wait-on": "^8.0.5"
+    "wait-on": "^9.0.0"
   },
   "dependencies": {
     "@types/pixelmatch": "^5.2.6",
