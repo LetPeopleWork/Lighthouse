@@ -47,7 +47,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/date-fns": "^2.6.3",
     "@types/lodash.debounce": "^4.0.9",
-    "@types/node": "^24.5.1",
+    "@types/node": "^24.5.2",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
