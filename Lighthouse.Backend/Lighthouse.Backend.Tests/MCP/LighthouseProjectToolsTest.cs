@@ -1,11 +1,11 @@
 using Lighthouse.Backend.MCP;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Tests.API;
 using Moq;
-using Newtonsoft.Json;
 using NuGet.Protocol;
 
 namespace Lighthouse.Backend.Tests.MCP
@@ -14,14 +14,17 @@ namespace Lighthouse.Backend.Tests.MCP
     {
         private Mock<IRepository<Project>> projectRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
+        private Mock<IProjectMetricsService> projectMetricsServiceMock;
 
         [SetUp]
         public void Setup()
         {
             projectRepositoryMock = new Mock<IRepository<Project>>();
             forecastServiceMock = new Mock<IForecastService>();
+            projectMetricsServiceMock = new Mock<IProjectMetricsService>();
             SetupServiceProviderMock(projectRepositoryMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
+            SetupServiceProviderMock(projectMetricsServiceMock.Object);
         }
 
         [Test]
@@ -459,6 +462,217 @@ namespace Lighthouse.Backend.Tests.MCP
                 Assert.That(totalMilestones, Is.EqualTo(3)); // All milestones
                 Assert.That(futureMilestones, Is.EqualTo(2)); // Only future milestones analyzed
             }
+        }
+
+        [Test]
+        public void GetProjectFlowMetrics_WithExistingProject_ReturnsFlowMetrics()
+        {
+            // Arrange
+            var project = CreateProjectWithTeamsAndFeatures();
+            var startDate = DateTime.Now.AddDays(-30);
+            var endDate = DateTime.Now;
+
+            var mockCycleTimePercentiles = new List<PercentileValue>
+            {
+                new PercentileValue(50, 5),
+                new PercentileValue(70, 8),
+                new PercentileValue(85, 12)
+            };
+
+            var mockCycleTimeData = new List<Feature>
+            {
+                CreateFeatureWithCycleTime(1, "Feature 1", 5),
+                CreateFeatureWithCycleTime(2, "Feature 2", 8)
+            };
+
+            var mockWipData = new RunChartData(new Dictionary<int, List<WorkItemBase>>
+            {
+                { 0, new List<WorkItemBase> { new WorkItem(), new WorkItem(), new WorkItem() } },
+                { 15, new List<WorkItemBase> { new WorkItem(), new WorkItem(), new WorkItem(), new WorkItem(), new WorkItem() } },
+                { 30, new List<WorkItemBase> { new WorkItem(), new WorkItem() } }
+            });
+
+            var mockThroughputData = new RunChartData(new Dictionary<int, List<WorkItemBase>>
+            {
+                { 0, new List<WorkItemBase>() },
+                { 10, new List<WorkItemBase> { new WorkItem(), new WorkItem() } },
+                { 20, new List<WorkItemBase> { new WorkItem() } },
+                { 30, new List<WorkItemBase> { new WorkItem(), new WorkItem(), new WorkItem() } }
+            });
+
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
+            
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimePercentilesForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(mockCycleTimePercentiles);
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(mockCycleTimeData);
+            projectMetricsServiceMock.Setup(x => x.GetFeaturesInProgressOverTimeForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(mockWipData);
+            projectMetricsServiceMock.Setup(x => x.GetThroughputForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(mockThroughputData);
+
+            var subject = CreateSubject();
+
+            // Act
+            var result = subject.GetProjectFlowMetrics(project.Name, startDate, endDate);
+
+            // Assert
+            using (Assert.EnterMultipleScope())
+            {
+                var flowMetrics = result.FromJson<dynamic>();
+
+                string projectName = Convert.ToString(flowMetrics.ProjectName);
+                int projectId = Convert.ToInt32(flowMetrics.ProjectId);
+
+                Assert.That(projectName, Is.EqualTo(project.Name));
+                Assert.That(projectId, Is.EqualTo(project.Id));
+
+                // Verify date range
+                var dateRange = flowMetrics.DateRange;
+                Assert.That(dateRange, Is.Not.Null);
+
+                // Verify metrics are included
+                Assert.That(flowMetrics.CycleTimePercentiles, Is.Not.Null);
+                Assert.That(flowMetrics.CycleTimes, Is.Not.Null);
+                Assert.That(flowMetrics.WorkInProgress, Is.Not.Null);
+                Assert.That(flowMetrics.Throughput, Is.Not.Null);
+
+                // Verify project summary
+                var projectSummary = flowMetrics.ProjectSummary;
+                Assert.That(projectSummary, Is.Not.Null);
+                
+                int totalFeatures = Convert.ToInt32(projectSummary.TotalFeatures);
+                int activeFeatures = Convert.ToInt32(projectSummary.ActiveFeatures);
+                
+                Assert.That(totalFeatures, Is.EqualTo(project.Features.Count));
+                Assert.That(activeFeatures, Is.EqualTo(project.Features.Count(f => f.StateCategory == StateCategories.Doing)));
+            }
+
+            // Verify service calls were made
+            projectMetricsServiceMock.Verify(x => x.GetCycleTimePercentilesForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            projectMetricsServiceMock.Verify(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            projectMetricsServiceMock.Verify(x => x.GetFeaturesInProgressOverTimeForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            projectMetricsServiceMock.Verify(x => x.GetThroughputForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+        }
+
+        [Test]
+        public void GetProjectFlowMetrics_WithNonExistingProject_ReturnsNotFoundMessage()
+        {
+            // Arrange
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns((Project?)null);
+
+            var subject = CreateSubject();
+
+            // Act
+            var result = subject.GetProjectFlowMetrics("NonExistentProject", DateTime.Now.AddDays(-30), DateTime.Now);
+
+            // Assert
+            Assert.That(result, Is.EqualTo("No project found with name NonExistentProject"));
+        }
+
+        [Test]
+        public void GetProjectFlowMetrics_WithNullDates_UsesDefaultDateRange()
+        {
+            // Arrange
+            var project = CreateProjectWithTeamsAndFeatures();
+
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
+            
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimePercentilesForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new List<PercentileValue>());
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new List<Feature>());
+            projectMetricsServiceMock.Setup(x => x.GetFeaturesInProgressOverTimeForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new RunChartData());
+            projectMetricsServiceMock.Setup(x => x.GetThroughputForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new RunChartData());
+
+            var subject = CreateSubject();
+
+            // Act - Pass null dates to test default behavior
+            var result = subject.GetProjectFlowMetrics(project.Name, null, null);
+
+            // Assert
+            using (Assert.EnterMultipleScope())
+            {
+                var flowMetrics = result.FromJson<dynamic>();
+
+                // Verify it returns data (not error message)
+                string projectName = Convert.ToString(flowMetrics.ProjectName);
+                Assert.That(projectName, Is.EqualTo(project.Name));
+
+                // Verify default date range is used (90 days)
+                var dateRange = flowMetrics.DateRange;
+                int daysInRange = Convert.ToInt32(dateRange.DaysInRange);
+                Assert.That(daysInRange, Is.EqualTo(90));
+            }
+
+            // Verify service calls were made with default date range
+            projectMetricsServiceMock.Verify(x => x.GetCycleTimePercentilesForProject(
+                project, 
+                It.Is<DateTime>(d => d.Date == DateTime.Now.AddDays(-90).Date),
+                It.Is<DateTime>(d => d.Date == DateTime.Now.Date)), 
+                Times.Once);
+        }
+
+        private Project CreateProjectWithTeamsAndFeatures()
+        {
+            var project = CreateProject();
+            
+            // Add teams
+            var team1 = new Team { Id = 1, Name = "Development Team", WorkTrackingSystemConnectionId = 1 };
+            var team2 = new Team { Id = 2, Name = "QA Team", WorkTrackingSystemConnectionId = 1 };
+            project.Teams.Add(team1);
+            project.Teams.Add(team2);
+            
+            // Add features
+            var feature1 = new Feature
+            {
+                Id = 1,
+                Name = "Feature 1",
+                ReferenceId = "FTR-1",
+                State = "Active",
+                StateCategory = StateCategories.Doing,
+                OwningTeam = "Development Team",
+                Url = "https://example.com/feature/1"
+            };
+            
+            var feature2 = new Feature
+            {
+                Id = 2,
+                Name = "Feature 2",
+                ReferenceId = "FTR-2",
+                State = "Done",
+                StateCategory = StateCategories.Done,
+                OwningTeam = "Development Team",
+                Url = "https://example.com/feature/2"
+            };
+            
+            project.Features.Add(feature1);
+            project.Features.Add(feature2);
+            
+            return project;
+        }
+
+        private Feature CreateFeatureWithCycleTime(int id, string name, int cycleTime)
+        {
+            var startDate = DateTime.Now.AddDays(-cycleTime - 5);
+            var endDate = DateTime.Now.AddDays(-5);
+            
+            return new Feature
+            {
+                Id = id,
+                Name = name,
+                ReferenceId = $"FTR-{id}",
+                State = "Done",
+                StateCategory = StateCategories.Done,
+                OwningTeam = "Development Team",
+                Url = $"https://example.com/feature/{id}",
+                StartedDate = startDate,
+                ClosedDate = endDate
+            };
         }
     }
 }

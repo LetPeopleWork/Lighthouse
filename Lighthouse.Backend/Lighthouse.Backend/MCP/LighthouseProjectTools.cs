@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using ModelContextProtocol.Server;
 using NuGet.Protocol;
@@ -293,6 +294,54 @@ namespace Lighthouse.Backend.MCP
                         } : "No future milestones to analyze",
                     Milestones = milestoneAnalysis,
                     LastUpdated = project.UpdateTime
+                });
+            }
+        }
+
+        [McpServerTool, Description("Get Flow Metrics of the specified Project in a given time range")]
+        public string GetProjectFlowMetrics(string projectName, DateTime? startDate, DateTime? endDate)
+        {
+            var rangeStart = startDate ?? DateTime.Now.AddDays(-90);
+            var rangeEnd = endDate ?? DateTime.Now;
+
+            using (var scope = CreateServiceScope())
+            {
+                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+                var projectMetricsService = GetServiceFromServiceScope<IProjectMetricsService>(scope);
+
+                var project = GetProjectByName(projectName, projectRepo);
+                if (project == null)
+                {
+                    return $"No project found with name {projectName}";
+                }
+
+                var cycleTimePercentiles = projectMetricsService.GetCycleTimePercentilesForProject(project, rangeStart, rangeEnd);
+                var cycleTimes = projectMetricsService.GetCycleTimeDataForProject(project, rangeStart, rangeEnd).Select(f => f.CycleTime);
+                var wip = projectMetricsService.GetFeaturesInProgressOverTimeForProject(project, rangeStart, rangeEnd);
+                var throughput = projectMetricsService.GetThroughputForProject(project, rangeStart, rangeEnd);
+
+                return ToJson(new
+                {
+                    ProjectName = project.Name,
+                    ProjectId = project.Id,
+                    DateRange = new
+                    {
+                        StartDate = rangeStart,
+                        EndDate = rangeEnd,
+                        DaysInRange = (rangeEnd - rangeStart).Days
+                    },
+                    CycleTimePercentiles = cycleTimePercentiles,
+                    CycleTimes = cycleTimes,
+                    WorkInProgress = wip,
+                    Throughput = throughput,
+                    ProjectSummary = new
+                    {
+                        TotalFeatures = project.Features.Count,
+                        ActiveFeatures = project.Features.Count(f => f.StateCategory == StateCategories.Doing),
+                        CompletedFeatures = project.Features.Count(f => f.StateCategory == StateCategories.Done),
+                        InvolvedTeams = project.Teams.Select(t => new { t.Id, t.Name }).ToList(),
+                        LastUpdated = project.UpdateTime
+                    }
                 });
             }
         }
