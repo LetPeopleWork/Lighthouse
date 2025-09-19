@@ -257,15 +257,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private async Task UpdateUnparentedItems(Project project)
         {
-            if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
-            {
-                logger.LogDebug("Skipping Unparented Items for Project {ProjectName} - No Query defined", project.Name);
-                return;
-            }
-
             logger.LogInformation("Getting Unparented Items for Project {ProjectName}", project.Name);
 
             var unparentedFeature = await GetOrAddUnparentedFeature(project);
+
+            if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
+            {
+                logger.LogDebug("Skipping Unparented Items for Project {ProjectName} - No Query defined", project.Name);
+                project.Features.Remove(unparentedFeature);
+                featureRepository.Remove(unparentedFeature.Id);
+
+                return;
+            }
 
             foreach (var team in project.Teams)
             {

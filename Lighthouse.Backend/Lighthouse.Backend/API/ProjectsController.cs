@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.API
             project.Name = projectSetting.Name;
             project.WorkItemTypes = projectSetting.WorkItemTypes;
             project.WorkItemQuery = projectSetting.WorkItemQuery;
-            project.UnparentedItemsQuery = projectSetting.UnparentedItemsQuery;
+            project.UnparentedItemsQuery = projectSetting.UnparentedItemsQuery?.Trim();
 
             project.UsePercentileToCalculateDefaultAmountOfWorkItems = projectSetting.UsePercentileToCalculateDefaultAmountOfWorkItems;
             project.DefaultAmountOfWorkItemsPerFeature = projectSetting.DefaultAmountOfWorkItemsPerFeature;
