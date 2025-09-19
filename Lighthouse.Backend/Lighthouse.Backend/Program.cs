@@ -193,8 +193,7 @@ namespace Lighthouse.Backend
                     .WithTools<LighthouseTeamTools>()
                     .WithTools<LighthouseProjectTools>()
                     .WithTools<LighthouseFeatureTools>()
-                    .WithGetPromptHandler((request, cancellationToken) => ValueTask.FromResult(new GetPromptResult()))
-                    .WithListPromptsHandler((request, cancellationToken) => ValueTask.FromResult(new ListPromptsResult()))
+                    .WithPrompts<LighthousePrompts>()
                     .WithReadResourceHandler((request, cancellationToken) => ValueTask.FromResult(new ReadResourceResult()))
                     .WithListResourcesHandler((request, cancellationToken) => ValueTask.FromResult(new ListResourcesResult()));
             }
