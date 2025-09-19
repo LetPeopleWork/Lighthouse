@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using ModelContextProtocol.Server;
 using NuGet.Protocol;
@@ -123,6 +122,178 @@ namespace Lighthouse.Backend.MCP
                         t.UpdateTime
                     })
                     .ToJson();
+            }
+        }
+
+        [McpServerTool, Description("Run a When Forecast for a Project")]
+        public string RunProjectWhenForecast(string projectName)
+        {
+            using (var scope = CreateServiceScope())
+            {
+                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+
+                var project = GetProjectByName(projectName, projectRepo);
+                if (project == null)
+                {
+                    return $"No project found with name {projectName}";
+                }
+
+                if (project.Features.Count == 0)
+                {
+                    return $"Project {projectName} has no features to forecast";
+                }
+
+                // Get all features with remaining work
+                var featuresWithWork = project.Features
+                    .Where(f => f.FeatureWork.Sum(fw => fw.RemainingWorkItems) > 0)
+                    .ToList();
+
+                if (featuresWithWork.Count == 0)
+                {
+                    return ToJson(new
+                    {
+                        ProjectName = project.Name,
+                        ProjectId = project.Id,
+                        Message = "All features in the project are completed",
+                        TotalFeatures = project.Features.Count,
+                        CompletedFeatures = project.Features.Count,
+                        ProjectCompletionStatus = "Complete"
+                    });
+                }
+
+                // Find the feature that will complete latest by checking the 85th percentile forecast
+                // (using 85th percentile as a reasonable confidence level for project planning)
+                var latestFeature = featuresWithWork
+                    .Where(f => f.Forecast != null)
+                    .OrderByDescending(f => f.Forecast.GetProbability(85))
+                    .FirstOrDefault();
+
+                if (latestFeature == null)
+                {
+                    return $"Project {projectName} features do not have forecast data available";
+                }
+
+                var totalRemainingWork = featuresWithWork.Sum(f => f.FeatureWork.Sum(fw => fw.RemainingWorkItems));
+
+                return ToJson(new
+                {
+                    ProjectName = project.Name,
+                    ProjectId = project.Id,
+                    CriticalPathFeature = new
+                    {
+                        latestFeature.Id,
+                        latestFeature.Name,
+                        latestFeature.ReferenceId,
+                        RemainingWork = latestFeature.FeatureWork.Sum(fw => fw.RemainingWorkItems)
+                    },
+                    ProjectForecast = new
+                    {
+                        Probability50 = latestFeature.Forecast.GetProbability(50),
+                        Probability70 = latestFeature.Forecast.GetProbability(70),
+                        Probability85 = latestFeature.Forecast.GetProbability(85),
+                        Probability95 = latestFeature.Forecast.GetProbability(95)
+                    },
+                    ConfidenceIntervals = new
+                    {
+                        High = $"{latestFeature.Forecast.GetProbability(50)} days (50% confidence)",
+                        Medium = $"{latestFeature.Forecast.GetProbability(70)} days (70% confidence)",
+                        Low = $"{latestFeature.Forecast.GetProbability(85)} days (85% confidence)",
+                        VeryLow = $"{latestFeature.Forecast.GetProbability(95)} days (95% confidence)"
+                    },
+                    EstimatedCompletionDates = new
+                    {
+                        Probability50 = DateTime.Today.AddDays(latestFeature.Forecast.GetProbability(50)),
+                        Probability70 = DateTime.Today.AddDays(latestFeature.Forecast.GetProbability(70)),
+                        Probability85 = DateTime.Today.AddDays(latestFeature.Forecast.GetProbability(85)),
+                        Probability95 = DateTime.Today.AddDays(latestFeature.Forecast.GetProbability(95))
+                    },
+                    ProjectSummary = new
+                    {
+                        TotalFeatures = project.Features.Count,
+                        FeaturesWithRemainingWork = featuresWithWork.Count,
+                        TotalRemainingWork = totalRemainingWork,
+                        InvolvedTeams = project.Teams.Select(t => new { t.Id, t.Name }).ToList()
+                    }
+                });
+            }
+        }
+
+        [McpServerTool, Description("Get project milestones with likelihood analysis")]
+        public string GetProjectMilestones(string projectName)
+        {
+            using (var scope = CreateServiceScope())
+            {
+                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+
+                var project = GetProjectByName(projectName, projectRepo);
+                if (project == null)
+                {
+                    return $"No project found with name {projectName}";
+                }
+
+                if (project.Milestones.Count == 0)
+                {
+                    return $"Project {projectName} has no milestones defined";
+                }
+
+                var milestoneAnalysis = project.Milestones
+                    .Where(m => m.Date >= DateTime.Today) // Only future milestones
+                    .OrderBy(m => m.Date)
+                    .Select(milestone =>
+                    {
+                        // Calculate overall project likelihood for this milestone
+                        var featureLikelihoods = project.Features
+                            .Where(f => f.FeatureWork.Sum(fw => fw.RemainingWorkItems) > 0)
+                            .Select(f => f.GetLikelhoodForDate(milestone.Date))
+                            .ToList();
+
+                        var averageLikelihood = featureLikelihoods.Any() ? featureLikelihoods.Average() : 100.0;
+                        var minLikelihood = featureLikelihoods.Any() ? featureLikelihoods.Min() : 100.0;
+                        var maxLikelihood = featureLikelihoods.Any() ? featureLikelihoods.Max() : 100.0;
+
+                        return new
+                        {
+                            milestone.Id,
+                            milestone.Name,
+                            milestone.Date,
+                            DaysFromNow = (milestone.Date - DateTime.Today).Days,
+                            OverallLikelihood = Math.Round(averageLikelihood, 1),
+                            LikelihoodRange = new
+                            {
+                                Min = Math.Round(minLikelihood, 1),
+                                Max = Math.Round(maxLikelihood, 1),
+                                Average = Math.Round(averageLikelihood, 1)
+                            },
+                            RiskAssessment = averageLikelihood switch
+                            {
+                                >= 80 => "Low Risk - Very likely to be met",
+                                >= 60 => "Medium Risk - Likely to be met with some uncertainty",
+                                >= 40 => "High Risk - Uncertain, may require intervention",
+                                _ => "Very High Risk - Unlikely to be met without significant changes"
+                            },
+                            FeaturesAnalyzed = featureLikelihoods.Count,
+                            RemainingFeatures = project.Features.Count(f => f.FeatureWork.Sum(fw => fw.RemainingWorkItems) > 0)
+                        };
+                    })
+                    .ToList();
+
+                return ToJson(new
+                {
+                    ProjectName = project.Name,
+                    ProjectId = project.Id,
+                    TotalMilestones = project.Milestones.Count,
+                    FutureMilestones = milestoneAnalysis.Count,
+                    OverallProjectHealth = milestoneAnalysis.Any() ? 
+                        milestoneAnalysis.Average(m => m.OverallLikelihood) switch
+                        {
+                            >= 80 => "Healthy - Most milestones likely to be met",
+                            >= 60 => "Moderate - Some milestones at risk",
+                            >= 40 => "At Risk - Many milestones uncertain",
+                            _ => "Critical - Most milestones unlikely to be met"
+                        } : "No future milestones to analyze",
+                    Milestones = milestoneAnalysis,
+                    LastUpdated = project.UpdateTime
+                });
             }
         }
 
