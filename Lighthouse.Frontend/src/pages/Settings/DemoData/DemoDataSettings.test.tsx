@@ -63,7 +63,7 @@ describe("DemoDataSettings", () => {
 		});
 	});
 
-	it("displays warning alert about data removal", async () => {
+	it("displays warning alert about data removal and backup advice", async () => {
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue([]);
 
 		render(
@@ -76,6 +76,11 @@ describe("DemoDataSettings", () => {
 			expect(
 				screen.getByText(
 					"Important: Loading demo data will remove all existing teams and projects!",
+				),
+			).toBeInTheDocument();
+			expect(
+				screen.getByText(
+					"This action cannot be undone. Please make a backup of your current configuration before proceeding.",
 				),
 			).toBeInTheDocument();
 		});
@@ -129,7 +134,7 @@ describe("DemoDataSettings", () => {
 		expect(screen.getByText("Premium")).toBeInTheDocument();
 	});
 
-	it("loads scenario when load button is clicked", async () => {
+	it("loads scenario when load button is clicked and confirmed", async () => {
 		const user = userEvent.setup();
 		const mockScenarios: IDemoDataScenario[] = [
 			{
@@ -156,9 +161,99 @@ describe("DemoDataSettings", () => {
 		const loadButton = screen.getByText("Load Scenario");
 		await user.click(loadButton);
 
-		expect(mockDemoDataService.loadScenario).toHaveBeenCalledWith(
-			"small-startup",
+		// Should show confirmation dialog
+		await waitFor(() => {
+			expect(screen.getByText("Confirm Demo Data Loading")).toBeInTheDocument();
+		});
+
+		// Click the proceed button
+		const proceedButton = screen.getByText("Proceed with Loading");
+		await user.click(proceedButton);
+
+		await waitFor(() => {
+			expect(mockDemoDataService.loadScenario).toHaveBeenCalledWith(
+				"small-startup",
+			);
+		});
+	});
+
+	it("does not load scenario when canceled in confirmation dialog", async () => {
+		const user = userEvent.setup();
+		const mockScenarios: IDemoDataScenario[] = [
+			{
+				id: "small-startup",
+				title: "Small Startup",
+				description: "A basic setup",
+				isPremium: false,
+			},
+		];
+
+		mockDemoDataService.getAvailableScenarios.mockResolvedValue(mockScenarios);
+		mockDemoDataService.loadScenario.mockResolvedValue(undefined);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<DemoDataSettings />
+			</ApiServiceContext.Provider>,
 		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Small Startup")).toBeInTheDocument();
+		});
+
+		const loadButton = screen.getByText("Load Scenario");
+		await user.click(loadButton);
+
+		// Should show confirmation dialog
+		await waitFor(() => {
+			expect(screen.getByText("Confirm Demo Data Loading")).toBeInTheDocument();
+		});
+
+		// Click the cancel button
+		const cancelButton = screen.getByText("Cancel");
+		await user.click(cancelButton);
+
+		// Should not call the service
+		expect(mockDemoDataService.loadScenario).not.toHaveBeenCalled();
+
+		// Dialog should be closed
+		await waitFor(() => {
+			expect(
+				screen.queryByText("Confirm Demo Data Loading"),
+			).not.toBeInTheDocument();
+		});
+	});
+
+	it("shows confirmation dialog for load all scenarios", async () => {
+		const user = userEvent.setup();
+		mockDemoDataService.getAvailableScenarios.mockResolvedValue([]);
+		mockDemoDataService.loadAllScenarios.mockResolvedValue(undefined);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<DemoDataSettings />
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Load All Scenarios")).toBeInTheDocument();
+		});
+
+		const loadAllButton = screen.getByText("Load All");
+		await user.click(loadAllButton);
+
+		// Should show confirmation dialog
+		await waitFor(() => {
+			expect(screen.getByText("Confirm Demo Data Loading")).toBeInTheDocument();
+		});
+
+		// Click the proceed button
+		const proceedButton = screen.getByText("Proceed with Loading");
+		await user.click(proceedButton);
+
+		await waitFor(() => {
+			expect(mockDemoDataService.loadAllScenarios).toHaveBeenCalled();
+		});
 	});
 
 	it("shows load all button for premium users", async () => {

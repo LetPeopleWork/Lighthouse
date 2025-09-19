@@ -3,10 +3,15 @@ import InfoIcon from "@mui/icons-material/Info";
 import LoadingButton from "@mui/lab/LoadingButton";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
@@ -15,7 +20,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useId, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IDemoDataScenario } from "../../../models/DemoData/IDemoData";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -27,10 +32,18 @@ const DemoDataSettings: React.FC = () => {
 		null,
 	);
 	const [loadingAll, setLoadingAll] = useState(false);
+	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+	const [pendingAction, setPendingAction] = useState<{
+		type: "scenario" | "all";
+		scenarioId?: string;
+	} | null>(null);
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { demoDataService } = useContext(ApiServiceContext);
 	const { licenseStatus } = useLicenseRestrictions();
+
+	const dialogTitleId = useId();
+	const dialogDescriptionId = useId();
 
 	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? false;
 
@@ -75,6 +88,28 @@ const DemoDataSettings: React.FC = () => {
 		}
 	};
 
+	const handleConfirmScenario = (scenarioId: string) => {
+		setPendingAction({ type: "scenario", scenarioId });
+		setConfirmDialogOpen(true);
+	};
+
+	const handleConfirmAllScenarios = () => {
+		setPendingAction({ type: "all" });
+		setConfirmDialogOpen(true);
+	};
+
+	const handleConfirmDialogClose = (confirmed: boolean) => {
+		if (confirmed && pendingAction) {
+			if (pendingAction.type === "scenario" && pendingAction.scenarioId) {
+				handleLoadScenario(pendingAction.scenarioId);
+			} else if (pendingAction.type === "all") {
+				handleLoadAllScenarios();
+			}
+		}
+		setConfirmDialogOpen(false);
+		setPendingAction(null);
+	};
+
 	if (loading) {
 		return (
 			<Box display="flex" justifyContent="center" p={4}>
@@ -108,9 +143,9 @@ const DemoDataSettings: React.FC = () => {
 					Important: Loading demo data will remove all existing teams and
 					projects!
 				</Typography>
-				<Typography variant="body2" color="text.secondary">
-					This action cannot be undone. Make sure to export your current
-					configuration if you want to preserve it.
+				<Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+					This action cannot be undone. Please make a backup of your current
+					configuration before proceeding.
 				</Typography>
 			</Alert>
 
@@ -161,7 +196,7 @@ const DemoDataSettings: React.FC = () => {
 									variant="contained"
 									fullWidth
 									loading={loadingScenarioId === scenario.id}
-									onClick={() => handleLoadScenario(scenario.id)}
+									onClick={() => handleConfirmScenario(scenario.id)}
 									disabled={scenario.isPremium && !canUsePremiumFeatures}
 									color="primary"
 								>
@@ -211,7 +246,7 @@ const DemoDataSettings: React.FC = () => {
 					variant="contained"
 					color="secondary"
 					loading={loadingAll}
-					onClick={handleLoadAllScenarios}
+					onClick={handleConfirmAllScenarios}
 					disabled={!canUsePremiumFeatures}
 					sx={{
 						bgcolor: "white",
@@ -280,6 +315,49 @@ const DemoDataSettings: React.FC = () => {
 					</Box>
 				</Stack>
 			</Paper>
+
+			{/* Confirmation Dialog */}
+			<Dialog
+				open={confirmDialogOpen}
+				onClose={() => handleConfirmDialogClose(false)}
+				aria-labelledby={dialogTitleId}
+				aria-describedby={dialogDescriptionId}
+			>
+				<DialogTitle id={dialogTitleId}>Confirm Demo Data Loading</DialogTitle>
+				<DialogContent>
+					<Box id={dialogDescriptionId}>
+						<Typography variant="body1" sx={{ fontWeight: "medium", mb: 2 }}>
+							⚠️ This action will permanently delete all existing teams and
+							projects!
+						</Typography>
+						<Typography variant="body2" sx={{ mb: 2 }}>
+							{pendingAction?.type === "all"
+								? "Loading all scenarios will replace your current data with comprehensive demo content."
+								: "Loading this scenario will replace your current data with the selected demo content."}
+						</Typography>
+						<Typography variant="body2" color="text.secondary">
+							Please ensure you have backed up your configuration before
+							proceeding. This action cannot be undone.
+						</Typography>
+					</Box>
+				</DialogContent>
+				<DialogActions>
+					<Button
+						onClick={() => handleConfirmDialogClose(false)}
+						color="primary"
+					>
+						Cancel
+					</Button>
+					<Button
+						onClick={() => handleConfirmDialogClose(true)}
+						color="error"
+						variant="contained"
+						autoFocus
+					>
+						Proceed with Loading
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Box>
 	);
 };
