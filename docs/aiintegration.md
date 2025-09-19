@@ -37,21 +37,21 @@ Lighthouse is using *Server Side Events (SSE)* as technology, so you don't need 
 Following are some example configurations. We're assuming that Lighthouse is running on your local machine, on port 8080.
 
 ## VS Code Copilot
-VS Code Copilot supports MCP Servers based on SSE, so all you need to do is to add this configuration and you should be good to go:
+VS Code Copilot supports MCP Servers via HTTP transport. Use this configuration:
 
 ```json
     "mcp": {
         "servers": {
             "lighthouse-mcp": {
-                "type": "sse",
-                "url": "http://localhost:8080/sse"
+                "type": "http",
+                "url": "http://localhost:8080"
             }
         }
     },
 ```
 
 ## Claude Desktop
-At the time of writing, Claude was not yet supporting *SSE* out of the box. However, you can use an adapter MCP server to work around this problem. The following configuration was tested successfully.
+Claude Desktop supports MCP via HTTP transport. Use this configuration:
 
 ```json
     "mcpServers": {
@@ -59,7 +59,7 @@ At the time of writing, Claude was not yet supporting *SSE* out of the box. Howe
             "command": "npx",
             "args": [
                 "mcp-remote",
-                "http://localhost:8080/sse"
+                "http://localhost:8080"
             ]
         }
     }

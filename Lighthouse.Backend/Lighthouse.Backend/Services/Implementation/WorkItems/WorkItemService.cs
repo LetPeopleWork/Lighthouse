@@ -140,14 +140,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             logger.LogInformation("Extrapolating Not Broken Down Features for Project {ProjectName}", project.Name);
 
-            var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
-
             foreach (var feature in project.GetFeaturesToExtrapolate())
             {
                 logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
                 feature.IsUsingDefaultFeatureSize = true;
 
-                var remainingWork = GetExtrapolatedRemainingWork(project, workItemService, feature);
+                var remainingWork = GetExtrapolatedRemainingWork(project, feature);
 
                 AssignExtrapolatedWorkToTeams(project, feature, remainingWork);
 
@@ -190,17 +188,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private int GetExtrapolatedRemainingWork(Project project, IWorkTrackingConnector workItemService, Feature feature)
+        private int GetExtrapolatedRemainingWork(Project project, Feature feature)
         {
             if (feature.EstimatedSize > 0)
             {
                 return feature.EstimatedSize;
             }
 
-            return GetDefaultRemainingWork(project, workItemService);
+            return GetDefaultRemainingWork(project);
         }
 
-        private int GetDefaultRemainingWork(Project project, IWorkTrackingConnector workItemService)
+        private int GetDefaultRemainingWork(Project project)
         {
             if (defaultWorkItemsBasedOnPercentile.TryGetValue(project.Id, out var defaultItems))
             {
