@@ -7,7 +7,7 @@ import {
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -29,6 +29,10 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
 	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
 	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(false);
+	const [probabilityInputValue, setProbabilityInputValue] =
+		useState<string>("");
+
+	const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const { getTerm } = useTerminology();
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
@@ -55,7 +59,21 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			(settings.blockedTags && settings.blockedTags.length > 0) ||
 				(settings.blockedStates && settings.blockedStates.length > 0),
 		);
+
+		// Initialize probability input value with current setting
+		setProbabilityInputValue(
+			settings.serviceLevelExpectationProbability.toString(),
+		);
 	}, [settings, showFeatureWip]);
+
+	// Cleanup timeout on unmount
+	useEffect(() => {
+		return () => {
+			if (debounceTimeoutRef.current) {
+				clearTimeout(debounceTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	const handleWipLimitEnableChange = (checked: boolean) => {
 		setIsWipLimitEnabled(checked);
@@ -69,7 +87,9 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 
 	const handleWipLimitChange = (value: string) => {
 		const newLimit = Number.parseInt(value, 10);
-		onSettingsChange("systemWIPLimit", newLimit);
+		if (!Number.isNaN(newLimit)) {
+			onSettingsChange("systemWIPLimit", newLimit);
+		}
 	};
 
 	const handleFeatureWipEnableChange = (checked: boolean) => {
@@ -88,7 +108,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const handleFeatureWipChange = (value: string) => {
 		const newFeatureWip = Number.parseInt(value, 10);
 
-		if ("featureWIP" in settings) {
+		if (!Number.isNaN(newFeatureWip) && "featureWIP" in settings) {
 			onSettingsChange("featureWIP" as keyof T, newFeatureWip);
 		}
 	};
@@ -96,23 +116,50 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const handleSleEnableChange = (checked: boolean) => {
 		setIsSleEnabled(checked);
 
+		// Clear any pending debounced updates
+		if (debounceTimeoutRef.current) {
+			clearTimeout(debounceTimeoutRef.current);
+			debounceTimeoutRef.current = null;
+		}
+
 		if (checked) {
 			onSettingsChange("serviceLevelExpectationProbability", 70);
 			onSettingsChange("serviceLevelExpectationRange", 10);
+			setProbabilityInputValue("70");
 		} else {
 			onSettingsChange("serviceLevelExpectationProbability", 0);
 			onSettingsChange("serviceLevelExpectationRange", 0);
+			setProbabilityInputValue("0");
 		}
 	};
 
+	const debouncedProbabilityChange = useCallback(
+		(value: string) => {
+			if (debounceTimeoutRef.current) {
+				clearTimeout(debounceTimeoutRef.current);
+			}
+
+			debounceTimeoutRef.current = setTimeout(() => {
+				const numValue = Number.parseInt(value, 10);
+				if (!Number.isNaN(numValue)) {
+					onSettingsChange("serviceLevelExpectationProbability", numValue);
+				}
+			}, 300); // 300ms delay for responsive user experience
+		},
+		[onSettingsChange],
+	);
+
 	const handleProbabilityChange = (value: string) => {
-		const numValue = Number.parseInt(value, 10);
-		onSettingsChange("serviceLevelExpectationProbability", numValue);
+		setProbabilityInputValue(value);
+		debouncedProbabilityChange(value);
 	};
 
 	const handleRangeChange = (value: string) => {
 		const numValue = Number.parseInt(value, 10);
-		onSettingsChange("serviceLevelExpectationRange", numValue);
+
+		if (!Number.isNaN(numValue)) {
+			onSettingsChange("serviceLevelExpectationRange", numValue);
+		}
 	};
 
 	const handleAddBlockedTag = (tag: string) => {
@@ -268,7 +315,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							type="number"
 							fullWidth
 							margin="normal"
-							value={settings.serviceLevelExpectationProbability}
+							value={probabilityInputValue}
 							slotProps={{
 								htmlInput: {
 									min: 50,

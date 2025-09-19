@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
@@ -350,8 +350,13 @@ describe("FlowMetricsConfigurationComponent", () => {
 			await user.clear(probabilityInput);
 			await user.type(probabilityInput, "85");
 
-			// Just verify that onSettingsChange was called after updating the input
-			expect(mockOnSettingsChange).toHaveBeenCalled();
+			// Wait for the debounced callback to be called
+			await waitFor(
+				() => {
+					expect(mockOnSettingsChange).toHaveBeenCalled();
+				},
+				{ timeout: 600 },
+			);
 		});
 
 		it("should update range value when input changes", async () => {
@@ -971,8 +976,8 @@ describe("FlowMetricsConfigurationComponent", () => {
 			await user.clear(wipLimitInput);
 			await user.type(wipLimitInput, "abc"); // Non-numeric input
 
-			// Should still be called with NaN which will be handled by the component
-			expect(mockOnSettingsChange).toHaveBeenCalled();
+			// Should not be called with NaN which will be handled by the component
+			expect(mockOnSettingsChange).not.toHaveBeenCalled();
 		});
 
 		it("should ensure minimum value constraints are enforced visually", () => {
