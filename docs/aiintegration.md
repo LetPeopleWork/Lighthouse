@@ -75,8 +75,21 @@ Tools can be used by your LLM out of the context, or as a specific action (for e
 
 The following tools are available on the Lighthouse MCP Server:
 
+### Team Tools
 - *GetAllTeams*: Gets all teams configured in Lighthouse
 - *GetTeamByName*: Gets a specific team with details by name
 - *RunHowManyForecast*: Runs a forecast for a specified team and a given date range to identify how many items can be closed in this time
 - *RunWhenForecast*: Runs a forecast for a specified team and a given number of items to identify when they will be closed
 - *GetFlowMetricsForTeam*: Gets the metrics for the specified team
+
+### Project Tools
+- *GetAllProjects*: Gets all projects configured in Lighthouse
+- *GetProjectByName*: Gets a specific project with details by name
+- *GetProjectFeatures*: Gets features within a specific project
+- *GetProjectTeams*: Gets teams involved in a specific project
+- *RunProjectWhenForecast*: Runs a forecast for a project to identify when it will be completed
+- *GetProjectMilestones*: Gets project milestones with likelihood analysis
+
+### Feature Tools
+- *GetFeatureDetails*: Gets detailed information about a specific feature by name
+- *GetFeatureWhenForecast*: Gets when a feature will be done with forecast percentiles (50/70/85/95)

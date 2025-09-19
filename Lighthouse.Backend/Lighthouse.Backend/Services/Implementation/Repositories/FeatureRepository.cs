@@ -25,6 +25,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return features.AsQueryable();
         }
 
+        public override Feature? GetById(int id)
+        {
+            return GetAll().SingleOrDefault(f => f.Id == id);
+        }
+
         private IQueryable<Feature> GetFeatures()
         {
             return Context.Features
