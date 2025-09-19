@@ -191,6 +191,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddMcpServer()
                     .WithHttpTransport()
                     .WithTools<LighthouseTeamTools>()
+                    .WithTools<LighthouseProjectTools>()
                     .WithGetPromptHandler((request, cancellationToken) => ValueTask.FromResult(new GetPromptResult()))
                     .WithListPromptsHandler((request, cancellationToken) => ValueTask.FromResult(new ListPromptsResult()))
                     .WithReadResourceHandler((request, cancellationToken) => ValueTask.FromResult(new ReadResourceResult()))
