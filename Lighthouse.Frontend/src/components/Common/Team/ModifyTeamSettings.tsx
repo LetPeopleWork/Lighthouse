@@ -335,7 +335,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 						<GeneralSettingsComponent
 							settings={teamSettings}
 							onSettingsChange={handleTeamSettingsChange}
-							workTrackingSystemConnection={selectedWorkTrackingSystem}
 							workTrackingSystems={workTrackingSystems}
 							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
 							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}

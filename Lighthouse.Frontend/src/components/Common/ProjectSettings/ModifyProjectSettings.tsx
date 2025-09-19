@@ -380,7 +380,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<GeneralSettingsComponent
 							settings={projectSettings}
 							onSettingsChange={handleProjectSettingsChange}
-							workTrackingSystemConnection={selectedWorkTrackingSystem}
 							workTrackingSystems={workTrackingSystems}
 							selectedWorkTrackingSystem={selectedWorkTrackingSystem}
 							onWorkTrackingSystemChange={handleWorkTrackingSystemChange}

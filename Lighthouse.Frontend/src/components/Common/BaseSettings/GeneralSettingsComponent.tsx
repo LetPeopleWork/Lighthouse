@@ -22,7 +22,6 @@ interface GeneralSettingsComponentProps<T extends IBaseSettings> {
 	settings: T | null;
 	onSettingsChange: <K extends keyof T>(key: K, value: T[K]) => void;
 	title?: string;
-	workTrackingSystemConnection?: IWorkTrackingSystemConnection | null;
 	workTrackingSystems?: IWorkTrackingSystemConnection[];
 	selectedWorkTrackingSystem?: IWorkTrackingSystemConnection | null;
 	onWorkTrackingSystemChange?: (event: SelectChangeEvent<string>) => void;
@@ -36,7 +35,6 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 	settings,
 	onSettingsChange,
 	title = "General Configuration",
-	workTrackingSystemConnection = null,
 	workTrackingSystems = [],
 	selectedWorkTrackingSystem = null,
 	onWorkTrackingSystemChange = () => {},
@@ -131,7 +129,23 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 	};
 
 	const handleWorkTrackingSystemChange = (event: SelectChangeEvent<string>) => {
-		onSettingsChange("workItemQuery" as keyof T, "" as T[keyof T]);
+		const newSystemName = event.target.value;
+		const newSystem = workTrackingSystems.find(
+			(system) => system.name === newSystemName,
+		);
+
+		// Only clear workItemQuery if switching between different data source types
+		const currentDataSourceType = selectedWorkTrackingSystem?.dataSourceType;
+		const newDataSourceType = newSystem?.dataSourceType;
+
+		if (
+			currentDataSourceType &&
+			newDataSourceType &&
+			currentDataSourceType !== newDataSourceType
+		) {
+			onSettingsChange("workItemQuery" as keyof T, "" as T[keyof T]);
+		}
+
 		onWorkTrackingSystemChange(event);
 	};
 
@@ -180,7 +194,7 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 				</Grid>
 			)}
 			{(!showWorkTrackingSystemSelection ||
-				workTrackingSystemConnection?.dataSourceType !== "File") && (
+				selectedWorkTrackingSystem?.dataSourceType !== "File") && (
 				<Grid size={{ xs: 12 }}>
 					<TextField
 						label={`${workItemTerm} ${queryTerm}`}
@@ -199,11 +213,11 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 				</Grid>
 			)}
 			{showWorkTrackingSystemSelection &&
-				(workTrackingSystemConnection?.dataSourceType === "File" ||
-					(workTrackingSystemConnection &&
-						!workTrackingSystemConnection.dataSourceType)) && (
+				(selectedWorkTrackingSystem?.dataSourceType === "File" ||
+					(selectedWorkTrackingSystem &&
+						!selectedWorkTrackingSystem.dataSourceType)) && (
 					<FileUploadComponent
-						workTrackingSystemConnection={workTrackingSystemConnection}
+						workTrackingSystemConnection={selectedWorkTrackingSystem}
 						selectedFile={selectedFile}
 						onFileSelect={handleFileSelect}
 						uploadProgress={uploadProgress}

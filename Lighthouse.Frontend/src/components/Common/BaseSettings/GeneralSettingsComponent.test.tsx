@@ -158,7 +158,7 @@ describe("GeneralSettingsComponent", () => {
 		expect(screen.getByText(/Add New.*System/)).toBeInTheDocument();
 	});
 
-	it("calls onWorkTrackingSystemChange and clears workItemQuery when system selection changes", async () => {
+	it("clears workItemQuery when switching between different data source types", async () => {
 		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
 		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
 			.fn()
@@ -191,7 +191,7 @@ describe("GeneralSettingsComponent", () => {
 							settings={testSettings}
 							onSettingsChange={mockOnSettingsChange}
 							workTrackingSystems={mockWorkTrackingSystems}
-							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]} // Query type
 							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
 							onNewWorkTrackingSystemConnectionAdded={
 								mockOnNewWorkTrackingSystemConnectionAdded
@@ -209,10 +209,137 @@ describe("GeneralSettingsComponent", () => {
 		await waitFor(() => {
 			expect(screen.getByText("Test System 2")).toBeInTheDocument();
 		});
-		await userEvent.click(screen.getByText("Test System 2"));
+		await userEvent.click(screen.getByText("Test System 2")); // Switch to File type
 
 		expect(mockOnWorkTrackingSystemChange).toHaveBeenCalled();
+		// Should clear workItemQuery when switching from Query to File type
 		expect(mockOnSettingsChange).toHaveBeenCalledWith("workItemQuery", "");
+	});
+
+	it("preserves workItemQuery when switching between same data source types", async () => {
+		const sameTypeSystem: IWorkTrackingSystemConnection = {
+			id: 3,
+			name: "Test System 3",
+			workTrackingSystem: "Linear", // Valid WorkTrackingSystemType
+			options: [],
+			dataSourceType: "Query", // Same as Test System 1
+		};
+
+		const systemsWithSameType = [...mockWorkTrackingSystems, sameTypeSystem];
+
+		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
+		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+			.fn()
+			.mockResolvedValue(systemsWithSameType);
+
+		const mockTerminologyService = createMockTerminologyService();
+		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+		]);
+
+		const mockApiContext = createMockApiServiceContext({
+			workTrackingSystemService: mockWorkTrackingSystemService,
+			terminologyService: mockTerminologyService,
+		});
+
+		const queryClient = new QueryClient({
+			defaultOptions: {
+				queries: {
+					retry: false,
+				},
+			},
+		});
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TerminologyProvider>
+						<GeneralSettingsComponent
+							settings={testSettings}
+							onSettingsChange={mockOnSettingsChange}
+							workTrackingSystems={systemsWithSameType}
+							selectedWorkTrackingSystem={mockWorkTrackingSystems[0]} // Query type
+							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+							onNewWorkTrackingSystemConnectionAdded={
+								mockOnNewWorkTrackingSystemConnectionAdded
+							}
+							showWorkTrackingSystemSelection={true}
+						/>
+					</TerminologyProvider>
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>,
+		);
+
+		const selectElement = screen.getByRole("combobox");
+
+		await userEvent.click(selectElement);
+		await waitFor(() => {
+			expect(screen.getByText("Test System 3")).toBeInTheDocument();
+		});
+		await userEvent.click(screen.getByText("Test System 3")); // Switch to another Query type
+
+		expect(mockOnWorkTrackingSystemChange).toHaveBeenCalled();
+		// Should NOT clear workItemQuery when switching between same data source types
+		expect(mockOnSettingsChange).not.toHaveBeenCalledWith("workItemQuery", "");
+	});
+
+	it("preserves workItemQuery when no previous system was selected", async () => {
+		const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
+		mockWorkTrackingSystemService.getWorkTrackingSystems = vi
+			.fn()
+			.mockResolvedValue(mockWorkTrackingSystems);
+
+		const mockTerminologyService = createMockTerminologyService();
+		mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+			{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+			{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+		]);
+
+		const mockApiContext = createMockApiServiceContext({
+			workTrackingSystemService: mockWorkTrackingSystemService,
+			terminologyService: mockTerminologyService,
+		});
+
+		const queryClient = new QueryClient({
+			defaultOptions: {
+				queries: {
+					retry: false,
+				},
+			},
+		});
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<TerminologyProvider>
+						<GeneralSettingsComponent
+							settings={testSettings}
+							onSettingsChange={mockOnSettingsChange}
+							workTrackingSystems={mockWorkTrackingSystems}
+							selectedWorkTrackingSystem={null} // No previous system
+							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
+							onNewWorkTrackingSystemConnectionAdded={
+								mockOnNewWorkTrackingSystemConnectionAdded
+							}
+							showWorkTrackingSystemSelection={true}
+						/>
+					</TerminologyProvider>
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>,
+		);
+
+		const selectElement = screen.getByRole("combobox");
+
+		await userEvent.click(selectElement);
+		await waitFor(() => {
+			expect(screen.getByText("Test System 1")).toBeInTheDocument();
+		});
+		await userEvent.click(screen.getByText("Test System 1")); // Select first system when none was selected
+
+		expect(mockOnWorkTrackingSystemChange).toHaveBeenCalled();
+		// Should NOT clear workItemQuery when no previous system was selected
+		expect(mockOnSettingsChange).not.toHaveBeenCalledWith("workItemQuery", "");
 	});
 
 	it("opens ModifyTrackingSystemConnectionDialog when Add New button is clicked", async () => {
@@ -299,7 +426,6 @@ describe("GeneralSettingsComponent", () => {
 							onSettingsChange={mockOnSettingsChange}
 							workTrackingSystems={mockWorkTrackingSystems}
 							selectedWorkTrackingSystem={fileBasedSystem}
-							workTrackingSystemConnection={fileBasedSystem}
 							onWorkTrackingSystemChange={mockOnWorkTrackingSystemChange}
 							onNewWorkTrackingSystemConnectionAdded={
 								mockOnNewWorkTrackingSystemConnectionAdded
