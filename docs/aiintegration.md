@@ -93,3 +93,19 @@ The following tools are available on the Lighthouse MCP Server:
 ### Feature Tools
 - *GetFeatureDetails*: Gets detailed information about a specific feature by name
 - *GetFeatureWhenForecast*: Gets when a feature will be done with forecast percentiles (50/70/85/95)
+
+## Resources
+Resources allow your AI client to access Lighthouse documentation directly, providing context about how to use various features and capabilities.
+
+### Documentation Resources
+The following documentation resources are available through MCP:
+
+- **Lighthouse Documentation**: Main documentation homepage with overview and getting started information
+- **Concepts**: Core concepts and components of Lighthouse including teams, projects, and forecasting
+- **Teams**: How to work with teams in Lighthouse, including setup and configuration
+- **Projects**: How to work with projects in Lighthouse, including creation and management
+- **Metrics**: Understanding and working with Lighthouse metrics, dashboards, and visualizations
+- **AI Integration**: How to integrate Lighthouse with AI systems including Model Context Protocol (MCP)
+- **How Lighthouse Forecasts**: Detailed explanation of Monte Carlo simulations and forecasting methodology
+
+These resources provide your AI assistant with comprehensive information about Lighthouse capabilities, allowing for more informed responses and better assistance with configuration and usage questions.

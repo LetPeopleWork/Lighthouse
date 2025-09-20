@@ -26,7 +26,6 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.Jira;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
-using ModelContextProtocol.Protocol;
 using Serilog;
 using Serilog.Settings.Configuration;
 using System.Collections.Concurrent;
@@ -194,8 +193,20 @@ namespace Lighthouse.Backend
                     .WithTools<LighthouseProjectTools>()
                     .WithTools<LighthouseFeatureTools>()
                     .WithPrompts<LighthousePrompts>()
-                    .WithReadResourceHandler((request, cancellationToken) => ValueTask.FromResult(new ReadResourceResult()))
-                    .WithListResourcesHandler((request, cancellationToken) => ValueTask.FromResult(new ListResourcesResult()));
+                    .WithReadResourceHandler(async (request, cancellationToken) => 
+                    {
+                        var serviceProvider = builder.Services.BuildServiceProvider();
+                        using var scope = serviceProvider.CreateScope();
+                        var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                        return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
+                    })
+                    .WithListResourcesHandler(async (request, cancellationToken) => 
+                    {
+                        var serviceProvider = builder.Services.BuildServiceProvider();
+                        using var scope = serviceProvider.CreateScope();
+                        var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                        return await resources.ListDocumentationResources();
+                    });
             }
         }
 
@@ -239,6 +250,9 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<JiraWorkTrackingConnector>();
             builder.Services.AddScoped<LinearWorkTrackingConnector>();
             builder.Services.AddScoped<CsvWorkTrackingConnector>();
+
+            // MCP Resources
+            builder.Services.AddScoped<LighthouseResources>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdater>();
