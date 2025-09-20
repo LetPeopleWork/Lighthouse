@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             RemoveIfExists(new OptionalFeature { Id = 0, Key = OptionalFeatureKeys.LighthouseChartKey, Name = "Lighthouse Chart", Description = "Shows Burndown Chart with Forecasts for each Feature in a Project", Enabled = false });
             RemoveIfExists(new OptionalFeature { Id = 1, Key = OptionalFeatureKeys.CycleTimeScatterPlotKey, Name = "Cycle Time Scatter Plot", Description = "Shows Cycle Time Scatterplot for a team", Enabled = false });
 
-            AddIfNotExists(new OptionalFeature { Id = 2, Key = OptionalFeatureKeys.McpServerKey, Name = "MCP Server", Description = "Enables MCP Server to integrate with AI Agents (requires restart)", Enabled = false, IsPreview = true });
+            AddIfNotExists(new OptionalFeature { Id = 2, Key = OptionalFeatureKeys.McpServerKey, Name = "MCP Server", Description = "Enables MCP Server to integrate with AI Agents (requires restart)", Enabled = false, IsPreview = false });
 
             AddIfNotExists(new OptionalFeature { Id = 3, Key = OptionalFeatureKeys.LinearIntegrationKey, Name = "Linear Integration", Description = "Enables Experimental Support for Linear.app", Enabled = false, IsPreview = true });
 
