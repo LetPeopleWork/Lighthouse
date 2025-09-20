@@ -187,26 +187,34 @@ namespace Lighthouse.Backend
         {
             if (mcpFeature?.Enabled ?? false)
             {
-                builder.Services.AddMcpServer()
-                    .WithHttpTransport()
-                    .WithTools<LighthouseTeamTools>()
-                    .WithTools<LighthouseProjectTools>()
-                    .WithTools<LighthouseFeatureTools>()
-                    .WithPrompts<LighthousePrompts>()
-                    .WithReadResourceHandler(async (request, cancellationToken) => 
-                    {
-                        var serviceProvider = builder.Services.BuildServiceProvider();
-                        using var scope = serviceProvider.CreateScope();
-                        var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
-                        return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
-                    })
-                    .WithListResourcesHandler(async (request, cancellationToken) => 
-                    {
-                        var serviceProvider = builder.Services.BuildServiceProvider();
-                        using var scope = serviceProvider.CreateScope();
-                        var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
-                        return await resources.ListDocumentationResources();
-                    });
+                // Only configure MCP server if user has premium license
+                var tempServiceProvider = builder.Services.BuildServiceProvider();
+                using var scope = tempServiceProvider.CreateScope();
+                var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
+                
+                if (licenseService.CanUsePremiumFeatures())
+                {
+                    builder.Services.AddMcpServer()
+                        .WithHttpTransport()
+                        .WithTools<LighthouseTeamTools>()
+                        .WithTools<LighthouseProjectTools>()
+                        .WithTools<LighthouseFeatureTools>()
+                        .WithPrompts<LighthousePrompts>()
+                        .WithReadResourceHandler(async (request, cancellationToken) => 
+                        {
+                            var serviceProvider = builder.Services.BuildServiceProvider();
+                            using var scope = serviceProvider.CreateScope();
+                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                            return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
+                        })
+                        .WithListResourcesHandler(async (request, cancellationToken) => 
+                        {
+                            var serviceProvider = builder.Services.BuildServiceProvider();
+                            using var scope = serviceProvider.CreateScope();
+                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                            return await resources.ListDocumentationResources();
+                        });
+                }
             }
         }
 
