@@ -6,6 +6,16 @@ nav_order: 40
 
 If you're using AI clients like Claude or Copilot, you can configure Lighthouse as a resource for those clients to get data from. This comprehensive guide will help you successfully configure and use the Lighthouse MCP server with your preferred AI client.
 
+{: .recommendation}
+**Help Us Improve Your Experience!** 🚀  
+AI integration is rapidly evolving, and we want to ensure Lighthouse stays at the forefront. We'd love to hear from you:
+- **Share your client configurations** - Found a setup that works great? Help others!
+- **Suggest new prompts** - Have ideas for expert prompts that would be valuable?
+- **Report what's working (or not)** - Your real-world experiences help us prioritize improvements
+- **Request new AI client support** - Using a client we don't cover yet?
+
+**Join our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)** to share your experiences, get help, and connect with other users exploring AI-powered project management!
+
 - TOC
 {:toc}
 
