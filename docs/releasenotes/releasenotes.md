@@ -10,11 +10,64 @@ nav_order: 95
 Preview
 {: .label .label-blue }
  -->
- 
-# Lighthouse v25.9.13.1420
+
+# Lighthouse v25.9.20.1022
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Extended MCP Features [**Premium Only**]
+
+[The Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) integration has been completely **reworked and modernized** to provide a comprehensive AI-powered experience for Lighthouse.
+Use it in the LLM of your choice or create agentic workflows using the data coming directly from Lighthouse.
+
+### Tools
+[Tools](https://modelcontextprotocol.io/specification/2025-06-18/server/tools) allow you to execute real time operations based on the data that is in Lighthouse. This includes:
+- **Team Management**: Get team details, analyze flow metrics, and run forecasts
+- **Project Analytics**: Access project information, features, milestones, and completion forecasts  
+- **Feature Tracking**: Detailed feature information and delivery forecasts
+- **Flow Analysis**: Comprehensive cycle time, throughput, and WIP analysis
+
+### Prompts
+Through carefully designed [Prompts](https://modelcontextprotocol.io/specification/2025-06-18/server/prompts), you get AI-powered insights based on our expertise with customized prompt templates that make use of the above tools:
+- **Team Flow Analysis**: Professional metrics interpretation
+- **Aging Work Analysis**: Identify flow problems and predictability issues
+- **Forecasting Guidance**: Data-driven planning with Monte Carlo Forecasting
+- **Retrospective Facilitation**: Generate structured, data-driven improvement sessions
+
+### Resources
+Our MCP server offers the documentation as [resource](https://modelcontextprotocol.io/specification/2025-06-18/server/resources), so that you have all the relevant context for your operations.
+
+### Real-World Use Cases
+Transform your daily workflows with natural language interactions:
+
+- *"How many items can my team complete by month-end?"*
+- *"When will Project Alpha be finished?"*  
+- *"Analyze our flow metrics and suggest improvements"*
+- *"Generate insights for our upcoming retrospective"*
+- *"What features are we working on and when will they be done?"*
+
+### Supported AI Clients
+
+Compatible with popular AI assistants like **Claude Desktop**, **VS Code Copilot**, and any other client that supports MCP.
+
+### Getting Started
+
+1. Enable MCP Server in Lighthouse Settings → Optional Features
+2. Configure your AI client using our [comprehensive documentation](https://docs.lighthouse.letpeople.work/aiintegration.html)
+3. Start asking questions in natural language!
+
+*This feature represents a significant evolution in how teams can interact with their project data, bringing expert-level analysis capabilities directly to your AI assistant.*
+
+## Continuous Improvements & Bug Fixes
+- Before loading Demo Data, a confirmation popup will show to make sure you understand that you lose all existing data.
+- When trying to add an SLE percentile, the values were not accepted. This is fixed now.
+- When switching the Work Tracking System connection, the work item query was cleared. This made the default teams/project queries unusable. This is behaviour is adjusted now. 
+- Update of various third-party libraries
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.9.13.1420...v25.9.20.1022)
+ 
+# Lighthouse v25.9.13.1420
 
 ## New Work Item Prediction [**Premium Only**]
 Based on the created items, Lighthouse can now also forecast the arrival of work in your process:
