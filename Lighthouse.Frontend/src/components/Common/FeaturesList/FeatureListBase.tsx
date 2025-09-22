@@ -98,11 +98,11 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 		? features.filter((feature) => feature.stateCategory !== "Done")
 		: features;
 
-	// Group features by parent work item
+	// Group features by parent work item while preserving order
 	const groupFeatures = (featuresToGroup: IFeature[]) => {
 		const groups: Record<string, IFeature[]> = {};
 
-		// Group with parent
+		// Group features while maintaining their original order
 		for (const feature of featuresToGroup) {
 			const parentId = feature.parentWorkItemReference || "none";
 			if (!groups[parentId]) {
@@ -159,33 +159,28 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 	// Determine if we should display grouped or flat list of features
 	const displayFeatures = () => {
 		if (!groupFeaturesByParent) {
-			// Return flat list
+			// Return flat list in original backend order
 			return <>{filteredFeatures.map((feature) => renderTableRow(feature))}</>;
 		}
 
-		// Group features by parent
+		// Group features by parent while preserving order
 		const groups = groupFeatures(filteredFeatures);
-		let sortedKeys = Object.keys(groups);
 
-		// Sort keys based on parent features order (from API) and put "none" at the bottom
-		sortedKeys = sortedKeys.sort((a, b) => {
-			// Place "none" group at the bottom
-			if (a === "none") return 1;
-			if (b === "none") return -1;
+		// Get parent order based on first occurrence in filteredFeatures
+		const parentOrder: string[] = [];
+		const seenParents = new Set<string>();
 
-			// Use order from API if we have both parent features
-			if (parentFeatures[a] && parentFeatures[b]) {
-				// By default, keep the order from the API
-				return 0;
+		for (const feature of filteredFeatures) {
+			const parentId = feature.parentWorkItemReference || "none";
+			if (!seenParents.has(parentId)) {
+				parentOrder.push(parentId);
+				seenParents.add(parentId);
 			}
-
-			// If we don't have both parents, fall back to alphanumeric sort
-			return a.localeCompare(b);
-		});
+		}
 
 		return (
 			<>
-				{sortedKeys.map((parentId) => (
+				{parentOrder.map((parentId) => (
 					<Fragment key={parentId}>
 						<tr>
 							<td
@@ -227,10 +222,12 @@ const FeatureListBase: React.FC<FeatureListBaseProps> = ({
 						const parentFeaturesList =
 							await featureService.getFeaturesByReferences(uniqueParentIds);
 						// Convert array to a record object with referenceId as the key
-						const parentsMap = parentFeaturesList.reduce<
+						const parentsMap = (parentFeaturesList || []).reduce<
 							Record<string, IFeature>
 						>((acc, feature) => {
-							acc[feature.referenceId] = feature;
+							if (feature?.referenceId) {
+								acc[feature.referenceId] = feature;
+							}
 							return acc;
 						}, {});
 						setParentFeatures(parentsMap);

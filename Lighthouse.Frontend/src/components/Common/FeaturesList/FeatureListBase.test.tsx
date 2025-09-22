@@ -1389,5 +1389,138 @@ describe("FeatureListBase component", () => {
 			const input = within(groupingToggle).getByRole("switch");
 			expect(input).toBeChecked();
 		});
+
+		it("should maintain backend order for both parent groups and features within groups", async () => {
+			const user = userEvent.setup();
+
+			// Create features that will test both parent order and feature order within groups
+			// Backend returns features in this specific order:
+			const featuresInBackendOrder = [
+				createFeature(1, "Feature A1", "ToDo", "PARENT-300"), // First feature of third parent
+				createFeature(2, "Feature B1", "Doing", "PARENT-100"), // First feature of first parent
+				createFeature(3, "Feature A2", "ToDo", "PARENT-300"), // Second feature of third parent
+				createFeature(4, "Feature C1", "Done", "PARENT-200"), // First feature of second parent
+				createFeature(5, "Feature B2", "Doing", "PARENT-100"), // Second feature of first parent
+				createFeature(6, "Feature C2", "ToDo", "PARENT-200"), // Second feature of second parent
+				createFeature(7, "Feature D1", "ToDo"), // Feature without parent
+			];
+
+			const featuresReferences = featuresInBackendOrder.map((f) => ({
+				id: f.id,
+				name: f.name,
+			}));
+
+			// Create mock parent features
+			const mockParent100 = new Feature();
+			mockParent100.name = "Parent Feature 100";
+			mockParent100.referenceId = "PARENT-100";
+
+			const mockParent200 = new Feature();
+			mockParent200.name = "Parent Feature 200";
+			mockParent200.referenceId = "PARENT-200";
+
+			const mockParent300 = new Feature();
+			mockParent300.name = "Parent Feature 300";
+			mockParent300.referenceId = "PARENT-300";
+
+			const mockFeatureService = createMockFeatureService();
+			(mockFeatureService.getFeaturesByIds as Mock).mockResolvedValue(
+				featuresInBackendOrder,
+			);
+			(mockFeatureService.getFeaturesByReferences as Mock).mockResolvedValue([
+				mockParent300,
+				mockParent100,
+				mockParent200,
+			]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<FeatureListBase
+						featureReferences={featuresReferences}
+						contextId={1}
+						contextType="project"
+						renderTableHeader={() => (
+							<tr>
+								<th>Name</th>
+							</tr>
+						)}
+						renderTableRow={(feature: IFeature) => (
+							<tr data-testid={`feature-${feature.id}`} key={feature.id}>
+								<td>{feature.name}</td>
+							</tr>
+						)}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for features to load
+			await waitFor(() => {
+				expect(screen.getByTestId("feature-1")).toBeInTheDocument();
+			});
+
+			// Activate grouping toggle
+			const groupingToggle = screen.getByTestId(
+				"group-features-by-parent-toggle",
+			);
+			await user.click(groupingToggle);
+
+			// Wait for parent features to load
+			await waitFor(() => {
+				expect(
+					screen.getByText("PARENT-300: Parent Feature 300"),
+				).toBeInTheDocument();
+			});
+
+			// Get all table rows to check the order
+			const tableBody = screen.getByRole("table").querySelector("tbody");
+			const allRows = Array.from(tableBody?.children || []);
+
+			// Expected order based on first occurrence of parents in backend data:
+			// 1. PARENT-300 (first appears with Feature A1)
+			// 2. PARENT-100 (first appears with Feature B1)
+			// 3. PARENT-200 (first appears with Feature C1)
+			// 4. "No Parent" group (Feature D1)
+
+			let rowIndex = 0;
+
+			// Check PARENT-300 group (first occurrence)
+			expect(allRows[rowIndex].textContent).toContain(
+				"PARENT-300: Parent Feature 300",
+			);
+			rowIndex++;
+			expect(allRows[rowIndex]).toHaveAttribute("data-testid", "feature-1"); // Feature A1
+			rowIndex++;
+			expect(allRows[rowIndex]).toHaveAttribute("data-testid", "feature-3"); // Feature A2
+			rowIndex++;
+
+			// Check PARENT-100 group (second occurrence)
+			expect(allRows[rowIndex].textContent).toContain(
+				"PARENT-100: Parent Feature 100",
+			);
+			rowIndex++;
+			expect(allRows[rowIndex]).toHaveAttribute("data-testid", "feature-2"); // Feature B1
+			rowIndex++;
+			expect(allRows[rowIndex]).toHaveAttribute("data-testid", "feature-5"); // Feature B2
+			rowIndex++;
+
+			// Check PARENT-200 group (third occurrence)
+			expect(allRows[rowIndex].textContent).toContain(
+				"PARENT-200: Parent Feature 200",
+			);
+			rowIndex++;
+			expect(allRows[rowIndex]).toHaveAttribute("data-testid", "feature-4"); // Feature C1
+			rowIndex++;
+			expect(allRows[rowIndex]).toHaveAttribute("data-testid", "feature-6"); // Feature C2
+			rowIndex++;
+
+			// Check "No Parent" group (last)
+			expect(allRows[rowIndex].textContent).toContain("No Parent");
+			rowIndex++;
+			expect(allRows[rowIndex]).toHaveAttribute("data-testid", "feature-7"); // Feature D1
+		});
 	});
 });
