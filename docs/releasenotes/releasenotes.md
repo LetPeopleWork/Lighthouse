@@ -11,10 +11,24 @@ Preview
 {: .label .label-blue }
  -->
 
-# Lighthouse v25.9.20.1022
+
+# Lighthouse v25.9.22.1707
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+This release fixes the issue that when you grouped Features by their parent, the parent items were not showing up in their respective order.
+The new behaviour is as follows:
+- If you don't group by parent, you will see a "flat list" respecting your feature order.
+- If you group by parent, you will see the parent items respecting their backlog order. Within a parent, the features are shown in their respective order.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.9.20.1022...v25.9.22.1707)
+
+# Lighthouse v25.9.20.1022
 
 ## Extended MCP Features [**Premium Only**]
 
