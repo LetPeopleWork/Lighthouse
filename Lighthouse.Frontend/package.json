@@ -21,7 +21,7 @@
     "@microsoft/signalr": "^9.0.6",
     "@mui/icons-material": "^7.3.2",
     "@mui/lab": "^7.0.0-beta.17",
-    "@mui/material": "^7.3.2",
+    "@mui/material": "^7.3.3",
     "@mui/x-charts": "^8.12.0",
     "@mui/x-date-pickers": "^8.12.0",
     "@tanstack/react-query": "^5.90.2",
