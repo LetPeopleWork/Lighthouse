@@ -18,7 +18,7 @@
   "license": "MIT",
   "description": "",
   "devDependencies": {
-    "@biomejs/biome": "2.2.5",
+    "@biomejs/biome": "2.2.6",
     "@playwright/test": "^1.56.0",
     "@types/node": "^24.7.2",
     "cross-env": "^10.1.0",
