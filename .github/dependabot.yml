@@ -26,3 +26,12 @@ updates:
     commit-message:
       prefix: "deps"
     open-pull-requests-limit: 5
+
+  # Update Docker base images in Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "deps"
+    open-pull-requests-limit: 5
