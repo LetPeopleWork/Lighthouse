@@ -9,7 +9,7 @@ args = parser.parse_args()
 
 API_TOKEN = args.api_token
 USERNAME = 'atlassian.pushchair@huser-berta.com'
-JIRA_BASE_URL = 'https://letpeoplework.atlassian.net/rest/api/latest'
+JIRA_BASE_URL = 'https://letpeoplework.atlassian.net/rest/api/3'
 
 # Target throughput for each team including "Epics"
 teams_targets = {
