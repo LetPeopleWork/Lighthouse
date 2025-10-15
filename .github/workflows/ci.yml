@@ -455,7 +455,7 @@ jobs:
           VERSION=${{ needs.tag.outputs.fileversion }}
 
           # Define platforms you want to support
-          PLATFORMS="linux/amd64,linux/arm64,linux/arm"
+          PLATFORMS="linux/amd64,linux/arm64"
 
           # Build and push the multi-platform image
           docker buildx build --platform $PLATFORMS --no-cache \
