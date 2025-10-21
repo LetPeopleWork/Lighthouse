@@ -309,7 +309,6 @@ export const BaseMetricsView = <
 				/>
 			),
 		});
-
 		items.push({
 			id: "aging",
 			priority: 12,

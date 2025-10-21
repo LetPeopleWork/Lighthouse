@@ -206,7 +206,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		setDialogOpen(true);
 	};
 
-	return cycleTimeDataPoints.length > 0 ? (
+	return cycleTimeDataPoints.length > 0 && groupedDataPoints.length > 0 ? (
 		<>
 			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
 				<CardContent

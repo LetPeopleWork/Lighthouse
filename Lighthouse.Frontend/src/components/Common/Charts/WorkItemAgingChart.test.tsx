@@ -412,9 +412,39 @@ describe("WorkItemAgingChart component", () => {
 			/>,
 		);
 
-		// Component should still render without crashing
-		expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
-		expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
+		// Component should render empty state when items are filtered out due to missing/invalid state
+		expect(screen.getByText("No items in progress")).toBeInTheDocument();
+		expect(
+			screen.queryByTestId("mock-chart-container"),
+		).not.toBeInTheDocument();
+	});
+
+	it("handles items with states not in doingStates list", () => {
+		const itemsWithNonDoingStates: IWorkItem[] = [
+			{
+				...mockInProgressItems[0],
+				state: "Done",
+			},
+			{
+				...mockInProgressItems[1],
+				state: "Closed",
+			},
+		];
+
+		render(
+			<WorkItemAgingChart
+				inProgressItems={itemsWithNonDoingStates}
+				percentileValues={mockPercentileValues}
+				serviceLevelExpectation={mockSLE}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		// Component should render empty state when no items match doingStates
+		expect(screen.getByText("No items in progress")).toBeInTheDocument();
+		expect(
+			screen.queryByTestId("mock-chart-container"),
+		).not.toBeInTheDocument();
 	});
 
 	it("correctly extracts age from work items", () => {
