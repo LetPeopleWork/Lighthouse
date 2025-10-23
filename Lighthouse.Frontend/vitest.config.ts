@@ -12,5 +12,9 @@ export default defineConfig({
         coverage: {
             reporter: ['text', 'lcov'],
         },
+        reporters: [
+            'default',
+            ['vitest-sonar-reporter', { outputFile: 'sonar-report.xml' }]
+        ],
     },
 });
