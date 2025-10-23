@@ -10,7 +10,8 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "types":[
-      "vitest/globals"
+      "vitest/globals",
+      "node"
     ],
 
     /* Bundler mode */
