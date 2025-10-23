@@ -6,12 +6,12 @@ import type { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import ForecastInfo from "./ForecastInfo";
 
 vi.mock("./ForecastLevel", () => ({
-	ForecastLevel: vi.fn(() => ({
-		level: "High",
-		probability: 85,
-		IconComponent: () => <span data-testid="icon" />,
-		color: "green",
-	})),
+	ForecastLevel: class {
+		level = "High";
+		probability = 85;
+		IconComponent = () => <span data-testid="icon" />;
+		color = "green";
+	},
 }));
 
 vi.mock("../LocalDateTimeDisplay/LocalDateTimeDisplay", () => ({
