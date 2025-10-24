@@ -49,7 +49,7 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 		setChartData(data);
 	}, [maxHistory, startDate]);
 
-	if (chartData.length === 0) {
+	if (areas.length === 0 || chartData.length === 0) {
 		return null;
 	}
 
