@@ -250,20 +250,128 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             logger.LogDebug("Getting Issue by Key '{Key}'", issueId);
 
-            var url = $"rest/api/latest/issue/{issueId}?expand=changelog";
+            // First, get the issue without changelog expansion (or with limited changelog)
+            var issueUrl = $"rest/api/latest/issue/{issueId}";
+            var issueResponse = await jiraClient.GetAsync(issueUrl);
+            issueResponse.EnsureSuccessStatusCode();
 
-            var response = await jiraClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
+            var issueBody = await issueResponse.Content.ReadAsStringAsync();
+            using var issueJsonDoc = JsonDocument.Parse(issueBody);
 
-            var responseBody = await response.Content.ReadAsStringAsync();
-            var jsonResponse = JsonDocument.Parse(responseBody);
+            // Fetch all changelog entries via pagination
+            var allChangelogHistories = await GetAllChangelogEntriesForIssue(jiraClient, issueId);
+
+            // Merge the complete changelog back into the issue JSON structure
+            var issueWithCompleteChangelog = MergeChangelogIntoIssueJson(issueJsonDoc.RootElement, allChangelogHistories);
 
             var rankField = await GetRankField(jiraClient);
-            var issue = issueFactory.CreateIssueFromJson(jsonResponse.RootElement, workitemQueryOwner, additionalRelatedField, rankField);
+            var issue = issueFactory.CreateIssueFromJson(issueWithCompleteChangelog, workitemQueryOwner, additionalRelatedField, rankField);
 
-            logger.LogDebug("Found Issue by Key: {Key}", issue.Key);
+            logger.LogDebug("Found Issue by Key: {Key} with {ChangelogCount} changelog entries", issue.Key, allChangelogHistories.Count);
 
             return issue;
+        }
+
+        private async Task<List<JsonElement>> GetAllChangelogEntriesForIssue(HttpClient jiraClient, string issueId)
+        {
+            var allChangelogHistories = new List<JsonElement>();
+            var startAt = 0;
+            const int maxResults = 100; // Jira's max per page
+            var isLast = false;
+            var totalChangelogs = 0;
+
+            while (!isLast)
+            {
+                var changelogUrl = $"rest/api/3/issue/{issueId}/changelog?startAt={startAt}&maxResults={maxResults}";
+                var changelogResponse = await jiraClient.GetAsync(changelogUrl);
+                changelogResponse.EnsureSuccessStatusCode();
+
+                var changelogBody = await changelogResponse.Content.ReadAsStringAsync();
+                using var changelogJson = JsonDocument.Parse(changelogBody);
+
+                if (changelogJson.RootElement.TryGetProperty(JiraFieldNames.ValuesFieldName, out var values))
+                {
+                    foreach (var changelogEntry in values.EnumerateArray())
+                    {
+                        allChangelogHistories.Add(changelogEntry.Clone());
+                    }
+                }
+
+                if (changelogJson.RootElement.TryGetProperty(JiraFieldNames.TotalFieldName, out var totalProp))
+                {
+                    totalChangelogs = totalProp.GetInt32();
+                }
+
+                isLast = changelogJson.RootElement.TryGetProperty(JiraFieldNames.IsLastFieldName, out var isLastProp) && isLastProp.GetBoolean();
+                startAt += maxResults;
+            }
+
+            logger.LogDebug("Retrieved {Count} of {Total} changelog entries for Issue {Key}", allChangelogHistories.Count, totalChangelogs, issueId);
+
+            return allChangelogHistories;
+        }
+
+        private static JsonElement MergeChangelogIntoIssueJson(JsonElement issueJson, List<JsonElement> changelogHistories)
+        {
+            using var stream = new MemoryStream();
+            using var writer = new Utf8JsonWriter(stream);
+
+            writer.WriteStartObject();
+
+            // Copy all properties from the original issue JSON
+            foreach (var property in issueJson.EnumerateObject())
+            {
+                if (property.Name == JiraFieldNames.ChangelogFieldName)
+                {
+                    // Replace the changelog with our complete paginated data
+                    writer.WritePropertyName(JiraFieldNames.ChangelogFieldName);
+                    writer.WriteStartObject();
+                    
+                    writer.WriteNumber(JiraFieldNames.StartAtFieldName, 0);
+                    writer.WriteNumber(JiraFieldNames.MaxResultsFieldName, changelogHistories.Count);
+                    writer.WriteNumber(JiraFieldNames.TotalFieldName, changelogHistories.Count);
+                    
+                    writer.WritePropertyName(JiraFieldNames.HistoriesFieldName);
+                    writer.WriteStartArray();
+                    foreach (var history in changelogHistories)
+                    {
+                        history.WriteTo(writer);
+                    }
+                    writer.WriteEndArray();
+                    
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    property.WriteTo(writer);
+                }
+            }
+
+            // If there was no changelog property, add it
+            if (!issueJson.TryGetProperty(JiraFieldNames.ChangelogFieldName, out _))
+            {
+                writer.WritePropertyName(JiraFieldNames.ChangelogFieldName);
+                writer.WriteStartObject();
+                
+                writer.WriteNumber(JiraFieldNames.StartAtFieldName, 0);
+                writer.WriteNumber(JiraFieldNames.MaxResultsFieldName, changelogHistories.Count);
+                writer.WriteNumber(JiraFieldNames.TotalFieldName, changelogHistories.Count);
+                
+                writer.WritePropertyName(JiraFieldNames.HistoriesFieldName);
+                writer.WriteStartArray();
+                foreach (var history in changelogHistories)
+                {
+                    history.WriteTo(writer);
+                }
+                writer.WriteEndArray();
+                
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
+            writer.Flush();
+
+            return JsonDocument.Parse(stream.ToArray()).RootElement;
         }
 
         private static async Task<string> GetRankField(HttpClient jiraClient)
