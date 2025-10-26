@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.Order, Is.Not.Null);
 
                 Assert.That(workItem.CreatedDate, Is.EqualTo(new DateTime(2025, 04, 24, 11, 05, 51, 877, DateTimeKind.Utc)));
-                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 04, 24, 11, 06, 40, 918, DateTimeKind.Utc)));
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2025, 10, 26, 11, 51, 18, 595, DateTimeKind.Utc)));
                 Assert.That(workItem.ClosedDate, Is.Null);
             };
         }
