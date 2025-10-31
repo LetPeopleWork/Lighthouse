@@ -249,6 +249,14 @@ namespace Lighthouse.Backend.Services.Implementation
                 new Milestone { Name = "Quarterly Demo", Date = DateTime.Now.AddDays(7*12) },
             });
 
+            var newProductInitiative = CreatesScenario(14, "New Product Initiative", "Look at how you could forecast if you don't have any refined Features yet");
+            newProductInitiative.IsPremium = true;
+
+            newProductInitiative.Teams.Add(DemoTeamNames.GoodThroughput);
+            newProductInitiative.Projects.Add(DemoProjectNames.NewProductInitiative);
+
+            premiumScenarios.Add(newProductInitiative);
+
             return premiumScenarios;
         }
 
