@@ -29,7 +29,7 @@
     "camelcase-keys": "^10.0.0",
     "class-transformer": "^0.5.1",
     "date-fns": "^4.1.0",
-    "dayjs": "^1.11.18",
+    "dayjs": "^1.11.19",
     "lodash.debounce": "^4.0.8",
     "lorem-ipsum": "^2.0.8",
     "react": "^19.1.0",
