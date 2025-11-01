@@ -12,10 +12,31 @@ Preview
  -->
 
 
-# Lighthouse v25.9.22.1707
+# Lighthouse v25.10.31.1906
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Forecasts in Dashboard
+The Overview Dashboard will now show the number of remaining work items for a project, as well as a forecast for the completion of the project:
+**To Do: Add Image Link**
+
+This should help to get a better overview over ongoing and planned projects, without having to dig into the details.
+
+## Continuous Improvements & Bug Fixes
+Apart from that, this release has smaller improvements and bug fixes, along with update of third party packages:
+- Added a new Demo Scenario to forecast a project that has nothing broken down yet [Premium]
+- Fixed an issue that Cycle Time and Work Item Age were not properly calculated for Jira Issues that had a lot of updates.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.9.22.1707...v25.10.31.1906)
+
+# Lighthouse v25.9.22.1707
 
 This release fixes the issue that when you grouped Features by their parent, the parent items were not showing up in their respective order.
 The new behaviour is as follows:
