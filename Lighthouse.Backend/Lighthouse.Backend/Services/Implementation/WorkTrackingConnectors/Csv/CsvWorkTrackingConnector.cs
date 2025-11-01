@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             }
         }
 
-        private WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
+        private static WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
         {
             var referenceId = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
             var name = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
@@ -181,7 +181,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return workItemBase;
         }
 
-        private DateTime? ParseDateTime(CsvReader reader, WorkTrackingSystemConnection connection, string columnName)
+        private static DateTime? ParseDateTime(CsvReader reader, WorkTrackingSystemConnection connection, string columnName)
         {
             var dateTime = reader.GetField<DateTime?>(GetOptionByKey(connection, columnName));
 
@@ -249,22 +249,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 ];
         }
 
-        private string GetOptionByKey(WorkTrackingSystemConnection connection, string key)
+        private static string GetOptionByKey(WorkTrackingSystemConnection connection, string key)
         {
             return connection.Options.Single(o => o.Key == key).Value;
         }
 
-        private string GetDelimiter(WorkTrackingSystemConnection connection)
+        private static string GetDelimiter(WorkTrackingSystemConnection connection)
         {
             return GetOptionByKey(connection, CsvWorkTrackingOptionNames.Delimiter);
         }
 
-        private string GetAdditionalDateTimeFormat(WorkTrackingSystemConnection connection)
+        private static string GetAdditionalDateTimeFormat(WorkTrackingSystemConnection connection)
         {
             return GetOptionByKey(connection, CsvWorkTrackingOptionNames.DateTimeFormat);
         }
 
-        private string GetTagSeparator(WorkTrackingSystemConnection connection)
+        private static string GetTagSeparator(WorkTrackingSystemConnection connection)
         {
             return GetOptionByKey(connection, CsvWorkTrackingOptionNames.TagSeparator);
         }

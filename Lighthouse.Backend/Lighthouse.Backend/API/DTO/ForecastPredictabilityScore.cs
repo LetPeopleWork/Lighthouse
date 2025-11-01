@@ -24,15 +24,15 @@ namespace Lighthouse.Backend.API.DTO
 
         private double CalculatePredictabilityScore()
         {
-            var firstPercentile = Percentiles.First();
-            var lastPercentile = Percentiles.Last();
+            var firstPercentile = Percentiles[0];
+            var lastPercentile = Percentiles[Percentiles.Count - 1];
 
             if (firstPercentile.Value == 0)
             {
                 return 0;
             }
 
-            return (double)(lastPercentile.Value / (double)firstPercentile.Value);
+            return lastPercentile.Value / (double)firstPercentile.Value;
         }
     }
 }

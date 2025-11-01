@@ -438,7 +438,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return ServiceProvider.GetService<IWorkTrackingSystemFactory>() ?? throw new ArgumentNullException("Could not resolve Work Tracking System Factory");
         }
 
-        private IRepository<WorkTrackingSystemConnection> GetWorkTrackingSystemRepository()
+        private WorkTrackingSystemConnectionRepository GetWorkTrackingSystemRepository()
         {
             var repo = (WorkTrackingSystemConnectionRepository)ServiceProvider.GetService<IRepository<WorkTrackingSystemConnection>>() ?? throw new ArgumentNullException("Coult not resolve Work Tracking System Connection Repo");
             repo.SeedBuiltInConnections();

@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public override Team? GetById(int id)
         {
-            logger.LogDebug("Getting Team by Id. Id {id}", id);
+            logger.LogDebug("Getting Team by Id. Id {Id}", id);
             return GetAll()
                 .SingleOrDefault(t => t.Id == id);
         }

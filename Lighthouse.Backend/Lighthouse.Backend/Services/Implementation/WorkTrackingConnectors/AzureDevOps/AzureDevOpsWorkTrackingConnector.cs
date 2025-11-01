@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private static readonly ConcurrentDictionary<string, WorkItemTrackingHttpClient> ClientCache = new();
         private static readonly ConcurrentDictionary<string, SemaphoreSlim> OrgLimiters = new();
 
-        private SemaphoreSlim GetLimiter(string url) => OrgLimiters.GetOrAdd(new Uri(url).Host, _ => new SemaphoreSlim(6));
+        private static SemaphoreSlim GetLimiter(string url) => OrgLimiters.GetOrAdd(new Uri(url).Host, _ => new SemaphoreSlim(6));
 
         public AzureDevOpsWorkTrackingConnector(ILogger<AzureDevOpsWorkTrackingConnector> logger, ICryptoService cryptoService, IAppSettingService appSettingService)
         {

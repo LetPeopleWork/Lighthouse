@@ -59,14 +59,14 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
             return Task.CompletedTask;
         }
 
-        private bool EntityLimitExceeded<TEntity>(AuthorizationFilterContext context, int maxAllowed)
+        private void EntityLimitExceeded<TEntity>(AuthorizationFilterContext context, int maxAllowed)
             where TEntity : class, IEntity
         {
             var repository = context.HttpContext.RequestServices.GetService<IRepository<TEntity>>();
             if (repository == null)
             {
                 context.Result = new StatusCodeResult(500);
-                return true;
+                return;
             }
 
             var count = repository.GetAll().Count();
@@ -77,10 +77,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 };
-                return true;
             }
-
-            return false;
         }
     }
 }

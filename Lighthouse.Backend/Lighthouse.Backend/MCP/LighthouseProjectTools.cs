@@ -248,9 +248,9 @@ namespace Lighthouse.Backend.MCP
                             .Select(f => f.GetLikelhoodForDate(milestone.Date))
                             .ToList();
 
-                        var averageLikelihood = featureLikelihoods.Any() ? featureLikelihoods.Average() : 100.0;
-                        var minLikelihood = featureLikelihoods.Any() ? featureLikelihoods.Min() : 100.0;
-                        var maxLikelihood = featureLikelihoods.Any() ? featureLikelihoods.Max() : 100.0;
+                        var averageLikelihood = featureLikelihoods.Count != 0 ? featureLikelihoods.Average() : 100.0;
+                        var minLikelihood = featureLikelihoods.Count != 0 ? featureLikelihoods.Min() : 100.0;
+                        var maxLikelihood = featureLikelihoods.Count != 0 ? featureLikelihoods.Max() : 100.0;
 
                         return new
                         {
@@ -284,7 +284,7 @@ namespace Lighthouse.Backend.MCP
                     ProjectId = project.Id,
                     TotalMilestones = project.Milestones.Count,
                     FutureMilestones = milestoneAnalysis.Count,
-                    OverallProjectHealth = milestoneAnalysis.Any() ? 
+                    OverallProjectHealth = milestoneAnalysis.Count != 0 ? 
                         milestoneAnalysis.Average(m => m.OverallLikelihood) switch
                         {
                             >= 80 => "Healthy - Most milestones likely to be met",

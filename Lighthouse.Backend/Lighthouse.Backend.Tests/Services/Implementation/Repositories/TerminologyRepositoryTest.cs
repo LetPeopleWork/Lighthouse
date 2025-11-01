@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var entries = subject.GetAll().ToList();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(entries.Count, Is.GreaterThan(0));
+                Assert.That(entries, Is.Not.Empty);
                 
                 // Verify all entries have positive auto-incremented IDs
                 foreach (var entry in entries)
@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 // Verify IDs are unique
                 var ids = entries.Select(e => e.Id).ToList();
                 var uniqueIds = ids.Distinct().ToList();
-                Assert.That(uniqueIds.Count, Is.EqualTo(ids.Count), "All IDs should be unique");
+                Assert.That(uniqueIds, Has.Count.EqualTo(ids.Count), "All IDs should be unique");
                 
                 // Verify entries are ordered by creation (first entry should have smallest ID)
                 var sortedIds = ids.OrderBy(id => id).ToList();

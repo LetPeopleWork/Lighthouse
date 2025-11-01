@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task ImportLicense_NoFileProvided_ReturnsBadRequest()
         {
-            var result = await subject.ImportLicense(null);
+            var result = await subject.ImportLicense(null!);
 
             using (Assert.EnterMultipleScope())
             {

@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(4));
-                Assert.That(manualForecast.Likelihood, Is.Not.EqualTo(0));
+                Assert.That(manualForecast.Likelihood, Is.Not.Zero);
             };
         }
 

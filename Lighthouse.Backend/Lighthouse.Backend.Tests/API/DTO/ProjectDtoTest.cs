@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var subject = CreateSubject(project);
 
-            Assert.That(subject.RemainingWorkItems, Is.EqualTo(0));
+            Assert.That(subject.RemainingWorkItems, Is.Zero);
         }
 
         [Test]
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var subject = CreateSubject(project);
 
-            Assert.That(subject.TotalWorkItems, Is.EqualTo(0));
+            Assert.That(subject.TotalWorkItems, Is.Zero);
         }
 
         [Test]
@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(subject.Forecasts, Has.Count.EqualTo(4));
-                Assert.That(subject.Forecasts.Select(f => f.Probability), Is.EquivalentTo(new[] { 50, 70, 85, 95 }));
+                Assert.That(subject.Forecasts.Select(f => f.Probability), Is.EquivalentTo([50, 70, 85, 95]));
             }
         }
 

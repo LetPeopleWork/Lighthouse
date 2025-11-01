@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet]
+        [ProducesResponseType<LicenseStatusDto>(StatusCodes.Status200OK)]
         public IActionResult GetLicenseStatus()
         {
             var (licenseInfo, isValid) = licenseService.GetLicenseData();

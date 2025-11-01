@@ -1,7 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +11,7 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class ProjectMetricsController : ControllerBase
     {
+        private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
         private readonly IRepository<Project> projectRepository;
         private readonly IProjectMetricsService projectMetricsService;
 
@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) => projectMetricsService.GetStartedItemsForProject(project, startDate, endDate));
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, project =>

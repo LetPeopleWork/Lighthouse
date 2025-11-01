@@ -11,6 +11,7 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class TeamMetricsController : ControllerBase
     {
+        private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
 
@@ -25,7 +26,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetThroughputForTeam(team, startDate, endDate));
@@ -36,7 +37,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetStartedItemsForTeam(team, startDate, endDate));
@@ -47,7 +48,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetWorkInProgressOverTimeForTeam(team, startDate, endDate));
@@ -79,7 +80,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate));
@@ -90,7 +91,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
@@ -105,7 +106,7 @@ namespace Lighthouse.Backend.API
         {
             if (startDate.Date > endDate.Date)
             {
-                return BadRequest("Start date must be before end date.");
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>

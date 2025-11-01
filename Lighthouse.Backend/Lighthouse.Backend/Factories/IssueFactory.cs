@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Factories
         {
             var stateCategory = workitemQueryOwner.MapStateToStateCategory(state);
 
-            // If the StateCategory is ToDo or Unknown, we have neither started nor finished
+            // If the StateCategory is To Do or Unknown, we have neither started nor finished
             DateTime? closedDate = null;
             DateTime? startedDate = null;
 

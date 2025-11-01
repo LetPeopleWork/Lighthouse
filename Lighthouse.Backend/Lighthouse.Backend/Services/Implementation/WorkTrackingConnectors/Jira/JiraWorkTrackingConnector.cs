@@ -553,7 +553,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 query.Append("jql=").Append(Uri.EscapeDataString(jqlQuery));
                 query.Append("&fields=").Append(Uri.EscapeDataString("*all"));
                 query.Append("&expand=changelog");
-                query.Append("&maxResults=").Append(pageLimit.ToString());
+                query.Append("&maxResults=").Append(pageLimit);
 
                 if (!string.IsNullOrEmpty(nextPageToken))
                 {

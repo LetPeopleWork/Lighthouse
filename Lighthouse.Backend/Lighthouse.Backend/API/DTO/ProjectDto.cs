@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public int RemainingWorkItems { get; } = 0;
 
-        private List<WhenForecastDto> GetLatestForecasts(IEnumerable<WhenForecast> forecasts)
+        private static List<WhenForecastDto> GetLatestForecasts(IEnumerable<WhenForecast> forecasts)
         {
             var whenForecasts = new List<WhenForecastDto>();
 
