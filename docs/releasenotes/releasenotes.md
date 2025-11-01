@@ -11,15 +11,14 @@ Preview
 {: .label .label-blue }
  -->
 
-
-# Lighthouse v25.10.31.1906
+# Lighthouse v25.11.1.1014
 {: .d-inline-block }
 Latest
 {: .label .label-green }
 
 ## Forecasts in Dashboard
 The Overview Dashboard will now show the number of remaining work items for a project, as well as a forecast for the completion of the project:
-**To Do: Add Image Link**
+![Overview Dashboard with Forecasts](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/OverviewDashboardFeatures.png)
 
 This should help to get a better overview over ongoing and planned projects, without having to dig into the details.
 
@@ -27,14 +26,16 @@ This should help to get a better overview over ongoing and planned projects, wit
 Apart from that, this release has smaller improvements and bug fixes, along with update of third party packages:
 - Added a new Demo Scenario to forecast a project that has nothing broken down yet [Premium]
 - Fixed an issue that Cycle Time and Work Item Age were not properly calculated for Jira Issues that had a lot of updates.
+- Adjust the default http port on macOS (from 5000 to 5002), as AirPlay is often using port 5000, leading to errors on startup.
 
 ## Contributions ❤️ 
 Special Thanks to everyone who contributed their feedback to this release:
 - [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
 - [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Maria Chec](https://www.linkedin.com/in/mariachec/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.9.22.1707...v25.10.31.1906)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.9.22.1707...v25.11.1.1014)
 
 # Lighthouse v25.9.22.1707
 
