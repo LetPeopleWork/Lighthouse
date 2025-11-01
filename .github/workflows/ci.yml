@@ -302,7 +302,7 @@ jobs:
 
       - name: Adjust HTTP port for macOS (AirPlay conflict)
         run: |
-          sed -i '' 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.json
+          sed -i 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.json
 
       - name: Set osx executable permission
         run: sudo chmod +x ./publish/osx-x64/Lighthouse
