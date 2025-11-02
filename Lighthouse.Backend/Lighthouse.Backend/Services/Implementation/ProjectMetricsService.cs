@@ -144,6 +144,21 @@ namespace Lighthouse.Backend.Services.Implementation
             ];
         }
 
+        public int GetTotalWorkItemAge(Project project)
+        {
+            logger.LogDebug("Getting Total Work Item Age for Project {ProjectName}", project.Name);
+
+            var inProgressFeatures = featureRepository.GetAllByPredicate(f =>
+                f.Projects.Any(p => p.Id == project.Id) &&
+                f.StateCategory == StateCategories.Doing);
+
+            var totalAge = inProgressFeatures.Sum(feature => feature.WorkItemAge);
+
+            logger.LogDebug("Total Work Item Age for Project {ProjectName}: {TotalAge} days", project.Name, totalAge);
+
+            return totalAge;
+        }
+
         public void InvalidateProjectMetrics(Project project)
         {
             InvalidateMetrics(project, logger);

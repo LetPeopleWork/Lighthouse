@@ -291,6 +291,160 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             ;
         }
 
+        [Test]
+        public void GetTotalWorkItemAge_NoFeaturesInDoing_ReturnsZero()
+        {
+            features.Clear();
+            var feature1 = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.ToDo,
+            };
+            feature1.Projects.Add(project);
+            features.Add(feature1);
+
+            var feature2 = new Feature
+            {
+                Id = 2,
+                StateCategory = StateCategories.Done,
+            };
+            feature2.Projects.Add(project);
+            features.Add(feature2);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.Zero);
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_FeaturesOfOtherProject_ReturnsZero()
+        {
+            var otherProject = new Project { Id = 999, Name = "Other Project" };
+            features.Clear();
+            var feature = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-5),
+            };
+            feature.Projects.Add(otherProject);
+            features.Add(feature);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.Zero);
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_SingleFeatureInProgress_ReturnsFeatureAge()
+        {
+            features.Clear();
+            var feature = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-5),
+            };
+            feature.Projects.Add(project);
+            features.Add(feature);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.EqualTo(6));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_MultipleFeaturesInProgress_ReturnsSumOfAges()
+        {
+            features.Clear();
+            var feature1 = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-10),
+            };
+            feature1.Projects.Add(project);
+            features.Add(feature1);
+
+            var feature2 = new Feature
+            {
+                Id = 2,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-5),
+            };
+            feature2.Projects.Add(project);
+            features.Add(feature2);
+
+            var feature3 = new Feature
+            {
+                Id = 3,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-2),
+            };
+            feature3.Projects.Add(project);
+            features.Add(feature3);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            // 11 + 6 + 3 = 20
+            Assert.That(totalAge, Is.EqualTo(20));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_MixedStateFeatures_OnlyCountsDoingFeatures()
+        {
+            features.Clear();
+            var feature1 = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-7),
+            };
+            feature1.Projects.Add(project);
+            features.Add(feature1);
+
+            var feature2 = new Feature
+            {
+                Id = 2,
+                StateCategory = StateCategories.Done,
+                StartedDate = DateTime.UtcNow.AddDays(-15),
+                ClosedDate = DateTime.UtcNow.AddDays(-3),
+            };
+            feature2.Projects.Add(project);
+            features.Add(feature2);
+
+            var feature3 = new Feature
+            {
+                Id = 3,
+                StateCategory = StateCategories.ToDo,
+            };
+            feature3.Projects.Add(project);
+            features.Add(feature3);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.EqualTo(8));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_FeatureWithNoStartedDate_UsesCreatedDate()
+        {
+            features.Clear();
+            var feature = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = null,
+                CreatedDate = DateTime.UtcNow.AddDays(-9),
+            };
+            feature.Projects.Add(project);
+            features.Add(feature);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.EqualTo(10));
+        }
+
         private void SetupTestData()
         {
             project = new Project
@@ -299,10 +453,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Name = "Test Project"
             };
 
-            var jan2 = new DateTime(2023, 1, 2);
-            var jan4 = new DateTime(2023, 1, 4);
-            var jan5 = new DateTime(2023, 1, 5);
-            var jan10 = new DateTime(2023, 1, 10);
+            var jan2 = new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc);
+            var jan4 = new DateTime(2023, 1, 4, 0, 0, 0, DateTimeKind.Utc);
+            var jan5 = new DateTime(2023, 1, 5, 0, 0, 0, DateTimeKind.Utc);
+            var jan10 = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
             features = new List<Feature>
             {

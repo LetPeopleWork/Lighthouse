@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Services.Interfaces
         
         IEnumerable<Feature> GetCycleTimeDataForProject(Project project, DateTime startDate, DateTime endDate);
 
+        int GetTotalWorkItemAge(Project project);
+
         void InvalidateProjectMetrics(Project project);
     }
 }

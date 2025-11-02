@@ -118,5 +118,11 @@ namespace Lighthouse.Backend.API
                 return projectMetricsService.GetMultiItemForecastPredictabilityScoreForProject(project, startDate, endDate);
             });
         }
+
+        [HttpGet("totalWorkItemAge")]
+        public ActionResult<int> GetTotalWorkItemAge(int projectId)
+        {
+            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, projectMetricsService.GetTotalWorkItemAge);
+        }
     }
 }

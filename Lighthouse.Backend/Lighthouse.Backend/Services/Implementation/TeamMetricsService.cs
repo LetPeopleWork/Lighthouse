@@ -187,6 +187,18 @@ namespace Lighthouse.Backend.Services.Implementation
             ];
         }
 
+        public int GetTotalWorkItemAge(Team team)
+        {
+            logger.LogDebug("Getting Total Work Item Age for Team {TeamName}", team.Name);
+
+            var inProgressItems = GetInProgressWorkItemsForTeam(team);
+            var totalAge = inProgressItems.Sum(item => item.WorkItemAge);
+
+            logger.LogDebug("Total Work Item Age for Team {TeamName}: {TotalAge} days", team.Name, totalAge);
+
+            return totalAge;
+        }
+
         public void InvalidateTeamMetrics(Team team)
         {
             InvalidateMetrics(team, logger);

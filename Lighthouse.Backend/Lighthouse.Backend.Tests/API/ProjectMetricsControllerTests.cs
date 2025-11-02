@@ -303,7 +303,38 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.StatusCode, Is.EqualTo(200));
                 Assert.That(result.Value, Is.EqualTo(expectedScore));
             }
-            ;
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_ProjectIdDoesNotExist_ReturnsNotFound()
+        {
+            var response = subject.GetTotalWorkItemAge(1337);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_ProjectExists_GetsTotalWorkItemAgeFromProjectMetricsService()
+        {
+            const int expectedTotalAge = 56;
+            projectMetricsService.Setup(service => service.GetTotalWorkItemAge(project)).Returns(expectedTotalAge);
+
+            var response = subject.GetTotalWorkItemAge(project.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedTotalAge));
+            }
         }
     }
 }
