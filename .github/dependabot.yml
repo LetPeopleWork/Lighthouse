@@ -5,6 +5,12 @@ updates:
     directory: "/Lighthouse.Frontend"
     schedule:
       interval: "daily"
+    ignore:
+      # Ignore MUI X Charts updates until v8.16+ regression is fixed
+      - dependency-name: "@mui/x-charts"
+        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
+      - dependency-name: "@mui/x-date-pickers"
+        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
     commit-message:
       prefix: "deps"
     open-pull-requests-limit: 5

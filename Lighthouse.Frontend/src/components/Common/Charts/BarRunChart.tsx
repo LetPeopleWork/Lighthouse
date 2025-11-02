@@ -160,7 +160,12 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 										},
 									},
 								]}
-								xAxis={[{ scaleType: "band", dataKey: "day" }]}
+								xAxis={[
+									{
+										scaleType: "band",
+										dataKey: "day",
+									},
+								]}
 								series={[
 									{
 										dataKey: "value",

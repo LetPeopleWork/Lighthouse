@@ -74,7 +74,9 @@ describe("StackedAreaChart component", () => {
 		const emptyAreas: AreaChartItem[] = [];
 		const startDate = new Date(2023, 0, 1);
 
-		const { container } = render(<StackedAreaChart areas={emptyAreas} startDate={startDate} />);
+		const { container } = render(
+			<StackedAreaChart areas={emptyAreas} startDate={startDate} />,
+		);
 
 		// Check that the component returns null (no content rendered)
 		expect(container.firstChild).toBeNull();
