@@ -119,6 +119,22 @@ export class ProjectDetailPage {
 			.nth(1);
 	}
 
+	get totalWorkItemAgeWidget(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-totalWorkItemAge")
+			.locator("div")
+			.filter({ hasText: /^Total Work Item Age.*days$/ })
+			.first();
+	}
+
+	get totalWorkItemAgeRunChart(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-totalWorkItemAgeOverTime")
+			.locator("div")
+			.filter({ hasText: /^Features Total Work Item Age Over Time.*$/ })
+			.nth(1);
+	}
+
 	get projectId(): number {
 		const url = new URL(this.page.url());
 		const projectId = url.pathname.split("/").pop() ?? "0";

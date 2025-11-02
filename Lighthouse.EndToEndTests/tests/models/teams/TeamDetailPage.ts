@@ -208,4 +208,20 @@ export class TeamDetailPage {
 			.filter({ hasText: "Started vs. Closed Work" })
 			.first();
 	}
+
+	get totalWorkItemAgeWidget(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-totalWorkItemAge")
+			.locator("div")
+			.filter({ hasText: /^Total Work Item Age.*days$/ })
+			.first();
+	}
+
+	get totalWorkItemAgeRunChart(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-totalWorkItemAgeOverTime")
+			.locator("div")
+			.filter({ hasText: /^Work Items Total Work Item Age Over Time.*$/ })
+			.nth(1);
+	}
 }

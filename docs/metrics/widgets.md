@@ -189,6 +189,45 @@ If you enable the trend lines, the start and end points of both areas will be co
 2. Bring the lines closer together - this means you will decrease your Cycle Time.
 3. Increase the *angle* of the lines - this means you will increase your Throughput.
 
+## Total Work Item Age
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Projects |
+| **Flow Metric** | Work Item Age, WIP |
+| **Affected by Filtering** | No (Widget), Yes (Chart) |
+
+The Total Work Item Age widget shows the cumulative age of all items currently in progress. This metric helps you understand the overall "inventory" age of your work in progress.
+
+![Total Work Item Age Widget](../assets/features/metrics/totalWorkItemAge.png)
+
+The widget displays a single number representing the sum of ages (in days) of all items currently in a *Doing* state. This gives you a quick view of your total WIP "burden" - the higher the number, the more accumulated age you're carrying in your system.
+
+For example, if you have:
+- Item A: 5 days old
+- Item B: 3 days old  
+- Item C: 2 days old
+
+Your Total Work Item Age would be 10 days.
+
+{: .important}
+This widget is **not affected** by date filtering. It always shows the **current** total age of all items in progress.
+
+### Total Work Item Age Over Time
+
+To see how your total work item age has evolved, there's also a run chart showing the historical trend:
+
+![Total Work Item Age Run Chart](../assets/features/metrics/totalWorkItemAgeRunChart.png)
+
+This chart visualizes how the cumulative age of your WIP has changed over the selected time period. You can use this to:
+- Identify periods where age accumulated (indicating items getting stuck)
+- See the impact of finishing old items (sharp drops in total age)
+- Monitor whether your overall WIP age is trending up or down
+
+If you click on a specific day, it will show you which items contributed to the total age on that date, along with each item's individual age at that point in time.
+
+{: .note}
+The age calculation for historical dates shows how old each item was on that specific date, not its current age. An item started 10 days ago would show age 1 on its first day, age 2 on its second day, and so on.
+
 ## Feature Size
 
 |--------------|-------------------------|

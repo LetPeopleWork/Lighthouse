@@ -441,6 +441,16 @@ testWithData(
 			"features/metrics/simplifiedCFD.png",
 		);
 
+		await takeElementScreenshot(
+			teamDetailPage.totalWorkItemAgeWidget,
+			"features/metrics/totalWorkItemAge.png",
+		);
+
+		await takeElementScreenshot(
+			teamDetailPage.totalWorkItemAgeRunChart,
+			"features/metrics/totalWorkItemAgeRunChart.png",
+		);
+
 		overviewPage.lightHousePage.goToOverview();
 
 		// Project Deletion Dialog
