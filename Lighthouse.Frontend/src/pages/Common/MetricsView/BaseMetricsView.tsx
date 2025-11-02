@@ -7,6 +7,7 @@ import FeatureSizeScatterPlotChart from "../../../components/Common/Charts/Featu
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
+import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import type { IFeature } from "../../../models/Feature";
@@ -254,14 +255,14 @@ export const BaseMetricsView = <
 		items.push({
 			id: "itemsInProgress",
 			priority: 1,
-			size: "medium",
+			size: "small",
 			node: <ItemsInProgress entries={inProgressEntries} />,
 		});
 
 		items.push({
 			id: "percentiles",
 			priority: 2,
-			size: "medium",
+			size: "small",
 			node: (
 				<CycleTimePercentiles
 					percentileValues={percentileValues}
@@ -274,7 +275,7 @@ export const BaseMetricsView = <
 		items.push({
 			id: "startedVsFinished",
 			priority: 3,
-			size: "medium",
+			size: "small",
 			node: (
 				<StartedVsFinishedDisplay
 					startedItems={startedItems}
@@ -352,8 +353,21 @@ export const BaseMetricsView = <
 		});
 
 		items.push({
-			id: "stacked",
+			id: "totalWorkItemAgeOverTime",
 			priority: 14,
+			size: "large",
+			node: wipOverTimeData ? (
+				<TotalWorkItemAgeRunChart
+					title={`${title} Total Work Item Age Over Time`}
+					startDate={startDate}
+					wipOverTimeData={wipOverTimeData}
+				/>
+			) : null,
+		});
+
+		items.push({
+			id: "stacked",
+			priority: 15,
 			size: "large",
 			node:
 				throughputData && startedItems ? (
@@ -383,7 +397,7 @@ export const BaseMetricsView = <
 		if (cycleTimeData.length > 0 && "size" in cycleTimeData[0]) {
 			items.push({
 				id: "featureSize",
-				priority: 15,
+				priority: 16,
 				size: "large", // Use standardized large size
 				node: (
 					<FeatureSizeScatterPlotChart

@@ -17,7 +17,8 @@ interface TotalWorkItemAgeRunChartProps {
 
 /**
  * Calculate the historical age of a work item on a specific date
- * Age = days between startedDate and the historical date
+ * Age = days between startedDate and the historical date + 1
+ * (An item started today has age 1, not 0)
  */
 const calculateHistoricalAge = (
 	item: IWorkItem,
@@ -27,7 +28,7 @@ const calculateHistoricalAge = (
 	const historical = new Date(historicalDate);
 	const diffMs = historical.getTime() - started.getTime();
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-	return Math.max(0, diffDays); // Age cannot be negative
+	return Math.max(0, diffDays + 1); // Add 1 so an item started today has age 1
 };
 
 const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({

@@ -235,6 +235,40 @@ vi.mock("../../../components/Common/Charts/WorkItemAgingChart", () => ({
 	),
 }));
 
+vi.mock("../../../components/Common/Charts/TotalWorkItemAgeWidget", () => ({
+	default: ({
+		entityId,
+		metricsService,
+	}: {
+		entityId: number;
+		metricsService: IMetricsService<IWorkItem>;
+	}) => (
+		<div data-testid="total-work-item-age-widget">
+			<div data-testid="widget-entity-id">{entityId}</div>
+			<div data-testid="widget-has-service">
+				{metricsService ? "has-service" : "no-service"}
+			</div>
+		</div>
+	),
+}));
+
+vi.mock("../../../components/Common/Charts/TotalWorkItemAgeRunChart", () => ({
+	default: ({
+		title,
+		startDate,
+		wipOverTimeData,
+	}: {
+		title: string;
+		startDate: Date;
+		wipOverTimeData: RunChartData;
+	}) => (
+		<div data-testid={`total-work-item-age-run-chart-${title}`}>
+			<div data-testid="age-chart-data-count">{wipOverTimeData.history}</div>
+			<div data-testid="age-chart-start-date">{startDate.toISOString()}</div>
+		</div>
+	),
+}));
+
 // Mock DashboardHeader and Dashboard to capture dashboardId prop
 vi.mock("./DashboardHeader", () => ({
 	default: ({
@@ -620,6 +654,14 @@ describe("BaseMetricsView component", () => {
 					"stacked-area-chart-Simplified Cumulative Flow Diagram",
 				),
 			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("total-work-item-age-widget"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId(
+					"total-work-item-age-run-chart-Features Total Work Item Age Over Time",
+				),
+			).toBeInTheDocument();
 		});
 
 		// Check that service level expectation is set correctly
@@ -712,6 +754,40 @@ describe("BaseMetricsView component", () => {
 		expect(screen.getByTestId("service-level-expectation")).toHaveTextContent(
 			"80:10",
 		);
+	});
+
+	it("renders Total Work Item Age widget and chart correctly", async () => {
+		render(
+			<BaseMetricsView
+				entity={mockProject}
+				metricsService={mockMetricsService}
+				title="Features"
+				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		// Wait for components to render
+		await waitFor(() => {
+			// Check Total Work Item Age Widget is rendered
+			expect(
+				screen.getByTestId("total-work-item-age-widget"),
+			).toBeInTheDocument();
+			expect(screen.getByTestId("widget-entity-id")).toHaveTextContent(
+				String(mockProject.id),
+			);
+			expect(screen.getByTestId("widget-has-service")).toHaveTextContent(
+				"has-service",
+			);
+
+			// Check Total Work Item Age Run Chart is rendered
+			expect(
+				screen.getByTestId(
+					"total-work-item-age-run-chart-Features Total Work Item Age Over Time",
+				),
+			).toBeInTheDocument();
+			expect(screen.getByTestId("age-chart-data-count")).toHaveTextContent("2");
+		});
 	});
 
 	it("updates data when start date changes", async () => {
