@@ -10,11 +10,21 @@ nav_order: 95
 Preview
 {: .label .label-blue }
  -->
-
-# Lighthouse v25.11.1.1014
+ 
+# Lighthouse v25.11.2
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+Fixed issue of missing x-axis labels in various charts. The labels (dates, states) are now shown again!
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.1.1014...v25.11.2)
+
+# Lighthouse v25.11.1.1014
 
 ## Forecasts in Dashboard
 The Overview Dashboard will now show the number of remaining work items for a project, as well as a forecast for the completion of the project:
