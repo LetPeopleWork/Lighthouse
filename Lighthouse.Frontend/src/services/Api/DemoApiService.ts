@@ -335,6 +335,14 @@ export class DemoTeamMetricsService implements ITeamMetricsService {
 		}
 		return items;
 	}
+
+	async getTotalWorkItemAge(teamId: number): Promise<number> {
+		console.log(`Getting Total Work Item Age for Team ${teamId}`);
+		await delay();
+
+		// Generate a random total age between 50 and 300 days
+		return Math.floor(Math.random() * (300 - 50 + 1)) + 50;
+	}
 }
 
 export class DemoProjectMetricsService implements IProjectMetricsService {
@@ -563,6 +571,14 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 			features.push(feature);
 		}
 		return features;
+	}
+
+	async getTotalWorkItemAge(projectId: number): Promise<number> {
+		console.log(`Getting Total Work Item Age for Project ${projectId}`);
+		await delay();
+
+		// Generate a random total age between 100 and 500 days (projects typically have higher total age)
+		return Math.floor(Math.random() * (500 - 100 + 1)) + 100;
 	}
 }
 

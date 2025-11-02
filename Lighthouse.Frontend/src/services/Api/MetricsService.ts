@@ -42,6 +42,8 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<ForecastPredictabilityScore>;
+
+	getTotalWorkItemAge(id: number): Promise<number>;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
@@ -182,6 +184,16 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			);
 
 			return this.deserializeForecastAccuracy(response.data);
+		});
+	}
+
+	async getTotalWorkItemAge(id: number): Promise<number> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<number>(
+				`/${this.api}/${id}/metrics/totalWorkItemAge`,
+			);
+
+			return response.data;
 		});
 	}
 

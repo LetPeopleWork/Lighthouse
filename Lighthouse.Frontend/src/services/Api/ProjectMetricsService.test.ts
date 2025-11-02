@@ -247,4 +247,32 @@ describe("ProjectMetricsService", () => {
 			expect(result).toBe("startDate=2023-01-01&endDate=2023-01-31");
 		});
 	});
+
+	describe("getTotalWorkItemAge", () => {
+		it("should call the correct API endpoint and return total age", async () => {
+			// Arrange
+			const mockTotalAge = 250;
+			mockGet.mockResolvedValueOnce({ data: mockTotalAge });
+
+			// Act
+			const result = await service.getTotalWorkItemAge(projectId);
+
+			// Assert
+			expect(mockGet).toHaveBeenCalledWith(
+				`/projects/${projectId}/metrics/totalWorkItemAge`,
+			);
+			expect(result).toBe(250);
+		});
+
+		it("should handle errors when getting total work item age", async () => {
+			// Arrange
+			const errorMessage = "Network Error";
+			mockGet.mockRejectedValueOnce(new Error(errorMessage));
+
+			// Act & Assert
+			await expect(service.getTotalWorkItemAge(projectId)).rejects.toThrow(
+				errorMessage,
+			);
+		});
+	});
 });

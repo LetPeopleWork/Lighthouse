@@ -484,6 +484,7 @@ describe("BaseMetricsView component", () => {
 				{ percentile: 85, value: 10 },
 				{ percentile: 95, value: 15 },
 			]),
+			getTotalWorkItemAge: vi.fn().mockResolvedValue(150),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -878,6 +879,7 @@ describe("BaseMetricsView component", () => {
 			getMultiItemForecastPredictabilityScore: vi
 				.fn()
 				.mockRejectedValue(new Error("API error")),
+			getTotalWorkItemAge: vi.fn().mockRejectedValue(new Error("API error")),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1325,6 +1327,7 @@ describe("BaseMetricsView component", () => {
 				getMultiItemForecastPredictabilityScore: vi
 					.fn()
 					.mockRejectedValue(new Error("Predictability API error")),
+				getTotalWorkItemAge: vi.fn().mockRejectedValue(new Error("API error")),
 			};
 
 			const consoleSpy = vi

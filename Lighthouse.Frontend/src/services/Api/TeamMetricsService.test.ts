@@ -140,6 +140,28 @@ describe("TeamMetricsService", () => {
 		);
 	});
 
+	it("should get total work item age for a team", async () => {
+		const mockTotalAge = 157;
+
+		mockedAxios.get.mockResolvedValueOnce({ data: mockTotalAge });
+
+		const result = await teamMetricsService.getTotalWorkItemAge(1);
+
+		expect(result).toBe(157);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/1/metrics/totalWorkItemAge",
+		);
+	});
+
+	it("should handle errors when getting total work item age", async () => {
+		const errorMessage = "Network Error";
+		mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
+
+		await expect(teamMetricsService.getTotalWorkItemAge(1)).rejects.toThrow(
+			errorMessage,
+		);
+	});
+
 	const createMockWorkItem = (name: string): IWorkItem => ({
 		id: Math.floor(Math.random() * 1000),
 		referenceId: Math.floor(Math.random() * 1000).toString(),
