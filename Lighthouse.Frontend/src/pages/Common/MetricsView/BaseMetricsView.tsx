@@ -7,6 +7,7 @@ import FeatureSizeScatterPlotChart from "../../../components/Common/Charts/Featu
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
+import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
@@ -278,6 +279,18 @@ export const BaseMetricsView = <
 				<StartedVsFinishedDisplay
 					startedItems={startedItems}
 					closedItems={throughputData}
+				/>
+			),
+		});
+
+		items.push({
+			id: "totalWorkItemAge",
+			priority: 4,
+			size: "small",
+			node: (
+				<TotalWorkItemAgeWidget
+					entityId={entity.id}
+					metricsService={metricsService}
 				/>
 			),
 		});
