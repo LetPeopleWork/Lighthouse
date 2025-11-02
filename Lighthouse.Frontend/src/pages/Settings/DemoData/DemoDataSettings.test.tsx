@@ -177,6 +177,48 @@ describe("DemoDataSettings", () => {
 		});
 	});
 
+	it("loads scenario with ID '0' when load button is clicked and confirmed", async () => {
+		const user = userEvent.setup();
+		const mockScenarios: IDemoDataScenario[] = [
+			{
+				id: "0",
+				title: "When Will This Be Done?",
+				description: "One Team, one project with a set of Epics",
+				isPremium: false,
+			},
+		];
+
+		mockDemoDataService.getAvailableScenarios.mockResolvedValue(mockScenarios);
+		mockDemoDataService.loadScenario.mockResolvedValue(undefined);
+
+		render(
+			<ApiServiceContext.Provider value={mockApiContext}>
+				<DemoDataSettings />
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("When Will This Be Done?")).toBeInTheDocument();
+		});
+
+		const loadButton = screen.getByText("Load Scenario");
+		await user.click(loadButton);
+
+		// Should show confirmation dialog
+		await waitFor(() => {
+			expect(screen.getByText("Confirm Demo Data Loading")).toBeInTheDocument();
+		});
+
+		// Click the proceed button
+		const proceedButton = screen.getByText("Proceed with Loading");
+		await user.click(proceedButton);
+
+		// Verify that the scenario with ID "0" is loaded correctly
+		await waitFor(() => {
+			expect(mockDemoDataService.loadScenario).toHaveBeenCalledWith("0");
+		});
+	});
+
 	it("does not load scenario when canceled in confirmation dialog", async () => {
 		const user = userEvent.setup();
 		const mockScenarios: IDemoDataScenario[] = [
