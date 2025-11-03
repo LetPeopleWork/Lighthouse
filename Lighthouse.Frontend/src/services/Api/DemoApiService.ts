@@ -526,6 +526,52 @@ export class DemoProjectMetricsService implements IProjectMetricsService {
 		];
 	}
 
+	async getAllFeaturesForSizeChart(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeature[]> {
+		console.log(
+			`Getting All Features For Size Chart for Project ${projectId} between ${startDate} - ${endDate}`,
+		);
+		await delay();
+
+		const allFeatures: IFeature[] = [];
+
+		const project = projects.find((p) => p.id === projectId);
+		if (!project) {
+			return allFeatures;
+		}
+
+		// Get all features (Done, ToDo, and Doing) related to this project
+		for (const feature of features) {
+			const featureProjects = feature.projects || [];
+			const isInProject = featureProjects.some(
+				(fp) => fp.id === project.id || fp.name === project.name,
+			);
+
+			if (isInProject) {
+				// Include Done features closed in date range
+				if (
+					feature.stateCategory === "Done" &&
+					feature.closedDate >= startDate &&
+					feature.closedDate <= endDate
+				) {
+					allFeatures.push(feature);
+				}
+				// Include all ToDo and Doing features
+				else if (
+					feature.stateCategory === "ToDo" ||
+					feature.stateCategory === "Doing"
+				) {
+					allFeatures.push(feature);
+				}
+			}
+		}
+
+		return allFeatures;
+	}
+
 	async getCycleTimeData(
 		id: number,
 		startDate: Date,

@@ -93,6 +93,21 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        [HttpGet("allFeaturesForSizeChart")]
+        public ActionResult<IEnumerable<FeatureDto>> GetAllFeaturesForSizeChart(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+            {
+                var features = projectMetricsService.GetAllFeaturesForSizeChart(project, startDate, endDate);
+                return features.Select(f => new FeatureDto(f));
+            });
+        }
+
         [HttpGet("sizePercentiles")]
         public ActionResult<IEnumerable<PercentileValue>> GetSizePercentiles(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

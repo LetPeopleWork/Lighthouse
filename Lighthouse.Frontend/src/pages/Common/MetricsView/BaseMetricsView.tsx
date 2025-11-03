@@ -69,6 +69,10 @@ export const BaseMetricsView = <
 		IPercentileValue[]
 	>([]);
 
+	const [allFeaturesForSizeChart, setAllFeaturesForSizeChart] = useState<
+		IFeature[]
+	>([]);
+
 	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
 	const [predictabilityData, setPredictabilityData] =
 		useState<IForecastPredictabilityScore | null>(null);
@@ -198,16 +202,23 @@ export const BaseMetricsView = <
 					endDate,
 				);
 				setSizePercentileValues(percentiles);
+
+				const allFeatures =
+					await projectMetricsService.getAllFeaturesForSizeChart(
+						entity.id,
+						startDate,
+						endDate,
+					);
+				setAllFeaturesForSizeChart(allFeatures);
 			} catch (error) {
 				console.error(`Error fetching Size Percentile Data:`, error);
 			}
 		};
 
-		// Check if the service has the getSizePercentiles method (only ProjectMetricsService has this)
+		// Check if the service has the getAllFeaturesForSizeChart method (only ProjectMetricsService has this)
 		if (
-			"getSizePercentiles" in metricsService &&
-			typeof (metricsService as IProjectMetricsService).getSizePercentiles ===
-				"function"
+			"getAllFeaturesForSizeChart" in metricsService &&
+			"getSizePercentiles" in metricsService
 		) {
 			fetchSizePercentileData(metricsService as IProjectMetricsService);
 		}
@@ -394,14 +405,14 @@ export const BaseMetricsView = <
 		});
 
 		// Feature size chart (conditional)
-		if (cycleTimeData.length > 0 && "size" in cycleTimeData[0]) {
+		if (allFeaturesForSizeChart.length > 0) {
 			items.push({
 				id: "featureSize",
 				priority: 16,
 				size: "large", // Use standardized large size
 				node: (
 					<FeatureSizeScatterPlotChart
-						sizeDataPoints={cycleTimeData as IFeature[]}
+						sizeDataPoints={allFeaturesForSizeChart}
 						sizePercentileValues={sizePercentileValues}
 					/>
 				),

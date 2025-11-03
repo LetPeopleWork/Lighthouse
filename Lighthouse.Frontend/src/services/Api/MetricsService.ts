@@ -56,6 +56,12 @@ export interface IProjectMetricsService extends IMetricsService<IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IPercentileValue[]>;
+
+	getAllFeaturesForSizeChart(
+		projectId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFeature[]>;
 }
 
 export abstract class BaseMetricsService<T extends IWorkItem | IFeature>

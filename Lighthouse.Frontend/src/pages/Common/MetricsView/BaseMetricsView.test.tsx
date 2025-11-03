@@ -518,6 +518,13 @@ describe("BaseMetricsView component", () => {
 				{ percentile: 85, value: 10 },
 				{ percentile: 95, value: 15 },
 			]),
+			getAllFeaturesForSizeChart: vi.fn().mockResolvedValue(
+				mockCycleTimeData.map((item) => ({
+					...item,
+					size: 5,
+					stateCategory: "Done",
+				})),
+			),
 			getTotalWorkItemAge: vi.fn().mockResolvedValue(150),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
@@ -525,6 +532,11 @@ describe("BaseMetricsView component", () => {
 				startDate: Date,
 				endDate: Date,
 			) => Promise<IPercentileValue[]>;
+			getAllFeaturesForSizeChart?: (
+				id: number,
+				startDate: Date,
+				endDate: Date,
+			) => Promise<IFeature[]>;
 		};
 	}
 
@@ -624,6 +636,22 @@ describe("BaseMetricsView component", () => {
 				expect.any(Date),
 				expect.any(Date),
 			);
+			if (projectMetricsService.getAllFeaturesForSizeChart) {
+				expect(
+					projectMetricsService.getAllFeaturesForSizeChart,
+				).toHaveBeenCalledWith(
+					mockProject.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			}
+			if (projectMetricsService.getSizePercentiles) {
+				expect(projectMetricsService.getSizePercentiles).toHaveBeenCalledWith(
+					mockProject.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			}
 		});
 
 		// Check components are rendered with correct data
@@ -691,13 +719,24 @@ describe("BaseMetricsView component", () => {
 			/>,
 		);
 
-		// Wait for component to load and getSizePercentiles to be called
+		// Wait for component to load and size chart methods to be called
 		await waitFor(() => {
-			expect(projectMetricsService.getSizePercentiles).toHaveBeenCalledWith(
-				mockProject.id,
-				expect.any(Date),
-				expect.any(Date),
-			);
+			if (projectMetricsService.getSizePercentiles) {
+				expect(projectMetricsService.getSizePercentiles).toHaveBeenCalledWith(
+					mockProject.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			}
+			if (projectMetricsService.getAllFeaturesForSizeChart) {
+				expect(
+					projectMetricsService.getAllFeaturesForSizeChart,
+				).toHaveBeenCalledWith(
+					mockProject.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			}
 		});
 
 		// Check that FeatureSizeScatterPlotChart receives the size percentile values

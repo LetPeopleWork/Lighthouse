@@ -144,6 +144,28 @@ namespace Lighthouse.Backend.Services.Implementation
             ];
         }
 
+        public IEnumerable<Feature> GetAllFeaturesForSizeChart(Project project, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting All Features For Size Chart for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
+
+            var allFeatures = featureRepository.GetAllByPredicate(f =>
+                    f.Projects.Any(p => p.Id == project.Id) &&
+                    (f.StateCategory == StateCategories.Done || 
+                     f.StateCategory == StateCategories.ToDo || 
+                     f.StateCategory == StateCategories.Doing))
+                .ToList();
+
+            // Filter to only features that were closed in the date range OR are currently in ToDo/Doing state
+            return allFeatures.Where(f =>
+                (f.StateCategory == StateCategories.Done &&
+                 f.ClosedDate.HasValue &&
+                 f.ClosedDate.Value.Date >= startDate.Date &&
+                 f.ClosedDate.Value.Date <= endDate.Date) ||
+                f.StateCategory == StateCategories.ToDo ||
+                f.StateCategory == StateCategories.Doing
+            ).ToList();
+        }
+
         public int GetTotalWorkItemAge(Project project)
         {
             logger.LogDebug("Getting Total Work Item Age for Project {ProjectName}", project.Name);

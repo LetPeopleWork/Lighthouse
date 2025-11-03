@@ -143,6 +143,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getMultiItemForecastPredictabilityScore: vi.fn(),
 		getSizePercentiles: vi.fn(),
 		getTotalWorkItemAge: vi.fn(),
+		getAllFeaturesForSizeChart: vi.fn().mockResolvedValue([]),
 	};
 };
 

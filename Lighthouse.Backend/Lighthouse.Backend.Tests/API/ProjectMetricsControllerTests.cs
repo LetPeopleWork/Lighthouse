@@ -336,5 +336,74 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.Value, Is.EqualTo(expectedTotalAge));
             }
         }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_WithValidInput_ReturnsOk()
+        {
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+            var features = new List<Feature>
+            {
+                new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StateCategory = StateCategories.Done, StartedDate = DateTime.Now.AddDays(-5), ClosedDate = new DateTime(2023, 1, 10) },
+                new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StateCategory = StateCategories.Doing, StartedDate = DateTime.Now.AddDays(-3) },
+                new Feature { Id = 3, Name = "Feature 3", ReferenceId = "F3", StateCategory = StateCategories.ToDo }
+            };
+
+            projectMetricsService.Setup(x => x.GetAllFeaturesForSizeChart(project, startDate, endDate))
+                .Returns(features);
+
+            var result = subject.GetAllFeaturesForSizeChart(1, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result.Result as OkObjectResult;
+                var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
+                Assert.That(featureDtos?.Count(), Is.EqualTo(3));
+            };
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_WithInvalidDateRange_ReturnsBadRequest()
+        {
+            var startDate = new DateTime(2023, 1, 31);
+            var endDate = new DateTime(2023, 1, 1);  // End date before start date
+
+            var result = subject.GetAllFeaturesForSizeChart(1, startDate, endDate);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_WithInvalidProjectId_ReturnsNotFound()
+        {
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            var result = subject.GetAllFeaturesForSizeChart(999, startDate, endDate);
+
+            Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_EmptyResult_ReturnsOkWithEmptyList()
+        {
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+            var emptyFeatures = new List<Feature>();
+
+            projectMetricsService.Setup(x => x.GetAllFeaturesForSizeChart(project, startDate, endDate))
+                .Returns(emptyFeatures);
+
+            var result = subject.GetAllFeaturesForSizeChart(1, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result.Result as OkObjectResult;
+                var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
+                Assert.That(featureDtos, Is.Empty);
+            };
+        }
     }
 }

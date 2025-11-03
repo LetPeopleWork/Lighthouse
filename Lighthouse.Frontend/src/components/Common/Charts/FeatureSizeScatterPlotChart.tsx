@@ -21,6 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IFeature } from "../../../models/Feature";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { StateCategory } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 import { hexToRgba } from "../../../utils/theme/colors";
@@ -93,7 +94,15 @@ interface IGroupedFeature {
 const groupFeatures = (items: IFeature[]): IGroupedFeature[] => {
 	const groups: Record<string, IGroupedFeature> = {};
 	for (const item of items) {
-		const cycleTime = item.cycleTime || 0;
+		let cycleTime: number;
+		if (item.stateCategory === "Done") {
+			cycleTime = item.cycleTime ?? 0;
+		} else if (item.stateCategory === "Doing") {
+			cycleTime = item.workItemAge ?? 0;
+		} else {
+			// Items in the 'To Do' state are shown at the 0 line
+			cycleTime = 0;
+		}
 		const key = `${cycleTime}-${item.size}`;
 		if (!groups[key]) {
 			groups[key] = {
@@ -135,14 +144,51 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const [visiblePercentiles, setVisiblePercentiles] = useState<
 		Record<number, boolean>
 	>(() => Object.fromEntries(percentiles.map((p) => [p.percentile, true])));
+
+	// State for controlling which categories to show
+	const [showDone, setShowDone] = useState<boolean>(true);
+	const [showToDo, setShowToDo] = useState<boolean>(false);
+	const [showInProgress, setShowInProgress] = useState<boolean>(false);
+
+	// Determine which state categories exist in the data
+	const availableStates = useMemo(() => {
+		const states = new Set<StateCategory>();
+		for (const item of sizeDataPoints) {
+			states.add(item.stateCategory);
+		}
+		return states;
+	}, [sizeDataPoints]);
+
+	const hasDoneFeatures = availableStates.has("Done");
+	const hasToDoFeatures = availableStates.has("ToDo");
+	const hasInProgressFeatures = availableStates.has("Doing");
+
+	// Filter features based on toggle states
+	const filteredDataPoints = useMemo(() => {
+		return sizeDataPoints.filter((item) => {
+			if (item.stateCategory === "Done") return showDone;
+			if (item.stateCategory === "ToDo") return showToDo;
+			if (item.stateCategory === "Doing") return showInProgress;
+			return false;
+		});
+	}, [sizeDataPoints, showDone, showToDo, showInProgress]);
+
 	const groupedDataPoints = useMemo(
 		() =>
 			groupFeatures(
-				sizeDataPoints.filter(
-					(item) => item.cycleTime !== null && item.size !== null,
-				),
+				filteredDataPoints.filter((item) => {
+					// Filter out To Do items with size 0 (not worth showing)
+					if (
+						item.stateCategory === "ToDo" &&
+						(item.size === 0 || item.size === null)
+					) {
+						return false;
+					}
+					// Keep all other items (Done/Doing with any size, or To Do with size > 0)
+					return item.size !== null;
+				}),
 			),
-		[sizeDataPoints],
+		[filteredDataPoints],
 	);
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IFeature[]>([]);
@@ -199,42 +245,141 @@ const FeatureSizeScatterPlotChart: React.FC<
 					<Typography variant="h6">
 						{featuresTerm} {sizeTerm}
 					</Typography>
-					{percentiles.length > 0 && (
+					{(percentiles.length > 0 ||
+						hasDoneFeatures ||
+						hasToDoFeatures ||
+						hasInProgressFeatures) && (
 						<Stack
 							direction="row"
 							spacing={1}
-							sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}
+							sx={{
+								mb: 2,
+								flexWrap: "wrap",
+								gap: 1,
+								justifyContent: "space-between",
+								alignItems: "center",
+							}}
 						>
-							{percentiles.map((p) => {
-								const forecastLevel = new ForecastLevel(p.percentile);
-								return (
-									<Chip
-										key={`legend-${p.percentile}`}
-										label={`${p.percentile}%`}
-										sx={{
-											borderColor: forecastLevel.color,
-											borderWidth: visiblePercentiles[p.percentile] ? 2 : 1,
-											borderStyle: "dashed",
-											opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
-											backgroundColor: !visiblePercentiles[p.percentile]
-												? "transparent"
-												: hexToRgba(forecastLevel.color, theme.opacity.high),
-											"&:hover": {
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ flexWrap: "wrap", gap: 1 }}
+							>
+								{percentiles.map((p) => {
+									const forecastLevel = new ForecastLevel(p.percentile);
+									return (
+										<Chip
+											key={`legend-${p.percentile}`}
+											label={`${p.percentile}%`}
+											sx={{
 												borderColor: forecastLevel.color,
+												borderWidth: visiblePercentiles[p.percentile] ? 2 : 1,
+												borderStyle: "dashed",
+												opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
+												backgroundColor: visiblePercentiles[p.percentile]
+													? hexToRgba(forecastLevel.color, theme.opacity.high)
+													: "transparent",
+												"&:hover": {
+													borderColor: forecastLevel.color,
+													borderWidth: 2,
+													backgroundColor: hexToRgba(
+														forecastLevel.color,
+														theme.opacity.high + 0.1,
+													),
+												},
+											}}
+											variant={
+												visiblePercentiles[p.percentile] ? "filled" : "outlined"
+											}
+											onClick={() => togglePercentileVisibility(p.percentile)}
+										/>
+									);
+								})}
+							</Stack>
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ flexWrap: "wrap", gap: 1 }}
+							>
+								{hasToDoFeatures && (
+									<Chip
+										label="To Do"
+										sx={{
+											borderColor: theme.palette.primary.main,
+											borderWidth: showToDo ? 2 : 1,
+											opacity: showToDo ? 1 : 0.7,
+											backgroundColor: showToDo
+												? hexToRgba(
+														theme.palette.primary.main,
+														theme.opacity.high,
+													)
+												: "transparent",
+											"&:hover": {
+												borderColor: theme.palette.primary.main,
 												borderWidth: 2,
 												backgroundColor: hexToRgba(
-													forecastLevel.color,
+													theme.palette.primary.main,
 													theme.opacity.high + 0.1,
 												),
 											},
 										}}
-										variant={
-											visiblePercentiles[p.percentile] ? "filled" : "outlined"
-										}
-										onClick={() => togglePercentileVisibility(p.percentile)}
+										variant={showToDo ? "filled" : "outlined"}
+										onClick={() => setShowToDo(!showToDo)}
 									/>
-								);
-							})}
+								)}
+								{hasInProgressFeatures && (
+									<Chip
+										label="In Progress"
+										sx={{
+											borderColor: theme.palette.primary.main,
+											borderWidth: showInProgress ? 2 : 1,
+											opacity: showInProgress ? 1 : 0.7,
+											backgroundColor: showInProgress
+												? hexToRgba(
+														theme.palette.primary.main,
+														theme.opacity.high,
+													)
+												: "transparent",
+											"&:hover": {
+												borderColor: theme.palette.primary.main,
+												borderWidth: 2,
+												backgroundColor: hexToRgba(
+													theme.palette.primary.main,
+													theme.opacity.high + 0.1,
+												),
+											},
+										}}
+										variant={showInProgress ? "filled" : "outlined"}
+										onClick={() => setShowInProgress(!showInProgress)}
+									/>
+								)}
+								{hasDoneFeatures && (
+									<Chip
+										label="Done"
+										sx={{
+											borderColor: theme.palette.primary.main,
+											borderWidth: showDone ? 2 : 1,
+											opacity: showDone ? 1 : 0.7,
+											backgroundColor: showDone
+												? hexToRgba(
+														theme.palette.primary.main,
+														theme.opacity.high,
+													)
+												: "transparent",
+											"&:hover": {
+												borderColor: theme.palette.primary.main,
+												borderWidth: 2,
+												backgroundColor: hexToRgba(
+													theme.palette.primary.main,
+													theme.opacity.high + 0.1,
+												),
+											},
+										}}
+										variant={showDone ? "filled" : "outlined"}
+										onClick={() => setShowDone(!showDone)}
+									/>
+								)}
+							</Stack>
 						</Stack>
 					)}
 					<ChartContainer
@@ -245,7 +390,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 								scaleType: "linear",
 								label: `${sizeTerm} (Child Items)`,
 								min: 0,
-								max: getMaxYAxisHeight(sizeDataPoints, percentiles),
+								max: getMaxYAxisHeight(filteredDataPoints, percentiles),
 								valueFormatter: (value: number) => {
 									return Number.isInteger(value) ? value.toString() : "";
 								},
@@ -256,7 +401,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 								id: "timeAxis",
 								scaleType: "linear",
 								label: `${cycleTimeTerm} (days)`,
-								min: 1,
+								min: 0,
 								valueFormatter: (value: number) => {
 									return Number.isInteger(value) ? value.toString() : "";
 								},
@@ -286,7 +431,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 									const numberOfClosedItems = group.items.length ?? 0;
 									if (numberOfClosedItems === 1) {
 										const single = group.items[0];
-										return `${getWorkItemName(single)} (Click for details)`;
+										return `${getWorkItemName(single)} - ${single.state} (Click for details)`;
 									}
 									return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
 								},
