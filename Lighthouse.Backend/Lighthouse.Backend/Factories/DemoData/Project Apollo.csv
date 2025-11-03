@@ -1,4 +1,7 @@
 ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags
-AP-001,Stellar Navigation,Next,Epic,,{-10},,
-AP-002,Mars Colonization,Backlog,Epic,,,,
-AP-003,Asteroid Mining Program,Backlog,Epic,,,,
+AP-001,Lunar Settlement Initiative,Done,Epic,,{-84},{-70},
+AP-002,Deep Space Communications,Done,Epic,,{-75},{-30},
+AP-003,Interplanetary Transport Network,Done, Epic,,{-45},{-8},
+AP-004,Stellar Navigation,Analysing,Epic,,{-10},,
+AP-005,Mars Colonization,Backlog,Epic,,,,
+AP-006,Asteroid Mining Program,Backlog,Epic,,,,
