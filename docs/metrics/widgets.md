@@ -232,7 +232,42 @@ The age calculation for historical dates shows how old each item was on that spe
 
 |--------------|-------------------------|
 | **Applies to** | Projects |
-| **Flow Metric** | Cycle Time, Throughput |
+| **Flow Metric** | Cycle Time, Work Item Age, Throughput |
 | **Affected by Filtering** | Yes |
 
-This chart is showing you the size of your done Features over the selected time range on a scatter plot.
+This chart shows the size of your Features on a scatter plot, with the ability to filter by state category.
+
+![Feature Size Scatterplot](../assets/features/metrics/featuresize.png)
+
+The chart displays features from your selected time range, with:
+- **X-axis**: Feature size (number of child work items)
+- **Y-axis**: Time metric (varies by state - see below)
+
+### State Filtering
+
+The chart includes three filter chips on the right side to show or hide features by state:
+
+- **Done** (enabled by default): Shows completed features using their cycle time
+- **To Do** (disabled by default): Shows unstarted features positioned at the y=0 baseline
+- **In Progress** (disabled by default): Shows features currently being worked on using their work item age
+
+{: .note}
+Features in the To Do category with a size of 0 (no child work items) are automatically filtered out, as they represent features that haven't been broken down yet.
+
+### Time Metrics by State
+
+The y-axis value differs based on the feature's state:
+- **Done features**: Display their **cycle time** (how long they took from start to completion)
+- **In Progress features**: Display their **work item age** (how long they've been in progress)
+- **To Do features**: Appear at **y=0** (no time elapsed yet)
+
+This allows you to see:
+- How feature size correlates with cycle time for completed features
+- How long current features have been in progress relative to their size
+- The size distribution of features in your backlog
+
+### Percentile Lines
+
+Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), you can show percentile lines to understand your feature delivery patterns. Multiple features with the same size and time value are grouped in a bubble - the larger the bubble, the more features it represents.
+
+Click on any bubble to see detailed information about the feature(s) it represents.
