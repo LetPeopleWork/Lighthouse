@@ -513,26 +513,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {
                     var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
-                    var needsFullChangelog = ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs);
                     
-                    JsonElement issueToProcess;
-                    if (needsFullChangelog)
-                    {
-                        // Fetch complete changelog for this issue
-                        var allChangelogHistories = await GetAllChangelogEntriesForIssue(client, issueKey);
-                        
-                        // Merge complete changelog into the issue JSON
-                        issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, allChangelogHistories);
-                        logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, allChangelogHistories.Count);
-                    }
-                    else
-                    {
-                        // Use changelog as-is from initial query
-                        issueToProcess = jsonIssue;
-                        logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
-                    }
-                    
-                    var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, additionalRelatedField, rankField);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, additionalRelatedField, rankField);
                     issues.Add(issue);
                 }
             }
