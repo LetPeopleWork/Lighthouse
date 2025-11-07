@@ -287,10 +287,7 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	);
 
 	const demoDataPage = await settingsPage.goToDemoData();
-	await takePageScreenshot(
-		demoDataPage.page,
-		"settings/demodata.png",
-	);
+	await takePageScreenshot(demoDataPage.page, "settings/demodata.png");
 
 	const defaultTeamSettingsPage = await settingsPage.goToDefaultTeamSettings();
 	await takePageScreenshot(

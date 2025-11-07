@@ -115,7 +115,7 @@ export class ProjectDetailPage {
 		return this.page
 			.getByTestId("dashboard-item-featureSize")
 			.locator("div")
-			.filter({ hasText: "Features Size50%70%85%95%50%" })
+			.filter({ hasText: "Features Size50%70%85%95%To" })
 			.nth(1);
 	}
 
