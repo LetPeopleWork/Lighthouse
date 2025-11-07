@@ -10,12 +10,42 @@ nav_order: 95
 Preview
 {: .label .label-blue }
  -->
- 
-# Lighthouse v25.11.2
+
+
+# Lighthouse v25.11.6.540
 {: .d-inline-block }
 Latest
 {: .label .label-green }
 
+## Total Work Item Age
+This release introduced two new metric widgets, that visualize the *Total Work Item Age*. The *Total Work Item Age* shows the cumulative age of all items currently in progress:
+
+![Total Age Widget](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/totalWorkItemAge.png).
+
+The first widget shows the current total age (independent to any filters). The second widget will show the total age over time. Check the [documentation](https://docs.lighthouse.letpeople.work/metrics/widgets.html#total-work-item-age) for more details.
+
+## Feature Size Chart Enhancements
+The Feature Size chart so far only was showing closed items. It is extended now so you can visualize In Progress or To Do Features.
+This is useful if you want to:
+- Check if you in progress items are growing too large and you need to act on it (for example in a Portfolio weekly)
+- Analyse the upcoming work
+
+![Feature Size Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/featuresize.png)
+
+By default, the To Do and In Progress items are not shown, but can individually be toggled on. The percentile lines visualized are calculated only from the closed items.
+
+## Continuous Improvements & Bug Fixes
+- Loading the first demo scenario failed (nothing was loaded) - this is fixed now.
+- On Jira Data Center, the updating of Teams or projects was failing due to a recent change that tried to use an API endpoint that does not exist on Jira Data Center. Loading now works again.
+- Update of various third party packages.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.2...v25.11.6.540)
+ 
+# Lighthouse v25.11.2
 Fixed issue of missing x-axis labels in various charts. The labels (dates, states) are now shown again!
 
 ## Contributions ❤️ 
