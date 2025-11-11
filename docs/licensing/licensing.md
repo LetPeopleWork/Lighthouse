@@ -54,7 +54,7 @@ This includes the details of the person who ordered the license as well as the o
 {: .important}
 This information cannot be changed. If you try to manually adjust this, Lighthouse will mark the license as invalid.
 
-# Loading/Renewing a License
+# Loading a License
 You can load a license if you have no license yet:
 
 ![No License](../assets/licensing/no_license.png)
@@ -65,6 +65,33 @@ You can load a license if you have no license yet:
 After this, you will see the license information. Ideally the icon turns green and your license was successfully loaded.
 
 It could also be that the license is not valid or invalid.
+
+# Updating a License
+If you have an existing license and receive an updated license file (for example, after extending your license period), you can update it:
+
+1. Click on the license icon
+2. Select *Update License*
+3. Choose the new *license.json* file that was sent to you
+
+The new license information will replace the existing one, and your premium features will be updated accordingly.
+
+# Clearing a License
+If you need to remove a license from your Lighthouse instance:
+
+1. Click on the license icon
+2. Select *Clear License*
+3. Confirm the action
+
+After clearing the license, your instance will revert to the free version with its constraints. You can load a new license at any time using the *Add License* option.
+
+# Renewing a License
+When your license is about to expire or has expired, you can purchase a license extension directly:
+
+1. Click on the license icon
+2. Select *Renew License*
+3. You will be redirected to the https://letpeople.work website where you can purchase a license extension
+
+After completing the purchase, you will receive a new license file via email that you can load using the *Update License* option.
 
 # Invalid Licenses
 If you try to load a file that was not an official license, or an official license that was manually modified, Lighthouse will detect this and display the information:

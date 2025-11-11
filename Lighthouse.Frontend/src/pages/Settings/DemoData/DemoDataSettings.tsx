@@ -256,7 +256,8 @@ const DemoDataSettings: React.FC = () => {
 							projects!
 						</Typography>
 						<Typography variant="body2" sx={{ mb: 2 }}>
-							Loading this scenario will replace your current data with the selected demo content.
+							Loading this scenario will replace your current data with the
+							selected demo content.
 						</Typography>
 						<Typography variant="body2" color="text.secondary">
 							Please ensure you have backed up your configuration before
