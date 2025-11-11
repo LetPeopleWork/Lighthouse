@@ -61,6 +61,15 @@ const LicenseStatusIcon: React.FC = () => {
 			return errorColor; // Red for invalid license
 		}
 
+		// Check if license is not yet valid
+		if (licenseStatus.validFrom) {
+			const now = new Date();
+			const validFromDate = new Date(licenseStatus.validFrom);
+			if (validFromDate > now) {
+				return warningColor; // Orange for pending license
+			}
+		}
+
 		// Check license expiry status
 		if (licenseStatus.expiryDate) {
 			const now = new Date();
@@ -102,6 +111,20 @@ const LicenseStatusIcon: React.FC = () => {
 
 		if (!licenseStatus.isValid) {
 			return "Invalid license - Click for details";
+		}
+
+		// Check if license is not yet valid
+		if (licenseStatus.validFrom) {
+			const now = new Date();
+			const validFromDate = new Date(licenseStatus.validFrom);
+			if (validFromDate > now) {
+				const formattedDate = validFromDate.toLocaleDateString(undefined, {
+					year: "numeric",
+					month: "short",
+					day: "numeric",
+				});
+				return `License pending - Valid from ${formattedDate}`;
+			}
 		}
 
 		if (licenseStatus.expiryDate) {

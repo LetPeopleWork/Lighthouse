@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Models
 
       public DateTime ExpiryDate { get; set; }
 
+      public DateTime? ValidFrom { get; set; }
+
       public string LicenseNumber { get; set; }
 
       public string Signature { get; set; }

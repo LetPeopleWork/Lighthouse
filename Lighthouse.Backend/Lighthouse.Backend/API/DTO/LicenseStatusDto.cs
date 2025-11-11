@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.API.DTO
                 Email = licenseInfo.Email;
                 Organization = licenseInfo.Organization;
                 ExpiryDate = licenseInfo.ExpiryDate;
+                ValidFrom = licenseInfo.ValidFrom;
             }
         }
 
@@ -33,6 +34,8 @@ namespace Lighthouse.Backend.API.DTO
         public string? LicenseNumber { get; }
         
         public DateTime? ExpiryDate { get; }
+
+        public DateTime? ValidFrom { get; }
 
         public bool CanUsePremiumFeatures { get; }
     }

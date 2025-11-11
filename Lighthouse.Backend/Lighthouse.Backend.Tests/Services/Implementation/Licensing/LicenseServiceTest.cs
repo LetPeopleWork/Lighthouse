@@ -208,6 +208,123 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         }
 
         [Test]
+        public void CanUsePremiumFeature_ValidLicense_ValidFromInFuture_ReturnsFalse()
+        {
+            var licenseInfo = new LicenseInformation
+            {
+                Name = "Benjamin",
+                Organization = "Let People Work",
+                Email = "benjamin@letpeople.work",
+                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                ValidFrom = DateTime.UtcNow.AddDays(10),
+            };
+
+            var licenseVerifierMock = new Mock<ILicenseVerifier>();
+            licenseVerifierMock
+                .Setup(verifier => verifier.VerifyLicense(licenseInfo))
+                .Returns(true);
+
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
+
+            var licenseService = CreateSubject(licenseVerifierMock.Object);
+
+            var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
+
+            Assert.That(canUsePremiumFeatures, Is.False);
+        }
+
+        [Test]
+        public void CanUsePremiumFeature_ValidLicense_ValidFromInPast_ReturnsTrue()
+        {
+            var licenseInfo = new LicenseInformation
+            {
+                Name = "Benjamin",
+                Organization = "Let People Work",
+                Email = "benjamin@letpeople.work",
+                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                ValidFrom = DateTime.UtcNow.AddDays(-10),
+            };
+
+            var licenseVerifierMock = new Mock<ILicenseVerifier>();
+            licenseVerifierMock
+                .Setup(verifier => verifier.VerifyLicense(licenseInfo))
+                .Returns(true);
+
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
+
+            var licenseService = CreateSubject(licenseVerifierMock.Object);
+
+            var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
+
+            Assert.That(canUsePremiumFeatures, Is.True);
+        }
+
+        [Test]
+        public void CanUsePremiumFeature_ValidLicense_ValidFromToday_ReturnsTrue()
+        {
+            var licenseInfo = new LicenseInformation
+            {
+                Name = "Benjamin",
+                Organization = "Let People Work",
+                Email = "benjamin@letpeople.work",
+                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                ValidFrom = DateTime.Today,
+            };
+
+            var licenseVerifierMock = new Mock<ILicenseVerifier>();
+            licenseVerifierMock
+                .Setup(verifier => verifier.VerifyLicense(licenseInfo))
+                .Returns(true);
+
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
+
+            var licenseService = CreateSubject(licenseVerifierMock.Object);
+
+            var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
+
+            Assert.That(canUsePremiumFeatures, Is.True);
+        }
+
+        [Test]
+        public void CanUsePremiumFeature_ValidLicense_ValidFromNull_ReturnsTrue()
+        {
+            var licenseInfo = new LicenseInformation
+            {
+                Name = "Benjamin",
+                Organization = "Let People Work",
+                Email = "benjamin@letpeople.work",
+                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                ValidFrom = null,
+            };
+
+            var licenseVerifierMock = new Mock<ILicenseVerifier>();
+            licenseVerifierMock
+                .Setup(verifier => verifier.VerifyLicense(licenseInfo))
+                .Returns(true);
+
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
+
+            var licenseService = CreateSubject(licenseVerifierMock.Object);
+
+            var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
+
+            Assert.That(canUsePremiumFeatures, Is.True);
+        }
+
+        [Test]
+        public async Task ImportLicense_LicenseWithoutValidFrom_SetsValidFromToNull()
+        {
+            var licenseService = CreateSubject();
+            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
+
+            var result = await licenseService.ImportLicense(licenseContent);
+
+            // The valid_license.json doesn't have valid_from, so it should be null
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result!.ValidFrom, Is.Null);
+        }
+
+        [Test]
         public void ClearLicense_NoLicense_DoesNotThrow()
         {
             var licenseService = CreateSubject();

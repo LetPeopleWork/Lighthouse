@@ -269,4 +269,61 @@ describe("LicenseStatusDialog", () => {
 			screen.queryByTestId("license-status-dialog"),
 		).not.toBeInTheDocument();
 	});
+
+	it("renders pending license warning when validFrom is in the future", () => {
+		const validFromDate = new Date();
+		validFromDate.setDate(validFromDate.getDate() + 5); // 5 days in the future
+
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			name: "John Doe",
+			email: "john.doe@example.com",
+			validFrom: validFromDate,
+		};
+
+		render(
+			<LicenseStatusDialog
+				open={true}
+				onClose={mockOnClose}
+				licenseStatus={licenseStatus}
+				isLoading={false}
+				error={null}
+			/>,
+		);
+
+		expect(
+			screen.getByText(/This license will become valid on/i),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(/Premium features are not yet available/i),
+		).toBeInTheDocument();
+	});
+
+	it("displays validFrom date when provided", () => {
+		const validFromDate = new Date("2025-01-01");
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			validFrom: validFromDate,
+		};
+
+		render(
+			<LicenseStatusDialog
+				open={true}
+				onClose={mockOnClose}
+				licenseStatus={licenseStatus}
+				isLoading={false}
+				error={null}
+			/>,
+		);
+
+		expect(screen.getByText("Valid From")).toBeInTheDocument();
+		const validFromElement = screen
+			.getByText("Valid From")
+			.parentElement?.querySelector("p:last-child");
+		expect(validFromElement?.textContent).toContain("2025");
+	});
 });

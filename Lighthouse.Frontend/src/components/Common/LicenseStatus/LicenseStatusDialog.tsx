@@ -49,6 +49,15 @@ const LicenseStatusDialog: React.FC<LicenseStatusDialogProps> = ({
 			return <ErrorIcon style={{ color: errorColor }} />;
 		}
 
+		// Check if license is not yet valid
+		if (licenseStatus.validFrom) {
+			const now = new Date();
+			const validFromDate = new Date(licenseStatus.validFrom);
+			if (validFromDate > now) {
+				return <WarningIcon style={{ color: warningColor }} />;
+			}
+		}
+
 		// Check if license expires within 30 days
 		if (licenseStatus.expiryDate) {
 			const now = new Date();
@@ -82,6 +91,20 @@ const LicenseStatusDialog: React.FC<LicenseStatusDialogProps> = ({
 					resolve this issue.
 				</Alert>
 			);
+		}
+
+		// Check if license is not yet valid
+		if (licenseStatus.validFrom) {
+			const now = new Date();
+			const validFromDate = new Date(licenseStatus.validFrom);
+			if (validFromDate > now) {
+				return (
+					<Alert severity="warning" sx={{ mb: 2 }}>
+						This license will become valid on {formatDate(validFromDate)}.
+						Premium features are not yet available.
+					</Alert>
+				);
+			}
 		}
 
 		// Check if license expires within 30 days
@@ -207,6 +230,17 @@ const LicenseStatusDialog: React.FC<LicenseStatusDialogProps> = ({
 							</Typography>
 							<Typography variant="body1" sx={{ mb: 2 }}>
 								{licenseStatus.licenseNumber}
+							</Typography>
+						</>
+					)}
+
+					{licenseStatus.hasLicense && licenseStatus.validFrom && (
+						<>
+							<Typography variant="body2" color="text.secondary" gutterBottom>
+								Valid From
+							</Typography>
+							<Typography variant="body1" sx={{ mb: 2 }}>
+								{formatDate(licenseStatus.validFrom)}
 							</Typography>
 						</>
 					)}

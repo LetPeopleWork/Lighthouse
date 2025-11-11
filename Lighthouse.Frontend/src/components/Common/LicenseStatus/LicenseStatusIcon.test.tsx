@@ -226,4 +226,33 @@ describe("LicenseStatusIcon", () => {
 			expect(screen.getByTestId("license-status-popover")).toBeInTheDocument();
 		});
 	});
+
+	it("shows pending license tooltip when validFrom is in the future", async () => {
+		const validFromDate = new Date();
+		validFromDate.setDate(validFromDate.getDate() + 7); // 7 days from now
+
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			validFrom: validFromDate,
+		};
+
+		vi.mocked(mockLicensingService.getLicenseStatus).mockResolvedValue(
+			licenseStatus,
+		);
+
+		renderComponent();
+
+		await waitFor(() => {
+			const button = screen.getByTestId("license-status-button");
+			userEvent.hover(button);
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(/License pending - Valid from/i),
+			).toBeInTheDocument();
+		});
+	});
 });

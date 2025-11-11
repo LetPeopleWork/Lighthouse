@@ -463,4 +463,35 @@ describe("LicenseStatusPopover", () => {
 		// Note: Testing the disabled state during actual upload would require
 		// more complex test setup with controlled state
 	});
+
+	it("renders pending license when validFrom is in the future", () => {
+		const validFromDate = new Date();
+		validFromDate.setDate(validFromDate.getDate() + 10); // 10 days in the future
+
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			name: "John Doe",
+			email: "john.doe@example.com",
+			organization: "Example Corp",
+			validFrom: validFromDate,
+		};
+
+		render(
+			<LicenseStatusPopover
+				anchorEl={mockAnchorEl}
+				onClose={mockOnClose}
+				licenseStatus={licenseStatus}
+				isLoading={false}
+				error={null}
+			/>,
+		);
+
+		expect(screen.getByText("Pending")).toBeInTheDocument();
+		expect(screen.getByText(/License will be valid from/i)).toBeInTheDocument();
+		expect(
+			screen.getByText(/Premium Features are not yet available/i),
+		).toBeInTheDocument();
+	});
 });

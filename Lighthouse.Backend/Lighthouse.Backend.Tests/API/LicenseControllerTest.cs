@@ -238,6 +238,37 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetLicenseStatus_WithLicenseAndValidFrom_ReturnsValidFrom()
+        {
+            var validFromDate = new DateTime(2025, 1, 1);
+            var licenseInfo = new LicenseInformation
+            {
+                Name = "John Doe",
+                Email = "john@doe.com",
+                Organization = "Doe Inc.",
+                ExpiryDate = new DateTime(2025, 12, 31),
+                ValidFrom = validFromDate,
+                Signature = "valid_signature"
+            };
+
+            licenseServiceMock.Setup(s => s.GetLicenseData())
+                              .Returns((licenseInfo, true));
+
+            var result = subject.GetLicenseStatus();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+
+                var licenseStatus = okResult.Value as LicenseStatusDto;
+                Assert.That(licenseStatus, Is.Not.Null);
+                Assert.That(licenseStatus.ValidFrom, Is.EqualTo(validFromDate));
+            }
+        }
+
+        [Test]
         public async Task ClearLicense_Success_ReturnsOk()
         {
             licenseServiceMock.Setup(s => s.ClearLicense())

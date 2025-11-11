@@ -55,6 +55,11 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 ["organization"] = license.Organization
             };
 
+            if (license.ValidFrom.HasValue)
+            {
+                dict["valid_from"] = license.ValidFrom.Value.ToString("yyyy-MM-dd");
+            }
+
             using var stream = new MemoryStream();
             using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
 

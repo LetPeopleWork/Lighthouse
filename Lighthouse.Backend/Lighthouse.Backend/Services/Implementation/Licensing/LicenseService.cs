@@ -54,7 +54,16 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
         public bool CanUsePremiumFeatures()
         {
             var (licenseInfo, isValid) = GetLicenseData();
-            return isValid && licenseInfo?.ExpiryDate.Date >= DateTime.UtcNow.Date;
+            if (!isValid || licenseInfo == null)
+            {
+                return false;
+            }
+
+            var now = DateTime.UtcNow.Date;
+            var isNotExpired = licenseInfo.ExpiryDate.Date >= now;
+            var isValidFromDate = !licenseInfo.ValidFrom.HasValue || licenseInfo.ValidFrom.Value.Date <= now;
+
+            return isNotExpired && isValidFromDate;
         }
 
         public async Task ClearLicense()
@@ -74,12 +83,19 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
             var licenseElement = licenseDoc.RootElement.GetProperty("license");
             var signatureBase64 = licenseDoc.RootElement.GetProperty("signature").GetString();
 
+            DateTime? validFrom = null;
+            if (licenseElement.TryGetProperty("valid_from", out var validFromElement))
+            {
+                validFrom = DateTime.SpecifyKind(validFromElement.GetDateTime(), DateTimeKind.Utc);
+            }
+
             return new LicenseInformation
             {
                 Name = licenseElement.GetProperty("name").GetString() ?? string.Empty,
                 Email = licenseElement.GetProperty("email").GetString() ?? string.Empty,
                 Organization = licenseElement.GetProperty("organization").GetString() ?? string.Empty,
                 ExpiryDate = DateTime.SpecifyKind(licenseElement.GetProperty("expiry").GetDateTime(), DateTimeKind.Utc),
+                ValidFrom = validFrom,
                 LicenseNumber = licenseElement.TryGetProperty("license_number", out var licenseNumberElement) 
                     ? licenseNumberElement.GetString() ?? string.Empty 
                     : string.Empty,

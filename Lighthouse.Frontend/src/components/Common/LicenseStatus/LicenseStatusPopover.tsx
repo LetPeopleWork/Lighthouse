@@ -172,6 +172,15 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 			return <ErrorIcon style={{ color: errorColor, fontSize: 20 }} />;
 		}
 
+		// Check if license is not yet valid (validFrom in future)
+		if (licenseStatus.validFrom) {
+			const now = new Date();
+			const validFromDate = new Date(licenseStatus.validFrom);
+			if (validFromDate > now) {
+				return <WarningIcon style={{ color: warningColor, fontSize: 20 }} />;
+			}
+		}
+
 		// Check license expiry status
 		if (licenseStatus.expiryDate) {
 			const now = new Date();
@@ -258,6 +267,16 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 					>
 						{(() => {
 							if (!licenseStatus.isValid) return "Invalid License";
+
+							// Check if license is not yet valid
+							if (licenseStatus.validFrom) {
+								const now = new Date();
+								const validFromDate = new Date(licenseStatus.validFrom);
+								if (validFromDate > now) {
+									return "Pending";
+								}
+							}
+
 							if (
 								licenseStatus.expiryDate &&
 								new Date(licenseStatus.expiryDate) <= new Date()
@@ -309,6 +328,28 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 						License is invalid. Premium Features will be disabled.
 					</Typography>
 				)}
+
+				{licenseStatus.isValid &&
+					licenseStatus.validFrom &&
+					(() => {
+						const now = new Date();
+						const validFromDate = new Date(licenseStatus.validFrom);
+
+						// Check if license is not yet valid
+						if (validFromDate > now) {
+							return (
+								<Typography
+									variant="body2"
+									color="warning.main"
+									sx={{ mt: 1, fontStyle: "italic" }}
+								>
+									License will be valid from {formatDate(validFromDate)}.
+									Premium Features are not yet available.
+								</Typography>
+							);
+						}
+						return null;
+					})()}
 
 				{licenseStatus.isValid &&
 					licenseStatus.expiryDate &&
