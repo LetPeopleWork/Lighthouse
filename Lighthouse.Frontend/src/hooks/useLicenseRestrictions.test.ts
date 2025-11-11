@@ -10,6 +10,7 @@ import { useLicenseRestrictions } from "./useLicenseRestrictions";
 const mockLicensingService = {
 	getLicenseStatus: vi.fn(),
 	importLicense: vi.fn(),
+	clearLicense: vi.fn(),
 };
 
 const mockTeamService = {

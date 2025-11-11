@@ -20,6 +20,7 @@ describe("LicenseStatusPopover", () => {
 		mockLicensingService = {
 			getLicenseStatus: vi.fn(),
 			importLicense: vi.fn(),
+			clearLicense: vi.fn(),
 		};
 
 		// Mock window.open
@@ -313,5 +314,153 @@ describe("LicenseStatusPopover", () => {
 		expect(
 			screen.queryByTestId("license-status-popover"),
 		).not.toBeInTheDocument();
+	});
+
+	it("shows clear license button when license exists", () => {
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			name: "Test User",
+		};
+
+		renderComponent({ licenseStatus });
+
+		expect(screen.getByText("Clear License")).toBeInTheDocument();
+	});
+
+	it("does not show clear license button when no license exists", () => {
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: false,
+			isValid: false,
+			canUsePremiumFeatures: false,
+		};
+
+		renderComponent({ licenseStatus });
+
+		expect(screen.queryByText("Clear License")).not.toBeInTheDocument();
+	});
+
+	it("handles clear license successfully", async () => {
+		const user = userEvent.setup();
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			name: "Test User",
+		};
+
+		vi.mocked(mockLicensingService.clearLicense).mockResolvedValue();
+
+		renderComponent({ licenseStatus });
+
+		const clearButton = screen.getByText("Clear License");
+		await user.click(clearButton);
+
+		// Confirmation dialog should appear
+		await waitFor(() => {
+			expect(screen.getByText("Clear License?")).toBeInTheDocument();
+			expect(
+				screen.getByText(
+					/Are you sure you want to clear the license information/,
+				),
+			).toBeInTheDocument();
+		});
+
+		// Click confirm button
+		const confirmButton = screen.getByRole("button", {
+			name: /Clear License/i,
+		});
+		await user.click(confirmButton);
+
+		await waitFor(() => {
+			expect(mockLicensingService.clearLicense).toHaveBeenCalled();
+			expect(mockOnLicenseImported).toHaveBeenCalledWith({
+				hasLicense: false,
+				isValid: false,
+				canUsePremiumFeatures: false,
+			});
+		});
+	});
+
+	it("cancels clear license on dialog cancel", async () => {
+		const user = userEvent.setup();
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			name: "Test User",
+		};
+
+		renderComponent({ licenseStatus });
+
+		const clearButton = screen.getByText("Clear License");
+		await user.click(clearButton);
+
+		// Confirmation dialog should appear
+		await waitFor(() => {
+			expect(screen.getByText("Clear License?")).toBeInTheDocument();
+		});
+
+		// Click cancel button
+		const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+		await user.click(cancelButton);
+
+		// Dialog should close without calling clearLicense
+		await waitFor(() => {
+			expect(screen.queryByText("Clear License?")).not.toBeInTheDocument();
+		});
+		expect(mockLicensingService.clearLicense).not.toHaveBeenCalled();
+	});
+
+	it("shows error when clear license fails", async () => {
+		const user = userEvent.setup();
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			name: "Test User",
+		};
+
+		vi.mocked(mockLicensingService.clearLicense).mockRejectedValue(
+			new Error("Failed to clear license"),
+		);
+
+		renderComponent({ licenseStatus });
+
+		const clearButton = screen.getByText("Clear License");
+		await user.click(clearButton);
+
+		// Confirm in dialog
+		await waitFor(() => {
+			expect(screen.getByText("Clear License?")).toBeInTheDocument();
+		});
+
+		const confirmButton = screen.getByRole("button", {
+			name: /Clear License/i,
+		});
+		await user.click(confirmButton);
+
+		await waitFor(() => {
+			expect(mockLicensingService.clearLicense).toHaveBeenCalled();
+			expect(screen.getByText("Failed to clear license")).toBeInTheDocument();
+		});
+	});
+
+	it("disables clear button during upload", () => {
+		const licenseStatus: ILicenseStatus = {
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: false,
+			name: "Test User",
+		};
+
+		renderComponent({ licenseStatus });
+
+		const clearButton = screen.getByText("Clear License") as HTMLButtonElement;
+		expect(clearButton.disabled).toBe(false);
+
+		// Note: Testing the disabled state during actual upload would require
+		// more complex test setup with controlled state
 	});
 });

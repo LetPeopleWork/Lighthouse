@@ -126,6 +126,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 				canUsePremiumFeatures: true,
 			}),
 			importLicense: vi.fn(),
+			clearLicense: vi.fn(),
 		},
 	});
 

@@ -126,4 +126,20 @@ describe("LicensingService", () => {
 		expect(licenseStatus.expiryDate).toBeInstanceOf(Date);
 		expect(licenseStatus.expiryDate?.getFullYear()).toBe(2024);
 	});
+
+	it("should clear license", async () => {
+		mockedAxios.delete.mockResolvedValueOnce({ data: {} });
+
+		await licensingService.clearLicense();
+
+		expect(mockedAxios.delete).toHaveBeenCalledWith("/license");
+	});
+
+	it("should handle clear license error", async () => {
+		const errorMessage = "Failed to clear license";
+		mockedAxios.delete.mockRejectedValueOnce(new Error(errorMessage));
+
+		await expect(licensingService.clearLicense()).rejects.toThrow(errorMessage);
+		expect(mockedAxios.delete).toHaveBeenCalledWith("/license");
+	});
 });

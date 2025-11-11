@@ -4,6 +4,7 @@ import { BaseApiService } from "./BaseApiService";
 export interface ILicensingService {
 	getLicenseStatus(): Promise<ILicenseStatus>;
 	importLicense(file: File): Promise<ILicenseStatus>;
+	clearLicense(): Promise<void>;
 }
 
 export class LicensingService
@@ -44,6 +45,12 @@ export class LicensingService
 			}
 
 			return response.data;
+		});
+	}
+
+	async clearLicense(): Promise<void> {
+		return await this.withErrorHandling(async () => {
+			await this.apiService.delete("/license");
 		});
 	}
 }

@@ -27,6 +27,7 @@ describe("Header component", () => {
 				isValid: true,
 			}),
 			importLicense: vi.fn(),
+			clearLicense: vi.fn(),
 		};
 	});
 

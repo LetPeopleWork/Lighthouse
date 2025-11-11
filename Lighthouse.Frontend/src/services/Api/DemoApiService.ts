@@ -732,6 +732,11 @@ export class DemoApiService
 		};
 	}
 
+	async clearLicense(): Promise<void> {
+		console.log("Clearing license");
+		await delay();
+	}
+
 	async initialize(): Promise<void> {
 		await delay();
 		console.log("Initialized Update Subscription Service");

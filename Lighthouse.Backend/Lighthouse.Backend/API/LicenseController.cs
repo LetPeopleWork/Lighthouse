@@ -58,5 +58,19 @@ namespace Lighthouse.Backend.API
                 return BadRequest($"Error processing license file: {ex.Message}");
             }
         }
+
+        [HttpDelete]
+        public async Task<IActionResult> ClearLicense()
+        {
+            try
+            {
+                await licenseService.ClearLicense();
+                return Ok(new { message = "License cleared successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error clearing license: {ex.Message}");
+            }
+        }
     }
 }

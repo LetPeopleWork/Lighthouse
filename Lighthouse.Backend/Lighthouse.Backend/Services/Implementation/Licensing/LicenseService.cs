@@ -57,6 +57,16 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
             return isValid && licenseInfo?.ExpiryDate.Date >= DateTime.UtcNow.Date;
         }
 
+        public async Task ClearLicense()
+        {
+            var licenseInfo = licenseRepository.GetAll().FirstOrDefault();
+            if (licenseInfo != null)
+            {
+                licenseRepository.Remove(licenseInfo.Id);
+                await licenseRepository.Save();
+            }
+        }
+
         private LicenseInformation ExtractLicenseInformation(string license)
         {
             using JsonDocument licenseDoc = JsonDocument.Parse(license);

@@ -207,6 +207,68 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
             Assert.That(canUsePremiumFeatures, Is.True);
         }
 
+        [Test]
+        public void ClearLicense_NoLicense_DoesNotThrow()
+        {
+            var licenseService = CreateSubject();
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation>());
+
+            Assert.DoesNotThrowAsync(async () => await licenseService.ClearLicense());
+
+            licenseRepoMock.Verify(repo => repo.Remove(It.IsAny<int>()), Times.Never);
+            licenseRepoMock.Verify(repo => repo.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task ClearLicense_WithLicense_RemovesLicenseFromRepository()
+        {
+            var licenseService = CreateSubject();
+            var licenseInfo = new LicenseInformation
+            {
+                Id = 1,
+                Name = "Test User",
+                Organization = "Test Org",
+                Email = "test@example.com",
+                ExpiryDate = DateTime.UtcNow.AddDays(30),
+                Signature = "test_signature"
+            };
+
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
+
+            await licenseService.ClearLicense();
+
+            licenseRepoMock.Verify(repo => repo.Remove(licenseInfo.Id), Times.Once);
+            licenseRepoMock.Verify(repo => repo.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task ClearLicense_WithLicense_SubsequentGetLicenseDataReturnsNull()
+        {
+            var licenseService = CreateSubject();
+            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
+            var licenseInfo = await licenseService.ImportLicense(licenseContent);
+
+            // Setup: Initially has license
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo! });
+
+            var (initialLicense, initialIsValid) = licenseService.GetLicenseData();
+            Assert.That(initialLicense, Is.Not.Null);
+
+            // Clear license
+            await licenseService.ClearLicense();
+
+            // Setup: After clearing, no license
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation>());
+
+            var (clearedLicense, clearedIsValid) = licenseService.GetLicenseData();
+            
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(clearedLicense, Is.Null);
+                Assert.That(clearedIsValid, Is.False);
+            }
+        }
+
         private LicenseService CreateSubject(ILicenseVerifier? licenseVerifierOverride = null)
         {
             var licenseVerifier = licenseVerifierOverride ?? new LicenseVerifier();

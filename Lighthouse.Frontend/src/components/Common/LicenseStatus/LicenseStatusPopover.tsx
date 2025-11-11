@@ -1,4 +1,5 @@
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ClearIcon from "@mui/icons-material/Clear";
 import ErrorIcon from "@mui/icons-material/Error";
 import InfoIcon from "@mui/icons-material/Info";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -6,6 +7,11 @@ import WarningIcon from "@mui/icons-material/Warning";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
@@ -13,7 +19,7 @@ import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useContext, useRef, useState } from "react";
+import { useContext, useId, useRef, useState } from "react";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
@@ -44,6 +50,10 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
+	const [isClearing, setIsClearing] = useState(false);
+	const [showClearConfirmation, setShowClearConfirmation] = useState(false);
+	const dialogTitleId = useId();
+	const dialogDescriptionId = useId();
 	const open = Boolean(anchorEl);
 
 	const formatDate = (date: Date) => {
@@ -111,6 +121,37 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 			"_blank",
 			"noopener,noreferrer",
 		);
+	};
+
+	const handleClearLicenseClick = () => {
+		setShowClearConfirmation(true);
+	};
+
+	const handleClearLicenseCancel = () => {
+		setShowClearConfirmation(false);
+	};
+
+	const handleClearLicenseConfirm = async () => {
+		setShowClearConfirmation(false);
+		setIsClearing(true);
+		setUploadError(null);
+
+		try {
+			await licensingService.clearLicense();
+			// Refresh the license status after clearing
+			const newLicenseStatus: ILicenseStatus = {
+				hasLicense: false,
+				isValid: false,
+				canUsePremiumFeatures: false,
+			};
+			onLicenseImported?.(newLicenseStatus);
+		} catch (error) {
+			setUploadError(
+				error instanceof Error ? error.message : "Failed to clear license",
+			);
+		} finally {
+			setIsClearing(false);
+		}
 	};
 
 	const getUploadButtonText = () => {
@@ -311,112 +352,162 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 	};
 
 	return (
-		<Popover
-			open={open}
-			anchorEl={anchorEl}
-			onClose={onClose}
-			anchorOrigin={{
-				vertical: "bottom",
-				horizontal: "right",
-			}}
-			transformOrigin={{
-				vertical: "top",
-				horizontal: "right",
-			}}
-			data-testid="license-status-popover"
-			sx={{
-				"& .MuiPopover-paper": {
-					backgroundColor: theme.palette.background.paper,
-					border: `1px solid ${theme.palette.divider}`,
-					boxShadow: theme.shadows[8],
-				},
-			}}
-		>
-			{/* Info icon in top right */}
-			<Box sx={{ position: "relative" }}>
-				<Tooltip title="Learn more about Premium Features">
-					<IconButton
-						onClick={handleInfoClick}
-						size="small"
+		<>
+			<Popover
+				open={open}
+				anchorEl={anchorEl}
+				onClose={onClose}
+				anchorOrigin={{
+					vertical: "bottom",
+					horizontal: "right",
+				}}
+				transformOrigin={{
+					vertical: "top",
+					horizontal: "right",
+				}}
+				data-testid="license-status-popover"
+				sx={{
+					"& .MuiPopover-paper": {
+						backgroundColor: theme.palette.background.paper,
+						border: `1px solid ${theme.palette.divider}`,
+						boxShadow: theme.shadows[8],
+					},
+				}}
+			>
+				{/* Info icon in top right */}
+				<Box sx={{ position: "relative" }}>
+					<Tooltip title="Learn more about Premium Features">
+						<IconButton
+							onClick={handleInfoClick}
+							size="small"
+							sx={{
+								position: "absolute",
+								top: 8,
+								right: 8,
+								zIndex: 1,
+								color: theme.palette.primary.main,
+								"&:hover": {
+									backgroundColor: `${theme.palette.primary.main}10`,
+								},
+							}}
+						>
+							<InfoIcon />
+						</IconButton>
+					</Tooltip>
+					{renderContent()}
+				</Box>
+				{/* Action buttons - always visible */}
+				<Box>
+					<Divider />
+					<Box
 						sx={{
-							position: "absolute",
-							top: 8,
-							right: 8,
-							zIndex: 1,
-							color: theme.palette.primary.main,
-							"&:hover": {
-								backgroundColor: `${theme.palette.primary.main}10`,
-							},
+							p: 2,
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							gap: 1,
+							minHeight: "40px",
 						}}
 					>
-						<InfoIcon />
-					</IconButton>
-				</Tooltip>
-				{renderContent()}
-			</Box>
-			{/* Action buttons - always visible */}
-			<Box>
-				<Divider />
-				<Box
-					sx={{
-						p: 2,
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						gap: 1,
-						minHeight: "40px",
-					}}
-				>
-					{/* Error text on the left */}
-					{uploadError && (
-						<Typography
-							variant="caption"
-							color="error"
-							sx={{
-								wordWrap: "break-word",
-								whiteSpace: "normal",
-								maxWidth: "200px",
-								lineHeight: 1.4,
-								flex: 1,
-							}}
-						>
-							{uploadError}
-						</Typography>
-					)}
+						{/* Error text on the left */}
+						{uploadError && (
+							<Typography
+								variant="caption"
+								color="error"
+								sx={{
+									wordWrap: "break-word",
+									whiteSpace: "normal",
+									maxWidth: "200px",
+									lineHeight: 1.4,
+									flex: 1,
+								}}
+							>
+								{uploadError}
+							</Typography>
+						)}
 
-					{/* Button on the right */}
-					<Box sx={{ display: "flex", alignItems: "center" }}>
-						<input
-							type="file"
-							ref={fileInputRef}
-							onChange={handleFileUpload}
-							accept=".json"
-							style={{ display: "none" }}
-						/>
+						{/* Button on the right */}
+						<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							<input
+								type="file"
+								ref={fileInputRef}
+								onChange={handleFileUpload}
+								accept=".json"
+								style={{ display: "none" }}
+							/>
 
-						<Button
-							variant="outlined"
-							size="small"
-							startIcon={
-								isUploading ? (
-									<CircularProgress size={16} />
-								) : (
-									<UploadFileIcon />
-								)
-							}
-							onClick={handleUploadClick}
-							disabled={isUploading}
-							sx={{
-								textTransform: "none",
-								fontSize: "0.75rem",
-							}}
-						>
-							{getUploadButtonText()}
-						</Button>
+							{licenseStatus?.hasLicense && (
+								<Button
+									variant="outlined"
+									size="small"
+									color="error"
+									startIcon={
+										isClearing ? <CircularProgress size={16} /> : <ClearIcon />
+									}
+									onClick={handleClearLicenseClick}
+									disabled={isClearing || isUploading}
+									sx={{
+										textTransform: "none",
+										fontSize: "0.75rem",
+									}}
+								>
+									{isClearing ? "Clearing..." : "Clear License"}
+								</Button>
+							)}
+
+							<Button
+								variant="outlined"
+								size="small"
+								startIcon={
+									isUploading ? (
+										<CircularProgress size={16} />
+									) : (
+										<UploadFileIcon />
+									)
+								}
+								onClick={handleUploadClick}
+								disabled={isUploading || isClearing}
+								sx={{
+									textTransform: "none",
+									fontSize: "0.75rem",
+								}}
+							>
+								{getUploadButtonText()}
+							</Button>
+						</Box>
 					</Box>
 				</Box>
-			</Box>
-		</Popover>
+			</Popover>
+
+			{/* Confirmation Dialog */}
+			<Dialog
+				open={showClearConfirmation}
+				onClose={handleClearLicenseCancel}
+				aria-labelledby={dialogTitleId}
+				aria-describedby={dialogDescriptionId}
+			>
+				<DialogTitle id={dialogTitleId}>Clear License?</DialogTitle>
+				<DialogContent>
+					<DialogContentText id={dialogDescriptionId}>
+						Are you sure you want to clear the license information? This action
+						cannot be undone. You will need to re-import a license file to use
+						premium features again.
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleClearLicenseCancel} autoFocus>
+						Cancel
+					</Button>
+					<Button
+						onClick={handleClearLicenseConfirm}
+						color="error"
+						variant="contained"
+					>
+						Clear License
+					</Button>
+				</DialogActions>
+			</Dialog>
+		</>
 	);
 };
 

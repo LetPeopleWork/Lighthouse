@@ -200,5 +200,6 @@ export const createMockLicensingService = (): ILicensingService => {
 	return {
 		getLicenseStatus: vi.fn(),
 		importLicense: vi.fn(),
+		clearLicense: vi.fn(),
 	};
 };

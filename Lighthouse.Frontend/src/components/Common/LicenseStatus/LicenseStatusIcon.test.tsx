@@ -31,6 +31,7 @@ describe("LicenseStatusIcon", () => {
 		mockLicensingService = {
 			getLicenseStatus: vi.fn(),
 			importLicense: vi.fn(),
+			clearLicense: vi.fn(),
 		};
 	});
 

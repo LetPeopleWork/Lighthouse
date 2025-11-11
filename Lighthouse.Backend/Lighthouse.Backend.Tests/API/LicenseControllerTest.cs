@@ -237,6 +237,44 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task ClearLicense_Success_ReturnsOk()
+        {
+            licenseServiceMock.Setup(s => s.ClearLicense())
+                              .Returns(Task.CompletedTask);
+
+            var result = await subject.ClearLicense();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<OkObjectResult>());
+                var okResult = result as OkObjectResult;
+                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+            }
+
+            licenseServiceMock.Verify(s => s.ClearLicense(), Times.Once);
+        }
+
+        [Test]
+        public async Task ClearLicense_ServiceThrowsException_ReturnsBadRequestWithErrorMessage()
+        {
+            var exceptionMessage = "Database error";
+            licenseServiceMock.Setup(s => s.ClearLicense())
+                              .ThrowsAsync(new InvalidOperationException(exceptionMessage));
+
+            var result = await subject.ClearLicense();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequestResult = result as BadRequestObjectResult;
+                Assert.That(badRequestResult.StatusCode, Is.EqualTo(400));
+                Assert.That(badRequestResult.Value, Is.EqualTo($"Error clearing license: {exceptionMessage}"));
+            }
+
+            licenseServiceMock.Verify(s => s.ClearLicense(), Times.Once);
+        }
+
         private static IFormFile CreateMockFormFile(string fileName, string content)
         {
             var bytes = Encoding.UTF8.GetBytes(content);

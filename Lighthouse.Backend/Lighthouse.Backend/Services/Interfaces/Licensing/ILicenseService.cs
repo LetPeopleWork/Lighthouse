@@ -9,5 +9,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Licensing
         Task<LicenseInformation?> ImportLicense(string licenseContent);
 
         bool CanUsePremiumFeatures();
+
+        Task ClearLicense();
     }
 }
