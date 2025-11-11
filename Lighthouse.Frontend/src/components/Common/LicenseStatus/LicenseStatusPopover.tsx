@@ -1,3 +1,4 @@
+import RenewalIcon from "@mui/icons-material/Autorenew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ClearIcon from "@mui/icons-material/Clear";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -159,6 +160,67 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 			return "Uploading...";
 		}
 		return licenseStatus?.hasLicense ? "Update License" : "Add License";
+	};
+
+	const isLicenseExpiringSoon = (): boolean => {
+		if (!licenseStatus?.hasLicense || !licenseStatus.expiryDate) {
+			return false;
+		}
+
+		const now = new Date();
+		const expiryDate = new Date(licenseStatus.expiryDate);
+
+		// Show renewal for expired licenses
+		if (expiryDate <= now) {
+			return true;
+		}
+
+		// Show renewal if license expires within 30 days
+		const thirtyDaysFromNow = new Date(
+			now.getTime() + 30 * 24 * 60 * 60 * 1000,
+		);
+		return expiryDate <= thirtyDaysFromNow;
+	};
+
+	const getRenewalUrl = (): string => {
+		if (!licenseStatus?.expiryDate) {
+			return "https://letpeople.work/lighthouse#lighthouse-license";
+		}
+
+		const now = new Date();
+		const expiryDate = new Date(licenseStatus.expiryDate);
+
+		// For expired licenses, use today as validFrom
+		// For licenses expiring soon, use the day after expiry
+		let validFrom: string;
+		if (expiryDate <= now) {
+			// License is expired - use today
+			validFrom = now.toISOString().split("T")[0];
+		} else {
+			// License is expiring soon - use day after expiry
+			const nextDay = new Date(expiryDate);
+			nextDay.setDate(nextDay.getDate() + 1);
+			validFrom = nextDay.toISOString().split("T")[0];
+		}
+
+		// Build URL with query parameters
+		const params = new URLSearchParams();
+		if (licenseStatus.name) {
+			params.append("name", licenseStatus.name);
+		}
+		if (licenseStatus.email) {
+			params.append("email", licenseStatus.email);
+		}
+		if (licenseStatus.organization) {
+			params.append("organization", licenseStatus.organization);
+		}
+		params.append("validFrom", validFrom);
+
+		return `https://letpeople.work/lighthouse?${params.toString()}#lighthouse-license`;
+	};
+
+	const handleRenewLicense = () => {
+		window.open(getRenewalUrl(), "_blank", "noopener,noreferrer");
 	};
 
 	const getStatusIcon = () => {
@@ -476,6 +538,22 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 								accept=".json"
 								style={{ display: "none" }}
 							/>
+
+							{isLicenseExpiringSoon() && (
+								<Button
+									variant="outlined"
+									size="small"
+									color="warning"
+									startIcon={<RenewalIcon />}
+									onClick={handleRenewLicense}
+									sx={{
+										textTransform: "none",
+										fontSize: "0.75rem",
+									}}
+								>
+									Renew License
+								</Button>
+							)}
 
 							{licenseStatus?.hasLicense && (
 								<Button

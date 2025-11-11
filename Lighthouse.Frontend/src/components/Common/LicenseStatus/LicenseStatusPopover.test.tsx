@@ -494,4 +494,244 @@ describe("LicenseStatusPopover", () => {
 			screen.getByText(/Premium Features are not yet available/i),
 		).toBeInTheDocument();
 	});
+
+	describe("Renew License Button", () => {
+		it("shows renew button when license expires within 30 days", () => {
+			const expiryDate = new Date();
+			expiryDate.setDate(expiryDate.getDate() + 15); // 15 days from now
+
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: false,
+				name: "John Doe",
+				email: "john@example.com",
+				organization: "Example Corp",
+				expiryDate,
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(screen.getByText("Renew License")).toBeInTheDocument();
+		});
+
+		it("shows renew button when license has expired", () => {
+			const expiryDate = new Date();
+			expiryDate.setDate(expiryDate.getDate() - 5); // 5 days ago
+
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: false,
+				canUsePremiumFeatures: false,
+				name: "John Doe",
+				email: "john@example.com",
+				organization: "Example Corp",
+				expiryDate,
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(screen.getByText("Renew License")).toBeInTheDocument();
+		});
+
+		it("does not show renew button when license expires in more than 30 days", () => {
+			const expiryDate = new Date();
+			expiryDate.setDate(expiryDate.getDate() + 60); // 60 days from now
+
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: false,
+				name: "John Doe",
+				email: "john@example.com",
+				expiryDate,
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(screen.queryByText("Renew License")).not.toBeInTheDocument();
+		});
+
+		it("does not show renew button when no license exists", () => {
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: false,
+				isValid: false,
+				canUsePremiumFeatures: false,
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(screen.queryByText("Renew License")).not.toBeInTheDocument();
+		});
+
+		it("does not show renew button when license has no expiry date", () => {
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: false,
+				name: "John Doe",
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(screen.queryByText("Renew License")).not.toBeInTheDocument();
+		});
+
+		it("opens renewal URL with correct parameters for expiring license", async () => {
+			const user = userEvent.setup();
+			// Set expiry date to be within 30 days
+			const expiryDate = new Date();
+			expiryDate.setDate(expiryDate.getDate() + 20); // 20 days from now
+
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: false,
+				name: "Jane Smith",
+				email: "jane@company.com",
+				organization: "Tech Inc",
+				expiryDate,
+			};
+
+			renderComponent({ licenseStatus });
+
+			const renewButton = screen.getByText("Renew License");
+			await user.click(renewButton);
+
+			expect(window.open).toHaveBeenCalledWith(
+				expect.stringContaining("https://letpeople.work/lighthouse?"),
+				"_blank",
+				"noopener,noreferrer",
+			);
+
+			const callUrl = vi.mocked(window.open).mock.calls[0][0] as string;
+			expect(callUrl).toContain("name=Jane+Smith");
+			expect(callUrl).toContain("email=jane%40company.com");
+			expect(callUrl).toContain("organization=Tech+Inc");
+
+			// Calculate expected validFrom (day after expiry)
+			const expectedValidFrom = new Date(expiryDate);
+			expectedValidFrom.setDate(expectedValidFrom.getDate() + 1);
+			const expectedValidFromString = expectedValidFrom
+				.toISOString()
+				.split("T")[0];
+
+			expect(callUrl).toContain(`validFrom=${expectedValidFromString}`);
+			expect(callUrl).toContain("#lighthouse-license");
+		});
+
+		it("opens renewal URL with today's date for expired license", async () => {
+			const user = userEvent.setup();
+			const today = new Date();
+			const todayString = today.toISOString().split("T")[0];
+
+			const expiryDate = new Date();
+			expiryDate.setDate(expiryDate.getDate() - 10); // 10 days ago
+
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: false,
+				canUsePremiumFeatures: false,
+				name: "Jane Smith",
+				email: "jane@company.com",
+				organization: "Tech Inc",
+				expiryDate,
+			};
+
+			renderComponent({ licenseStatus });
+
+			const renewButton = screen.getByText("Renew License");
+			await user.click(renewButton);
+
+			expect(window.open).toHaveBeenCalledWith(
+				expect.stringContaining("https://letpeople.work/lighthouse?"),
+				"_blank",
+				"noopener,noreferrer",
+			);
+
+			const callUrl = vi.mocked(window.open).mock.calls[0][0] as string;
+			expect(callUrl).toContain("name=Jane+Smith");
+			expect(callUrl).toContain("email=jane%40company.com");
+			expect(callUrl).toContain("organization=Tech+Inc");
+			expect(callUrl).toContain(`validFrom=${todayString}`);
+			expect(callUrl).toContain("#lighthouse-license");
+		});
+
+		it("opens renewal URL without optional fields when not present", async () => {
+			const user = userEvent.setup();
+			// Set expiry date to be within 30 days
+			const expiryDate = new Date();
+			expiryDate.setDate(expiryDate.getDate() + 20); // 20 days from now
+
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: false,
+				expiryDate,
+				// No name, email, or organization
+			};
+
+			renderComponent({ licenseStatus });
+
+			const renewButton = screen.getByText("Renew License");
+			await user.click(renewButton);
+
+			expect(window.open).toHaveBeenCalledWith(
+				expect.stringContaining("https://letpeople.work/lighthouse?"),
+				"_blank",
+				"noopener,noreferrer",
+			);
+
+			const callUrl = vi.mocked(window.open).mock.calls[0][0] as string;
+			expect(callUrl).not.toContain("name=");
+			expect(callUrl).not.toContain("email=");
+			expect(callUrl).not.toContain("organization=");
+
+			// Calculate expected validFrom (day after expiry)
+			const expectedValidFrom = new Date(expiryDate);
+			expectedValidFrom.setDate(expectedValidFrom.getDate() + 1);
+			const expectedValidFromString = expectedValidFrom
+				.toISOString()
+				.split("T")[0];
+
+			expect(callUrl).toContain(`validFrom=${expectedValidFromString}`);
+			expect(callUrl).toContain("#lighthouse-license");
+		});
+
+		it("shows renew button exactly on expiry day", () => {
+			const expiryDate = new Date();
+			expiryDate.setHours(0, 0, 0, 0); // Start of today
+
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: false,
+				canUsePremiumFeatures: false,
+				name: "John Doe",
+				email: "john@example.com",
+				expiryDate,
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(screen.getByText("Renew License")).toBeInTheDocument();
+		});
+
+		it("shows renew button exactly 30 days before expiry", () => {
+			const expiryDate = new Date();
+			expiryDate.setDate(expiryDate.getDate() + 30);
+
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: false,
+				name: "John Doe",
+				email: "john@example.com",
+				expiryDate,
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(screen.getByText("Renew License")).toBeInTheDocument();
+		});
+	});
 });
