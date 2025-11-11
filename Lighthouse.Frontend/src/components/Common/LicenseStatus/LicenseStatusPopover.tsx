@@ -158,7 +158,7 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 		if (isUploading) {
 			return "Uploading...";
 		}
-		return licenseStatus?.hasLicense ? "Renew License" : "Add License";
+		return licenseStatus?.hasLicense ? "Update License" : "Add License";
 	};
 
 	const getStatusIcon = () => {

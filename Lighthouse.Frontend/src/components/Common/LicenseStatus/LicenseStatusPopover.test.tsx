@@ -81,7 +81,7 @@ describe("LicenseStatusPopover", () => {
 		expect(screen.getByText("Add License")).toBeInTheDocument();
 	});
 
-	it("shows 'Renew License' when license exists", () => {
+	it("shows 'Update License' when license exists", () => {
 		const licenseStatus: ILicenseStatus = {
 			hasLicense: true,
 			isValid: true,
@@ -90,7 +90,7 @@ describe("LicenseStatusPopover", () => {
 
 		renderComponent({ licenseStatus });
 
-		expect(screen.getByText("Renew License")).toBeInTheDocument();
+		expect(screen.getByText("Update License")).toBeInTheDocument();
 	});
 
 	it("shows 'Add License' when no license exists", () => {
