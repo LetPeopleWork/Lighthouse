@@ -27,9 +27,6 @@ There are various scenarios, some of them are available in the community edition
 | Quarterly Planning | See how a Quarterly Planning could look like for a Team that uses Monte Carlo Forecasts | Strategic planning sessions, OKR setting, long-term forecasting | Premium |
 | New Product Initiative | A project with 20 unstarted epics representing a new product in early planning stages | Initial forecasting for new initiatives, capacity planning, backlog prioritization, demonstrating "when will we finish?" forecasts | Premium |
 
-{: .note}
-If you have a premium license, you can also load all the scenarios at once.
-
 ## Feedback
 We'd love to hear from you! Reach out to us at [contact@letpeople.work](mailto:contact@letpeople.work) or through our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A) if you have feedback on the scenarios or wish something else to be covered or adjusted.
 

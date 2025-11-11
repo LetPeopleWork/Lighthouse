@@ -38,7 +38,6 @@ describe("DemoDataSettings", () => {
 	const mockDemoDataService = {
 		getAvailableScenarios: vi.fn(),
 		loadScenario: vi.fn(),
-		loadAllScenarios: vi.fn(),
 	};
 
 	const mockApiContext = createMockApiServiceContext({
@@ -263,52 +262,6 @@ describe("DemoDataSettings", () => {
 			expect(
 				screen.queryByText("Confirm Demo Data Loading"),
 			).not.toBeInTheDocument();
-		});
-	});
-
-	it("shows confirmation dialog for load all scenarios", async () => {
-		const user = userEvent.setup();
-		mockDemoDataService.getAvailableScenarios.mockResolvedValue([]);
-		mockDemoDataService.loadAllScenarios.mockResolvedValue(undefined);
-
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
-
-		await waitFor(() => {
-			expect(screen.getByText("Load All Scenarios")).toBeInTheDocument();
-		});
-
-		const loadAllButton = screen.getByText("Load All");
-		await user.click(loadAllButton);
-
-		// Should show confirmation dialog
-		await waitFor(() => {
-			expect(screen.getByText("Confirm Demo Data Loading")).toBeInTheDocument();
-		});
-
-		// Click the proceed button
-		const proceedButton = screen.getByText("Proceed with Loading");
-		await user.click(proceedButton);
-
-		await waitFor(() => {
-			expect(mockDemoDataService.loadAllScenarios).toHaveBeenCalled();
-		});
-	});
-
-	it("shows load all button for premium users", async () => {
-		mockDemoDataService.getAvailableScenarios.mockResolvedValue([]);
-
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
-
-		await waitFor(() => {
-			expect(screen.getByText("Load All Scenarios")).toBeInTheDocument();
 		});
 	});
 

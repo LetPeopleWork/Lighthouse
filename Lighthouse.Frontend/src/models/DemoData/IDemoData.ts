@@ -8,5 +8,4 @@ export interface IDemoDataScenario {
 export interface IDemoDataService {
 	getAvailableScenarios(): Promise<IDemoDataScenario[]>;
 	loadScenario(scenarioId: string): Promise<void>;
-	loadAllScenarios(): Promise<void>;
 }

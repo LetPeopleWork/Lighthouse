@@ -31,10 +31,8 @@ const DemoDataSettings: React.FC = () => {
 	const [loadingScenarioId, setLoadingScenarioId] = useState<string | null>(
 		null,
 	);
-	const [loadingAll, setLoadingAll] = useState(false);
 	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 	const [pendingAction, setPendingAction] = useState<{
-		type: "scenario" | "all";
 		scenarioId?: string;
 	} | null>(null);
 	const theme = useTheme();
@@ -76,37 +74,15 @@ const DemoDataSettings: React.FC = () => {
 		}
 	};
 
-	const handleLoadAllScenarios = async () => {
-		try {
-			setLoadingAll(true);
-			await demoDataService.loadAllScenarios();
-			// Optionally show success message or redirect
-		} catch (error) {
-			console.error("Failed to load all scenarios:", error);
-		} finally {
-			setLoadingAll(false);
-		}
-	};
-
 	const handleConfirmScenario = (scenarioId: string) => {
-		setPendingAction({ type: "scenario", scenarioId });
-		setConfirmDialogOpen(true);
-	};
-
-	const handleConfirmAllScenarios = () => {
-		setPendingAction({ type: "all" });
+		setPendingAction({ scenarioId });
 		setConfirmDialogOpen(true);
 	};
 
 	const handleConfirmDialogClose = (confirmed: boolean) => {
 		if (confirmed && pendingAction) {
-			if (
-				pendingAction.type === "scenario" &&
-				pendingAction.scenarioId !== undefined
-			) {
+			if (pendingAction.scenarioId !== undefined) {
 				handleLoadScenario(pendingAction.scenarioId);
-			} else if (pendingAction.type === "all") {
-				handleLoadAllScenarios();
 			}
 		}
 		setConfirmDialogOpen(false);
@@ -213,60 +189,6 @@ const DemoDataSettings: React.FC = () => {
 				))}
 			</Grid>
 
-			{/* Load All Button */}
-			<Paper
-				elevation={2}
-				sx={{
-					p: 3,
-					mb: 4,
-					backgroundColor: theme.palette.primary.main,
-					color: theme.palette.primary.contrastText,
-					opacity: canUsePremiumFeatures ? 1 : 0.6,
-				}}
-			>
-				<Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: "center" }}>
-					<Typography variant="h6" sx={{ flexGrow: 1 }}>
-						Load All Scenarios
-					</Typography>
-					{!canUsePremiumFeatures && (
-						<Chip
-							label="Premium"
-							color="secondary"
-							size="small"
-							variant="outlined"
-							sx={{
-								color: "white",
-								borderColor: "white",
-							}}
-						/>
-					)}
-				</Stack>
-				<Typography variant="body2" sx={{ mb: 2 }}>
-					Load all available demo scenarios at once to create a comprehensive
-					test environment.
-				</Typography>
-				<LoadingButton
-					variant="contained"
-					color="secondary"
-					loading={loadingAll}
-					onClick={handleConfirmAllScenarios}
-					disabled={!canUsePremiumFeatures}
-					sx={{
-						bgcolor: "white",
-						color: theme.palette.primary.main,
-						"&:hover": {
-							bgcolor: "grey.100",
-						},
-						"&:disabled": {
-							bgcolor: "grey.300",
-							color: "grey.600",
-						},
-					}}
-				>
-					{canUsePremiumFeatures ? "Load All" : "Premium Required"}
-				</LoadingButton>
-			</Paper>
-
 			{/* Contact Information */}
 			<Paper
 				elevation={1}
@@ -334,9 +256,7 @@ const DemoDataSettings: React.FC = () => {
 							projects!
 						</Typography>
 						<Typography variant="body2" sx={{ mb: 2 }}>
-							{pendingAction?.type === "all"
-								? "Loading all scenarios will replace your current data with comprehensive demo content."
-								: "Loading this scenario will replace your current data with the selected demo content."}
+							Loading this scenario will replace your current data with the selected demo content.
 						</Typography>
 						<Typography variant="body2" color="text.secondary">
 							Please ensure you have backed up your configuration before

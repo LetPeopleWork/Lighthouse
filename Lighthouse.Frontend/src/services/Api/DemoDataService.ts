@@ -21,10 +21,4 @@ export class DemoDataService
 			await this.apiService.post(`/demo/scenarios/${scenarioId}/load`);
 		});
 	}
-
-	async loadAllScenarios(): Promise<void> {
-		return await this.withErrorHandling(async () => {
-			await this.apiService.post("/demo/scenarios/load-all");
-		});
-	}
 }

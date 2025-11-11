@@ -52,16 +52,6 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
-        [HttpPost("scenarios/load-all")]
-        [LicenseGuard(RequirePremium = true)]
-        public async Task<ActionResult> LoadAll()
-        {
-            var scenarios = demoDataService.GetAllScenarios();
-            await LoadScenarios(scenarios.ToArray());
-
-            return Ok();
-        }
-
         private async Task LoadScenarios(params DemoDataScenario[] scenarios)
         {
             await demoDataService.LoadScenarios(scenarios);

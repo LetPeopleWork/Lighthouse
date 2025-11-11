@@ -93,34 +93,6 @@ describe("DemoDataService", () => {
 		});
 	});
 
-	describe("loadAllScenarios", () => {
-		it("should load all scenarios", async () => {
-			mockedAxios.post.mockResolvedValueOnce({ data: {} });
-
-			await demoDataService.loadAllScenarios();
-
-			expect(mockedAxios.post).toHaveBeenCalledWith("/demo/scenarios/load-all");
-		});
-
-		it("should handle multiple calls to load all scenarios", async () => {
-			mockedAxios.post.mockResolvedValueOnce({ data: {} });
-			mockedAxios.post.mockResolvedValueOnce({ data: {} });
-
-			await demoDataService.loadAllScenarios();
-			await demoDataService.loadAllScenarios();
-
-			expect(mockedAxios.post).toHaveBeenCalledTimes(2);
-			expect(mockedAxios.post).toHaveBeenNthCalledWith(
-				1,
-				"/demo/scenarios/load-all",
-			);
-			expect(mockedAxios.post).toHaveBeenNthCalledWith(
-				2,
-				"/demo/scenarios/load-all",
-			);
-		});
-	});
-
 	describe("error handling", () => {
 		it("should handle network errors in getAvailableScenarios", async () => {
 			const networkError = new Error("Network Error");
@@ -143,16 +115,6 @@ describe("DemoDataService", () => {
 			expect(mockedAxios.post).toHaveBeenCalledWith(
 				`/demo/scenarios/${scenarioId}/load`,
 			);
-		});
-
-		it("should handle errors in loadAllScenarios", async () => {
-			const apiError = new Error("Server Error");
-			mockedAxios.post.mockRejectedValueOnce(apiError);
-
-			await expect(demoDataService.loadAllScenarios()).rejects.toThrow(
-				"Server Error",
-			);
-			expect(mockedAxios.post).toHaveBeenCalledWith("/demo/scenarios/load-all");
 		});
 	});
 });

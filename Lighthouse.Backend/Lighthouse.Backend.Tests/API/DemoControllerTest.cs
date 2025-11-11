@@ -103,27 +103,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task LoadAll_LoadsAllScenarios()
-        {
-            var scenario1 = CreateScenario("Una");
-            var scenario2 = CreateScenario("Una Mas");
-
-            var subject = CreateSubject();
-
-            var response = await subject.LoadAll();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response, Is.InstanceOf<OkResult>());
-
-                var okResult = response as OkResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
-
-                demoDataServiceMock.Verify(x => x.LoadScenarios(scenario1, scenario2));
-            }
-        }
-
-        [Test]
         public async Task LoadScenario_UpdatesAllTeams()
         {
             var team1 = new Team { Id = 1 };

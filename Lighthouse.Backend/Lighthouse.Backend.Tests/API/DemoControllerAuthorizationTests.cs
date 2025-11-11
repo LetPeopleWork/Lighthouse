@@ -11,13 +11,6 @@ namespace Lighthouse.Backend.Tests.API
         {
         }
 
-        [Test]
-        public async Task LoadAllScenarios_AsNonPremiumUser_Returns403()
-        {
-            var response = await Client.PostAsync("/api/demo/scenarios/load-all", null);
-
-            var body = await response.Content.ReadAsStringAsync();
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), $"Response body: {body}");
-        }
+        // Note: LoadAll endpoint has been removed as demo scenarios should only be loaded individually
     }
 }

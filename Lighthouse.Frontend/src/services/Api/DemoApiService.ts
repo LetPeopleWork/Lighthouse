@@ -2035,15 +2035,4 @@ export class DemoApiService
 		this.recreateProjects();
 		this.recreateFeatures();
 	}
-
-	async loadAllScenarios(): Promise<void> {
-		await delay();
-
-		// In a real implementation, this would load all scenarios combined
-		// For demo purposes, we'll just recreate the current demo data
-		console.log("Demo: Loading all scenarios");
-		this.recreateTeams();
-		this.recreateProjects();
-		this.recreateFeatures();
-	}
 }
