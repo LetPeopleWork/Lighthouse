@@ -235,6 +235,23 @@ vi.mock("../../../components/Common/Charts/WorkItemAgingChart", () => ({
 	),
 }));
 
+vi.mock("../../../components/Common/Charts/WorkDistributionChart", () => ({
+	default: ({
+		workItems,
+		title,
+	}: {
+		workItems: IWorkItem[];
+		title: string;
+	}) => (
+		<div data-testid="work-distribution-chart">
+			<div data-testid="distribution-title">{title}</div>
+			<div data-testid="distribution-work-items-count">
+				{workItems.length}
+			</div>
+		</div>
+	),
+}));
+
 vi.mock("../../../components/Common/Charts/TotalWorkItemAgeWidget", () => ({
 	default: ({
 		entityId,
@@ -1467,6 +1484,361 @@ describe("BaseMetricsView component", () => {
 			});
 
 			consoleSpy.mockRestore();
+		});
+	});
+
+	describe("WorkDistributionChart functionality", () => {
+		it("renders WorkDistributionChart with combined cycle time and in-progress data", async () => {
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched and WorkDistributionChart to render
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+			});
+
+			// Verify the chart receives the correct title
+			expect(screen.getByTestId("distribution-title")).toHaveTextContent(
+				"Work Distribution",
+			);
+
+			// Verify the chart receives combined data (cycleTimeData + inProgressItems)
+			// mockCycleTimeData has 2 items, mockInProgressItems has 2 items = 4 total
+			expect(
+				screen.getByTestId("distribution-work-items-count"),
+			).toHaveTextContent("4");
+		});
+
+		it("passes correct combined data when cycle time data changes", async () => {
+			const customCycleTimeData: IWorkItem[] = [
+				{
+					id: 5,
+					name: "Item 5",
+					state: "Done",
+					stateCategory: "Done" as StateCategory,
+					type: "Story",
+					referenceId: "ITEM-5",
+					url: "https://example.com/work/5",
+					startedDate: new Date("2023-01-01"),
+					closedDate: new Date("2023-01-08"),
+					cycleTime: 7,
+					workItemAge: 7,
+					parentWorkItemReference: "PARENT-1",
+					isBlocked: false,
+				},
+				{
+					id: 6,
+					name: "Item 6",
+					state: "Done",
+					stateCategory: "Done" as StateCategory,
+					type: "Bug",
+					referenceId: "ITEM-6",
+					url: "https://example.com/work/6",
+					startedDate: new Date("2023-01-02"),
+					closedDate: new Date("2023-01-12"),
+					cycleTime: 10,
+					workItemAge: 10,
+					parentWorkItemReference: "PARENT-2",
+					isBlocked: false,
+				},
+				{
+					id: 7,
+					name: "Item 7",
+					state: "Done",
+					stateCategory: "Done" as StateCategory,
+					type: "Task",
+					referenceId: "ITEM-7",
+					url: "https://example.com/work/7",
+					startedDate: new Date("2023-01-03"),
+					closedDate: new Date("2023-01-09"),
+					cycleTime: 6,
+					workItemAge: 6,
+					parentWorkItemReference: "PARENT-1",
+					isBlocked: false,
+				},
+			];
+
+			const customMetricsService = createMockMetricsService<IWorkItem>();
+			customMetricsService.getCycleTimeData = vi
+				.fn()
+				.mockResolvedValue(customCycleTimeData);
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={customMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+			});
+
+			// Verify the chart receives combined data
+			// customCycleTimeData has 3 items, mockInProgressItems has 2 items = 5 total
+			expect(
+				screen.getByTestId("distribution-work-items-count"),
+			).toHaveTextContent("5");
+		});
+
+		it("passes correct combined data when in-progress items change", async () => {
+			const customInProgressItems: IWorkItem[] = [
+				{
+					id: 8,
+					name: "Item 8",
+					state: "In Progress",
+					stateCategory: "Doing" as StateCategory,
+					type: "Story",
+					referenceId: "ITEM-8",
+					url: "https://example.com/work/8",
+					startedDate: new Date("2023-01-01"),
+					closedDate: new Date(),
+					cycleTime: 0,
+					workItemAge: 15,
+					parentWorkItemReference: "PARENT-3",
+					isBlocked: false,
+				},
+			];
+
+			const customMetricsService = createMockMetricsService<IWorkItem>();
+			customMetricsService.getInProgressItems = vi
+				.fn()
+				.mockResolvedValue(customInProgressItems);
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={customMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+			});
+
+			// Verify the chart receives combined data
+			// mockCycleTimeData has 2 items, customInProgressItems has 1 item = 3 total
+			expect(
+				screen.getByTestId("distribution-work-items-count"),
+			).toHaveTextContent("3");
+		});
+
+		it("handles empty cycle time data", async () => {
+			const emptyMetricsService = createMockMetricsService<IWorkItem>();
+			emptyMetricsService.getCycleTimeData = vi.fn().mockResolvedValue([]);
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={emptyMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+			});
+
+			// Verify the chart receives only in-progress items
+			// Empty cycleTimeData + mockInProgressItems (2 items) = 2 total
+			expect(
+				screen.getByTestId("distribution-work-items-count"),
+			).toHaveTextContent("2");
+		});
+
+		it("handles empty in-progress items", async () => {
+			const emptyProgressMetricsService =
+				createMockMetricsService<IWorkItem>();
+			emptyProgressMetricsService.getInProgressItems = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={emptyProgressMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+			});
+
+			// Verify the chart receives only cycle time data
+			// mockCycleTimeData (2 items) + empty inProgressItems = 2 total
+			expect(
+				screen.getByTestId("distribution-work-items-count"),
+			).toHaveTextContent("2");
+		});
+
+		it("handles both empty cycle time and in-progress data", async () => {
+			const emptyMetricsService = createMockMetricsService<IWorkItem>();
+			emptyMetricsService.getCycleTimeData = vi.fn().mockResolvedValue([]);
+			emptyMetricsService.getInProgressItems = vi.fn().mockResolvedValue([]);
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={emptyMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+			});
+
+			// Verify the chart receives empty data
+			expect(
+				screen.getByTestId("distribution-work-items-count"),
+			).toHaveTextContent("0");
+		});
+
+		it("updates WorkDistributionChart when date range changes", async () => {
+			const updateableService = createMockMetricsService<IWorkItem>();
+			let callCount = 0;
+
+			// Mock to return different data on subsequent calls
+			updateableService.getCycleTimeData = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					return Promise.resolve(mockCycleTimeData); // 2 items
+				}
+				// Return more items on second call
+				return Promise.resolve([
+					...mockCycleTimeData,
+					{
+						id: 10,
+						name: "Item 10",
+						state: "Done",
+						stateCategory: "Done" as StateCategory,
+						type: "Story",
+						referenceId: "ITEM-10",
+						url: "https://example.com/work/10",
+						startedDate: new Date("2023-01-01"),
+						closedDate: new Date("2023-01-11"),
+						cycleTime: 10,
+						workItemAge: 10,
+						parentWorkItemReference: "PARENT-4",
+						isBlocked: false,
+					},
+				]);
+			});
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={updateableService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for initial data
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				// Initial: 2 cycle time + 2 in progress = 4
+				expect(
+					screen.getByTestId("distribution-work-items-count"),
+				).toHaveTextContent("4");
+			});
+
+			// Change date range
+			fireEvent.click(screen.getByTestId("dashboard-date-range-toggle"));
+			await screen.findByTestId("start-date");
+			fireEvent.click(screen.getByTestId("change-start-date"));
+
+			// Wait for updated data
+			await waitFor(() => {
+				// After update: 3 cycle time + 2 in progress = 5
+				expect(
+					screen.getByTestId("distribution-work-items-count"),
+				).toHaveTextContent("5");
+			});
+		});
+
+		it("displays work distribution chart with Team entity", async () => {
+			render(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={mockMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+			});
+
+			// Verify the chart is rendered with correct data
+			expect(screen.getByTestId("distribution-title")).toHaveTextContent(
+				"Work Distribution",
+			);
+			expect(
+				screen.getByTestId("distribution-work-items-count"),
+			).toHaveTextContent("4"); // 2 cycle time + 2 in progress
+		});
+
+		it("properly types work items as IWorkItem[] when passing to chart", async () => {
+			// This test verifies type casting works correctly with generic T
+			const featureMetricsService = createMockMetricsService<IFeature>();
+			const mockFeatureData = mockCycleTimeData.map((item) => ({
+				...item,
+				size: 5,
+			}));
+			featureMetricsService.getCycleTimeData = vi
+				.fn()
+				.mockResolvedValue(mockFeatureData);
+
+			render(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={featureMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Wait for data to be fetched
+			await waitFor(() => {
+				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+			});
+
+			// Verify the chart receives the data despite type being T (IFeature)
+			// Cast to IWorkItem[] should work since IFeature extends IWorkItem
+			expect(
+				screen.getByTestId("distribution-work-items-count"),
+			).toHaveTextContent("4");
 		});
 	});
 });

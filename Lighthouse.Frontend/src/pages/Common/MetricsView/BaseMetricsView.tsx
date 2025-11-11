@@ -9,6 +9,7 @@ import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
 import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
+import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
@@ -334,9 +335,22 @@ export const BaseMetricsView = <
 				/>
 			),
 		});
+
+		items.push({
+			id: "workDistribution",
+			priority: 12,
+			size: "large",
+			node: (
+				<WorkDistributionChart
+					workItems={[...cycleTimeData, ...inProgressItems] as IWorkItem[]}
+					title="Work Distribution"
+				/>
+			),
+		});
+
 		items.push({
 			id: "aging",
-			priority: 12,
+			priority: 13,
 			size: "large",
 			node: (
 				<WorkItemAgingChart
@@ -350,7 +364,7 @@ export const BaseMetricsView = <
 
 		items.push({
 			id: "wipOverTime",
-			priority: 13,
+			priority: 14,
 			size: "large",
 			node: wipOverTimeData ? (
 				<LineRunChart
@@ -365,7 +379,7 @@ export const BaseMetricsView = <
 
 		items.push({
 			id: "totalWorkItemAgeOverTime",
-			priority: 14,
+			priority: 15,
 			size: "large",
 			node: wipOverTimeData ? (
 				<TotalWorkItemAgeRunChart
@@ -378,7 +392,7 @@ export const BaseMetricsView = <
 
 		items.push({
 			id: "stacked",
-			priority: 15,
+			priority: 16,
 			size: "large",
 			node:
 				throughputData && startedItems ? (
@@ -408,7 +422,7 @@ export const BaseMetricsView = <
 		if (allFeaturesForSizeChart.length > 0) {
 			items.push({
 				id: "featureSize",
-				priority: 16,
+				priority: 17,
 				size: "large", // Use standardized large size
 				node: (
 					<FeatureSizeScatterPlotChart
