@@ -19,6 +19,9 @@ on:
       expiry:
         description: 'Expiry Date (YYYY-MM-DD) - defaults to 2 weeks from now'
         required: false
+      valid_from:
+        description: 'Valid From Date (YYYY-MM-DD) - defaults to today'
+        required: false
 
 jobs:
   generate-and-verify:
@@ -42,6 +45,16 @@ jobs:
             EXPIRY_DATE="${{ github.event.inputs.expiry }}"
           fi
           echo "expiry_date=$EXPIRY_DATE" >> $GITHUB_OUTPUT
+
+      - name: Set default valid from date (today)
+        id: set-valid-from
+        run: |
+          if [ -z "${{ github.event.inputs.valid_from }}" ]; then
+            VALID_FROM_DATE=$(date +%Y-%m-%d)
+          else
+            VALID_FROM_DATE="${{ github.event.inputs.valid_from }}"
+          fi
+          echo "valid_from_date=$VALID_FROM_DATE" >> $GITHUB_OUTPUT
 
       - name: Set default values
         id: set-defaults
@@ -74,7 +87,7 @@ jobs:
 
       - name: Generate license
         run: |
-          python Scripts/generate_license.py private_key.pem license.json "${{ github.run_number }}" "${{ steps.set-defaults.outputs.name }}" "${{ steps.set-defaults.outputs.email }}" "${{ steps.set-defaults.outputs.organization }}" "${{ steps.set-expiry.outputs.expiry_date }}"
+          python Scripts/generate_license.py private_key.pem license.json "${{ github.run_number }}" "${{ steps.set-defaults.outputs.name }}" "${{ steps.set-defaults.outputs.email }}" "${{ steps.set-defaults.outputs.organization }}" "${{ steps.set-expiry.outputs.expiry_date }}" "${{ steps.set-valid-from.outputs.valid_from_date }}"
 
       - name: Write public key to file
         run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PUBLIC_KEY }}" > public_key.pem

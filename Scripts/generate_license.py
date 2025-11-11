@@ -9,11 +9,11 @@ from cryptography.hazmat.backends import default_backend
 
 def main():
     # Expected args (excluding script name):
-    # <private_key.pem> <output_file.json> <license_number> <name> <email> <organization> <expiry>
-    if len(sys.argv) != 8:
+    # <private_key.pem> <output_file.json> <license_number> <name> <email> <organization> <expiry> [valid_from]
+    if len(sys.argv) < 8 or len(sys.argv) > 9:
         print(sys.argv)
         print(
-            "Usage: python generate_license.py <private_key.pem> <output_file.json> <license_number> <name> <email> <organization> <expiry>"
+            "Usage: python generate_license.py <private_key.pem> <output_file.json> <license_number> <name> <email> <organization> <expiry> [valid_from]"
         )
         sys.exit(1)
 
@@ -24,6 +24,7 @@ def main():
     email = sys.argv[5]
     organization = sys.argv[6]
     expiry = sys.argv[7]
+    valid_from = sys.argv[8] if len(sys.argv) == 9 else datetime.now().strftime("%Y-%m-%d")
 
     # Basic expiry format validation
     try:
@@ -32,12 +33,20 @@ def main():
         print("Expiry date must be in YYYY-MM-DD format")
         sys.exit(1)
 
+    # Basic valid_from format validation
+    try:
+        datetime.strptime(valid_from, "%Y-%m-%d")
+    except ValueError:
+        print("Valid from date must be in YYYY-MM-DD format")
+        sys.exit(1)
+
     license_data = {
         "license_number": str(license_number),  # ensure string for JSON stability
         "name": name,
         "email": email,
         "organization": organization,
         "expiry": expiry,
+        "valid_from": valid_from,
     }
 
     license_json = json.dumps(license_data, separators=(',', ':'), sort_keys=True).encode("utf-8")
