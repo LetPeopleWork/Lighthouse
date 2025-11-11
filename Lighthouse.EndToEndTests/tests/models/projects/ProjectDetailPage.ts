@@ -115,7 +115,23 @@ export class ProjectDetailPage {
 		return this.page
 			.getByTestId("dashboard-item-featureSize")
 			.locator("div")
-			.filter({ hasText: "Features Size50%70%85%95%50%" })
+			.filter({ hasText: "Features Size50%70%85%95%To" })
+			.nth(1);
+	}
+
+	get totalWorkItemAgeWidget(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-totalWorkItemAge")
+			.locator("div")
+			.filter({ hasText: /^Total Work Item Age.*days$/ })
+			.first();
+	}
+
+	get totalWorkItemAgeRunChart(): Locator {
+		return this.page
+			.getByTestId("dashboard-item-totalWorkItemAgeOverTime")
+			.locator("div")
+			.filter({ hasText: /^Features Total Work Item Age Over Time.*$/ })
 			.nth(1);
 	}
 

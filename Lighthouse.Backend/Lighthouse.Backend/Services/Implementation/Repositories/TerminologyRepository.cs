@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
-    public class TerminologyRepository : RepositoryBase<TerminologyEntry>, IRepository<TerminologyEntry>
+    public class TerminologyRepository : RepositoryBase<TerminologyEntry>
     {
         public TerminologyRepository(LighthouseAppContext context, ILogger<TerminologyRepository> logger)
             : base(context, context => context.TerminologyEntries, logger)

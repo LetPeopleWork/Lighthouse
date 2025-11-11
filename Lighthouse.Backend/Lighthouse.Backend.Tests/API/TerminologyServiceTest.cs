@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result.Count, Is.EqualTo(2));
+                Assert.That(result.Count(), Is.EqualTo(2));
 
                 var featureEntry = result.Single(e => e.Key == "feature");
                 var storyEntry = result.Single(e => e.Key == "story");

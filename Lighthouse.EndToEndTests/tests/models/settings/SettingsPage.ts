@@ -1,10 +1,10 @@
 import type { Page } from "@playwright/test";
 import { ProjectEditPage } from "../projects/ProjectEditPage";
+import { DemoDataPage } from "../teams/DemoDataPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
 import { LogsPage } from "./Logs/LogsPage";
 import { SystemSettingsPage } from "./SystemSettings/SystemSettingsPage";
 import { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystems/WorkTrackingSystemsSettingsPage";
-import { DemoDataPage } from "../teams/DemoDataPage";
 
 export class SettingsPage {
 	page: Page;
@@ -19,7 +19,7 @@ export class SettingsPage {
 		return new WorkTrackingSystemsSettingsPage(this.page);
 	}
 
-	async goToDemoData(): Promise<DemoDataPage>{
+	async goToDemoData(): Promise<DemoDataPage> {
 		await this.page.getByTestId("demo-data-tab").click();
 
 		return new DemoDataPage(this.page);

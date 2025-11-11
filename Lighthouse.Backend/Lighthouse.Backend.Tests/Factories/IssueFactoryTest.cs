@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.Factories
     public class IssueFactoryTest
     {
         private Mock<ILexoRankService> lexoRankServiceMock;
-        private IWorkItemQueryOwner workItemQueryOwner;
+        private TestWorkItemQueryOwner workItemQueryOwner;
 
         private string jsonTemplate;
 

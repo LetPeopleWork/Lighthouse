@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import DataOverviewTable from "./DataOverviewTable";
 
@@ -10,6 +10,23 @@ vi.mock("react-router-dom", async () => {
 		...actual,
 		useNavigate: vi.fn(),
 	};
+});
+
+// Mock matchMedia before each test
+beforeEach(() => {
+	Object.defineProperty(globalThis, "matchMedia", {
+		writable: true,
+		value: vi.fn().mockImplementation((query) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		})),
+	});
 });
 
 const renderWithRouter = (ui: React.ReactNode) => {
@@ -193,18 +210,6 @@ describe("DataOverviewTable", () => {
 	});
 
 	it("displays tags as chips for each item", () => {
-		// Prevent mobile view to make sure tags are visible
-		vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-			matches: false,
-			media: query,
-			onchange: null,
-			addListener: vi.fn(),
-			removeListener: vi.fn(),
-			addEventListener: vi.fn(),
-			removeEventListener: vi.fn(),
-			dispatchEvent: vi.fn(),
-		}));
-
 		renderWithRouter(
 			<DataOverviewTable
 				data={sampleData}
@@ -238,18 +243,6 @@ describe("DataOverviewTable", () => {
 	});
 
 	it("displays no tags for items without tags", () => {
-		// Prevent mobile view to make sure tags column is visible
-		vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-			matches: false,
-			media: query,
-			onchange: null,
-			addListener: vi.fn(),
-			removeListener: vi.fn(),
-			addEventListener: vi.fn(),
-			removeEventListener: vi.fn(),
-			dispatchEvent: vi.fn(),
-		}));
-
 		renderWithRouter(
 			<DataOverviewTable
 				data={sampleData}
@@ -269,18 +262,6 @@ describe("DataOverviewTable", () => {
 	});
 
 	it("should not display empty tags", () => {
-		// Prevent mobile view to make sure tags column is visible
-		vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-			matches: false,
-			media: query,
-			onchange: null,
-			addListener: vi.fn(),
-			removeListener: vi.fn(),
-			addEventListener: vi.fn(),
-			removeEventListener: vi.fn(),
-			dispatchEvent: vi.fn(),
-		}));
-
 		const dataWithEmptyTag: IFeatureOwner[] = [
 			{
 				id: 1,

@@ -21,7 +21,7 @@ RUN dotnet build "Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.cspr
 	-c "$BUILD_CONFIGURATION" \
 	-o /app/build/
 
-FROM node:22-alpine AS node-builder
+FROM node:25-alpine AS node-builder
 WORKDIR /node
 COPY Lighthouse.Frontend /node
 RUN npm install --ignore-scripts \

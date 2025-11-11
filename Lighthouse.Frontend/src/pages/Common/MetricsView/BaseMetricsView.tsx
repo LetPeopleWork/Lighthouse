@@ -7,6 +7,8 @@ import FeatureSizeScatterPlotChart from "../../../components/Common/Charts/Featu
 import LineRunChart from "../../../components/Common/Charts/LineRunChart";
 import StackedAreaChart from "../../../components/Common/Charts/StackedAreaChart";
 import StartedVsFinishedDisplay from "../../../components/Common/Charts/StartedVsFinishedDisplay";
+import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
+import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
@@ -65,6 +67,10 @@ export const BaseMetricsView = <
 
 	const [sizePercentileValues, setSizePercentileValues] = useState<
 		IPercentileValue[]
+	>([]);
+
+	const [allFeaturesForSizeChart, setAllFeaturesForSizeChart] = useState<
+		IFeature[]
 	>([]);
 
 	const [startedItems, setStartedItems] = useState<RunChartData | null>(null);
@@ -196,16 +202,23 @@ export const BaseMetricsView = <
 					endDate,
 				);
 				setSizePercentileValues(percentiles);
+
+				const allFeatures =
+					await projectMetricsService.getAllFeaturesForSizeChart(
+						entity.id,
+						startDate,
+						endDate,
+					);
+				setAllFeaturesForSizeChart(allFeatures);
 			} catch (error) {
 				console.error(`Error fetching Size Percentile Data:`, error);
 			}
 		};
 
-		// Check if the service has the getSizePercentiles method (only ProjectMetricsService has this)
+		// Check if the service has the getAllFeaturesForSizeChart method (only ProjectMetricsService has this)
 		if (
-			"getSizePercentiles" in metricsService &&
-			typeof (metricsService as IProjectMetricsService).getSizePercentiles ===
-				"function"
+			"getAllFeaturesForSizeChart" in metricsService &&
+			"getSizePercentiles" in metricsService
 		) {
 			fetchSizePercentileData(metricsService as IProjectMetricsService);
 		}
@@ -253,14 +266,14 @@ export const BaseMetricsView = <
 		items.push({
 			id: "itemsInProgress",
 			priority: 1,
-			size: "medium",
+			size: "small",
 			node: <ItemsInProgress entries={inProgressEntries} />,
 		});
 
 		items.push({
 			id: "percentiles",
 			priority: 2,
-			size: "medium",
+			size: "small",
 			node: (
 				<CycleTimePercentiles
 					percentileValues={percentileValues}
@@ -273,11 +286,23 @@ export const BaseMetricsView = <
 		items.push({
 			id: "startedVsFinished",
 			priority: 3,
-			size: "medium",
+			size: "small",
 			node: (
 				<StartedVsFinishedDisplay
 					startedItems={startedItems}
 					closedItems={throughputData}
+				/>
+			),
+		});
+
+		items.push({
+			id: "totalWorkItemAge",
+			priority: 4,
+			size: "small",
+			node: (
+				<TotalWorkItemAgeWidget
+					entityId={entity.id}
+					metricsService={metricsService}
 				/>
 			),
 		});
@@ -309,7 +334,6 @@ export const BaseMetricsView = <
 				/>
 			),
 		});
-
 		items.push({
 			id: "aging",
 			priority: 12,
@@ -340,8 +364,21 @@ export const BaseMetricsView = <
 		});
 
 		items.push({
-			id: "stacked",
+			id: "totalWorkItemAgeOverTime",
 			priority: 14,
+			size: "large",
+			node: wipOverTimeData ? (
+				<TotalWorkItemAgeRunChart
+					title={`${title} Total Work Item Age Over Time`}
+					startDate={startDate}
+					wipOverTimeData={wipOverTimeData}
+				/>
+			) : null,
+		});
+
+		items.push({
+			id: "stacked",
+			priority: 15,
 			size: "large",
 			node:
 				throughputData && startedItems ? (
@@ -368,14 +405,14 @@ export const BaseMetricsView = <
 		});
 
 		// Feature size chart (conditional)
-		if (cycleTimeData.length > 0 && "size" in cycleTimeData[0]) {
+		if (allFeaturesForSizeChart.length > 0) {
 			items.push({
 				id: "featureSize",
-				priority: 15,
+				priority: 16,
 				size: "large", // Use standardized large size
 				node: (
 					<FeatureSizeScatterPlotChart
-						sizeDataPoints={cycleTimeData as IFeature[]}
+						sizeDataPoints={allFeaturesForSizeChart}
 						sizePercentileValues={sizePercentileValues}
 					/>
 				),

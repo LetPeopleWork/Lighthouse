@@ -291,6 +291,380 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             ;
         }
 
+        [Test]
+        public void GetTotalWorkItemAge_NoFeaturesInDoing_ReturnsZero()
+        {
+            features.Clear();
+            var feature1 = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.ToDo,
+            };
+            feature1.Projects.Add(project);
+            features.Add(feature1);
+
+            var feature2 = new Feature
+            {
+                Id = 2,
+                StateCategory = StateCategories.Done,
+            };
+            feature2.Projects.Add(project);
+            features.Add(feature2);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.Zero);
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_FeaturesOfOtherProject_ReturnsZero()
+        {
+            var otherProject = new Project { Id = 999, Name = "Other Project" };
+            features.Clear();
+            var feature = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-5),
+            };
+            feature.Projects.Add(otherProject);
+            features.Add(feature);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.Zero);
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_SingleFeatureInProgress_ReturnsFeatureAge()
+        {
+            features.Clear();
+            var feature = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-5),
+            };
+            feature.Projects.Add(project);
+            features.Add(feature);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.EqualTo(6));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_MultipleFeaturesInProgress_ReturnsSumOfAges()
+        {
+            features.Clear();
+            var feature1 = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-10),
+            };
+            feature1.Projects.Add(project);
+            features.Add(feature1);
+
+            var feature2 = new Feature
+            {
+                Id = 2,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-5),
+            };
+            feature2.Projects.Add(project);
+            features.Add(feature2);
+
+            var feature3 = new Feature
+            {
+                Id = 3,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-2),
+            };
+            feature3.Projects.Add(project);
+            features.Add(feature3);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            // 11 + 6 + 3 = 20
+            Assert.That(totalAge, Is.EqualTo(20));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_MixedStateFeatures_OnlyCountsDoingFeatures()
+        {
+            features.Clear();
+            var feature1 = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-7),
+            };
+            feature1.Projects.Add(project);
+            features.Add(feature1);
+
+            var feature2 = new Feature
+            {
+                Id = 2,
+                StateCategory = StateCategories.Done,
+                StartedDate = DateTime.UtcNow.AddDays(-15),
+                ClosedDate = DateTime.UtcNow.AddDays(-3),
+            };
+            feature2.Projects.Add(project);
+            features.Add(feature2);
+
+            var feature3 = new Feature
+            {
+                Id = 3,
+                StateCategory = StateCategories.ToDo,
+            };
+            feature3.Projects.Add(project);
+            features.Add(feature3);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.EqualTo(8));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_FeatureWithNoStartedDate_UsesCreatedDate()
+        {
+            features.Clear();
+            var feature = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Doing,
+                StartedDate = null,
+                CreatedDate = DateTime.UtcNow.AddDays(-9),
+            };
+            feature.Projects.Add(project);
+            features.Add(feature);
+
+            var totalAge = subject.GetTotalWorkItemAge(project);
+
+            Assert.That(totalAge, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_ReturnsOnlyDoneFeaturesInDateRange()
+        {
+            // Arrange
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            // Act
+            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Count.EqualTo(3)); // F1, F2 (Done in range), F3 (Doing)
+                Assert.That(result.Any(f => f.ReferenceId == "F1"), Is.True);
+                Assert.That(result.Any(f => f.ReferenceId == "F2"), Is.True);
+                Assert.That(result.Any(f => f.ReferenceId == "F3"), Is.True);
+            };
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_IncludesToDoFeatures()
+        {
+            // Arrange
+            features.Add(new Feature
+            {
+                Id = 4,
+                Name = "Feature 4",
+                ReferenceId = "F4",
+                StateCategory = StateCategories.ToDo,
+                CreatedDate = DateTime.UtcNow
+            });
+            features.Last().Projects.Add(project);
+
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            // Act
+            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Count.EqualTo(4)); // F1, F2 (Done), F3 (Doing), F4 (ToDo)
+                Assert.That(result.Any(f => f.ReferenceId == "F4"), Is.True);
+                Assert.That(result.Any(f => f.StateCategory == StateCategories.ToDo), Is.True);
+            };
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_IncludesDoingFeatures()
+        {
+            // Arrange
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            // Act
+            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Any(f => f.ReferenceId == "F3"), Is.True);
+                Assert.That(result.Any(f => f.StateCategory == StateCategories.Doing), Is.True);
+            };
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_ExcludesDoneFeaturesOutsideDateRange()
+        {
+            // Arrange
+            features.Add(new Feature
+            {
+                Id = 5,
+                Name = "Feature 5",
+                ReferenceId = "F5",
+                StartedDate = new DateTime(2022, 12, 1),
+                ClosedDate = new DateTime(2022, 12, 15),
+                StateCategory = StateCategories.Done,
+            });
+            features.Last().Projects.Add(project);
+
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            // Act
+            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Any(f => f.ReferenceId == "F5"), Is.False);
+            };
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_IncludesMixedStateFeatures()
+        {
+            // Arrange
+            features.Add(new Feature
+            {
+                Id = 6,
+                Name = "Feature 6",
+                ReferenceId = "F6",
+                StateCategory = StateCategories.ToDo,
+                CreatedDate = DateTime.UtcNow
+            });
+            features.Last().Projects.Add(project);
+
+            features.Add(new Feature
+            {
+                Id = 7,
+                Name = "Feature 7",
+                ReferenceId = "F7",
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-2)
+            });
+            features.Last().Projects.Add(project);
+
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            // Act
+            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Count(f => f.StateCategory == StateCategories.Done), Is.EqualTo(2)); // F1, F2
+                Assert.That(result.Count(f => f.StateCategory == StateCategories.Doing), Is.EqualTo(2)); // F3, F7
+                Assert.That(result.Count(f => f.StateCategory == StateCategories.ToDo), Is.EqualTo(1)); // F6
+            };
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_OnlyToDoAndDoingFeatures_ReturnsAll()
+        {
+            // Arrange
+            features.Clear();
+            features.Add(new Feature
+            {
+                Id = 1,
+                Name = "Feature 1",
+                ReferenceId = "F1",
+                StateCategory = StateCategories.ToDo,
+                CreatedDate = DateTime.UtcNow
+            });
+            features.Last().Projects.Add(project);
+
+            features.Add(new Feature
+            {
+                Id = 2,
+                Name = "Feature 2",
+                ReferenceId = "F2",
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-2)
+            });
+            features.Last().Projects.Add(project);
+
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            // Act
+            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Count.EqualTo(2));
+                Assert.That(result.Any(f => f.StateCategory == StateCategories.ToDo), Is.True);
+                Assert.That(result.Any(f => f.StateCategory == StateCategories.Doing), Is.True);
+            };
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_NoFeatures_ReturnsEmpty()
+        {
+            // Arrange
+            features.Clear();
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            // Act
+            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Is.Empty);
+            };
+        }
+
+        [Test]
+        public void GetAllFeaturesForSizeChart_FeaturesOfOtherProject_NotIncluded()
+        {
+            // Arrange
+            var otherProject = new Project { Id = 999, Name = "Other Project" };
+            features.Add(new Feature
+            {
+                Id = 8,
+                Name = "Feature 8",
+                ReferenceId = "F8",
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.AddDays(-2)
+            });
+            features.Last().Projects.Add(otherProject);
+
+            var startDate = new DateTime(2023, 1, 1);
+            var endDate = new DateTime(2023, 1, 31);
+
+            // Act
+            var result = subject.GetAllFeaturesForSizeChart(project, startDate, endDate).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Any(f => f.ReferenceId == "F8"), Is.False);
+            };
+        }
+
         private void SetupTestData()
         {
             project = new Project
@@ -299,10 +673,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Name = "Test Project"
             };
 
-            var jan2 = new DateTime(2023, 1, 2);
-            var jan4 = new DateTime(2023, 1, 4);
-            var jan5 = new DateTime(2023, 1, 5);
-            var jan10 = new DateTime(2023, 1, 10);
+            var jan2 = new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc);
+            var jan4 = new DateTime(2023, 1, 4, 0, 0, 0, DateTimeKind.Utc);
+            var jan5 = new DateTime(2023, 1, 5, 0, 0, 0, DateTimeKind.Utc);
+            var jan10 = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
             features = new List<Feature>
             {

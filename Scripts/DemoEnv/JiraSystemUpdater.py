@@ -9,7 +9,7 @@ args = parser.parse_args()
 
 API_TOKEN = args.api_token
 USERNAME = 'atlassian.pushchair@huser-berta.com'
-JIRA_BASE_URL = 'https://letpeoplework.atlassian.net/rest/api/latest'
+JIRA_BASE_URL = 'https://letpeoplework.atlassian.net/rest/api/3'
 
 # Target throughput for each team including "Epics"
 teams_targets = {
@@ -90,7 +90,7 @@ def move_issues_stepwise(team):
 
     # Move items from New to In Progress
     print(f"  🔍 Querying '{team}' items in 'To Do' state...")
-    new_issues_resp = session.get(f"{JIRA_BASE_URL}/search", params={
+    new_issues_resp = session.get(f"{JIRA_BASE_URL}/search/jql", params={
         "jql": f"{jql_base} AND status = 'To Do'",
         "fields": "key",
         "maxResults": 100
@@ -116,7 +116,7 @@ def move_issues_stepwise(team):
 
     # Move items from In Progress to Done
     print(f"  🔍 Querying '{team}' items in 'In Progress' state...")
-    in_progress_resp = session.get(f"{JIRA_BASE_URL}/search", params={
+    in_progress_resp = session.get(f"{JIRA_BASE_URL}/search/jql", params={
         "jql": f"{jql_base} AND status = 'In Progress'",
         "fields": "key",
         "maxResults": 100

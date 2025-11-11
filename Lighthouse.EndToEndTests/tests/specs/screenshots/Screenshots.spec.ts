@@ -287,10 +287,7 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	);
 
 	const demoDataPage = await settingsPage.goToDemoData();
-	await takePageScreenshot(
-		demoDataPage.page,
-		"settings/demodata.png",
-	);
+	await takePageScreenshot(demoDataPage.page, "settings/demodata.png");
 
 	const defaultTeamSettingsPage = await settingsPage.goToDefaultTeamSettings();
 	await takePageScreenshot(
@@ -439,6 +436,16 @@ testWithData(
 		await takeElementScreenshot(
 			teamDetailPage.simplifiedCfdWidget,
 			"features/metrics/simplifiedCFD.png",
+		);
+
+		await takeElementScreenshot(
+			teamDetailPage.totalWorkItemAgeWidget,
+			"features/metrics/totalWorkItemAge.png",
+		);
+
+		await takeElementScreenshot(
+			teamDetailPage.totalWorkItemAgeRunChart,
+			"features/metrics/totalWorkItemAgeRunChart.png",
 		);
 
 		overviewPage.lightHousePage.goToOverview();

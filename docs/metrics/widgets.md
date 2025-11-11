@@ -189,11 +189,85 @@ If you enable the trend lines, the start and end points of both areas will be co
 2. Bring the lines closer together - this means you will decrease your Cycle Time.
 3. Increase the *angle* of the lines - this means you will increase your Throughput.
 
+## Total Work Item Age
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Projects |
+| **Flow Metric** | Work Item Age, WIP |
+| **Affected by Filtering** | No (Widget), Yes (Chart) |
+
+The Total Work Item Age widget shows the cumulative age of all items currently in progress. This metric helps you understand the overall "inventory" age of your work in progress.
+
+![Total Work Item Age Widget](../assets/features/metrics/totalWorkItemAge.png)
+
+The widget displays a single number representing the sum of ages (in days) of all items currently in a *Doing* state. This gives you a quick view of your total WIP "burden" - the higher the number, the more accumulated age you're carrying in your system.
+
+For example, if you have:
+- Item A: 5 days old
+- Item B: 3 days old  
+- Item C: 2 days old
+
+Your Total Work Item Age would be 10 days.
+
+{: .important}
+This widget is **not affected** by date filtering. It always shows the **current** total age of all items in progress.
+
+### Total Work Item Age Over Time
+
+To see how your total work item age has evolved, there's also a run chart showing the historical trend:
+
+![Total Work Item Age Run Chart](../assets/features/metrics/totalWorkItemAgeRunChart.png)
+
+This chart visualizes how the cumulative age of your WIP has changed over the selected time period. You can use this to:
+- Identify periods where age accumulated (indicating items getting stuck)
+- See the impact of finishing old items (sharp drops in total age)
+- Monitor whether your overall WIP age is trending up or down
+
+If you click on a specific day, it will show you which items contributed to the total age on that date, along with each item's individual age at that point in time.
+
+{: .note}
+The age calculation for historical dates shows how old each item was on that specific date, not its current age. An item started 10 days ago would show age 1 on its first day, age 2 on its second day, and so on.
+
 ## Feature Size
 
 |--------------|-------------------------|
 | **Applies to** | Projects |
-| **Flow Metric** | Cycle Time, Throughput |
+| **Flow Metric** | Cycle Time, Work Item Age, Throughput |
 | **Affected by Filtering** | Yes |
 
-This chart is showing you the size of your done Features over the selected time range on a scatter plot.
+This chart shows the size of your Features on a scatter plot, with the ability to filter by state category.
+
+![Feature Size Scatterplot](../assets/features/metrics/featuresize.png)
+
+The chart displays features from your selected time range, with:
+- **X-axis**: Feature size (number of child work items)
+- **Y-axis**: Time metric (varies by state - see below)
+
+### State Filtering
+
+The chart includes three filter chips on the right side to show or hide features by state:
+
+- **Done** (enabled by default): Shows completed features using their cycle time
+- **To Do** (disabled by default): Shows unstarted features positioned at the y=0 baseline
+- **In Progress** (disabled by default): Shows features currently being worked on using their work item age
+
+{: .note}
+Features in the To Do category with a size of 0 (no child work items) are automatically filtered out, as they represent features that haven't been broken down yet.
+
+### Time Metrics by State
+
+The y-axis value differs based on the feature's state:
+- **Done features**: Display their **cycle time** (how long they took from start to completion)
+- **In Progress features**: Display their **work item age** (how long they've been in progress)
+- **To Do features**: Appear at **y=0** (no time elapsed yet)
+
+This allows you to see:
+- How feature size correlates with cycle time for completed features
+- How long current features have been in progress relative to their size
+- The size distribution of features in your backlog
+
+### Percentile Lines
+
+Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), you can show percentile lines to understand your feature delivery patterns. Multiple features with the same size and time value are grouped in a bubble - the larger the bubble, the more features it represents.
+
+Click on any bubble to see detailed information about the feature(s) it represents.

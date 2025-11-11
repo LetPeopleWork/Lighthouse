@@ -74,11 +74,12 @@ describe("StackedAreaChart component", () => {
 		const emptyAreas: AreaChartItem[] = [];
 		const startDate = new Date(2023, 0, 1);
 
-		render(<StackedAreaChart areas={emptyAreas} startDate={startDate} />);
+		const { container } = render(
+			<StackedAreaChart areas={emptyAreas} startDate={startDate} />,
+		);
 
-		// Check that no chart is rendered
-		const chartElement = document.querySelector("svg");
-		expect(chartElement).not.toBeInTheDocument();
+		// Check that the component returns null (no content rendered)
+		expect(container.firstChild).toBeNull();
 	});
 
 	it("should toggle trend lines when switch is clicked", async () => {

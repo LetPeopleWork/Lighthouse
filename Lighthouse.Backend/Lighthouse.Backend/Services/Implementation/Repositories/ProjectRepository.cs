@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public override Project? GetById(int id)
         {
-            logger.LogDebug("Get Project by Id. Id: {id}", id);
+            logger.LogDebug("Get Project by Id. Id: {Id}", id);
 
             return GetAllProjectsWithIncludes()
                     .SingleOrDefault(x => x.Id == id);
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public override void Remove(int id)
         {
-            logger.LogInformation("Removing Project with {id}", id);
+            logger.LogInformation("Removing Project with {Id}", id);
             var itemToRemove = Context.Projects.Find(id);
 
             if (itemToRemove != null)
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 feature.Projects.Remove(itemToRemove);
                 if (feature.Projects.Count == 0)
                 {
-                    logger.LogInformation("Feature {feature} ({id}) is not related to any project - removing.", feature.Name, id);
+                    logger.LogInformation("Feature {Feature} ({Id}) is not related to any project - removing.", feature.Name, id);
                     orphanedFeatures.Add(feature);
                 }
             }

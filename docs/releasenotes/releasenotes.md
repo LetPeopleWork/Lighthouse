@@ -12,10 +12,72 @@ Preview
  -->
 
 
-# Lighthouse v25.9.22.1707
+# Lighthouse v25.11.6.540
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Total Work Item Age
+This release introduced two new metric widgets, that visualize the *Total Work Item Age*. The *Total Work Item Age* shows the cumulative age of all items currently in progress:
+
+![Total Age Widget](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/totalWorkItemAge.png).
+
+The first widget shows the current total age (independent to any filters). The second widget will show the total age over time. Check the [documentation](https://docs.lighthouse.letpeople.work/metrics/widgets.html#total-work-item-age) for more details.
+
+## Feature Size Chart Enhancements
+The Feature Size chart so far only was showing closed items. It is extended now so you can visualize In Progress or To Do Features.
+This is useful if you want to:
+- Check if you in progress items are growing too large and you need to act on it (for example in a Portfolio weekly)
+- Analyse the upcoming work
+
+![Feature Size Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/featuresize.png)
+
+By default, the To Do and In Progress items are not shown, but can individually be toggled on. The percentile lines visualized are calculated only from the closed items.
+
+## Continuous Improvements & Bug Fixes
+- Loading the first demo scenario failed (nothing was loaded) - this is fixed now.
+- On Jira Data Center, the updating of Teams or projects was failing due to a recent change that tried to use an API endpoint that does not exist on Jira Data Center. Loading now works again.
+- Update of various third party packages.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.2...v25.11.6.540)
+ 
+# Lighthouse v25.11.2
+Fixed issue of missing x-axis labels in various charts. The labels (dates, states) are now shown again!
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.1.1014...v25.11.2)
+
+# Lighthouse v25.11.1.1014
+
+## Forecasts in Dashboard
+The Overview Dashboard will now show the number of remaining work items for a project, as well as a forecast for the completion of the project:
+![Overview Dashboard with Forecasts](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/OverviewDashboardFeatures.png)
+
+This should help to get a better overview over ongoing and planned projects, without having to dig into the details.
+
+## Continuous Improvements & Bug Fixes
+Apart from that, this release has smaller improvements and bug fixes, along with update of third party packages:
+- Added a new Demo Scenario to forecast a project that has nothing broken down yet [Premium]
+- Fixed an issue that Cycle Time and Work Item Age were not properly calculated for Jira Issues that had a lot of updates.
+- Adjust the default http port on macOS (from 5000 to 5002), as AirPlay is often using port 5000, leading to errors on startup.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Maria Chec](https://www.linkedin.com/in/mariachec/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.9.22.1707...v25.11.1.1014)
+
+# Lighthouse v25.9.22.1707
 
 This release fixes the issue that when you grouped Features by their parent, the parent items were not showing up in their respective order.
 The new behaviour is as follows:

@@ -1,9 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Build.Framework;
 using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.API
@@ -47,9 +45,7 @@ namespace Lighthouse.Backend.API
 
         private List<FeatureDto> GetFeaturesByPredicate(Expression<Func<Feature, bool>> predicate)
         {
-            var featureDtos = new List<FeatureDto>();
-
-            var features = featureRepository.GetAllByPredicate(predicate).ToList().OrderBy(f => f, new FeatureComparer());
+            var features = featureRepository.GetAllByPredicate(predicate).OrderBy(f => f, new FeatureComparer());
 
             return features.Select(f => new FeatureDto(f)).ToList();
         }

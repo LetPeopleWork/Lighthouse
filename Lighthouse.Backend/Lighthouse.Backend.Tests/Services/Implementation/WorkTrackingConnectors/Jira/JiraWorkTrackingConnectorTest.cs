@@ -2,7 +2,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -34,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var matchingItems = await subject.GetWorkItemsForTeam(team);
 
-            Assert.That(matchingItems.Count, Is.EqualTo(2));
+            Assert.That(matchingItems.Count(), Is.EqualTo(2));
         }
 
         [Test]
@@ -49,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var closedItems = await subject.GetWorkItemsForTeam(team);
 
-            Assert.That(closedItems.Count, Is.EqualTo(18));
+            Assert.That(closedItems.Count(), Is.EqualTo(18));
         }
 
         [Test]

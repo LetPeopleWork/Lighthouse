@@ -71,7 +71,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Becky Tedds**](https://www.linkedin.com/in/beckytedds/)
 - [**Lars Henning**](https://www.linkedin.com/in/larshenning42/)
 - [**Mihajlo Vilajić**](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
-
+- [**Maria Chec**](https://www.linkedin.com/in/mariachec/)
 ---
 
 ## Supporting Companies

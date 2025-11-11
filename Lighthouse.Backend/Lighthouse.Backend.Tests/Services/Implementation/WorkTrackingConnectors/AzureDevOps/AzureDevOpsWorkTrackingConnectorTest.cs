@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var matchingItems = await subject.GetWorkItemsForTeam(team);
 
-            Assert.That(matchingItems.Count, Is.EqualTo(2));
+            Assert.That(matchingItems.Count(), Is.EqualTo(2));
         }
 
         [Test]
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.GetWorkItemsForTeam(team);
 
-            Assert.That(result.Count, Is.EqualTo(22));
+            Assert.That(result.Count(), Is.EqualTo(22));
         }
 
         [Test]
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);
@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);
@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);
@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);
@@ -223,7 +223,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);
@@ -246,7 +246,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);
@@ -269,7 +269,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Count, Is.EqualTo(1));
+                Assert.That(result.Count(), Is.EqualTo(1));
                 var workItem = result.Single();
 
                 Assert.That(workItem.StartedDate.HasValue, Is.True);

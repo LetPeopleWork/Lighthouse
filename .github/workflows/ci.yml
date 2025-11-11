@@ -300,6 +300,10 @@ jobs:
       - name: Remove development settings from osx-x64
         run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.Development.json
 
+      - name: Adjust HTTP port for macOS (AirPlay conflict)
+        run: |
+          sed -i 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.json
+
       - name: Set osx executable permission
         run: sudo chmod +x ./publish/osx-x64/Lighthouse
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
@@ -455,7 +459,7 @@ jobs:
           VERSION=${{ needs.tag.outputs.fileversion }}
 
           # Define platforms you want to support
-          PLATFORMS="linux/amd64,linux/arm64,linux/arm"
+          PLATFORMS="linux/amd64,linux/arm64"
 
           # Build and push the multi-platform image
           docker buildx build --platform $PLATFORMS --no-cache \

@@ -48,7 +48,9 @@ Your terminal will start showing the logmessages and you should something simila
 
 ![Starting Lighthouse](../assets/installation/startup.png)
 
-By default, Lighthouse will start running on the system on port 5001. If everything worked as expected, you can open the app now in your browser via [https://localhost:5001](https://localhost:5001).
+By default, Lighthouse will start running on port 5001 for HTTPS. The HTTP port is 5000 on Windows and Linux, or 5002 on macOS (to avoid conflicts with AirPlay Receiver). If everything worked as expected, you can open the app now in your browser:
+- Windows/Linux: [https://localhost:5001](https://localhost:5001) or [http://localhost:5000](http://localhost:5000)
+- macOS: [https://localhost:5001](https://localhost:5001) or [http://localhost:5002](http://localhost:5002)
 
 You should see the (empty) landing page:
 ![Landing Page](../assets/installation/landingpage.png)
@@ -127,7 +129,7 @@ Following is a list of observed problems together with some potential solutions.
 10:26:11 - ERROR - Host: Hosting failed to start
 System.IO.IOException: Failed to bind to address http://[::]:5000: address already in use
 ```
-This means that the specified port is already used by another application. This may be another instance of Lighthouse (did you stop all other instances?), or by chance another tool is using the same port (we've seen for example *AirPlay Receiver* using Port 5000 which is Lighthouse default port). If the port is blocked and you can't change/stop the other application that is using it, you can also adjust the port that Lighthouse is using. Check the [Configuration Options](configuration.html#http--https-url) for more details.
+This means that the specified port is already used by another application. This may be another instance of Lighthouse (did you stop all other instances?), or by chance another tool is using the same port. On macOS, port 5000 is commonly used by the *AirPlay Receiver* service, which is why Lighthouse defaults to port 5002 on macOS. If the port is still blocked and you can't change/stop the other application that is using it, you can adjust the port that Lighthouse is using. Check the [Configuration Options](configuration.html#http--https-url) for more details.
 
 ## Register Lighthouse as a Service
 Using this approach, you'll have to restart Lighthouse after every restart. What you can do instead is to register it as a service, that way it will run automatically in the background.

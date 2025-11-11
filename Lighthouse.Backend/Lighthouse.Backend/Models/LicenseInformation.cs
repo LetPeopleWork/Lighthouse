@@ -7,7 +7,7 @@ namespace Lighthouse.Backend.Models
       public int Id
       {
          get => 1;
-         set { /* ignored */ }
+         set { _ = value; }
       }
 
       public string Name { get; set; }

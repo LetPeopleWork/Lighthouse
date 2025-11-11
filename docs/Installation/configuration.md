@@ -35,10 +35,10 @@ Please only use this option if you know what you're doing. If you don't provide 
 # Configuration Options
 
 ## Http & Https URL
-By default, Lighthouse will listen on Ports 5000 (http) and 5001 (https). You might want to override this, for example if you want to expose Lighthouse on the default ports (80/443), or need to adjust it to whatever makes sense in your environment.
+By default, Lighthouse will listen on Ports 5000 (http) and 5001 (https). On macOS, the HTTP port defaults to 5002 instead of 5000 to avoid conflicts with the AirPlay Receiver service that commonly uses port 5000. You might want to override this, for example if you want to expose Lighthouse on the default ports (80/443), or need to adjust it to whatever makes sense in your environment.
 
 **Default Values:**
-- Http URL: `http://*:5000`
+- Http URL: `http://*:5000` (Windows/Linux) or `http://*:5002` (macOS)
 - Https URL: `https://*:5001`
 
 **Override Options:**
@@ -62,7 +62,8 @@ For example, to map container port 443 to host port 8081:
 docker run -p 8081:443 ghcr.io/letpeoplework/lighthouse:latest
 ```
 
-Note that when running Lighthouse outside of Docker, it will use the default ports 5000/5001 unless overridden.
+{: .note}
+When running Lighthouse outside of Docker, it will use the default ports 5000/5001 (Windows/Linux) or 5002/5001 (macOS) unless overridden.
 
 ## Database
 Lighthouse can work with different databases. Currently it supports [SQLite](https://www.sqlite.org/) and [postgresql](https://www.postgresql.org/) databases to store the data.

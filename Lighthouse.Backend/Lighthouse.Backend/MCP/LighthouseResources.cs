@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.MCP
 
                 return new ReadResourceResult
                 {
-                    Contents = new[] { resourceContent }
+                    Contents = [resourceContent]
                 };
             }
             catch (HttpRequestException)

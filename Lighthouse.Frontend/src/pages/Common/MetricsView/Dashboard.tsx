@@ -75,11 +75,11 @@ const Dashboard: React.FC<DashboardProps> = ({
 		// Define sizes for different breakpoints
 		const sizeConfigs = {
 			small: {
-				xl: { colSpan: 3, rowSpan: 1 },
-				lg: { colSpan: 2, rowSpan: 1 },
-				md: { colSpan: 2, rowSpan: 1 },
-				sm: { colSpan: 3, rowSpan: 1 },
-				xs: { colSpan: 4, rowSpan: 1 },
+				xl: { colSpan: 3, rowSpan: 2 },
+				lg: { colSpan: 2, rowSpan: 2 },
+				md: { colSpan: 2, rowSpan: 2 },
+				sm: { colSpan: 3, rowSpan: 2 },
+				xs: { colSpan: 4, rowSpan: 2 },
 			},
 			medium: {
 				xl: { colSpan: 4, rowSpan: 2 },

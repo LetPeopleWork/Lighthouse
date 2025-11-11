@@ -845,6 +845,85 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             ;
         }
 
+        [Test]
+        public void GetTotalWorkItemAge_NoWorkItemsInDoing_ReturnsZero()
+        {
+            AddWorkItem(StateCategories.ToDo, 1, string.Empty);
+            AddWorkItem(StateCategories.Done, 1, string.Empty);
+
+            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+
+            Assert.That(totalAge, Is.Zero);
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_NoWorkOfTeamInDoing_ReturnsZero()
+        {
+            AddWorkItem(StateCategories.Doing, 2, string.Empty);
+
+            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+
+            Assert.That(totalAge, Is.Zero);
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_SingleItemInProgress_ReturnsItemAge()
+        {
+            var workItem = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            workItem.StartedDate = DateTime.UtcNow.AddDays(-5);
+
+            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+
+            Assert.That(totalAge, Is.EqualTo(6));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_MultipleItemsInProgress_ReturnsSumOfAges()
+        {
+            var workItem1 = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            workItem1.StartedDate = DateTime.UtcNow.AddDays(-5);
+
+            var workItem2 = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            workItem2.StartedDate = DateTime.UtcNow.AddDays(-3);
+
+            var workItem3 = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            workItem3.StartedDate = DateTime.UtcNow.AddDays(-1);
+
+            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+
+            // 6 + 4 + 2 = 12
+            Assert.That(totalAge, Is.EqualTo(12));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_MixedStateItems_OnlyCountsDoingItems()
+        {
+            var doingItem = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            doingItem.StartedDate = DateTime.UtcNow.AddDays(-5);
+
+            var doneItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            doneItem.StartedDate = DateTime.UtcNow.AddDays(-10);
+            doneItem.ClosedDate = DateTime.UtcNow.AddDays(-2);
+
+            AddWorkItem(StateCategories.ToDo, 1, string.Empty);
+
+            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+
+            Assert.That(totalAge, Is.EqualTo(6));
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_ItemWithNoStartedDate_UsesCreatedDate()
+        {
+            var workItem = AddWorkItem(StateCategories.Doing, 1, string.Empty);
+            workItem.StartedDate = null;
+            workItem.CreatedDate = DateTime.UtcNow.AddDays(-7);
+
+            var totalAge = subject.GetTotalWorkItemAge(testTeam);
+
+            Assert.That(totalAge, Is.EqualTo(8));
+        }
+
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)
         {
             var workItem = new WorkItem

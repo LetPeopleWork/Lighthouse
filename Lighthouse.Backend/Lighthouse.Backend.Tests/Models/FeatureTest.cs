@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var size = subject.Size;
             
-            Assert.That(size, Is.EqualTo(0));
+            Assert.That(size, Is.Zero);
         }
 
         [Test]
@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var size = subject.Size;
             
-            Assert.That(size, Is.EqualTo(0));
+            Assert.That(size, Is.Zero);
         }
 
         [Test]

@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             }
         }
 
-        private void SetAzureDevOpsConnectionOptions(WorkTrackingSystemConnection connection)
+        private static void SetAzureDevOpsConnectionOptions(WorkTrackingSystemConnection connection)
         {
             SetWorkTrackingSystemOption(connection, CsvWorkTrackingOptionNames.Delimiter, ",");
             SetWorkTrackingSystemOption(connection, CsvWorkTrackingOptionNames.DateTimeFormat, "d.M.yyyy HH:mm:ss");
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             SetWorkTrackingSystemOption(connection, CsvWorkTrackingOptionNames.EstimatedSizeHeader, string.Empty);
         }
 
-        private void SetWorkTrackingSystemOption(WorkTrackingSystemConnection connection, string key, string value)
+        private static void SetWorkTrackingSystemOption(WorkTrackingSystemConnection connection, string key, string value)
         {
             connection.Options.Single(o => o.Key == key).Value = value;
         }

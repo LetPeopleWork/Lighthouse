@@ -18,9 +18,13 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<PercentileValue> GetCycleTimePercentilesForProject(Project project, DateTime startDate, DateTime endDate);
 
-        IEnumerable<PercentileValue> GetSizePercentilesForProject(Project project, DateTime startDate, DateTime endDate);
-        
         IEnumerable<Feature> GetCycleTimeDataForProject(Project project, DateTime startDate, DateTime endDate);
+
+        IEnumerable<PercentileValue> GetSizePercentilesForProject(Project project, DateTime startDate, DateTime endDate);
+
+        IEnumerable<Feature> GetAllFeaturesForSizeChart(Project project, DateTime startDate, DateTime endDate);
+
+        int GetTotalWorkItemAge(Project project);
 
         void InvalidateProjectMetrics(Project project);
     }

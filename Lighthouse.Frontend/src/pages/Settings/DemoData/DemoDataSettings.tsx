@@ -100,7 +100,10 @@ const DemoDataSettings: React.FC = () => {
 
 	const handleConfirmDialogClose = (confirmed: boolean) => {
 		if (confirmed && pendingAction) {
-			if (pendingAction.type === "scenario" && pendingAction.scenarioId) {
+			if (
+				pendingAction.type === "scenario" &&
+				pendingAction.scenarioId !== undefined
+			) {
 				handleLoadScenario(pendingAction.scenarioId);
 			} else if (pendingAction.type === "all") {
 				handleLoadAllScenarios();

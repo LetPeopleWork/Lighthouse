@@ -239,7 +239,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		return Math.ceil(maxValue * 1.1);
 	};
 
-	return inProgressItems.length > 0 ? (
+	return inProgressItems.length > 0 && groupedDataPoints.length > 0 ? (
 		<>
 			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
 				<CardContent

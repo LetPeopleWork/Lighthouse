@@ -25,6 +25,7 @@ There are various scenarios, some of them are available in the community edition
 | It's Not Always What It Seems | Two teams that look a certain way on first glance. Explore all Flow Metrics to get a full picture and don't draw conclusions before. | Advanced analytics training, avoiding metric misinterpretation, comprehensive flow analysis | Premium |
 | Dependencies | Explore a project where we have Epics with multiple Teams involved. | Complex project planning, cross-team dependencies, program management | Premium |
 | Quarterly Planning | See how a Quarterly Planning could look like for a Team that uses Monte Carlo Forecasts | Strategic planning sessions, OKR setting, long-term forecasting | Premium |
+| New Product Initiative | A project with 20 unstarted epics representing a new product in early planning stages | Initial forecasting for new initiatives, capacity planning, backlog prioritization, demonstrating "when will we finish?" forecasts | Premium |
 
 {: .note}
 If you have a premium license, you can also load all the scenarios at once.

@@ -145,6 +145,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 		feature.size = size;
 		feature.cycleTime = cycleTime;
 		feature.state = "Done";
+		feature.stateCategory = "Done";
 		feature.type = "Feature";
 		feature.closedDate = new Date("2023-01-15");
 		return feature;
@@ -239,7 +240,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const singleFeature = [createFeature(1, "Test Feature", 5, 8)];
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={singleFeature} />);
 
-			const markerButton = screen.getByRole("button");
+			const markerButton = screen.getByRole("button", {
+				name: /view.*feature.*with size.*child items/i,
+			});
 			fireEvent.click(markerButton);
 
 			expect(screen.getByTestId("feature-count")).toHaveTextContent(
@@ -393,13 +396,16 @@ describe("FeatureSizeScatterPlotChart", () => {
 		it("provides proper aria labels for interactive elements", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
-			const buttons = screen.getAllByRole("button");
-			buttons.forEach((button) => {
+			// Get only marker buttons, not chip buttons
+			const markerButtons = screen.getAllByRole("button", {
+				name: /view.*with size.*child items/i,
+			});
+			for (const button of markerButtons) {
 				expect(button).toHaveAttribute("aria-label");
 				expect(button.getAttribute("aria-label")).toMatch(
 					/view.*with size.*child items/i,
 				);
-			});
+			}
 		});
 
 		it("includes descriptive titles for chart markers", () => {
@@ -448,6 +454,248 @@ describe("FeatureSizeScatterPlotChart", () => {
 				name: /view 1 feature with size 5 child items/i,
 			});
 			expect(markerButton).toBeInTheDocument();
+		});
+	});
+
+	describe("state category filtering with chips", () => {
+		const createFeatureWithState = (
+			id: number,
+			name: string,
+			size: number,
+			cycleTime: number | null,
+			workItemAge: number,
+			stateCategory: "Done" | "ToDo" | "Doing",
+		): IFeature => {
+			const feature = createFeature(id, name, size, cycleTime ?? 0);
+			feature.stateCategory = stateCategory;
+			feature.cycleTime = cycleTime as number;
+			feature.workItemAge = workItemAge;
+			return feature;
+		};
+
+		const mixedStateFeatures: IFeature[] = [
+			createFeatureWithState(1, "Done Feature", 5, 10, 0, "Done"),
+			createFeatureWithState(2, "ToDo Feature", 8, null, 0, "ToDo"),
+			createFeatureWithState(3, "Doing Feature", 12, null, 5, "Doing"),
+			createFeatureWithState(4, "Another Done", 15, 20, 0, "Done"),
+		];
+
+		it("displays filter chips for Done, ToDo and In Progress", () => {
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+			);
+
+			expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "To Do" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "In Progress" }),
+			).toBeInTheDocument();
+		});
+
+		it("shows only Done features by default (Done chip is active)", () => {
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+			);
+
+			const container = screen.getByTestId("chart-container");
+			// Only 2 Done features should be displayed
+			expect(container).toHaveAttribute("data-series-count", "2");
+
+			// Done chip should be filled variant
+			const doneChip = screen.getByRole("button", { name: "Done" });
+			expect(doneChip.className).toContain("MuiChip-filled");
+		});
+
+		it("shows ToDo features when ToDo chip is clicked", () => {
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+			);
+
+			const todoChip = screen.getByRole("button", { name: "To Do" });
+			fireEvent.click(todoChip);
+
+			const container = screen.getByTestId("chart-container");
+			// Should show 2 Done + 1 To Do = 3 features
+			expect(container).toHaveAttribute("data-series-count", "3");
+		});
+
+		it("shows In Progress features when In Progress chip is clicked", () => {
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+			);
+
+			const doingChip = screen.getByRole("button", { name: "In Progress" });
+			fireEvent.click(doingChip);
+
+			const container = screen.getByTestId("chart-container");
+			// Should show 2 Done + 1 Doing = 3 features
+			expect(container).toHaveAttribute("data-series-count", "3");
+		});
+
+		it("shows all features when all chips are enabled", () => {
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+			);
+
+			const todoChip = screen.getByRole("button", { name: "To Do" });
+			const doingChip = screen.getByRole("button", { name: "In Progress" });
+
+			fireEvent.click(todoChip);
+			fireEvent.click(doingChip);
+
+			const container = screen.getByTestId("chart-container");
+			// Should show all 4 features
+			expect(container).toHaveAttribute("data-series-count", "4");
+		});
+
+		it("can toggle Done features off", () => {
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
+			);
+
+			const doneChip = screen.getByRole("button", { name: "Done" });
+			const todoChip = screen.getByRole("button", { name: "To Do" });
+
+			// Enable To Do first
+			fireEvent.click(todoChip);
+
+			// Now toggle Done off
+			fireEvent.click(doneChip);
+
+			const container = screen.getByTestId("chart-container");
+			// Should show only 1 To Do feature
+			expect(container).toHaveAttribute("data-series-count", "1");
+		});
+
+		it("calculates percentiles only from Done features regardless of chip state", () => {
+			const percentiles: IPercentileValue[] = [{ percentile: 50, value: 10 }];
+
+			render(
+				<FeatureSizeScatterPlotChart
+					sizeDataPoints={mixedStateFeatures}
+					sizePercentileValues={percentiles}
+				/>,
+			);
+
+			// Enable all chips
+			const todoChip = screen.getByRole("button", { name: "To Do" });
+			const doingChip = screen.getByRole("button", { name: "In Progress" });
+
+			fireEvent.click(todoChip);
+			fireEvent.click(doingChip);
+
+			// Percentile reference line should still be visible and unchanged
+			const referenceLine = screen.getByTestId("reference-line-50%");
+			expect(referenceLine).toBeInTheDocument();
+			expect(referenceLine).toHaveAttribute("data-value", "10");
+		});
+
+		it("hides state chips when no non-Done features are present", () => {
+			const onlyDoneFeatures = [
+				createFeatureWithState(1, "Done 1", 5, 10, 0, "Done"),
+				createFeatureWithState(2, "Done 2", 8, 12, 0, "Done"),
+			];
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={onlyDoneFeatures} />);
+
+			expect(
+				screen.queryByRole("button", { name: "To Do" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "In Progress" }),
+			).not.toBeInTheDocument();
+			// Done chip should still be visible
+			expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+		});
+
+		it("only shows ToDo chip when only ToDo features exist alongside Done", () => {
+			const doneAndTodoFeatures = [
+				createFeatureWithState(1, "Done 1", 5, 10, 0, "Done"),
+				createFeatureWithState(2, "ToDo 1", 8, null, 0, "ToDo"),
+			];
+
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={doneAndTodoFeatures} />,
+			);
+
+			expect(screen.getByRole("button", { name: "To Do" })).toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "In Progress" }),
+			).not.toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+		});
+
+		it("only shows In Progress chip when only Doing features exist alongside Done", () => {
+			const doneAndDoingFeatures = [
+				createFeatureWithState(1, "Done 1", 5, 10, 0, "Done"),
+				createFeatureWithState(2, "Doing 1", 12, null, 5, "Doing"),
+			];
+
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={doneAndDoingFeatures} />,
+			);
+
+			expect(
+				screen.queryByRole("button", { name: "To Do" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "In Progress" }),
+			).toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+		});
+
+		it("filters out ToDo items with size 0", () => {
+			const featuresWithZeroSize = [
+				createFeatureWithState(1, "Done with 0", 0, 10, 0, "Done"),
+				createFeatureWithState(2, "ToDo with 0", 0, null, 0, "ToDo"),
+				createFeatureWithState(3, "ToDo with size", 5, null, 0, "ToDo"),
+				createFeatureWithState(4, "Doing with 0", 0, null, 3, "Doing"),
+			];
+
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={featuresWithZeroSize} />,
+			);
+
+			// Enable all state chips
+			fireEvent.click(screen.getByRole("button", { name: "To Do" }));
+			fireEvent.click(screen.getByRole("button", { name: "In Progress" }));
+
+			const container = screen.getByTestId("chart-container");
+			// Should show: 1 Done (size 0), 1 To Do (size 5), 1 Doing (size 0) = 3
+			// To Do with size 0 should be filtered out
+			expect(container).toHaveAttribute("data-series-count", "3");
+		});
+
+		it("uses workItemAge for In Progress items", () => {
+			const inProgressFeature = [
+				createFeatureWithState(1, "In Progress", 10, null, 7, "Doing"),
+			];
+
+			render(
+				<FeatureSizeScatterPlotChart sizeDataPoints={inProgressFeature} />,
+			);
+
+			// Enable In Progress chip
+			fireEvent.click(screen.getByRole("button", { name: "In Progress" }));
+
+			// The feature should be displayed - workItemAge of 7 should be used as y-coordinate
+			const container = screen.getByTestId("chart-container");
+			expect(container).toHaveAttribute("data-series-count", "1");
+		});
+
+		it("shows ToDo items at y=0", () => {
+			const todoFeature = [
+				createFeatureWithState(1, "To Do Item", 5, null, 0, "ToDo"),
+			];
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={todoFeature} />);
+
+			// Enable To Do chip
+			fireEvent.click(screen.getByRole("button", { name: "To Do" }));
+
+			// The feature should be displayed at y=0
+			const container = screen.getByTestId("chart-container");
+			expect(container).toHaveAttribute("data-series-count", "1");
 		});
 	});
 });

@@ -28,6 +28,16 @@
         
         public static string ItemsFieldName => "items";
 
+        public static string ValuesFieldName => "values";
+
+        public static string TotalFieldName => "total";
+
+        public static string IsLastFieldName => "isLast";
+
+        public static string StartAtFieldName => "startAt";
+
+        public static string MaxResultsFieldName => "maxResults";
+
         public static string IdPropertyName => "id";
 
         public static string NamePropertyName => "name";

@@ -80,14 +80,5 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 Add(defaultAppSetting);
             }
         }
-
-        private void RemoveIfExists(AppSetting defaultAppSetting)
-        {
-            var existingDefault = GetByPredicate((appSetting) => appSetting.Key == defaultAppSetting.Key);
-            if (existingDefault != null)
-            {
-                Remove(defaultAppSetting);
-            }
-        }
     }
 }

@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Factories
             return ReplaceDatePlaceholders(csvContent);
         }
 
-        private string ReplaceDatePlaceholders(string csvContent)
+        private static string ReplaceDatePlaceholders(string csvContent)
         {
             var pattern = @"\{(-?\d+)\}";
             var today = DateTime.Today;
@@ -108,5 +108,7 @@ namespace Lighthouse.Backend.Factories
         public static string ProjectWithDependencies => "Project Ocean Explorer";
 
         public static string QuarterlyPlanning => "Project NeuroLink City";
+
+        public static string NewProductInitiative => "Project Altobelli";
     }
 }

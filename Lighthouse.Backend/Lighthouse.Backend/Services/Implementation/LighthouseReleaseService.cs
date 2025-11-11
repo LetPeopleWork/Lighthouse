@@ -2,7 +2,6 @@
 using Lighthouse.Backend.Services.Interfaces;
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Runtime.InteropServices;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -144,7 +143,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 var args = GetCommandLineArguments();
 
-                logger.LogDebug("Current process path: {path}, args: {args}", currentProcessPath, args);
+                logger.LogDebug("Current process path: {Path}, args: {Args}", currentProcessPath, args);
 
                 // Create update script based on OS
                 var updateScriptPath = CreateUpdateScript(
@@ -203,14 +202,14 @@ namespace Lighthouse.Backend.Services.Implementation
 
             if (releaseAsset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
-                logger.LogDebug("Extracting zip file to {extractPath}", extractPath);
+                logger.LogDebug("Extracting zip file to {ExtractPath}", extractPath);
                 ZipFile.ExtractToDirectory(assetPath, extractPath, true);
-                logger.LogInformation("Extraction completed to {extractPath}", extractPath);
+                logger.LogInformation("Extraction completed to {ExtractPath}", extractPath);
             }
             else
             {
                 // Copy the asset directly if it's not a zip (like an executable)
-                logger.LogDebug("Asset is not a zip file, copying directly to {extractPath}", extractPath);
+                logger.LogDebug("Asset is not a zip file, copying directly to {ExtractPath}", extractPath);
                 File.Copy(assetPath, Path.Combine(extractPath, releaseAsset.Name), true);
             }
 
@@ -220,13 +219,13 @@ namespace Lighthouse.Backend.Services.Implementation
         private async Task<string> DownloadAssetToTempDirectory(LighthouseReleaseAsset releaseAsset, string tempDir)
         {
             var assetPath = Path.Combine(tempDir, releaseAsset.Name);
-            logger.LogDebug("Downloading asset {assetName} from {link} to {path}", releaseAsset.Name, releaseAsset.Link, assetPath);
+            logger.LogDebug("Downloading asset {AssetName} from {Link} to {Path}", releaseAsset.Name, releaseAsset.Link, assetPath);
 
             using (var response = await httpClient.GetAsync(releaseAsset.Link))
             {
                 if (!response.IsSuccessStatusCode)
                 {
-                    logger.LogError("Failed to download asset: {statusCode}", response.StatusCode);
+                    logger.LogError("Failed to download asset: {StatusCode}", response.StatusCode);
                     return string.Empty;
                 }
 
@@ -236,7 +235,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
             }
 
-            logger.LogInformation("Asset downloaded successfully to {path}", assetPath);
+            logger.LogInformation("Asset downloaded successfully to {Path}", assetPath);
             return assetPath;
         }
 
@@ -244,7 +243,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var tempDir = Path.Combine(Path.GetTempPath(), $"lighthouse_update_{Guid.NewGuid()}");
             Directory.CreateDirectory(tempDir);
-            logger.LogDebug("Created temporary directory for update: {tempDir}", tempDir);
+            logger.LogDebug("Created temporary directory for update: {TempDir}", tempDir);
             return tempDir;
         }
 
@@ -371,7 +370,7 @@ exit 0";
                     };
                 }
 
-                logger.LogInformation("Executing update script: {script}", scriptPath);
+                logger.LogInformation("Executing update script: {Script}", scriptPath);
                 Process.Start(startInfo);
 
                 // Exit the application to allow the update script to work

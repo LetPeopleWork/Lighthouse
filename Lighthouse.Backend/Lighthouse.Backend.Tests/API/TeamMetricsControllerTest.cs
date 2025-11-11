@@ -479,6 +479,45 @@ namespace Lighthouse.Backend.Tests.API
             };
         }
 
+        [Test]
+        public void GetTotalWorkItemAge_TeamIdDoesNotExist_ReturnsNotFound()
+        {
+            var subject = CreateSubject();
+
+            var response = subject.GetTotalWorkItemAge(1337);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+
+                var notFoundResult = response.Result as NotFoundResult;
+                Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
+            }
+        }
+
+        [Test]
+        public void GetTotalWorkItemAge_TeamExists_GetsTotalWorkItemAgeFromTeamMetricsService()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            const int expectedTotalAge = 42;
+            teamMetricsServiceMock.Setup(service => service.GetTotalWorkItemAge(team)).Returns(expectedTotalAge);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetTotalWorkItemAge(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+                Assert.That(result.Value, Is.EqualTo(expectedTotalAge));
+            }
+        }
+
         private TeamMetricsController CreateSubject()
         {
             return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object);
