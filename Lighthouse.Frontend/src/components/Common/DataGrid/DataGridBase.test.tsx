@@ -662,7 +662,7 @@ describe("DataGridBase", () => {
 	});
 
 	describe("CSV Export (Premium Feature)", () => {
-		it("should show export button when premium license is available", () => {
+		it("should show export button enabled when premium license is available", () => {
 			// Mock premium license
 			(useLicenseRestrictions as unknown as Mock).mockReturnValue({
 				licenseStatus: { canUsePremiumFeatures: true },
@@ -678,13 +678,13 @@ describe("DataGridBase", () => {
 				/>,
 			);
 
-			// Toolbar should be visible with export button
-			const exportButton = screen.getByRole("button", { name: /export/i });
+			// Toolbar should be visible with export button enabled
+			const exportButton = screen.getByTestId("export-button");
 			expect(exportButton).toBeInTheDocument();
 			expect(exportButton).not.toBeDisabled();
 		});
 
-		it("should hide export button when premium license is not available", () => {
+		it("should show export button disabled when premium license is not available", () => {
 			// Mock no premium license (default from beforeEach)
 			render(
 				<DataGridBase
@@ -695,9 +695,10 @@ describe("DataGridBase", () => {
 				/>,
 			);
 
-			// Export button should not be visible
-			const exportButton = screen.queryByRole("button", { name: /export/i });
-			expect(exportButton).not.toBeInTheDocument();
+			// Export button should be visible but disabled
+			const exportButton = screen.getByTestId("export-button");
+			expect(exportButton).toBeInTheDocument();
+			expect(exportButton).toBeDisabled();
 		});
 
 		it("should not show toolbar when export is disabled", () => {
@@ -716,11 +717,11 @@ describe("DataGridBase", () => {
 			);
 
 			// No toolbar should be present
-			const exportButton = screen.queryByRole("button", { name: /export/i });
+			const exportButton = screen.queryByTestId("export-button");
 			expect(exportButton).not.toBeInTheDocument();
 		});
 
-		it("should show info message when export is enabled but no premium license", () => {
+		it("should show toolbar with disabled buttons when export is enabled but no premium license", () => {
 			// Mock no premium license (default from beforeEach)
 			render(
 				<DataGridBase
@@ -731,9 +732,13 @@ describe("DataGridBase", () => {
 				/>,
 			);
 
-			// Should show premium feature message
-			const premiumMessage = screen.getByText(/premium feature/i);
-			expect(premiumMessage).toBeInTheDocument();
+			// Buttons should be visible but disabled
+			const exportButton = screen.getByTestId("export-button");
+			const copyButton = screen.getByTestId("copy-button");
+			expect(exportButton).toBeInTheDocument();
+			expect(exportButton).toBeDisabled();
+			expect(copyButton).toBeInTheDocument();
+			expect(copyButton).toBeDisabled();
 		});
 
 		it("should use custom export filename when provided", () => {
@@ -753,9 +758,10 @@ describe("DataGridBase", () => {
 				/>,
 			);
 
-			// Verify toolbar is rendered (actual CSV generation is tested by MUI)
-			const exportButton = screen.getByRole("button", { name: /export/i });
+			// Verify toolbar is rendered (actual CSV generation is tested by implementation)
+			const exportButton = screen.getByTestId("export-button");
 			expect(exportButton).toBeInTheDocument();
+			expect(exportButton).not.toBeDisabled();
 		});
 
 		it("should default enableExport to false when not specified", () => {
@@ -768,8 +774,45 @@ describe("DataGridBase", () => {
 			render(<DataGridBase rows={mockRows} columns={mockColumns} />);
 
 			// No export button should be visible by default
-			const exportButton = screen.queryByRole("button", { name: /export/i });
+			const exportButton = screen.queryByTestId("export-button");
 			expect(exportButton).not.toBeInTheDocument();
+		});
+
+		it("should show copy button enabled when premium license is available", () => {
+			// Mock premium license
+			(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+				licenseStatus: { canUsePremiumFeatures: true },
+				isLoading: false,
+			});
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableExport={true}
+				/>,
+			);
+
+			// Copy button should be visible and enabled
+			const copyButton = screen.getByTestId("copy-button");
+			expect(copyButton).toBeInTheDocument();
+			expect(copyButton).not.toBeDisabled();
+		});
+
+		it("should show copy button disabled when premium license is not available", () => {
+			// Mock no premium license (default from beforeEach)
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableExport={true}
+				/>,
+			);
+
+			// Copy button should be visible but disabled
+			const copyButton = screen.getByTestId("copy-button");
+			expect(copyButton).toBeInTheDocument();
+			expect(copyButton).toBeDisabled();
 		});
 	});
 });
