@@ -54,6 +54,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	disableColumnMenu?: boolean;
 	/** Auto height (default: false) */
 	autoHeight?: boolean;
+	/** Hide pagination (default: false) */
+	hidePagination?: boolean;
 }
 
 /**

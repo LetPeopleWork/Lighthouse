@@ -10,23 +10,20 @@ import {
 	IconButton,
 	LinearProgress,
 	Link as MuiLink,
-	Paper,
-	Table,
-	TableBody,
-	TableCell,
-	TableContainer,
-	TableHead,
-	TableRow,
 	Tooltip,
 	Typography,
 	useMediaQuery,
 	useTheme,
 } from "@mui/material";
+import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
+import { useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import type { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IProject } from "../../../models/Project/Project";
+import DataGridBase from "../DataGrid/DataGridBase";
+import type { DataGridColumn } from "../DataGrid/types";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 
@@ -68,74 +65,77 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	}
 
 	// Type guard to check if item is a Project
-	const isProject = (item: IFeatureOwner): item is IProject => {
+	const isProject = useCallback((item: IFeatureOwner): item is IProject => {
 		return (
 			"totalWorkItems" in item &&
 			"remainingWorkItems" in item &&
 			"forecasts" in item
 		);
-	};
+	}, []);
 
 	// Check if any of the data items are projects
 	const hasAnyProjects = data.some(isProject);
 
 	// Get the key forecasts (50/70/85/95 percentile)
-	const getKeyForecasts = (project: IProject) => {
+	const getKeyForecasts = useCallback((project: IProject) => {
 		return [50, 70, 85, 95]
 			.map((percentile) =>
 				project.forecasts.find((f) => f.probability === percentile),
 			)
 			.filter((f) => f !== undefined);
-	};
+	}, []);
 
-	const renderProgressCell = (item: IProject) => {
-		return (
-			<Box sx={{ width: "100%" }}>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						mb: 0.5,
-					}}
-				>
-					<Typography variant="caption" color="text.secondary">
-						{item.totalWorkItems - item.remainingWorkItems} done out of{" "}
-						{item.totalWorkItems}
-					</Typography>
-					<Typography variant="caption" color="text.secondary">
-						{item.totalWorkItems > 0
-							? Math.round(
-									((item.totalWorkItems - item.remainingWorkItems) /
+	const renderProgressCell = useCallback(
+		(item: IProject) => {
+			return (
+				<Box sx={{ width: "100%" }}>
+					<Box
+						sx={{
+							display: "flex",
+							justifyContent: "space-between",
+							mb: 0.5,
+						}}
+					>
+						<Typography variant="caption" color="text.secondary">
+							{item.totalWorkItems - item.remainingWorkItems} done out of{" "}
+							{item.totalWorkItems}
+						</Typography>
+						<Typography variant="caption" color="text.secondary">
+							{item.totalWorkItems > 0
+								? Math.round(
+										((item.totalWorkItems - item.remainingWorkItems) /
+											item.totalWorkItems) *
+											100,
+									)
+								: 0}
+							%
+						</Typography>
+					</Box>
+					<LinearProgress
+						variant="determinate"
+						value={
+							item.totalWorkItems > 0
+								? ((item.totalWorkItems - item.remainingWorkItems) /
 										item.totalWorkItems) *
-										100,
-								)
-							: 0}
-						%
-					</Typography>
+									100
+								: 0
+						}
+						sx={{
+							height: 8,
+							borderRadius: 1,
+							bgcolor: theme.palette.grey[200],
+							"& .MuiLinearProgress-bar": {
+								bgcolor: theme.palette.primary.main,
+							},
+						}}
+					/>
 				</Box>
-				<LinearProgress
-					variant="determinate"
-					value={
-						item.totalWorkItems > 0
-							? ((item.totalWorkItems - item.remainingWorkItems) /
-									item.totalWorkItems) *
-								100
-							: 0
-					}
-					sx={{
-						height: 8,
-						borderRadius: 1,
-						bgcolor: theme.palette.grey[200],
-						"& .MuiLinearProgress-bar": {
-							bgcolor: theme.palette.primary.main,
-						},
-					}}
-				/>
-			</Box>
-		);
-	};
+			);
+		},
+		[theme],
+	);
 
-	const renderForecastsCell = (keyForecasts: IWhenForecast[]) => {
+	const renderForecastsCell = useCallback((keyForecasts: IWhenForecast[]) => {
 		if (keyForecasts.length === 0) {
 			return (
 				<Typography variant="body2" color="text.secondary">
@@ -178,149 +178,201 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				})}
 			</Box>
 		);
-	};
+	}, []);
 
-	const renderTableRow = (item: IFeatureOwner, index: number) => {
-		const isProjectItem = isProject(item);
-		const keyForecasts = isProjectItem ? getKeyForecasts(item) : [];
+	// Define DataGrid columns - dynamically include project-specific columns
+	const columns: DataGridColumn<IFeatureOwner & GridValidRowModel>[] =
+		useMemo(() => {
+			const baseColumns: DataGridColumn<IFeatureOwner & GridValidRowModel>[] = [
+				{
+					field: "name",
+					headerName: "Name",
+					width: isMobile ? 200 : 250,
+					flex: 1,
+					renderCell: ({ row }) => (
+						<Link
+							to={`/${api}/${row.id}`}
+							style={{
+								textDecoration: "none",
+								color: theme.palette.primary.main,
+								fontWeight: "bold",
+							}}
+						>
+							{row.name}
+						</Link>
+					),
+				},
+				{
+					field: "remainingFeatures",
+					headerName: "Features",
+					width: 120,
+					hideable: !isMobile,
+					renderCell: ({ value }) => {
+						const count = value as number;
+						return (
+							<Typography variant="body2">
+								{count} feature{count === 1 ? "" : "s"}
+							</Typography>
+						);
+					},
+				},
+				{
+					field: "tags",
+					headerName: "Tags",
+					width: 200,
+					flex: 1,
+					hideable: !isMobile,
+					sortable: false,
+					renderCell: ({ value }) => {
+						const tags = value as string[];
+						return (
+							<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+								{tags
+									.filter((t) => t.trim() !== "")
+									.map((tag) => (
+										<Chip
+											key={tag}
+											label={tag}
+											size="small"
+											color="primary"
+											variant="outlined"
+											sx={{ fontWeight: "bold" }}
+										/>
+									))}
+							</Box>
+						);
+					},
+				},
+			];
 
-		return (
-			<TableRow
-				key={item.id}
-				data-testid={`table-row-${item.id}`}
-				sx={{
-					opacity: 0,
-					animation: "fadeIn 0.5s forwards",
-					animationDelay: `${index * 0.05}s`,
-					"@keyframes fadeIn": {
-						"0%": { opacity: 0, transform: "translateY(5px)" },
-						"100%": { opacity: 1, transform: "translateY(0)" },
+			// Add project-specific columns if we have projects
+			if (hasAnyProjects) {
+				baseColumns.push(
+					{
+						field: "progress",
+						headerName: "Progress",
+						width: 220,
+						hideable: !isMobile,
+						sortable: false,
+						renderCell: ({ row }) => {
+							if (!isProject(row)) {
+								return (
+									<Typography variant="body2" color="text.secondary">
+										—
+									</Typography>
+								);
+							}
+							return renderProgressCell(row);
+						},
 					},
-					"&:hover": {
-						bgcolor: theme.palette.action.hover,
+					{
+						field: "forecasts",
+						headerName: "Forecasts",
+						width: 280,
+						hideable: !isTablet,
+						sortable: false,
+						renderCell: ({ row }) => {
+							if (!isProject(row)) {
+								return (
+									<Typography variant="body2" color="text.secondary">
+										—
+									</Typography>
+								);
+							}
+							const keyForecasts = getKeyForecasts(row);
+							return renderForecastsCell(keyForecasts);
+						},
 					},
-				}}
-			>
-				<TableCell>
-					<Link
-						to={`/${api}/${item.id}`}
-						style={{
-							textDecoration: "none",
-							color: theme.palette.primary.main,
-							fontWeight: "bold",
-						}}
-					>
-						{item.name}
-					</Link>
-				</TableCell>
-				{!isMobile && (
-					<TableCell>
-						<Typography variant="body2">
-							{item.remainingFeatures} feature
-							{item.remainingFeatures === 1 ? "" : "s"}
-						</Typography>
-					</TableCell>
-				)}
-				{!isMobile && (
-					<TableCell>
-						<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-							{item.tags
-								.filter((t) => t.trim() !== "")
-								.map((tag) => (
-									<Chip
-										key={`${item.id}-${tag}`}
-										label={tag}
-										size="small"
-										color="primary"
-										variant="outlined"
-										sx={{ fontWeight: "bold" }}
+				);
+			}
+
+			// Add common columns
+			baseColumns.push(
+				{
+					field: "lastUpdated",
+					headerName: "Last Updated",
+					width: 180,
+					renderCell: ({ value }) => (
+						<LocalDateTimeDisplay utcDate={value as Date} showTime={true} />
+					),
+				},
+				{
+					field: "actions",
+					headerName: "",
+					width: isMobile ? 120 : 150,
+					sortable: false,
+					hideable: false,
+					renderCell: ({ row }) => (
+						<Box
+							sx={{
+								display: "flex",
+								justifyContent: "flex-end",
+								gap: isTablet ? 0 : 1,
+								width: "100%",
+							}}
+						>
+							<Tooltip title="Details">
+								<IconButton
+									component={Link}
+									to={`/${api}/${row.id}`}
+									size={isTablet ? "small" : "medium"}
+									sx={{
+										color: theme.palette.primary.main,
+										transition: "transform 0.2s",
+										"&:hover": { transform: "scale(1.1)" },
+									}}
+								>
+									<InfoIcon fontSize={isTablet ? "small" : "medium"} />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Edit">
+								<IconButton
+									component={Link}
+									to={`/${api}/edit/${row.id}`}
+									size={isTablet ? "small" : "medium"}
+									sx={{
+										color: theme.palette.primary.main,
+										transition: "transform 0.2s",
+										"&:hover": { transform: "scale(1.1)" },
+									}}
+								>
+									<EditIcon fontSize={isTablet ? "small" : "medium"} />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Delete">
+								<IconButton
+									onClick={() => onDelete(row)}
+									size={isTablet ? "small" : "medium"}
+									sx={{
+										color: theme.palette.primary.main,
+										transition: "transform 0.2s",
+										"&:hover": { transform: "scale(1.1)" },
+									}}
+								>
+									<DeleteIcon
+										fontSize={isTablet ? "small" : "medium"}
+										data-testid="delete-item-button"
 									/>
-								))}
+								</IconButton>
+							</Tooltip>
 						</Box>
-					</TableCell>
-				)}
-				{!isMobile && hasAnyProjects && (
-					<TableCell>
-						{isProjectItem ? (
-							renderProgressCell(item)
-						) : (
-							<Typography variant="body2" color="text.secondary">
-								—
-							</Typography>
-						)}
-					</TableCell>
-				)}
-				{!isTablet && hasAnyProjects && (
-					<TableCell>
-						{isProjectItem ? (
-							renderForecastsCell(keyForecasts)
-						) : (
-							<Typography variant="body2" color="text.secondary">
-								—
-							</Typography>
-						)}
-					</TableCell>
-				)}
-				<TableCell>
-					<LocalDateTimeDisplay utcDate={item.lastUpdated} showTime={true} />
-				</TableCell>
-				<TableCell align="right">
-					<Box
-						sx={{
-							display: "flex",
-							justifyContent: "flex-end",
-							gap: isTablet ? 0 : 1,
-						}}
-					>
-						<Tooltip title="Details">
-							<IconButton
-								component={Link}
-								to={`/${api}/${item.id}`}
-								size={isTablet ? "small" : "medium"}
-								sx={{
-									color: theme.palette.primary.main,
-									transition: "transform 0.2s",
-									"&:hover": { transform: "scale(1.1)" },
-								}}
-							>
-								<InfoIcon fontSize={isTablet ? "small" : "medium"} />
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="Edit">
-							<IconButton
-								component={Link}
-								to={`/${api}/edit/${item.id}`}
-								size={isTablet ? "small" : "medium"}
-								sx={{
-									color: theme.palette.primary.main,
-									transition: "transform 0.2s",
-									"&:hover": { transform: "scale(1.1)" },
-								}}
-							>
-								<EditIcon fontSize={isTablet ? "small" : "medium"} />
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="Delete">
-							<IconButton
-								onClick={() => onDelete(item)}
-								size={isTablet ? "small" : "medium"}
-								sx={{
-									color: theme.palette.primary.main,
-									transition: "transform 0.2s",
-									"&:hover": { transform: "scale(1.1)" },
-								}}
-							>
-								<DeleteIcon
-									fontSize={isTablet ? "small" : "medium"}
-									data-testid="delete-item-button"
-								/>
-							</IconButton>
-						</Tooltip>
-					</Box>
-				</TableCell>
-			</TableRow>
-		);
-	};
+					),
+				},
+			);
+
+			return baseColumns;
+		}, [
+			api,
+			theme,
+			isMobile,
+			isTablet,
+			hasAnyProjects,
+			onDelete,
+			isProject,
+			renderProgressCell,
+			getKeyForecasts,
+			renderForecastsCell,
+		]);
 
 	return (
 		<Container maxWidth={false} sx={{ pb: 4 }}>
@@ -418,68 +470,16 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 			)}
 
 			{data.length > 0 && filteredData.length > 0 && (
-				<TableContainer
-					component={Paper}
-					data-testid="table-container"
-					sx={{
-						borderRadius: 2,
-						boxShadow: theme.shadows[3],
-						overflow: "hidden",
-					}}
-				>
-					<Table>
-						<TableHead
-							sx={{
-								bgcolor: theme.palette.action.hover,
-							}}
-						>
-							<TableRow>
-								<TableCell sx={{ width: isMobile ? "35%" : "15%" }}>
-									<Typography variant="subtitle1" fontWeight="bold">
-										Name
-									</Typography>
-								</TableCell>
-								{!isMobile && (
-									<TableCell sx={{ width: "10%" }}>
-										<Typography variant="subtitle1" fontWeight="bold">
-											Features
-										</Typography>
-									</TableCell>
-								)}
-								{!isMobile && (
-									<TableCell sx={{ width: "15%" }}>
-										<Typography variant="subtitle1" fontWeight="bold">
-											Tags
-										</Typography>
-									</TableCell>
-								)}
-								{!isMobile && hasAnyProjects && (
-									<TableCell sx={{ width: "15%" }}>
-										<Typography variant="subtitle1" fontWeight="bold">
-											Progress
-										</Typography>
-									</TableCell>
-								)}
-								{!isTablet && hasAnyProjects && (
-									<TableCell sx={{ width: "20%" }}>
-										<Typography variant="subtitle1" fontWeight="bold">
-											Forecasts
-										</Typography>
-									</TableCell>
-								)}
-								<TableCell sx={{ width: "10%" }}>
-									<Typography variant="subtitle1" fontWeight="bold">
-										Last Updated
-									</Typography>
-								</TableCell>
-								<TableCell
-									sx={{ width: isMobile ? "25%" : "10%", textAlign: "right" }}
-								/>
-							</TableRow>
-						</TableHead>
-						<TableBody>{filteredData.map(renderTableRow)}</TableBody>
-					</Table>
-				</TableContainer>
+				<Box data-testid="datagrid-container">
+					<DataGridBase
+						rows={filteredData as (IFeatureOwner & GridValidRowModel)[]}
+						columns={columns}
+						loading={false}
+						autoHeight={true}
+						hidePagination={true}
+						enableFiltering={true}
+					/>
+				</Box>
 			)}
 		</Container>
 	);

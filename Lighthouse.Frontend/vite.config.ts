@@ -11,6 +11,9 @@ export default defineConfig({
         VitePWA({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'icons/*.png'],
+            workbox: {
+                maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB
+            },
             manifest: {
                 name: 'Lighthouse',
                 short_name: 'Lighthouse',

@@ -33,6 +33,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	emptyStateMessage = "No rows to display",
 	disableColumnMenu = false,
 	autoHeight = false,
+	hidePagination = false,
 }: DataGridBaseProps<T>): React.ReactElement {
 	// Convert DataGridColumn to GridColDef
 	const gridColumns = useMemo(() => {
@@ -100,6 +101,7 @@ function DataGridBase<T extends GridValidRowModel>({
 				autoHeight={autoHeight}
 				pageSizeOptions={[10, 25, 50, 100]}
 				disableRowSelectionOnClick
+				hideFooter={hidePagination}
 				sx={{
 					"& .MuiDataGrid-cell:focus": {
 						outline: "none",

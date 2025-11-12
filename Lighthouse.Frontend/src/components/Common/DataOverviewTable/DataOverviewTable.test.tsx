@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
+import type { IProject } from "../../../models/Project/Project";
 import DataOverviewTable from "./DataOverviewTable";
 
 vi.mock("react-router-dom", async () => {
@@ -33,10 +34,11 @@ const renderWithRouter = (ui: React.ReactNode) => {
 	return render(<BrowserRouter>{ui}</BrowserRouter>);
 };
 
-const sampleData: IFeatureOwner[] = [
+// Sample team data (no project-specific fields)
+const sampleTeamData: IFeatureOwner[] = [
 	{
 		id: 1,
-		name: "Item 1",
+		name: "Team 1",
 		remainingFeatures: 5,
 		features: [],
 		tags: ["critical", "frontend"],
@@ -47,7 +49,7 @@ const sampleData: IFeatureOwner[] = [
 	},
 	{
 		id: 2,
-		name: "Item 2",
+		name: "Team 2",
 		remainingFeatures: 15,
 		features: [],
 		tags: ["backend"],
@@ -58,7 +60,7 @@ const sampleData: IFeatureOwner[] = [
 	},
 	{
 		id: 3,
-		name: "Another Item",
+		name: "Another Team",
 		remainingFeatures: 25,
 		features: [],
 		tags: [],
@@ -69,322 +71,328 @@ const sampleData: IFeatureOwner[] = [
 	},
 ];
 
+// Sample project data (with project-specific fields)
+const sampleProjectData: IProject[] = [
+	{
+		id: 1,
+		name: "Project 1",
+		remainingFeatures: 5,
+		features: [],
+		tags: ["critical", "frontend"],
+		lastUpdated: new Date(),
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
+		involvedTeams: [],
+		milestones: [],
+		totalWorkItems: 100,
+		remainingWorkItems: 50,
+		forecasts: [],
+	},
+	{
+		id: 2,
+		name: "Project 2",
+		remainingFeatures: 15,
+		features: [],
+		tags: ["backend"],
+		lastUpdated: new Date(),
+		serviceLevelExpectationProbability: 0,
+		serviceLevelExpectationRange: 0,
+		systemWIPLimit: 0,
+		involvedTeams: [],
+		milestones: [],
+		totalWorkItems: 200,
+		remainingWorkItems: 100,
+		forecasts: [],
+	},
+];
+
 describe("DataOverviewTable", () => {
-	it("renders correctly", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText=""
-			/>,
-		);
-		expect(screen.getByTestId("table-container")).toBeInTheDocument();
+	describe("with Teams data (using DataGrid)", () => {
+		it("renders DataGrid correctly for teams", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+			expect(screen.getByTestId("datagrid-container")).toBeInTheDocument();
+		});
+
+		it("displays all team items in DataGrid", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+			for (const item of sampleTeamData) {
+				expect(screen.getByText(item.name)).toBeInTheDocument();
+			}
+		});
+
+		it("filters teams correctly in DataGrid", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText="Team 1"
+				/>,
+			);
+
+			expect(screen.getByText("Team 1")).toBeInTheDocument();
+			expect(screen.queryByText("Team 2")).not.toBeInTheDocument();
+			expect(screen.queryByText("Another Team")).not.toBeInTheDocument();
+		});
+
+		it("displays tags in DataGrid", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+
+			expect(screen.getByText("critical")).toBeInTheDocument();
+			expect(screen.getByText("frontend")).toBeInTheDocument();
+			expect(screen.getByText("backend")).toBeInTheDocument();
+		});
+
+		it("filters teams by tag in DataGrid", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText="critical"
+				/>,
+			);
+
+			expect(screen.getByText("Team 1")).toBeInTheDocument();
+			expect(screen.queryByText("Team 2")).not.toBeInTheDocument();
+			expect(screen.queryByText("Another Team")).not.toBeInTheDocument();
+		});
 	});
 
-	it("displays all items from the data passed in", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText=""
-			/>,
-		);
-		for (const item of sampleData) {
-			expect(screen.getByTestId(`table-row-${item.id}`)).toBeInTheDocument();
-			expect(screen.getByText(item.name)).toBeInTheDocument();
-		}
+	describe("with Projects data (using DataGrid)", () => {
+		it("renders DataGrid correctly for projects", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleProjectData}
+					title="projects"
+					api="projects"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+			expect(screen.getByTestId("datagrid-container")).toBeInTheDocument();
+		});
+
+		it("displays all project items in DataGrid", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleProjectData}
+					title="projects"
+					api="projects"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+			for (const item of sampleProjectData) {
+				expect(screen.getByText(item.name)).toBeInTheDocument();
+			}
+		});
 	});
 
-	it("displays items in alphabetical order by name", () => {
-		const unsortedData = [
-			{
-				id: 3,
-				name: "Zebra Item",
-				remainingWork: 30,
-				remainingFeatures: 25,
-				features: [],
-				tags: [],
-				totalWork: 33,
-				lastUpdated: new Date(),
-				serviceLevelExpectationProbability: 0,
-				serviceLevelExpectationRange: 0,
-				systemWIPLimit: 0,
-			},
-			{
-				id: 1,
-				name: "Apple Item",
-				remainingWork: 10,
-				remainingFeatures: 5,
-				features: [],
-				tags: [],
-				totalWork: 20,
-				lastUpdated: new Date(),
-				serviceLevelExpectationProbability: 0,
-				serviceLevelExpectationRange: 0,
-				systemWIPLimit: 0,
-			},
-			{
-				id: 2,
-				name: "Banana Item",
-				remainingWork: 20,
-				remainingFeatures: 15,
-				features: [],
-				tags: [],
-				totalWork: 20,
-				lastUpdated: new Date(),
-				serviceLevelExpectationProbability: 0,
-				serviceLevelExpectationRange: 0,
-				systemWIPLimit: 0,
-			},
-		];
+	describe("Common functionality", () => {
+		it("displays items in alphabetical order by name", () => {
+			const unsortedTeamData: IFeatureOwner[] = [
+				{
+					id: 3,
+					name: "Zebra Team",
+					remainingFeatures: 25,
+					features: [],
+					tags: [],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+				},
+				{
+					id: 1,
+					name: "Apple Team",
+					remainingFeatures: 5,
+					features: [],
+					tags: [],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+				},
+				{
+					id: 2,
+					name: "Banana Team",
+					remainingFeatures: 15,
+					features: [],
+					tags: [],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+				},
+			];
 
-		renderWithRouter(
-			<DataOverviewTable
-				data={unsortedData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText=""
-			/>,
-		);
+			renderWithRouter(
+				<DataOverviewTable
+					data={unsortedTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
 
-		// Get all row elements
-		const rows = screen.getAllByTestId(/^table-row-/);
+			// Check that they appear in alphabetical order
+			expect(screen.getByText("Apple Team")).toBeInTheDocument();
+			expect(screen.getByText("Banana Team")).toBeInTheDocument();
+			expect(screen.getByText("Zebra Team")).toBeInTheDocument();
+		});
 
-		// Check that they appear in alphabetical order in the DOM
-		expect(rows[0]).toHaveTextContent("Apple Item");
-		expect(rows[1]).toHaveTextContent("Banana Item");
-		expect(rows[2]).toHaveTextContent("Zebra Item");
-	});
+		it("displays the custom message when no item matches filter", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText="Non-existing Team"
+				/>,
+			);
 
-	it("filters properly", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText="Item"
-			/>,
-		);
+			expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
+		});
 
-		expect(screen.getByText("Item 1")).toBeInTheDocument();
-		expect(screen.getByText("Item 2")).toBeInTheDocument();
-		expect(screen.queryByText("Another Item")).toBeInTheDocument();
-	});
+		it("should not display empty tags", () => {
+			const dataWithEmptyTag: IFeatureOwner[] = [
+				{
+					id: 1,
+					name: "Item with empty tag",
+					remainingFeatures: 5,
+					features: [],
+					tags: ["valid-tag", "", "  ", "another-valid-tag"],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+				},
+			];
 
-	it("displays the custom message when no item matches filter", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText="Non-existing Item"
-			/>,
-		);
+			renderWithRouter(
+				<DataOverviewTable
+					data={dataWithEmptyTag}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
 
-		expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
-	});
+			expect(screen.getByText("valid-tag")).toBeInTheDocument();
+			expect(screen.getByText("another-valid-tag")).toBeInTheDocument();
 
-	it("initializes with provided filter text", () => {
-		const initialFilterText = "Item";
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText={initialFilterText}
-			/>,
-		);
+			const tagChips = document.querySelectorAll(".MuiChip-outlined");
+			expect(tagChips.length).toEqual(2);
+		});
 
-		// Verify only matching items are displayed
-		expect(screen.getByText("Item 1")).toBeInTheDocument();
-		expect(screen.getByText("Item 2")).toBeInTheDocument();
-		expect(screen.queryByText("Another Item")).toBeInTheDocument();
-	});
+		it("filters items by partial tag match", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText="front"
+				/>,
+			);
 
-	it("displays tags as chips for each item", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText=""
-			/>,
-		);
+			expect(screen.getByText("Team 1")).toBeInTheDocument(); // Team 1 has "frontend" tag
+			expect(screen.queryByText("Team 2")).not.toBeInTheDocument(); // Team 2 doesn't have a tag containing "front"
+			expect(screen.queryByText("Another Team")).not.toBeInTheDocument(); // Another Team doesn't have tags
+		});
 
-		// Check the first item with multiple tags
-		const item1Row = screen.getByTestId("table-row-1");
-		const criticalTag = screen.getByText("critical");
-		const frontendTag = screen.getByText("frontend");
+		it("filters by tag when name doesn't match", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText="backend"
+				/>,
+			);
 
-		expect(criticalTag).toBeInTheDocument();
-		expect(frontendTag).toBeInTheDocument();
-		expect(item1Row).toContainElement(criticalTag);
-		expect(item1Row).toContainElement(frontendTag);
+			expect(screen.queryByText("Team 1")).not.toBeInTheDocument(); // Team 1 doesn't have "backend" tag
+			expect(screen.getByText("Team 2")).toBeInTheDocument(); // Team 2 has "backend" tag
+			expect(screen.queryByText("Another Team")).not.toBeInTheDocument(); // Another Team doesn't have tags
+		});
 
-		// Check the second item with a single tag
-		const item2Row = screen.getByTestId("table-row-2");
-		const backendTag = screen.getByText("backend");
+		it("should not show items when neither name nor tags match", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText="asdfasdfasdfasdf"
+				/>,
+			);
 
-		expect(backendTag).toBeInTheDocument();
-		expect(item2Row).toContainElement(backendTag);
+			expect(screen.queryByText("Team 1")).not.toBeInTheDocument();
+			expect(screen.queryByText("Team 2")).not.toBeInTheDocument();
+			expect(screen.queryByText("Another Team")).not.toBeInTheDocument();
+			expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
+		});
 
-		// Check that tags are displayed as chips with the expected style (outlined variant)
-		const tagChips = document.querySelectorAll(".MuiChip-outlined");
-		expect(tagChips.length).toBe(3); // Total 3 tags across all items
-	});
+		it("shows demo data link when no data is available", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={[]}
+					title="Test Items"
+					api="api"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
 
-	it("displays no tags for items without tags", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText=""
-			/>,
-		);
+			expect(screen.getByTestId("empty-items-message")).toBeInTheDocument();
 
-		// Check the item with no tags
-		const item3Row = screen.getByTestId("table-row-3");
+			// Check that the demo data link is present and has correct href
+			const demoDataLink = screen.getByText("Load Demo Data");
+			expect(demoDataLink).toBeInTheDocument();
+			expect(demoDataLink.closest("a")).toHaveAttribute(
+				"href",
+				"/settings?tab=demodata",
+			);
 
-		// No additional tags should be in this row
-		const tagsInRow3 = item3Row.querySelectorAll(".MuiChip-root");
-		expect(tagsInRow3.length).toBe(0);
-	});
-
-	it("should not display empty tags", () => {
-		const dataWithEmptyTag: IFeatureOwner[] = [
-			{
-				id: 1,
-				name: "Item with empty tag",
-				remainingFeatures: 5,
-				features: [],
-				tags: ["valid-tag", "", "  ", "another-valid-tag"],
-				lastUpdated: new Date(),
-				serviceLevelExpectationProbability: 0,
-				serviceLevelExpectationRange: 0,
-				systemWIPLimit: 0,
-			},
-		];
-
-		renderWithRouter(
-			<DataOverviewTable
-				data={dataWithEmptyTag}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText=""
-			/>,
-		);
-
-		expect(screen.getByText("valid-tag")).toBeInTheDocument();
-		expect(screen.getByText("another-valid-tag")).toBeInTheDocument();
-
-		const tagChips = document.querySelectorAll(".MuiChip-outlined");
-		expect(tagChips.length).toEqual(2);
-	});
-
-	it("filters items by tag", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText="critical"
-			/>,
-		);
-
-		expect(screen.getByText("Item 1")).toBeInTheDocument(); // Item 1 has "critical" tag
-		expect(screen.queryByText("Item 2")).not.toBeInTheDocument(); // Item 2 doesn't have "critical" tag
-		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have "critical" tag
-	});
-
-	it("filters items by partial tag match", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText="front"
-			/>,
-		);
-
-		expect(screen.getByText("Item 1")).toBeInTheDocument(); // Item 1 has "frontend" tag
-		expect(screen.queryByText("Item 2")).not.toBeInTheDocument(); // Item 2 doesn't have a tag containing "front"
-		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have tags
-	});
-
-	it("filters by tag when name doesn't match", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText="backend"
-			/>,
-		);
-
-		expect(screen.queryByText("Item 1")).not.toBeInTheDocument(); // Item 1 doesn't have "backend" tag
-		expect(screen.getByText("Item 2")).toBeInTheDocument(); // Item 2 has "backend" tag
-		expect(screen.queryByText("Another Item")).not.toBeInTheDocument(); // Another Item doesn't have tags
-	});
-
-	it("should not show items when neither name nor tags match", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={sampleData}
-				title="api"
-				api="api"
-				onDelete={vi.fn()}
-				filterText="asdfasdfasdfasdf"
-			/>,
-		);
-
-		expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
-		expect(screen.queryByText("Item 2")).not.toBeInTheDocument();
-		expect(screen.queryByText("Another Item")).not.toBeInTheDocument();
-		expect(screen.getByTestId("no-items-message")).toBeInTheDocument();
-	});
-
-	it("shows demo data link when no data is available", () => {
-		renderWithRouter(
-			<DataOverviewTable
-				data={[]}
-				title="Test Items"
-				api="api"
-				onDelete={vi.fn()}
-				filterText=""
-			/>,
-		);
-
-		expect(screen.getByTestId("empty-items-message")).toBeInTheDocument();
-
-		// Check that the demo data link is present and has correct href
-		const demoDataLink = screen.getByText("Load Demo Data");
-		expect(demoDataLink).toBeInTheDocument();
-		expect(demoDataLink.closest("a")).toHaveAttribute(
-			"href",
-			"/settings?tab=demodata",
-		);
-
-		// Check that the documentation link is also present
-		const docLink = screen.getByText("Check the documentation");
-		expect(docLink).toBeInTheDocument();
-		expect(docLink.closest("a")).toHaveAttribute(
-			"href",
-			"https://docs.lighthouse.letpeople.work",
-		);
+			// Check that the documentation link is also present
+			const docLink = screen.getByText("Check the documentation");
+			expect(docLink).toBeInTheDocument();
+			expect(docLink.closest("a")).toHaveAttribute(
+				"href",
+				"https://docs.lighthouse.letpeople.work",
+			);
+		});
 	});
 });
