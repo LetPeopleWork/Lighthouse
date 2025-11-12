@@ -75,8 +75,10 @@ beforeEach(() => {
 	localStorage.clear();
 });
 
-const mockTeamMetricsService: ITeamMetricsService =
-	createMockTeamMetricsService();
+const mockTeamMetricsService: ITeamMetricsService = {
+	...createMockTeamMetricsService(),
+	getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+};
 
 // Create mock features for the service
 const mockFeature1 = new Feature();
@@ -305,9 +307,9 @@ describe("ProjectFeatureList component", () => {
 		expect(screen.getByText("Updated On")).toBeInTheDocument();
 
 		// Milestone columns should be present for current/future milestones
-		expect(screen.queryByText("Milestone 1")).not.toBeInTheDocument();
-		expect(screen.getByText("Milestone 2")).toBeInTheDocument();
-		expect(screen.getByText("Milestone 3")).toBeInTheDocument();
+		expect(screen.queryByText(/Milestone 1/)).not.toBeInTheDocument();
+		expect(screen.getByText(/Milestone 2/)).toBeInTheDocument();
+		expect(screen.getByText(/Milestone 3/)).toBeInTheDocument();
 	});
 
 	it("should render all features with correct data", async () => {
