@@ -5,13 +5,15 @@ parent: Metrics
 nav_order: 32
 ---
 
-# Widgets
 Following a brief overview over the various metric widgets that are available in Lighthouse.
+
+- TOC
+{:toc}
 
 # Details
 Many Charts and Widgets are clickable and will provide you more details about the work items they visualize. You will see the mouse changing to a "hand" icon - in such a case you can click and a dialog with more details will pop up.
 
-## Work Items In Progress
+# Work Items In Progress
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -38,7 +40,7 @@ Lastly, you can see the number of items that are currently blocked. The *Goal* i
 {: .important}
 This widget is **not affected** by the date filtering. It always shows the **current** Work In Progress.
 
-## WIP Over Time
+# WIP Over Time
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -53,7 +55,7 @@ If you click on a specific day, it will show you the details of which items were
 
 If you have defined a *System WIP Limit*, you can show this as a horizontal line on your chart.
 
-## Work Item Aging Chart
+# Work Item Aging Chart
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -73,7 +75,7 @@ You can selectively show various percentiles from your cycle time for the select
 {: .note}
 If there is a blocked item, it will appear as a red dot in the chart.
 
-## Work Distribution
+# Work Distribution
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -90,7 +92,7 @@ The chart displays:
 - Hovering over a segment shows the exact count and percentage
 - Items without a parent are grouped under "No Parent"
 
-### Viewing Details
+## Viewing Details
 
 Click on any segment of the pie chart to open a detailed dialog showing:
 - The parent work item reference
@@ -107,7 +109,7 @@ This visualization helps you:
 {: .note}
 The chart combines both completed work items (from the selected date range) and items currently in progress to give you a complete picture of work distribution. This means you can see not just what was done, but also what's currently being worked on under each parent item.
 
-## Started vs. Closed
+# Started vs. Closed
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -129,7 +131,7 @@ This can help you to prepare just enough items for your team(s). Whether you do 
 
 If you want to know more details, you can click on the widget, and it will show you the specific items that were closed and opened in the selected time range.
 
-## Throughput Run Chart
+# Throughput Run Chart
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -146,7 +148,7 @@ This widget will adjust based on the selected time range. If you want to know wh
 
 On the top right, you will see the *Predictability Score*. If you click on it, another widget is brought up:
 
-## Predictability Score
+# Predictability Score
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -172,7 +174,7 @@ The idea behind the score is that, if your percentiles are very much "away" from
 {: .important}
 The goal is not to be at 100%. In fact, that's far from realistic. We believe any value above 60% is decent. The intent of this chart is to show the results of an MCS for various inputs. For example if the throughput is distributed differently, or you take a longer or different range.
 
-## Cycle Time Percentiles
+# Cycle Time Percentiles
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -191,7 +193,7 @@ If you click anywhere on the widget (independent if you look at percentiles or t
 
 ![Closed Items Dialog](../assets/features/metrics/closeditemsdialog.png)
 
-## Cycle Time Scatterplot
+# Cycle Time Scatterplot
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -207,7 +209,7 @@ This visual allows you to see patterns or outliers. Hovering over a dot will giv
 
 You can click on the percentiles on top in the legend to show/hide them. Additionally, if you have defined an SLE, you can show the line on your scatterplot as well.
 
-## Simplified Cumulative Flow Diagram (CFD)
+# Simplified Cumulative Flow Diagram (CFD)
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -223,7 +225,7 @@ If you enable the trend lines, the start and end points of both areas will be co
 2. Bring the lines closer together - this means you will decrease your Cycle Time.
 3. Increase the *angle* of the lines - this means you will increase your Throughput.
 
-## Total Work Item Age
+# Total Work Item Age
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Projects |
@@ -246,7 +248,7 @@ Your Total Work Item Age would be 10 days.
 {: .important}
 This widget is **not affected** by date filtering. It always shows the **current** total age of all items in progress.
 
-### Total Work Item Age Over Time
+## Total Work Item Age Over Time
 
 To see how your total work item age has evolved, there's also a run chart showing the historical trend:
 
@@ -262,7 +264,7 @@ If you click on a specific day, it will show you which items contributed to the 
 {: .note}
 The age calculation for historical dates shows how old each item was on that specific date, not its current age. An item started 10 days ago would show age 1 on its first day, age 2 on its second day, and so on.
 
-## Feature Size
+# Feature Size
 
 |--------------|-------------------------|
 | **Applies to** | Projects |
@@ -277,7 +279,7 @@ The chart displays features from your selected time range, with:
 - **X-axis**: Feature size (number of child work items)
 - **Y-axis**: Time metric (varies by state - see below)
 
-### State Filtering
+## State Filtering
 
 The chart includes three filter chips on the right side to show or hide features by state:
 
@@ -288,7 +290,7 @@ The chart includes three filter chips on the right side to show or hide features
 {: .note}
 Features in the To Do category with a size of 0 (no child work items) are automatically filtered out, as they represent features that haven't been broken down yet.
 
-### Time Metrics by State
+## Time Metrics by State
 
 The y-axis value differs based on the feature's state:
 - **Done features**: Display their **cycle time** (how long they took from start to completion)
@@ -300,7 +302,7 @@ This allows you to see:
 - How long current features have been in progress relative to their size
 - The size distribution of features in your backlog
 
-### Percentile Lines
+## Percentile Lines
 
 Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), you can show percentile lines to understand your feature delivery patterns. Multiple features with the same size and time value are grouped in a bubble - the larger the bubble, the more features it represents.
 
