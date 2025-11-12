@@ -7,3 +7,14 @@ class MockResizeObserver {
   }
   
   global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+
+// Mock CSS imports to avoid CSS parsing errors in tests
+const mockCSS = new Proxy(
+  {},
+  {
+    get: () => ({}),
+  }
+);
+
+// This will be used if Vitest tries to import CSS files
+export default mockCSS;

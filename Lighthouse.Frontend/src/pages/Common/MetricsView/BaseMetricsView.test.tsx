@@ -245,9 +245,7 @@ vi.mock("../../../components/Common/Charts/WorkDistributionChart", () => ({
 	}) => (
 		<div data-testid="work-distribution-chart">
 			<div data-testid="distribution-title">{title}</div>
-			<div data-testid="distribution-work-items-count">
-				{workItems.length}
-			</div>
+			<div data-testid="distribution-work-items-count">{workItems.length}</div>
 		</div>
 	),
 }));
@@ -1501,7 +1499,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for data to be fetched and WorkDistributionChart to render
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 			});
 
 			// Verify the chart receives the correct title
@@ -1582,7 +1582,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for data to be fetched
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 			});
 
 			// Verify the chart receives combined data
@@ -1628,7 +1630,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for data to be fetched
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 			});
 
 			// Verify the chart receives combined data
@@ -1654,7 +1658,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for data to be fetched
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 			});
 
 			// Verify the chart receives only in-progress items
@@ -1665,8 +1671,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("handles empty in-progress items", async () => {
-			const emptyProgressMetricsService =
-				createMockMetricsService<IWorkItem>();
+			const emptyProgressMetricsService = createMockMetricsService<IWorkItem>();
 			emptyProgressMetricsService.getInProgressItems = vi
 				.fn()
 				.mockResolvedValue([]);
@@ -1683,7 +1688,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for data to be fetched
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 			});
 
 			// Verify the chart receives only cycle time data
@@ -1710,7 +1717,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for data to be fetched
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 			});
 
 			// Verify the chart receives empty data
@@ -1762,7 +1771,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for initial data
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 				// Initial: 2 cycle time + 2 in progress = 4
 				expect(
 					screen.getByTestId("distribution-work-items-count"),
@@ -1796,7 +1807,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for data to be fetched
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 			});
 
 			// Verify the chart is rendered with correct data
@@ -1831,7 +1844,9 @@ describe("BaseMetricsView component", () => {
 
 			// Wait for data to be fetched
 			await waitFor(() => {
-				expect(screen.getByTestId("work-distribution-chart")).toBeInTheDocument();
+				expect(
+					screen.getByTestId("work-distribution-chart"),
+				).toBeInTheDocument();
 			});
 
 			// Verify the chart receives the data despite type being T (IFeature)

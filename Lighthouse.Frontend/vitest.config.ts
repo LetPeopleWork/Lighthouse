@@ -8,7 +8,11 @@ export default defineConfig({
         env: {
             VITE_API_SERVICE_TYPE: 'DEMO',
         },
-        css: true,
+        css: {
+            modules: {
+                classNameStrategy: 'non-scoped',
+            },
+        },
         coverage: {
             reporter: ['text', 'lcov'],
         },
@@ -16,5 +20,10 @@ export default defineConfig({
             'default',
             ['vitest-sonar-reporter', { outputFile: 'sonar-report.xml' }]
         ],
+        server: {
+            deps: {
+                inline: ['@mui/x-data-grid'],
+            },
+        },
     },
 });
