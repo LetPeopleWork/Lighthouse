@@ -429,6 +429,11 @@ testWithData(
 		);
 
 		await takeElementScreenshot(
+			teamDetailPage.workDistributionChart,
+			"features/metrics/workDistributionChart.png"
+		);
+
+		await takeElementScreenshot(
 			teamDetailPage.workItemAgingChart,
 			"features/metrics/workItemAgingChart.png",
 		);
