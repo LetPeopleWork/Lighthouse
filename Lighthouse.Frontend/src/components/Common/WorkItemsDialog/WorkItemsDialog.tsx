@@ -235,6 +235,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 							]}
 							disableColumnMenu={false}
 							disableColumnSelector={false}
+							enableExport={true}
 						/>
 					</Box>
 				) : (

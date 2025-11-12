@@ -3,6 +3,8 @@ import type { GridColDef, GridValidRowModel } from "@mui/x-data-grid";
 import { DataGrid } from "@mui/x-data-grid";
 import type React from "react";
 import { useMemo } from "react";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import DataGridToolbar from "./DataGridToolbar";
 import type { DataGridBaseProps } from "./types";
 
 /**
@@ -17,6 +19,7 @@ import type { DataGridBaseProps } from "./types";
  * - Custom cell renderers
  * - Persistent state (localStorage)
  * - Column selector hidden by default
+ * - CSV export (Premium feature)
  */
 function DataGridBase<T extends GridValidRowModel>({
 	rows,
@@ -36,7 +39,13 @@ function DataGridBase<T extends GridValidRowModel>({
 	disableColumnSelector = true,
 	autoHeight = false,
 	hidePagination = false,
+	enableExport = false,
+	exportFileName,
 }: DataGridBaseProps<T>): React.ReactElement {
+	// Check license status for premium features
+	const { licenseStatus } = useLicenseRestrictions();
+	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? false;
+
 	// Convert DataGridColumn to GridColDef
 	const gridColumns = useMemo(() => {
 		return columns.map((col) => {
@@ -64,6 +73,23 @@ function DataGridBase<T extends GridValidRowModel>({
 		}
 		return model;
 	}, [initialHiddenColumns]);
+
+	// Create a toolbar component with closed-over props
+	const CustomToolbar = useMemo(() => {
+		if (!enableExport) return undefined;
+
+		// Return a component function that MUI can instantiate
+		function ToolbarWithProps() {
+			return (
+				<DataGridToolbar
+					canUsePremiumFeatures={canUsePremiumFeatures}
+					exportFileName={exportFileName}
+				/>
+			);
+		}
+
+		return ToolbarWithProps;
+	}, [enableExport, canUsePremiumFeatures, exportFileName]);
 
 	return (
 		<Box
@@ -106,6 +132,15 @@ function DataGridBase<T extends GridValidRowModel>({
 				disableRowSelectionOnClick
 				hideFooter={hidePagination}
 				getRowHeight={() => "auto"}
+				// Show toolbar if export is enabled
+				slots={
+					CustomToolbar
+						? {
+								toolbar: CustomToolbar,
+							}
+						: undefined
+				}
+				showToolbar={enableExport}
 				sx={{
 					"& .MuiDataGrid-cell": {
 						display: "flex",

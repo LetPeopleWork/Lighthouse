@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import DataGridBase from "./DataGridBase";
 import type { DataGridColumn } from "./types";
 
@@ -10,6 +12,11 @@ vi.mock("@mui/x-data-grid", async () => {
 		...actual,
 	};
 });
+
+// Mock the useLicenseRestrictions hook
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: vi.fn(),
+}));
 
 // Mock data interface
 interface TestRow {
@@ -37,6 +44,12 @@ beforeEach(() => {
 
 	// Clear localStorage before each test
 	localStorage.clear();
+
+	// Default mock for useLicenseRestrictions - no premium by default
+	(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+		licenseStatus: { canUsePremiumFeatures: false },
+		isLoading: false,
+	});
 });
 
 const mockColumns: DataGridColumn<TestRow>[] = [
@@ -645,6 +658,118 @@ describe("DataGridBase", () => {
 
 			// All columns should be filterable
 			// (This is verified by MUI DataGrid's default behavior)
+		});
+	});
+
+	describe("CSV Export (Premium Feature)", () => {
+		it("should show export button when premium license is available", () => {
+			// Mock premium license
+			(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+				licenseStatus: { canUsePremiumFeatures: true },
+				isLoading: false,
+			});
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableExport={true}
+					exportFileName="test-export"
+				/>,
+			);
+
+			// Toolbar should be visible with export button
+			const exportButton = screen.getByRole("button", { name: /export/i });
+			expect(exportButton).toBeInTheDocument();
+			expect(exportButton).not.toBeDisabled();
+		});
+
+		it("should hide export button when premium license is not available", () => {
+			// Mock no premium license (default from beforeEach)
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableExport={true}
+					exportFileName="test-export"
+				/>,
+			);
+
+			// Export button should not be visible
+			const exportButton = screen.queryByRole("button", { name: /export/i });
+			expect(exportButton).not.toBeInTheDocument();
+		});
+
+		it("should not show toolbar when export is disabled", () => {
+			// Mock premium license
+			(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+				licenseStatus: { canUsePremiumFeatures: true },
+				isLoading: false,
+			});
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableExport={false}
+				/>,
+			);
+
+			// No toolbar should be present
+			const exportButton = screen.queryByRole("button", { name: /export/i });
+			expect(exportButton).not.toBeInTheDocument();
+		});
+
+		it("should show info message when export is enabled but no premium license", () => {
+			// Mock no premium license (default from beforeEach)
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableExport={true}
+					exportFileName="test-export"
+				/>,
+			);
+
+			// Should show premium feature message
+			const premiumMessage = screen.getByText(/premium feature/i);
+			expect(premiumMessage).toBeInTheDocument();
+		});
+
+		it("should use custom export filename when provided", () => {
+			// Mock premium license
+			(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+				licenseStatus: { canUsePremiumFeatures: true },
+				isLoading: false,
+			});
+
+			const customFileName = "my-custom-export";
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableExport={true}
+					exportFileName={customFileName}
+				/>,
+			);
+
+			// Verify toolbar is rendered (actual CSV generation is tested by MUI)
+			const exportButton = screen.getByRole("button", { name: /export/i });
+			expect(exportButton).toBeInTheDocument();
+		});
+
+		it("should default enableExport to false when not specified", () => {
+			// Mock premium license
+			(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+				licenseStatus: { canUsePremiumFeatures: true },
+				isLoading: false,
+			});
+
+			render(<DataGridBase rows={mockRows} columns={mockColumns} />);
+
+			// No export button should be visible by default
+			const exportButton = screen.queryByRole("button", { name: /export/i });
+			expect(exportButton).not.toBeInTheDocument();
 		});
 	});
 });

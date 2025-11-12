@@ -58,6 +58,10 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	autoHeight?: boolean;
 	/** Hide pagination (default: false) */
 	hidePagination?: boolean;
+	/** Enable CSV export functionality (default: false) - Premium Feature */
+	enableExport?: boolean;
+	/** Custom filename for CSV export (without extension) */
+	exportFileName?: string;
 }
 
 /**
