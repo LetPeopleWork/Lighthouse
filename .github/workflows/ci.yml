@@ -1,7 +1,7 @@
 name: Build And Deploy Lighthouse
 
 env:
-  DOTNET_VERSION: '9'  
+  DOTNET_VERSION: '10'  
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEINTEGRATIONTESTTOKEN }}
