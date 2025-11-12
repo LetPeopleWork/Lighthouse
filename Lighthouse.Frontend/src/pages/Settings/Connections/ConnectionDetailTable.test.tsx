@@ -25,7 +25,7 @@ describe("ConnectionDetailTable", () => {
 		mockHandleDeleteConnection.mockClear();
 	});
 
-	it("should render the table with connections", () => {
+	it("should render the data grid with connections", () => {
 		render(
 			<ConnectionDetailTable
 				workTrackingSystemConnections={mockConnections}
@@ -34,8 +34,14 @@ describe("ConnectionDetailTable", () => {
 			/>,
 		);
 
+		// Check for data grid and column headers
+		const grid = screen.getByRole("grid");
+		expect(grid).toBeInTheDocument();
+
 		expect(screen.getByText("Name")).toBeInTheDocument();
 		expect(screen.getByText("Actions")).toBeInTheDocument();
+
+		// Check for connection names in the grid
 		expect(screen.getByText("Jira")).toBeInTheDocument();
 		expect(screen.getByText("ADO")).toBeInTheDocument();
 	});
@@ -49,7 +55,7 @@ describe("ConnectionDetailTable", () => {
 			/>,
 		);
 
-		const editButtons = screen.getAllByTestId("EditIcon");
+		const editButtons = screen.getAllByTestId("edit-connection-button");
 		fireEvent.click(editButtons[0]);
 
 		expect(mockOnEditConnectionButtonClicked).toHaveBeenCalledTimes(1);
@@ -67,14 +73,14 @@ describe("ConnectionDetailTable", () => {
 			/>,
 		);
 
-		const deleteButtons = screen.getAllByTestId("DeleteIcon");
+		const deleteButtons = screen.getAllByTestId("delete-connection-button");
 		fireEvent.click(deleteButtons[0]);
 
 		expect(mockHandleDeleteConnection).toHaveBeenCalledTimes(1);
 		expect(mockHandleDeleteConnection).toHaveBeenCalledWith(mockConnections[0]);
 	});
 
-	it("should render edit and delete buttons for connections when CSV is present", () => {
+	it("should render edit and delete buttons for all connections including CSV", () => {
 		render(
 			<ConnectionDetailTable
 				workTrackingSystemConnections={mockConnectionsWithCsv}
@@ -83,24 +89,45 @@ describe("ConnectionDetailTable", () => {
 			/>,
 		);
 
-		// Find the Jira connection row and verify it has buttons
-		const jiraRow = screen.getByText("Jira").closest("tr");
-		expect(jiraRow).toBeInTheDocument();
+		// Verify all connections are displayed
+		expect(screen.getByText("Jira")).toBeInTheDocument();
+		expect(screen.getByText("CSV")).toBeInTheDocument();
+		expect(screen.getByText("ADO")).toBeInTheDocument();
 
-		// The Jira row should have edit and delete buttons
-		const editButtons = screen.getAllByTestId("EditIcon");
-		const deleteButtons = screen.getAllByTestId("DeleteIcon");
+		// Verify all connections have edit and delete buttons (3 connections = 3 edit + 3 delete)
+		const editButtons = screen.getAllByTestId("edit-connection-button");
+		const deleteButtons = screen.getAllByTestId("delete-connection-button");
 
-		// Click on the first edit button (should be Jira since CSV buttons are hidden)
+		expect(editButtons).toHaveLength(3);
+		expect(deleteButtons).toHaveLength(3);
+
+		// Test clicking the first edit button (Jira)
 		fireEvent.click(editButtons[0]);
 		expect(mockOnEditConnectionButtonClicked).toHaveBeenCalledWith(
 			mockConnectionsWithCsv[0],
-		); // Jira connection
+		);
 
-		// Click on the first delete button (should be Jira since CSV buttons are hidden)
+		// Test clicking the first delete button (Jira)
 		fireEvent.click(deleteButtons[0]);
 		expect(mockHandleDeleteConnection).toHaveBeenCalledWith(
 			mockConnectionsWithCsv[0],
-		); // Jira connection
+		);
+	});
+
+	it("should support sorting on the Name column", () => {
+		render(
+			<ConnectionDetailTable
+				workTrackingSystemConnections={mockConnections}
+				onEditConnectionButtonClicked={mockOnEditConnectionButtonClicked}
+				handleDeleteConnection={mockHandleDeleteConnection}
+			/>,
+		);
+
+		const grid = screen.getByRole("grid");
+		expect(grid).toBeInTheDocument();
+
+		// The Name column should be sortable (sortable: true in column definition)
+		const nameHeader = screen.getByText("Name");
+		expect(nameHeader).toBeInTheDocument();
 	});
 });

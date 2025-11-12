@@ -1,15 +1,11 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import {
-	IconButton,
-	Table,
-	TableBody,
-	TableCell,
-	TableContainer,
-	TableHead,
-	TableRow,
-} from "@mui/material";
+import { Box, IconButton, Tooltip, useTheme } from "@mui/material";
+import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
+import { useMemo } from "react";
+import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
+import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 
 interface ConnectionDetailTableProps {
@@ -25,34 +21,80 @@ const ConnectionDetailTable: React.FC<ConnectionDetailTableProps> = ({
 	onEditConnectionButtonClicked,
 	handleDeleteConnection,
 }) => {
+	const theme = useTheme();
+
+	const columns: DataGridColumn<
+		IWorkTrackingSystemConnection & GridValidRowModel
+	>[] = useMemo(
+		() => [
+			{
+				field: "name",
+				headerName: "Name",
+				flex: 1,
+				sortable: true,
+			},
+			{
+				field: "actions",
+				headerName: "Actions",
+				width: 150,
+				sortable: false,
+				hideable: false,
+				renderCell: ({ row }) => (
+					<Box
+						sx={{
+							display: "flex",
+							justifyContent: "flex-start",
+							gap: 1,
+							width: "100%",
+						}}
+					>
+						<Tooltip title="Edit">
+							<IconButton
+								onClick={() => onEditConnectionButtonClicked(row)}
+								size="medium"
+								sx={{
+									color: theme.palette.primary.main,
+									transition: "transform 0.2s",
+									"&:hover": { transform: "scale(1.1)" },
+								}}
+								data-testid="edit-connection-button"
+							>
+								<EditIcon fontSize="medium" />
+							</IconButton>
+						</Tooltip>
+						<Tooltip title="Delete">
+							<IconButton
+								onClick={() => handleDeleteConnection(row)}
+								size="medium"
+								sx={{
+									color: theme.palette.primary.main,
+									transition: "transform 0.2s",
+									"&:hover": { transform: "scale(1.1)" },
+								}}
+								data-testid="delete-connection-button"
+							>
+								<DeleteIcon fontSize="medium" />
+							</IconButton>
+						</Tooltip>
+					</Box>
+				),
+			},
+		],
+		[theme, onEditConnectionButtonClicked, handleDeleteConnection],
+	);
+
 	return (
-		<TableContainer>
-			<Table>
-				<TableHead>
-					<TableRow>
-						<TableCell>Name</TableCell>
-						<TableCell>Actions</TableCell>
-					</TableRow>
-				</TableHead>
-				<TableBody>
-					{workTrackingSystemConnections.map((system) => (
-						<TableRow key={system.id}>
-							<TableCell>{system.name}</TableCell>
-							<TableCell>
-								<IconButton
-									onClick={() => onEditConnectionButtonClicked(system)}
-								>
-									<EditIcon />
-								</IconButton>
-								<IconButton onClick={() => handleDeleteConnection(system)}>
-									<DeleteIcon />
-								</IconButton>
-							</TableCell>
-						</TableRow>
-					))}
-				</TableBody>
-			</Table>
-		</TableContainer>
+		<DataGridBase
+			rows={
+				workTrackingSystemConnections as (IWorkTrackingSystemConnection &
+					GridValidRowModel)[]
+			}
+			columns={columns}
+			loading={false}
+			autoHeight={true}
+			hidePagination={true}
+			disableColumnSelector={true}
+		/>
 	);
 };
 
