@@ -199,7 +199,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 			for (const milestone of currentOrFutureMilestones) {
 				baseColumns.push({
 					field: `milestone_${milestone.id}`,
-					headerName: `${milestone.name}`,
+					headerName: `${milestone.name} (${milestone.date.toLocaleDateString()})`,
 					width: 150,
 					sortable: false,
 					renderCell: ({ row }) => (

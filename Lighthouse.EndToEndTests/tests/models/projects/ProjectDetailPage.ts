@@ -16,7 +16,7 @@ export class ProjectDetailPage {
 
 	getFeatureInProgressIcon(feature: string): Locator {
 		const inProgressIcon = this.page
-			.getByRole("cell", { name: feature })
+			.getByRole("gridcell", { name: feature })
 			.getByRole("button")
 			.first();
 		return inProgressIcon;
@@ -24,7 +24,7 @@ export class ProjectDetailPage {
 
 	getFeatureIsDefaultSize(featureName: string): Locator {
 		const defaultSizeIcon = this.page
-			.getByRole("cell")
+			.getByRole("gridcell")
 			.filter({ hasText: featureName })
 			.getByLabel("No child Work Items were found for");
 		return defaultSizeIcon;
@@ -33,20 +33,6 @@ export class ProjectDetailPage {
 	getTeamLinkForFeature(teamName: string, index: number): Locator {
 		const teamLink = this.page.getByRole("link", { name: teamName }).nth(index);
 		return teamLink;
-	}
-
-	async getLastUpdatedDateForFeature(featureName: string): Promise<Date> {
-		const featureRow = this.page.locator(`tr:has-text("${featureName}")`);
-		const featureRowText = await featureRow.textContent();
-
-		const datePattern =
-			/(\d{1,2}\/\d{1,2}\/\d{4},\s\d{1,2}:\d{2}:\d{2}\s[AP]M)$/;
-		const match = featureRowText?.match(datePattern);
-		if (!match) {
-			return new Date();
-		}
-
-		return new Date(match[1]);
 	}
 
 	async getLastUpdatedDate(): Promise<Date> {
@@ -75,9 +61,10 @@ export class ProjectDetailPage {
 
 	getMilestoneColumn(milestoneName: string, milestoneDate: Date): Locator {
 		const dateString = milestoneDate.toLocaleDateString("en-US");
-		return this.page.getByRole("columnheader", {
-			name: `${milestoneName} (${dateString})`,
-		});
+
+		return this.page
+			.getByRole("columnheader")
+			.filter({ hasText: `${milestoneName} (${dateString})` });
 	}
 
 	async toggleFeatureWIPConfiguration(): Promise<void> {

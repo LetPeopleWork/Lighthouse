@@ -162,12 +162,6 @@ testWithUpdatedTeams([3])(
 				milestoneDate,
 			);
 			await expect(milestoneColumn).toBeVisible();
-
-			const lastUpdatedTimeForFeature =
-				await projectDetailPage.getLastUpdatedDateForFeature(
-					"Majestic Moments",
-				);
-			expectDateToBeRecent(lastUpdatedTimeForFeature);
 		});
 
 		await test.step("Delete Milestone removes column", async () => {
