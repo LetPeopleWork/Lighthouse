@@ -174,15 +174,16 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				headerName: "Updated On",
 				width: 200,
 				type: "dateTime",
+				valueGetter: (value: Date | string) => {
+					return value instanceof Date ? value : new Date(value);
+				},
 				renderCell: ({ row }) => (
 					<LocalDateTimeDisplay utcDate={row.lastUpdated} showTime={true} />
 				),
 			},
 		],
 		[featureTerm, team, featuresInProgress],
-	);
-
-	// Note: Grouping by parent is not yet implemented in DataGrid version
+	); // Note: Grouping by parent is not yet implemented in DataGrid version
 	// This will be added in a follow-up enhancement
 	if (groupFeaturesByParent) {
 		// TODO: Implement grouping in DataGrid

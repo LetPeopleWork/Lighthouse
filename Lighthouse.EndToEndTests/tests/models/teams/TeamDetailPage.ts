@@ -169,11 +169,11 @@ export class TeamDetailPage {
 			.nth(1);
 	}
 
-	get workDistributionChart(): Locator{
+	get workDistributionChart(): Locator {
 		return this.page
-		.locator('div')
-		.filter({ hasText: /^Work Distribution.*$/ })
-		.nth(2)
+			.locator("div")
+			.filter({ hasText: /^Work Distribution.*$/ })
+			.nth(2);
 	}
 
 	get simplifiedCfdWidget(): Locator {

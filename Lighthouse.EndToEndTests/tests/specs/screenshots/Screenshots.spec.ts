@@ -430,7 +430,7 @@ testWithData(
 
 		await takeElementScreenshot(
 			teamDetailPage.workDistributionChart,
-			"features/metrics/workDistributionChart.png"
+			"features/metrics/workDistributionChart.png",
 		);
 
 		await takeElementScreenshot(

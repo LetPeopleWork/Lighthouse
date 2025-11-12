@@ -219,11 +219,13 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 				headerName: "Updated On",
 				width: 200,
 				type: "dateTime",
+				valueGetter: (value: Date | string) => {
+					return value instanceof Date ? value : new Date(value);
+				},
 				renderCell: ({ row }) => (
 					<LocalDateTimeDisplay utcDate={row.lastUpdated} showTime={true} />
 				),
 			});
-
 			return baseColumns;
 		}, [
 			featureTerm,
