@@ -73,6 +73,40 @@ You can selectively show various percentiles from your cycle time for the select
 {: .note}
 If there is a blocked item, it will appear as a red dot in the chart.
 
+## Work Distribution
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Projects |
+| **Flow Metric** | WIP, Cycle Time |
+| **Affected by Filtering** | Yes |
+
+The Work Distribution chart provides a visual breakdown of how work items are distributed across their parent work items (such as Features, Epics, or Initiatives). This pie chart helps you understand where your team's effort is focused.
+
+![Work Distribution Chart](../assets/features/metrics/workDistributionChart.png)
+
+The chart displays:
+- Each segment represents a parent work item and its associated child items
+- The size of each segment corresponds to the number of child work items
+- Hovering over a segment shows the exact count and percentage
+- Items without a parent are grouped under "No Parent"
+
+### Viewing Details
+
+Click on any segment of the pie chart to open a detailed dialog showing:
+- The parent work item reference
+- List of all child work items in that group
+- Each work item's cycle time (for completed items) or work item age (for items in progress)
+- Additional work item details (title, ID, state)
+
+This visualization helps you:
+- Identify which features or epics are consuming the most team capacity
+- Spot imbalances in work distribution across different initiatives
+- Understand the relationship between parent initiatives and actual work being done
+- Find work items that may not be properly linked to parent items
+
+{: .note}
+The chart combines both completed work items (from the selected date range) and items currently in progress to give you a complete picture of work distribution. This means you can see not just what was done, but also what's currently being worked on under each parent item.
+
 ## Started vs. Closed
 
 |--------------|-------------------------|
