@@ -32,6 +32,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	height = 600,
 	emptyStateMessage = "No rows to display",
 	disableColumnMenu = false,
+	disableColumnSelector = false,
 	autoHeight = false,
 	hidePagination = false,
 }: DataGridBaseProps<T>): React.ReactElement {
@@ -97,12 +98,17 @@ function DataGridBase<T extends GridValidRowModel>({
 					}
 				}}
 				disableColumnMenu={disableColumnMenu}
+				disableColumnSelector={disableColumnSelector}
 				disableColumnFilter={!enableFiltering}
 				autoHeight={autoHeight}
 				pageSizeOptions={[10, 25, 50, 100]}
 				disableRowSelectionOnClick
 				hideFooter={hidePagination}
 				sx={{
+					"& .MuiDataGrid-cell": {
+						display: "flex",
+						alignItems: "center",
+					},
 					"& .MuiDataGrid-cell:focus": {
 						outline: "none",
 					},

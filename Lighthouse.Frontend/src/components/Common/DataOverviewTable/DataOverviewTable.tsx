@@ -478,6 +478,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 						autoHeight={true}
 						hidePagination={true}
 						enableFiltering={true}
+						disableColumnSelector={true}
 					/>
 				</Box>
 			)}
