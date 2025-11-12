@@ -1,5 +1,6 @@
 import type {
 	GridColDef,
+	GridFilterModel,
 	GridSortModel,
 	GridValidRowModel,
 } from "@mui/x-data-grid";
@@ -39,6 +40,12 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	initialHiddenColumns?: string[];
 	/** Callback when column visibility changes */
 	onColumnVisibilityChange?: (hiddenColumns: string[]) => void;
+	/** Initial filter model */
+	initialFilterModel?: GridFilterModel;
+	/** Callback when filter changes */
+	onFilterModelChange?: (model: GridFilterModel) => void;
+	/** Enable column filtering (default: false) */
+	enableFiltering?: boolean;
 	/** Custom height for the grid */
 	height?: number | string;
 	/** Custom empty state message */
@@ -63,4 +70,5 @@ export interface PersistedGridState {
 	sortModel?: GridSortModel;
 	columnVisibilityModel?: ColumnVisibilityModel;
 	columnOrder?: string[];
+	filterModel?: GridFilterModel;
 }

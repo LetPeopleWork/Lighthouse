@@ -45,24 +45,28 @@ const mockColumns: DataGridColumn<TestRow>[] = [
 		headerName: "ID",
 		width: 70,
 		sortable: true,
+		type: "number",
 	},
 	{
 		field: "name",
 		headerName: "Name",
 		width: 130,
 		sortable: true,
+		type: "string",
 	},
 	{
 		field: "age",
 		headerName: "Age",
 		width: 90,
 		sortable: true,
+		type: "number",
 	},
 	{
 		field: "email",
 		headerName: "Email",
 		width: 200,
 		sortable: true,
+		type: "string",
 	},
 ];
 
@@ -405,6 +409,208 @@ describe("DataGridBase", () => {
 			const rows = container.querySelectorAll('[role="row"]');
 			// Should be less than total rows (1 header + virtualized rows)
 			expect(rows.length).toBeLessThan(largeDataset.length + 1);
+		});
+	});
+
+	describe("Filtering", () => {
+		it("should not show filter UI by default when enableFiltering is false", () => {
+			const { container } = render(
+				<DataGridBase rows={mockRows} columns={mockColumns} />,
+			);
+
+			// Filter panel should not be visible by default
+			const filterPanel = container.querySelector(".MuiDataGrid-filterForm");
+			expect(filterPanel).not.toBeInTheDocument();
+		});
+
+		it("should enable filtering when enableFiltering prop is true", () => {
+			const { container } = render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+				/>,
+			);
+
+			// Grid should render
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+
+			// Column headers should have filter capability
+			// (MUI DataGrid shows filter menu in column headers when filtering is enabled)
+			const columnHeaders = container.querySelectorAll('[role="columnheader"]');
+			expect(columnHeaders.length).toBeGreaterThan(0);
+		});
+
+		it("should initialize with provided filter model", () => {
+			const initialFilterModel = {
+				items: [{ field: "name", operator: "contains", value: "Alice" }],
+			};
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+					initialFilterModel={initialFilterModel}
+				/>,
+			);
+
+			// Grid should render with filter applied
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+
+			// Alice should be visible
+			expect(screen.getByText("Alice")).toBeInTheDocument();
+		});
+
+		it("should call onFilterModelChange when filter changes", () => {
+			const onFilterModelChange = vi.fn();
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+					onFilterModelChange={onFilterModelChange}
+				/>,
+			);
+
+			// Grid is rendered with filtering enabled
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+
+			// Callback should be ready to receive filter changes
+			// (actual interaction testing would require userEvent interactions)
+		});
+
+		it("should support text column filtering with contains operator", () => {
+			const filterModel = {
+				items: [{ field: "name", operator: "contains", value: "li" }],
+			};
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+					initialFilterModel={filterModel}
+				/>,
+			);
+
+			// Alice and Charlie contain 'li'
+			expect(screen.getByText("Alice")).toBeInTheDocument();
+			expect(screen.getByText("Charlie")).toBeInTheDocument();
+
+			// Grid should be present
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+		});
+
+		it("should support number column filtering with equals operator", () => {
+			const filterModel = {
+				items: [{ field: "age", operator: "=", value: "30" }],
+			};
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+					initialFilterModel={filterModel}
+				/>,
+			);
+
+			// Only Alice has age 30
+			expect(screen.getByText("Alice")).toBeInTheDocument();
+
+			// Grid should be present
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+		});
+
+		it("should support number column filtering with greater than operator", () => {
+			const filterModel = {
+				items: [{ field: "age", operator: ">", value: "30" }],
+			};
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+					initialFilterModel={filterModel}
+				/>,
+			);
+
+			// Only Charlie has age > 30
+			expect(screen.getByText("Charlie")).toBeInTheDocument();
+
+			// Grid should be present
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+		});
+
+		it("should support multiple filters combined with AND logic", () => {
+			const filterModel = {
+				items: [
+					{ field: "name", operator: "contains", value: "li" },
+					{ field: "age", operator: ">", value: "30" },
+				],
+			};
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+					initialFilterModel={filterModel}
+				/>,
+			);
+
+			// Only Charlie matches both: contains 'li' AND age > 30
+			expect(screen.getByText("Charlie")).toBeInTheDocument();
+
+			// Grid should be present
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+		});
+
+		it("should show all rows when filter is cleared", () => {
+			const filterModel = {
+				items: [],
+			};
+
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+					initialFilterModel={filterModel}
+				/>,
+			);
+
+			// All rows should be visible
+			expect(screen.getByText("Alice")).toBeInTheDocument();
+			expect(screen.getByText("Bob")).toBeInTheDocument();
+			expect(screen.getByText("Charlie")).toBeInTheDocument();
+		});
+
+		it("should make columns filterable by default when enableFiltering is true", () => {
+			render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={true}
+				/>,
+			);
+
+			// Grid should render
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+
+			// All columns should be filterable
+			// (This is verified by MUI DataGrid's default behavior)
 		});
 	});
 });

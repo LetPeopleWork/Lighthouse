@@ -10,6 +10,7 @@ import type { DataGridBaseProps } from "./types";
  * Built on top of @mui/x-data-grid with additional features:
  * - Sorting on all columns
  * - Column visibility toggle
+ * - Column filtering (optional)
  * - Virtualization for performance
  * - Responsive design
  * - TypeScript-safe with generics
@@ -25,6 +26,9 @@ function DataGridBase<T extends GridValidRowModel>({
 	onSortModelChange,
 	initialHiddenColumns = [],
 	onColumnVisibilityChange,
+	initialFilterModel,
+	onFilterModelChange,
+	enableFiltering = false,
 	height = 600,
 	emptyStateMessage = "No rows to display",
 	disableColumnMenu = false,
@@ -74,8 +78,14 @@ function DataGridBase<T extends GridValidRowModel>({
 					sorting: {
 						sortModel: initialSortModel,
 					},
+					filter: initialFilterModel
+						? {
+								filterModel: initialFilterModel,
+							}
+						: undefined,
 				}}
 				onSortModelChange={onSortModelChange}
+				onFilterModelChange={onFilterModelChange}
 				columnVisibilityModel={columnVisibilityModel}
 				onColumnVisibilityModelChange={(newModel) => {
 					if (onColumnVisibilityChange) {
@@ -86,6 +96,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					}
 				}}
 				disableColumnMenu={disableColumnMenu}
+				disableColumnFilter={!enableFiltering}
 				autoHeight={autoHeight}
 				pageSizeOptions={[10, 25, 50, 100]}
 				disableRowSelectionOnClick
