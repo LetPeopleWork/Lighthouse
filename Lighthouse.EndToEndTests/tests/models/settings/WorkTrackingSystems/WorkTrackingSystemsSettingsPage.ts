@@ -45,6 +45,6 @@ export class WorkTrackingSystemsSettingsPage {
 	}
 
 	getWorkTrackingSystem(name: string) {
-		return this.page.getByRole("cell", { name: name });
+		return this.page.getByRole("gridcell", { name: name });
 	}
 }
