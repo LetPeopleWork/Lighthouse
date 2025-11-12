@@ -8,6 +8,7 @@ import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
 import { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IFeatureService } from "../../../services/Api/FeatureService";
 import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
 import {
 	createMockApiServiceContext,
@@ -116,17 +117,15 @@ const MockApiServiceProvider = ({
 }: {
 	children: React.ReactNode;
 }) => {
-	const mockFeatureService = {
-		getFeaturesByIds: vi.fn().mockResolvedValue([
-			mockFeature1,
-			mockFeature2,
-			mockFeature3,
-		]),
+	const mockFeatureService: Partial<IFeatureService> = {
+		getFeaturesByIds: vi
+			.fn()
+			.mockResolvedValue([mockFeature1, mockFeature2, mockFeature3]),
 	};
 
 	const mockContext = createMockApiServiceContext({
 		teamMetricsService: mockTeamMetricsService,
-		featureService: mockFeatureService as any,
+		featureService: mockFeatureService as IFeatureService,
 	});
 
 	return (

@@ -130,106 +130,107 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 	}, [features, hideCompletedFeatures]);
 
 	// Define columns
-	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(() => {
-		const baseColumns: DataGridColumn<IFeature & GridValidRowModel>[] = [
-			{
-				field: "name",
-				headerName: `${featureTerm} Name`,
-				width: 300,
-				flex: 1,
-				renderCell: ({ row }) => (
-					<FeatureName
-						name={getWorkItemName(row)}
-						url={row.url ?? ""}
-						stateCategory={row.stateCategory}
-						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-						teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
-							featuresInProgress[team.id]?.includes(row.referenceId),
-						)}
-					/>
-				),
-			},
-			{
-				field: "progress",
-				headerName: "Progress",
-				width: 300,
-				sortable: false,
-				renderCell: ({ row }) => (
-					<Box>
-						<ProgressIndicator
-							title="Overall Progress"
-							progressableItem={{
-								remainingWork: row.getRemainingWorkForFeature(),
-								totalWork: row.getTotalWorkForFeature(),
-							}}
+	const columns: DataGridColumn<IFeature & GridValidRowModel>[] =
+		useMemo(() => {
+			const baseColumns: DataGridColumn<IFeature & GridValidRowModel>[] = [
+				{
+					field: "name",
+					headerName: `${featureTerm} Name`,
+					width: 300,
+					flex: 1,
+					renderCell: ({ row }) => (
+						<FeatureName
+							name={getWorkItemName(row)}
+							url={row.url ?? ""}
+							stateCategory={row.stateCategory}
+							isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
+							teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
+								featuresInProgress[team.id]?.includes(row.referenceId),
+							)}
 						/>
-						{project.involvedTeams
-							.filter((team) => row.getTotalWorkForTeam(team.id) > 0)
-							.map((team) => (
-								<Box key={team.id}>
-									<ProgressIndicator
-										title={
-											<StyledLink to={`/teams/${team.id}`}>
-												{team.name}
-											</StyledLink>
-										}
-										progressableItem={{
-											remainingWork: row.getRemainingWorkForTeam(team.id),
-											totalWork: row.getTotalWorkForTeam(team.id),
-										}}
-									/>
-								</Box>
-							))}
-					</Box>
-				),
-			},
-			{
-				field: "forecasts",
-				headerName: "Forecasts",
-				width: 200,
-				sortable: false,
-				renderCell: ({ row }) => (
-					<ForecastInfoList title={""} forecasts={row.forecasts} />
-				),
-			},
-		];
+					),
+				},
+				{
+					field: "progress",
+					headerName: "Progress",
+					width: 400,
+					sortable: false,
+					renderCell: ({ row }) => (
+						<Box sx={{ width: "100%" }}>
+							<ProgressIndicator
+								title="Overall Progress"
+								progressableItem={{
+									remainingWork: row.getRemainingWorkForFeature(),
+									totalWork: row.getTotalWorkForFeature(),
+								}}
+							/>
+							{project.involvedTeams
+								.filter((team) => row.getTotalWorkForTeam(team.id) > 0)
+								.map((team) => (
+									<Box key={team.id}>
+										<ProgressIndicator
+											title={
+												<StyledLink to={`/teams/${team.id}`}>
+													{team.name}
+												</StyledLink>
+											}
+											progressableItem={{
+												remainingWork: row.getRemainingWorkForTeam(team.id),
+												totalWork: row.getTotalWorkForTeam(team.id),
+											}}
+										/>
+									</Box>
+								))}
+						</Box>
+					),
+				},
+				{
+					field: "forecasts",
+					headerName: "Forecasts",
+					width: 200,
+					sortable: false,
+					renderCell: ({ row }) => (
+						<ForecastInfoList title={""} forecasts={row.forecasts} />
+					),
+				},
+			];
 
-		// Add milestone columns dynamically
-		for (const milestone of currentOrFutureMilestones) {
+			// Add milestone columns dynamically
+			for (const milestone of currentOrFutureMilestones) {
+				baseColumns.push({
+					field: `milestone_${milestone.id}`,
+					headerName: `${milestone.name}`,
+					width: 150,
+					sortable: false,
+					renderCell: ({ row }) => (
+						<ForecastLikelihood
+							remainingItems={row.getRemainingWorkForFeature()}
+							targetDate={milestone.date}
+							likelihood={row.getMilestoneLikelihood(milestone.id)}
+							showText={false}
+						/>
+					),
+				});
+			}
+
+			// Add Updated On column
 			baseColumns.push({
-				field: `milestone_${milestone.id}`,
-				headerName: `${milestone.name}`,
-				width: 150,
-				sortable: false,
+				field: "lastUpdated",
+				headerName: "Updated On",
+				width: 200,
+				type: "dateTime",
 				renderCell: ({ row }) => (
-					<ForecastLikelihood
-						remainingItems={row.getRemainingWorkForFeature()}
-						targetDate={milestone.date}
-						likelihood={row.getMilestoneLikelihood(milestone.id)}
-						showText={false}
-					/>
+					<LocalDateTimeDisplay utcDate={row.lastUpdated} showTime={true} />
 				),
 			});
-		}
 
-		// Add Updated On column
-		baseColumns.push({
-			field: "lastUpdated",
-			headerName: "Updated On",
-			width: 200,
-			type: "dateTime",
-			renderCell: ({ row }) => (
-				<LocalDateTimeDisplay utcDate={row.lastUpdated} showTime={true} />
-			),
-		});
-
-		return baseColumns;
-	}, [
-		featureTerm,
-		project.involvedTeams,
-		featuresInProgress,
-		currentOrFutureMilestones,
-	]);
+			return baseColumns;
+		}, [
+			featureTerm,
+			project.involvedTeams,
+			featuresInProgress,
+			currentOrFutureMilestones,
+		]);
 
 	// Note: Grouping by parent is not yet implemented in DataGrid version
 	// This will be added in a follow-up enhancement
