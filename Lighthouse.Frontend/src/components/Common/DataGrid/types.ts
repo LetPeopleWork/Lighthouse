@@ -44,7 +44,7 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	initialFilterModel?: GridFilterModel;
 	/** Callback when filter changes */
 	onFilterModelChange?: (model: GridFilterModel) => void;
-	/** Enable column filtering (default: false) */
+	/** Enable column filtering (default: true) */
 	enableFiltering?: boolean;
 	/** Custom height for the grid */
 	height?: number | string;
@@ -52,7 +52,7 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	emptyStateMessage?: string;
 	/** Disable column menu (default: false) */
 	disableColumnMenu?: boolean;
-	/** Disable column selector (default: false) */
+	/** Disable column selector (default: true) */
 	disableColumnSelector?: boolean;
 	/** Auto height (default: false) */
 	autoHeight?: boolean;

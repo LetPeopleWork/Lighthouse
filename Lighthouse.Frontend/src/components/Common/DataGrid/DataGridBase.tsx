@@ -10,12 +10,13 @@ import type { DataGridBaseProps } from "./types";
  * Built on top of @mui/x-data-grid with additional features:
  * - Sorting on all columns
  * - Column visibility toggle
- * - Column filtering (optional)
+ * - Column filtering (enabled by default)
  * - Virtualization for performance
  * - Responsive design
  * - TypeScript-safe with generics
  * - Custom cell renderers
  * - Persistent state (localStorage)
+ * - Column selector hidden by default
  */
 function DataGridBase<T extends GridValidRowModel>({
 	rows,
@@ -28,11 +29,11 @@ function DataGridBase<T extends GridValidRowModel>({
 	onColumnVisibilityChange,
 	initialFilterModel,
 	onFilterModelChange,
-	enableFiltering = false,
+	enableFiltering = true,
 	height = 600,
 	emptyStateMessage = "No rows to display",
 	disableColumnMenu = false,
-	disableColumnSelector = false,
+	disableColumnSelector = true,
 	autoHeight = false,
 	hidePagination = false,
 }: DataGridBaseProps<T>): React.ReactElement {
@@ -104,13 +105,21 @@ function DataGridBase<T extends GridValidRowModel>({
 				pageSizeOptions={[10, 25, 50, 100]}
 				disableRowSelectionOnClick
 				hideFooter={hidePagination}
+				getRowHeight={() => "auto"}
 				sx={{
 					"& .MuiDataGrid-cell": {
 						display: "flex",
 						alignItems: "center",
+						paddingTop: 1,
+						paddingBottom: 1,
+						whiteSpace: "normal",
+						wordWrap: "break-word",
 					},
 					"& .MuiDataGrid-cell:focus": {
 						outline: "none",
+					},
+					"& .MuiDataGrid-row": {
+						maxHeight: "none !important",
 					},
 					"& .MuiDataGrid-row:hover": {
 						cursor: "pointer",

@@ -1,8 +1,16 @@
-import { TableCell, TableRow, Typography } from "@mui/material";
+import {
+	Box,
+	FormControlLabel,
+	Paper,
+	Switch,
+	TableContainer,
+} from "@mui/material";
+import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
+import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
-import FeatureListBase from "../../../components/Common/FeaturesList/FeatureListBase";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
@@ -20,15 +28,50 @@ interface ProjectFeatureListProps {
 }
 
 const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
-	const { teamMetricsService } = useContext(ApiServiceContext);
+	const { teamMetricsService, featureService } = useContext(ApiServiceContext);
 
 	const [featuresInProgress, setFeaturesInProgress] = useState<
 		Record<string, string[]>
 	>({});
+	const [features, setFeatures] = useState<IFeature[]>([]);
+	const [hideCompletedFeatures, setHideCompletedFeatures] =
+		useState<boolean>(false);
+	const [groupFeaturesByParent, setGroupFeaturesByParent] =
+		useState<boolean>(false);
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
+	// Storage keys for toggles
+	const storageKey = `lighthouse_hide_completed_features_project_${project.id}`;
+	const groupingStorageKey = `lighthouse_group_features_by_parent_project_${project.id}`;
+
+	// Load features
+	useEffect(() => {
+		const fetchFeatures = async () => {
+			const featureIds = project.features.map((fr) => fr.id);
+			const featureData = await featureService.getFeaturesByIds(featureIds);
+			setFeatures(featureData);
+		};
+
+		fetchFeatures();
+	}, [project.features, featureService]);
+
+	// Load toggle preferences from localStorage
+	useEffect(() => {
+		const storedPreference = localStorage.getItem(storageKey);
+		if (storedPreference !== null) {
+			setHideCompletedFeatures(storedPreference === "true");
+		}
+
+		const storedGroupingPreference = localStorage.getItem(groupingStorageKey);
+		if (storedGroupingPreference !== null) {
+			setGroupFeaturesByParent(storedGroupingPreference === "true");
+		}
+	}, [storageKey, groupingStorageKey]);
+
+	// Fetch features in progress
 	useEffect(() => {
 		const fetchFeaturesInProgress = async () => {
 			const featuresByTeam: Record<string, string[]> = {};
@@ -53,114 +96,182 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 		fetchFeaturesInProgress();
 	}, [project.involvedTeams, teamMetricsService]);
 
-	const currentOrFutureMilestones = project.milestones.filter((milestone) => {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
+	const currentOrFutureMilestones = useMemo(() => {
+		return project.milestones.filter((milestone) => {
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
 
-		const milestoneDate = new Date(milestone.date);
-		milestoneDate.setHours(0, 0, 0, 0);
+			const milestoneDate = new Date(milestone.date);
+			milestoneDate.setHours(0, 0, 0, 0);
 
-		return milestoneDate >= today;
-	});
+			return milestoneDate >= today;
+		});
+	}, [project.milestones]);
 
-	const renderTableHeader = () => (
-		<TableRow>
-			<TableCell>
-				<Typography variant="h6" component="div">
-					{`${featureTerm} Name`}
-				</Typography>
-			</TableCell>
-			<TableCell sx={{ width: "25%" }}>
-				<Typography variant="h6" component="div">
-					Progress
-				</Typography>
-			</TableCell>
-			<TableCell>
-				<Typography variant="h6" component="div">
-					Forecasts
-				</Typography>
-			</TableCell>
-			{currentOrFutureMilestones.map((milestone) => (
-				<TableCell key={milestone.id}>
-					<Typography variant="h6" component="div">
-						{milestone.name} (
-						<LocalDateTimeDisplay utcDate={milestone.date} />)
-					</Typography>
-				</TableCell>
-			))}
-			<TableCell>
-				<Typography variant="h6" component="div">
-					Updated On
-				</Typography>
-			</TableCell>
-		</TableRow>
-	);
+	const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const newValue = event.target.checked;
+		setHideCompletedFeatures(newValue);
+		localStorage.setItem(storageKey, newValue.toString());
+	};
 
-	const renderTableRow = (feature: IFeature) => (
-		<TableRow key={feature.id}>
-			<TableCell>
-				<FeatureName
-					name={getWorkItemName(feature)}
-					url={feature.url ?? ""}
-					stateCategory={feature.stateCategory}
-					isUsingDefaultFeatureSize={feature.isUsingDefaultFeatureSize}
-					teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
-						featuresInProgress[team.id]?.includes(feature.referenceId),
-					)}
-				/>
-			</TableCell>
-			<TableCell>
-				<ProgressIndicator
-					title="Overall Progress"
-					progressableItem={{
-						remainingWork: feature.getRemainingWorkForFeature(),
-						totalWork: feature.getTotalWorkForFeature(),
-					}}
-				/>
+	const handleGroupingToggleChange = (
+		event: React.ChangeEvent<HTMLInputElement>,
+	) => {
+		const newValue = event.target.checked;
+		setGroupFeaturesByParent(newValue);
+		localStorage.setItem(groupingStorageKey, newValue.toString());
+	};
 
-				{project.involvedTeams
-					.filter((team) => feature.getTotalWorkForTeam(team.id) > 0)
-					.map((team) => (
-						<div key={team.id}>
-							<ProgressIndicator
-								title={
-									<StyledLink to={`/teams/${team.id}`}>{team.name}</StyledLink>
-								}
-								progressableItem={{
-									remainingWork: feature.getRemainingWorkForTeam(team.id),
-									totalWork: feature.getTotalWorkForTeam(team.id),
-								}}
-							/>
-						</div>
-					))}
-			</TableCell>
-			<TableCell>
-				<ForecastInfoList title={""} forecasts={feature.forecasts} />
-			</TableCell>
-			{currentOrFutureMilestones.map((milestone) => (
-				<TableCell key={milestone.id}>
+	// Filter features based on the "hide completed" setting
+	const filteredFeatures = useMemo(() => {
+		return hideCompletedFeatures
+			? features.filter((feature) => feature.stateCategory !== "Done")
+			: features;
+	}, [features, hideCompletedFeatures]);
+
+	// Define columns
+	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(() => {
+		const baseColumns: DataGridColumn<IFeature & GridValidRowModel>[] = [
+			{
+				field: "name",
+				headerName: `${featureTerm} Name`,
+				width: 300,
+				flex: 1,
+				renderCell: ({ row }) => (
+					<FeatureName
+						name={getWorkItemName(row)}
+						url={row.url ?? ""}
+						stateCategory={row.stateCategory}
+						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
+						teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
+							featuresInProgress[team.id]?.includes(row.referenceId),
+						)}
+					/>
+				),
+			},
+			{
+				field: "progress",
+				headerName: "Progress",
+				width: 300,
+				sortable: false,
+				renderCell: ({ row }) => (
+					<Box>
+						<ProgressIndicator
+							title="Overall Progress"
+							progressableItem={{
+								remainingWork: row.getRemainingWorkForFeature(),
+								totalWork: row.getTotalWorkForFeature(),
+							}}
+						/>
+						{project.involvedTeams
+							.filter((team) => row.getTotalWorkForTeam(team.id) > 0)
+							.map((team) => (
+								<Box key={team.id}>
+									<ProgressIndicator
+										title={
+											<StyledLink to={`/teams/${team.id}`}>
+												{team.name}
+											</StyledLink>
+										}
+										progressableItem={{
+											remainingWork: row.getRemainingWorkForTeam(team.id),
+											totalWork: row.getTotalWorkForTeam(team.id),
+										}}
+									/>
+								</Box>
+							))}
+					</Box>
+				),
+			},
+			{
+				field: "forecasts",
+				headerName: "Forecasts",
+				width: 200,
+				sortable: false,
+				renderCell: ({ row }) => (
+					<ForecastInfoList title={""} forecasts={row.forecasts} />
+				),
+			},
+		];
+
+		// Add milestone columns dynamically
+		for (const milestone of currentOrFutureMilestones) {
+			baseColumns.push({
+				field: `milestone_${milestone.id}`,
+				headerName: `${milestone.name}`,
+				width: 150,
+				sortable: false,
+				renderCell: ({ row }) => (
 					<ForecastLikelihood
-						remainingItems={feature.getRemainingWorkForFeature()}
+						remainingItems={row.getRemainingWorkForFeature()}
 						targetDate={milestone.date}
-						likelihood={feature.getMilestoneLikelihood(milestone.id)}
+						likelihood={row.getMilestoneLikelihood(milestone.id)}
 						showText={false}
 					/>
-				</TableCell>
-			))}
-			<TableCell>
-				<LocalDateTimeDisplay utcDate={feature.lastUpdated} showTime={true} />
-			</TableCell>
-		</TableRow>
-	);
+				),
+			});
+		}
+
+		// Add Updated On column
+		baseColumns.push({
+			field: "lastUpdated",
+			headerName: "Updated On",
+			width: 200,
+			type: "dateTime",
+			renderCell: ({ row }) => (
+				<LocalDateTimeDisplay utcDate={row.lastUpdated} showTime={true} />
+			),
+		});
+
+		return baseColumns;
+	}, [
+		featureTerm,
+		project.involvedTeams,
+		featuresInProgress,
+		currentOrFutureMilestones,
+	]);
+
+	// Note: Grouping by parent is not yet implemented in DataGrid version
+	// This will be added in a follow-up enhancement
+	if (groupFeaturesByParent) {
+		// TODO: Implement grouping in DataGrid
+		console.warn("Grouping by parent is not yet supported in DataGrid mode");
+	}
 
 	return (
-		<FeatureListBase
-			featureReferences={project.features}
-			renderTableHeader={renderTableHeader}
-			renderTableRow={renderTableRow}
-			contextId={project.id}
-			contextType="project"
-		/>
+		<TableContainer component={Paper}>
+			<Box sx={{ display: "flex", justifyContent: "flex-end", p: 2, gap: 2 }}>
+				<FormControlLabel
+					control={
+						<Switch
+							checked={groupFeaturesByParent}
+							onChange={handleGroupingToggleChange}
+							color="primary"
+							data-testid="group-features-by-parent-toggle"
+						/>
+					}
+					label={`Group ${featuresTerm} by Parent`}
+				/>
+				<FormControlLabel
+					control={
+						<Switch
+							checked={hideCompletedFeatures}
+							onChange={handleToggleChange}
+							color="primary"
+							data-testid="hide-completed-features-toggle"
+						/>
+					}
+					label={`Hide Completed ${featuresTerm}`}
+				/>
+			</Box>
+			<DataGridBase
+				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
+				columns={columns}
+				loading={features.length === 0}
+				autoHeight={true}
+				hidePagination={true}
+			/>
+		</TableContainer>
 	);
 };
 

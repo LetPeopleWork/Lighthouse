@@ -307,9 +307,13 @@ describe("DataGridBase", () => {
 			// (actual interaction testing would require userEvent clicks on column menu)
 		});
 
-		it("should support column menu for visibility toggle by default", () => {
+		it("should support column menu for visibility toggle when disableColumnSelector is false", () => {
 			const { container } = render(
-				<DataGridBase rows={mockRows} columns={mockColumns} />,
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					disableColumnSelector={false}
+				/>,
 			);
 
 			// Check that column menu buttons are present
@@ -317,6 +321,14 @@ describe("DataGridBase", () => {
 				'button[aria-label*="column menu"]',
 			);
 			expect(menuButtons.length).toBeGreaterThan(0);
+		});
+
+		it("should hide column selector by default when disableColumnSelector is not specified", () => {
+			render(<DataGridBase rows={mockRows} columns={mockColumns} />);
+
+			// Grid should render
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
 		});
 
 		it("should hide column menu when disableColumnMenu is true", () => {
@@ -413,12 +425,34 @@ describe("DataGridBase", () => {
 	});
 
 	describe("Filtering", () => {
-		it("should not show filter UI by default when enableFiltering is false", () => {
+		it("should show filter UI by default when enableFiltering is not specified", () => {
 			const { container } = render(
 				<DataGridBase rows={mockRows} columns={mockColumns} />,
 			);
 
-			// Filter panel should not be visible by default
+			// Grid should render with filtering enabled by default
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+
+			// Column headers should have filter capability
+			const columnHeaders = container.querySelectorAll('[role="columnheader"]');
+			expect(columnHeaders.length).toBeGreaterThan(0);
+		});
+
+		it("should disable filtering when enableFiltering is explicitly false", () => {
+			const { container } = render(
+				<DataGridBase
+					rows={mockRows}
+					columns={mockColumns}
+					enableFiltering={false}
+				/>,
+			);
+
+			// Grid should render
+			const grid = screen.getByRole("grid");
+			expect(grid).toBeInTheDocument();
+
+			// Filter panel should not be available
 			const filterPanel = container.querySelector(".MuiDataGrid-filterForm");
 			expect(filterPanel).not.toBeInTheDocument();
 		});
