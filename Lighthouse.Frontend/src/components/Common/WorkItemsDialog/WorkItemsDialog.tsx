@@ -1,20 +1,18 @@
 import BlockIcon from "@mui/icons-material/Block";
 import CloseIcon from "@mui/icons-material/Close";
 import {
+	Box,
 	Chip,
 	Dialog,
 	DialogContent,
 	DialogTitle,
 	IconButton,
 	Link,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
 	Tooltip,
 	Typography,
 } from "@mui/material";
+import type { GridValidRowModel } from "@mui/x-data-grid";
+import { useCallback, useMemo } from "react";
 import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -27,6 +25,8 @@ import {
 	realisticColor,
 	riskyColor,
 } from "../../../utils/theme/colors";
+import DataGridBase from "../DataGrid/DataGridBase";
+import type { DataGridColumn } from "../DataGrid/types";
 
 export interface WorkItemsDialogProps {
 	title: string;
@@ -54,9 +54,9 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
 	// Check if items are Features with owning team
-	const isFeature = (item: IWorkItem): item is IFeature => {
+	const isFeature = useCallback((item: IWorkItem): item is IFeature => {
 		return "owningTeam" in item;
-	};
+	}, []);
 
 	const hasOwningTeams =
 		items.length > 0 &&
@@ -69,28 +69,150 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		return additionalColumnContent(b) - additionalColumnContent(a);
 	});
 
-	const getColumnColor = (value: number) => {
-		if (!sle) return undefined;
+	const getColumnColor = useCallback(
+		(value: number) => {
+			if (!sle) return undefined;
 
-		const seventyPercentSLE = sle * 0.7;
-		const fiftyPercentSLE = sle * 0.5;
+			const seventyPercentSLE = sle * 0.7;
+			const fiftyPercentSLE = sle * 0.5;
 
-		// Using updated forecast colors with better contrast
-		if (value > sle) {
-			return riskyColor; // Enhanced red
+			// Using updated forecast colors with better contrast
+			if (value > sle) {
+				return riskyColor; // Enhanced red
+			}
+			if (value >= seventyPercentSLE) {
+				return realisticColor; // Enhanced orange
+			}
+			if (value >= fiftyPercentSLE) {
+				return confidentColor; // Enhanced light green
+			}
+			return certainColor; // Enhanced green
+		},
+		[sle],
+	);
+
+	// Define columns for DataGrid
+	const columns = useMemo(() => {
+		const baseColumns: DataGridColumn<IWorkItem & GridValidRowModel>[] = [
+			{
+				field: "referenceId",
+				headerName: "ID",
+				width: 120,
+				renderCell: ({ row }) => {
+					return !row.name?.toLowerCase().includes("unparented")
+						? row.referenceId
+						: "";
+				},
+			},
+			{
+				field: "name",
+				headerName: "Name",
+				width: 300,
+				flex: 1,
+				renderCell: ({ row }) => {
+					if (row.url) {
+						return (
+							<Link href={row.url} target="_blank" rel="noopener noreferrer">
+								{row.name}
+							</Link>
+						);
+					}
+					return row.name;
+				},
+			},
+			{
+				field: "type",
+				headerName: "Type",
+				width: 120,
+			},
+			{
+				field: "state",
+				headerName: "State",
+				width: 150,
+				renderCell: ({ row }) => (
+					<Chip
+						size="small"
+						label={row.state}
+						color={getStateColor(row.stateCategory)}
+						variant="outlined"
+					/>
+				),
+			},
+		];
+
+		// Add Owned by column if needed
+		if (hasOwningTeams) {
+			baseColumns.push({
+				field: "owningTeam",
+				headerName: "Owned by",
+				width: 150,
+				renderCell: ({ row }) => {
+					return isFeature(row) ? row.owningTeam : "";
+				},
+			});
 		}
-		if (value >= seventyPercentSLE) {
-			return realisticColor; // Enhanced orange
-		}
-		if (value >= fiftyPercentSLE) {
-			return confidentColor; // Enhanced light green
-		}
-		return certainColor; // Enhanced green
-	};
+
+		// Add additional column
+		baseColumns.push({
+			field: "additionalColumn",
+			headerName: `${additionalColumnTitle} (${additionalColumnDescription})`,
+			width: 200,
+			sortable: true,
+			valueGetter: (_, row) => additionalColumnContent(row),
+			renderCell: ({ row }) => {
+				const value = additionalColumnContent(row);
+				return (
+					<Typography
+						variant="body2"
+						data-testid="additionalColumnContent"
+						sx={{
+							color: getColumnColor(value),
+							fontWeight: sle ? "bold" : "normal",
+							padding: "4px 8px",
+							borderRadius: 1,
+							display: "inline-flex",
+							alignItems: "center",
+							backgroundColor: (theme) => {
+								const timeColor = getColumnColor(value);
+								return timeColor
+									? hexToRgba(timeColor ?? theme.palette.text.primary, 0.1)
+									: "transparent";
+							},
+						}}
+					>
+						{value}
+						{row.isBlocked && (
+							<Tooltip title={`This ${workItemTerm} is ${blockedTerm}`}>
+								<BlockIcon
+									sx={{
+										color: "error.main",
+										fontSize: "1rem",
+										ml: 1,
+									}}
+								/>
+							</Tooltip>
+						)}
+					</Typography>
+				);
+			},
+		});
+
+		return baseColumns;
+	}, [
+		hasOwningTeams,
+		additionalColumnTitle,
+		additionalColumnDescription,
+		additionalColumnContent,
+		sle,
+		workItemTerm,
+		blockedTerm,
+		isFeature,
+		getColumnColor,
+	]);
 
 	return (
 		<Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-			<DialogTitle>
+			<DialogTitle sx={{ backgroundColor: "background.paper" }}>
 				{title}
 				<IconButton
 					onClick={onClose}
@@ -99,129 +221,22 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 					<CloseIcon />
 				</IconButton>
 			</DialogTitle>
-			<DialogContent>
+			<DialogContent sx={{ backgroundColor: "background.paper" }}>
 				{items.length > 0 ? (
-					<Table>
-						<TableHead>
-							<TableRow>
-								<TableCell>ID</TableCell>
-								<TableCell>Name</TableCell>
-								<TableCell>Type</TableCell>
-								<TableCell>State</TableCell>
-								{hasOwningTeams && <TableCell>Owned by</TableCell>}
-								<TableCell>
-									{additionalColumnTitle}
-
-									<Typography
-										variant="caption"
-										sx={{ ml: 1, fontStyle: "italic" }}
-									>
-										({additionalColumnDescription})
-									</Typography>
-								</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{sortedItems.map((item) => (
-								<TableRow
-									key={item.id}
-									sx={{
-										"&:hover": {
-											backgroundColor: (theme) =>
-												theme.palette.mode === "dark"
-													? "rgba(255, 255, 255, 0.08)"
-													: "rgba(0, 0, 0, 0.04)",
-										},
-									}}
-								>
-									<TableCell>
-										{!item.name?.toLowerCase().includes("unparented")
-											? item.referenceId
-											: ""}
-									</TableCell>
-									<TableCell
-										sx={{
-											whiteSpace: "normal",
-											wordBreak: "break-word",
-											maxWidth: "300px",
-										}}
-									>
-										{item.url ? (
-											<Link
-												href={item.url}
-												target="_blank"
-												rel="noopener noreferrer"
-											>
-												{item.name}
-											</Link>
-										) : (
-											item.name
-										)}
-									</TableCell>
-									<TableCell>{item.type}</TableCell>
-									<TableCell>
-										<Chip
-											size="small"
-											label={item.state}
-											color={getStateColor(item.stateCategory)}
-											variant="outlined"
-										/>
-									</TableCell>
-									{hasOwningTeams && (
-										<TableCell>
-											{isFeature(item) ? item.owningTeam : ""}
-										</TableCell>
-									)}
-									<TableCell>
-										<Typography
-											variant="body2"
-											data-testid="additionalColumnContent"
-											sx={{
-												color: getColumnColor(additionalColumnContent(item)),
-												fontWeight: sle ? "bold" : "normal",
-												padding: "4px 8px",
-												borderRadius: 1,
-												display: "inline-flex",
-												alignItems: "center",
-												backgroundColor: (theme) => {
-													const timeColor = getColumnColor(
-														additionalColumnContent(item),
-													);
-													return timeColor
-														? hexToRgba(
-																timeColor ?? theme.palette.text.primary,
-																0.1,
-															)
-														: "transparent";
-												},
-												// Ensure text remains readable on hover by increasing contrast
-												"tr:hover &": {
-													boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.05)",
-													position: "relative",
-													zIndex: 1,
-												},
-											}}
-										>
-											{additionalColumnContent(item)}
-											{item.isBlocked && (
-												<Tooltip
-													title={`This ${workItemTerm} is ${blockedTerm}`}
-												>
-													<BlockIcon
-														sx={{
-															color: "error.main",
-															fontSize: "1rem",
-															ml: 1,
-														}}
-													/>
-												</Tooltip>
-											)}
-										</Typography>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+					<Box sx={{ mt: 2 }}>
+						<DataGridBase
+							rows={sortedItems as (IWorkItem & GridValidRowModel)[]}
+							columns={columns}
+							loading={false}
+							autoHeight={true}
+							hidePagination={true}
+							initialSortModel={[
+								{ field: "additionalColumn", sort: "desc" as const },
+							]}
+							disableColumnMenu={false}
+							disableColumnSelector={false}
+						/>
+					</Box>
 				) : (
 					<Typography variant="body2" color="text.secondary">
 						No items to display

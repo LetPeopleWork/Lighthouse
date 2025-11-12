@@ -257,7 +257,7 @@ describe("WorkItemsDialog Component", () => {
 		expect(screen.getByText("Name")).toBeInTheDocument();
 		expect(screen.getByText("Type")).toBeInTheDocument();
 		expect(screen.getByText("State")).toBeInTheDocument();
-		expect(screen.getByText("Work Item Age")).toBeInTheDocument();
+		expect(screen.getByText(/Work Item Age/)).toBeInTheDocument();
 
 		// Check if work item data is displayed
 		expect(screen.getByText("Implement feature X")).toBeInTheDocument();
@@ -281,7 +281,7 @@ describe("WorkItemsDialog Component", () => {
 		);
 
 		// Check if correct column name is displayed
-		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
+		expect(screen.getByText(/Cycle Time/)).toBeInTheDocument();
 
 		// Check formatting of cycle time
 		expect(screen.getByText("12")).toBeInTheDocument();
@@ -389,7 +389,7 @@ describe("WorkItemsDialog Component", () => {
 		);
 
 		// Check if column header is displayed correctly
-		expect(screen.getByText("Work Item Age/Cycle Time")).toBeInTheDocument();
+		expect(screen.getByText(/Work Item Age\/Cycle Time/)).toBeInTheDocument();
 	});
 
 	describe("Service Level Expectation (SLE) functionality", () => {
@@ -533,14 +533,12 @@ describe("WorkItemsDialog Component", () => {
 			// Check that blocked icons are in the same cell as time values
 			const timeCells = screen.getAllByTestId("additionalColumnContent");
 			const blockedTimeCells = timeCells.filter((cell) => {
-				// Check if this cell contains a blocked icon
-				const parent = cell.closest("td");
-				return parent?.querySelector('[data-testid="BlockIcon"]') !== null;
+				// Check if this cell contains a blocked icon by checking its children
+				return cell.querySelector('[data-testid="BlockIcon"]') !== null;
 			});
 
 			expect(blockedTimeCells).toHaveLength(2); // Two blocked items
 		});
-
 		test("blocked items are sorted correctly with time metrics", () => {
 			render(
 				<WorkItemsDialog
@@ -577,9 +575,8 @@ describe("WorkItemsDialog Component", () => {
 			expect(blockIcons).toHaveLength(2);
 
 			// Check column header
-			expect(screen.getByText("Cycle Time")).toBeInTheDocument();
+			expect(screen.getByText(/Cycle Time/)).toBeInTheDocument();
 		});
-
 		test("blocked icon appears with SLE coloring", () => {
 			render(
 				<WorkItemsDialog
