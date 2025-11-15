@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
+import type { IVersionService } from "../../../services/Api/VersionService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import LicenseStatusPopover from "./LicenseStatusPopover";
 
@@ -12,6 +13,7 @@ describe("LicenseStatusPopover", () => {
 	const mockOnLicenseImported = vi.fn();
 	const mockAnchorEl = document.createElement("button");
 	let mockLicensingService: ILicensingService;
+	let mockVersionService: IVersionService;
 
 	beforeEach(() => {
 		mockOnClose.mockClear();
@@ -23,8 +25,20 @@ describe("LicenseStatusPopover", () => {
 			clearLicense: vi.fn(),
 		};
 
+		mockVersionService = {
+			getCurrentVersion: vi.fn().mockResolvedValue("v1.33.7"),
+			isUpdateAvailable: vi.fn(),
+			getNewReleases: vi.fn(),
+			isUpdateSupported: vi.fn(),
+			installUpdate: vi.fn(),
+		};
+
 		// Mock window.open
 		vi.stubGlobal("open", vi.fn());
+
+		// Mock location.href
+		delete (globalThis as { location?: unknown }).location;
+		globalThis.location = { href: "" } as Location;
 	});
 
 	const renderComponent = (
@@ -32,6 +46,7 @@ describe("LicenseStatusPopover", () => {
 	) => {
 		const mockApiContext = createMockApiServiceContext({
 			licensingService: mockLicensingService,
+			versionService: mockVersionService,
 		});
 
 		return render(
@@ -732,6 +747,129 @@ describe("LicenseStatusPopover", () => {
 			renderComponent({ licenseStatus });
 
 			expect(screen.getByText("Renew License")).toBeInTheDocument();
+		});
+	});
+
+	describe("Contact Support", () => {
+		it("shows Contact Support icon when canUsePremiumFeatures is true", async () => {
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: true,
+				name: "John Doe",
+				email: "john@example.com",
+				organization: "Test Org",
+				licenseNumber: "LIC-12345",
+				expiryDate: new Date("2025-12-31"),
+			};
+
+			renderComponent({ licenseStatus });
+
+			// Wait for the version to be fetched
+			await waitFor(() => {
+				expect(mockVersionService.getCurrentVersion).toHaveBeenCalled();
+			});
+
+			expect(screen.getByLabelText("Contact Support")).toBeInTheDocument();
+		});
+
+		it("does not show Contact Support icon when canUsePremiumFeatures is false", () => {
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: false,
+				name: "John Doe",
+				email: "john@example.com",
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(screen.queryByLabelText("Contact Support")).not.toBeInTheDocument();
+		});
+
+		it("opens mailto link with correct information when Contact Support icon is clicked", async () => {
+			const user = userEvent.setup();
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: true,
+				name: "John Doe",
+				email: "john@example.com",
+				organization: "Test Org",
+				licenseNumber: "LIC-12345",
+				expiryDate: new Date("2025-12-31"),
+			};
+
+			renderComponent({ licenseStatus });
+
+			// Wait for the version to be fetched
+			await waitFor(() => {
+				expect(mockVersionService.getCurrentVersion).toHaveBeenCalled();
+			});
+
+			const supportIcon = screen.getByLabelText("Contact Support");
+			await user.click(supportIcon);
+
+			// Check that location.href was set with a mailto link
+			expect(globalThis.location.href).toContain("mailto:lighthouse@letpeople.work");
+			expect(globalThis.location.href).toContain("subject=");
+			expect(globalThis.location.href).toContain("Lighthouse%20Support%20Request");
+			expect(globalThis.location.href).toContain("body=");
+			expect(globalThis.location.href).toContain("John%20Doe");
+			expect(globalThis.location.href).toContain("john%40example.com");
+			expect(globalThis.location.href).toContain("Test%20Org");
+			expect(globalThis.location.href).toContain("LIC-12345");
+			expect(globalThis.location.href).toContain("v1.33.7");
+		});
+
+		it("handles missing license information gracefully in support email", async () => {
+			const user = userEvent.setup();
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: true,
+			};
+
+			renderComponent({ licenseStatus });
+
+			// Wait for the version to be fetched
+			await waitFor(() => {
+				expect(mockVersionService.getCurrentVersion).toHaveBeenCalled();
+			});
+
+			const supportIcon = screen.getByLabelText("Contact Support");
+			await user.click(supportIcon);
+
+			// Check that location.href was set with N/A for missing fields
+			expect(globalThis.location.href).toContain("N%2FA"); // URL encoded N/A
+		});
+
+		it("fetches version when popover opens with premium license", async () => {
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: true,
+				name: "John Doe",
+			};
+
+			renderComponent({ licenseStatus });
+
+			await waitFor(() => {
+				expect(mockVersionService.getCurrentVersion).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("does not fetch version when canUsePremiumFeatures is false", () => {
+			const licenseStatus: ILicenseStatus = {
+				hasLicense: true,
+				isValid: true,
+				canUsePremiumFeatures: false,
+				name: "John Doe",
+			};
+
+			renderComponent({ licenseStatus });
+
+			expect(mockVersionService.getCurrentVersion).not.toHaveBeenCalled();
 		});
 	});
 });

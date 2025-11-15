@@ -1,6 +1,7 @@
 import RenewalIcon from "@mui/icons-material/Autorenew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ClearIcon from "@mui/icons-material/Clear";
+import EmailIcon from "@mui/icons-material/Email";
 import ErrorIcon from "@mui/icons-material/Error";
 import InfoIcon from "@mui/icons-material/Info";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -20,7 +21,7 @@ import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useContext, useId, useRef, useState } from "react";
+import { useContext, useEffect, useId, useRef, useState } from "react";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
@@ -47,15 +48,33 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 	onLicenseImported,
 }) => {
 	const theme = useTheme();
-	const { licensingService } = useContext(ApiServiceContext);
+	const { licensingService, versionService } = useContext(ApiServiceContext);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 	const [isClearing, setIsClearing] = useState(false);
 	const [showClearConfirmation, setShowClearConfirmation] = useState(false);
+	const [lighthouseVersion, setLighthouseVersion] = useState<string>("");
 	const dialogTitleId = useId();
 	const dialogDescriptionId = useId();
 	const open = Boolean(anchorEl);
+
+	// Fetch Lighthouse version
+	useEffect(() => {
+		const fetchVersion = async () => {
+			try {
+				const version = await versionService.getCurrentVersion();
+				setLighthouseVersion(version);
+			} catch (error) {
+				console.error("Failed to fetch version:", error);
+				setLighthouseVersion("Unknown");
+			}
+		};
+
+		if (open && licenseStatus?.canUsePremiumFeatures) {
+			fetchVersion();
+		}
+	}, [open, licenseStatus?.canUsePremiumFeatures, versionService]);
 
 	const formatDate = (date: Date) => {
 		return date.toLocaleDateString(undefined, {
@@ -221,6 +240,37 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 
 	const handleRenewLicense = () => {
 		window.open(getRenewalUrl(), "_blank", "noopener,noreferrer");
+	};
+
+	const handleContactSupport = () => {
+		const subject = "Lighthouse Support Request";
+		const body = `
+Hello Lighthouse Support Team,
+
+I need assistance with the following issue:
+
+--- License Information ---
+Name: ${licenseStatus?.name || "N/A"}
+Email: ${licenseStatus?.email || "N/A"}
+Organization: ${licenseStatus?.organization || "N/A"}
+License Number: ${licenseStatus?.licenseNumber || "N/A"}
+License Expiry: ${licenseStatus?.expiryDate ? formatDate(licenseStatus.expiryDate) : "N/A"}
+License Validity: ${licenseStatus?.validFrom ? formatDate(licenseStatus.validFrom) : "N/A"}
+
+--- System Information ---
+Lighthouse Version: ${lighthouseVersion}
+Operating System: [Please fill in - e.g., Windows 11, macOS 14, Ubuntu 22.04]
+Hosting Method: [Please fill in - e.g., Docker, Windows Service, Direct Installation]
+
+--- Issue Description ---
+[Please describe your issue here]
+
+Thank you for your support!
+		`.trim();
+
+		// Encode the mailto link
+		const mailtoLink = `mailto:lighthouse@letpeople.work?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+		globalThis.location.href = mailtoLink;
 	};
 
 	const getStatusIcon = () => {
@@ -477,26 +527,49 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 					},
 				}}
 			>
-				{/* Info icon in top right */}
+				{/* Icons in top right */}
 				<Box sx={{ position: "relative" }}>
-					<Tooltip title="Learn more about Premium Features">
-						<IconButton
-							onClick={handleInfoClick}
-							size="small"
-							sx={{
-								position: "absolute",
-								top: 8,
-								right: 8,
-								zIndex: 1,
-								color: theme.palette.primary.main,
-								"&:hover": {
-									backgroundColor: `${theme.palette.primary.main}10`,
-								},
-							}}
-						>
-							<InfoIcon />
-						</IconButton>
-					</Tooltip>
+					<Box
+						sx={{
+							position: "absolute",
+							top: 8,
+							right: 8,
+							zIndex: 1,
+							display: "flex",
+							gap: 0.5,
+						}}
+					>
+						{licenseStatus?.canUsePremiumFeatures && (
+							<Tooltip title="Contact Support">
+								<IconButton
+									onClick={handleContactSupport}
+									size="small"
+									sx={{
+										color: theme.palette.primary.main,
+										"&:hover": {
+											backgroundColor: `${theme.palette.primary.main}10`,
+										},
+									}}
+								>
+									<EmailIcon />
+								</IconButton>
+							</Tooltip>
+						)}
+						<Tooltip title="Learn more about Premium Features">
+							<IconButton
+								onClick={handleInfoClick}
+								size="small"
+								sx={{
+									color: theme.palette.primary.main,
+									"&:hover": {
+										backgroundColor: `${theme.palette.primary.main}10`,
+									},
+								}}
+							>
+								<InfoIcon />
+							</IconButton>
+						</Tooltip>
+					</Box>
 					{renderContent()}
 				</Box>
 				{/* Action buttons - always visible */}
@@ -530,7 +603,14 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 						)}
 
 						{/* Button on the right */}
-						<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								gap: 1,
+								flexWrap: "wrap",
+							}}
+						>
 							<input
 								type="file"
 								ref={fileInputRef}
