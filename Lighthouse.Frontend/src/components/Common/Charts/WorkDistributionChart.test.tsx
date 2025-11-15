@@ -1,6 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockFeatureService,
+} from "../../../tests/MockApiServiceProvider";
 import WorkDistributionChart from "./WorkDistributionChart";
 
 // Mock the WorkItemsDialog component
@@ -91,6 +96,22 @@ function generateMockWorkItem(
 	};
 }
 
+// Helper function to render component with API context
+function renderWithContext(ui: React.ReactElement) {
+	const mockFeatureService = createMockFeatureService();
+	mockFeatureService.getFeaturesByReferences = vi.fn().mockResolvedValue([]);
+
+	const mockContext = createMockApiServiceContext({
+		featureService: mockFeatureService,
+	});
+
+	return render(
+		<ApiServiceContext.Provider value={mockContext}>
+			{ui}
+		</ApiServiceContext.Provider>,
+	);
+}
+
 describe("WorkDistributionChart component", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -98,7 +119,7 @@ describe("WorkDistributionChart component", () => {
 
 	describe("Empty State", () => {
 		it("should display 'No work items to display' when no work items are provided", () => {
-			render(<WorkDistributionChart workItems={[]} />);
+			renderWithContext(<WorkDistributionChart workItems={[]} />);
 
 			expect(
 				screen.getByText("Work Distribution by Parent"),
@@ -116,7 +137,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "PARENT-2"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			expect(
 				screen.getByText("Work Distribution by Parent"),
@@ -128,7 +149,7 @@ describe("WorkDistributionChart component", () => {
 			const workItems = [generateMockWorkItem(1, "PARENT-1")];
 			const customTitle = "Custom Distribution Title";
 
-			render(
+			renderWithContext(
 				<WorkDistributionChart workItems={workItems} title={customTitle} />,
 			);
 
@@ -143,7 +164,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(4, "PARENT-3"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// Check that all parent references are displayed
 			expect(screen.getByText("PARENT-1: 2")).toBeInTheDocument();
@@ -162,7 +183,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(5, "EPIC-200"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// Verify grouped counts
 			expect(screen.getByText("EPIC-100: 3")).toBeInTheDocument();
@@ -176,7 +197,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "PARENT-1"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			expect(screen.getByText("No Parent: 2")).toBeInTheDocument();
 			expect(screen.getByText("PARENT-1: 1")).toBeInTheDocument();
@@ -192,7 +213,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(6, "MEDIUM"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			const slices = screen.getAllByRole("button");
 			// First slice should be LARGE (3 items), then MEDIUM (2 items), then SMALL (1 item)
@@ -210,7 +231,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "PARENT-2"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// Click on the first pie slice (PARENT-1 with 2 items)
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -229,7 +250,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "EPIC-B"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// Click on EPIC-A slice (should be first due to sorting by size)
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -246,7 +267,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(2, "PARENT-1"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// Open dialog
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -269,7 +290,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(5, "PARENT-2"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// Click first slice (PARENT-2 with 3 items, sorted descending)
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
@@ -294,7 +315,7 @@ describe("WorkDistributionChart component", () => {
 		it("should handle single work item", () => {
 			const workItems = [generateMockWorkItem(1, "SINGLE-PARENT")];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			expect(screen.getByText("SINGLE-PARENT: 1")).toBeInTheDocument();
 			expect(screen.getByTestId("mock-pie-chart")).toBeInTheDocument();
@@ -308,7 +329,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(4, "SAME-PARENT"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			expect(screen.getByText("SAME-PARENT: 4")).toBeInTheDocument();
 			expect(screen.getAllByRole("button")).toHaveLength(1); // Only one slice
@@ -323,7 +344,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(5, ""),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// No Parent should have 3 items (sorted first)
 			expect(screen.getByText("No Parent: 3")).toBeInTheDocument();
@@ -335,7 +356,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(i + 1, `PARENT-${i + 1}`),
 			);
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// All parents should have 1 item each
 			const slices = screen.getAllByRole("button");
@@ -355,7 +376,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(2, "PARENT-1", 15),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
 
@@ -371,7 +392,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(3, "FEATURE-XYZ"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
 
@@ -389,7 +410,7 @@ describe("WorkDistributionChart component", () => {
 				generateMockWorkItem(2, "PARENT-1"),
 			];
 
-			render(<WorkDistributionChart workItems={workItems} />);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			fireEvent.click(screen.getByTestId("pie-slice-0"));
 
@@ -398,6 +419,232 @@ describe("WorkDistributionChart component", () => {
 			expect(
 				screen.getByText("Work Items for PARENT-1 (2 items)"),
 			).toBeInTheDocument();
+		});
+	});
+
+	describe("Parent Name Fetching", () => {
+		it("should fetch parent names from feature service", async () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi.fn().mockResolvedValue([
+				{ referenceId: "EPIC-100", name: "Epic 100 Feature Name" },
+				{ referenceId: "EPIC-200", name: "Epic 200 Feature Name" },
+			]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-100"),
+				generateMockWorkItem(2, "EPIC-100"),
+				generateMockWorkItem(3, "EPIC-200"),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for the feature service to be called
+			await vi.waitFor(() => {
+				expect(mockFeatureService.getFeaturesByReferences).toHaveBeenCalledWith(
+					["EPIC-100", "EPIC-200"],
+				);
+			});
+		});
+
+		it("should display parent names instead of reference IDs when available", async () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi.fn().mockResolvedValue([
+				{ referenceId: "EPIC-100", name: "User Authentication" },
+				{ referenceId: "EPIC-200", name: "Dashboard Features" },
+			]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-100"),
+				generateMockWorkItem(2, "EPIC-100"),
+				generateMockWorkItem(3, "EPIC-200"),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for parent names to be fetched and rendered
+			await vi.waitFor(() => {
+				expect(screen.getByText("User Authentication: 2")).toBeInTheDocument();
+			});
+
+			expect(screen.getByText("Dashboard Features: 1")).toBeInTheDocument();
+		});
+
+		it("should fall back to reference ID when parent name is not available", async () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi.fn().mockResolvedValue([
+				{ referenceId: "EPIC-100", name: "Known Feature" },
+				// EPIC-200 is not returned by the service
+			]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-100"),
+				generateMockWorkItem(2, "EPIC-200"),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for rendering to complete
+			await vi.waitFor(() => {
+				expect(screen.getByText("Known Feature: 1")).toBeInTheDocument();
+			});
+
+			// Should fall back to reference ID for unknown parent
+			expect(screen.getByText("EPIC-200: 1")).toBeInTheDocument();
+		});
+
+		it("should not fetch parent names when all items have no parent", () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, ""),
+				generateMockWorkItem(2, ""),
+				generateMockWorkItem(3, ""),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Service should not be called since there are no parent references
+			expect(mockFeatureService.getFeaturesByReferences).not.toHaveBeenCalled();
+
+			expect(screen.getByText("No Parent: 3")).toBeInTheDocument();
+		});
+
+		it("should handle API errors gracefully and fall back to reference IDs", async () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi
+				.fn()
+				.mockRejectedValue(new Error("API Error"));
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-100"),
+				generateMockWorkItem(2, "EPIC-100"),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for the API call to complete (even though it fails)
+			await vi.waitFor(() => {
+				expect(mockFeatureService.getFeaturesByReferences).toHaveBeenCalled();
+			});
+
+			// Should fall back to reference ID on error
+			expect(screen.getByText("EPIC-100: 2")).toBeInTheDocument();
+		});
+
+		it("should use parent names in dialog title when available", async () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi
+				.fn()
+				.mockResolvedValue([
+					{ referenceId: "EPIC-100", name: "Payment Processing" },
+				]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-100"),
+				generateMockWorkItem(2, "EPIC-100"),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for parent names to be loaded
+			await vi.waitFor(() => {
+				expect(screen.getByText("Payment Processing: 2")).toBeInTheDocument();
+			});
+
+			// Click on the slice
+			fireEvent.click(screen.getByTestId("pie-slice-0"));
+
+			// Dialog should use the parent name
+			expect(
+				screen.getByText("Work Items for Payment Processing (2 items)"),
+			).toBeInTheDocument();
+		});
+
+		it("should handle empty parent references (whitespace only)", () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi
+				.fn()
+				.mockResolvedValue([]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, "   "), // Whitespace only
+				generateMockWorkItem(2, "\t"), // Tab character
+				generateMockWorkItem(3, "EPIC-100"),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Whitespace-only references are treated as empty strings (no parent)
+			// So we expect "No Parent: 0" because empty strings are filtered out
+			// But the actual items with whitespace will get their own groups
+			// The component doesn't trim, so "   " and "\t" are different from ""
+
+			// Should only fetch for EPIC-100, not whitespace references
+			expect(mockFeatureService.getFeaturesByReferences).toHaveBeenCalledWith([
+				"EPIC-100",
+			]);
+
+			// Verify EPIC-100 is displayed
+			expect(screen.getByText("EPIC-100: 1")).toBeInTheDocument();
 		});
 	});
 });

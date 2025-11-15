@@ -1,9 +1,10 @@
 import { Box, Card, CardContent, Typography, useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts";
 import type React from "react";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { hexToRgba } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
@@ -28,10 +29,48 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const { featureService } = useContext(ApiServiceContext);
 
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogTitle, setDialogTitle] = useState<string>("");
+	const [parentNames, setParentNames] = useState<Map<string, string>>(
+		new Map(),
+	);
+
+	// Fetch parent work item names
+	useEffect(() => {
+		const fetchParentNames = async () => {
+			// Get unique parent references (excluding "No Parent")
+			const parentRefs = Array.from(
+				new Set(
+					workItems
+						.map((item) => item.parentWorkItemReference)
+						.filter((ref) => ref && ref.trim() !== ""),
+				),
+			);
+
+			if (parentRefs.length === 0) {
+				return;
+			}
+
+			try {
+				const features =
+					await featureService.getFeaturesByReferences(parentRefs);
+				const nameMap = new Map<string, string>();
+
+				for (const feature of features) {
+					nameMap.set(feature.referenceId, feature.name);
+				}
+
+				setParentNames(nameMap);
+			} catch (error) {
+				console.error("Failed to fetch parent work item names:", error);
+			}
+		};
+
+		fetchParentNames();
+	}, [workItems, featureService]);
 
 	// Group work items by parent reference
 	const groupedData = workItems.reduce(
@@ -46,14 +85,22 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 		{} as Record<string, IWorkItem[]>,
 	);
 
-	// Convert to pie chart data format
+	// Convert to pie chart data format with parent names
 	const pieData: WorkDistributionData[] = Object.entries(groupedData).map(
-		([parent, items]) => ({
-			id: parent,
-			value: items.length,
-			label: parent,
-			items: items,
-		}),
+		([parent, items]) => {
+			// Use parent name if available, otherwise fall back to reference ID
+			const displayName =
+				parent === "No Parent"
+					? "No Parent"
+					: parentNames.get(parent) || parent;
+
+			return {
+				id: parent,
+				value: items.length,
+				label: displayName,
+				items: items,
+			};
+		},
 	);
 
 	// Sort by value descending for better visualization
@@ -110,14 +157,28 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 
 	return (
 		<>
-			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+			<Card sx={{ p: 1, borderRadius: 2, height: "100%" }}>
 				<CardContent
-					sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+					sx={{
+						height: "100%",
+						display: "flex",
+						flexDirection: "column",
+						p: 0,
+						"&:last-child": { pb: 0 },
+					}}
 				>
-					<Typography variant="h6" gutterBottom>
+					<Typography variant="h6" gutterBottom sx={{ px: 1, pt: 1, pb: 0.5 }}>
 						{title}
 					</Typography>
-					<Box sx={{ flex: 1, minHeight: 0, display: "flex" }}>
+					<Box
+						sx={{
+							flex: 1,
+							minHeight: 0,
+							display: "flex",
+							width: "100%",
+							height: "100%",
+						}}
+					>
 						<PieChart
 							series={[
 								{
@@ -143,9 +204,12 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 								},
 							]}
 							onItemClick={handlePieClick}
-							margin={{ right: 200 }}
+							margin={{ top: 5, bottom: 5, left: 5, right: 5 }}
+							hideLegend={true}
 							sx={{
 								cursor: "pointer",
+								width: "100%",
+								height: "100%",
 								"& .MuiPieArc-root": {
 									cursor: "pointer",
 								},

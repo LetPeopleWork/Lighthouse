@@ -283,10 +283,10 @@ describe("TotalWorkItemAgeRunChart", () => {
 		// This test simulates the bug report from Indonesia (UTC+7)
 		// Item SI-2205 started on Nov 12, 2025 in UTC
 		// When viewed on Nov 13, 2025, it should show age of 2 days, not 0 or 1
-		
+
 		const startDate = new Date("2025-11-12T00:00:00.000Z"); // Nov 12 in UTC
 		const itemStartedDate = new Date("2025-11-12T00:00:00.000Z"); // Same day in UTC
-		
+
 		const item: IWorkItem = {
 			id: 2205,
 			name: "Error message improvement",
@@ -320,7 +320,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 		);
 
 		expect(screen.getByTestId("base-run-chart")).toBeInTheDocument();
-		
+
 		// The component should calculate:
 		// Day 0: age = 1 (started same day)
 		// Day 1: age = 2 (one day after start)
@@ -331,7 +331,7 @@ describe("TotalWorkItemAgeRunChart", () => {
 		// Test that an item started today always has age of at least 1
 		const startDate = new Date("2025-11-15T00:00:00.000Z");
 		const itemStartedDate = new Date("2025-11-15T00:00:00.000Z");
-		
+
 		const item: IWorkItem = {
 			id: 1,
 			name: "Test Item",
