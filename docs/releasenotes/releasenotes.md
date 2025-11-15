@@ -12,10 +12,59 @@ Preview
  -->
 
 
-# Lighthouse v25.11.6.540
+# Lighthouse v25.11.15.1404
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Work Distribution Chart
+The Work Distribution chart provides a visual breakdown of how work items are distributed across their parent work items (such as Features, Epics, or Initiatives). This pie chart helps you understand where your team’s effort is focused.
+
+![Work Distribution Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/workDistributionChart.png)
+
+Hovering over the chart will show you which item had how many child items. Clicking on it will bring up a dialog with additional information.
+
+## Additional License Options
+We've extended the options in the license dialog for our premium users. You can now do the following things.
+
+### Clear a License
+If you want to free up the license slot you can clear the license. Alternatively, if you have an expired license and don't want to see the warning, you can also clear the information.
+
+### Renew your License
+Starting with the last month of your license validity, you can *Renew* your license. Clicking on the renew button will bring you directly to our homepage and prefill the dialog to order a new license, valid from the date your current one expires.
+
+### Email Support
+Through the ✉️ emoji, you can send us an email with your favorite mail client. Moreover, we'll prefill some information that will help us to better support you!
+
+You can find all details in the [documentation](https://docs.lighthouse.letpeople.work/licensing/licensing.html).
+
+## New Data Grid & Export
+We've replaced many custom tables we had in Lighthouse with a common component that we can reuse across the application. This will simplify the maintenance while bringing you a unified design, as well as some more options. You can now sort & filter based on the various columns!
+
+![Closed Items](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/closeditemsdialog.png)
+
+For premium users, the data grid also offers the possibility to export the data in the table in one click:
+- You can copy it to your clipboard, so you can paste it easily in chats or emails
+- You can export it as a csv file, if you want to do some custom analysis on it
+
+**Note:** While we did our best to make sure everything works as it did before, we may have missed a few things. If you experience side effects, or things simply not working anymore related to the new tables, please reach out!
+
+## Continuous Improvements & Bug Fixes
+- Removed "Load all Scenarios" from Demo Data as the demo data was fine tuned for individual scenarios and this leads to messy data
+- Adjusted Work Item Age over Time Chart to take different time zones into account
+- You can now directly link to the metrics of a project or team. The link will also include the selected time frame. This allows easy sharing with a colleague if you look at a specific time frame.
+- Update of various third party packages.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)- 
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
+- [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.6.540...v25.11.15.1404)
+
+# Lighthouse v25.11.6.540
 
 ## Total Work Item Age
 This release introduced two new metric widgets, that visualize the *Total Work Item Age*. The *Total Work Item Age* shows the cumulative age of all items currently in progress:
