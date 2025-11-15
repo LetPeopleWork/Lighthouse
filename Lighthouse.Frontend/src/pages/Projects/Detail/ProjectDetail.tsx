@@ -22,7 +22,7 @@ import ProjectMetricsView from "./ProjectMetricsView";
 
 const ProjectDetail: React.FC = () => {
 	const navigate = useNavigate();
-	const { id } = useParams<{ id: string }>();
+	const { id, tab } = useParams<{ id: string; tab?: string }>();
 	const projectId = Number(id);
 
 	let subscribedToUpdates = false;
@@ -32,7 +32,7 @@ const ProjectDetail: React.FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isProjectUpdating, setIsProjectUpdating] = useState<boolean>(false);
 	const [activeView, setActiveView] = useState<"forecast" | "metrics">(
-		"forecast",
+		tab === "metrics" ? "metrics" : "forecast",
 	);
 
 	const [projectSettings, setProjectSettings] =
@@ -111,6 +111,8 @@ const ProjectDetail: React.FC = () => {
 		newView: "forecast" | "metrics",
 	) => {
 		setActiveView(newView);
+		const tabPath = newView === "forecast" ? "forecasts" : newView;
+		navigate(`/projects/${id}/${tabPath}`, { replace: true });
 	};
 
 	useEffect(() => {

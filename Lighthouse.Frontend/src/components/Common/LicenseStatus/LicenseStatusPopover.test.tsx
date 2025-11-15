@@ -784,7 +784,9 @@ describe("LicenseStatusPopover", () => {
 
 			renderComponent({ licenseStatus });
 
-			expect(screen.queryByLabelText("Contact Support")).not.toBeInTheDocument();
+			expect(
+				screen.queryByLabelText("Contact Support"),
+			).not.toBeInTheDocument();
 		});
 
 		it("opens mailto link with correct information when Contact Support icon is clicked", async () => {
@@ -811,9 +813,13 @@ describe("LicenseStatusPopover", () => {
 			await user.click(supportIcon);
 
 			// Check that location.href was set with a mailto link
-			expect(globalThis.location.href).toContain("mailto:lighthouse@letpeople.work");
+			expect(globalThis.location.href).toContain(
+				"mailto:lighthouse@letpeople.work",
+			);
 			expect(globalThis.location.href).toContain("subject=");
-			expect(globalThis.location.href).toContain("Lighthouse%20Support%20Request");
+			expect(globalThis.location.href).toContain(
+				"Lighthouse%20Support%20Request",
+			);
 			expect(globalThis.location.href).toContain("body=");
 			expect(globalThis.location.href).toContain("John%20Doe");
 			expect(globalThis.location.href).toContain("john%40example.com");

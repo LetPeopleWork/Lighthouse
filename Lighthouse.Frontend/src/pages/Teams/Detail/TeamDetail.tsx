@@ -22,7 +22,7 @@ import TeamMetricsView from "./TeamMetricsView";
 
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
-	const { id } = useParams<{ id: string }>();
+	const { id, tab } = useParams<{ id: string; tab?: string }>();
 	const teamId = Number(id);
 
 	const { getTerm } = useTerminology();
@@ -40,7 +40,7 @@ const TeamDetail: React.FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
 	const [activeView, setActiveView] = useState<"forecast" | "metrics">(
-		"forecast",
+		tab === "metrics" ? "metrics" : "forecast",
 	);
 
 	const { teamService, updateSubscriptionService } =
@@ -119,6 +119,8 @@ const TeamDetail: React.FC = () => {
 		newView: "forecast" | "metrics",
 	) => {
 		setActiveView(newView);
+		const tabPath = newView === "forecast" ? "forecasts" : newView;
+		navigate(`/teams/${id}/${tabPath}`, { replace: true });
 	};
 
 	return (

@@ -86,12 +86,12 @@ const App: React.FC = () => {
 								<Routes>
 									<Route path="/" element={<OverviewDashboard />} />
 									<Route path="/teams">
-										<Route path=":id" element={<TeamDetail />} />
+										<Route path=":id/:tab?" element={<TeamDetail />} />
 										<Route path="edit/:id" element={<EditTeam />} />
 										<Route path="new" element={<EditTeam />} />
 									</Route>
 									<Route path="/projects">
-										<Route path=":id" element={<ProjectDetail />} />
+										<Route path=":id/:tab?" element={<ProjectDetail />} />
 										<Route path="edit/:id" element={<EditProject />} />
 										<Route path="new" element={<EditProject />} />
 									</Route>
