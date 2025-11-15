@@ -19,6 +19,9 @@ interface TotalWorkItemAgeRunChartProps {
  * Calculate the historical age of a work item on a specific date
  * Age = days between startedDate and the historical date + 1
  * (An item started today has age 1, not 0)
+ * 
+ * This matches the backend calculation: ((end.Date - start.Date).TotalDays) + 1
+ * We use UTC date-only comparison to avoid timezone issues.
  */
 const calculateHistoricalAge = (
 	item: IWorkItem,
@@ -26,9 +29,17 @@ const calculateHistoricalAge = (
 ): number => {
 	const started = new Date(item.startedDate);
 	const historical = new Date(historicalDate);
-	const diffMs = historical.getTime() - started.getTime();
+	
+	// Extract date-only components in UTC (matching backend's .Date property behavior)
+	const startDateOnly = Date.UTC(started.getUTCFullYear(), started.getUTCMonth(), started.getUTCDate());
+	const endDateOnly = Date.UTC(historical.getUTCFullYear(), historical.getUTCMonth(), historical.getUTCDate());
+	
+	// Calculate difference in days
+	const diffMs = endDateOnly - startDateOnly;
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-	return Math.max(0, diffDays + 1); // Add 1 so an item started today has age 1
+	
+	// Add 1 to match backend logic (item started today has age 1, not 0)
+	return Math.max(1, diffDays + 1);
 };
 
 const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
@@ -52,8 +63,11 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 
 		for (let dayIndex = 0; dayIndex < wipOverTimeData.history; dayIndex++) {
 			const items = wipOverTimeData.workItemsPerUnitOfTime[dayIndex] || [];
+			
+			// Create historical date using UTC to avoid timezone issues
+			// The startDate comes from the backend as UTC
 			const historicalDate = new Date(startDate);
-			historicalDate.setDate(historicalDate.getDate() + dayIndex);
+			historicalDate.setUTCDate(historicalDate.getUTCDate() + dayIndex);
 
 			// Calculate total age for all items on this day
 			const totalAge = items.reduce((sum, item) => {
@@ -80,8 +94,9 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 	const handleLineClick = (dataIndex: number) => {
 		const items = wipOverTimeData.workItemsPerUnitOfTime[dataIndex] || [];
 		if (items.length > 0) {
+			// Use UTC methods to match calculation logic
 			const day = new Date(startDate);
-			day.setDate(day.getDate() + dataIndex);
+			day.setUTCDate(day.getUTCDate() + dataIndex);
 			setSelectedDate(day);
 			const formattedDate = day.toLocaleDateString();
 			setDialogTitle(

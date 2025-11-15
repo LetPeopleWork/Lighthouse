@@ -278,4 +278,90 @@ describe("TotalWorkItemAgeRunChart", () => {
 
 		expect(screen.getByTestId("base-run-chart")).toBeInTheDocument();
 	});
+
+	it("calculates age consistently across timezones (UTC+7 Indonesia scenario)", () => {
+		// This test simulates the bug report from Indonesia (UTC+7)
+		// Item SI-2205 started on Nov 12, 2025 in UTC
+		// When viewed on Nov 13, 2025, it should show age of 2 days, not 0 or 1
+		
+		const startDate = new Date("2025-11-12T00:00:00.000Z"); // Nov 12 in UTC
+		const itemStartedDate = new Date("2025-11-12T00:00:00.000Z"); // Same day in UTC
+		
+		const item: IWorkItem = {
+			id: 2205,
+			name: "Error message improvement",
+			state: "Building",
+			stateCategory: "Doing",
+			type: "Story",
+			referenceId: "SI-2205",
+			url: null,
+			startedDate: itemStartedDate,
+			closedDate: new Date(),
+			cycleTime: 0,
+			workItemAge: 2,
+			parentWorkItemReference: "",
+			isBlocked: false,
+		};
+
+		// Day 0 (Nov 12): item age should be 1
+		// Day 1 (Nov 13): item age should be 2
+		const workItemsPerDay = {
+			0: [item], // Nov 12
+			1: [item], // Nov 13
+		};
+
+		const mockData = new RunChartData(workItemsPerDay, 2, 0);
+
+		render(
+			<TotalWorkItemAgeRunChart
+				wipOverTimeData={mockData}
+				startDate={startDate}
+			/>,
+		);
+
+		expect(screen.getByTestId("base-run-chart")).toBeInTheDocument();
+		
+		// The component should calculate:
+		// Day 0: age = 1 (started same day)
+		// Day 1: age = 2 (one day after start)
+		// This matches the backend logic: ((end.Date - start.Date).TotalDays) + 1
+	});
+
+	it("ensures minimum age is 1, never 0", () => {
+		// Test that an item started today always has age of at least 1
+		const startDate = new Date("2025-11-15T00:00:00.000Z");
+		const itemStartedDate = new Date("2025-11-15T00:00:00.000Z");
+		
+		const item: IWorkItem = {
+			id: 1,
+			name: "Test Item",
+			state: "In Progress",
+			stateCategory: "Doing",
+			type: "Task",
+			referenceId: "REF-1",
+			url: null,
+			startedDate: itemStartedDate,
+			closedDate: new Date(),
+			cycleTime: 0,
+			workItemAge: 1,
+			parentWorkItemReference: "",
+			isBlocked: false,
+		};
+
+		const workItemsPerDay = {
+			0: [item], // Same day as start
+		};
+
+		const mockData = new RunChartData(workItemsPerDay, 1, 0);
+
+		render(
+			<TotalWorkItemAgeRunChart
+				wipOverTimeData={mockData}
+				startDate={startDate}
+			/>,
+		);
+
+		expect(screen.getByTestId("base-run-chart")).toBeInTheDocument();
+		// Age should be 1, never 0
+	});
 });

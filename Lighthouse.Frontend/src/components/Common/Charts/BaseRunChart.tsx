@@ -29,7 +29,8 @@ const BaseRunChart: React.FC<BaseRunChartProps> = ({
 
 	const data = Array.from({ length: chartData.history }, (_, index) => {
 		const targetDate = new Date(startDate);
-		targetDate.setDate(targetDate.getDate() + index);
+		// Use UTC methods to avoid timezone issues with dates from backend
+		targetDate.setUTCDate(targetDate.getUTCDate() + index);
 
 		return {
 			day: targetDate.toLocaleDateString(),

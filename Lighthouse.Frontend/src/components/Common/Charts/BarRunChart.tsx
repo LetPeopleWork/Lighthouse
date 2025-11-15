@@ -51,7 +51,8 @@ const BarRunChart: React.FC<BarRunChartProps> = ({
 		const items = chartData.workItemsPerUnitOfTime[dataIndex] || [];
 		if (items.length > 0) {
 			const day = new Date(startDate);
-			day.setDate(day.getDate() + dataIndex);
+			// Use UTC methods to avoid timezone issues
+			day.setUTCDate(day.getUTCDate() + dataIndex);
 			const formattedDate = day.toLocaleDateString();
 			setDialogTitle(`${workItemsTerm} Closed on ${formattedDate}`);
 			setSelectedItems(items);
