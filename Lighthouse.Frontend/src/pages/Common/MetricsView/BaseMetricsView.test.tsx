@@ -1263,50 +1263,51 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-	it("refetches predictability data when entity changes", async () => {
-		const { rerender } = renderWithRouter(
-			<BaseMetricsView
-				entity={mockProject}
-				metricsService={mockMetricsService}
-				title="Features"
-				defaultDateRange={30}
-				doingStates={["To Do", "In Progress", "Review"]}
-			/>,
-		);
-
-		// Wait for initial load
-		await waitFor(() => {
-			expect(
-				mockMetricsService.getMultiItemForecastPredictabilityScore,
-			).toHaveBeenCalledTimes(1);
-		});
-
-		// Reset mock call counts
-		vi.clearAllMocks();
-
-		// Change entity - must wrap in MemoryRouter for rerender
-		rerender(
-			<MemoryRouter>
+		it("refetches predictability data when entity changes", async () => {
+			const { rerender } = renderWithRouter(
 				<BaseMetricsView
-					entity={mockTeam}
+					entity={mockProject}
 					metricsService={mockMetricsService}
-					title="Work Items"
+					title="Features"
 					defaultDateRange={30}
 					doingStates={["To Do", "In Progress", "Review"]}
-				/>
-			</MemoryRouter>,
-		);
+				/>,
+			);
 
-		// Verify predictability data is fetched again with new entity
-		await waitFor(() => {
-			expect(
-				mockMetricsService.getMultiItemForecastPredictabilityScore,
-			).toHaveBeenCalledTimes(1);
-			expect(
-				mockMetricsService.getMultiItemForecastPredictabilityScore,
-			).toHaveBeenCalledWith(mockTeam.id, expect.any(Date), expect.any(Date));
+			// Wait for initial load
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledTimes(1);
+			});
+
+			// Reset mock call counts
+			vi.clearAllMocks();
+
+			// Change entity - must wrap in MemoryRouter for rerender
+			rerender(
+				<MemoryRouter>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</MemoryRouter>,
+			);
+
+			// Verify predictability data is fetched again with new entity
+			await waitFor(() => {
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledTimes(1);
+				expect(
+					mockMetricsService.getMultiItemForecastPredictabilityScore,
+				).toHaveBeenCalledWith(mockTeam.id, expect.any(Date), expect.any(Date));
+			});
 		});
-	});		it("handles predictability data fetch errors gracefully", async () => {
+		it("handles predictability data fetch errors gracefully", async () => {
 			const errorPredictabilityService: IMetricsService<IWorkItem> = {
 				...mockMetricsService,
 				getMultiItemForecastPredictabilityScore: vi
@@ -2048,7 +2049,6 @@ describe("BaseMetricsView component", () => {
 
 			// Get initial dates
 			const initialStartDate = screen.getByTestId("start-date").textContent;
-			const initialEndDate = screen.getByTestId("end-date").textContent;
 
 			// Change start date
 			fireEvent.click(screen.getByTestId("change-start-date"));
