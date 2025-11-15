@@ -212,12 +212,13 @@ describe("TeamFeatureList component", () => {
 
 		expect(screen.getByText("Feature Name")).toBeInTheDocument();
 		expect(screen.getByText("Progress")).toBeInTheDocument();
-		expect(screen.getByText("Forecasts")).toBeInTheDocument();
+		expect(screen.getByText("Parent")).toBeInTheDocument();
 		expect(screen.getByText("Projects")).toBeInTheDocument();
+		expect(screen.getByText("Forecasts")).toBeInTheDocument();
 		expect(screen.getByText("Updated On")).toBeInTheDocument();
 	});
 
-	it("should render toggles for hide completed and group by parent", async () => {
+	it("should render toggle for hide completed features", async () => {
 		render(
 			<MockApiServiceProvider>
 				<MemoryRouter>
@@ -231,9 +232,6 @@ describe("TeamFeatureList component", () => {
 
 		expect(
 			screen.getByTestId("hide-completed-features-toggle"),
-		).toBeInTheDocument();
-		expect(
-			screen.getByTestId("group-features-by-parent-toggle"),
 		).toBeInTheDocument();
 	});
 });

@@ -13,8 +13,10 @@ import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
+import ParentWorkItemCell from "../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
+import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -33,16 +35,15 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	const [features, setFeatures] = useState<IFeature[]>([]);
 	const [hideCompletedFeatures, setHideCompletedFeatures] =
 		useState<boolean>(false);
-	const [groupFeaturesByParent, setGroupFeaturesByParent] =
-		useState<boolean>(false);
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
-	// Storage keys for toggles
+	const parentMap = useParentWorkItems(features);
+
+	// Storage key for toggle
 	const storageKey = `lighthouse_hide_completed_features_team_${team.id}`;
-	const groupingStorageKey = `lighthouse_group_features_by_parent_team_${team.id}`;
 
 	// Load features
 	useEffect(() => {
@@ -55,18 +56,13 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 		fetchFeatures();
 	}, [team.features, featureService]);
 
-	// Load toggle preferences from localStorage
+	// Load toggle preference from localStorage
 	useEffect(() => {
 		const storedPreference = localStorage.getItem(storageKey);
 		if (storedPreference !== null) {
 			setHideCompletedFeatures(storedPreference === "true");
 		}
-
-		const storedGroupingPreference = localStorage.getItem(groupingStorageKey);
-		if (storedGroupingPreference !== null) {
-			setGroupFeaturesByParent(storedGroupingPreference === "true");
-		}
-	}, [storageKey, groupingStorageKey]);
+	}, [storageKey]);
 
 	// Fetch features in progress
 	useEffect(() => {
@@ -82,14 +78,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 		const newValue = event.target.checked;
 		setHideCompletedFeatures(newValue);
 		localStorage.setItem(storageKey, newValue.toString());
-	};
-
-	const handleGroupingToggleChange = (
-		event: React.ChangeEvent<HTMLInputElement>,
-	) => {
-		const newValue = event.target.checked;
-		setGroupFeaturesByParent(newValue);
-		localStorage.setItem(groupingStorageKey, newValue.toString());
 	};
 
 	// Filter features based on the "hide completed" setting
@@ -153,6 +141,18 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				),
 			},
 			{
+				field: "parent",
+				headerName: "Parent",
+				width: 300,
+				sortable: false,
+				renderCell: ({ row }) => (
+					<ParentWorkItemCell
+						parentReference={row.parentWorkItemReference}
+						parentMap={parentMap}
+					/>
+				),
+			},
+			{
 				field: "projects",
 				headerName: "Projects",
 				width: 200,
@@ -182,28 +182,12 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				),
 			},
 		],
-		[featureTerm, team, featuresInProgress],
-	); // Note: Grouping by parent is not yet implemented in DataGrid version
-	// This will be added in a follow-up enhancement
-	if (groupFeaturesByParent) {
-		// TODO: Implement grouping in DataGrid
-		console.warn("Grouping by parent is not yet supported in DataGrid mode");
-	}
+		[featureTerm, team, featuresInProgress, parentMap],
+	);
 
 	return (
 		<TableContainer component={Paper}>
 			<Box sx={{ display: "flex", justifyContent: "flex-end", p: 2, gap: 2 }}>
-				<FormControlLabel
-					control={
-						<Switch
-							checked={groupFeaturesByParent}
-							onChange={handleGroupingToggleChange}
-							color="primary"
-							data-testid="group-features-by-parent-toggle"
-						/>
-					}
-					label={`Group ${featuresTerm} by Parent`}
-				/>
 				<FormControlLabel
 					control={
 						<Switch
