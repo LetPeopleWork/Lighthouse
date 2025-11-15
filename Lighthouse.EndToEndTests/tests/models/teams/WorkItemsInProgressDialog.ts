@@ -8,7 +8,7 @@ export class WorkItemsInProgressDialog {
 	}
 
 	async close(): Promise<void> {
-		const closeButton = this.page.getByRole("button");
+		const closeButton = this.page.getByRole("button").first();
 		await closeButton.click();
 	}
 }
