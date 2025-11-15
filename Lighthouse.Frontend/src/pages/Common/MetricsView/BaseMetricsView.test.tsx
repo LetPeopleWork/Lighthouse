@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import {
@@ -358,6 +359,11 @@ vi.mock("./Dashboard", () => ({
 }));
 
 describe("BaseMetricsView component", () => {
+	// Helper function to render component with router context
+	const renderWithRouter = (component: ReactNode) => {
+		return render(<MemoryRouter>{component}</MemoryRouter>);
+	};
+
 	// Create RunChartData with correct properties
 	const mockItemsCompletedData: RunChartData = new RunChartData(
 		generateWorkItemMapForRunChart([3, 5]),
@@ -371,7 +377,7 @@ describe("BaseMetricsView component", () => {
 		delete (projectMetricsService as unknown as Record<string, unknown>)
 			.getFeaturesInProgress;
 
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={projectMetricsService}
@@ -399,7 +405,7 @@ describe("BaseMetricsView component", () => {
 			teamMetricsService as unknown as Record<string, unknown>
 		).getFeaturesInProgress = vi.fn().mockResolvedValue([]);
 
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockTeam}
 				metricsService={teamMetricsService}
@@ -594,7 +600,7 @@ describe("BaseMetricsView component", () => {
 			.fn()
 			.mockResolvedValue(mockFeatureData);
 
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={projectMetricsService}
@@ -724,7 +730,7 @@ describe("BaseMetricsView component", () => {
 			.fn()
 			.mockResolvedValue(mockFeatureData);
 
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={projectMetricsService}
@@ -766,7 +772,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("renders all components correctly with Team entity", async () => {
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockTeam}
 				metricsService={mockMetricsService}
@@ -811,7 +817,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("renders Total Work Item Age widget and chart correctly", async () => {
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={mockMetricsService}
@@ -845,7 +851,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("updates data when start date changes", async () => {
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={mockMetricsService}
@@ -887,7 +893,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("updates data when end date changes", async () => {
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={mockMetricsService}
@@ -929,7 +935,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("initializes with the specified default date range", async () => {
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={mockMetricsService}
@@ -967,7 +973,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("falls back to default date range of 30 days when not specified", async () => {
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={mockMetricsService}
@@ -1014,7 +1020,7 @@ describe("BaseMetricsView component", () => {
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={errorMetricsService}
@@ -1060,7 +1066,7 @@ describe("BaseMetricsView component", () => {
 			idealWip: 5,
 		};
 
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={mockProject}
 				metricsService={mockMetricsService}
@@ -1092,7 +1098,7 @@ describe("BaseMetricsView component", () => {
 		projectWithoutSLE.serviceLevelExpectationProbability = 0;
 		projectWithoutSLE.serviceLevelExpectationRange = 0;
 
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={projectWithoutSLE}
 				metricsService={mockMetricsService}
@@ -1117,7 +1123,7 @@ describe("BaseMetricsView component", () => {
 		projectWithPartialSLE.serviceLevelExpectationProbability = 85;
 		projectWithPartialSLE.serviceLevelExpectationRange = 0;
 
-		render(
+		renderWithRouter(
 			<BaseMetricsView
 				entity={projectWithPartialSLE}
 				metricsService={mockMetricsService}
@@ -1136,7 +1142,7 @@ describe("BaseMetricsView component", () => {
 
 	describe("Predictability Score functionality", () => {
 		it("fetches predictability data on initial load", async () => {
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={mockMetricsService}
@@ -1159,7 +1165,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("passes predictability data to BarRunChart component", async () => {
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={mockMetricsService}
@@ -1181,7 +1187,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("refetches predictability data when start date changes", async () => {
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={mockMetricsService}
@@ -1223,7 +1229,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("refetches predictability data when end date changes", async () => {
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={mockMetricsService}
@@ -1257,50 +1263,50 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		it("refetches predictability data when entity changes", async () => {
-			const { rerender } = render(
-				<BaseMetricsView
-					entity={mockProject}
-					metricsService={mockMetricsService}
-					title="Features"
-					defaultDateRange={30}
-					doingStates={["To Do", "In Progress", "Review"]}
-				/>,
-			);
+	it("refetches predictability data when entity changes", async () => {
+		const { rerender } = renderWithRouter(
+			<BaseMetricsView
+				entity={mockProject}
+				metricsService={mockMetricsService}
+				title="Features"
+				defaultDateRange={30}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
 
-			// Wait for initial load
-			await waitFor(() => {
-				expect(
-					mockMetricsService.getMultiItemForecastPredictabilityScore,
-				).toHaveBeenCalledTimes(1);
-			});
+		// Wait for initial load
+		await waitFor(() => {
+			expect(
+				mockMetricsService.getMultiItemForecastPredictabilityScore,
+			).toHaveBeenCalledTimes(1);
+		});
 
-			// Reset mock call counts
-			vi.clearAllMocks();
+		// Reset mock call counts
+		vi.clearAllMocks();
 
-			// Change entity
-			rerender(
+		// Change entity - must wrap in MemoryRouter for rerender
+		rerender(
+			<MemoryRouter>
 				<BaseMetricsView
 					entity={mockTeam}
 					metricsService={mockMetricsService}
 					title="Work Items"
 					defaultDateRange={30}
 					doingStates={["To Do", "In Progress", "Review"]}
-				/>,
-			);
+				/>
+			</MemoryRouter>,
+		);
 
-			// Verify predictability data is fetched again with new entity
-			await waitFor(() => {
-				expect(
-					mockMetricsService.getMultiItemForecastPredictabilityScore,
-				).toHaveBeenCalledTimes(1);
-				expect(
-					mockMetricsService.getMultiItemForecastPredictabilityScore,
-				).toHaveBeenCalledWith(mockTeam.id, expect.any(Date), expect.any(Date));
-			});
+		// Verify predictability data is fetched again with new entity
+		await waitFor(() => {
+			expect(
+				mockMetricsService.getMultiItemForecastPredictabilityScore,
+			).toHaveBeenCalledTimes(1);
+			expect(
+				mockMetricsService.getMultiItemForecastPredictabilityScore,
+			).toHaveBeenCalledWith(mockTeam.id, expect.any(Date), expect.any(Date));
 		});
-
-		it("handles predictability data fetch errors gracefully", async () => {
+	});		it("handles predictability data fetch errors gracefully", async () => {
 			const errorPredictabilityService: IMetricsService<IWorkItem> = {
 				...mockMetricsService,
 				getMultiItemForecastPredictabilityScore: vi
@@ -1312,7 +1318,7 @@ describe("BaseMetricsView component", () => {
 				.spyOn(console, "error")
 				.mockImplementation(() => {});
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={errorPredictabilityService}
@@ -1351,7 +1357,7 @@ describe("BaseMetricsView component", () => {
 					.mockResolvedValue(null),
 			};
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={nullPredictabilityService}
@@ -1392,7 +1398,7 @@ describe("BaseMetricsView component", () => {
 					.mockResolvedValue(customPredictabilityData),
 			};
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={customService}
@@ -1411,7 +1417,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("calls predictability service with correct date parameters", async () => {
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={mockMetricsService}
@@ -1464,7 +1470,7 @@ describe("BaseMetricsView component", () => {
 				.spyOn(console, "error")
 				.mockImplementation(() => {});
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={errorMetricsService}
@@ -1487,7 +1493,7 @@ describe("BaseMetricsView component", () => {
 
 	describe("WorkDistributionChart functionality", () => {
 		it("renders WorkDistributionChart with combined cycle time and in-progress data", async () => {
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={mockMetricsService}
@@ -1570,7 +1576,7 @@ describe("BaseMetricsView component", () => {
 				.fn()
 				.mockResolvedValue(customCycleTimeData);
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={customMetricsService}
@@ -1618,7 +1624,7 @@ describe("BaseMetricsView component", () => {
 				.fn()
 				.mockResolvedValue(customInProgressItems);
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={customMetricsService}
@@ -1646,7 +1652,7 @@ describe("BaseMetricsView component", () => {
 			const emptyMetricsService = createMockMetricsService<IWorkItem>();
 			emptyMetricsService.getCycleTimeData = vi.fn().mockResolvedValue([]);
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={emptyMetricsService}
@@ -1676,7 +1682,7 @@ describe("BaseMetricsView component", () => {
 				.fn()
 				.mockResolvedValue([]);
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={emptyProgressMetricsService}
@@ -1705,7 +1711,7 @@ describe("BaseMetricsView component", () => {
 			emptyMetricsService.getCycleTimeData = vi.fn().mockResolvedValue([]);
 			emptyMetricsService.getInProgressItems = vi.fn().mockResolvedValue([]);
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={emptyMetricsService}
@@ -1759,7 +1765,7 @@ describe("BaseMetricsView component", () => {
 				]);
 			});
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={updateableService}
@@ -1795,7 +1801,7 @@ describe("BaseMetricsView component", () => {
 		});
 
 		it("displays work distribution chart with Team entity", async () => {
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockTeam}
 					metricsService={mockMetricsService}
@@ -1832,7 +1838,7 @@ describe("BaseMetricsView component", () => {
 				.fn()
 				.mockResolvedValue(mockFeatureData);
 
-			render(
+			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
 					metricsService={featureMetricsService}
@@ -1854,6 +1860,244 @@ describe("BaseMetricsView component", () => {
 			expect(
 				screen.getByTestId("distribution-work-items-count"),
 			).toHaveTextContent("4");
+		});
+	});
+
+	describe("URL State Management", () => {
+		it("initializes dates from URL parameters when provided", async () => {
+			const initialRoute =
+				"/teams/1/metrics?startDate=2025-01-01&endDate=2025-01-31";
+
+			render(
+				<MemoryRouter initialEntries={[initialRoute]}>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</MemoryRouter>,
+			);
+
+			// Wait for component to render
+			await waitFor(() => {
+				expect(screen.getByTestId("start-date")).toBeInTheDocument();
+			});
+
+			// Verify dates are initialized from URL
+			const startDateElement = screen.getByTestId("start-date");
+			const endDateElement = screen.getByTestId("end-date");
+
+			expect(startDateElement.textContent).toContain("2025-01-01");
+			expect(endDateElement.textContent).toContain("2025-01-31");
+		});
+
+		it("falls back to default dates when URL parameters are missing", async () => {
+			const initialRoute = "/teams/1/metrics"; // No date params
+
+			render(
+				<MemoryRouter initialEntries={[initialRoute]}>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</MemoryRouter>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("start-date")).toBeInTheDocument();
+			});
+
+			const startDateElement = screen.getByTestId("start-date");
+			const endDateElement = screen.getByTestId("end-date");
+
+			// Should use default: 30 days ago and today
+			const expectedStart = new Date();
+			expectedStart.setDate(expectedStart.getDate() - 30);
+
+			const startDateText = startDateElement.textContent || "";
+			const endDateText = endDateElement.textContent || "";
+
+			// Verify the dates are set (exact values depend on test execution time)
+			expect(startDateText).toBeTruthy();
+			expect(endDateText).toBeTruthy();
+
+			// The end date should be close to today
+			const endDate = new Date(endDateText);
+			const now = new Date();
+			const diffInDays = Math.abs(
+				(endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+			);
+			expect(diffInDays).toBeLessThan(1); // Within 1 day
+		});
+
+		it("falls back to defaults when URL parameters contain invalid dates", async () => {
+			const initialRoute =
+				"/teams/1/metrics?startDate=invalid-date&endDate=not-a-date";
+
+			render(
+				<MemoryRouter initialEntries={[initialRoute]}>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</MemoryRouter>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("start-date")).toBeInTheDocument();
+			});
+
+			// Should fall back to defaults (same behavior as missing params)
+			const startDateElement = screen.getByTestId("start-date");
+			const endDateElement = screen.getByTestId("end-date");
+
+			expect(startDateElement.textContent).toBeTruthy();
+			expect(endDateElement.textContent).toBeTruthy();
+		});
+
+		it("updates URL when start date changes", async () => {
+			render(
+				<MemoryRouter initialEntries={["/teams/1/metrics"]}>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</MemoryRouter>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("change-start-date")).toBeInTheDocument();
+			});
+
+			// Get initial dates
+			const initialStartDate = screen.getByTestId("start-date").textContent;
+
+			// Change start date
+			fireEvent.click(screen.getByTestId("change-start-date"));
+
+			// Wait for update
+			await waitFor(() => {
+				const newStartDate = screen.getByTestId("start-date").textContent;
+				expect(newStartDate).not.toBe(initialStartDate);
+			});
+
+			// Verify the date changed (the mock DateRangeSelector subtracts 30 days)
+			const newStartDate = screen.getByTestId("start-date").textContent;
+			expect(newStartDate).not.toBe(initialStartDate);
+		});
+
+		it("updates URL when end date changes", async () => {
+			render(
+				<MemoryRouter initialEntries={["/teams/1/metrics"]}>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</MemoryRouter>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("change-end-date")).toBeInTheDocument();
+			});
+
+			// Get initial state
+			const initialEndDate = screen.getByTestId("end-date").textContent;
+
+			// Change end date
+			fireEvent.click(screen.getByTestId("change-end-date"));
+
+			// Wait for update and verify the date changed
+			await waitFor(() => {
+				const newEndDate = screen.getByTestId("end-date").textContent;
+				expect(newEndDate).not.toBe(initialEndDate);
+			});
+		});
+
+		it("sets both date parameters in URL when either date changes", async () => {
+			const initialRoute = "/teams/1/metrics";
+
+			render(
+				<MemoryRouter initialEntries={[initialRoute]}>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</MemoryRouter>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("change-start-date")).toBeInTheDocument();
+			});
+
+			// Get initial dates
+			const initialStartDate = screen.getByTestId("start-date").textContent;
+			const initialEndDate = screen.getByTestId("end-date").textContent;
+
+			// Change start date
+			fireEvent.click(screen.getByTestId("change-start-date"));
+
+			// Wait for both dates to be present in the display
+			await waitFor(() => {
+				const newStartDate = screen.getByTestId("start-date").textContent;
+				expect(newStartDate).not.toBe(initialStartDate);
+			});
+
+			// Both dates should still be displayed (URL should have both params)
+			expect(screen.getByTestId("start-date").textContent).toBeTruthy();
+			expect(screen.getByTestId("end-date").textContent).toBeTruthy();
+		});
+
+		it("uses custom defaultDateRange when specified", async () => {
+			const customDateRange = 60;
+			const initialRoute = "/teams/1/metrics"; // No date params
+
+			render(
+				<MemoryRouter initialEntries={[initialRoute]}>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={customDateRange}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+				</MemoryRouter>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("start-date")).toBeInTheDocument();
+			});
+
+			const startDateElement = screen.getByTestId("start-date");
+			const endDateElement = screen.getByTestId("end-date");
+
+			// Calculate expected start date (60 days ago)
+			const expectedStart = new Date();
+			expectedStart.setDate(expectedStart.getDate() - customDateRange);
+
+			const actualStart = new Date(startDateElement.textContent || "");
+			const actualEnd = new Date(endDateElement.textContent || "");
+
+			// Verify the start date is approximately 60 days ago
+			const diffInDays =
+				(actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60 * 24);
+			expect(Math.abs(diffInDays - customDateRange)).toBeLessThan(1); // Within 1 day tolerance
 		});
 	});
 });

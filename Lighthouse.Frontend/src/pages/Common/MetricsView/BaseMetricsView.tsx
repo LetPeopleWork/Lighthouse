@@ -1,5 +1,6 @@
 import { Grid } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
@@ -78,16 +79,48 @@ export const BaseMetricsView = <
 	const [predictabilityData, setPredictabilityData] =
 		useState<IForecastPredictabilityScore | null>(null);
 
-	const [startDate, setStartDate] = useState<Date>(() => {
+	// URL state management for dates
+	const [searchParams, setSearchParams] = useSearchParams();
+
+	// Helper function to format date as YYYY-MM-DD
+	const formatDate = (date: Date): string => {
+		return date.toISOString().split("T")[0];
+	};
+
+	// Helper function to parse date from string
+	const parseDate = (dateString: string): Date | null => {
+		const date = new Date(dateString);
+		return Number.isNaN(date.getTime()) ? null : date;
+	};
+
+	// Calculate default start date
+	const getDefaultStartDate = (): Date => {
 		const date = new Date();
 		date.setDate(date.getDate() - defaultDateRange);
 		return date;
+	};
+
+	// Initialize dates from URL or defaults
+	const [startDate, setStartDate] = useState<Date>(() => {
+		const urlStartDate = searchParams.get("startDate");
+		if (urlStartDate) {
+			const parsed = parseDate(urlStartDate);
+			if (parsed) return parsed;
+		}
+		return getDefaultStartDate();
 	});
 
 	const [serviceLevelExpectation, setServiceLevelExpectation] =
 		useState<IPercentileValue | null>(null);
 
-	const [endDate, setEndDate] = useState<Date>(new Date());
+	const [endDate, setEndDate] = useState<Date>(() => {
+		const urlEndDate = searchParams.get("endDate");
+		if (urlEndDate) {
+			const parsed = parseDate(urlEndDate);
+			if (parsed) return parsed;
+		}
+		return new Date();
+	});
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -95,6 +128,27 @@ export const BaseMetricsView = <
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
 	const dashboardId = `${"getFeaturesInProgress" in metricsService ? "Team" : "Project"}_${entity.id}`;
+
+	// Helper to update URL with both date parameters
+	const updateDateParams = (start: Date, end: Date) => {
+		const newParams = new URLSearchParams(searchParams);
+		newParams.set("startDate", formatDate(start));
+		newParams.set("endDate", formatDate(end));
+		setSearchParams(newParams, { replace: true });
+	};
+
+	// Handler for date changes that updates URL params
+	const handleStartDateChange = (date: Date | null) => {
+		if (!date) return;
+		setStartDate(date);
+		updateDateParams(date, endDate);
+	};
+
+	const handleEndDateChange = (date: Date | null) => {
+		if (!date) return;
+		setEndDate(date);
+		updateDateParams(startDate, date);
+	};
 
 	useEffect(() => {
 		const fetchPredictabilityData = async () => {
@@ -441,8 +495,8 @@ export const BaseMetricsView = <
 			<DashboardHeader
 				startDate={startDate}
 				endDate={endDate}
-				onStartDateChange={(date) => date && setStartDate(date)}
-				onEndDateChange={(date) => date && setEndDate(date)}
+				onStartDateChange={handleStartDateChange}
+				onEndDateChange={handleEndDateChange}
 				dashboardId={dashboardId}
 			/>
 
