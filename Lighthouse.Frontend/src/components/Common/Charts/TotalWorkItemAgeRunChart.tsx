@@ -6,6 +6,7 @@ import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { getAgeInDaysFromStart } from "../../../utils/date/age";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import BaseRunChart from "./BaseRunChart";
 
@@ -17,7 +18,7 @@ interface TotalWorkItemAgeRunChartProps {
 
 /**
  * Calculate the historical age of a work item on a specific date
- * Age = days between startedDate and the historical date + 1
+ * Age = days between startedDate and the historical date
  * (An item started today has age 1, not 0)
  *
  * This matches the backend calculation: ((end.Date - start.Date).TotalDays) + 1
@@ -27,27 +28,7 @@ const calculateHistoricalAge = (
 	item: IWorkItem,
 	historicalDate: Date,
 ): number => {
-	const started = new Date(item.startedDate);
-	const historical = new Date(historicalDate);
-
-	// Extract date-only components in UTC (matching backend's .Date property behavior)
-	const startDateOnly = Date.UTC(
-		started.getUTCFullYear(),
-		started.getUTCMonth(),
-		started.getUTCDate(),
-	);
-	const endDateOnly = Date.UTC(
-		historical.getUTCFullYear(),
-		historical.getUTCMonth(),
-		historical.getUTCDate(),
-	);
-
-	// Calculate difference in days
-	const diffMs = endDateOnly - startDateOnly;
-	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-	// Add 1 to match backend logic (item started today has age 1, not 0)
-	return Math.max(1, diffDays + 1);
+	return getAgeInDaysFromStart(item.startedDate, historicalDate);
 };
 
 const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
@@ -197,12 +178,14 @@ const TotalWorkItemAgeRunChart: React.FC<TotalWorkItemAgeRunChartProps> = ({
 				additionalColumnTitle={workItemAgeTerm}
 				additionalColumnDescription="days"
 				additionalColumnContent={(item) => {
-					// Calculate historical age for the selected date
+					// Calculate historical age for the selected date or use
+					// the current reference date so the dialog shows a value
+					// consistent with the chart calculation.
 					if (selectedDate) {
 						return calculateHistoricalAge(item, selectedDate);
 					}
-					// Fallback to current age if no date selected
-					return item.workItemAge;
+
+					return calculateHistoricalAge(item, new Date());
 				}}
 			/>
 		</>
