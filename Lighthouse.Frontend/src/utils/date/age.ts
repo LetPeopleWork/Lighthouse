@@ -3,7 +3,8 @@ export const getAgeInDaysFromStart = (
 	startDate: Date | string,
 	referenceDate: Date,
 ): number => {
-	const start = startDate instanceof Date ? startDate : new Date(String(startDate));
+	const start =
+		startDate instanceof Date ? startDate : new Date(String(startDate));
 	// Work out age in days using UTC date-only arithmetic to avoid timezone issues
 	const startDateOnly = Date.UTC(
 		start.getUTCFullYear(),
