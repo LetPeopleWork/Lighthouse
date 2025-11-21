@@ -469,6 +469,40 @@ jobs:
             --build-arg VERSION=$VERSION \
             --push .
 
+      - name: Pull and verify Docker image
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          VERSION=${{ needs.tag.outputs.fileversion }}
+          
+          # Pull the amd64 version for testing
+          docker pull --platform linux/amd64 ghcr.io/$REPO_NAME:$VERSION
+
+      - name: Run Docker container for health check
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          VERSION=${{ needs.tag.outputs.fileversion }}
+          
+          # Run container in detached mode with SQLite
+          docker run -d --name lighthouse-test \
+            -p 443:443 \
+            -e Database__Provider=sqlite \
+            -e Database__ConnectionString="Data Source=lighthouse.db" \
+            ghcr.io/$REPO_NAME:$VERSION
+
+      - name: Wait for Lighthouse to start
+        run: |
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:443; do sleep 1; done'
+          echo "Server is ready!"
+
+      - name: Cleanup test container
+        if: always()
+        run: |
+          echo "Container logs:"
+          docker logs lighthouse-test || true
+          docker stop lighthouse-test || true
+          docker rm lighthouse-test || true
+
   verifypostgres:
     name: Verify Lighthouse against Postgres
     runs-on: ubuntu-latest
