@@ -28,6 +28,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	rows: T[];
 	/** Array of column definitions */
 	columns: DataGridColumn<T>[];
+	/** Unique identifier for localStorage persistence of column visibility. Required. Use format: 'feature-grid', 'team-members-grid', etc. */
+	storageKey: string;
 	/** Unique identifier field name for rows */
 	idField?: string;
 	/** Loading state */

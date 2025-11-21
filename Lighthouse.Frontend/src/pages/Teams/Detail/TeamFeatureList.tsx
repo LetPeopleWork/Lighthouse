@@ -203,6 +203,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			<DataGridBase
 				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
 				columns={columns}
+				storageKey={`team-features-${team.id}`}
 				loading={features.length === 0}
 			/>
 		</TableContainer>

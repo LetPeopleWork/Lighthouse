@@ -474,6 +474,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					<DataGridBase
 						rows={filteredData as (IFeatureOwner & GridValidRowModel)[]}
 						columns={columns}
+						storageKey={`data-overview-${api}`}
 					/>
 				</Box>
 			)}

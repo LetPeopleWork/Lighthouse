@@ -253,6 +253,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 			<DataGridBase
 				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
 				columns={columns}
+				storageKey={`project-features-${project.id}`}
 				loading={features.length === 0}
 			/>
 		</TableContainer>

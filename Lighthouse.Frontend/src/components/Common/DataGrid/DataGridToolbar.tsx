@@ -8,16 +8,19 @@ import { useCallback, useState } from "react";
 interface DataGridToolbarProps {
 	/** Whether user has premium features available */
 	canUsePremiumFeatures?: boolean;
+	/** Whether export functionality is enabled */
+	enableExport?: boolean;
 	/** Custom filename for CSV export (without extension) */
 	exportFileName?: string;
 }
 
 /**
  * Custom toolbar for DataGrid with CSV export functionality
- * Export feature is gated behind premium license
+ * Export features are gated behind premium license
  */
 const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	canUsePremiumFeatures = false,
+	enableExport = false,
 	exportFileName,
 }) => {
 	const apiRef = useGridApiContext();
@@ -64,13 +67,14 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 			const textContent = allRows.map((row) => row.join("\t")).join("\n");
 
 			// HTML table format (preserves formatting in emails/rich text editors)
-			const escapeHtml = (text: string) =>
-				text
-					.replace(/&/g, "&amp;")
-					.replace(/</g, "&lt;")
-					.replace(/>/g, "&gt;")
-					.replace(/"/g, "&quot;");
-
+			const escapeHtml = (text: string) => {
+				let result = text;
+				result = result.replaceAll("&", "&amp;");
+				result = result.replaceAll("<", "&lt;");
+				result = result.replaceAll(">", "&gt;");
+				result = result.replaceAll('"', "&quot;");
+				return result;
+			};
 			const htmlContent = `
 				<table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse;">
 					<thead>
@@ -142,7 +146,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 						stringValue.includes("\n") ||
 						stringValue.includes('"')
 					) {
-						return `"${stringValue.replace(/"/g, '""')}"`;
+						return `"${stringValue.replaceAll('"', '""')}"`;
 					}
 					return stringValue;
 				});
@@ -165,7 +169,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 			link.download = `${generateFileName()}.csv`;
 			document.body.appendChild(link);
 			link.click();
-			document.body.removeChild(link);
+			link.remove();
 			URL.revokeObjectURL(url);
 		} catch (error) {
 			console.error("Failed to export CSV:", error);
@@ -173,42 +177,58 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	}, [apiRef, canUsePremiumFeatures, generateFileName]);
 
 	// Determine tooltip messages
-	const copyTooltip = canUsePremiumFeatures
-		? copyStatus === "copied"
-			? "Copied!"
-			: "Copy to Clipboard"
-		: "Premium feature - Upgrade to use";
+	let copyTooltip = "Copy to Clipboard";
+	if (!canUsePremiumFeatures) {
+		copyTooltip = "Premium feature - Upgrade to use";
+	} else if (copyStatus === "copied") {
+		copyTooltip = "Copied!";
+	}
 
 	const csvTooltip = canUsePremiumFeatures
 		? "Export to CSV"
 		: "Premium feature - Upgrade to use";
 
 	return (
-		<Box sx={{ display: "flex", gap: 0.5, p: 0.5, justifyContent: "flex-end" }}>
-			<Tooltip title={copyTooltip}>
-				<span>
-					<IconButton
-						onClick={handleCopyToClipboard}
-						disabled={!canUsePremiumFeatures}
-						size="small"
-						data-testid="copy-button"
-					>
-						<ContentCopyIcon fontSize="small" />
-					</IconButton>
-				</span>
-			</Tooltip>
-			<Tooltip title={csvTooltip}>
-				<span>
-					<IconButton
-						onClick={handleExportToCSV}
-						disabled={!canUsePremiumFeatures}
-						size="small"
-						data-testid="export-button"
-					>
-						<FileDownloadIcon fontSize="small" />
-					</IconButton>
-				</span>
-			</Tooltip>
+		<Box
+			sx={{
+				display: "flex",
+				gap: 0.5,
+				p: 1,
+				justifyContent: "flex-end",
+				alignItems: "center",
+				borderBottom: "1px solid",
+				borderColor: "divider",
+			}}
+		>
+			{/* Export features */}
+			{enableExport && (
+				<>
+					<Tooltip title={copyTooltip}>
+						<span>
+							<IconButton
+								onClick={handleCopyToClipboard}
+								disabled={!canUsePremiumFeatures}
+								size="small"
+								data-testid="copy-button"
+							>
+								<ContentCopyIcon fontSize="small" />
+							</IconButton>
+						</span>
+					</Tooltip>
+					<Tooltip title={csvTooltip}>
+						<span>
+							<IconButton
+								onClick={handleExportToCSV}
+								disabled={!canUsePremiumFeatures}
+								size="small"
+								data-testid="export-button"
+							>
+								<FileDownloadIcon fontSize="small" />
+							</IconButton>
+						</span>
+					</Tooltip>
+				</>
+			)}
 		</Box>
 	);
 };

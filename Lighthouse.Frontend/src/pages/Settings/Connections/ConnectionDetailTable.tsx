@@ -90,6 +90,7 @@ const ConnectionDetailTable: React.FC<ConnectionDetailTableProps> = ({
 					GridValidRowModel)[]
 			}
 			columns={columns}
+			storageKey="connection-detail-table"
 		/>
 	);
 };

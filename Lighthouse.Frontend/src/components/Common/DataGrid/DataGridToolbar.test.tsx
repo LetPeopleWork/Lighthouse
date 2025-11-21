@@ -10,6 +10,7 @@ vi.mock("@mui/x-data-grid", async () => {
 	return {
 		...actual,
 		useGridApiContext: () => mockApiRef,
+		DataGrid: vi.fn(() => null), // Mock DataGrid component
 	};
 });
 
@@ -60,6 +61,7 @@ const mockApiRef = {
 			};
 			return rows[Number(id)]?.[field];
 		}),
+		showColumnMenu: vi.fn(),
 	} as unknown as GridApiCommon,
 };
 
@@ -69,9 +71,13 @@ describe("DataGridToolbar", () => {
 	});
 
 	describe("Rendering", () => {
-		it("should render both copy and export buttons", () => {
+		it("should render export buttons when export is enabled", () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -83,7 +89,11 @@ describe("DataGridToolbar", () => {
 
 		it("should render buttons as enabled when premium features are available", () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -93,23 +103,46 @@ describe("DataGridToolbar", () => {
 			expect(exportButton).not.toBeDisabled();
 		});
 
-		it("should render buttons as disabled when premium features are not available", () => {
+		it("should render export buttons as disabled when premium features are not available", () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={false} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={false}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
 			const exportButton = screen.getByTestId("export-button");
 
+			// Export buttons should be disabled without premium
 			expect(copyButton).toBeDisabled();
 			expect(exportButton).toBeDisabled();
+		});
+
+		it("should not render export buttons when enableExport is false", () => {
+			render(
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={false}
+					exportFileName="test"
+				/>,
+			);
+
+			// Export buttons should not be rendered
+			expect(screen.queryByTestId("copy-button")).not.toBeInTheDocument();
+			expect(screen.queryByTestId("export-button")).not.toBeInTheDocument();
 		});
 	});
 
 	describe("Tooltips", () => {
 		it("should show 'Copy to Clipboard' tooltip when premium is available and not copied", async () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -122,7 +155,11 @@ describe("DataGridToolbar", () => {
 
 		it("should show 'Export to CSV' tooltip when premium is available", async () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const exportButton = screen.getByTestId("export-button");
@@ -135,7 +172,11 @@ describe("DataGridToolbar", () => {
 
 		it("should show premium feature message when premium is not available", async () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={false} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={false}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -152,7 +193,11 @@ describe("DataGridToolbar", () => {
 	describe("Copy to Clipboard", () => {
 		it("should copy data to clipboard when copy button is clicked with premium", async () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -170,7 +215,11 @@ describe("DataGridToolbar", () => {
 
 		it("should show 'Copied!' feedback after successful copy", async () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -187,7 +236,11 @@ describe("DataGridToolbar", () => {
 				.mockImplementation(() => {});
 
 			render(
-				<DataGridToolbar canUsePremiumFeatures={false} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={false}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -202,7 +255,11 @@ describe("DataGridToolbar", () => {
 
 		it("should include headers in copied data", async () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -220,7 +277,11 @@ describe("DataGridToolbar", () => {
 
 		it("should use getCellValue to handle valueGetter columns", async () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -241,10 +302,24 @@ describe("DataGridToolbar", () => {
 		it("should trigger CSV download when export button is clicked with premium", async () => {
 			// Mock document.body methods
 			const appendChildSpy = vi.spyOn(document.body, "appendChild");
-			const removeChildSpy = vi.spyOn(document.body, "removeChild");
+
+			// Mock HTMLElement.remove() since we use link.remove() instead of removeChild
+			const mockRemove = vi.fn();
+			const originalCreateElement = document.createElement.bind(document);
+			vi.spyOn(document, "createElement").mockImplementation((tagName) => {
+				const element = originalCreateElement(tagName);
+				if (tagName === "a") {
+					element.remove = mockRemove;
+				}
+				return element;
+			});
 
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const exportButton = screen.getByTestId("export-button");
@@ -252,17 +327,18 @@ describe("DataGridToolbar", () => {
 
 			await waitFor(() => {
 				expect(appendChildSpy).toHaveBeenCalled();
-				expect(removeChildSpy).toHaveBeenCalled();
+				expect(mockRemove).toHaveBeenCalled();
 			});
 
 			appendChildSpy.mockRestore();
-			removeChildSpy.mockRestore();
+			vi.mocked(document.createElement).mockRestore();
 		});
 
 		it("should use custom filename when provided", async () => {
 			render(
 				<DataGridToolbar
 					canUsePremiumFeatures={true}
+					enableExport={true}
 					exportFileName="custom-export"
 				/>,
 			);
@@ -293,7 +369,9 @@ describe("DataGridToolbar", () => {
 		});
 
 		it("should use default filename when not provided", async () => {
-			render(<DataGridToolbar canUsePremiumFeatures={true} />);
+			render(
+				<DataGridToolbar canUsePremiumFeatures={true} enableExport={true} />,
+			);
 
 			const exportButton = screen.getByTestId("export-button");
 
@@ -322,7 +400,11 @@ describe("DataGridToolbar", () => {
 
 		it("should not export when premium features are not available", async () => {
 			render(
-				<DataGridToolbar canUsePremiumFeatures={false} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={false}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const exportButton = screen.getByTestId("export-button");
@@ -346,7 +428,11 @@ describe("DataGridToolbar", () => {
 			const appendChildSpy = vi.spyOn(document.body, "appendChild");
 
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const exportButton = screen.getByTestId("export-button");
@@ -364,7 +450,11 @@ describe("DataGridToolbar", () => {
 			const appendChildSpy = vi.spyOn(document.body, "appendChild");
 
 			render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const exportButton = screen.getByTestId("export-button");
@@ -388,12 +478,20 @@ describe("DataGridToolbar", () => {
 				.mockImplementation(() => {});
 
 			const { rerender } = render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			// Change to no premium
 			rerender(
-				<DataGridToolbar canUsePremiumFeatures={false} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={false}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const copyButton = screen.getByTestId("copy-button");
@@ -404,7 +502,11 @@ describe("DataGridToolbar", () => {
 
 		it("should prevent export if premium is removed after render", async () => {
 			const { rerender } = render(
-				<DataGridToolbar canUsePremiumFeatures={true} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			// Spy on appendChild after initial render
@@ -412,7 +514,11 @@ describe("DataGridToolbar", () => {
 
 			// Change to no premium
 			rerender(
-				<DataGridToolbar canUsePremiumFeatures={false} exportFileName="test" />,
+				<DataGridToolbar
+					canUsePremiumFeatures={false}
+					enableExport={true}
+					exportFileName="test"
+				/>,
 			);
 
 			const exportButton = screen.getByTestId("export-button");
