@@ -543,4 +543,63 @@ describe("WorkItemAgingChart component", () => {
 			expect(screen.getByText("No items in progress")).toBeInTheDocument();
 		});
 	});
+
+	describe("Case-insensitive state matching", () => {
+		it("matches states regardless of casing", () => {
+			const itemsWithDifferentCasing: IWorkItem[] = [
+				{
+					...mockInProgressItems[0],
+					state: "IN PROGRESS",
+					workItemAge: 5,
+				},
+				{
+					...mockInProgressItems[1],
+					state: "in progress",
+					workItemAge: 8,
+				},
+				{
+					...mockInProgressItems[2],
+					state: "In Progress",
+					workItemAge: 3,
+				},
+			];
+
+			render(
+				<WorkItemAgingChart
+					inProgressItems={itemsWithDifferentCasing}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// Chart should render with all items matched despite different casing
+			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
+			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+			expect(screen.getByTestId("mock-chart-container")).toBeInTheDocument();
+		});
+
+		it("handles mixed casing in doingStates configuration", () => {
+			const items: IWorkItem[] = [
+				{
+					...mockInProgressItems[0],
+					state: "ready for review",
+					workItemAge: 5,
+				},
+			];
+
+			render(
+				<WorkItemAgingChart
+					inProgressItems={items}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Ready For Review"]}
+				/>,
+			);
+
+			// Chart should render with item matched despite casing difference
+			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
+			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+		});
+	});
 });

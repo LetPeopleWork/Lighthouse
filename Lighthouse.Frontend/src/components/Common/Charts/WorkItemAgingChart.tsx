@@ -127,14 +127,14 @@ const groupWorkItems = (
 
 	const stateIndexMap: Record<string, number> = {};
 	for (let i = 0; i < doingStates.length; i++) {
-		stateIndexMap[doingStates[i]] = i;
+		stateIndexMap[doingStates[i].toLowerCase()] = i;
 	}
 
 	for (const item of items) {
 		if (!item.state) continue;
 
 		const age = getAgeInDays(item);
-		const stateIndex = stateIndexMap[item.state];
+		const stateIndex = stateIndexMap[item.state.toLowerCase()];
 		if (stateIndex === undefined) continue;
 
 		const key = `${item.state}-${age}`;
