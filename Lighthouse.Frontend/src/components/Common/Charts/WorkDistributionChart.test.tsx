@@ -422,6 +422,331 @@ describe("WorkDistributionChart component", () => {
 		});
 	});
 
+	describe("Table View", () => {
+		it("should render table with correct headers", () => {
+			const workItems = [
+				generateMockWorkItem(1, "PARENT-1"),
+				generateMockWorkItem(2, "PARENT-2"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			// Check table headers
+			expect(screen.getByText("Name")).toBeInTheDocument();
+			expect(screen.getByText("%")).toBeInTheDocument();
+			expect(screen.getByText("Work Items")).toBeInTheDocument();
+		});
+
+		it("should display all parent groups in table with correct data", () => {
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-100"),
+				generateMockWorkItem(2, "EPIC-100"),
+				generateMockWorkItem(3, "EPIC-100"),
+				generateMockWorkItem(4, "EPIC-200"),
+				generateMockWorkItem(5, "EPIC-200"),
+				generateMockWorkItem(6, "EPIC-300"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			// Check parent names in table (should be sorted by count descending)
+			expect(screen.getByText("EPIC-100")).toBeInTheDocument();
+			expect(screen.getByText("EPIC-200")).toBeInTheDocument();
+			expect(screen.getByText("EPIC-300")).toBeInTheDocument();
+
+			// Check percentages (3/6 = 50%, 2/6 = 33.3%, 1/6 = 16.7%)
+			expect(screen.getByText("50.0%")).toBeInTheDocument();
+			expect(screen.getByText("33.3%")).toBeInTheDocument();
+			expect(screen.getByText("16.7%")).toBeInTheDocument();
+
+			// Check counts in table
+			const tableCells = screen.getAllByRole("cell");
+			const countCells = tableCells.filter(
+				(cell) =>
+					cell.textContent === "3" ||
+					cell.textContent === "2" ||
+					cell.textContent === "1",
+			);
+			expect(countCells.length).toBeGreaterThanOrEqual(3);
+		});
+
+		it("should display 'No Parent' in table when items have no parent reference", () => {
+			const workItems = [
+				generateMockWorkItem(1, ""),
+				generateMockWorkItem(2, ""),
+				generateMockWorkItem(3, "EPIC-100"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			// Check that "No Parent" is displayed in the table
+			expect(screen.getByText("No Parent")).toBeInTheDocument();
+
+			// Check percentages (2/3 = 66.7%, 1/3 = 33.3%)
+			expect(screen.getByText("66.7%")).toBeInTheDocument();
+			expect(screen.getByText("33.3%")).toBeInTheDocument();
+		});
+
+		it("should display color indicators next to parent names in table", () => {
+			const workItems = [
+				generateMockWorkItem(1, "PARENT-1"),
+				generateMockWorkItem(2, "PARENT-2"),
+			];
+
+			const { container } = renderWithContext(
+				<WorkDistributionChart workItems={workItems} />,
+			);
+
+			// Look for the parent names in the table which should be next to color indicators
+			expect(screen.getByText("PARENT-1")).toBeInTheDocument();
+			expect(screen.getByText("PARENT-2")).toBeInTheDocument();
+			
+			// Verify table structure exists
+			const tableCells = container.querySelectorAll('td');
+			expect(tableCells.length).toBeGreaterThanOrEqual(4);
+		});
+
+		it("should open dialog when clicking on table row", () => {
+			const workItems = [
+				generateMockWorkItem(1, "PARENT-1"),
+				generateMockWorkItem(2, "PARENT-1"),
+				generateMockWorkItem(3, "PARENT-2"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			// Find and click on a table row (not header)
+			const tableRows = screen.getAllByRole("row");
+			// First row is header, second row should be PARENT-1 (2 items, sorted first)
+			fireEvent.click(tableRows[1]);
+
+			// Verify dialog is opened with correct data
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+			expect(
+				screen.getByText(/Work Items for PARENT-1 \(2 items\)/),
+			).toBeInTheDocument();
+		});
+
+		it("should show correct items when clicking different table rows", () => {
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-A"),
+				generateMockWorkItem(2, "EPIC-A"),
+				generateMockWorkItem(3, "EPIC-A"),
+				generateMockWorkItem(4, "EPIC-B"),
+				generateMockWorkItem(5, "EPIC-B"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			const tableRows = screen.getAllByRole("row");
+
+			// Click on first data row (EPIC-A with 3 items)
+			fireEvent.click(tableRows[1]);
+			expect(
+				screen.getByText("Work Items for EPIC-A (3 items)"),
+			).toBeInTheDocument();
+			expect(screen.getByText("Work Item 1")).toBeInTheDocument();
+
+			// Close dialog
+			fireEvent.click(screen.getByRole("button", { name: /close/i }));
+
+			// Click on second data row (EPIC-B with 2 items)
+			fireEvent.click(tableRows[2]);
+			expect(
+				screen.getByText("Work Items for EPIC-B (2 items)"),
+			).toBeInTheDocument();
+			expect(screen.getByText("Work Item 4")).toBeInTheDocument();
+		});
+
+		it("should calculate percentages correctly for varying distributions", () => {
+			const workItems = [
+				generateMockWorkItem(1, "A"),
+				generateMockWorkItem(2, "B"),
+				generateMockWorkItem(3, "B"),
+				generateMockWorkItem(4, "C"),
+				generateMockWorkItem(5, "C"),
+				generateMockWorkItem(6, "C"),
+				generateMockWorkItem(7, "D"),
+				generateMockWorkItem(8, "D"),
+				generateMockWorkItem(9, "D"),
+				generateMockWorkItem(10, "D"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			// D: 4/10 = 40.0%
+			expect(screen.getByText("40.0%")).toBeInTheDocument();
+			// C: 3/10 = 30.0%
+			expect(screen.getByText("30.0%")).toBeInTheDocument();
+			// B: 2/10 = 20.0%
+			expect(screen.getByText("20.0%")).toBeInTheDocument();
+			// A: 1/10 = 10.0%
+			expect(screen.getByText("10.0%")).toBeInTheDocument();
+		});
+
+		it("should display 100% for single parent group", () => {
+			const workItems = [
+				generateMockWorkItem(1, "ONLY-PARENT"),
+				generateMockWorkItem(2, "ONLY-PARENT"),
+				generateMockWorkItem(3, "ONLY-PARENT"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			expect(screen.getByText("100.0%")).toBeInTheDocument();
+		});
+
+		it("should sort table rows by count descending", () => {
+			const workItems = [
+				generateMockWorkItem(1, "SMALL"),
+				generateMockWorkItem(2, "LARGE"),
+				generateMockWorkItem(3, "LARGE"),
+				generateMockWorkItem(4, "LARGE"),
+				generateMockWorkItem(5, "MEDIUM"),
+				generateMockWorkItem(6, "MEDIUM"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			const tableRows = screen.getAllByRole("row");
+			// Skip header row (index 0)
+			const row1Text = tableRows[1].textContent || "";
+			const row2Text = tableRows[2].textContent || "";
+			const row3Text = tableRows[3].textContent || "";
+
+			// Should be ordered: LARGE (3), MEDIUM (2), SMALL (1)
+			expect(row1Text).toContain("LARGE");
+			expect(row1Text).toContain("3");
+			expect(row2Text).toContain("MEDIUM");
+			expect(row2Text).toContain("2");
+			expect(row3Text).toContain("SMALL");
+			expect(row3Text).toContain("1");
+		});
+
+		it("should display parent names in table when fetched from API", async () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi.fn().mockResolvedValue([
+				{ referenceId: "EPIC-100", name: "User Management" },
+				{ referenceId: "EPIC-200", name: "Reporting Features" },
+			]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-100"),
+				generateMockWorkItem(2, "EPIC-100"),
+				generateMockWorkItem(3, "EPIC-200"),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for parent names to be fetched and displayed in table
+			await vi.waitFor(() => {
+				expect(screen.getByText("User Management")).toBeInTheDocument();
+			});
+
+			expect(screen.getByText("Reporting Features")).toBeInTheDocument();
+		});
+
+		it("should use parent names in dialog when clicking table row", async () => {
+			const mockFeatureService = createMockFeatureService();
+			mockFeatureService.getFeaturesByReferences = vi.fn().mockResolvedValue([
+				{ referenceId: "EPIC-100", name: "Search Functionality" },
+			]);
+
+			const mockContext = createMockApiServiceContext({
+				featureService: mockFeatureService,
+			});
+
+			const workItems = [
+				generateMockWorkItem(1, "EPIC-100"),
+				generateMockWorkItem(2, "EPIC-100"),
+			];
+
+			render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<WorkDistributionChart workItems={workItems} />
+				</ApiServiceContext.Provider>,
+			);
+
+			// Wait for parent names to load
+			await vi.waitFor(() => {
+				expect(screen.getByText("Search Functionality")).toBeInTheDocument();
+			});
+
+			// Click on table row
+			const tableRows = screen.getAllByRole("row");
+			fireEvent.click(tableRows[1]);
+
+			// Dialog should show parent name
+			expect(
+				screen.getByText("Work Items for Search Functionality (2 items)"),
+			).toBeInTheDocument();
+		});
+
+		it("should handle long parent names in table", () => {
+			const workItems = [
+				generateMockWorkItem(
+					1,
+					"VERY-LONG-PARENT-REFERENCE-ID-THAT-SHOULD-BE-TRUNCATED",
+				),
+				generateMockWorkItem(
+					2,
+					"VERY-LONG-PARENT-REFERENCE-ID-THAT-SHOULD-BE-TRUNCATED",
+				),
+			];
+
+			renderWithContext(
+				<WorkDistributionChart workItems={workItems} />,
+			);
+
+			// Verify the long parent name is displayed in the table
+			expect(screen.getByText("VERY-LONG-PARENT-REFERENCE-ID-THAT-SHOULD-BE-TRUNCATED")).toBeInTheDocument();
+			
+			// Verify count is correct
+			const tableRows = screen.getAllByRole("row");
+			expect(tableRows.length).toBe(2); // Header + 1 data row
+		});
+
+		it("should not render table when there are no work items", () => {
+			renderWithContext(<WorkDistributionChart workItems={[]} />);
+
+			// Table headers should not be present
+			expect(screen.queryByText("Name")).not.toBeInTheDocument();
+			expect(screen.queryByText("%")).not.toBeInTheDocument();
+		});
+
+		it("should maintain consistent order between pie chart and table", () => {
+			const workItems = [
+				generateMockWorkItem(1, "PARENT-A"),
+				generateMockWorkItem(2, "PARENT-B"),
+				generateMockWorkItem(3, "PARENT-B"),
+				generateMockWorkItem(4, "PARENT-C"),
+				generateMockWorkItem(5, "PARENT-C"),
+				generateMockWorkItem(6, "PARENT-C"),
+			];
+
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
+
+			// Both pie chart and table should be sorted: C(3), B(2), A(1)
+			const pieSlices = screen.getAllByRole("button");
+			expect(pieSlices[0]).toHaveTextContent("PARENT-C: 3");
+			expect(pieSlices[1]).toHaveTextContent("PARENT-B: 2");
+			expect(pieSlices[2]).toHaveTextContent("PARENT-A: 1");
+
+			const tableRows = screen.getAllByRole("row");
+			expect(tableRows[1].textContent).toContain("PARENT-C");
+			expect(tableRows[2].textContent).toContain("PARENT-B");
+			expect(tableRows[3].textContent).toContain("PARENT-A");
+		});
+	});
+
 	describe("Parent Name Fetching", () => {
 		it("should fetch parent names from feature service", async () => {
 			const mockFeatureService = createMockFeatureService();

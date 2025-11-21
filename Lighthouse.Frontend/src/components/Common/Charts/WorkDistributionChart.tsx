@@ -1,4 +1,15 @@
-import { Box, Card, CardContent, Typography, useTheme } from "@mui/material";
+import {
+	Box,
+	Card,
+	CardContent,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableRow,
+	Typography,
+	useTheme,
+} from "@mui/material";
 import { PieChart } from "@mui/x-charts";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
@@ -27,7 +38,12 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
-	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+
+	const workItemsTerm =
+		workItems.length > 0 && "owningTeam" in workItems[0]
+			? getTerm(TERMINOLOGY_KEYS.FEATURES)
+			: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const { featureService } = useContext(ApiServiceContext);
 
@@ -140,6 +156,17 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 		setDialogOpen(false);
 	};
 
+	const handleTableRowClick = (dataIndex: number) => {
+		if (dataIndex !== undefined && pieData[dataIndex]) {
+			const selectedData = pieData[dataIndex];
+			setDialogTitle(
+				`${workItemsTerm} for ${selectedData.label} (${selectedData.value} items)`,
+			);
+			setSelectedItems(selectedData.items);
+			setDialogOpen(true);
+		}
+	};
+
 	if (workItems.length === 0) {
 		return (
 			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
@@ -175,46 +202,147 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 							flex: 1,
 							minHeight: 0,
 							display: "flex",
+							flexDirection: "row",
+							gap: 2,
 							width: "100%",
 							height: "100%",
 						}}
 					>
-						<PieChart
-							series={[
-								{
-									data: pieData.map((item, index) => ({
-										id: item.id,
-										value: item.value,
-										label: item.label,
-										color: colors[index],
-									})),
-									highlightScope: { fade: "global", highlight: "item" },
-									faded: {
-										innerRadius: 30,
-										additionalRadius: -30,
-										color: "gray",
+						{/* Pie Chart */}
+						<Box
+							sx={{
+								flex: 1,
+								minWidth: 0,
+								minHeight: 0,
+								display: "flex",
+								width: "100%",
+								height: "100%",
+							}}
+						>
+							<PieChart
+								series={[
+									{
+										data: pieData.map((item, index) => ({
+											id: item.id,
+											value: item.value,
+											label: item.label,
+											color: colors[index],
+										})),
+										highlightScope: { fade: "global", highlight: "item" },
+										faded: {
+											innerRadius: 30,
+											additionalRadius: -30,
+											color: "gray",
+										},
+										valueFormatter: (item: { value: number }) => {
+											const percentage = (
+												(item.value / workItems.length) *
+												100
+											).toFixed(1);
+											return `${item.value} items (${percentage}%)`;
+										},
 									},
-									valueFormatter: (item: { value: number }) => {
+								]}
+								onItemClick={handlePieClick}
+								margin={{ top: 5, bottom: 5, left: 5, right: 5 }}
+								hideLegend={true}
+								sx={{
+									cursor: "pointer",
+									width: "100%",
+									height: "100%",
+									"& .MuiPieArc-root": {
+										cursor: "pointer",
+									},
+								}}
+							/>
+						</Box>
+
+						{/* Table View */}
+						<Box
+							sx={{
+								flex: 1,
+								minWidth: 0,
+								overflow: "auto",
+								maxHeight: "100%",
+							}}
+						>
+							<Table size="small" sx={{ minWidth: 200 }}>
+								<TableHead>
+									<TableRow>
+										<TableCell sx={{ py: 1, fontWeight: 600 }}>Name</TableCell>
+										<TableCell align="right" sx={{ py: 1, fontWeight: 600 }}>
+											%
+										</TableCell>
+										<TableCell align="right" sx={{ py: 1, fontWeight: 600 }}>
+											{workItemsTerm}
+										</TableCell>
+									</TableRow>
+								</TableHead>
+								<TableBody>
+									{pieData.map((item, index) => {
 										const percentage = (
 											(item.value / workItems.length) *
 											100
 										).toFixed(1);
-										return `${item.value} items (${percentage}%)`;
-									},
-								},
-							]}
-							onItemClick={handlePieClick}
-							margin={{ top: 5, bottom: 5, left: 5, right: 5 }}
-							hideLegend={true}
-							sx={{
-								cursor: "pointer",
-								width: "100%",
-								height: "100%",
-								"& .MuiPieArc-root": {
-									cursor: "pointer",
-								},
-							}}
-						/>
+										return (
+											<TableRow
+												key={item.id}
+												onClick={() => handleTableRowClick(index)}
+												sx={{
+													cursor: "pointer",
+													"&:hover": {
+														backgroundColor: theme.palette.action.hover,
+													},
+												}}
+											>
+												<TableCell
+													sx={{
+														py: 1,
+														display: "flex",
+														alignItems: "center",
+														gap: 1,
+													}}
+												>
+													<Box
+														sx={{
+															width: 12,
+															height: 12,
+															borderRadius: "50%",
+															backgroundColor: colors[index],
+															flexShrink: 0,
+														}}
+													/>
+													<Typography
+														variant="body2"
+														sx={{
+															fontWeight: 500,
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+														}}
+													>
+														{item.label}
+													</Typography>
+												</TableCell>
+												<TableCell
+													align="right"
+													sx={{ py: 1, whiteSpace: "nowrap" }}
+												>
+													<Typography variant="body2" color="text.secondary">
+														{percentage}%
+													</Typography>
+												</TableCell>
+												<TableCell
+													align="right"
+													sx={{ py: 1, whiteSpace: "nowrap" }}
+												>
+													<Typography variant="body2">{item.value}</Typography>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+								</TableBody>
+							</Table>
+						</Box>
 					</Box>
 				</CardContent>
 			</Card>
