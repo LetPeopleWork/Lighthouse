@@ -79,7 +79,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 				<table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse;">
 					<thead>
 						<tr>
-							${headers.map((h) => `<th style="background-color: #f0f0f0; font-weight: bold; text-align: left;">${escapeHtml(h)}</th>`).join("")}
+							${headers.map((h) => `<th style="background-color: #30574E; color: white; font-weight: bold; text-align: left;"> ${escapeHtml(h)}</th>`).join("")}
 						</tr>
 					</thead>
 					<tbody>
