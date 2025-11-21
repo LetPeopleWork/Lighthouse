@@ -34,29 +34,9 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	loading?: boolean;
 	/** Initial sort model */
 	initialSortModel?: GridSortModel;
-	/** Callback when sort changes */
-	onSortModelChange?: (model: GridSortModel) => void;
-	/** Initial hidden columns */
-	initialHiddenColumns?: string[];
-	/** Callback when column visibility changes */
-	onColumnVisibilityChange?: (hiddenColumns: string[]) => void;
-	/** Initial filter model */
-	initialFilterModel?: GridFilterModel;
-	/** Callback when filter changes */
-	onFilterModelChange?: (model: GridFilterModel) => void;
-	/** Enable column filtering (default: true) */
-	enableFiltering?: boolean;
-	/** Custom height for the grid */
-	height?: number | string;
 	/** Custom empty state message */
 	emptyStateMessage?: string;
-	/** Disable column menu (default: false) */
-	disableColumnMenu?: boolean;
-	/** Disable column selector (default: true) */
-	disableColumnSelector?: boolean;
-	/** Auto height (default: false) */
-	autoHeight?: boolean;
-	/** Hide pagination (default: false) */
+	/** Hide pagination (default: true) */
 	hidePagination?: boolean;
 	/** Enable CSV export functionality (default: false) - Premium Feature */
 	enableExport?: boolean;

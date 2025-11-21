@@ -90,10 +90,6 @@ const ConnectionDetailTable: React.FC<ConnectionDetailTableProps> = ({
 					GridValidRowModel)[]
 			}
 			columns={columns}
-			loading={false}
-			autoHeight={true}
-			hidePagination={true}
-			disableColumnSelector={true}
 		/>
 	);
 };

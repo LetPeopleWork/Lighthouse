@@ -474,11 +474,6 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					<DataGridBase
 						rows={filteredData as (IFeatureOwner & GridValidRowModel)[]}
 						columns={columns}
-						loading={false}
-						autoHeight={true}
-						hidePagination={true}
-						enableFiltering={true}
-						disableColumnSelector={true}
 					/>
 				</Box>
 			)}

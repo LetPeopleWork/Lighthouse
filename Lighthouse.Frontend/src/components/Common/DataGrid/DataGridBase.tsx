@@ -27,21 +27,11 @@ function DataGridBase<T extends GridValidRowModel>({
 	idField = "id",
 	loading = false,
 	initialSortModel = [],
-	onSortModelChange,
-	initialHiddenColumns = [],
-	onColumnVisibilityChange,
-	initialFilterModel,
-	onFilterModelChange,
-	enableFiltering = true,
-	height = 600,
 	emptyStateMessage = "No rows to display",
-	disableColumnMenu = false,
-	disableColumnSelector = true,
-	autoHeight = false,
-	hidePagination = false,
+	hidePagination = true,
 	enableExport = false,
 	exportFileName,
-}: DataGridBaseProps<T>): React.ReactElement {
+}: Readonly<DataGridBaseProps<T>>): React.ReactElement {
 	// Check license status for premium features
 	const { licenseStatus } = useLicenseRestrictions();
 	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? false;
@@ -65,15 +55,6 @@ function DataGridBase<T extends GridValidRowModel>({
 		});
 	}, [columns]);
 
-	// Initialize column visibility model
-	const columnVisibilityModel = useMemo(() => {
-		const model: Record<string, boolean> = {};
-		for (const field of initialHiddenColumns) {
-			model[field] = false;
-		}
-		return model;
-	}, [initialHiddenColumns]);
-
 	// Create a toolbar component with closed-over props
 	const CustomToolbar = useMemo(() => {
 		if (!enableExport) return undefined;
@@ -94,7 +75,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	return (
 		<Box
 			sx={{
-				height: autoHeight ? "auto" : height,
+				height: "auto",
 				width: "100%",
 			}}
 		>
@@ -107,27 +88,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					sorting: {
 						sortModel: initialSortModel,
 					},
-					filter: initialFilterModel
-						? {
-								filterModel: initialFilterModel,
-							}
-						: undefined,
 				}}
-				onSortModelChange={onSortModelChange}
-				onFilterModelChange={onFilterModelChange}
-				columnVisibilityModel={columnVisibilityModel}
-				onColumnVisibilityModelChange={(newModel) => {
-					if (onColumnVisibilityChange) {
-						const hiddenColumns = Object.entries(newModel)
-							.filter(([, visible]) => !visible)
-							.map(([field]) => field);
-						onColumnVisibilityChange(hiddenColumns);
-					}
-				}}
-				disableColumnMenu={disableColumnMenu}
-				disableColumnSelector={disableColumnSelector}
-				disableColumnFilter={!enableFiltering}
-				autoHeight={autoHeight}
 				pageSizeOptions={[10, 25, 50, 100]}
 				disableRowSelectionOnClick
 				hideFooter={hidePagination}

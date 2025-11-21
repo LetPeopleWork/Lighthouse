@@ -204,8 +204,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
 				columns={columns}
 				loading={features.length === 0}
-				autoHeight={true}
-				hidePagination={true}
 			/>
 		</TableContainer>
 	);

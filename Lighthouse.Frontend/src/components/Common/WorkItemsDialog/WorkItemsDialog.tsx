@@ -227,15 +227,11 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 						<DataGridBase
 							rows={sortedItems as (IWorkItem & GridValidRowModel)[]}
 							columns={columns}
-							loading={false}
-							autoHeight={true}
-							hidePagination={true}
 							initialSortModel={[
 								{ field: "additionalColumn", sort: "desc" as const },
 							]}
-							disableColumnMenu={false}
-							disableColumnSelector={false}
 							enableExport={true}
+							exportFileName={title.replace(/\s+/g, "_")}
 						/>
 					</Box>
 				) : (

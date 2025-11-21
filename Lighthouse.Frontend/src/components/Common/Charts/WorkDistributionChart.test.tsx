@@ -500,9 +500,9 @@ describe("WorkDistributionChart component", () => {
 			// Look for the parent names in the table which should be next to color indicators
 			expect(screen.getByText("PARENT-1")).toBeInTheDocument();
 			expect(screen.getByText("PARENT-2")).toBeInTheDocument();
-			
+
 			// Verify table structure exists
-			const tableCells = container.querySelectorAll('td');
+			const tableCells = container.querySelectorAll("td");
 			expect(tableCells.length).toBeGreaterThanOrEqual(4);
 		});
 
@@ -656,9 +656,11 @@ describe("WorkDistributionChart component", () => {
 
 		it("should use parent names in dialog when clicking table row", async () => {
 			const mockFeatureService = createMockFeatureService();
-			mockFeatureService.getFeaturesByReferences = vi.fn().mockResolvedValue([
-				{ referenceId: "EPIC-100", name: "Search Functionality" },
-			]);
+			mockFeatureService.getFeaturesByReferences = vi
+				.fn()
+				.mockResolvedValue([
+					{ referenceId: "EPIC-100", name: "Search Functionality" },
+				]);
 
 			const mockContext = createMockApiServiceContext({
 				featureService: mockFeatureService,
@@ -702,13 +704,15 @@ describe("WorkDistributionChart component", () => {
 				),
 			];
 
-			renderWithContext(
-				<WorkDistributionChart workItems={workItems} />,
-			);
+			renderWithContext(<WorkDistributionChart workItems={workItems} />);
 
 			// Verify the long parent name is displayed in the table
-			expect(screen.getByText("VERY-LONG-PARENT-REFERENCE-ID-THAT-SHOULD-BE-TRUNCATED")).toBeInTheDocument();
-			
+			expect(
+				screen.getByText(
+					"VERY-LONG-PARENT-REFERENCE-ID-THAT-SHOULD-BE-TRUNCATED",
+				),
+			).toBeInTheDocument();
+
 			// Verify count is correct
 			const tableRows = screen.getAllByRole("row");
 			expect(tableRows.length).toBe(2); // Header + 1 data row

@@ -237,22 +237,6 @@ describe("DataGridBase", () => {
 			expect(sortButtons.length).toBeGreaterThan(0);
 		});
 
-		it("should call onSortModelChange when sorting changes", async () => {
-			const onSortModelChange = vi.fn();
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					onSortModelChange={onSortModelChange}
-				/>,
-			);
-
-			// Grid is rendered with sortable columns
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-		});
-
 		it("should initialize with provided sort model", () => {
 			const initialSortModel = [{ field: "name", sort: "asc" as const }];
 
@@ -281,61 +265,6 @@ describe("DataGridBase", () => {
 	});
 
 	describe("Column Visibility", () => {
-		it("should hide columns specified in initialHiddenColumns", () => {
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					initialHiddenColumns={["age", "email"]}
-				/>,
-			);
-
-			// Visible columns should be rendered
-			expect(screen.getByText("ID")).toBeInTheDocument();
-			expect(screen.getByText("Name")).toBeInTheDocument();
-
-			// Hidden columns should not be visible - check by column header
-			// Note: MUI DataGrid still renders hidden columns in the DOM but hides them with CSS
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-		});
-
-		it("should call onColumnVisibilityChange when column visibility changes", () => {
-			const onColumnVisibilityChange = vi.fn();
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					onColumnVisibilityChange={onColumnVisibilityChange}
-					initialHiddenColumns={["age"]}
-				/>,
-			);
-
-			// Verify component renders
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-
-			// The callback should be ready to receive changes
-			// (actual interaction testing would require userEvent clicks on column menu)
-		});
-
-		it("should support column menu for visibility toggle when disableColumnSelector is false", () => {
-			const { container } = render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					disableColumnSelector={false}
-				/>,
-			);
-
-			// Check that column menu buttons are present
-			const menuButtons = container.querySelectorAll(
-				'button[aria-label*="column menu"]',
-			);
-			expect(menuButtons.length).toBeGreaterThan(0);
-		});
-
 		it("should hide column selector by default when disableColumnSelector is not specified", () => {
 			render(<DataGridBase rows={mockRows} columns={mockColumns} />);
 
@@ -343,59 +272,12 @@ describe("DataGridBase", () => {
 			const grid = screen.getByRole("grid");
 			expect(grid).toBeInTheDocument();
 		});
-
-		it("should hide column menu when disableColumnMenu is true", () => {
-			const { container } = render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					disableColumnMenu={true}
-				/>,
-			);
-
-			// Column menu buttons should not be present
-			const menuButtons = container.querySelectorAll(
-				'button[aria-label*="column menu"]',
-			);
-			expect(menuButtons.length).toBe(0);
-		});
 	});
 
 	describe("Responsive Design & Sizing", () => {
-		it("should render with default height of 600px", () => {
+		it("should render with default height of auto", () => {
 			const { container } = render(
 				<DataGridBase rows={mockRows} columns={mockColumns} />,
-			);
-
-			const gridContainer = container.querySelector(".MuiBox-root");
-			expect(gridContainer).toHaveStyle({ height: "600px" });
-		});
-
-		it("should render with custom height", () => {
-			const { container } = render(
-				<DataGridBase rows={mockRows} columns={mockColumns} height={400} />,
-			);
-
-			const gridContainer = container.querySelector(".MuiBox-root");
-			expect(gridContainer).toHaveStyle({ height: "400px" });
-		});
-
-		it("should render with string height value", () => {
-			const { container } = render(
-				<DataGridBase rows={mockRows} columns={mockColumns} height="80vh" />,
-			);
-
-			const gridContainer = container.querySelector(".MuiBox-root");
-			expect(gridContainer).toHaveStyle({ height: "80vh" });
-		});
-
-		it("should render with auto height when autoHeight is true", () => {
-			const { container } = render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					autoHeight={true}
-				/>,
 			);
 
 			const gridContainer = container.querySelector(".MuiBox-root");
@@ -452,31 +334,9 @@ describe("DataGridBase", () => {
 			expect(columnHeaders.length).toBeGreaterThan(0);
 		});
 
-		it("should disable filtering when enableFiltering is explicitly false", () => {
+		it("should enable filtering", () => {
 			const { container } = render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={false}
-				/>,
-			);
-
-			// Grid should render
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-
-			// Filter panel should not be available
-			const filterPanel = container.querySelector(".MuiDataGrid-filterForm");
-			expect(filterPanel).not.toBeInTheDocument();
-		});
-
-		it("should enable filtering when enableFiltering prop is true", () => {
-			const { container } = render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-				/>,
+				<DataGridBase rows={mockRows} columns={mockColumns} />,
 			);
 
 			// Grid should render
@@ -489,168 +349,8 @@ describe("DataGridBase", () => {
 			expect(columnHeaders.length).toBeGreaterThan(0);
 		});
 
-		it("should initialize with provided filter model", () => {
-			const initialFilterModel = {
-				items: [{ field: "name", operator: "contains", value: "Alice" }],
-			};
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-					initialFilterModel={initialFilterModel}
-				/>,
-			);
-
-			// Grid should render with filter applied
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-
-			// Alice should be visible
-			expect(screen.getByText("Alice")).toBeInTheDocument();
-		});
-
-		it("should call onFilterModelChange when filter changes", () => {
-			const onFilterModelChange = vi.fn();
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-					onFilterModelChange={onFilterModelChange}
-				/>,
-			);
-
-			// Grid is rendered with filtering enabled
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-
-			// Callback should be ready to receive filter changes
-			// (actual interaction testing would require userEvent interactions)
-		});
-
-		it("should support text column filtering with contains operator", () => {
-			const filterModel = {
-				items: [{ field: "name", operator: "contains", value: "li" }],
-			};
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-					initialFilterModel={filterModel}
-				/>,
-			);
-
-			// Alice and Charlie contain 'li'
-			expect(screen.getByText("Alice")).toBeInTheDocument();
-			expect(screen.getByText("Charlie")).toBeInTheDocument();
-
-			// Grid should be present
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-		});
-
-		it("should support number column filtering with equals operator", () => {
-			const filterModel = {
-				items: [{ field: "age", operator: "=", value: "30" }],
-			};
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-					initialFilterModel={filterModel}
-				/>,
-			);
-
-			// Only Alice has age 30
-			expect(screen.getByText("Alice")).toBeInTheDocument();
-
-			// Grid should be present
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-		});
-
-		it("should support number column filtering with greater than operator", () => {
-			const filterModel = {
-				items: [{ field: "age", operator: ">", value: "30" }],
-			};
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-					initialFilterModel={filterModel}
-				/>,
-			);
-
-			// Only Charlie has age > 30
-			expect(screen.getByText("Charlie")).toBeInTheDocument();
-
-			// Grid should be present
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-		});
-
-		it("should support multiple filters combined with AND logic", () => {
-			const filterModel = {
-				items: [
-					{ field: "name", operator: "contains", value: "li" },
-					{ field: "age", operator: ">", value: "30" },
-				],
-			};
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-					initialFilterModel={filterModel}
-				/>,
-			);
-
-			// Only Charlie matches both: contains 'li' AND age > 30
-			expect(screen.getByText("Charlie")).toBeInTheDocument();
-
-			// Grid should be present
-			const grid = screen.getByRole("grid");
-			expect(grid).toBeInTheDocument();
-		});
-
-		it("should show all rows when filter is cleared", () => {
-			const filterModel = {
-				items: [],
-			};
-
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-					initialFilterModel={filterModel}
-				/>,
-			);
-
-			// All rows should be visible
-			expect(screen.getByText("Alice")).toBeInTheDocument();
-			expect(screen.getByText("Bob")).toBeInTheDocument();
-			expect(screen.getByText("Charlie")).toBeInTheDocument();
-		});
-
-		it("should make columns filterable by default when enableFiltering is true", () => {
-			render(
-				<DataGridBase
-					rows={mockRows}
-					columns={mockColumns}
-					enableFiltering={true}
-				/>,
-			);
+		it("should make columns filterable by default", () => {
+			render(<DataGridBase rows={mockRows} columns={mockColumns} />);
 
 			// Grid should render
 			const grid = screen.getByRole("grid");

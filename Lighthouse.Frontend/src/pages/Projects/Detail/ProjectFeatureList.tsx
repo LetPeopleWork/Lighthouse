@@ -254,8 +254,6 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
 				columns={columns}
 				loading={features.length === 0}
-				autoHeight={true}
-				hidePagination={true}
 			/>
 		</TableContainer>
 	);
