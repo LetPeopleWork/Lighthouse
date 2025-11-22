@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Factories
             return workTrackingSystemConnection;
         }
 
-        private string ParseCsv(string csvName)
+        private static string ParseCsv(string csvName)
         {
             var csvContent = File.ReadAllText($"Factories/DemoData/{csvName}.csv");
 
