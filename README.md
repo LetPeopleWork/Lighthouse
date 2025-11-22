@@ -1,87 +1,111 @@
-# Lighthouse
+# Lighthouse — Flow metrics, predictability & Monte Carlo forecasting
+
 ![Latest Release](https://img.shields.io/github/v/release/letpeoplework/lighthouse?sort=semver&display_name=release&label=latest&color=rgb(48%2C%2087%2C%2078)&link=https%3A%2F%2Fgithub.com%2FLetPeopleWork%2FLighthouse%2Freleases%2Flatest)
 
-![CI Workflow](https://github.com/letpeoplework/Lighthouse/actions/workflows/ci.yml/badge.svg) [![Frontend Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=LetPeopleWork_Lighthouse_Frontend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=LetPeopleWork_Lighthouse_Frontend) [![Backend Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=LetPeopleWork_Lighthouse&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=LetPeopleWork_Lighthouse)
+Lighthouse is a free, open-source forecasting and Flow metrics platform designed for Agile and Kanban teams. By applying Monte Carlo simulations to your historical throughput, Lighthouse helps teams predict delivery dates, understand predictability, and keep systems stable with actionable Flow Metrics.
 
-Lighthouse is a tool that helps you run probabilistic forecasts using Monte Carlo Simulations in a continuous and simple way.
-It connects to your Work Tracking Tool (currently Jira and Azure DevOps are supported) and will automatically update your team's Throughput and your project's forecasted delivery dates.
+Try the Community version — no account or credit card required; runs on your infrastructure and ships with a demo mode for exploration.
 
-You can use it with a single team for doing manual "When" and "How Many" forecasts, as well as for tracking projects with one or multiple teams.
+![Team Metrics Overview](docs/assets/features/overview.png)
 
-Lighthouse is provided free of charge as open-source software by [LetPeopleWork](https://letpeople.work). If you want to learn more about the tool, what we can offer you and your company, or just want to chat, please reach out.
+## Why Lighthouse?
 
-# Documentation
-You can find the documentation including how to download and get started in the dedicated documentation page: [https://docs.lighthouse.letpeople.work](https://docs.lighthouse.letpeople.work)
+- Monte Carlo simulation-based forecasts (How Many, When) — probability-driven delivery estimates
+- Built for Kanban: in-depth flow metrics (WIP, Cycle Time, Throughput, Work Item Age) and widgets for teams and projects
+- Integrations with Jira, Azure DevOps, CSV import and Linear (preview) to keep your existing toolchain
+- Dashboards and Predictability Score to turn data into decisions and keep systems stable
+- Free & open-source (MIT); runs on your infrastructure
 
-# Questions & Problems
-If the [Documentation](#documentation) is not answering your question, you can get support in our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
+## Built for Kanban & Stability
 
-# Bug Reports & Feature Requests
-We are eager to get feedback and constantly improve Lighthouse to better serve your needs. We run regular reviews and would love for people to join there to hear their thoughts and discuss improvements.
+Lighthouse is optimized for teams that want to keep a stable delivery system. It focuses on indicators teams use to maintain flow and reduce variability — key Kanban principles.
 
-## 💬 Preferred Way: Join Our Slack Community
-Our preferred way of getting feedback is through our Slack Channel where you can engage with the community and development team:
+Key capabilities to keep systems stable:
 
-**[Join Let People Work Slack Community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A)**
+- WIP monitoring and historical WIP charts — detect overload and make pull-based decisions
+- Throughput and run charts — measure team capacity and detect trends
+- Cycle Time (percentiles & scatterplots) — identify outliers and flow breakdowns
+- Work Item Age and Work Item Aging charts — find stuck work early and reduce rework
+- Simplified CFD and Work Distribution — visualize state changes and where effort is spent
+- Predictability Score — a single-number indicator measuring how stable your throughput is
 
-## 📧 Alternative: Email Feedback
-You can also provide feedback via email to **[lighthouse@letpeople.work](mailto:lighthouse@letpeople.work)**
+## How teams use Lighthouse
 
-### 🐛 When reporting issues, please include:
+- Keep WIP within limits and watch aging items so flow remains predictable
+- Use Monte Carlo forecasts to discuss trade-offs (e.g., delivery vs. scope) and make probability-driven decisions
+- Establish SLEs and targets using Cycle Time & Predictability metrics
+- Run experiments — e.g., reduce batch size or enforce pull policies — and measure the impact
 
-**For Feature Requests:**
-- Description of the desired functionality
-- Use case and expected benefits
-- Any relevant context or examples
+## Quick links
 
-**For Bugs:**
-- Steps to reproduce the issue
-- Lighthouse version you're using
-- Expected behavior vs. actual behavior
-- Screenshots or logs if applicable
+- Product: https://letpeople.work/lighthouse
+- Docs: https://docs.lighthouse.letpeople.work (installation, features, configuration)
+- Releases & container images: https://github.com/LetPeopleWork/Lighthouse/releases
+- Slack: https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A
+- Email: lighthouse@letpeople.work
 
-# Support Our Work
-Lighthouse is completely free and open-source. If you find it valuable for your team and would like to support its continued development, consider making a donation on [Ko-fi](https://ko-fi.com/letpeoplework). Your support helps us maintain and improve Lighthouse for everyone!
+## Quick Start
 
-# Contribution
-See our [Contributions Page](https://docs.lighthouse.letpeople.work/contributions/contributions.html) for more details on how you can contribute.
+Docker (recommended):
 
-# Build and Run from Sources
-To build and run the sources locally, follow these instructions.
-
-Lighthouse is built with Aspnet Core WebAPI as a backend and a React frontend.
-
-## Prerequisites
-Make sure that you have:
-- [Latest AspNet Core SDK](https://dotnet.microsoft.com/en-us/download/dotnet/latest)
-- [Node](https://nodejs.org/en)
-
-## Backend
-After cloning the sources, you find the *Lighthouse.sln* solution in the root folder. Open it in Visual Studio and you can build and run it locally. Once it's running, you can hit the endpoints at the exposed ports.
-
-## Frontend
-The frontend is using [Vite](https://vitejs.dev/) as development server. After cloning, you find the folder *Lighthouse.Frontend* in your root directory. Inside this folder you find a node project. First install the dependencies:
+```bash
+docker pull ghcr.io/letpeoplework/lighthouse:latest
+docker run -d -p 8081:443 -p 8080:80 -v ".:/app/Data" -v "./logs:/app/logs" -e "Database__ConnectionString=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
 ```
+
+## Standard Installation (binary packages)
+
+1. Download the platform-specific package from: https://github.com/LetPeopleWork/Lighthouse/releases/latest
+2. Extract and run; `Lighthouse.exe` on Windows, `./Lighthouse` on Linux/macOS.
+
+## Developer: Build & run from source
+
+1. Clone the repo and build the backend and frontend locally
+
+```bash
+git clone https://github.com/LetPeopleWork/Lighthouse.git
+cd Lighthouse
+# Back-end: build and run
+dotnet build Lighthouse.sln
+dotnet run --project Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj
+
+# Front-end: inside Lighthouse.Frontend
+cd Lighthouse.Frontend
 npm install
+npm run dev      # connect to the local backend or set VITE_API_BASE_URL
+npm run dev-demo # run UI with demo/mock data
 ```
 
-After you have installed all the dependencies you can run the frontend in various ways.
+## Core features
 
-### Start Frontend Using Mock Data
-If you want to simply see the UI and not connect to a live backend, you can start up vite using a mock data service using the following command:
-```
-npm run dev-demo
-```
+- Monte Carlo forecasting (How Many / When)
+- Flow metrics dashboards and widgets: WIP, Throughput, Cycle Time, Work Item Age, Feature Size
+- Predictability Score (throughput percentiles) and SLEs
+- Project & Team forecasts that respect backlog ordering and Feature WIP
+- Integrations: Jira, Azure DevOps, CSV import, Linear (preview)
+- Demo UI and docker images for rapid onboarding
 
-This can be useful if you want to adjust the UI without having to star the backend (for example if you are designing something or refactoring).
+## Screenshots & Examples
 
-### Start Frontend Connecting to Real Backend
-If you want to test the end to end connection, you can run the following command:
-```
-npm run dev
-```
+Core dashboards and widget screenshots are available in the docs:
+- https://docs.lighthouse.letpeople.work/metrics/widgets.html
 
-This will run the frontend and set the backend url to `VITE_API_BASE_URL=http://localhost:5169/api` as defined in the *package.json* file. If you run your backend on a different port, adjust this accordingly.
+## Support, Contribution & Roadmap
 
-### Run Tests
-Tests are run using vitest, you can run all the tests using `npm tests`.
+- Join Slack for community support: https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A
+- Open issues and feature requests on GitHub: https://github.com/LetPeopleWork/Lighthouse/issues
+- Contribute code and docs: https://docs.lighthouse.letpeople.work/contributions/contributions.html
+
+## License & Security
+
+Lighthouse is MIT licensed — see the LICENSE file. The product runs fully on your infrastructure; data is not sent to third-party cloud providers by default.
+
+## Known limitations
+
+- Lighthouse does not model explicit dependencies between work items (backlog order and team focus determines forecasts).
+- If several teams work on the same feature, probability calculations may be conservative (current approach shows later estimates per-silo).
+- The Free Community edition imposes limits on the number of projects/teams; see docs for details.
+
+Want more influence on your Kanban process? Use Lighthouse with Slack and let people work on improvements to WIP, SLEs, and cycle time reductions — we provide the tooling and the expertise.
+
+---
