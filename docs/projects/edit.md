@@ -192,6 +192,9 @@ You can configure how you identify blocked items in your process. Lighthouse off
 ### Tags
 If you use tags (*labels* in Jira), you can specify which tag mean that an item is blocked. You are free to define whatever and how many tags you like.
 
+{: .note}
+Jira note: If you use Jira's built-in `Flag` functionality, add `Flagged` to the blocked tags in Lighthouse and flagged issues will be detected and visualized as blocked.
+
 ### States
 You can also specify states that indicate a blockage of your work. You can pick any state that you defined as [doing state](#states).
 

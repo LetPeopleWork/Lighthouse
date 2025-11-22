@@ -75,6 +75,9 @@ You can selectively show various percentiles from your cycle time for the select
 {: .note}
 If there is a blocked item, it will appear as a red dot in the chart.
 
+{: .note}
+Jira note: Lighthouse identifies blocked items using the blocked tags or blocked states configured on Teams/Projects. If you use Jira's built-in `Flag` feature, add a `Flagged` label to your blocked tags so flagged issues appear as blocked in charts and widgets.
+
 # Work Distribution
 
 |--------------|-------------------------|
