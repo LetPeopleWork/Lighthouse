@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Factories
             this.logger = logger;
         }
 
-        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null, string? rankFieldName = null)
+        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? additionalRelatedField = null, string? rankFieldName = null, string? flaggedField = null)
         {
             // If the rank field is not set, use the default one and try our luck
             var rankField = !string.IsNullOrEmpty(rankFieldName) ? rankFieldName : "customfield_10019";
@@ -39,6 +39,16 @@ namespace Lighthouse.Backend.Factories
             }
 
             (var startedDate, var closedDate) = GetStartedAndClosedDate(json, workitemQueryOwner, state);
+
+            if (!string.IsNullOrEmpty(flaggedField))
+            {
+                var flaggedFieldValue = fields.GetFieldValue(flaggedField);
+
+                if (!string.IsNullOrEmpty(flaggedFieldValue))
+                {
+                    labels.Add(JiraFieldNames.FlaggedName);
+                }
+            }
 
             return new Issue(key, title, createdDate, closedDate, startedDate, parentKey, rank, issueType, state, labels, fields);
         }

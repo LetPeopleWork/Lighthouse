@@ -127,6 +127,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        [TestCase("Flagged")]
+        [TestCase("FLAGGED")]
+        [TestCase("flagged")]
+        public async Task GetWorkItemsForTeam_ItemIsFlagged_FlaggedConfiguredAsBlockingTag_TreatsAsBlocked(string flaggedTag)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND key = PROJ-23");
+            
+            team.BlockedTags.Clear();
+            team.BlockedTags.Add(flaggedTag);
+
+            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
+
+            Assert.That(workItem.IsBlocked, Is.True);
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ItemIsNotFlagged_FlaggedConfiguredAsBlockingTag_TreatsNotBlocked()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND key = PROJ-18");
+            
+            team.BlockedTags.Clear();
+            team.BlockedTags.Add("Flagged");
+
+            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-18");
+
+            Assert.That(workItem.IsBlocked, Is.False);
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ItemIsFlagged_FlaggedNotConfiguredAsBlockingTag_TreatsNotBlocked()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND key = PROJ-23");
+
+            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
+
+            Assert.That(workItem.IsBlocked, Is.False);
+        }
+
+        [Test]
         public async Task GetFeaturesForProject_LabelDoesNotExist_ReturnsNoItems()
         {
             var subject = CreateSubject();

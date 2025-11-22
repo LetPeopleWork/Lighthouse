@@ -51,5 +51,7 @@
         public static string UpdatedFieldName => "updated";
 
         public static string RankName => "Rank";
+
+        public static string FlaggedName => "Flagged";
     }
 }

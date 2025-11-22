@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string rankFieldName = string.Empty;
 
+        private static string flaggedFieldName = string.Empty;
+
         private static readonly SocketsHttpHandler SharedHandler = new SocketsHttpHandler
         {
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
@@ -265,7 +267,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var issueWithCompleteChangelog = MergeChangelogIntoIssueJson(issueJsonDoc.RootElement, allChangelogHistories);
 
             var rankField = await GetRankField(jiraClient);
-            var issue = issueFactory.CreateIssueFromJson(issueWithCompleteChangelog, workitemQueryOwner, additionalRelatedField, rankField);
+
+            var flaggedField = await GetFlaggedFieldName(jiraClient, workitemQueryOwner);
+            var issue = issueFactory.CreateIssueFromJson(issueWithCompleteChangelog, workitemQueryOwner, additionalRelatedField, rankField, flaggedField);
 
             logger.LogDebug("Found Issue by Key: {Key} with {ChangelogCount} changelog entries", issue.Key, allChangelogHistories.Count);
 
@@ -399,6 +403,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return JsonDocument.Parse(stream.ToArray()).RootElement;
         }
 
+        private static async Task<string> GetFlaggedFieldName(HttpClient jiraClient, IWorkItemQueryOwner workItemQueryOwner)
+        {
+            var blockedTags = workItemQueryOwner.BlockedTags.Select(bt => bt.ToLower());
+
+            if (!blockedTags.Contains(JiraFieldNames.FlaggedName.ToLower()))
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrEmpty(flaggedFieldName))
+            {
+                return flaggedFieldName;
+            }
+
+            flaggedFieldName = await GetCustomFieldByName(jiraClient, JiraFieldNames.FlaggedName);
+            return flaggedFieldName;
+        }
+
         private static async Task<string> GetRankField(HttpClient jiraClient)
         {
             if (!string.IsNullOrEmpty(rankFieldName))
@@ -406,7 +428,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return rankFieldName;
             }
 
+            rankFieldName = await GetCustomFieldByName(jiraClient, JiraFieldNames.RankName);
+            return rankFieldName;
+        }
+
+        private static async Task<string> GetCustomFieldByName(HttpClient jiraClient, string customFieldName)
+        {
             var url = "rest/api/latest/field";
+            var customField = string.Empty;
 
             var response = await jiraClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
@@ -416,14 +445,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             foreach (var field in jsonResponse.RootElement.EnumerateArray())
             {
-                if (field.GetProperty(JiraFieldNames.NamePropertyName).GetString() == JiraFieldNames.RankName)
+                if (field.GetProperty(JiraFieldNames.NamePropertyName).GetString() == customFieldName)
                 {
-                    rankFieldName = field.GetProperty(JiraFieldNames.IdPropertyName).GetString() ?? string.Empty;
+                    customField = field.GetProperty(JiraFieldNames.IdPropertyName).GetString() ?? string.Empty;
                     break;
                 }
             }
 
-            return rankFieldName;
+            return customField;
         }
 
         private WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner)
@@ -457,13 +486,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var deployment = await GetDeploymentType(client, workItemQueryOwner.WorkTrackingSystemConnection);
             
             var rankField = await GetRankField(client);
+            var flaggedField = await GetFlaggedFieldName(client, workItemQueryOwner);
 
             if (deployment == JiraDeployment.Cloud)
             {
-                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField);
+                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField, flaggedField);
             }
 
-            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField);
+            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField, flaggedField);
         }
 
         private bool ShouldFetchFullChangelog(JsonElement jsonIssue, string issueKey, out int totalChangelogs)
@@ -487,7 +517,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return false;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, string? additionalRelatedField, int? maxResultsOverride, string rankField)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, string? additionalRelatedField, int? maxResultsOverride, string rankField, string flaggedField)
         {
             var issues = new List<Issue>();
             var startAt = 0;
@@ -514,7 +544,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 {
                     var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
                     
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, additionalRelatedField, rankField);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, additionalRelatedField, rankField, flaggedField);
                     issues.Add(issue);
                 }
             }
@@ -522,7 +552,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return issues;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, string? additionalRelatedField, int? maxResultsOverride, string rankField)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, string? additionalRelatedField, int? maxResultsOverride, string rankField, string flaggedField)
         {
             var issues = new List<Issue>();
             string? nextPageToken = null;
@@ -545,7 +575,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var response = await client.GetAsync(query.ToString());
                 if (!response.IsSuccessStatusCode)
                 { 
-                    return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField);
+                    return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, additionalRelatedField, maxResultsOverride, rankField, flaggedField);
                 }
 
                 var body = await response.Content.ReadAsStringAsync();
@@ -575,7 +605,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
                     }
                     
-                    var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, additionalRelatedField, rankField);
+                    var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, additionalRelatedField, rankField, flaggedField);
                     issues.Add(issue);
                 }
 

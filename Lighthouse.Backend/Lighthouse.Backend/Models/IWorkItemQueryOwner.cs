@@ -22,6 +22,10 @@ namespace Lighthouse.Backend.Models
 
         IEnumerable<string> OpenStates { get; }
 
+        List<string> BlockedStates { get; set; }
+        
+        List<string> BlockedTags { get; set; }
+
         StateCategories MapStateToStateCategory(string state);
     }
 }
