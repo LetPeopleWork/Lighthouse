@@ -124,6 +124,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 				{
 					field: "name",
 					headerName: `${featureTerm} Name`,
+					hideable: false,
 					width: 300,
 					flex: 1,
 					renderCell: ({ row }) => (

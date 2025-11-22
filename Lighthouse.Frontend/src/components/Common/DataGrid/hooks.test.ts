@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	useColumnOrder,
 	useColumnVisibility,
+	useColumnWidths,
 	usePersistedGridState,
 } from "./hooks";
 
@@ -177,6 +178,7 @@ describe("usePersistedGridState", () => {
 			sortModel: [{ field: "name", sort: "asc" as const }],
 			columnVisibilityModel: { age: false },
 			columnOrder: ["id", "name", "email"],
+			columnWidths: { id: 70, name: 120 },
 		};
 
 		act(() => {
@@ -195,6 +197,7 @@ describe("usePersistedGridState", () => {
 			sortModel: [{ field: "age", sort: "desc" as const }],
 			columnVisibilityModel: { email: false },
 			columnOrder: ["name", "id", "age", "email"],
+			columnWidths: { name: 130, age: 90 },
 		};
 
 		localStorageMock.setItem(storageKey, JSON.stringify(existingState));
@@ -209,6 +212,7 @@ describe("usePersistedGridState", () => {
 
 		const newState = {
 			sortModel: [{ field: "name", sort: "asc" as const }],
+			columnWidths: { id: 70 },
 		};
 
 		act(() => {
@@ -225,6 +229,7 @@ describe("usePersistedGridState", () => {
 			sortModel: undefined,
 			columnVisibilityModel: undefined,
 			columnOrder: undefined,
+			columnWidths: undefined,
 		});
 		expect(localStorageMock.getItem(storageKey)).toBeNull();
 	});
@@ -239,6 +244,44 @@ describe("usePersistedGridState", () => {
 			sortModel: undefined,
 			columnVisibilityModel: undefined,
 			columnOrder: undefined,
+			columnWidths: undefined,
 		});
+	});
+});
+
+describe("useColumnWidths", () => {
+	it("should initialize with provided widths", () => {
+		const initialWidths = { id: 70, name: 120 };
+		const { result } = renderHook(() => useColumnWidths(initialWidths));
+
+		expect(result.current.columnWidths).toEqual(initialWidths);
+	});
+
+	it("should set a column width", () => {
+		const initialWidths = { id: 70 };
+		const { result } = renderHook(() => useColumnWidths(initialWidths));
+
+		act(() => {
+			result.current.setColumnWidth("name", 150);
+		});
+
+		expect(result.current.columnWidths).toEqual({ id: 70, name: 150 });
+	});
+
+	it("should reset to initial widths", () => {
+		const initialWidths = { id: 70 };
+		const { result } = renderHook(() => useColumnWidths(initialWidths));
+
+		act(() => {
+			result.current.setColumnWidth("name", 150);
+		});
+
+		expect(result.current.columnWidths).not.toEqual(initialWidths);
+
+		act(() => {
+			result.current.reset();
+		});
+
+		expect(result.current.columnWidths).toEqual(initialWidths);
 	});
 });

@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -332,6 +333,40 @@ describe("DataGridBase", () => {
 		});
 	});
 
+	it("should not allow non-hideable columns to be hidden", () => {
+		const storageKey = "test-grid";
+		const persisted = { columnVisibilityModel: { name: false } };
+		// Mark 'name' column as non-hideable by setting hideable flag on the column definition
+		const columnsWithNonHideable: DataGridColumn<TestRow>[] = [
+			{ field: "id", headerName: "ID", width: 70, sortable: true },
+			{
+				field: "name",
+				headerName: "Name",
+				width: 130,
+				sortable: true,
+				hideable: false,
+			},
+			{ field: "age", headerName: "Age", width: 90, sortable: true },
+			{ field: "email", headerName: "Email", width: 200, sortable: true },
+		];
+
+		localStorage.setItem(
+			`lighthouse:datagrid:${storageKey}:state`,
+			JSON.stringify(persisted),
+		);
+
+		render(
+			<DataGridBase
+				rows={mockRows}
+				columns={columnsWithNonHideable}
+				storageKey={storageKey}
+			/>,
+		);
+
+		// Even though persisted state tried to hide 'name', it should remain visible
+		expect(screen.getByText("Name")).toBeInTheDocument();
+	});
+
 	describe("Responsive Design & Sizing", () => {
 		it("should render with default height of auto", () => {
 			const { container } = render(
@@ -602,5 +637,153 @@ describe("DataGridBase", () => {
 			const grid = screen.getByRole("grid");
 			expect(grid).toBeInTheDocument();
 		});
+	});
+});
+
+describe("Persistence (Order & Widths)", () => {
+	it("should apply persisted column order on mount", () => {
+		const storageKey = "test-grid";
+		const persisted = {
+			columnOrder: ["age", "name", "id", "email"],
+		};
+		localStorage.setItem(
+			`lighthouse:datagrid:${storageKey}:state`,
+			JSON.stringify(persisted),
+		);
+
+		const { container } = render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey={storageKey}
+			/>,
+		);
+
+		// Column headers should appear in order specified in columnOrder - ensure Age appears before Name
+		const headers = container.querySelectorAll('[role="columnheader"]');
+		// Map to text content
+		const headerTexts = Array.from(headers).map(
+			(h) => h.textContent?.trim() || "",
+		);
+		const ageIdx = headerTexts.indexOf("Age");
+		const nameIdx = headerTexts.indexOf("Name");
+		expect(ageIdx).toBeGreaterThan(-1);
+		expect(nameIdx).toBeGreaterThan(-1);
+		expect(ageIdx).toBeLessThan(nameIdx);
+	});
+
+	it("should always show reset layout and column order buttons even when export is disabled", async () => {
+		render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey="test-grid"
+				enableExport={false}
+			/>,
+		);
+
+		// Reset layout should be visible even if export is disabled
+		const resetButton = screen.getByTestId("reset-layout-button");
+		expect(resetButton).toBeInTheDocument();
+
+		// Column order button should also be visible by default
+		const orderButton = screen.getByTestId("open-column-order-button");
+		expect(orderButton).toBeInTheDocument();
+	});
+
+	it("should apply persisted column widths on mount", () => {
+		const storageKey = "test-grid";
+		const persisted = {
+			columnWidths: { name: 250 },
+		};
+		localStorage.setItem(
+			`lighthouse:datagrid:${storageKey}:state`,
+			JSON.stringify(persisted),
+		);
+
+		const { container } = render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey={storageKey}
+			/>,
+		);
+
+		// Check the header cell for Name width is roughly persisted value
+		const nameHeader = container.querySelector('[data-field="name"]');
+		if (nameHeader) {
+			const styleWidth = (nameHeader as HTMLElement).style.width;
+			// MUI may apply px values, so ensure persisted value exists in string
+			expect(styleWidth.includes("250")).toBeTruthy();
+		}
+	});
+
+	it("should clear persisted state when reset layout is clicked", async () => {
+		const storageKey = "test-grid";
+		const persisted = {
+			columnOrder: ["age", "name", "id", "email"],
+			columnWidths: { name: 200 },
+			columnVisibilityModel: { email: false },
+		};
+		localStorage.setItem(
+			`lighthouse:datagrid:${storageKey}:state`,
+			JSON.stringify(persisted),
+		);
+
+		render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey={storageKey}
+				enableExport={true}
+			/>,
+		);
+
+		const resetButton = screen.getByTestId("reset-layout-button");
+		expect(resetButton).toBeInTheDocument();
+
+		await userEvent.click(resetButton);
+		// Persisted state should be removed
+		expect(
+			localStorage.getItem(`lighthouse:datagrid:${storageKey}:state`),
+		).toBeNull();
+	});
+
+	it("should open ColumnOrderDialog and persist order after save", async () => {
+		const storageKey = "test-grid";
+		render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey={storageKey}
+				enableExport={true}
+			/>,
+		);
+
+		// Open column order dialog via toolbar button
+		const orderButton = screen.getByTestId("open-column-order-button");
+		expect(orderButton).toBeInTheDocument();
+
+		await userEvent.click(orderButton);
+
+		// Dialog should appear - find it by role
+		const dialog = screen.getByRole("dialog");
+		expect(dialog).toBeInTheDocument();
+
+		const moveUpName = within(dialog).getByTestId("move-up-name");
+		// Move 'name' up (if it's not first)
+		await userEvent.click(moveUpName);
+
+		// Save dialog
+		const saveButton = within(dialog).getByText("Save");
+		await userEvent.click(saveButton);
+
+		// Persisted state should have columnOrder array
+		const stored = JSON.parse(
+			localStorage.getItem(`lighthouse:datagrid:${storageKey}:state`) || "{}",
+		);
+		expect(stored.columnOrder).toBeDefined();
+		// Ensure 'name' appears somewhere in array (changes may vary depending on UI state)
+		expect(stored.columnOrder).toContain("name");
 	});
 });

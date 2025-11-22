@@ -31,6 +31,7 @@ const ConnectionDetailTable: React.FC<ConnectionDetailTableProps> = ({
 				field: "name",
 				headerName: "Name",
 				flex: 1,
+				hideable: false,
 				sortable: true,
 			},
 			{

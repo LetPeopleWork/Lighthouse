@@ -95,6 +95,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				headerName: `${featureTerm} Name`,
 				width: 300,
 				flex: 1,
+				hideable: false,
 				renderCell: ({ row }) => (
 					<FeatureName
 						name={getWorkItemName(row)}

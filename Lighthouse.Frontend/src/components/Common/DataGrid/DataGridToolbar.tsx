@@ -1,5 +1,7 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import ReplayIcon from "@mui/icons-material/Replay";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import { useGridApiContext } from "@mui/x-data-grid";
 import type React from "react";
@@ -12,6 +14,12 @@ interface DataGridToolbarProps {
 	enableExport?: boolean;
 	/** Custom filename for CSV export (without extension) */
 	exportFileName?: string;
+	/** Reset layout handler */
+	onResetLayout?: () => void;
+	/** Open column order dialog */
+	onOpenColumnOrder?: () => void;
+	/** Whether user may reorder columns */
+	allowColumnReorder?: boolean;
 }
 
 /**
@@ -22,6 +30,9 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	canUsePremiumFeatures = false,
 	enableExport = false,
 	exportFileName,
+	onResetLayout,
+	onOpenColumnOrder,
+	allowColumnReorder = false,
 }) => {
 	const apiRef = useGridApiContext();
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
@@ -228,6 +239,34 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 						</span>
 					</Tooltip>
 				</>
+			)}
+			{/* Reset layout button */}
+			{onResetLayout && (
+				<Tooltip title="Reset layout to defaults">
+					<span>
+						<IconButton
+							onClick={onResetLayout}
+							size="small"
+							data-testid="reset-layout-button"
+						>
+							<ReplayIcon fontSize="small" />
+						</IconButton>
+					</span>
+				</Tooltip>
+			)}
+			{/* Column Order button */}
+			{allowColumnReorder && onOpenColumnOrder && (
+				<Tooltip title="Reorder columns">
+					<span>
+						<IconButton
+							onClick={onOpenColumnOrder}
+							size="small"
+							data-testid="open-column-order-button"
+						>
+							<ViewColumnIcon fontSize="small" />
+						</IconButton>
+					</span>
+				</Tooltip>
 			)}
 		</Box>
 	);

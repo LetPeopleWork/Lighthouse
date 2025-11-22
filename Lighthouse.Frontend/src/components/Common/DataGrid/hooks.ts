@@ -70,6 +70,7 @@ export function useColumnOrder(initialColumnOrder: string[]) {
 		columnOrder,
 		moveColumn,
 		reset,
+		setColumnOrder,
 	};
 }
 
@@ -92,17 +93,38 @@ export function usePersistedGridState(storageKey: string) {
 			sortModel: undefined,
 			columnVisibilityModel: undefined,
 			columnOrder: undefined,
+			columnWidths: undefined,
 		};
 	});
 
 	const saveState = useCallback(
 		(newState: PersistedGridState) => {
-			setState(newState);
-			try {
-				localStorage.setItem(storageKey, JSON.stringify(newState));
-			} catch (error) {
-				console.error("Error saving grid state to localStorage:", error);
-			}
+			setState((prev) => {
+				const merged = { ...prev, ...newState } as PersistedGridState;
+				try {
+					localStorage.setItem(storageKey, JSON.stringify(merged));
+				} catch (error) {
+					console.error("Error saving grid state to localStorage:", error);
+				}
+				return merged;
+			});
+		},
+		[storageKey],
+	);
+
+	// Allow callers to provide a function updater to safely merge the new state
+	const updateState = useCallback(
+		(updater: (prev: PersistedGridState) => PersistedGridState) => {
+			setState((prev) => {
+				const next = updater(prev);
+				const merged = { ...prev, ...next } as PersistedGridState;
+				try {
+					localStorage.setItem(storageKey, JSON.stringify(merged));
+				} catch (error) {
+					console.error("Error saving grid state to localStorage:", error);
+				}
+				return merged;
+			});
 		},
 		[storageKey],
 	);
@@ -112,6 +134,7 @@ export function usePersistedGridState(storageKey: string) {
 			sortModel: undefined,
 			columnVisibilityModel: undefined,
 			columnOrder: undefined,
+			columnWidths: undefined,
 		});
 		try {
 			localStorage.removeItem(storageKey);
@@ -123,6 +146,41 @@ export function usePersistedGridState(storageKey: string) {
 	return {
 		state,
 		saveState,
+		updateState,
 		clearState,
+	};
+}
+
+/**
+ * Hook for managing column widths.
+ * @param initialWidths - Object mapping column field names to widths (pixels)
+ */
+export function useColumnWidths(
+	initialWidths: { [field: string]: number } = {},
+) {
+	const [columnWidths, setColumnWidths] = useState<{ [field: string]: number }>(
+		initialWidths,
+	);
+
+	const setColumnWidth = useCallback((field: string, width: number) => {
+		setColumnWidths((prev) => ({ ...prev, [field]: width }));
+	}, []);
+
+	const setAllWidths = useCallback(
+		(nextWidths: { [field: string]: number }) => {
+			setColumnWidths(nextWidths);
+		},
+		[],
+	);
+
+	const reset = useCallback(() => {
+		setColumnWidths(initialWidths);
+	}, [initialWidths]);
+
+	return {
+		columnWidths,
+		setColumnWidth,
+		setAllWidths,
+		reset,
 	};
 }

@@ -58,12 +58,10 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		return "owningTeam" in item;
 	}, []);
 
-	const hasOwningTeams =
-		items.length > 0 &&
-		items.some(
-			(item) =>
-				isFeature(item) && item.owningTeam && item.owningTeam.trim() !== "",
-		);
+	const hasOwningTeams = items.some(
+		(item) =>
+			isFeature(item) && item.owningTeam && item.owningTeam.trim() !== "",
+	);
 
 	const sortedItems = [...items].sort((a, b) => {
 		return additionalColumnContent(b) - additionalColumnContent(a);
@@ -99,15 +97,16 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				headerName: "ID",
 				width: 120,
 				renderCell: ({ row }) => {
-					return !row.name?.toLowerCase().includes("unparented")
-						? row.referenceId
-						: "";
+					return row.name?.toLowerCase().includes("unparented")
+						? ""
+						: row.referenceId;
 				},
 			},
 			{
 				field: "name",
 				headerName: "Name",
 				width: 300,
+				hideable: false,
 				flex: 1,
 				renderCell: ({ row }) => {
 					if (row.url) {

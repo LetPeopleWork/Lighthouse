@@ -189,6 +189,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					headerName: "Name",
 					width: isMobile ? 200 : 250,
 					flex: 1,
+					hideable: false,
 					renderCell: ({ row }) => (
 						<Link
 							to={`/${api}/${row.id}`}
@@ -298,7 +299,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				},
 				{
 					field: "actions",
-					headerName: "",
+					headerName: "Actions",
 					width: isMobile ? 120 : 150,
 					sortable: false,
 					hideable: false,

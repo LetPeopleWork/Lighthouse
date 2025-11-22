@@ -22,7 +22,7 @@ interface MockClipboardItem {
 	items: Record<string, Blob>;
 }
 
-global.ClipboardItem = class ClipboardItem implements MockClipboardItem {
+globalThis.ClipboardItem = class ClipboardItem implements MockClipboardItem {
 	constructor(public items: Record<string, Blob>) {}
 } as unknown as typeof ClipboardItem;
 
@@ -33,8 +33,8 @@ Object.assign(navigator, {
 });
 
 // Mock URL.createObjectURL and revokeObjectURL
-global.URL.createObjectURL = vi.fn(() => "mock-url");
-global.URL.revokeObjectURL = vi.fn();
+globalThis.URL.createObjectURL = vi.fn(() => "mock-url");
+globalThis.URL.revokeObjectURL = vi.fn();
 
 // Mock grid API
 const mockApiRef = {
@@ -132,6 +132,24 @@ describe("DataGridToolbar", () => {
 			// Export buttons should not be rendered
 			expect(screen.queryByTestId("copy-button")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("export-button")).not.toBeInTheDocument();
+		});
+
+		it("should render reset layout button when handler passed", async () => {
+			const onReset = vi.fn();
+			render(
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportFileName="test"
+					onResetLayout={onReset}
+				/>,
+			);
+
+			const resetButton = screen.getByTestId("reset-layout-button");
+			expect(resetButton).toBeInTheDocument();
+
+			await userEvent.click(resetButton);
+			expect(onReset).toHaveBeenCalled();
 		});
 	});
 

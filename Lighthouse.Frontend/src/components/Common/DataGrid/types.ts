@@ -44,6 +44,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	enableExport?: boolean;
 	/** Custom filename for CSV export (without extension) */
 	exportFileName?: string;
+	/** Whether the user can reorder columns using the Column Order dialog (default: true) */
+	allowColumnReorder?: boolean;
 }
 
 /**
@@ -60,5 +62,7 @@ export interface PersistedGridState {
 	sortModel?: GridSortModel;
 	columnVisibilityModel?: ColumnVisibilityModel;
 	columnOrder?: string[];
+	/** Column widths in pixels keyed by columns' field names */
+	columnWidths?: { [field: string]: number };
 	filterModel?: GridFilterModel;
 }
