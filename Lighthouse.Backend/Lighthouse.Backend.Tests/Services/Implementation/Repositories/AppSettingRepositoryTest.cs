@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Reflection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
@@ -84,10 +85,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             subject.Remove(appSetting);
             await subject.Save();
 
+            ResetSeedingFlag();
+
             subject = CreateSubject();
             appSetting = subject.GetByPredicate(s => s.Key == AppSettingKeys.TeamSettingFeatureWIP);
 
             Assert.That(appSetting.Value, Is.EqualTo("1"));
+        }
+
+        [TearDown]
+        protected override void TearDown()
+        {
+            ResetSeedingFlag();
+            base.TearDown();
+        }
+
+        private static void ResetSeedingFlag()
+        {
+            var type = typeof(AppSettingRepository);
+            var field = type.GetField("hasSeeded", BindingFlags.NonPublic | BindingFlags.Static);
+
+            if (field != null)
+            {
+                field.SetValue(null, false);
+            }
         }
 
         private AppSettingRepository CreateSubject()

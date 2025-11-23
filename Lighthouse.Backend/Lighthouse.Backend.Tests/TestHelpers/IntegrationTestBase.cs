@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
 
         [TearDown]
-        protected void TearDown()
+        protected virtual void TearDown()
         {
             // Ensure we clean up before disposing
             if (DatabaseContext != null)
