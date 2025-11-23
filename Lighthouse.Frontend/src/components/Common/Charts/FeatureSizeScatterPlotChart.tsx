@@ -15,6 +15,7 @@ import {
 	ChartsYAxis,
 	type ScatterMarkerProps,
 	ScatterPlot,
+	type ScatterValueType,
 } from "@mui/x-charts";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -34,28 +35,39 @@ import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
 
 const getBubbleSize = (count: number): number => {
-	return Math.min(5 + Math.sqrt(count) * 3, 20);
+	return Math.min(5 + count * 3, 20);
+};
+
+type MarkerOptions = {
+	seriesGroupedDataMap?: Map<string | number, IGroupedFeature[]>;
+	seriesGroupKeyMapMap?: Map<string | number, Map<string, number>>;
+	theme: Theme;
+	featuresTerm: string;
+	colorMap: Record<string, string>;
+	onShowItems: (items: IFeature[]) => void;
 };
 
 const ScatterMarker = (
 	props: ScatterMarkerProps,
 	allGroupedDataPoints: IGroupedFeature[],
-	theme: Theme,
-	featuresTerm: string,
-	colorMap: Record<string, string>,
-	onShowItems: (items: IFeature[]) => void,
+	groupKeyMap: Map<string, number>,
+	options: MarkerOptions,
 ) => {
-	const dataIndex = props.dataIndex || 0;
-	// Prefer explicit id on the datum (provided by the chart series' data item)
-	// The series data uses `id` to reference the allGroupedDataPoints mapping.
-	// The chart library sometimes provides the data item under different prop names
-	// (data, datum or item) and the id may be numeric or stringified, so normalize.
+	const {
+		seriesGroupedDataMap,
+		seriesGroupKeyMapMap,
+		theme,
+		featuresTerm,
+		colorMap,
+		onShowItems,
+	} = options;
+
 	type ScatterDatum = {
-		id?: number | string;
-		item?: { id?: number | string };
+		item?: Record<string, unknown>;
 		color?: string;
 		[key: string]: unknown;
 	};
+
 	const datum =
 		(
 			props as unknown as {
@@ -78,16 +90,124 @@ const ScatterMarker = (
 				item?: ScatterDatum;
 			}
 		).item;
-	const rawDatumId = datum?.id ?? datum?.item?.id ?? undefined;
-	const datumId = Number.isFinite(Number(rawDatumId))
-		? Number(rawDatumId)
-		: undefined;
-	const group =
-		typeof datumId === "number"
-			? allGroupedDataPoints[datumId]
-			: allGroupedDataPoints[dataIndex];
 
-	if (!group) return null;
+	const datumGroupIndex = (datum as unknown as { groupIndex?: number })
+		?.groupIndex;
+	const datumGroupKey = (datum as unknown as { groupKey?: string })?.groupKey;
+	const seriesIndexOrId =
+		(
+			props as unknown as {
+				seriesIndex?: number | string;
+				seriesId?: number | string;
+			}
+		)?.seriesIndex ??
+		(props as unknown as { seriesId?: number | string })?.seriesId;
+
+	let group: IGroupedFeature | undefined;
+
+	// 1) Prefer per-series mapping if available
+	if (seriesGroupedDataMap && seriesIndexOrId !== undefined) {
+		const seriesGrouped = seriesGroupedDataMap.get(seriesIndexOrId);
+		const dataIndex =
+			(props as unknown as { dataIndex?: number })?.dataIndex ?? 0;
+		if (seriesGrouped && typeof dataIndex === "number") {
+			const seriesGroup = seriesGrouped[dataIndex];
+			if (seriesGroup) {
+				if (typeof datumGroupIndex === "number") {
+					const explicitGroup = allGroupedDataPoints[datumGroupIndex];
+					if (explicitGroup && explicitGroup !== seriesGroup) {
+						group = explicitGroup;
+					} else {
+						group = seriesGroup;
+					}
+				} else if (typeof datumGroupKey === "string" && seriesGroupKeyMapMap) {
+					const seriesKeyMap = seriesGroupKeyMapMap.get(seriesIndexOrId);
+					const explicitIdx = seriesKeyMap?.get(datumGroupKey);
+					const explicitGroup =
+						typeof explicitIdx === "number"
+							? allGroupedDataPoints[explicitIdx]
+							: undefined;
+					if (explicitGroup && explicitGroup !== seriesGroup) {
+						group = explicitGroup;
+					} else {
+						group = seriesGroup;
+					}
+				} else {
+					group = seriesGroup;
+				}
+			}
+		}
+	}
+
+	// 2) Prefer explicit groupIndex if present
+	if (!group && typeof datumGroupIndex === "number") {
+		group = allGroupedDataPoints[datumGroupIndex];
+	}
+
+	// 3) Then try groupKey map
+	if (!group && typeof datumGroupKey === "string" && groupKeyMap) {
+		const idx = groupKeyMap.get(datumGroupKey);
+		if (typeof idx === "number") {
+			group = allGroupedDataPoints[idx];
+		}
+	}
+
+	// 4) As a last resort, try matching by coordinates (x/y)
+	if (!group) {
+		const datumX = (datum as unknown as { x?: number })?.x ?? props.x;
+		const datumY = (datum as unknown as { y?: number })?.y ?? props.y;
+		group = allGroupedDataPoints.find(
+			(g) => g.size === datumX && g.cycleTime === datumY,
+		);
+	}
+
+	// Fallback if we still don't have a group
+	if (!group) {
+		const providedColor = (props as unknown as { color?: string })?.color;
+		const fallbackColor = providedColor ?? theme.palette.primary.main;
+		const fallbackSize = 6;
+		return (
+			<>
+				<circle
+					cx={props.x}
+					cy={props.y}
+					r={fallbackSize}
+					fill={fallbackColor}
+					opacity={props.isHighlighted ? 1 : 0.8}
+					stroke={
+						props.isHighlighted
+							? theme.palette.background.paper
+							: hexToRgba(fallbackColor, 0.12)
+					}
+					strokeWidth={props.isHighlighted ? 2 : 1}
+					pointerEvents="none"
+				>
+					<title>{`Feature (unknown group) - click for details`}</title>
+				</circle>
+				<foreignObject
+					x={props.x - fallbackSize}
+					y={props.y - fallbackSize}
+					width={fallbackSize * 2}
+					height={fallbackSize * 2}
+				>
+					<button
+						type="button"
+						style={{
+							width: "100%",
+							height: "100%",
+							cursor: "pointer",
+							background: "transparent",
+							border: "none",
+							padding: 0,
+							borderRadius: "50%",
+						}}
+						onClick={() => {}}
+						aria-label={`View feature details`}
+					/>
+				</foreignObject>
+			</>
+		);
+	}
 
 	const bubbleSize = getBubbleSize(group.items.length);
 	const providedColor = (props as unknown as { color?: string }).color;
@@ -102,6 +222,7 @@ const ScatterMarker = (
 			onShowItems(group.items);
 		}
 	};
+
 	return (
 		<>
 			<circle
@@ -110,8 +231,12 @@ const ScatterMarker = (
 				r={bubbleSize}
 				fill={bubbleColor}
 				opacity={props.isHighlighted ? 1 : 0.8}
-				stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
-				strokeWidth={props.isHighlighted ? 2 : 0}
+				stroke={
+					props.isHighlighted
+						? theme.palette.background.paper
+						: hexToRgba(bubbleColor, 0.12)
+				}
+				strokeWidth={props.isHighlighted ? 2 : 1}
 				pointerEvents="none"
 			>
 				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} with size ${group.size} child items`}</title>
@@ -165,18 +290,17 @@ const groupFeatures = (items: IFeature[]): IGroupedFeature[] => {
 		} else if (item.stateCategory === "Doing") {
 			cycleTime = item.workItemAge ?? 0;
 		} else {
-			// Items in the 'To Do' state are shown at the 0 line
 			cycleTime = 0;
 		}
 
-		const key = `${cycleTime}-${item.size}`;
+		const key = `${item.stateCategory ?? item.state ?? "Unknown"}-${cycleTime}-${item.size}`;
 
 		if (!groups[key]) {
 			groups[key] = {
 				cycleTime,
 				size: item.size,
 				items: [],
-				state: item.state || "Unknown",
+				state: item.stateCategory || item.state || "Unknown",
 			};
 		}
 
@@ -224,13 +348,11 @@ const FeatureSizeScatterPlotChart: React.FC<
 	const [fixedXAxisMax, setFixedXAxisMax] = useState<number | null>(null);
 	const [fixedYAxisMax, setFixedYAxisMax] = useState<number | null>(null);
 
-	// Initialize percentile visibility
 	useEffect(() => {
 		const newVisibility = Object.fromEntries(
 			percentiles.map((p) => [p.percentile, true]),
 		);
 		setVisiblePercentiles((prev) => {
-			// Only update if keys have actually changed
 			const prevKeys = Object.keys(prev)
 				.sort((a, b) => a.localeCompare(b))
 				.join(",");
@@ -244,13 +366,11 @@ const FeatureSizeScatterPlotChart: React.FC<
 		});
 	}, [percentiles]);
 
-	// Extract unique state categories and create color map
 	const stateCategories = useMemo(() => {
 		const stateCategorySet = new Set<StateCategory>();
 		for (const item of sizeDataPoints) {
 			stateCategorySet.add(item.stateCategory);
 		}
-		// Use logical workflow order: To Do -> In Progress -> Done
 		const logicalOrder: StateCategory[] = ["ToDo", "Doing", "Done"];
 		return logicalOrder.filter((state) => stateCategorySet.has(state));
 	}, [sizeDataPoints]);
@@ -266,10 +386,9 @@ const FeatureSizeScatterPlotChart: React.FC<
 
 	useEffect(() => {
 		const newVisibility = Object.fromEntries(
-			stateCategories.map((s) => [s, s === "Done"]), // Only Done is visible by default
+			stateCategories.map((s) => [s, s === "Done"]),
 		) as Partial<Record<StateCategory, boolean>>;
 		setVisibleStateCategories((prev) => {
-			// Only update if keys have actually changed
 			const prevKeys = Object.keys(prev)
 				.sort((a, b) => a.localeCompare(b))
 				.join(",");
@@ -283,7 +402,6 @@ const FeatureSizeScatterPlotChart: React.FC<
 		});
 	}, [stateCategories]);
 
-	// Calculate fixed axis domains from initial data to prevent axis changes on filtering
 	useEffect(() => {
 		if (sizeDataPoints.length === 0) {
 			setFixedXAxisMax(null);
@@ -291,11 +409,9 @@ const FeatureSizeScatterPlotChart: React.FC<
 			return;
 		}
 
-		// Calculate X-axis max (size)
 		const xMax = getMaxYAxisHeight(sizeDataPoints, percentiles);
 		setFixedXAxisMax(xMax);
 
-		// Calculate Y-axis max (cycle time)
 		const cycleTimes = sizeDataPoints.map((item) => {
 			if (item.stateCategory === "Done") {
 				return item.cycleTime ?? 0;
@@ -309,20 +425,26 @@ const FeatureSizeScatterPlotChart: React.FC<
 		setFixedYAxisMax(maxCycleTime * 1.1);
 	}, [sizeDataPoints, percentiles]);
 
-	// First group all features, then filter groups based on state category toggles
 	const allGroupedDataPoints = useMemo(
 		() => groupFeatures(sizeDataPoints),
 		[sizeDataPoints],
 	);
 
+	const getGroupKey = useCallback(
+		(g: IGroupedFeature) => `${g.state}-${g.cycleTime}-${g.size}`,
+		[],
+	);
+
+	const groupKeyMap = useMemo(
+		() => new Map(allGroupedDataPoints.map((g, idx) => [getGroupKey(g), idx])),
+		[allGroupedDataPoints, getGroupKey],
+	);
+
 	const groupedDataPoints = useMemo(() => {
 		return allGroupedDataPoints.filter((group) => {
-			// Show group if at least one item has a visible state category
 			return group.items.some((item) => {
-				// Filter by state category visibility
 				if (visibleStateCategories[item.stateCategory] === false) return false;
 
-				// Filter out To Do items with size 0 (not worth showing)
 				if (
 					item.stateCategory === "ToDo" &&
 					(item.size === 0 || item.size === null)
@@ -330,7 +452,6 @@ const FeatureSizeScatterPlotChart: React.FC<
 					return false;
 				}
 
-				// Keep all other items (Done/Doing with any size, or To Do with size > 0)
 				return item.size !== null;
 			});
 		});
@@ -348,12 +469,10 @@ const FeatureSizeScatterPlotChart: React.FC<
 
 	const toggleStateCategoryVisibility = (stateCategory: StateCategory) => {
 		setVisibleStateCategories((prev) => {
-			// Count how many state categories are currently visible
 			const visibleCount = Object.values(prev).filter(
 				(v) => v !== false,
 			).length;
 
-			// If trying to hide the last visible state category, prevent it
 			if (prev[stateCategory] !== false && visibleCount <= 1) {
 				return prev;
 			}
@@ -374,6 +493,100 @@ const FeatureSizeScatterPlotChart: React.FC<
 		selectedItems.length && selectedItems[0]?.cycleTime !== null
 			? `${featuresTerm} Details`
 			: `Selected ${featuresTerm}`;
+
+	const { series, seriesGroupedDataMap, seriesGroupKeyMapMap } = useMemo(() => {
+		const dataMap = new Map<number, IGroupedFeature[]>();
+		const keyMapMap = new Map<number, Map<string, number>>();
+
+		const s = stateCategories
+			.filter((state) => visibleStateCategories[state] !== false)
+			.map((stateCategory, seriesIndex) => {
+				const seriesGrouped = groupedDataPoints.filter(
+					(g) =>
+						(g.items[0]?.stateCategory || g.state || "ToDo") === stateCategory,
+				);
+
+				dataMap.set(seriesIndex, seriesGrouped);
+
+				const seriesKeyMap = new Map<string, number>();
+				for (const group of seriesGrouped) {
+					const globalIdx = allGroupedDataPoints.indexOf(group);
+					seriesKeyMap.set(getGroupKey(group), globalIdx);
+				}
+
+				keyMapMap.set(seriesIndex, seriesKeyMap);
+
+				const seriesData = seriesGrouped.map((group) => {
+					const hasBlockedItems = group.items.some((i) => i.isBlocked);
+					const fillColor = hasBlockedItems
+						? errorColor
+						: colorMap[stateCategory] || theme.palette.primary.main;
+					const idx = allGroupedDataPoints.indexOf(group);
+					return {
+						x: group.size,
+						y: group.cycleTime,
+						groupIndex: idx,
+						groupKey: getGroupKey(group),
+						itemCount: group.items.length,
+						color: fillColor,
+					};
+				});
+
+				return {
+					type: "scatter" as const,
+					id: seriesIndex,
+					label: getStateCategoryDisplayName(stateCategory),
+					data: seriesData,
+					xAxisId: "sizeAxis",
+					yAxisId: "timeAxis",
+					color: colorMap[stateCategory] || theme.palette.primary.main,
+					markerSize: 4,
+					highlightScope: {
+						highlight: "item" as const,
+						fade: "global" as const,
+					},
+					valueFormatter: (item: ScatterValueType | null) => {
+						if (!item) return "";
+						const groupIndexVal = (item as unknown as { groupIndex?: number })
+							?.groupIndex;
+						const itemKey = (item as unknown as { groupKey?: string })
+							?.groupKey;
+						let group: IGroupedFeature | undefined;
+						if (typeof groupIndexVal === "number") {
+							group = allGroupedDataPoints[groupIndexVal];
+						}
+						if (!group && typeof itemKey === "string") {
+							const idx = groupKeyMap.get(itemKey);
+							if (typeof idx === "number") {
+								group = allGroupedDataPoints[idx];
+							}
+						}
+						if (!group) return "";
+						const numberOfClosedItems = group.items.length ?? 0;
+						if (numberOfClosedItems === 1) {
+							const single = group.items[0];
+							return `${getWorkItemName(single)} - ${single.state} (Click for details)`;
+						}
+						return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
+					},
+				};
+			});
+		return {
+			series: s,
+			seriesGroupedDataMap: dataMap,
+			seriesGroupKeyMapMap: keyMapMap,
+		};
+	}, [
+		stateCategories,
+		visibleStateCategories,
+		groupedDataPoints,
+		colorMap,
+		theme,
+		allGroupedDataPoints,
+		getGroupKey,
+		groupKeyMap,
+		featuresTerm,
+	]);
 
 	return sizeDataPoints.length > 0 ? (
 		<>
@@ -483,57 +696,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 								},
 							},
 						]}
-						series={stateCategories
-							.filter((s) => visibleStateCategories[s] !== false)
-							.map((stateCategory) => {
-								const seriesData = groupedDataPoints
-									.filter(
-										(g) =>
-											(g.items[0]?.stateCategory || g.state || "ToDo") ===
-											stateCategory,
-									)
-									.map((group) => {
-										const hasBlockedItems = group.items.some(
-											(i) => i.isBlocked,
-										);
-										const fillColor = hasBlockedItems
-											? errorColor
-											: colorMap[stateCategory] || theme.palette.primary.main;
-										return {
-											x: group.size,
-											y: group.cycleTime,
-											id: allGroupedDataPoints.indexOf(group),
-											itemCount: group.items.length,
-											color: fillColor,
-										};
-									});
-
-								return {
-									type: "scatter",
-									id: `series-${stateCategory}`,
-									label: getStateCategoryDisplayName(stateCategory),
-									data: seriesData,
-									xAxisId: "sizeAxis",
-									yAxisId: "timeAxis",
-									color: colorMap[stateCategory] || theme.palette.primary.main,
-									markerSize: 4,
-									highlightScope: {
-										highlight: "item",
-										fade: "global",
-									},
-									valueFormatter: (item) => {
-										if (item?.id === undefined) return "";
-										const group = allGroupedDataPoints[item.id as number];
-										if (!group) return "";
-										const numberOfClosedItems = group.items.length ?? 0;
-										if (numberOfClosedItems === 1) {
-											const single = group.items[0];
-											return `${getWorkItemName(single)} 	- ${single.state} (Click for details)`;
-										}
-										return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
-									},
-								};
-							})}
+						series={series}
 					>
 						{percentiles.map((p) => {
 							const forecastLevel = new ForecastLevel(p.percentile);
@@ -556,14 +719,14 @@ const FeatureSizeScatterPlotChart: React.FC<
 						<ScatterPlot
 							slots={{
 								marker: (props) =>
-									ScatterMarker(
-										props,
-										allGroupedDataPoints,
+									ScatterMarker(props, allGroupedDataPoints, groupKeyMap, {
+										seriesGroupedDataMap,
+										seriesGroupKeyMapMap,
 										theme,
 										featuresTerm,
 										colorMap,
-										handleShowItems,
-									),
+										onShowItems: handleShowItems,
+									}),
 							}}
 						/>
 						<ChartsTooltip

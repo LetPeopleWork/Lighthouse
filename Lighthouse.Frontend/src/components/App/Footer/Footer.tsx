@@ -1,4 +1,3 @@
-import CallIcon from "@mui/icons-material/Call";
 import EmailIcon from "@mui/icons-material/Email";
 import ForumIcon from "@mui/icons-material/Forum";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";

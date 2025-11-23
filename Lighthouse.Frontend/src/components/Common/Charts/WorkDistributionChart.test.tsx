@@ -548,8 +548,8 @@ describe("WorkDistributionChart component", () => {
 			expect(colorBox1).toBeTruthy();
 
 			const colorMap = getColorMapForKeys(["LARGE", "SMALL"], true);
-			const expected0 = `rgb(${hexToRgb(colorMap[colorMap.LARGE]).r}, ${hexToRgb(colorMap[colorMap.LARGE]).g}, ${hexToRgb(colorMap[colorMap.LARGE]).b})`;
-			const expected1 = `rgb(${hexToRgb(colorMap[colorMap.SMALL]).r},·${hexToRgb(colorMap.SMALL).g},·${hexToRgb(colorMap[colorMap.SMALL]).b})`;
+			const expected0 = `rgb(${hexToRgb(colorMap.LARGE).r}, ${hexToRgb(colorMap.LARGE).g}, ${hexToRgb(colorMap.LARGE).b})`;
+			const expected1 = `rgb(${hexToRgb(colorMap.SMALL).r}, ${hexToRgb(colorMap.SMALL).g}, ${hexToRgb(colorMap.SMALL).b})`;
 
 			const computed0 = globalThis.getComputedStyle(colorBox0).backgroundColor;
 			const computed1 = globalThis.getComputedStyle(colorBox1).backgroundColor;

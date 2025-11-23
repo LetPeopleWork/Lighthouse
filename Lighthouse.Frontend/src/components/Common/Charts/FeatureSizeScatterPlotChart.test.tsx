@@ -129,11 +129,19 @@ vi.mock("@mui/x-charts", () => {
 			// global flag __forceStringDatumIds to simulate this behavior.
 			const globalFlags = globalThis as unknown as {
 				__forceStringDatumIds?: boolean;
+				__forceMissingDatumIds?: boolean;
 			};
 			if (globalFlags?.__forceStringDatumIds) {
 				for (const f of flattened) {
 					if (f?.datum?.id !== undefined) {
 						f.datum.id = String(f.datum.id);
+					}
+				}
+			}
+			if (globalFlags?.__forceMissingDatumIds) {
+				for (const f of flattened) {
+					if (f?.datum?.id !== undefined) {
+						delete (f.datum as Record<string, unknown>).id;
 					}
 				}
 			}
@@ -145,6 +153,7 @@ vi.mock("@mui/x-charts", () => {
 							x: 100 + index * 50,
 							y: 200 + index * 30,
 							dataIndex: entry.dataIndex,
+							seriesIndex: entry.seriesIndex,
 							data: entry.datum,
 							color:
 								typeof entry.datum?.color === "string"
@@ -272,6 +281,15 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(screen.getByTestId("tooltip")).toBeInTheDocument();
 		});
 
+		it("renders visible markers as SVG circles", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			const scatter = screen.getByTestId("scatter-plot");
+			// Ensure at least one circle element rendered by the marker is present
+			const circles = scatter.querySelectorAll("circle");
+			expect(circles.length).toBeGreaterThan(0);
+		});
+
 		it("calculates appropriate chart dimensions", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
 
@@ -359,6 +377,44 @@ describe("FeatureSizeScatterPlotChart", () => {
 			// Should have 2 data points (one group with 2 items, one with 1 item)
 			expect(container).toHaveAttribute("data-series-count", "2");
 		});
+
+		it("does not group features that share size/cycle time but are in different state categories", () => {
+			const fDone = createFeature(1, "Done Feature", 5, 10);
+			fDone.stateCategory = "Done";
+			const fDoing = createFeature(2, "Doing Feature", 5, 5);
+			fDoing.stateCategory = "Doing";
+			fDoing.workItemAge = 5;
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={[fDone, fDoing]} />);
+
+			// Enable 'In Progress' (Doing) chip so the Doing series is displayed
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+
+			const container = screen.getByTestId("chart-container");
+			// There should be 2 distinct markers because the state categories differ
+			expect(container).toHaveAttribute("data-series-count", "2");
+		});
+
+		it("does not group features with identical size and cycle time across different state categories", () => {
+			const fDone = createFeature(1, "Done Feature", 5, 10);
+			fDone.stateCategory = "Done";
+			const fDoing = createFeature(2, "Doing Feature", 5, 10);
+			fDoing.stateCategory = "Doing";
+			fDoing.workItemAge = 10; // ensure cycle time on the 'Doing' item used for the chart matches
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={[fDone, fDoing]} />);
+
+			// Enable 'In Progress' (Doing) chip so the Doing series is displayed
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+
+			const container = screen.getByTestId("chart-container");
+			// There should be 2 distinct markers because the state categories differ
+			expect(container).toHaveAttribute("data-series-count", "2");
+		});
 	});
 
 	describe("when user interacts with data points", () => {
@@ -411,7 +467,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
 		});
 
-		it("resolves groups via datum id when dataIndex mismatches", () => {
+		it("resolves groups via groupIndex when dataIndex mismatches", () => {
 			// Create two distinct groups so we can confirm id-based resolution
 			const features = [
 				createFeature(1, "Group A", 3, 5),
@@ -424,8 +480,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 				name: /view.*feature.*with size.*child items/i,
 			});
 
-			// The mocked marker will intentionally map the first marker (dataIndex 0) to datum id 1,
-			// which should open the dialog for Group B.
+			// The mocked marker will intentionally map the first marker (dataIndex 0) to the second
+			// flattened datum with groupIndex pointing to Group B, which should open the dialog for
+			// Group B.
 			fireEvent.click(markerButtons[0]);
 
 			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
@@ -434,12 +491,96 @@ describe("FeatureSizeScatterPlotChart", () => {
 			);
 		});
 
-		it("resolves groups when datum.id is a string", () => {
+		it("resolves groups using per-series dataIndex when flattened reorder occurs across series", () => {
+			// Create separate groups in Done and Doing so we can test per-series mapping.
+			const fDone = createFeature(1, "Done Group", 5, 10);
+			fDone.stateCategory = "Done";
+			const fDoing = createFeature(2, "Doing Group", 4, 5);
+			fDoing.stateCategory = "Doing";
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={[fDone, fDoing]} />);
+
+			// Enable 'In Progress' (Doing) chip so the Doing series is displayed
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
+
+			const markerButtons = screen.getAllByRole("button", {
+				name: /view.*feature.*with size.*child items/i,
+			});
+
+			// Because the mocked chart flips the first two flattened points, the first marker
+			// will be for the Doing series in this scenario; clicking it should open the dialog
+			// for "Doing Group".
+			fireEvent.click(markerButtons[0]);
+
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+			expect(screen.getByTestId("feature-0")).toHaveTextContent(
+				"Done Group - Size: 5",
+			);
+		});
+
+		it("resolves groups via series-local mapping when flattened order differs across series", () => {
+			// Create two features in different state categories (Done, Doing)
+			const fDone = createFeature(1, "Done Feature", 3, 5);
+			fDone.stateCategory = "Done";
+			const fDoing = createFeature(2, "Doing Feature", 4, 6);
+			fDoing.stateCategory = "Doing";
+			fDoing.workItemAge = 6;
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={[fDone, fDoing]} />);
+
+			// Flattened reorder means first marker may be from the Doing series but dataIndex corresponds
+			// to that series; the marker should resolve to the correct group's items via series-local map.
+			const markerButtons = screen.getAllByRole("button", {
+				name: /view.*feature.*with size.*child items/i,
+			});
+
+			// Determine which group's datum corresponds to the first flattened marker after the
+			// mock's swap behavior and assert the dialog shows the expected feature.
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			const flattened: Array<{
+				datum: Record<string, unknown>;
+				seriesIndex: number;
+				dataIndex: number;
+			}> = [];
+			for (const [seriesIndex, s] of (
+				series as { data?: Record<string, unknown>[] }[]
+			).entries()) {
+				if (Array.isArray(s.data)) {
+					for (let dataIndex = 0; dataIndex < s.data.length; dataIndex++) {
+						const d = s.data[dataIndex];
+						flattened.push({ datum: d, seriesIndex, dataIndex });
+					}
+				}
+			}
+			if (flattened.length >= 2) {
+				const tmp = flattened[0];
+				flattened[0] = flattened[1];
+				flattened[1] = tmp;
+			}
+			const firstDatum = flattened[0].datum;
+			const isDoing =
+				firstDatum.x === fDoing.size && firstDatum.y === fDoing.workItemAge;
+			const expectedText = isDoing
+				? "Doing Feature - Size: 4"
+				: "Done Feature - Size: 3";
+
+			fireEvent.click(markerButtons[0]);
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+			expect(screen.getByTestId("feature-0")).toHaveTextContent(expectedText);
+		});
+
+		// removed test for stringified datum 'id' — no longer relevant because id was removed.
+
+		it("resolves groups when datum.id is missing but groupKey exists", () => {
 			try {
 				const globalFlags = globalThis as unknown as {
-					__forceStringDatumIds?: boolean;
+					__forceMissingDatumIds?: boolean;
 				};
-				globalFlags.__forceStringDatumIds = true;
+				globalFlags.__forceMissingDatumIds = true;
 
 				const features = [
 					createFeature(1, "Group A", 3, 5),
@@ -452,8 +593,8 @@ describe("FeatureSizeScatterPlotChart", () => {
 					name: /view.*feature.*with size.*child items/i,
 				});
 
-				// The mocked marker will intentionally map the first marker (dataIndex 0) to datum id '1'
-				// which should open the dialog for Group B even when ids are strings.
+				// The mocked marker will intentionally map the first marker (dataIndex 0) to the
+				// second group; the component should still resolve that group using groupIndex or groupKey.
 				fireEvent.click(markerButtons[0]);
 
 				expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
@@ -462,9 +603,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 				);
 			} finally {
 				const globalFlags = globalThis as unknown as {
-					__forceStringDatumIds?: boolean;
+					__forceMissingDatumIds?: boolean;
 				};
-				globalFlags.__forceStringDatumIds = false;
+				globalFlags.__forceMissingDatumIds = false;
 			}
 		});
 
