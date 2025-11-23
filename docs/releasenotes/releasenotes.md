@@ -4,13 +4,42 @@ layout: home
 nav_order: 95
 ---
 
-<!--
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
- -->
 
+## Data Grid Enhancements
+We've further improved the data grid component with additional convenience functions and column visibility controls. This includes:
+- The possibility to show and hide columns
+- The option to re-arrange the column order
+- Improved the resizing of columns
+- Storing those settings per user and table
+
+This should improve the usability of the datagrids!
+
+## Jira Integration Improvements
+Lighthouse now supports using Jira's *Flagged* field to mark work items as blocked, providing better integration with Jira workflows for identifying and tracking impediments. If you are using the *Flag* feature, you can simply add the keyword *Flagged* as a *Blocking Label* to your configuration, and Lighthouse will automatically detect it.
+
+## Categorization for Items in Scatterplots
+The Work Item Aging, Cycle Time, and Feature Size chart are all now displaying the different types of items with a specific color. The Feature Size Chart is categorizing by *Status Category*, while the other two are differentiating by *Item Type*. The categories are visualized on top as a legend, and can be toggled on and off through clicking.
+
+![Cycle Time Scatterplot](TODO)
+
+## Context for Work Distribution Chart
+The Work Distribution chart now includes tabular data views for detailed insights into underlying items. This gives some more context to the pie chart that visualizes the distribution. Additionally, the colors are aligned with the colors used for seperating items in the scatterplots (see above).
+
+![Work Distribution Chart](TODO)
+
+## Continuous Improvements & Bug Fixes
+- Fixed issue with Work Item Chart and Capitalization that could cause display inconsistencies.
+- Resolved Docker startup failures due to missing .NET version compatibility.
+- Update of various third party packages.
+
+## Contributions ❤️ 
+[Placeholder for contributors]
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.15.1404...vNext)
 
 # Lighthouse v25.11.15.1404
 {: .d-inline-block }
