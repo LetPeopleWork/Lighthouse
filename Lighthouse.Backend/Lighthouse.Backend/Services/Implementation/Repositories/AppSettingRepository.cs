@@ -6,9 +6,24 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
     public class AppSettingRepository : RepositoryBase<AppSetting>
     {
+        private static object seedLock = new object();
+        private static bool hasSeeded = false;
+
         public AppSettingRepository(LighthouseAppContext context, ILogger<AppSettingRepository> logger) : base(context, (LighthouseAppContext context) => context.AppSettings, logger)
         {
-            SeedAppSettings();
+            SeedIfNecessary();
+        }
+
+        private void SeedIfNecessary()
+        {
+            lock (seedLock)
+            {
+                if (!hasSeeded)
+                {
+                    SeedAppSettings();
+                    hasSeeded = true;
+                }
+            }
         }
 
         private void SeedAppSettings()
