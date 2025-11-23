@@ -480,15 +480,19 @@ describe("FeatureSizeScatterPlotChart", () => {
 			createFeatureWithState(4, "Another Done", 15, 20, 0, "Done"),
 		];
 
-		it("displays filter chips for Done, ToDo and In Progress", () => {
+		it("displays filter chips for Done, To Do and In Progress", () => {
 			render(
 				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
 			);
 
-			expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
-			expect(screen.getByRole("button", { name: "To Do" })).toBeInTheDocument();
 			expect(
-				screen.getByRole("button", { name: "In Progress" }),
+				screen.getByRole("button", { name: "Done visibility toggle" }),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "To Do visibility toggle" }),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
 			).toBeInTheDocument();
 		});
 
@@ -502,16 +506,20 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(container).toHaveAttribute("data-series-count", "2");
 
 			// Done chip should be filled variant
-			const doneChip = screen.getByRole("button", { name: "Done" });
+			const doneChip = screen.getByRole("button", {
+				name: "Done visibility toggle",
+			});
 			expect(doneChip.className).toContain("MuiChip-filled");
 		});
 
-		it("shows ToDo features when ToDo chip is clicked", () => {
+		it("shows To Do features when To Do chip is clicked", () => {
 			render(
 				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
 			);
 
-			const todoChip = screen.getByRole("button", { name: "To Do" });
+			const todoChip = screen.getByRole("button", {
+				name: "To Do visibility toggle",
+			});
 			fireEvent.click(todoChip);
 
 			const container = screen.getByTestId("chart-container");
@@ -524,7 +532,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
 			);
 
-			const doingChip = screen.getByRole("button", { name: "In Progress" });
+			const doingChip = screen.getByRole("button", {
+				name: "In Progress visibility toggle",
+			});
 			fireEvent.click(doingChip);
 
 			const container = screen.getByTestId("chart-container");
@@ -537,8 +547,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
 			);
 
-			const todoChip = screen.getByRole("button", { name: "To Do" });
-			const doingChip = screen.getByRole("button", { name: "In Progress" });
+			const todoChip = screen.getByRole("button", {
+				name: "To Do visibility toggle",
+			});
+			const doingChip = screen.getByRole("button", {
+				name: "In Progress visibility toggle",
+			});
 
 			fireEvent.click(todoChip);
 			fireEvent.click(doingChip);
@@ -553,8 +567,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 				<FeatureSizeScatterPlotChart sizeDataPoints={mixedStateFeatures} />,
 			);
 
-			const doneChip = screen.getByRole("button", { name: "Done" });
-			const todoChip = screen.getByRole("button", { name: "To Do" });
+			const doneChip = screen.getByRole("button", {
+				name: "Done visibility toggle",
+			});
+			const todoChip = screen.getByRole("button", {
+				name: "To Do visibility toggle",
+			});
 
 			// Enable To Do first
 			fireEvent.click(todoChip);
@@ -578,8 +596,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 			);
 
 			// Enable all chips
-			const todoChip = screen.getByRole("button", { name: "To Do" });
-			const doingChip = screen.getByRole("button", { name: "In Progress" });
+			const todoChip = screen.getByRole("button", {
+				name: "To Do visibility toggle",
+			});
+			const doingChip = screen.getByRole("button", {
+				name: "In Progress visibility toggle",
+			});
 
 			fireEvent.click(todoChip);
 			fireEvent.click(doingChip);
@@ -599,16 +621,18 @@ describe("FeatureSizeScatterPlotChart", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={onlyDoneFeatures} />);
 
 			expect(
-				screen.queryByRole("button", { name: "To Do" }),
+				screen.queryByRole("button", { name: "ToDo visibility toggle" }),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByRole("button", { name: "In Progress" }),
+				screen.queryByRole("button", { name: "In Progress visibility toggle" }),
 			).not.toBeInTheDocument();
 			// Done chip should still be visible
-			expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Done visibility toggle" }),
+			).toBeInTheDocument();
 		});
 
-		it("only shows ToDo chip when only ToDo features exist alongside Done", () => {
+		it("only shows To Do chip when only To Do features exist alongside Done", () => {
 			const doneAndTodoFeatures = [
 				createFeatureWithState(1, "Done 1", 5, 10, 0, "Done"),
 				createFeatureWithState(2, "ToDo 1", 8, null, 0, "ToDo"),
@@ -618,11 +642,15 @@ describe("FeatureSizeScatterPlotChart", () => {
 				<FeatureSizeScatterPlotChart sizeDataPoints={doneAndTodoFeatures} />,
 			);
 
-			expect(screen.getByRole("button", { name: "To Do" })).toBeInTheDocument();
 			expect(
-				screen.queryByRole("button", { name: "In Progress" }),
+				screen.getByRole("button", { name: "To Do visibility toggle" }),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "In Progress visibility toggle" }),
 			).not.toBeInTheDocument();
-			expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Done visibility toggle" }),
+			).toBeInTheDocument();
 		});
 
 		it("only shows In Progress chip when only Doing features exist alongside Done", () => {
@@ -636,15 +664,17 @@ describe("FeatureSizeScatterPlotChart", () => {
 			);
 
 			expect(
-				screen.queryByRole("button", { name: "To Do" }),
+				screen.queryByRole("button", { name: "To Do visibility toggle" }),
 			).not.toBeInTheDocument();
 			expect(
-				screen.getByRole("button", { name: "In Progress" }),
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
 			).toBeInTheDocument();
-			expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Done visibility toggle" }),
+			).toBeInTheDocument();
 		});
 
-		it("filters out ToDo items with size 0", () => {
+		it("filters out To Do items with size 0", () => {
 			const featuresWithZeroSize = [
 				createFeatureWithState(1, "Done with 0", 0, 10, 0, "Done"),
 				createFeatureWithState(2, "ToDo with 0", 0, null, 0, "ToDo"),
@@ -657,8 +687,12 @@ describe("FeatureSizeScatterPlotChart", () => {
 			);
 
 			// Enable all state chips
-			fireEvent.click(screen.getByRole("button", { name: "To Do" }));
-			fireEvent.click(screen.getByRole("button", { name: "In Progress" }));
+			fireEvent.click(
+				screen.getByRole("button", { name: "To Do visibility toggle" }),
+			);
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
 
 			const container = screen.getByTestId("chart-container");
 			// Should show: 1 Done (size 0), 1 To Do (size 5), 1 Doing (size 0) = 3
@@ -676,7 +710,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 			);
 
 			// Enable In Progress chip
-			fireEvent.click(screen.getByRole("button", { name: "In Progress" }));
+			fireEvent.click(
+				screen.getByRole("button", { name: "In Progress visibility toggle" }),
+			);
 
 			// The feature should be displayed - workItemAge of 7 should be used as y-coordinate
 			const container = screen.getByTestId("chart-container");
@@ -691,9 +727,9 @@ describe("FeatureSizeScatterPlotChart", () => {
 			render(<FeatureSizeScatterPlotChart sizeDataPoints={todoFeature} />);
 
 			// Enable To Do chip
-			fireEvent.click(screen.getByRole("button", { name: "To Do" }));
-
-			// The feature should be displayed at y=0
+			fireEvent.click(
+				screen.getByRole("button", { name: "To Do visibility toggle" }),
+			); // The feature should be displayed at y=0
 			const container = screen.getByTestId("chart-container");
 			expect(container).toHaveAttribute("data-series-count", "1");
 		});

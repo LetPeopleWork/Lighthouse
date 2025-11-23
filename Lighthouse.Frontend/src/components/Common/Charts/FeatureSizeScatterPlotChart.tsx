@@ -17,16 +17,21 @@ import {
 	ScatterPlot,
 } from "@mui/x-charts";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { IFeature } from "../../../models/Feature";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { StateCategory } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
-import { hexToRgba } from "../../../utils/theme/colors";
+import {
+	errorColor,
+	getColorMapForKeys,
+	hexToRgba,
+} from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import LegendChip from "./LegendChip";
 
 const getBubbleSize = (count: number): number => {
 	return Math.min(5 + Math.sqrt(count) * 3, 20);
@@ -41,10 +46,17 @@ const ScatterMarker = (
 ) => {
 	const dataIndex = props.dataIndex || 0;
 	const group = groupedDataPoints[dataIndex];
+
 	if (!group) return null;
+
 	const bubbleSize = getBubbleSize(group.items.length);
+	const providedColor = (props as unknown as { color?: string }).color;
+	const bubbleColor = providedColor ?? theme.palette.primary.main;
+
 	const handleOpenFeatures = () => {
-		if (group.items.length > 0) onShowItems(group.items);
+		if (group.items.length > 0) {
+			onShowItems(group.items);
+		}
 	};
 	return (
 		<>
@@ -52,7 +64,7 @@ const ScatterMarker = (
 				cx={props.x}
 				cy={props.y}
 				r={bubbleSize}
-				fill={props.color}
+				fill={bubbleColor}
 				opacity={props.isHighlighted ? 1 : 0.8}
 				stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
 				strokeWidth={props.isHighlighted ? 2 : 0}
@@ -89,10 +101,19 @@ interface IGroupedFeature {
 	cycleTime: number;
 	size: number;
 	items: IFeature[];
+	state: string;
 }
+
+const getStateCategoryDisplayName = (stateCategory: StateCategory): string => {
+	if (stateCategory === "ToDo") return "To Do";
+	if (stateCategory === "Doing") return "In Progress";
+	if (stateCategory === "Done") return "Done";
+	return stateCategory;
+};
 
 const groupFeatures = (items: IFeature[]): IGroupedFeature[] => {
 	const groups: Record<string, IGroupedFeature> = {};
+
 	for (const item of items) {
 		let cycleTime: number;
 		if (item.stateCategory === "Done") {
@@ -103,16 +124,21 @@ const groupFeatures = (items: IFeature[]): IGroupedFeature[] => {
 			// Items in the 'To Do' state are shown at the 0 line
 			cycleTime = 0;
 		}
+
 		const key = `${cycleTime}-${item.size}`;
+
 		if (!groups[key]) {
 			groups[key] = {
 				cycleTime,
 				size: item.size,
 				items: [],
+				state: item.state || "Unknown",
 			};
 		}
+
 		groups[key].items.push(item);
 	}
+
 	return Object.values(groups);
 };
 
@@ -140,85 +166,134 @@ const getMaxYAxisHeight = (
 const FeatureSizeScatterPlotChart: React.FC<
 	FeatureSizeScatterPlotChartProps
 > = ({ sizeDataPoints, sizePercentileValues = [] }) => {
-	const percentiles = sizePercentileValues ?? [];
-	const [visiblePercentiles, setVisiblePercentiles] = useState<
-		Record<number, boolean>
-	>(() => Object.fromEntries(percentiles.map((p) => [p.percentile, true])));
-
-	// State for controlling which categories to show
-	const [showDone, setShowDone] = useState<boolean>(true);
-	const [showToDo, setShowToDo] = useState<boolean>(false);
-	const [showInProgress, setShowInProgress] = useState<boolean>(false);
-
-	// Determine which state categories exist in the data
-	const availableStates = useMemo(() => {
-		const states = new Set<StateCategory>();
-		for (const item of sizeDataPoints) {
-			states.add(item.stateCategory);
-		}
-		return states;
-	}, [sizeDataPoints]);
-
-	const hasDoneFeatures = availableStates.has("Done");
-	const hasToDoFeatures = availableStates.has("ToDo");
-	const hasInProgressFeatures = availableStates.has("Doing");
-
-	// Filter features based on toggle states
-	const filteredDataPoints = useMemo(() => {
-		return sizeDataPoints.filter((item) => {
-			if (item.stateCategory === "Done") return showDone;
-			if (item.stateCategory === "ToDo") return showToDo;
-			if (item.stateCategory === "Doing") return showInProgress;
-			return false;
-		});
-	}, [sizeDataPoints, showDone, showToDo, showInProgress]);
-
-	const groupedDataPoints = useMemo(
-		() =>
-			groupFeatures(
-				filteredDataPoints.filter((item) => {
-					// Filter out To Do items with size 0 (not worth showing)
-					if (
-						item.stateCategory === "ToDo" &&
-						(item.size === 0 || item.size === null)
-					) {
-						return false;
-					}
-					// Keep all other items (Done/Doing with any size, or To Do with size > 0)
-					return item.size !== null;
-				}),
-			),
-		[filteredDataPoints],
-	);
-	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-	const [selectedItems, setSelectedItems] = useState<IFeature[]>([]);
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const sizeTerm = "Size";
 
-	const percentilesSig = useMemo(
-		() => percentiles.map((p) => `${p.percentile}:${p.value}`).join("|"),
-		[percentiles],
+	const percentiles = sizePercentileValues ?? [];
+
+	const [visiblePercentiles, setVisiblePercentiles] = useState<
+		Record<number, boolean>
+	>({});
+	const [fixedXAxisMax, setFixedXAxisMax] = useState<number | null>(null);
+	const [fixedYAxisMax, setFixedYAxisMax] = useState<number | null>(null);
+
+	// Initialize percentile visibility
+	useEffect(() => {
+		const newVisibility = Object.fromEntries(
+			percentiles.map((p) => [p.percentile, true]),
+		);
+		setVisiblePercentiles((prev) => {
+			// Only update if keys have actually changed
+			const prevKeys = Object.keys(prev)
+				.sort((a, b) => a.localeCompare(b))
+				.join(",");
+			const newKeys = Object.keys(newVisibility)
+				.sort((a, b) => a.localeCompare(b))
+				.join(",");
+			if (prevKeys !== newKeys) {
+				return newVisibility;
+			}
+			return prev;
+		});
+	}, [percentiles]);
+
+	// Extract unique state categories and create color map
+	const stateCategories = useMemo(() => {
+		const stateCategorySet = new Set<StateCategory>();
+		for (const item of sizeDataPoints) {
+			stateCategorySet.add(item.stateCategory);
+		}
+		// Use logical workflow order: To Do -> In Progress -> Done
+		const logicalOrder: StateCategory[] = ["ToDo", "Doing", "Done"];
+		return logicalOrder.filter((state) => stateCategorySet.has(state));
+	}, [sizeDataPoints]);
+
+	const colorMap = useMemo(
+		() => getColorMapForKeys(stateCategories, theme.palette.primary.main),
+		[stateCategories, theme.palette.primary.main],
 	);
-	const lastSigRef = useRef(percentilesSig);
+
+	const [visibleStateCategories, setVisibleStateCategories] = useState<
+		Partial<Record<StateCategory, boolean>>
+	>({});
 
 	useEffect(() => {
-		if (lastSigRef.current !== percentilesSig) {
-			lastSigRef.current = percentilesSig;
-			const next = Object.fromEntries(
-				percentiles.map((p) => [p.percentile, true]),
-			);
-			setVisiblePercentiles((prev) => {
-				const prevKeys = Object.keys(prev);
-				const nextKeys = Object.keys(next);
-				if (prevKeys.length !== nextKeys.length) return next;
-				for (const k of nextKeys) if (prev[+k] !== next[+k]) return next;
-				return prev;
-			});
+		const newVisibility = Object.fromEntries(
+			stateCategories.map((s) => [s, s === "Done"]), // Only Done is visible by default
+		) as Partial<Record<StateCategory, boolean>>;
+		setVisibleStateCategories((prev) => {
+			// Only update if keys have actually changed
+			const prevKeys = Object.keys(prev)
+				.sort((a, b) => a.localeCompare(b))
+				.join(",");
+			const newKeys = Object.keys(newVisibility)
+				.sort((a, b) => a.localeCompare(b))
+				.join(",");
+			if (prevKeys !== newKeys) {
+				return newVisibility;
+			}
+			return prev;
+		});
+	}, [stateCategories]);
+
+	// Calculate fixed axis domains from initial data to prevent axis changes on filtering
+	useEffect(() => {
+		if (sizeDataPoints.length === 0) {
+			setFixedXAxisMax(null);
+			setFixedYAxisMax(null);
+			return;
 		}
-	}, [percentilesSig, percentiles]);
+
+		// Calculate X-axis max (size)
+		const xMax = getMaxYAxisHeight(sizeDataPoints, percentiles);
+		setFixedXAxisMax(xMax);
+
+		// Calculate Y-axis max (cycle time)
+		const cycleTimes = sizeDataPoints.map((item) => {
+			if (item.stateCategory === "Done") {
+				return item.cycleTime ?? 0;
+			}
+			if (item.stateCategory === "Doing") {
+				return item.workItemAge ?? 0;
+			}
+			return 0;
+		});
+		const maxCycleTime = Math.max(...cycleTimes, 0);
+		setFixedYAxisMax(maxCycleTime * 1.1);
+	}, [sizeDataPoints, percentiles]);
+
+	// First group all features, then filter groups based on state category toggles
+	const allGroupedDataPoints = useMemo(
+		() => groupFeatures(sizeDataPoints),
+		[sizeDataPoints],
+	);
+
+	const groupedDataPoints = useMemo(() => {
+		return allGroupedDataPoints.filter((group) => {
+			// Show group if at least one item has a visible state category
+			return group.items.some((item) => {
+				// Filter by state category visibility
+				if (visibleStateCategories[item.stateCategory] === false) return false;
+
+				// Filter out To Do items with size 0 (not worth showing)
+				if (
+					item.stateCategory === "ToDo" &&
+					(item.size === 0 || item.size === null)
+				) {
+					return false;
+				}
+
+				// Keep all other items (Done/Doing with any size, or To Do with size > 0)
+				return item.size !== null;
+			});
+		});
+	}, [allGroupedDataPoints, visibleStateCategories]);
+
+	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+	const [selectedItems, setSelectedItems] = useState<IFeature[]>([]);
 
 	const togglePercentileVisibility = useCallback((percentile: number) => {
 		setVisiblePercentiles((prev) => ({
@@ -226,6 +301,25 @@ const FeatureSizeScatterPlotChart: React.FC<
 			[percentile]: !prev[percentile],
 		}));
 	}, []);
+
+	const toggleStateCategoryVisibility = (stateCategory: StateCategory) => {
+		setVisibleStateCategories((prev) => {
+			// Count how many state categories are currently visible
+			const visibleCount = Object.values(prev).filter(
+				(v) => v !== false,
+			).length;
+
+			// If trying to hide the last visible state category, prevent it
+			if (prev[stateCategory] !== false && visibleCount <= 1) {
+				return prev;
+			}
+
+			return {
+				...prev,
+				[stateCategory]: !prev[stateCategory],
+			};
+		});
+	};
 
 	const handleShowItems = useCallback((items: IFeature[]) => {
 		setSelectedItems(items);
@@ -236,6 +330,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 		selectedItems.length && selectedItems[0]?.cycleTime !== null
 			? `${featuresTerm} Details`
 			: `Selected ${featuresTerm}`;
+
 	return sizeDataPoints.length > 0 ? (
 		<>
 			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
@@ -245,10 +340,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 					<Typography variant="h6">
 						{featuresTerm} {sizeTerm}
 					</Typography>
-					{(percentiles.length > 0 ||
-						hasDoneFeatures ||
-						hasToDoFeatures ||
-						hasInProgressFeatures) && (
+					{(percentiles.length > 0 || stateCategories.length > 0) && (
 						<Stack
 							direction="row"
 							spacing={1}
@@ -296,90 +388,27 @@ const FeatureSizeScatterPlotChart: React.FC<
 									);
 								})}
 							</Stack>
-							<Stack
-								direction="row"
-								spacing={1}
-								sx={{ flexWrap: "wrap", gap: 1 }}
-							>
-								{hasToDoFeatures && (
-									<Chip
-										label="To Do"
-										sx={{
-											borderColor: theme.palette.primary.main,
-											borderWidth: showToDo ? 2 : 1,
-											opacity: showToDo ? 1 : 0.7,
-											backgroundColor: showToDo
-												? hexToRgba(
-														theme.palette.primary.main,
-														theme.opacity.high,
-													)
-												: "transparent",
-											"&:hover": {
-												borderColor: theme.palette.primary.main,
-												borderWidth: 2,
-												backgroundColor: hexToRgba(
-													theme.palette.primary.main,
-													theme.opacity.high + 0.1,
-												),
-											},
-										}}
-										variant={showToDo ? "filled" : "outlined"}
-										onClick={() => setShowToDo(!showToDo)}
-									/>
-								)}
-								{hasInProgressFeatures && (
-									<Chip
-										label="In Progress"
-										sx={{
-											borderColor: theme.palette.primary.main,
-											borderWidth: showInProgress ? 2 : 1,
-											opacity: showInProgress ? 1 : 0.7,
-											backgroundColor: showInProgress
-												? hexToRgba(
-														theme.palette.primary.main,
-														theme.opacity.high,
-													)
-												: "transparent",
-											"&:hover": {
-												borderColor: theme.palette.primary.main,
-												borderWidth: 2,
-												backgroundColor: hexToRgba(
-													theme.palette.primary.main,
-													theme.opacity.high + 0.1,
-												),
-											},
-										}}
-										variant={showInProgress ? "filled" : "outlined"}
-										onClick={() => setShowInProgress(!showInProgress)}
-									/>
-								)}
-								{hasDoneFeatures && (
-									<Chip
-										label="Done"
-										sx={{
-											borderColor: theme.palette.primary.main,
-											borderWidth: showDone ? 2 : 1,
-											opacity: showDone ? 1 : 0.7,
-											backgroundColor: showDone
-												? hexToRgba(
-														theme.palette.primary.main,
-														theme.opacity.high,
-													)
-												: "transparent",
-											"&:hover": {
-												borderColor: theme.palette.primary.main,
-												borderWidth: 2,
-												backgroundColor: hexToRgba(
-													theme.palette.primary.main,
-													theme.opacity.high + 0.1,
-												),
-											},
-										}}
-										variant={showDone ? "filled" : "outlined"}
-										onClick={() => setShowDone(!showDone)}
-									/>
-								)}
-							</Stack>
+							{stateCategories.length > 0 && (
+								<Stack
+									direction="row"
+									spacing={1}
+									sx={{ flexWrap: "wrap", gap: 1, ml: "auto" }}
+								>
+									{stateCategories.map((stateCategory) => (
+										<LegendChip
+											key={`legend-state-category-${stateCategory}`}
+											label={getStateCategoryDisplayName(stateCategory)}
+											color={
+												colorMap[stateCategory] ?? theme.palette.primary.main
+											}
+											visible={visibleStateCategories[stateCategory] !== false}
+											onToggle={() =>
+												toggleStateCategoryVisibility(stateCategory)
+											}
+										/>
+									))}
+								</Stack>
+							)}
 						</Stack>
 					)}
 					<ChartContainer
@@ -390,7 +419,9 @@ const FeatureSizeScatterPlotChart: React.FC<
 								scaleType: "linear",
 								label: `${sizeTerm} (Child Items)`,
 								min: 0,
-								max: getMaxYAxisHeight(filteredDataPoints, percentiles),
+								max:
+									fixedXAxisMax ??
+									getMaxYAxisHeight(sizeDataPoints, percentiles),
 								valueFormatter: (value: number) => {
 									return Number.isInteger(value) ? value.toString() : "";
 								},
@@ -402,6 +433,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 								scaleType: "linear",
 								label: `${cycleTimeTerm} (days)`,
 								min: 0,
+								max: fixedYAxisMax ?? undefined,
 								valueFormatter: (value: number) => {
 									return Number.isInteger(value) ? value.toString() : "";
 								},
@@ -410,12 +442,20 @@ const FeatureSizeScatterPlotChart: React.FC<
 						series={[
 							{
 								type: "scatter",
-								data: groupedDataPoints.map((group, index) => ({
-									x: group.size,
-									y: group.cycleTime,
-									id: index,
-									itemCount: group.items.length,
-								})),
+								data: groupedDataPoints.map((group, index) => {
+									const hasBlockedItems = group.items.some((i) => i.isBlocked);
+									const stateCategory = group.items[0]?.stateCategory || "ToDo";
+									const fillColor = hasBlockedItems
+										? errorColor
+										: colorMap[stateCategory] || theme.palette.primary.main;
+									return {
+										x: group.size,
+										y: group.cycleTime,
+										id: index,
+										itemCount: group.items.length,
+										color: fillColor,
+									};
+								}),
 								xAxisId: "sizeAxis",
 								yAxisId: "timeAxis",
 								color: theme.palette.primary.main,

@@ -210,3 +210,135 @@ export const getPredictabilityScoreColor = (score: number): string => {
 	if (score >= 0.5) return appColors.forecast.realistic;
 	return appColors.forecast.risky;
 };
+
+/**
+ * Helper: Convert hex to RGB tuple
+ */
+export const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+	const r = Number.parseInt(hex.slice(1, 3), 16);
+	const g = Number.parseInt(hex.slice(3, 5), 16);
+	const b = Number.parseInt(hex.slice(5, 7), 16);
+	return { r, g, b };
+};
+
+/**
+ * Helper: convert RGB to hex string
+ */
+export const rgbToHex = (r: number, g: number, b: number): string => {
+	const toHex = (n: number) => {
+		const v = Math.max(0, Math.min(255, Math.round(n)));
+		return v.toString(16).padStart(2, "0");
+	};
+	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+/**
+ * Convert a hex color to HSL
+ */
+export const hexToHsl = (hex: string): { h: number; s: number; l: number } => {
+	const { r, g, b } = hexToRgb(hex);
+	const rn = r / 255;
+	const gn = g / 255;
+	const bn = b / 255;
+	const max = Math.max(rn, gn, bn);
+	const min = Math.min(rn, gn, bn);
+	let h = 0;
+	let s = 0;
+	const l = (max + min) / 2;
+	if (max !== min) {
+		const d = max - min;
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		switch (max) {
+			case rn:
+				h = (gn - bn) / d + (gn < bn ? 6 : 0);
+				break;
+			case gn:
+				h = (bn - rn) / d + 2;
+				break;
+			case bn:
+				h = (rn - gn) / d + 4;
+				break;
+		}
+		h /= 6;
+	}
+	return { h: h * 360, s: s * 100, l: l * 100 };
+};
+
+/**
+ * Convert hsl to hex color string
+ */
+export const hslToHex = (h: number, s: number, l: number): string => {
+	// h: 0..360, s: 0..100, l: 0..100
+	h /= 360;
+	s /= 100;
+	l /= 100;
+	if (s === 0) {
+		const v = Math.round(l * 255);
+		return rgbToHex(v, v, v);
+	}
+	const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+	const p = 2 * l - q;
+	const hue2rgb = (p2: number, q2: number, t: number) => {
+		if (t < 0) t += 1;
+		if (t > 1) t -= 1;
+		if (t < 1 / 6) return p2 + (q2 - p2) * 6 * t;
+		if (t < 1 / 2) return q2;
+		if (t < 2 / 3) return p2 + (q2 - p2) * (2 / 3 - t) * 6;
+		return p2;
+	};
+	const r = hue2rgb(p, q, h + 1 / 3);
+	const g = hue2rgb(p, q, h);
+	const b = hue2rgb(p, q, h - 1 / 3);
+	return rgbToHex(
+		Math.round(r * 255),
+		Math.round(g * 255),
+		Math.round(b * 255),
+	);
+};
+
+/**
+ * Returns a deterministic color map for an array of keys using the base color.
+ * Defaults to alpha shading when small set or hsl hue shift for larger sets.
+ */
+export const getColorMapForKeys = (
+	keys: string[],
+	baseColor: string = primaryColor,
+	options?: { thresholdForHsl?: number; minAlpha?: number; maxAlpha?: number },
+): Record<string, string> => {
+	const minAlpha = options?.minAlpha ?? 0.45;
+	const maxAlpha = options?.maxAlpha ?? 1;
+	const thresholdForHsl = options?.thresholdForHsl ?? 10;
+
+	const uniqueKeys = Array.from(new Set(keys.filter(Boolean))).sort((a, b) =>
+		a.localeCompare(b, undefined, { sensitivity: "base" }),
+	);
+
+	if (uniqueKeys.length === 0) return {};
+
+	// If few keys -> use opacity shading similar to pie chart
+	if (uniqueKeys.length <= thresholdForHsl) {
+		return Object.fromEntries(
+			uniqueKeys.map((k, idx) => {
+				const percent =
+					uniqueKeys.length === 1 ? 1 : idx / (uniqueKeys.length - 1);
+				const alpha = minAlpha + percent * (maxAlpha - minAlpha);
+				return [k, hexToRgba(baseColor, alpha)];
+			}),
+		);
+	}
+
+	// For larger sets, use HSL hue rotation to get distinct colors while keeping saturation/lightness of the base
+	const baseHsl = hexToHsl(baseColor);
+	return Object.fromEntries(
+		uniqueKeys.map((k, idx) => {
+			const hueShift = (idx * (360 / uniqueKeys.length)) % 360;
+			const h = (baseHsl.h + hueShift) % 360;
+			// Slightly vary lightness for readability
+			const l = Math.max(
+				20,
+				Math.min(80, baseHsl.l + (idx % 2 === 0 ? 6 : -4)),
+			);
+			return [k, hslToHex(h, baseHsl.s, l)];
+		}),
+	);
+};

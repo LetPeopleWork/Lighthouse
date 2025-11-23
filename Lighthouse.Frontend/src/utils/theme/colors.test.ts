@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	appColors,
 	calculateContrastRatio,
+	getColorMapForKeys,
 	getColorWithOpacity,
 	getContrastText,
 	getPredictabilityScoreColor,
@@ -165,7 +166,7 @@ describe("colors utility functions", () => {
 			);
 			expect(getPredictabilityScoreColor(0.8)).toBe(appColors.forecast.certain);
 			expect(getPredictabilityScoreColor(0.9)).toBe(appColors.forecast.certain);
-			expect(getPredictabilityScoreColor(1.0)).toBe(appColors.forecast.certain);
+			expect(getPredictabilityScoreColor(1)).toBe(appColors.forecast.certain);
 		});
 
 		it("should return confident color for scores >= 0.6 and < 0.75", () => {
@@ -196,7 +197,7 @@ describe("colors utility functions", () => {
 		});
 
 		it("should return risky color for scores < 0.5", () => {
-			expect(getPredictabilityScoreColor(0.0)).toBe(appColors.forecast.risky);
+			expect(getPredictabilityScoreColor(0)).toBe(appColors.forecast.risky);
 			expect(getPredictabilityScoreColor(0.25)).toBe(appColors.forecast.risky);
 			expect(getPredictabilityScoreColor(0.49)).toBe(appColors.forecast.risky);
 		});
@@ -248,6 +249,49 @@ describe("colors utility functions", () => {
 				"rgba(255, 255, 255, 0.5)",
 			);
 			expect(getColorWithOpacity("#000000", 0.25)).toBe("rgba(0, 0, 0, 0.25)");
+		});
+
+		describe("getColorMapForKeys", () => {
+			it("should return an empty object for empty keys", () => {
+				expect(getColorMapForKeys([])).toEqual({});
+			});
+
+			it("should return deterministic mapping independent of input order and remove duplicates", () => {
+				const keys = ["TypeB", "TypeA", "TypeA"];
+				const map1 = getColorMapForKeys(keys);
+				const map2 = getColorMapForKeys(["TypeA", "TypeB"]);
+				// Same keys should yield identical mapping
+				expect(Object.keys(map1).sort((a, b) => a.localeCompare(b))).toEqual(
+					Object.keys(map2).sort((a, b) => a.localeCompare(b)),
+				);
+				expect(map1.TypeA).toBe(map2.TypeA);
+				expect(map1.TypeB).toBe(map2.TypeB);
+			});
+
+			it("should use rgba alpha shading by default for few keys", () => {
+				const map = getColorMapForKeys(
+					["A", "B", "C"],
+					appColors.primary.main,
+					{ thresholdForHsl: 10 },
+				);
+				expect(map.A).toMatch(/^rgba\(/);
+				expect(map.B).toMatch(/^rgba\(/);
+				expect(map.C).toMatch(/^rgba\(/);
+			});
+
+			it("should use HSL hex colors for many keys (hsl fallback)", () => {
+				const keys: string[] = [];
+				for (let i = 0; i < 12; i++) keys.push(`K${i}`);
+				const map = getColorMapForKeys(keys, appColors.primary.main, {
+					thresholdForHsl: 10,
+				});
+				// Expect hex values (# followed by 6 hex digits)
+				for (const c of Object.values(map))
+					expect(c).toMatch(/^#[0-9a-fA-F]{6}$/);
+				// Ensure distinct colors
+				const unique = new Set(Object.values(map));
+				expect(unique.size).toBe(keys.length);
+			});
 		});
 
 		it("should handle brand colors with opacity", () => {

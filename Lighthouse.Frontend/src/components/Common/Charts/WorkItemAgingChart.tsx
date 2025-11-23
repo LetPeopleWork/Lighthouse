@@ -16,21 +16,27 @@ import {
 	ScatterPlot,
 } from "@mui/x-charts";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
-import { errorColor, hexToRgba } from "../../../utils/theme/colors";
+import {
+	errorColor,
+	getColorMapForKeys,
+	hexToRgba,
+} from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import LegendChip from "./LegendChip";
 
 interface ScatterMarkerProps {
 	x: number;
 	y: number;
 	isHighlighted?: boolean;
 	dataIndex?: number;
+	color?: string;
 }
 
 const getAgeInDays = (item: IWorkItem): number => {
@@ -56,9 +62,11 @@ const ScatterMarker = (
 	if (!group) return null;
 
 	const bubbleSize = getBubbleSize(group.items.length);
+	// Use the color provided on the data item if present (series/data.color), otherwise fallback to theme
+	const providedColor = (props as unknown as { color?: string }).color;
 	const bubbleColor = group.hasBlockedItems
 		? errorColor
-		: theme.palette.primary.main;
+		: (providedColor ?? theme.palette.primary.main);
 
 	const handleOpenWorkItems = () => {
 		if (group.items.length > 0) {
@@ -117,6 +125,7 @@ interface IGroupedWorkItem {
 	age: number;
 	items: IWorkItem[];
 	hasBlockedItems: boolean;
+	type: string;
 }
 
 const groupWorkItems = (
@@ -146,6 +155,7 @@ const groupWorkItems = (
 				age,
 				items: [],
 				hasBlockedItems: false,
+				type: item.type || "Unknown",
 			};
 		}
 
@@ -185,6 +195,27 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 
+	// Extract unique types and create color map
+	const types = useMemo(() => {
+		const typeSet = new Set<string>();
+		for (const item of inProgressItems) {
+			if (item.type) typeSet.add(item.type);
+		}
+		return Array.from(typeSet).sort((a, b) => a.localeCompare(b));
+	}, [inProgressItems]);
+
+	const colorMap = useMemo(
+		() => getColorMapForKeys(types, theme.palette.primary.main),
+		[types, theme.palette.primary.main],
+	);
+
+	const [visibleTypes, setVisibleTypes] = useState<Record<string, boolean>>({});
+
+	// Initialize visible types when types change
+	useEffect(() => {
+		setVisibleTypes(Object.fromEntries(types.map((type) => [type, true])));
+	}, [types]);
+
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
@@ -205,8 +236,17 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 
 	useEffect(() => {
 		const grouped = groupWorkItems(inProgressItems, doingStates);
-		setGroupedDataPoints(grouped);
-	}, [inProgressItems, doingStates]);
+		// Filter based on type visibility - show group if at least one item has a visible type
+		const filtered = grouped.filter((g) => {
+			// Check if any item in the group has a visible type
+			return g.items.some((item) => {
+				const itemType = item.type || "";
+				if (!itemType) return true;
+				return visibleTypes[itemType] !== false;
+			});
+		});
+		setGroupedDataPoints(filtered);
+	}, [inProgressItems, doingStates, visibleTypes]);
 
 	const togglePercentileVisibility = (percentile: number) => {
 		setVisiblePercentiles((prev) => ({
@@ -217,6 +257,25 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 
 	const toggleSleVisibility = () => {
 		setSleVisible((prev) => !prev);
+	};
+
+	const toggleTypeVisibility = (type: string) => {
+		setVisibleTypes((prev) => {
+			// Count how many types are currently visible
+			const visibleCount = Object.values(prev).filter(
+				(v) => v !== false,
+			).length;
+
+			// If trying to hide the last visible type, prevent it
+			if (prev[type] !== false && visibleCount <= 1) {
+				return prev;
+			}
+
+			return {
+				...prev,
+				[type]: !prev[type],
+			};
+		});
 	};
 
 	const handleShowItems = (items: IWorkItem[]) => {
@@ -263,9 +322,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 										borderWidth: visiblePercentiles[p.percentile] ? 2 : 1,
 										borderStyle: "dashed",
 										opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
-										backgroundColor: !visiblePercentiles[p.percentile]
-											? "transparent"
-											: hexToRgba(forecastLevel.color, theme.opacity.high),
+										backgroundColor: visiblePercentiles[p.percentile]
+											? hexToRgba(forecastLevel.color, theme.opacity.high)
+											: "transparent",
 										"&:hover": {
 											borderColor: forecastLevel.color,
 											borderWidth: 2,
@@ -291,12 +350,12 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 									borderWidth: sleVisible ? 2 : 1,
 									borderStyle: "dashed",
 									opacity: sleVisible ? 1 : 0.7,
-									backgroundColor: !sleVisible
-										? "transparent"
-										: hexToRgba(
+									backgroundColor: sleVisible
+										? hexToRgba(
 												theme.palette.primary.main,
 												theme.opacity.medium,
-											),
+											)
+										: "transparent",
 									"&:hover": {
 										borderColor: theme.palette.primary.main,
 										borderWidth: 2,
@@ -310,6 +369,21 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								onClick={toggleSleVisibility}
 							/>
 						)}
+					</Stack>
+					<Stack
+						direction="row"
+						spacing={1}
+						sx={{ mb: 2, flexWrap: "wrap", gap: 1, ml: "auto" }}
+					>
+						{types.map((type) => (
+							<LegendChip
+								key={`legend-type-${type}`}
+								label={type}
+								color={colorMap[type] ?? theme.palette.primary.main}
+								visible={visibleTypes[type] !== false}
+								onToggle={() => toggleTypeVisibility(type)}
+							/>
+						))}
 					</Stack>
 
 					<ChartContainer
@@ -353,6 +427,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 									y: group.age,
 									id: index,
 									itemCount: group.items.length,
+									color: group.hasBlockedItems
+										? errorColor
+										: colorMap[group.type] || theme.palette.primary.main,
 								})),
 								xAxisId: "stateAxis",
 								yAxisId: "ageAxis",
@@ -371,8 +448,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 									const numberOfItems = group.items.length ?? 0;
 
 									if (numberOfItems === 1) {
-										const item = group.items[0];
-										return `${getWorkItemName(item)} (Click for details)`;
+										const workItem = group.items[0];
+										return `${getWorkItemName(workItem)} (Click for details)`;
 									}
 
 									return `${numberOfItems} ${workItemsTerm} in ${group.state} (Click for details)`;
@@ -409,7 +486,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								}}
 							/>
 						)}
-
 						{doingStates.slice(0, -1).map((stateName, index) => (
 							<ChartsReferenceLine
 								key={`vertical-grid-${stateName}`}
@@ -421,7 +497,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								}}
 							/>
 						))}
-
 						<ChartsXAxis />
 						<ChartsYAxis />
 						<ScatterPlot
@@ -437,8 +512,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 										handleShowItems,
 									),
 							}}
-						/>
-
+						/>{" "}
 						<ChartsTooltip
 							trigger="item"
 							sx={{

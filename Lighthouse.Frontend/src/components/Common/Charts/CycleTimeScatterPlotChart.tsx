@@ -17,15 +17,16 @@ import {
 	ScatterPlot,
 } from "@mui/x-charts";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
-import { hexToRgba } from "../../../utils/theme/colors";
+import { getColorMapForKeys, hexToRgba } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
+import LegendChip from "./LegendChip";
 
 const getDateOnlyTimestamp = (date: Date): number => {
 	const dateOnly = new Date(date);
@@ -50,6 +51,8 @@ const ScatterMarker = (
 	if (!group) return null;
 
 	const bubbleSize = getBubbleSize(group.items.length);
+	const providedColor = (props as unknown as { color?: string }).color;
+	const bubbleColor = providedColor ?? theme.palette.primary.main;
 
 	const handleOpenWorkItems = () => {
 		if (group.items.length > 0) {
@@ -63,11 +66,11 @@ const ScatterMarker = (
 				cx={props.x}
 				cy={props.y}
 				r={bubbleSize}
-				fill={props.color}
+				fill={bubbleColor}
 				opacity={props.isHighlighted ? 1 : 0.8}
 				stroke={props.isHighlighted ? theme.palette.background.paper : "none"}
 				strokeWidth={props.isHighlighted ? 2 : 0}
-				pointerEvents="none" // Disable pointer events as the button will handle clicks
+				pointerEvents="none"
 			>
 				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}</title>
 			</circle>
@@ -101,6 +104,7 @@ interface IGroupedWorkItem {
 	closedDateTimestamp: number;
 	cycleTime: number;
 	items: IWorkItem[];
+	type: string;
 }
 
 const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
@@ -116,6 +120,7 @@ const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
 				closedDateTimestamp,
 				cycleTime: item.cycleTime,
 				items: [],
+				type: item.type || "Unknown",
 			};
 		}
 
@@ -148,7 +153,6 @@ const getMaxYAxisHeight = (
 
 	const absoluteMax = Math.max(maxFromPercentiles, maxFromSle, maxFromData);
 
-	// Add 10% padding to the top
 	return absoluteMax * 1.1;
 };
 
@@ -167,6 +171,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	>([]);
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
+	const [fixedXAxisDomain, setFixedXAxisDomain] = useState<
+		[number, number] | null
+	>(null);
+	const [fixedYAxisMax, setFixedYAxisMax] = useState<number | null>(null);
 	const theme = useTheme();
 
 	const { getTerm } = useTerminology();
@@ -176,6 +184,51 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	);
 	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+
+	// Extract unique types and create color map
+	const types = useMemo(() => {
+		const typeSet = new Set<string>();
+		for (const item of cycleTimeDataPoints) {
+			if (item.type) typeSet.add(item.type);
+		}
+		return Array.from(typeSet).sort((a, b) => a.localeCompare(b));
+	}, [cycleTimeDataPoints]);
+
+	const colorMap = useMemo(
+		() => getColorMapForKeys(types, theme.palette.primary.main),
+		[types, theme.palette.primary.main],
+	);
+
+	const [visibleTypes, setVisibleTypes] = useState<Record<string, boolean>>({});
+
+	useEffect(() => {
+		setVisibleTypes(Object.fromEntries(types.map((type) => [type, true])));
+	}, [types]);
+
+	// Calculate fixed axis domains from initial data to prevent axis changes on filtering
+	useEffect(() => {
+		if (cycleTimeDataPoints.length === 0) {
+			setFixedXAxisDomain(null);
+			setFixedYAxisMax(null);
+			return;
+		}
+
+		// Calculate X-axis domain (time range)
+		const timestamps = cycleTimeDataPoints.map((item) =>
+			getDateOnlyTimestamp(item.closedDate),
+		);
+		const minTimestamp = Math.min(...timestamps);
+		const maxTimestamp = Math.max(...timestamps);
+		setFixedXAxisDomain([minTimestamp, maxTimestamp]);
+
+		// Calculate Y-axis max
+		const yMax = getMaxYAxisHeight(
+			percentileValues,
+			serviceLevelExpectation,
+			cycleTimeDataPoints,
+		);
+		setFixedYAxisMax(yMax);
+	}, [cycleTimeDataPoints, percentileValues, serviceLevelExpectation]);
 
 	useEffect(() => {
 		setPercentiles(percentileValues);
@@ -187,8 +240,18 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	}, [percentileValues]);
 
 	useEffect(() => {
-		setGroupedDataPoints(groupWorkItems(cycleTimeDataPoints));
-	}, [cycleTimeDataPoints]);
+		const grouped = groupWorkItems(cycleTimeDataPoints);
+		// Filter based on type visibility - show group if at least one item has a visible type
+		const filtered = grouped.filter((g) => {
+			// Check if any item in the group has a visible type
+			return g.items.some((item) => {
+				const itemType = item.type || "";
+				if (!itemType) return true;
+				return visibleTypes[itemType] !== false;
+			});
+		});
+		setGroupedDataPoints(filtered);
+	}, [cycleTimeDataPoints, visibleTypes]);
 
 	const togglePercentileVisibility = (percentile: number) => {
 		setVisiblePercentiles((prev) => ({
@@ -199,6 +262,25 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 	const toggleSleVisibility = () => {
 		setSleVisible((prev) => !prev);
+	};
+
+	const toggleTypeVisibility = (type: string) => {
+		setVisibleTypes((prev) => {
+			// Count how many types are currently visible
+			const visibleCount = Object.values(prev).filter(
+				(v) => v !== false,
+			).length;
+
+			// If trying to hide the last visible type, prevent it
+			if (prev[type] !== false && visibleCount <= 1) {
+				return prev;
+			}
+
+			return {
+				...prev,
+				[type]: !prev[type],
+			};
+		});
 	};
 
 	const handleShowItems = (items: IWorkItem[]) => {
@@ -217,65 +299,93 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					<Stack
 						direction="row"
 						spacing={1}
-						sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}
+						sx={{
+							mb: 2,
+							flexWrap: "wrap",
+							gap: 1,
+							justifyContent: "space-between",
+						}}
 					>
-						{percentiles.map((p) => {
-							const forecastLevel = new ForecastLevel(p.percentile);
-							return (
-								<Chip
-									key={`legend-${p.percentile}`}
-									label={`${p.percentile}%`}
-									sx={{
-										borderColor: forecastLevel.color,
-										borderWidth: visiblePercentiles[p.percentile] ? 2 : 1,
-										borderStyle: "dashed",
-										opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
-										backgroundColor: !visiblePercentiles[p.percentile]
-											? "transparent"
-											: hexToRgba(forecastLevel.color, theme.opacity.high),
-										"&:hover": {
+						<Stack
+							direction="row"
+							spacing={1}
+							sx={{ flexWrap: "wrap", gap: 1 }}
+						>
+							{percentiles.map((p) => {
+								const forecastLevel = new ForecastLevel(p.percentile);
+								return (
+									<Chip
+										key={`legend-${p.percentile}`}
+										label={`${p.percentile}%`}
+										sx={{
 											borderColor: forecastLevel.color,
+											borderWidth: visiblePercentiles[p.percentile] ? 2 : 1,
+											borderStyle: "dashed",
+											opacity: visiblePercentiles[p.percentile] ? 1 : 0.7,
+											backgroundColor: visiblePercentiles[p.percentile]
+												? hexToRgba(forecastLevel.color, theme.opacity.high)
+												: "transparent",
+											"&:hover": {
+												borderColor: forecastLevel.color,
+												borderWidth: 2,
+												backgroundColor: hexToRgba(
+													forecastLevel.color,
+													theme.opacity.high + 0.1,
+												),
+											},
+										}}
+										variant={
+											visiblePercentiles[p.percentile] ? "filled" : "outlined"
+										}
+										onClick={() => togglePercentileVisibility(p.percentile)}
+									/>
+								);
+							})}
+							{serviceLevelExpectation && (
+								<Chip
+									key="legend-sle"
+									label={serviceLevelExpectationTerm}
+									sx={{
+										borderColor: theme.palette.primary.main,
+										borderWidth: sleVisible ? 2 : 1,
+										borderStyle: "dashed",
+										opacity: sleVisible ? 1 : 0.7,
+										backgroundColor: sleVisible
+											? hexToRgba(
+													theme.palette.primary.main,
+													theme.opacity.medium,
+												)
+											: "transparent",
+										"&:hover": {
+											borderColor: theme.palette.primary.main,
 											borderWidth: 2,
 											backgroundColor: hexToRgba(
-												forecastLevel.color,
-												theme.opacity.high + 0.1,
+												theme.palette.primary.main,
+												theme.opacity.high,
 											),
 										},
 									}}
-									variant={
-										visiblePercentiles[p.percentile] ? "filled" : "outlined"
-									}
-									onClick={() => togglePercentileVisibility(p.percentile)}
+									variant={sleVisible ? "filled" : "outlined"}
+									onClick={toggleSleVisibility}
 								/>
-							);
-						})}
-						{serviceLevelExpectation && (
-							<Chip
-								key="legend-sle"
-								label={serviceLevelExpectationTerm}
-								sx={{
-									borderColor: theme.palette.primary.main,
-									borderWidth: sleVisible ? 2 : 1,
-									borderStyle: "dashed",
-									opacity: sleVisible ? 1 : 0.7,
-									backgroundColor: !sleVisible
-										? "transparent"
-										: hexToRgba(
-												theme.palette.primary.main,
-												theme.opacity.medium,
-											),
-									"&:hover": {
-										borderColor: theme.palette.primary.main,
-										borderWidth: 2,
-										backgroundColor: hexToRgba(
-											theme.palette.primary.main,
-											theme.opacity.high,
-										),
-									},
-								}}
-								variant={sleVisible ? "filled" : "outlined"}
-								onClick={toggleSleVisibility}
-							/>
+							)}
+						</Stack>
+						{types.length > 0 && (
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ flexWrap: "wrap", gap: 1 }}
+							>
+								{types.map((type) => (
+									<LegendChip
+										key={`legend-type-${type}`}
+										label={type}
+										color={colorMap[type]}
+										visible={visibleTypes[type] !== false}
+										onToggle={() => toggleTypeVisibility(type)}
+									/>
+								))}
+							</Stack>
 						)}
 					</Stack>
 
@@ -286,6 +396,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								id: "timeAxis",
 								scaleType: "time",
 								label: "Date",
+								min: fixedXAxisDomain?.[0],
+								max: fixedXAxisDomain?.[1],
 								valueFormatter: (value: number) => {
 									return new Date(value).toLocaleDateString();
 								},
@@ -297,11 +409,13 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								scaleType: "linear",
 								label: `${cycleTimeTerm} (days)`,
 								min: 1,
-								max: getMaxYAxisHeight(
-									percentiles,
-									serviceLevelExpectation,
-									cycleTimeDataPoints,
-								),
+								max:
+									fixedYAxisMax ??
+									getMaxYAxisHeight(
+										percentiles,
+										serviceLevelExpectation,
+										cycleTimeDataPoints,
+									),
 								valueFormatter: (value: number) => {
 									return Number.isInteger(value) ? value.toString() : "";
 								},
@@ -315,6 +429,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 									y: group.cycleTime,
 									id: index,
 									itemCount: group.items.length,
+									color: colorMap[group.type] || theme.palette.primary.main,
 								})),
 								xAxisId: "timeAxis",
 								yAxisId: "cycleTimeAxis",
@@ -333,8 +448,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 									const numberOfClosedItems = group.items.length ?? 0;
 
 									if (numberOfClosedItems === 1) {
-										const item = group.items[0];
-										return `${getWorkItemName(item)} (Click for details)`;
+										const workItem = group.items[0];
+										return `${getWorkItemName(workItem)} (Click for details)`;
 									}
 
 									return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
@@ -392,7 +507,6 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							sx={{
 								zIndex: 1200,
 								maxWidth: "400px",
-								// Hide the tooltip marker/dot
 								"& .MuiChartsTooltip-mark": {
 									display: "none",
 								},
