@@ -56,10 +56,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var team1 = CreateTeam(DateTime.Now.AddDays(-1));
             var team2 = CreateTeam(DateTime.Now.AddDays(-1));
             SetupTeams([team1, team2]);
-
             var subject = CreateSubject();
 
+            var tcs = new TaskCompletionSource<bool>();
+            int callCount = 0;
+            teamDataServiceMock.Setup(x => x.UpdateTeamData(It.IsAny<Team>()))
+                .Callback(() =>
+                {
+                    if (Interlocked.Increment(ref callCount) == 2)
+                        tcs.TrySetResult(true);
+                });
+
             await subject.StartAsync(CancellationToken.None);
+
+            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(1000));
+            Assert.That(completedTask, Is.EqualTo(tcs.Task), "UpdateTeamData was not called for all teams within timeout");
 
             teamDataServiceMock.Verify(x => x.UpdateTeamData(team1), Times.Once);
             teamDataServiceMock.Verify(x => x.UpdateTeamData(team2), Times.Once);

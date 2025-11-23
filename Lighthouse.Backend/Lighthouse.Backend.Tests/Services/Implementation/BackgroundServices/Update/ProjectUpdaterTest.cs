@@ -90,12 +90,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var project = CreateProject(DateTime.Now.AddDays(-1));
             SetupProjects(project);
-
             var subject = CreateSubject();
+
+            var tcs = new TaskCompletionSource<bool>();
+            projectMetricsServiceMock.Setup(x => x.InvalidateProjectMetrics(project))
+                .Callback(() => tcs.TrySetResult(true));
 
             await subject.StartAsync(CancellationToken.None);
 
-            projectMetricsServiceMock.Verify(x => x.InvalidateProjectMetrics(project));
+            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(1000));
+            Assert.That(completedTask, Is.EqualTo(tcs.Task), "InvalidateProjectMetrics was not called within timeout");
         }
 
         [Test]
