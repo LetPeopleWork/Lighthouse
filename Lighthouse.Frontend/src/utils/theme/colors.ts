@@ -297,66 +297,75 @@ export const hslToHex = (h: number, s: number, l: number): string => {
 };
 
 /**
- * Returns a deterministic color map for an array of keys using the base color.
- * Defaults to alpha shading when small set or hsl hue shift for larger sets.
+ * Returns a deterministic color map for an array of keys.
+ * Creates highly distinct colors optimized for dark backgrounds.
  */
 export const getColorMapForKeys = (
 	keys: string[],
-	baseColor: string = primaryColor,
-	options?: { thresholdForHsl?: number; minAlpha?: number; maxAlpha?: number },
+	preserveInputOrder = false,
 ): Record<string, string> => {
-	const minAlpha = options?.minAlpha ?? 0.45;
-	const maxAlpha = options?.maxAlpha ?? 1;
-	const thresholdForHsl = options?.thresholdForHsl ?? 10;
-
-	const uniqueKeys = Array.from(new Set(keys.filter(Boolean))).sort((a, b) =>
-		a.localeCompare(b, undefined, { sensitivity: "base" }),
-	);
+	const uniqueKeysFiltered = Array.from(new Set(keys.filter(Boolean)));
+	const uniqueKeys = preserveInputOrder
+		? uniqueKeysFiltered
+		: [...uniqueKeysFiltered].sort((a, b) =>
+				a.localeCompare(b, undefined, { sensitivity: "base" }),
+			);
 
 	if (uniqueKeys.length === 0) return {};
 
-	// If few keys -> use opacity shading
-	if (uniqueKeys.length <= thresholdForHsl) {
+	// Even for 2-3 keys, use distinct hues instead of just opacity
+	// Opacity differences are too subtle on dark backgrounds
+	if (uniqueKeys.length === 1) {
+		return { [uniqueKeys[0]]: "#4DA98C" };
+	}
+
+	// Highly distinct color palette optimized for dark backgrounds
+	// Each color is perceptually different and avoids red spectrum
+	const distinctColors = [
+		"#4DA98C", // Muted Aqua
+		"#6BA3F5", // Sky Blue
+		"#B185DB", // Medium Purple
+		"#90D65C", // Yellow-Green
+		"#4DD0E1", // Cool Cyan
+		"#9C7CE6", // Soft Violet
+		"#6FCF97", // Mint Green
+		"#C5E06E", // Soft Lime
+		"#2AA0B5", // Deep Cyan
+
+		"#A78BFA", // Light Purple
+
+		"#E685B8", // Muted Pink
+		"#F2A65A", // Warm Orange
+		"#E57373", // Soft Red
+		"#82C784", // Medium Green Variation
+	];
+
+	// If we have fewer keys than colors, just map directly
+	if (uniqueKeys.length <= distinctColors.length) {
 		return Object.fromEntries(
-			uniqueKeys.map((k, idx) => {
-				const percent =
-					uniqueKeys.length === 1 ? 1 : idx / (uniqueKeys.length - 1);
-				const alpha = minAlpha + percent * (maxAlpha - minAlpha);
-				return [k, hexToRgba(baseColor, alpha)];
-			}),
+			uniqueKeys.map((k, idx) => [k, distinctColors[idx]]),
 		);
 	}
 
-	// For larger sets, use strategic hue rotation avoiding red spectrum
-	const baseHsl = hexToHsl(baseColor);
-
-	// Define safe hue ranges (avoiding red: 0-30 and 330-360)
-	// We'll use: green-cyan-blue-purple spectrum (60-300 degrees)
-	const safeHueStart = 60; // Green
-	const safeHueEnd = 300; // Purple
-	const safeHueRange = safeHueEnd - safeHueStart;
-
+	// For many keys, cycle through colors with lightness variations
 	return Object.fromEntries(
 		uniqueKeys.map((k, idx) => {
-			// Distribute hues evenly across safe range
-			const hueOffset =
-				((idx * safeHueRange) / uniqueKeys.length) % safeHueRange;
-			const h = (safeHueStart + hueOffset) % 360;
+			const colorIdx = idx % distinctColors.length;
+			const cycleCount = Math.floor(idx / distinctColors.length);
 
-			// Alternate lightness more dramatically for better distinction
-			const lightnessVariation = idx % 3;
-			let l = baseHsl.l;
-			if (lightnessVariation === 0) l = Math.min(75, baseHsl.l + 15);
-			else if (lightnessVariation === 1) l = Math.max(35, baseHsl.l - 10);
-			else l = baseHsl.l;
+			let color = distinctColors[colorIdx];
 
-			// Slightly vary saturation for additional distinction
-			const s = Math.max(
-				40,
-				Math.min(90, baseHsl.s + (idx % 2 === 0 ? 10 : -5)),
-			);
+			// Adjust lightness for subsequent cycles
+			if (cycleCount > 0) {
+				const hsl = hexToHsl(color);
+				const newL =
+					cycleCount % 2 === 0
+						? Math.min(hsl.l + 15, 75)
+						: Math.max(hsl.l - 12, 40);
+				color = hslToHex(hsl.h, hsl.s, newL);
+			}
 
-			return [k, hslToHex(h, s, l)];
+			return [k, color];
 		}),
 	);
 };

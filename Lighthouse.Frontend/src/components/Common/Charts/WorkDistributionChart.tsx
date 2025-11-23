@@ -12,12 +12,12 @@ import {
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts";
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { hexToRgba } from "../../../utils/theme/colors";
+import { getColorMapForKeys, hexToRgba } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 
 interface WorkDistributionChartProps {
@@ -122,20 +122,12 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 	// Sort by value descending for better visualization
 	pieData.sort((a, b) => b.value - a.value);
 
-	// Generate colors based on theme
-	const generateColors = (count: number): string[] => {
-		const baseColor = theme.palette.primary.main;
-		const colors: string[] = [];
-
-		for (let i = 0; i < count; i++) {
-			const opacity = 0.4 + (i / count) * 0.6; // Range from 0.4 to 1.0
-			colors.push(hexToRgba(baseColor, opacity));
-		}
-
-		return colors;
-	};
-
-	const colors = generateColors(pieData.length);
+	// Generate a deterministic color map for the parents using the helper
+	// Memoize to ensure the color mapping stays stable across re-renders
+	const colorMap = useMemo(() => {
+		const map = pieData.map((p) => p.id);
+		return getColorMapForKeys(map);
+	}, [pieData]);
 
 	const handlePieClick = (
 		_event: React.MouseEvent<SVGPathElement>,
@@ -222,11 +214,13 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 							<PieChart
 								series={[
 									{
-										data: pieData.map((item, index) => ({
+										data: pieData.map((item) => ({
 											id: item.id,
 											value: item.value,
 											label: item.label,
-											color: colors[index],
+											color:
+												colorMap[item.id] ||
+												hexToRgba(theme.palette.primary.main, 1),
 										})),
 										highlightScope: { fade: "global", highlight: "item" },
 										faded: {
@@ -308,9 +302,12 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 															width: 12,
 															height: 12,
 															borderRadius: "50%",
-															backgroundColor: colors[index],
+															backgroundColor:
+																colorMap[item.id] ||
+																hexToRgba(theme.palette.primary.main, 1),
 															flexShrink: 0,
 														}}
+														data-testid={`color-box-${index}`}
 													/>
 													<Typography
 														variant="body2"

@@ -256,8 +256,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 	}, [sizeDataPoints]);
 
 	const colorMap = useMemo(
-		() => getColorMapForKeys(stateCategories, theme.palette.primary.main),
-		[stateCategories, theme.palette.primary.main],
+		() => getColorMapForKeys(stateCategories),
+		[stateCategories],
 	);
 
 	const [visibleStateCategories, setVisibleStateCategories] = useState<

@@ -6,6 +6,7 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "../../../tests/MockApiServiceProvider";
+import { getColorMapForKeys, hexToRgb } from "../../../utils/theme/colors";
 import WorkDistributionChart from "./WorkDistributionChart";
 
 // Mock the WorkItemsDialog component
@@ -504,6 +505,57 @@ describe("WorkDistributionChart component", () => {
 			// Verify table structure exists
 			const tableCells = container.querySelectorAll("td");
 			expect(tableCells.length).toBeGreaterThanOrEqual(4);
+
+			// Verify the color boxes are present and using the getColorMapForKeys mapping
+			const keys = ["PARENT-1", "PARENT-2"];
+			const colorMap = getColorMapForKeys(keys);
+			// Check the first two color boxes
+			const colorBox0 = container.querySelector(
+				'[data-testid="color-box-0"]',
+			) as HTMLElement;
+			const colorBox1 = container.querySelector(
+				'[data-testid="color-box-1"]',
+			) as HTMLElement;
+			expect(colorBox0).toBeTruthy();
+			expect(colorBox1).toBeTruthy();
+			const computed0 = globalThis.getComputedStyle(colorBox0).backgroundColor;
+			const computed1 = globalThis.getComputedStyle(colorBox1).backgroundColor;
+			const expected0 = `rgb(${hexToRgb(colorMap["PARENT-1"]).r}, ${hexToRgb(colorMap["PARENT-1"]).g}, ${hexToRgb(colorMap["PARENT-1"]).b})`;
+			const expected1 = `rgb(${hexToRgb(colorMap["PARENT-2"]).r}, ${hexToRgb(colorMap["PARENT-2"]).g}, ${hexToRgb(colorMap["PARENT-2"]).b})`;
+			expect(computed0).toBe(expected0);
+			expect(computed1).toBe(expected1);
+		});
+
+		it("should order colors starting with the largest parent", () => {
+			const workItems = [
+				generateMockWorkItem(1, "LARGE"),
+				generateMockWorkItem(2, "LARGE"),
+				generateMockWorkItem(3, "LARGE"),
+				generateMockWorkItem(4, "SMALL"),
+			];
+
+			const { container } = renderWithContext(
+				<WorkDistributionChart workItems={workItems} />,
+			);
+
+			const colorBox0 = container.querySelector(
+				'[data-testid="color-box-0"]',
+			) as HTMLElement;
+			const colorBox1 = container.querySelector(
+				'[data-testid="color-box-1"]',
+			) as HTMLElement;
+			expect(colorBox0).toBeTruthy();
+			expect(colorBox1).toBeTruthy();
+
+			const colorMap = getColorMapForKeys(["LARGE", "SMALL"], true);
+			const expected0 = `rgb(${hexToRgb(colorMap[colorMap.LARGE]).r}, ${hexToRgb(colorMap[colorMap.LARGE]).g}, ${hexToRgb(colorMap[colorMap.LARGE]).b})`;
+			const expected1 = `rgb(${hexToRgb(colorMap[colorMap.SMALL]).r},·${hexToRgb(colorMap.SMALL).g},·${hexToRgb(colorMap[colorMap.SMALL]).b})`;
+
+			const computed0 = globalThis.getComputedStyle(colorBox0).backgroundColor;
+			const computed1 = globalThis.getComputedStyle(colorBox1).backgroundColor;
+
+			expect(computed0).toBe(expected0);
+			expect(computed1).toBe(expected1);
 		});
 
 		it("should open dialog when clicking on table row", () => {

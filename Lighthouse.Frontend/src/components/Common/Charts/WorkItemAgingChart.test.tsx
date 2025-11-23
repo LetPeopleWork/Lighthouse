@@ -539,10 +539,7 @@ describe("WorkItemAgingChart component", () => {
 			expect(seriesAttr).toBeTruthy();
 			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
 
-			const colorMap = getColorMapForKeys(
-				["Bug", "Story"],
-				testTheme.palette.primary.main,
-			);
+			const colorMap = getColorMapForKeys(["Bug", "Story"], true);
 			// First group's color should match the color map for 'Bug'
 			expect(series?.[0]?.data?.[0]?.color).toBe(colorMap.Bug);
 			expect(series?.[0]?.data?.[0]?.color).not.toBe(

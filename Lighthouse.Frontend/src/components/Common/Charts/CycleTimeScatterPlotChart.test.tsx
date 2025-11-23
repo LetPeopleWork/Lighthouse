@@ -276,10 +276,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 		expect(seriesAttr).toBeTruthy();
 		const series = seriesAttr ? JSON.parse(seriesAttr) : [];
 
-		const colorMap = getColorMapForKeys(
-			["Bug", "Feature"],
-			testTheme.palette.primary.main,
-		);
+		const colorMap = getColorMapForKeys(["Bug", "Feature"], true);
 
 		// The groups are created in the same order we provided data; 'Bug' is first group -> color should match
 		expect(series?.[0]?.data?.[0]?.color).toBe(colorMap.Bug);

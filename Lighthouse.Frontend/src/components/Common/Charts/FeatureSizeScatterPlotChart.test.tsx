@@ -302,10 +302,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
 
 			// Color mapping is created from state categories (Done, Doing)
-			const colorMap = getColorMapForKeys(
-				["Done", "Doing"],
-				testTheme.palette.primary.main,
-			);
+			const colorMap = getColorMapForKeys(["Done", "Doing"]);
 			// Find the 'Done' series
 			const doneSeries = series.find(
 				(s: { id?: string; label?: string }) =>

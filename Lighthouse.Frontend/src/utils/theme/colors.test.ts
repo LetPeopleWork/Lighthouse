@@ -268,23 +268,27 @@ describe("colors utility functions", () => {
 				expect(map1.TypeB).toBe(map2.TypeB);
 			});
 
-			it("should use rgba alpha shading by default for few keys", () => {
-				const map = getColorMapForKeys(
-					["A", "B", "C"],
-					appColors.primary.main,
-					{ thresholdForHsl: 10 },
-				);
-				expect(map.A).toMatch(/^rgba\(/);
-				expect(map.B).toMatch(/^rgba\(/);
-				expect(map.C).toMatch(/^rgba\(/);
+			it("should preserve input order when preserveInputOrder is true", () => {
+				const keys = ["B", "A", "C"];
+				const map = getColorMapForKeys(keys, true);
+				// Ensure keys are present in the same order by comparing to array of keys from Object.keys
+				const orderedKeys = Object.keys(map);
+				expect(orderedKeys[0]).toBe("B");
+				expect(orderedKeys[1]).toBe("A");
+				expect(orderedKeys[2]).toBe("C");
+			});
+
+			it("should return hex colors for few keys by default", () => {
+				const map = getColorMapForKeys(["A", "B", "C"]);
+				expect(map.A).toMatch(/^#([0-9a-fA-F]{6})$/);
+				expect(map.B).toMatch(/^#([0-9a-fA-F]{6})$/);
+				expect(map.C).toMatch(/^#([0-9a-fA-F]{6})$/);
 			});
 
 			it("should use HSL hex colors for many keys (hsl fallback)", () => {
 				const keys: string[] = [];
 				for (let i = 0; i < 12; i++) keys.push(`K${i}`);
-				const map = getColorMapForKeys(keys, appColors.primary.main, {
-					thresholdForHsl: 10,
-				});
+				const map = getColorMapForKeys(keys);
 				// Expect hex values (# followed by 6 hex digits)
 				for (const c of Object.values(map))
 					expect(c).toMatch(/^#[0-9a-fA-F]{6}$/);

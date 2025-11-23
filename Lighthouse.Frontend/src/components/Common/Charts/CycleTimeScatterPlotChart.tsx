@@ -218,10 +218,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	// Use HSL hue rotation with lower saturation to create neutral colors that are easy on the eye
 	// Avoid generating colors that are too close to the 'error' red hue so types don't look like blocked
 	// Use the default color map
-	const colorMap = useMemo(
-		() => getColorMapForKeys(types, theme.palette.primary.main),
-		[types, theme.palette.primary.main],
-	);
+	const colorMap = useMemo(() => getColorMapForKeys(types), [types]);
 
 	const [visibleTypes, setVisibleTypes] = useState<Record<string, boolean>>({});
 

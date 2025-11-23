@@ -36,7 +36,6 @@ interface ScatterMarkerProps {
 	y: number;
 	isHighlighted?: boolean;
 	dataIndex?: number;
-	color?: string;
 }
 
 const getAgeInDays = (item: IWorkItem): number => {
@@ -205,10 +204,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		return Array.from(typeSet).sort((a, b) => a.localeCompare(b));
 	}, [inProgressItems]);
 
-	const colorMap = useMemo(
-		() => getColorMapForKeys(types, theme.palette.primary.main),
-		[types, theme.palette.primary.main],
-	);
+	const colorMap = useMemo(() => getColorMapForKeys(types), [types]);
 
 	const [visibleTypes, setVisibleTypes] = useState<Record<string, boolean>>({});
 
