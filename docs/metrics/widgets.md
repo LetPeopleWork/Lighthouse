@@ -72,6 +72,8 @@ On the y-axis, you'll see how long each particular item is in progress already.
 Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), multiple items are grouped in a bubble that is shown bigger. If you want more details, you can click on a specific bubble.
 You can selectively show various percentiles from your cycle time for the selected range, as well as the Service Level Expectation if you have configured it.
 
+The chart distinguishes items by type, using different colors for each item type. The legend allows you to show or hide specific item types.
+
 {: .note}
 If there is a blocked item, it will appear as a red dot in the chart.
 
@@ -94,6 +96,8 @@ The chart displays:
 - The size of each segment corresponds to the number of child work items
 - Hovering over a segment shows the exact count and percentage
 - Items without a parent are grouped under "No Parent"
+
+Additionally, the widget includes a table that presents the same data in tabular form, allowing for easy sorting and filtering of the work distribution information.
 
 ## Viewing Details
 
@@ -211,6 +215,8 @@ If there are items that were closed on the same day with the same cycle time, th
 This visual allows you to see patterns or outliers. Hovering over a dot will give you additional information, and with a click you'll get a more detailed view about the item(s) represented by the specific dot.
 
 You can click on the percentiles on top in the legend to show/hide them. Additionally, if you have defined an SLE, you can show the line on your scatterplot as well.
+
+The chart also distinguishes items by type, using different colors for each item type. The legend allows you to show or hide specific item types.
 
 # Simplified Cumulative Flow Diagram (CFD)
 
