@@ -4,10 +4,17 @@ layout: home
 nav_order: 95
 ---
 
+<!-- 
 # Lighthouse vNext
 {: .d-inline-block }
 Preview
 {: .label .label-blue }
+-->
+
+# Lighthouse v25.11.23.1453
+{: .d-inline-block }
+Latest
+{: .label .label-green }
 
 ## Data Grid Enhancements
 We've further improved the data grid component with additional convenience functions and column visibility controls. This includes:
@@ -24,12 +31,12 @@ Lighthouse now supports using Jira's *Flagged* field to mark work items as block
 ## Categorization for Items in Scatterplots
 The Work Item Aging, Cycle Time, and Feature Size chart are all now displaying the different types of items with a specific color. The Feature Size Chart is categorizing by *Status Category*, while the other two are differentiating by *Item Type*. The categories are visualized on top as a legend, and can be toggled on and off through clicking.
 
-![Cycle Time Scatterplot](TODO)
+![Cycle Time Scatterplot](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleTimeScatterplot.png)
 
 ## Context for Work Distribution Chart
 The Work Distribution chart now includes tabular data views for detailed insights into underlying items. This gives some more context to the pie chart that visualizes the distribution. Additionally, the colors are aligned with the colors used for seperating items in the scatterplots (see above).
 
-![Work Distribution Chart](TODO)
+![Work Distribution Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/workDistributionChart.png)
 
 ## Continuous Improvements & Bug Fixes
 - Fixed issue with Work Item Chart and Capitalization that could cause display inconsistencies.
@@ -37,14 +44,15 @@ The Work Distribution chart now includes tabular data views for detailed insight
 - Update of various third party packages.
 
 ## Contributions ❤️ 
-[Placeholder for contributors]
+Special Thanks to everyone who contributed their feedback to this release:
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/) 
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.15.1404...vNext)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.15.1404...v25.11.23.1453)
 
 # Lighthouse v25.11.15.1404
-{: .d-inline-block }
-Latest
-{: .label .label-green }
 
 ## Work Distribution Chart
 The Work Distribution chart provides a visual breakdown of how work items are distributed across their parent work items (such as Features, Epics, or Initiatives). This pie chart helps you understand where your team’s effort is focused.
