@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature, type IFeature } from "../../../models/Feature";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { testTheme } from "../../../tests/testTheme";
+import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
 import FeatureSizeScatterPlotChart from "./FeatureSizeScatterPlotChart";
 
 // Mock dependencies to isolate component behavior
@@ -65,26 +66,104 @@ vi.mock("@mui/x-charts", () => {
 				data-testid="chart-container"
 				data-height={height}
 				data-x-axis-max={xAxis?.[0]?.max}
-				data-series-count={series?.[0]?.data?.length}
+				data-series-count={
+					series
+						? series.reduce(
+								(acc, s) => acc + (Array.isArray(s.data) ? s.data.length : 0),
+								0,
+							)
+						: 0
+				}
+				data-series={series ? JSON.stringify(series) : undefined}
 			>
 				{children}
 			</div>
 		),
 		ScatterPlot: ({ slots }: ScatterPlotProps) => {
-			// Simulate multiple data points based on typical usage
-			const mockDataPoints = [0, 1, 2]; // Simulating 3 groups
+			// Read the produced series data from the chart container DOM to simulate actual data ordering
+			const container =
+				typeof document === "undefined"
+					? null
+					: document.querySelector('[data-testid="chart-container"]');
+			const seriesJson = container?.getAttribute("data-series")
+				? JSON.parse(container.getAttribute("data-series") as string)
+				: [];
+			// Flatten all series data into a single array of { datum, seriesIndex, dataIndex } records
+			type ChartDatum = {
+				id?: number | string;
+				color?: string;
+				[key: string]: unknown;
+			};
+			const flattened: Array<{
+				datum: ChartDatum;
+				seriesIndex: number;
+				dataIndex: number;
+			}> = [];
+			if (Array.isArray(seriesJson)) {
+				for (const [seriesIndex, s] of (
+					seriesJson as { data?: unknown }[]
+				).entries()) {
+					if (Array.isArray(s.data)) {
+						const seriesData = s.data as ChartDatum[];
+						for (
+							let dataIndex = 0;
+							dataIndex < seriesData.length;
+							dataIndex++
+						) {
+							const d = seriesData[dataIndex];
+							flattened.push({ datum: d, seriesIndex, dataIndex });
+						}
+					}
+				}
+			}
+			// Introduce a reorder of the flattened points to simulate cases where the visual order
+			// of the points (rendering order) does not match the allGroupedDataPoints index order.
+			// This helps validate the component's resilience to mismatched series/data indices.
+			if (flattened.length >= 2) {
+				const tmp = flattened[0];
+				flattened[0] = flattened[1];
+				flattened[1] = tmp;
+			}
+
+			// Some chart implementations may stringify datum IDs; tests can set
+			// global flag __forceStringDatumIds to simulate this behavior.
+			const globalFlags = globalThis as unknown as {
+				__forceStringDatumIds?: boolean;
+			};
+			if (globalFlags?.__forceStringDatumIds) {
+				for (const f of flattened) {
+					if (f?.datum?.id !== undefined) {
+						f.datum.id = String(f.datum.id);
+					}
+				}
+			}
+
 			return (
 				<div data-testid="scatter-plot">
-					{mockDataPoints.map((dataIndex) => {
+					{flattened.map((entry, index) => {
 						const mockMarkerProps = {
-							x: 100 + dataIndex * 50,
-							y: 200 + dataIndex * 30,
-							dataIndex,
-							color: "#1976d2",
+							x: 100 + index * 50,
+							y: 200 + index * 30,
+							dataIndex: entry.dataIndex,
+							data: entry.datum,
+							color:
+								typeof entry.datum?.color === "string"
+									? entry.datum.color
+									: "#1976d2",
 							isHighlighted: false,
+						} as {
+							x: number;
+							y: number;
+							dataIndex: number;
+							data: ChartDatum;
+							color: string;
+							isHighlighted: boolean;
 						};
 						return (
-							<div key={dataIndex} data-testid={`marker-${dataIndex}`}>
+							<div
+								key={`${entry.seriesIndex}-${entry.dataIndex}`}
+								data-testid={`marker-${index}`}
+							>
 								{slots?.marker?.(mockMarkerProps)}
 							</div>
 						);
@@ -198,8 +277,73 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			const container = screen.getByTestId("chart-container");
 			// Max size is 15, with 10% padding should be 16.5
-			expect(Number(container.getAttribute("data-x-axis-max"))).toBeGreaterThan(
-				15,
+			expect(Number(container.dataset.xAxisMax)).toBeGreaterThan(15);
+		});
+
+		it("should color groups using the legend state category color mapping", () => {
+			const features: IFeature[] = [
+				(() => {
+					const f = createFeature(1, "Done Feature", 5, 10);
+					f.stateCategory = "Done";
+					return f;
+				})(),
+				(() => {
+					const f = createFeature(2, "Doing Feature", 4, 5);
+					f.stateCategory = "Doing";
+					return f;
+				})(),
+			];
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			expect(seriesAttr).toBeTruthy();
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+
+			// Color mapping is created from state categories (Done, Doing)
+			const colorMap = getColorMapForKeys(
+				["Done", "Doing"],
+				testTheme.palette.primary.main,
+			);
+			// Find the 'Done' series
+			const doneSeries = series.find(
+				(s: { id?: string; label?: string }) =>
+					s.id === "series-Done" || s.label === "Done",
+			);
+			expect(doneSeries).toBeTruthy();
+			expect(doneSeries?.data?.[0]?.color).toBe(colorMap.Done);
+			expect(doneSeries?.data?.[0]?.color).not.toBe(
+				testTheme.palette.primary.main,
+			);
+		});
+
+		it("should color groups red when they contain blocked items", () => {
+			const features: IFeature[] = [
+				(() => {
+					const f = createFeature(1, "Done Feature", 5, 10);
+					f.stateCategory = "Done";
+					f.isBlocked = true;
+					return f;
+				})(),
+			];
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+
+			const container = screen.getByTestId("chart-container");
+			const seriesAttr = container.dataset.series;
+			expect(seriesAttr).toBeTruthy();
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+
+			const doneSeries = series.find(
+				(s: { id?: string; label?: string }) =>
+					s.id === "series-Done" || s.label === "Done",
+			);
+			expect(doneSeries).toBeTruthy();
+			// Blocked features should be colored using errorColor
+			expect(doneSeries?.data?.[0]?.color).toBe(errorColor);
+			expect(doneSeries?.data?.[0]?.color).not.toBe(
+				testTheme.palette.primary.main,
 			);
 		});
 
@@ -268,6 +412,63 @@ describe("FeatureSizeScatterPlotChart", () => {
 			fireEvent.click(screen.getByTestId("close-dialog"));
 
 			expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
+		});
+
+		it("resolves groups via datum id when dataIndex mismatches", () => {
+			// Create two distinct groups so we can confirm id-based resolution
+			const features = [
+				createFeature(1, "Group A", 3, 5),
+				createFeature(2, "Group B", 4, 6),
+			];
+
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+
+			const markerButtons = screen.getAllByRole("button", {
+				name: /view.*feature.*with size.*child items/i,
+			});
+
+			// The mocked marker will intentionally map the first marker (dataIndex 0) to datum id 1,
+			// which should open the dialog for Group B.
+			fireEvent.click(markerButtons[0]);
+
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+			expect(screen.getByTestId("feature-0")).toHaveTextContent(
+				"Group B - Size: 4",
+			);
+		});
+
+		it("resolves groups when datum.id is a string", () => {
+			try {
+				const globalFlags = globalThis as unknown as {
+					__forceStringDatumIds?: boolean;
+				};
+				globalFlags.__forceStringDatumIds = true;
+
+				const features = [
+					createFeature(1, "Group A", 3, 5),
+					createFeature(2, "Group B", 4, 6),
+				];
+
+				render(<FeatureSizeScatterPlotChart sizeDataPoints={features} />);
+
+				const markerButtons = screen.getAllByRole("button", {
+					name: /view.*feature.*with size.*child items/i,
+				});
+
+				// The mocked marker will intentionally map the first marker (dataIndex 0) to datum id '1'
+				// which should open the dialog for Group B even when ids are strings.
+				fireEvent.click(markerButtons[0]);
+
+				expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+				expect(screen.getByTestId("feature-0")).toHaveTextContent(
+					"Group B - Size: 4",
+				);
+			} finally {
+				const globalFlags = globalThis as unknown as {
+					__forceStringDatumIds?: boolean;
+				};
+				globalFlags.__forceStringDatumIds = false;
+			}
 		});
 
 		it("shows grouped features when multiple items share the same data point", () => {
@@ -348,9 +549,7 @@ describe("FeatureSizeScatterPlotChart", () => {
 
 			const container = screen.getByTestId("chart-container");
 			// Should scale to accommodate the 50 value with 10% padding
-			expect(Number(container.getAttribute("data-x-axis-max"))).toBeGreaterThan(
-				50,
-			);
+			expect(Number(container.dataset.xAxisMax)).toBeGreaterThan(50);
 		});
 
 		it("allows toggling percentile visibility", () => {

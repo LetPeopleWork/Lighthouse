@@ -315,7 +315,7 @@ export const getColorMapForKeys = (
 
 	if (uniqueKeys.length === 0) return {};
 
-	// If few keys -> use opacity shading similar to pie chart
+	// If few keys -> use opacity shading
 	if (uniqueKeys.length <= thresholdForHsl) {
 		return Object.fromEntries(
 			uniqueKeys.map((k, idx) => {
@@ -327,18 +327,36 @@ export const getColorMapForKeys = (
 		);
 	}
 
-	// For larger sets, use HSL hue rotation to get distinct colors while keeping saturation/lightness of the base
+	// For larger sets, use strategic hue rotation avoiding red spectrum
 	const baseHsl = hexToHsl(baseColor);
+
+	// Define safe hue ranges (avoiding red: 0-30 and 330-360)
+	// We'll use: green-cyan-blue-purple spectrum (60-300 degrees)
+	const safeHueStart = 60; // Green
+	const safeHueEnd = 300; // Purple
+	const safeHueRange = safeHueEnd - safeHueStart;
+
 	return Object.fromEntries(
 		uniqueKeys.map((k, idx) => {
-			const hueShift = (idx * (360 / uniqueKeys.length)) % 360;
-			const h = (baseHsl.h + hueShift) % 360;
-			// Slightly vary lightness for readability
-			const l = Math.max(
-				20,
-				Math.min(80, baseHsl.l + (idx % 2 === 0 ? 6 : -4)),
+			// Distribute hues evenly across safe range
+			const hueOffset =
+				((idx * safeHueRange) / uniqueKeys.length) % safeHueRange;
+			const h = (safeHueStart + hueOffset) % 360;
+
+			// Alternate lightness more dramatically for better distinction
+			const lightnessVariation = idx % 3;
+			let l = baseHsl.l;
+			if (lightnessVariation === 0) l = Math.min(75, baseHsl.l + 15);
+			else if (lightnessVariation === 1) l = Math.max(35, baseHsl.l - 10);
+			else l = baseHsl.l;
+
+			// Slightly vary saturation for additional distinction
+			const s = Math.max(
+				40,
+				Math.min(90, baseHsl.s + (idx % 2 === 0 ? 10 : -5)),
 			);
-			return [k, hslToHex(h, baseHsl.s, l)];
+
+			return [k, hslToHex(h, s, l)];
 		}),
 	);
 };

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
+import { getColorMapForKeys } from "../../../utils/theme/colors";
 import WorkItemAgingChart from "./WorkItemAgingChart";
 
 // Mock the Material-UI theme
@@ -54,8 +55,13 @@ vi.mock("@mui/x-charts", async () => {
 	const actual = await vi.importActual("@mui/x-charts");
 	return {
 		...actual,
-		ChartContainer: vi.fn(({ children }) => (
-			<div data-testid="mock-chart-container">{children}</div>
+		ChartContainer: vi.fn(({ series, children }) => (
+			<div
+				data-testid="mock-chart-container"
+				data-series={series ? JSON.stringify(series) : undefined}
+			>
+				{children}
+			</div>
 		)),
 		ScatterPlot: vi.fn(() => {
 			return (
@@ -483,6 +489,65 @@ describe("WorkItemAgingChart component", () => {
 			// Chart should render with blocked items
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 			expect(screen.getByText("Work Item Aging")).toBeInTheDocument();
+		});
+
+		it("should color groups using the legend type color mapping", () => {
+			const typeItems: IWorkItem[] = [
+				{
+					id: 7,
+					referenceId: "ITEM-7",
+					name: "Bug Item",
+					url: "https://example.com/item7",
+					cycleTime: 0,
+					startedDate: new Date(2023, 0, 1),
+					closedDate: new Date(),
+					workItemAge: 2,
+					type: "Bug",
+					state: "In Progress",
+					stateCategory: "Doing",
+					parentWorkItemReference: "",
+					isBlocked: false,
+				},
+				{
+					id: 8,
+					referenceId: "ITEM-8",
+					name: "Story Item",
+					url: "https://example.com/item8",
+					cycleTime: 0,
+					startedDate: new Date(2023, 0, 1),
+					closedDate: new Date(),
+					workItemAge: 3,
+					type: "Story",
+					state: "In Progress",
+					stateCategory: "Doing",
+					parentWorkItemReference: "",
+					isBlocked: false,
+				},
+			];
+
+			render(
+				<WorkItemAgingChart
+					inProgressItems={typeItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			const container = screen.getByTestId("mock-chart-container");
+			const seriesAttr = container.dataset.series;
+			expect(seriesAttr).toBeTruthy();
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+
+			const colorMap = getColorMapForKeys(
+				["Bug", "Story"],
+				testTheme.palette.primary.main,
+			);
+			// First group's color should match the color map for 'Bug'
+			expect(series?.[0]?.data?.[0]?.color).toBe(colorMap.Bug);
+			expect(series?.[0]?.data?.[0]?.color).not.toBe(
+				testTheme.palette.primary.main,
+			);
 		});
 
 		it("groups blocked and regular items correctly", () => {

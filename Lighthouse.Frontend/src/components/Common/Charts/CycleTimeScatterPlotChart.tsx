@@ -23,7 +23,11 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
-import { getColorMapForKeys, hexToRgba } from "../../../utils/theme/colors";
+import {
+	errorColor,
+	getColorMapForKeys,
+	hexToRgba,
+} from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
@@ -43,6 +47,8 @@ const ScatterMarker = (
 	groupedDataPoints: IGroupedWorkItem[],
 	theme: Theme,
 	workItemsTerm: string,
+	blockedTerm: string,
+	colorMap: Record<string, string>,
 	onShowItems: (items: IWorkItem[]) => void,
 ) => {
 	const dataIndex = props.dataIndex || 0;
@@ -52,7 +58,11 @@ const ScatterMarker = (
 
 	const bubbleSize = getBubbleSize(group.items.length);
 	const providedColor = (props as unknown as { color?: string }).color;
-	const bubbleColor = providedColor ?? theme.palette.primary.main;
+	const bubbleColor = group.hasBlockedItems
+		? errorColor
+		: (colorMap[group.type] ?? providedColor ?? theme.palette.primary.main);
+
+	const blockedSuffix = group.hasBlockedItems ? ` (${blockedTerm})` : "";
 
 	const handleOpenWorkItems = () => {
 		if (group.items.length > 0) {
@@ -72,7 +82,7 @@ const ScatterMarker = (
 				strokeWidth={props.isHighlighted ? 2 : 0}
 				pointerEvents="none"
 			>
-				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}</title>
+				<title>{`${group.items.length} item${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days${blockedSuffix}`}</title>
 			</circle>
 
 			<foreignObject
@@ -93,7 +103,7 @@ const ScatterMarker = (
 						borderRadius: "50%",
 					}}
 					onClick={handleOpenWorkItems}
-					aria-label={`View ${group.items.length} ${workItemsTerm}${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days`}
+					aria-label={`View ${group.items.length} ${workItemsTerm}${group.items.length > 1 ? "s" : ""} with cycle time ${group.cycleTime} days${blockedSuffix}`}
 				/>
 			</foreignObject>
 		</>
@@ -105,6 +115,7 @@ interface IGroupedWorkItem {
 	cycleTime: number;
 	items: IWorkItem[];
 	type: string;
+	hasBlockedItems: boolean;
 }
 
 const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
@@ -121,13 +132,22 @@ const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
 				cycleTime: item.cycleTime,
 				items: [],
 				type: item.type || "Unknown",
+				hasBlockedItems: false,
 			};
 		}
 
 		groups[key].items.push(item);
+
+		if (item.isBlocked) {
+			groups[key].hasBlockedItems = true;
+		}
 	}
 
-	return Object.values(groups);
+	// Ensure the group's type is explicitly set to the first item's type
+	return Object.values(groups).map((g) => ({
+		...g,
+		type: g.items?.[0]?.type || g.type || "Unknown",
+	}));
 };
 
 interface CycleTimeScatterPlotChartProps {
@@ -184,6 +204,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	);
 	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
 	// Extract unique types and create color map
 	const types = useMemo(() => {
@@ -194,6 +215,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		return Array.from(typeSet).sort((a, b) => a.localeCompare(b));
 	}, [cycleTimeDataPoints]);
 
+	// Use HSL hue rotation with lower saturation to create neutral colors that are easy on the eye
+	// Avoid generating colors that are too close to the 'error' red hue so types don't look like blocked
+	// Use the default color map
 	const colorMap = useMemo(
 		() => getColorMapForKeys(types, theme.palette.primary.main),
 		[types, theme.palette.primary.main],
@@ -429,7 +453,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 									y: group.cycleTime,
 									id: index,
 									itemCount: group.items.length,
-									color: colorMap[group.type] || theme.palette.primary.main,
+									color: group.hasBlockedItems
+										? errorColor
+										: colorMap[group.type] || theme.palette.primary.main,
 								})),
 								xAxisId: "timeAxis",
 								yAxisId: "cycleTimeAxis",
@@ -497,6 +523,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 										groupedDataPoints,
 										theme,
 										workItemsTerm,
+										blockedTerm,
+										colorMap,
 										handleShowItems,
 									),
 							}}

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
+import { errorColor, getColorMapForKeys } from "../../../utils/theme/colors";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 
 // Mock the Material-UI theme
@@ -49,13 +50,18 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
 	}),
 }));
 
-// Mock the MUI-X Charts
+// Mock the MUI-X Charts and expose series prop for assertions
 vi.mock("@mui/x-charts", async () => {
 	const actual = await vi.importActual("@mui/x-charts");
 	return {
 		...actual,
-		ChartContainer: vi.fn(({ children }) => (
-			<div data-testid="mock-chart-container">{children}</div>
+		ChartContainer: vi.fn(({ series, children }) => (
+			<div
+				data-testid="mock-chart-container"
+				data-series={series ? JSON.stringify(series) : undefined}
+			>
+				{children}
+			</div>
 		)),
 		ScatterPlot: vi.fn(() => {
 			return (
@@ -174,5 +180,113 @@ describe("CycleTimeScatterPlotChart component", () => {
 		);
 
 		expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
+	});
+
+	it("should color group with blocked item using the error color", () => {
+		const blockedItems: IWorkItem[] = [
+			{
+				id: 3,
+				referenceId: "ITEM-3",
+				name: "Blocked Item",
+				url: "https://example.com/item3",
+				cycleTime: 5,
+				startedDate: new Date(2023, 0, 10),
+				closedDate: new Date(2023, 0, 15),
+				workItemAge: 5,
+				state: "Done",
+				stateCategory: "Done",
+				type: "Task",
+				parentWorkItemReference: "",
+				isBlocked: true,
+			},
+			{
+				id: 4,
+				referenceId: "ITEM-4",
+				name: "Unblocked Item",
+				url: "https://example.com/item4",
+				cycleTime: 5,
+				startedDate: new Date(2023, 0, 10),
+				closedDate: new Date(2023, 0, 15),
+				workItemAge: 5,
+				state: "Done",
+				stateCategory: "Done",
+				type: "Task",
+				parentWorkItemReference: "",
+				isBlocked: false,
+			},
+		];
+
+		render(
+			<CycleTimeScatterPlotChart
+				percentileValues={mockPercentileValues}
+				cycleTimeDataPoints={blockedItems}
+			/>,
+		);
+
+		const container = screen.getByTestId("mock-chart-container");
+		const seriesAttr = container.dataset.series;
+		expect(seriesAttr).toBeTruthy();
+		const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+		// series[0].data[0].color should be the errorColor (blocked color)
+		expect(series?.[0]?.data?.[0]?.color).toBe(errorColor);
+	});
+	it("should color groups using the legend type color mapping", () => {
+		const typeItems: IWorkItem[] = [
+			{
+				id: 5,
+				referenceId: "ITEM-5",
+				name: "Bug Item",
+				url: "https://example.com/item5",
+				cycleTime: 2,
+				startedDate: new Date(2023, 0, 1),
+				closedDate: new Date(2023, 0, 3),
+				workItemAge: 2,
+				state: "Done",
+				stateCategory: "Done",
+				type: "Bug",
+				parentWorkItemReference: "",
+				isBlocked: false,
+			},
+			{
+				id: 6,
+				referenceId: "ITEM-6",
+				name: "Feature Item",
+				url: "https://example.com/item6",
+				cycleTime: 3,
+				startedDate: new Date(2023, 0, 2),
+				closedDate: new Date(2023, 0, 5),
+				workItemAge: 3,
+				state: "Done",
+				stateCategory: "Done",
+				type: "Feature",
+				parentWorkItemReference: "",
+				isBlocked: false,
+			},
+		];
+
+		render(
+			<CycleTimeScatterPlotChart
+				percentileValues={mockPercentileValues}
+				cycleTimeDataPoints={typeItems}
+			/>,
+		);
+
+		const container = screen.getByTestId("mock-chart-container");
+		const seriesAttr = container.dataset.series;
+		expect(seriesAttr).toBeTruthy();
+		const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+
+		const colorMap = getColorMapForKeys(
+			["Bug", "Feature"],
+			testTheme.palette.primary.main,
+		);
+
+		// The groups are created in the same order we provided data; 'Bug' is first group -> color should match
+		expect(series?.[0]?.data?.[0]?.color).toBe(colorMap.Bug);
+		expect(series?.[0]?.data?.[0]?.color).not.toBe(
+			testTheme.palette.primary.main,
+		);
+		// Should not be the same as the blocked/error color
+		expect(colorMap.Bug).not.toBe(errorColor);
 	});
 });

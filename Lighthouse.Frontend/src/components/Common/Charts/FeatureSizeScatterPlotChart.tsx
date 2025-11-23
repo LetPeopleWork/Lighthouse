@@ -39,19 +39,63 @@ const getBubbleSize = (count: number): number => {
 
 const ScatterMarker = (
 	props: ScatterMarkerProps,
-	groupedDataPoints: IGroupedFeature[],
+	allGroupedDataPoints: IGroupedFeature[],
 	theme: Theme,
 	featuresTerm: string,
+	colorMap: Record<string, string>,
 	onShowItems: (items: IFeature[]) => void,
 ) => {
 	const dataIndex = props.dataIndex || 0;
-	const group = groupedDataPoints[dataIndex];
+	// Prefer explicit id on the datum (provided by the chart series' data item)
+	// The series data uses `id` to reference the allGroupedDataPoints mapping.
+	// The chart library sometimes provides the data item under different prop names
+	// (data, datum or item) and the id may be numeric or stringified, so normalize.
+	type ScatterDatum = {
+		id?: number | string;
+		item?: { id?: number | string };
+		color?: string;
+		[key: string]: unknown;
+	};
+	const datum =
+		(
+			props as unknown as {
+				data?: ScatterDatum;
+				datum?: ScatterDatum;
+				item?: ScatterDatum;
+			}
+		).data ??
+		(
+			props as unknown as {
+				data?: ScatterDatum;
+				datum?: ScatterDatum;
+				item?: ScatterDatum;
+			}
+		).datum ??
+		(
+			props as unknown as {
+				data?: ScatterDatum;
+				datum?: ScatterDatum;
+				item?: ScatterDatum;
+			}
+		).item;
+	const rawDatumId = datum?.id ?? datum?.item?.id ?? undefined;
+	const datumId = Number.isFinite(Number(rawDatumId))
+		? Number(rawDatumId)
+		: undefined;
+	const group =
+		typeof datumId === "number"
+			? allGroupedDataPoints[datumId]
+			: allGroupedDataPoints[dataIndex];
 
 	if (!group) return null;
 
 	const bubbleSize = getBubbleSize(group.items.length);
 	const providedColor = (props as unknown as { color?: string }).color;
-	const bubbleColor = providedColor ?? theme.palette.primary.main;
+	const stateCategory = group.items[0]?.stateCategory || group.state || "ToDo";
+	const hasBlockedItems = group.items.some((i) => i.isBlocked);
+	const bubbleColor = hasBlockedItems
+		? errorColor
+		: (providedColor ?? colorMap[stateCategory] ?? theme.palette.primary.main);
 
 	const handleOpenFeatures = () => {
 		if (group.items.length > 0) {
@@ -439,44 +483,57 @@ const FeatureSizeScatterPlotChart: React.FC<
 								},
 							},
 						]}
-						series={[
-							{
-								type: "scatter",
-								data: groupedDataPoints.map((group, index) => {
-									const hasBlockedItems = group.items.some((i) => i.isBlocked);
-									const stateCategory = group.items[0]?.stateCategory || "ToDo";
-									const fillColor = hasBlockedItems
-										? errorColor
-										: colorMap[stateCategory] || theme.palette.primary.main;
-									return {
-										x: group.size,
-										y: group.cycleTime,
-										id: index,
-										itemCount: group.items.length,
-										color: fillColor,
-									};
-								}),
-								xAxisId: "sizeAxis",
-								yAxisId: "timeAxis",
-								color: theme.palette.primary.main,
-								markerSize: 4,
-								highlightScope: {
-									highlight: "item",
-									fade: "global",
-								},
-								valueFormatter: (item) => {
-									if (item?.id === undefined) return "";
-									const group = groupedDataPoints[item.id as number];
-									if (!group) return "";
-									const numberOfClosedItems = group.items.length ?? 0;
-									if (numberOfClosedItems === 1) {
-										const single = group.items[0];
-										return `${getWorkItemName(single)} - ${single.state} (Click for details)`;
-									}
-									return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
-								},
-							},
-						]}
+						series={stateCategories
+							.filter((s) => visibleStateCategories[s] !== false)
+							.map((stateCategory) => {
+								const seriesData = groupedDataPoints
+									.filter(
+										(g) =>
+											(g.items[0]?.stateCategory || g.state || "ToDo") ===
+											stateCategory,
+									)
+									.map((group) => {
+										const hasBlockedItems = group.items.some(
+											(i) => i.isBlocked,
+										);
+										const fillColor = hasBlockedItems
+											? errorColor
+											: colorMap[stateCategory] || theme.palette.primary.main;
+										return {
+											x: group.size,
+											y: group.cycleTime,
+											id: allGroupedDataPoints.indexOf(group),
+											itemCount: group.items.length,
+											color: fillColor,
+										};
+									});
+
+								return {
+									type: "scatter",
+									id: `series-${stateCategory}`,
+									label: getStateCategoryDisplayName(stateCategory),
+									data: seriesData,
+									xAxisId: "sizeAxis",
+									yAxisId: "timeAxis",
+									color: colorMap[stateCategory] || theme.palette.primary.main,
+									markerSize: 4,
+									highlightScope: {
+										highlight: "item",
+										fade: "global",
+									},
+									valueFormatter: (item) => {
+										if (item?.id === undefined) return "";
+										const group = allGroupedDataPoints[item.id as number];
+										if (!group) return "";
+										const numberOfClosedItems = group.items.length ?? 0;
+										if (numberOfClosedItems === 1) {
+											const single = group.items[0];
+											return `${getWorkItemName(single)} 	- ${single.state} (Click for details)`;
+										}
+										return `${numberOfClosedItems} Closed ${featuresTerm} (Click for details)`;
+									},
+								};
+							})}
 					>
 						{percentiles.map((p) => {
 							const forecastLevel = new ForecastLevel(p.percentile);
@@ -501,9 +558,10 @@ const FeatureSizeScatterPlotChart: React.FC<
 								marker: (props) =>
 									ScatterMarker(
 										props,
-										groupedDataPoints,
+										allGroupedDataPoints,
 										theme,
 										featuresTerm,
+										colorMap,
 										handleShowItems,
 									),
 							}}

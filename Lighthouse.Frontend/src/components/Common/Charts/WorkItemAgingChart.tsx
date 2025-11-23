@@ -54,6 +54,7 @@ const ScatterMarker = (
 	workItemTerm: string,
 	workItemsTerm: string,
 	blockedTerm: string,
+	colorMap: Record<string, string>,
 	onShowItems: (items: IWorkItem[]) => void,
 ) => {
 	const dataIndex = props.dataIndex ?? 0;
@@ -66,7 +67,7 @@ const ScatterMarker = (
 	const providedColor = (props as unknown as { color?: string }).color;
 	const bubbleColor = group.hasBlockedItems
 		? errorColor
-		: (providedColor ?? theme.palette.primary.main);
+		: (colorMap[group.type] ?? providedColor ?? theme.palette.primary.main);
 
 	const handleOpenWorkItems = () => {
 		if (group.items.length > 0) {
@@ -509,6 +510,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 										workItemTerm,
 										workItemsTerm,
 										blockedTerm,
+										colorMap,
 										handleShowItems,
 									),
 							}}
