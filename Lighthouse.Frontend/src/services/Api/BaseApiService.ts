@@ -34,7 +34,6 @@ export class BaseApiService {
 		}
 	}
 
-	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: False-Positive by Biome, it's used!
 	private static createApiErrorFromAxios(err: unknown): ApiError | null {
 		if (!axios.isAxiosError(err)) return null;
 		const error = err;
