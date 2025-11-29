@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { Locator, Page } from "playwright";
+import type { Locator, Page } from "@playwright/test";
 import { PNG } from "pngjs";
 import { getPathToDocsAssetsFolder } from "./folderPaths";
 
