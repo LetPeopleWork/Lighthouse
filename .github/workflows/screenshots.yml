@@ -34,13 +34,20 @@ jobs:
             echo "ARTIFACT_VERSION=${LATEST_TAG}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Enable Corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
       - name: Install E2E dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
   
       - name: Install Chromium
-        run: npx playwright install chromium --with-deps
+        run: pnpm dlx playwright install chromium --with-deps
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         
@@ -87,7 +94,7 @@ jobs:
           echo "License uploaded successfully!"
           
       - name: Recreating Screenshot using Playwright
-        run: npm run screenshots
+        run: pnpm run screenshots
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         env:
