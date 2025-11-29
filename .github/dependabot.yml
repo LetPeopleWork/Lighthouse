@@ -1,7 +1,7 @@
 version: 2
 updates:
-  # Update pnpm dependencies in `Lighthouse.Frontend/package.json`
-  - package-ecosystem: "pnpm"
+  # Update frontend dependencies in `Lighthouse.Frontend/package.json`
+  - package-ecosystem: "npm"
     directory: "/Lighthouse.Frontend"
     schedule:
       interval: "daily"
@@ -24,8 +24,8 @@ updates:
       prefix: "deps"
     open-pull-requests-limit: 5
 
-  # Update pnpm dependencies in `Lighthouse.EndToEndTests/package.json`
-  - package-ecosystem: "pnpm"
+  # Update end-to-end tests dependencies in `Lighthouse.EndToEndTests/package.json`
+  - package-ecosystem: "npm"
     directory: "/Lighthouse.EndToEndTests"
     schedule:
       interval: "daily"
