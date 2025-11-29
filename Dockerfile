@@ -24,8 +24,10 @@ RUN dotnet build "Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.cspr
 FROM node:25-alpine AS node-builder
 WORKDIR /node
 COPY Lighthouse.Frontend /node
-RUN npm install --ignore-scripts \
-&& npm run build-docker
+RUN corepack enable \
+	&& corepack prepare pnpm@latest --activate \
+	&& pnpm install --frozen-lockfile --ignore-scripts \
+	&& pnpm run build-docker
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
