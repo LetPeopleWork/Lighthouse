@@ -71,9 +71,9 @@ dotnet run --project Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.cs
 
 # Front-end: inside Lighthouse.Frontend
 cd Lighthouse.Frontend
-npm install
-npm run dev      # connect to the local backend or set VITE_API_BASE_URL
-npm run dev-demo # run UI with demo/mock data
+pnpm install
+pnpm run dev      # connect to the local backend or set VITE_API_BASE_URL
+pnpm run dev-demo # run UI with demo/mock data
 ```
 
 ## Core features
