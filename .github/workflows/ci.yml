@@ -139,19 +139,26 @@ jobs:
       if: needs.changes.outputs.frontend == 'true'
       uses: actions/setup-node@v4
 
-    - name: Install npm dependencies
+    - name: Enable Corepack and prepare pnpm
       if: needs.changes.outputs.frontend == 'true'
-      run: npm install
+      run: |
+        corepack enable
+        corepack prepare pnpm@latest --activate
+      working-directory: ./Lighthouse.Frontend
+
+    - name: Install pnpm dependencies
+      if: needs.changes.outputs.frontend == 'true'
+      run: pnpm install --frozen-lockfile
       working-directory: ./Lighthouse.Frontend
 
     - name: Build Frontend
       if: needs.changes.outputs.frontend == 'true'
-      run: npm run build
+      run: pnpm run build
       working-directory: ./Lighthouse.Frontend
 
     - name: Test Frontend
       if: needs.changes.outputs.frontend == 'true'
-      run: npm run sonarreport
+      run: pnpm run sonarreport
       working-directory: ./Lighthouse.Frontend
 
     - name: Frontend SonarCloud
@@ -161,7 +168,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       working-directory: ./Lighthouse.Frontend
       run: |
-        npm install -g sonarqube-scanner
+        pnpm add -g sonarqube-scanner
         sonar-scanner
 
   e2etests:
@@ -180,14 +187,21 @@ jobs:
       if: needs.changes.outputs.e2e == 'true'
       uses: actions/setup-node@v4
 
-    - name: Install npm dependencies
+    - name: Enable Corepack and prepare pnpm
       if: needs.changes.outputs.e2e == 'true'
-      run: npm install
+      run: |
+        corepack enable
+        corepack prepare pnpm@latest --activate
+      working-directory: ./Lighthouse.EndToEndTests
+
+    - name: Install pnpm dependencies
+      if: needs.changes.outputs.e2e == 'true'
+      run: pnpm install --frozen-lockfile
       working-directory: ./Lighthouse.EndToEndTests
 
     - name: Build E2E Tests
       if: needs.changes.outputs.e2e == 'true'
-      run: npm run build
+      run: pnpm run build
       working-directory: ./Lighthouse.EndToEndTests
 
   tag:
@@ -268,12 +282,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install npm dependencies
-        run: npm install
+      - name: Enable Corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
         working-directory: ./Lighthouse.Frontend
 
       - name: Build Frontend
-        run: npm run build
+        run: pnpm run build
         working-directory: ./Lighthouse.Frontend
 
       - name: Build Backend Solution
@@ -345,13 +365,20 @@ jobs:
           name: Lighthouse ${{ needs.tag.outputs.version }}
           path: ./Lighthouse
 
+      - name: Enable Corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
       - name: Install E2E dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
   
       - name: Install Chromium
-        run: npx playwright install chromium --with-deps
+        run: pnpm dlx playwright install chromium --with-deps
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
 
@@ -401,7 +428,7 @@ jobs:
           echo "License uploaded successfully!"
   
       - name: Run Playwright tests
-        run: npm run test
+        run: pnpm run test
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         env:
@@ -520,8 +547,15 @@ jobs:
           name: Lighthouse ${{ needs.tag.outputs.version }}
           path: ./Lighthouse  
 
+      - name: Enable Corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
       - name: Install E2E dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
 
@@ -535,7 +569,7 @@ jobs:
           echo "PostgreSQL is ready!"
 
       - name: Install Chromium
-        run: npx playwright install chromium --with-deps
+        run: pnpm dlx playwright install chromium --with-deps
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
 
@@ -585,7 +619,7 @@ jobs:
           echo "License uploaded successfully!"
 
       - name: Run Playwright tests
-        run: npm run test
+        run: pnpm run test
         shell: bash
         working-directory: ./Lighthouse.EndToEndTests
         env:
