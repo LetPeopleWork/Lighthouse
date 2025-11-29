@@ -169,6 +169,10 @@ jobs:
       working-directory: ./Lighthouse.Frontend
       run: |
         # Ensure pnpm global bin directory exists in CI before attempting global installs
+        # Create the directory, export PNPM_HOME for other steps, and append it to PATH
+        mkdir -p "$HOME/.local/share/pnpm"
+        echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
         pnpm setup
         pnpm add -g sonarqube-scanner
         sonar-scanner
