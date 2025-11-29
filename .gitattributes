@@ -1,11 +1,58 @@
 # Set default behavior to automatically normalize line endings
 * text=auto
 
-# Explicitly declare text files to be normalized
-*.js text
-*.jsx text
-*.ts text
-*.tsx text
-*.html text
-*.css text
-*.json text
+# Explicit rules to make the repo safe on Windows and Linux
+# --- Source files: prefer LF so editors on Linux/macOS and CI use consistent endings
+*.cs            text eol=lf
+*.csproj        text eol=lf
+*.sln           text eol=lf
+*.props         text eol=lf
+*.targets       text eol=lf
+
+# --- Frontend / web sources: LF is standard
+*.js            text eol=lf
+*.jsx           text eol=lf
+*.ts            text eol=lf
+*.tsx           text eol=lf
+*.html          text eol=lf
+*.css           text eol=lf
+*.scss          text eol=lf
+*.less          text eol=lf
+*.json          text eol=lf
+*.md            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+
+# --- Shell scripts for Unix should keep LF and may be executable
+*.sh            text eol=lf
+
+# --- Windows scripts should keep CRLF so they run out-of-the-box on Windows
+*.ps1           text eol=crlf
+*.bat           text eol=crlf
+
+# --- Treat common binary formats as binary (no EOL normalization)
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.eot           binary
+*.ttf           binary
+*.woff          binary
+*.woff2         binary
+*.zip           binary
+*.tar.gz        binary
+*.pdf           binary
+*.dll           binary
+*.exe           binary
+*.so            binary
+*.dylib         binary
+
+# --- Certs/keys: avoid accidental CRLF conversion for keys
+*.crt           binary
+*.key           -text
+
+# Keep user / OS generated files out where appropriate
+.vscode/**      -text
+/.gitignore     text eol=lf
+/.gitattributes text eol=lf
