@@ -168,6 +168,8 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       working-directory: ./Lighthouse.Frontend
       run: |
+        # Ensure pnpm global bin directory exists in CI before attempting global installs
+        pnpm setup
         pnpm add -g sonarqube-scanner
         sonar-scanner
 
