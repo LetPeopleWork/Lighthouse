@@ -142,6 +142,11 @@ jobs:
     - name: Enable Corepack and prepare pnpm
       if: needs.changes.outputs.frontend == 'true'
       run: |
+        mkdir -p "$HOME/.local/share/pnpm"
+        echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+        export PNPM_HOME="$HOME/.local/share/pnpm"
+        export PATH="$PNPM_HOME:$PATH"
         corepack enable
         corepack prepare pnpm@latest --activate
       working-directory: ./Lighthouse.Frontend
@@ -196,6 +201,11 @@ jobs:
     - name: Enable Corepack and prepare pnpm
       if: needs.changes.outputs.e2e == 'true'
       run: |
+        mkdir -p "$HOME/.local/share/pnpm"
+        echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+        export PNPM_HOME="$HOME/.local/share/pnpm"
+        export PATH="$PNPM_HOME:$PATH"
         corepack enable
         corepack prepare pnpm@latest --activate
       working-directory: ./Lighthouse.EndToEndTests
@@ -290,6 +300,11 @@ jobs:
 
       - name: Enable Corepack and prepare pnpm
         run: |
+          mkdir -p "$HOME/.local/share/pnpm"
+          echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
           corepack enable
           corepack prepare pnpm@latest --activate
         working-directory: ./Lighthouse.Frontend
@@ -373,6 +388,11 @@ jobs:
 
       - name: Enable Corepack and prepare pnpm
         run: |
+          mkdir -p "$HOME/.local/share/pnpm"
+          echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
           corepack enable
           corepack prepare pnpm@latest --activate
         shell: bash
@@ -555,6 +575,11 @@ jobs:
 
       - name: Enable Corepack and prepare pnpm
         run: |
+          mkdir -p "$HOME/.local/share/pnpm"
+          echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
           corepack enable
           corepack prepare pnpm@latest --activate
         shell: bash
