@@ -59,7 +59,7 @@
     "jsdom": "^27.2.0",
     "parse5": "^8.0.0",
     "typescript": "^5.9.3",
-    "vite": "^7.2.4",
+    "vite": "^7.2.6",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.10",
     "vitest-sonar-reporter": "^3.0.0"
