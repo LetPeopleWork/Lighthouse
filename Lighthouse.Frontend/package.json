@@ -54,7 +54,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.0.14",
-    "@vitest/spy": "^4.0.14",
+    "@vitest/spy": "^4.0.15",
     "cross-env": "^10.1.0",
     "jsdom": "^27.2.0",
     "parse5": "^8.0.0",
