@@ -121,8 +121,8 @@ importers:
         specifier: ^4.0.14
         version: 4.0.14(vitest@4.0.14(@types/node@24.10.1)(jsdom@27.2.0)(terser@5.44.1))
       '@vitest/spy':
-        specifier: ^4.0.14
-        version: 4.0.14
+        specifier: ^4.0.15
+        version: 4.0.15
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
@@ -1597,6 +1597,9 @@ packages:
 
   '@vitest/spy@4.0.14':
     resolution: {integrity: sha512-JmAZT1UtZooO0tpY3GRyiC/8W7dCs05UOq9rfsUUgEZEdq+DuHLmWhPsrTt0TiW7WYeL/hXpaE07AZ2RCk44hg==}
+
+  '@vitest/spy@4.0.15':
+    resolution: {integrity: sha512-+EIjOJmnY6mIfdXtE/bnozKEvTC4Uczg19yeZ2vtCz5Yyb0QQ31QWVQ8hswJ3Ysx/K2EqaNsVanjr//2+P3FHw==}
 
   '@vitest/utils@4.0.14':
     resolution: {integrity: sha512-hLqXZKAWNg8pI+SQXyXxWCTOpA3MvsqcbVeNgSi8x/CSN2wi26dSzn1wrOhmCmFjEvN9p8/kLFRHa6PI8jHazw==}
@@ -5149,6 +5152,8 @@ snapshots:
       pathe: 2.0.3
 
   '@vitest/spy@4.0.14': {}
+
+  '@vitest/spy@4.0.15': {}
 
   '@vitest/utils@4.0.14':
     dependencies:
