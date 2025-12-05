@@ -125,8 +125,25 @@ GITHUB_REPO=${GITHUB_REPO:-Lighthouse}
 RUNNER_NAME=${RUNNER_NAME:-codesign-runner}
 EOF
 
-# Clean up env file on exit
-trap 'rm -f "$ENV_FILE"' EXIT
+# Clean up env file on exit and restart host pcscd
+cleanup() {
+  rm -f "$ENV_FILE"
+  # Restart host pcscd if we stopped it
+  if [ "${STOPPED_PCSCD:-}" = "true" ]; then
+    echo "Restarting host pcscd..."
+    sudo systemctl start pcscd.socket 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+
+# Stop host pcscd to release YubiKey for container use
+# The container's pcscd needs exclusive access to the USB device
+if systemctl is-active --quiet pcscd.service 2>/dev/null || systemctl is-active --quiet pcscd.socket 2>/dev/null; then
+  echo "Stopping host pcscd to allow container access to YubiKey..."
+  sudo systemctl stop pcscd.service pcscd.socket 2>/dev/null || true
+  STOPPED_PCSCD=true
+  sleep 1
+fi
 
 # Run container with:
 # - --rm: Remove container after exit

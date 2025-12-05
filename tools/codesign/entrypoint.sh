@@ -25,13 +25,13 @@ fi
 
 # --- Start PC/SC daemon for YubiKey access ---
 echo "Starting pcscd daemon..."
-# Run pcscd as root without polkit (--disable-polkit if available, or just run it directly)
+# Run pcscd as root without polkit (polkit daemon doesn't run in containers)
 # Kill any existing pcscd first
 pkill pcscd 2>/dev/null || true
 sleep 1
 
-# Start pcscd in foreground mode as root
-/usr/bin/pcscd --foreground --auto-exit &
+# Start pcscd with --disable-polkit to bypass polkit authorization
+/usr/bin/pcscd --foreground --auto-exit --disable-polkit &
 PCSCD_PID=$!
 sleep 2
 
@@ -40,9 +40,8 @@ if ! kill -0 $PCSCD_PID 2>/dev/null; then
   echo "Warning: pcscd may not have started correctly" >&2
 fi
 
-# Set environment for smart card access
+# Set environment for smart card access (belt and suspenders)
 export PCSCLITE_NO_POLKIT=1
-
 # --- Generate GitHub App JWT ---
 generate_jwt() {
   local app_id="$1"
