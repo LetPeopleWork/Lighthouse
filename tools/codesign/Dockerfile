@@ -1,26 +1,37 @@
-FROM ubuntu:24.04
+FROM archlinux:latest
 
-ENV DEBIAN_FRONTEND=noninteractive
 ENV TIMESTAMP_URL="http://timestamp.digicert.com"
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
+# Install base packages and build dependencies
+RUN pacman -Syu --noconfirm \
+  && pacman -S --noconfirm \
+    base-devel \
     ca-certificates \
     curl \
     gnupg \
     opensc \
-    pcscd \
-    pcsc-tools \
-    libengine-pkcs11-openssl \
-    libp11-3 \
-    osslsigncode \
-    pkg-config \
+    pcsclite \
+    ccid \
+    libp11 \
+    pkgconf \
     gcc \
     make \
     bash \
     jq \
-    procps \
-  && rm -rf /var/lib/apt/lists/*
+    procps-ng \
+    git \
+    cmake \
+  && pacman -Scc --noconfirm
+
+# Build osslsigncode from source (not in Arch repos)
+RUN cd /tmp \
+  && git clone --depth 1 https://github.com/mtrojnar/osslsigncode.git \
+  && cd osslsigncode \
+  && mkdir build && cd build \
+  && cmake -DCMAKE_INSTALL_PREFIX=/usr .. \
+  && make -j$(nproc) \
+  && make install \
+  && cd / && rm -rf /tmp/osslsigncode
 
 WORKDIR /workspace
 
