@@ -30,18 +30,29 @@ echo "Starting pcscd daemon..."
 pkill pcscd 2>/dev/null || true
 sleep 1
 
-# Start pcscd with --disable-polkit to bypass polkit authorization
-/usr/bin/pcscd --foreground --auto-exit --disable-polkit &
+# Start pcscd in background (NO --auto-exit so it persists for the runner's lifetime)
+/usr/bin/pcscd --foreground --disable-polkit &
 PCSCD_PID=$!
 sleep 2
 
 # Check if pcscd is running
 if ! kill -0 $PCSCD_PID 2>/dev/null; then
-  echo "Warning: pcscd may not have started correctly" >&2
+  echo "Error: pcscd failed to start" >&2
+  exit 1
 fi
+echo "pcscd started (PID: $PCSCD_PID)"
 
 # Set environment for smart card access (belt and suspenders)
 export PCSCLITE_NO_POLKIT=1
+
+# Verify YubiKey is accessible via PKCS#11
+echo "Verifying smart card access..."
+if pkcs11-tool --module /usr/lib/pkcs11/opensc-pkcs11.so -L >/dev/null 2>&1; then
+  echo "Smart card detected successfully"
+  pkcs11-tool --module /usr/lib/pkcs11/opensc-pkcs11.so -L 2>/dev/null | head -5
+else
+  echo "Warning: No smart card detected. Signing will fail if YubiKey is not connected." >&2
+fi
 # --- Generate GitHub App JWT ---
 generate_jwt() {
   local app_id="$1"
