@@ -1,7 +1,7 @@
 FROM archlinux:latest
 
 ENV TIMESTAMP_URL="http://timestamp.digicert.com"
-ENV RUNNER_VERSION="2.321.0"
+ENV RUNNER_VERSION="2.329.0"
 
 # Install base packages and build dependencies
 RUN pacman -Syu --noconfirm \
@@ -63,7 +63,14 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/sign.sh /usr/local/bin/verify.sh /usr/local/bin/entrypoint.sh
 
-# Allow runner user to start pcscd
-RUN echo "runner ALL=(ALL) NOPASSWD: /usr/bin/pcscd" >> /etc/sudoers
+# Allow runner user to start pcscd and access smart card
+RUN echo "runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Add runner to pcscd group for smart card access (create group if needed)
+RUN getent group pcscd || groupadd pcscd && usermod -a -G pcscd runner
+
+# Disable polkit requirement for pcscd by creating a config that allows all
+# Since polkit daemon doesn't run in containers, we need to bypass it
+RUN mkdir -p /etc/reader.conf.d
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

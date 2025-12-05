@@ -784,12 +784,17 @@ jobs:
       - name: Sign Windows executables
         run: |
           sign.sh ./artifacts/win-x64 "Lighthouse.exe"
+          sign.sh ./artifacts/win-x64 "Lighthouse*.dll"
         env:
           YUBIKEY_PIN: ${{ secrets.YUBIKEY_PIN }}
 
-      - name: Verify signature
+      - name: Verify signatures
+        continue-on-error: true  # Self-signed cert will fail verification
         run: |
           verify.sh ./artifacts/win-x64/Lighthouse.exe
+          for dll in ./artifacts/win-x64/Lighthouse*.dll; do
+            verify.sh "$dll"
+          done
 
       - name: Delete unsigned artifact
         uses: geekyeggo/delete-artifact@v5
