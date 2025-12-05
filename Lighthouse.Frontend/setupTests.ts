@@ -1,12 +1,38 @@
 import '@testing-library/jest-dom';
 
 class MockResizeObserver {
-    observe() { /* Just declared to fulfill the interface */ }
-    unobserve() { /* Just declared to fulfill the interface */ }
-    disconnect() { /* Just declared to fulfill the interface */ }
-  }
-  
-  global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+  observe() { /* Just declared to fulfill the interface */ }
+  unobserve() { /* Just declared to fulfill the interface */ }
+  disconnect() { /* Just declared to fulfill the interface */ }
+}
+
+global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+
+
+// Mock localStorage with actual storage behavior
+const store: Record<string, string> = {};
+
+const localStorageMock = {
+  getItem: vi.fn((key: string) => store[key] || null),
+  setItem: vi.fn((key: string, value: string) => {
+    store[key] = value;
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete store[key];
+  }),
+  clear: vi.fn(() => {
+    Object.keys(store).forEach(key => delete store[key]);
+  }),
+  get length() {
+    return Object.keys(store).length;
+  },
+  key: vi.fn((index: number) => {
+    const keys = Object.keys(store);
+    return keys[index] || null;
+  }),
+};
+
+global.localStorage = localStorageMock as Storage;
 
 // Mock CSS imports to avoid CSS parsing errors in tests
 const mockCSS = new Proxy(

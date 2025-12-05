@@ -42,23 +42,8 @@ describe("FeatureListBase component", () => {
 	// Convert features to entity references for passing to the component
 	const featureReferences = features.map((f) => ({ id: f.id, name: f.name }));
 
-	// Mock localStorage before each test
-	let mockLocalStorage: { [key: string]: string } = {};
-
 	beforeEach(() => {
-		mockLocalStorage = {};
-
-		// Mock localStorage methods
-		Storage.prototype.getItem = vi.fn((key) => mockLocalStorage[key] || null);
-		Storage.prototype.setItem = vi.fn((key, value) => {
-			mockLocalStorage[key] = value.toString();
-		});
-		Storage.prototype.removeItem = vi.fn((key) => {
-			delete mockLocalStorage[key];
-		});
-		Storage.prototype.clear = vi.fn(() => {
-			mockLocalStorage = {};
-		});
+		localStorage.clear();
 	});
 
 	it("should render all features initially", async () => {
@@ -207,7 +192,10 @@ describe("FeatureListBase component", () => {
 	});
 
 	it("should load the saved preference from localStorage on mount", async () => {
-		mockLocalStorage.lighthouse_hide_completed_features_project_1 = "true";
+		localStorage.setItem(
+			"lighthouse_hide_completed_features_project_1",
+			JSON.stringify(true),
+		);
 
 		// Setup mock feature service
 		const mockFeatureService = createMockFeatureService();
@@ -289,9 +277,9 @@ describe("FeatureListBase component", () => {
 		await user.click(projectToggle);
 
 		// Verify localStorage was set for project context
-		expect(mockLocalStorage.lighthouse_hide_completed_features_project_1).toBe(
-			"true",
-		);
+		expect(
+			localStorage.getItem("lighthouse_hide_completed_features_project_1"),
+		).toBe("true");
 
 		// Unmount the component
 		unmount();
@@ -332,17 +320,17 @@ describe("FeatureListBase component", () => {
 		await user.click(teamToggle);
 
 		// Verify localStorage was set for team context
-		expect(mockLocalStorage.lighthouse_hide_completed_features_team_1).toBe(
-			"true",
-		);
+		expect(
+			localStorage.getItem("lighthouse_hide_completed_features_team_1"),
+		).toBe("true");
 
 		// Verify both settings exist independently in localStorage
-		expect(mockLocalStorage.lighthouse_hide_completed_features_project_1).toBe(
-			"true",
-		);
-		expect(mockLocalStorage.lighthouse_hide_completed_features_team_1).toBe(
-			"true",
-		);
+		expect(
+			localStorage.getItem("lighthouse_hide_completed_features_project_1"),
+		).toBe("true");
+		expect(
+			localStorage.getItem("lighthouse_hide_completed_features_team_1"),
+		).toBe("true");
 	});
 
 	it("should use default setting when no localStorage value exists", async () => {
@@ -475,21 +463,24 @@ describe("FeatureListBase component", () => {
 		await user.click(groupingToggle);
 
 		// Verify localStorage was updated
-		expect(mockLocalStorage.lighthouse_group_features_by_parent_project_1).toBe(
-			"true",
-		);
+		expect(
+			localStorage.getItem("lighthouse_group_features_by_parent_project_1"),
+		).toBe("true");
 
 		// Toggle it off
 		await user.click(groupingToggle);
 
 		// Verify localStorage was updated
-		expect(mockLocalStorage.lighthouse_group_features_by_parent_project_1).toBe(
-			"false",
-		);
+		expect(
+			localStorage.getItem("lighthouse_group_features_by_parent_project_1"),
+		).toBe("false");
 	});
 
 	it("should load the saved grouping preference from localStorage on mount", async () => {
-		mockLocalStorage.lighthouse_group_features_by_parent_project_1 = "true";
+		localStorage.setItem(
+			"lighthouse_group_features_by_parent_project_1",
+			JSON.stringify(true),
+		);
 
 		// Setup mock feature service
 		const mockFeatureService = createMockFeatureService();
@@ -582,9 +573,9 @@ describe("FeatureListBase component", () => {
 		await user.click(projectGroupingToggle);
 
 		// Verify localStorage was set for project context
-		expect(mockLocalStorage.lighthouse_group_features_by_parent_project_1).toBe(
-			"true",
-		);
+		expect(
+			localStorage.getItem("lighthouse_group_features_by_parent_project_1"),
+		).toBe("true");
 
 		// Unmount the component
 		unmount();
@@ -628,17 +619,17 @@ describe("FeatureListBase component", () => {
 		await user.click(teamGroupingToggle);
 
 		// Verify localStorage was set for team context
-		expect(mockLocalStorage.lighthouse_group_features_by_parent_team_1).toBe(
-			"true",
-		);
+		expect(
+			localStorage.getItem("lighthouse_group_features_by_parent_team_1"),
+		).toBe("true");
 
 		// Verify both settings exist independently in localStorage
-		expect(mockLocalStorage.lighthouse_group_features_by_parent_project_1).toBe(
-			"true",
-		);
-		expect(mockLocalStorage.lighthouse_group_features_by_parent_team_1).toBe(
-			"true",
-		);
+		expect(
+			localStorage.getItem("lighthouse_group_features_by_parent_project_1"),
+		).toBe("true");
+		expect(
+			localStorage.getItem("lighthouse_group_features_by_parent_team_1"),
+		).toBe("true");
 	});
 
 	// Tests for the grouping features functionality
@@ -1320,7 +1311,10 @@ describe("FeatureListBase component", () => {
 
 		it("should load and save grouping preference from localStorage", async () => {
 			// Set localStorage value before rendering
-			mockLocalStorage.lighthouse_group_features_by_parent_project_1 = "true";
+			localStorage.setItem(
+				"lighthouse_group_features_by_parent_project_1",
+				JSON.stringify(true),
+			);
 
 			// Create mock parent features
 			const mockParent100 = new Feature();
