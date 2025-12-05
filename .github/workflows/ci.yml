@@ -325,8 +325,11 @@ jobs:
         run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/win-x64
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
-      - name: Copy update_windows.ps1
-        run: cp ./Scripts/update_windows.ps1 ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/update_windows.ps1
+      # TODO: Add Windows Authenticode code signing here when certificates are available
+      # Steps needed:
+      # 1. Import code signing certificate from secrets
+      # 2. Use signtool or AzureSignTool to sign Lighthouse.exe
+      # Reference: https://docs.microsoft.com/en-us/windows/win32/seccrypto/signtool
 
       - name: Remove development settings from win-x64
         run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json
@@ -335,9 +338,6 @@ jobs:
         run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
-      - name: Copy update_mac.sh
-        run: cp ./Scripts/update_mac.sh ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/update_mac.sh
-
       - name: Remove development settings from osx-x64
         run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.Development.json
 
@@ -345,16 +345,110 @@ jobs:
         run: |
           sed -i 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.json
 
-      - name: Set osx executable permission
-        run: sudo chmod +x ./publish/osx-x64/Lighthouse
-        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+      - name: Create macOS .app bundle
+        run: |
+          APP_DIR="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse.app"
+          CONTENTS_DIR="$APP_DIR/Contents"
+          MACOS_DIR="$CONTENTS_DIR/MacOS"
+          RESOURCES_DIR="$CONTENTS_DIR/Resources"
+          OSX_PUBLISH="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64"
+          
+          # Create .app bundle directory structure
+          mkdir -p "$MACOS_DIR"
+          mkdir -p "$RESOURCES_DIR"
+          
+          # COPY (not move) the executable and supporting files into the bundle
+          # This keeps both the raw binary AND the .app bundle in the artifact for testing
+          cp "$OSX_PUBLISH/Lighthouse" "$MACOS_DIR/"
+          cp "$OSX_PUBLISH/appsettings.json" "$MACOS_DIR/"
+          cp -R "$OSX_PUBLISH/wwwroot" "$MACOS_DIR/" 2>/dev/null || true
+          
+          # Copy any other files (certs, etc.) into MacOS directory
+          for f in "$OSX_PUBLISH"/*; do
+            fname=$(basename "$f")
+            # Skip the .app bundle itself and directories we've already handled
+            if [[ "$fname" != "Lighthouse.app" && "$fname" != "Lighthouse" && "$fname" != "appsettings.json" && "$fname" != "wwwroot" ]]; then
+              if [[ -f "$f" ]]; then
+                cp "$f" "$MACOS_DIR/"
+              elif [[ -d "$f" ]]; then
+                cp -R "$f" "$MACOS_DIR/"
+              fi
+            fi
+          done
+          
+          # Copy app icons to Resources
+          cp ./Lighthouse.Frontend/public/icons/icon-512x512.png "$RESOURCES_DIR/AppIcon.png"
+          cp ./Lighthouse.Frontend/public/icons/icon-192x192.png "$RESOURCES_DIR/AppIcon-192.png"
+          
+          # Copy LICENSE and README to Resources
+          cp ./LICENSE "$RESOURCES_DIR/" 2>/dev/null || true
+          cp ./README.md "$RESOURCES_DIR/" 2>/dev/null || true
+          
+          # Create Info.plist
+          cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>Lighthouse</string>
+              <key>CFBundleIdentifier</key>
+              <string>work.letpeople.lighthouse</string>
+              <key>CFBundleName</key>
+              <string>Lighthouse</string>
+              <key>CFBundleDisplayName</key>
+              <string>Lighthouse</string>
+              <key>CFBundleVersion</key>
+              <string>${{ needs.tag.outputs.fileversion }}</string>
+              <key>CFBundleShortVersionString</key>
+              <string>${{ needs.tag.outputs.fileversion }}</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleSignature</key>
+              <string>????</string>
+              <key>CFBundleIconFile</key>
+              <string>AppIcon</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>10.13</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>LSApplicationCategoryType</key>
+              <string>public.app-category.developer-tools</string>
+              <key>NSHumanReadableCopyright</key>
+              <string>Copyright © Let People Work. All rights reserved.</string>
+          </dict>
+          </plist>
+          EOF
+          
+          # Set executable permission on both the raw binary and the one in the bundle
+          chmod +x "$OSX_PUBLISH/Lighthouse"
+          chmod +x "$MACOS_DIR/Lighthouse"
+          
+          echo "Created Lighthouse.app bundle at $APP_DIR"
+          echo ""
+          echo "=== osx-x64 directory now contains BOTH raw binary and .app bundle ==="
+          ls -la "$OSX_PUBLISH"
+          echo ""
+          echo "=== .app bundle contents ==="
+          ls -la "$CONTENTS_DIR"
+          ls -la "$MACOS_DIR"
+          ls -la "$RESOURCES_DIR"
+
+      # TODO: Add macOS code signing and notarization here
+      # This requires a macOS runner and Apple Developer credentials.
+      # Steps needed:
+      # 1. Switch to runs-on: macos-latest for this job (or a separate signing job)
+      # 2. Import Developer ID Application certificate from secrets
+      # 3. Sign the app bundle: codesign --deep --force --options runtime --sign "Developer ID Application: ..." Lighthouse.app
+      # 4. Create a DMG (optional): hdiutil create -volname "Lighthouse" -srcfolder Lighthouse.app -ov -format UDZO Lighthouse.dmg
+      # 5. Notarize: xcrun notarytool submit Lighthouse.dmg --apple-id ... --team-id ... --password ...
+      # 6. Staple: xcrun stapler staple Lighthouse.dmg (or Lighthouse.app)
+      # Reference: https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution
+      # TODO: Generate proper .icns icon file using iconutil on macOS runner
 
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
-
-      - name: Copy update_linux.sh
-        run: cp ./Scripts/update_linux.sh ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/update_linux.sh      
 
       - name: Remove development settings from linux-x64
         run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/appsettings.Development.json

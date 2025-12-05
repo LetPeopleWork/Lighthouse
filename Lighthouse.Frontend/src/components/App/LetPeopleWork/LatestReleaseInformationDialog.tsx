@@ -90,16 +90,6 @@ const LatestReleaseInformationDialog: React.FC<
 					</Typography>
 				</Box>
 
-				<Box display="flex" alignItems="center" mb={3}>
-					<UpdateIcon color="secondary" sx={{ marginRight: 1 }} />
-					<Typography variant="body1">
-						You can also use the update script for your respective operating
-						system in your Lighthouse folder (for example,{" "}
-						<code>update_windows.ps1</code>). Running this will automatically
-						download and extract the latest version for you.
-					</Typography>
-				</Box>
-
 				{newReleases?.map((release, index) => (
 					<InputGroup
 						key={release.name}
