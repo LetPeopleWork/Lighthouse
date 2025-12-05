@@ -2,7 +2,9 @@
 set -euo pipefail
 
 echo "Building codesign container (this may take a minute)..."
-docker build -t lighthouse-codesign -f tools/codesign/Dockerfile .
+docker build -t lighthouse-codesign ./tools/codesign
+echo "Checking osslsigncode version inside container"
+docker run --rm lighthouse-codesign osslsigncode --version || true
 
 echo "Checking osslsigncode version inside container"
 docker run --rm lighthouse-codesign osslsigncode --version || true

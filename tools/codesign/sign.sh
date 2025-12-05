@@ -44,10 +44,35 @@ fi
 PKCS11_CERT=${PKCS11_CERT:-'pkcs11:object=9a;type=cert'}
 PKCS11_KEY=${PKCS11_KEY:-'pkcs11:object=9a;type=private'}
 
-# Try to detect common module locations for opensc-pkcs11 and provider
+# Try to detect common module/provider/engine locations for OpenSC and OpenSSL engines
+# Prefer provider (OpenSSL 3) + opensc module, then legacy engine paths (engines-3 then engines-1.1)
 PKCS11_MODULE=${PKCS11_MODULE:-$(ls /usr/lib*/opensc-pkcs11*.so 2>/dev/null | head -n1 || true)}
 PROVIDER_PATH=${PROVIDER_PATH:-$(ls /usr/lib*/ossl-modules/pkcs11prov*.so 2>/dev/null | head -n1 || true)}
-ENGINE_PATH=${ENGINE_PATH:-$(ls /usr/lib*/engines-1.1/pkcs11*.so 2>/dev/null | head -n1 || true)}
+# Accept both engines-3 and engines-1.1 paths commonly found on Ubuntu/Debian
+ENGINE_PATH=${ENGINE_PATH:-$(ls /usr/lib*/engines-3/pkcs11*.so /usr/lib*/engines-1.1/pkcs11*.so 2>/dev/null | head -n1 || true)}
+
+if [ -n "$PROVIDER_PATH" ] && [ -n "$PKCS11_MODULE" ] && [ -f "$PROVIDER_PATH" ] && [ -f "$PKCS11_MODULE" ]; then
+  echo "Using OpenSSL 3 provider mode: provider=$PROVIDER_PATH pkcs11module=$PKCS11_MODULE"
+elif [ -n "$ENGINE_PATH" ] && [ -n "$PKCS11_MODULE" ] && [ -f "$ENGINE_PATH" ] && [ -f "$PKCS11_MODULE" ]; then
+  echo "Using PKCS#11 engine mode: engine=$ENGINE_PATH pkcs11module=$PKCS11_MODULE"
+else
+  echo "No PKCS#11 provider/engine detected in container; sign.sh will attempt fallback if available." >&2
+fi
+
+# Add very common explicit fallbacks so container runs don't need to pass these values
+if [ -z "$PKCS11_MODULE" ] && [ -f /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so ]; then
+  PKCS11_MODULE=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so
+fi
+if [ -z "$PROVIDER_PATH" ] && [ -f /usr/lib/ossl-modules/pkcs11prov.so ]; then
+  PROVIDER_PATH=/usr/lib/ossl-modules/pkcs11prov.so
+fi
+if [ -z "$ENGINE_PATH" ]; then
+  if [ -f /usr/lib/x86_64-linux-gnu/engines-3/pkcs11.so ]; then
+    ENGINE_PATH=/usr/lib/x86_64-linux-gnu/engines-3/pkcs11.so
+  elif [ -f /usr/lib/x86_64-linux-gnu/engines-1.1/pkcs11.so ]; then
+    ENGINE_PATH=/usr/lib/x86_64-linux-gnu/engines-1.1/pkcs11.so
+  fi
+fi
 
 TIMESTAMP_URL=${TIMESTAMP_URL:-${TIMESTAMP_URL:-http://timestamp.digicert.com}}
 PRODUCT_NAME=${PRODUCT_NAME:-'Lighthouse'}
