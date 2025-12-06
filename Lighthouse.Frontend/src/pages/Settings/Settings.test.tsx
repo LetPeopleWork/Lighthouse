@@ -10,12 +10,6 @@ vi.mock("./Connections/WorkTrackingSystemConnectionSettings", () => ({
 vi.mock("./LogSettings/LogSettings", () => ({
 	default: () => <div>Log Settings</div>,
 }));
-vi.mock("./DefaultTeamSettings/DefaultTeamSettings", () => ({
-	default: () => <div>Default Team Settings</div>,
-}));
-vi.mock("./DefaultProjectSettings/DefaultProjectSettings", () => ({
-	default: () => <div>Default Project Settings</div>,
-}));
 vi.mock("./DemoData/DemoDataSettings", () => ({
 	default: () => <div>Demo Data Settings</div>,
 }));
@@ -48,29 +42,12 @@ describe("Settings Component", () => {
 	it("should render the initial tab correctly", () => {
 		renderWithRouter();
 		expect(screen.getByTestId("work-tracking-panel")).toBeVisible();
-		expect(
-			screen.queryByTestId("default-team-settings-panel"),
-		).not.toBeVisible();
 	});
 
 	it("should switch to demo data tab when demodata query parameter is provided", () => {
 		renderWithRouter(["/settings?tab=demodata"]);
 
 		expect(screen.getByTestId("demo-data-panel")).toBeVisible();
-		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
-	});
-
-	it("should switch to Default Team Settings tab when clicked", () => {
-		renderWithRouter();
-		fireEvent.click(screen.getByTestId("default-team-settings-tab"));
-		expect(screen.getByTestId("default-team-settings-panel")).toBeVisible();
-		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
-	});
-
-	it("should switch to Default Project Settings tab when clicked", () => {
-		renderWithRouter();
-		fireEvent.click(screen.getByTestId("default-project-settings-tab"));
-		expect(screen.getByTestId("default-project-settings-panel")).toBeVisible();
 		expect(screen.getByTestId("work-tracking-panel")).not.toBeVisible();
 	});
 

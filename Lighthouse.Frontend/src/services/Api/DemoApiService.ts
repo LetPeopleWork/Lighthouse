@@ -1722,11 +1722,6 @@ export class DemoApiService
 		};
 	}
 
-	async updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void> {
-		console.log(`Updating ${teamSettings.name} Team Settings`);
-		await delay();
-	}
-
 	async getDefaultProjectSettings(): Promise<IProjectSettings> {
 		await delay();
 
@@ -1764,13 +1759,6 @@ export class DemoApiService
 			blockedStates: ["Waiting for Approval"],
 			blockedTags: ["Blocked", "Waiting for Customer Input"],
 		};
-	}
-
-	async updateDefaultProjectSettings(
-		projecSettings: IProjectSettings,
-	): Promise<void> {
-		console.log(`Updating ${projecSettings.name} Team Settings`);
-		await delay();
 	}
 
 	generateThroughput(): number[] {

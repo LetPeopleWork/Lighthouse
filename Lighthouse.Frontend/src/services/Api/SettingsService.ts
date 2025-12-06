@@ -11,9 +11,7 @@ export interface ISettingsService {
 		refreshSettings: IRefreshSettings,
 	): Promise<void>;
 	getDefaultTeamSettings(): Promise<ITeamSettings>;
-	updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void>;
 	getDefaultProjectSettings(): Promise<IProjectSettings>;
-	updateDefaultProjectSettings(projecSettings: IProjectSettings): Promise<void>;
 	getWorkTrackingSystemSettings(): Promise<IWorkTrackingSystemSettings>;
 	updateWorkTrackingSystemSettings(
 		workTrackingSystemSettings: IWorkTrackingSystemSettings,
@@ -64,15 +62,6 @@ export class SettingsService
 		});
 	}
 
-	async updateDefaultTeamSettings(teamSettings: ITeamSettings): Promise<void> {
-		this.withErrorHandling(async () => {
-			await this.apiService.put<ITeamSettings>(
-				"/appsettings/defaultteamsettings",
-				teamSettings,
-			);
-		});
-	}
-
 	async getDefaultProjectSettings(): Promise<IProjectSettings> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IProjectSettings>(
@@ -80,17 +69,6 @@ export class SettingsService
 			);
 
 			return this.deserializeProjectSettings(response.data);
-		});
-	}
-
-	async updateDefaultProjectSettings(
-		projecSettings: IProjectSettings,
-	): Promise<void> {
-		this.withErrorHandling(async () => {
-			await this.apiService.put<IProjectSettings>(
-				"/appsettings/defaultprojectsettings",
-				projecSettings,
-			);
 		});
 	}
 

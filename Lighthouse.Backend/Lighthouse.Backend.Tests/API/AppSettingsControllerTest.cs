@@ -110,22 +110,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateDefaultTeamSettings_UpdatesSettings()
-        {
-            var settings = new TeamSettingDto();
-
-            var subject = CreateSubject();
-
-            var result = await subject.UpdateDefaultTeamSettings(settings);
-
-            using (Assert.EnterMultipleScope())
-            {
-                appSettingServiceMock.Verify(x => x.UpdateDefaultTeamSettings(settings), Times.Once);
-                Assert.That(result, Is.InstanceOf<OkResult>());
-            };
-        }
-
-        [Test]
         public void GetDefaultProjectSettings_ReturnsSettings()
         {
             var settings = new ProjectSettingDto();
@@ -142,22 +126,6 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
                 Assert.That(okResult.Value, Is.EqualTo(settings));
-            };
-        }
-
-        [Test]
-        public async Task UpdateDefaultProjectSettings_UpdatesSettings()
-        {
-            var settings = new ProjectSettingDto();
-
-            var subject = CreateSubject();
-
-            var result = await subject.UpdateDefaultProjectSettings(settings);
-
-            using (Assert.EnterMultipleScope())
-            {
-                appSettingServiceMock.Verify(x => x.UpdateDefaultProjectSettings(settings), Times.Once);
-                Assert.That(result, Is.InstanceOf<OkResult>());
             };
         }
 

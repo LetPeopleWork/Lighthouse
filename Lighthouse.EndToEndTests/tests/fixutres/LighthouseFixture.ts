@@ -17,28 +17,11 @@ type LighthouseWithDataFixtures = {
 	testData: TestData;
 };
 
-type LighthouseWithDefaultSettingsFixtures = {
-	defaultSettings: DefaultSettings;
-};
-
 type TestData = {
 	projects: ModelIdentifier[];
 	teams: ModelIdentifier[];
 	connections: ModelIdentifier[];
 };
-
-type DefaultSettings = {
-	defaultProjectSettings: JsonValue;
-	defaultTeamSettings: JsonValue;
-};
-
-type JsonValue =
-	| string
-	| number
-	| boolean
-	| null
-	| { [key: string]: JsonValue }
-	| JsonValue[];
 
 export type ModelIdentifier = {
 	id: number;
@@ -47,33 +30,6 @@ export type ModelIdentifier = {
 
 async function clearConfiguration(request: APIRequestContext): Promise<void> {
 	await request.delete("/api/configuration/clear");
-}
-
-async function getDefaultSettings(
-	request: APIRequestContext,
-): Promise<DefaultSettings> {
-	let response = await request.get("/api/AppSettings/DefaultTeamSettings");
-	const defaultTeamSettings = await response.json();
-
-	response = await request.get("/api/AppSettings/DefaultProjectSettings");
-	const defaultProjectSettings = await response.json();
-
-	return {
-		defaultProjectSettings: defaultProjectSettings,
-		defaultTeamSettings: defaultTeamSettings,
-	};
-}
-
-async function restoreDefaultTeamSettings(
-	request: APIRequestContext,
-	defaultSettings: DefaultSettings,
-): Promise<void> {
-	await request.put("/api/AppSettings/DefaultTeamSettings", {
-		data: defaultSettings.defaultTeamSettings,
-	});
-	await request.put("/api/AppSettings/DefaultProjectSettings", {
-		data: defaultSettings.defaultProjectSettings,
-	});
 }
 
 async function generateTestData(
@@ -194,17 +150,6 @@ export const test = base.extend<LighthouseFixtures>({
 		await clearConfiguration(request);
 	},
 });
-
-export const testWithRestoredDefaultSettings =
-	test.extend<LighthouseWithDefaultSettingsFixtures>({
-		defaultSettings: async ({ request }, use) => {
-			const defaultSettings = await getDefaultSettings(request);
-
-			await use(defaultSettings);
-
-			await restoreDefaultTeamSettings(request, defaultSettings);
-		},
-	});
 
 export function testWithUpdatedTeams(teamsToUpdate: number[] = [0, 1, 2]) {
 	return test.extend<LighthouseWithDataFixtures>({

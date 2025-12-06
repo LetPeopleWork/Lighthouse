@@ -42,7 +42,6 @@ Independent of the [Work Item Query](#work-item-query), Lighthouse needs to know
 
 {: .recommendation}
 Common examples for item types on project level are "Epic" in Jira and Azure DevOps, and additionally "Feature" for Azure DevOps.
-Check [Default Project Settings](../settings/settings.html#default-project-settings) to see how to adjust default values for every newly created project.
 
 You can remove types by hitting the remove icon, and add new ones by typing them in and hit *Add Work Item Type*.
 

@@ -1,7 +1,5 @@
 import ArticleIcon from "@mui/icons-material/Article";
 import DatasetIcon from "@mui/icons-material/Dataset";
-import FolderIcon from "@mui/icons-material/Folder";
-import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SettingsSystemDaydreamIcon from "@mui/icons-material/SettingsSystemDaydream";
 import TabContext from "@mui/lab/TabContext";
@@ -20,8 +18,6 @@ import { useLocation } from "react-router-dom";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import WorkTrackingSystemConnectionSettings from "./Connections/WorkTrackingSystemConnectionSettings";
-import DefaultProjectSettings from "./DefaultProjectSettings/DefaultProjectSettings";
-import DefaultTeamSettings from "./DefaultTeamSettings/DefaultTeamSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
 import LogSettings from "./LogSettings/LogSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
@@ -34,7 +30,6 @@ const Settings: React.FC = () => {
 	const location = useLocation();
 
 	const { getTerm } = useTerminology();
-	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
 	const workTrackingSystemConnectionSettingsTerm = getTerm(
 		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
 	);
@@ -90,22 +85,6 @@ const Settings: React.FC = () => {
 			panelTestId: "demo-data-panel",
 			icon: <DatasetIcon />,
 			component: <DemoDataSettings />,
-		},
-		{
-			value: "30",
-			label: `Default ${teamsTerm}`,
-			testId: "default-team-settings-tab",
-			panelTestId: "default-team-settings-panel",
-			icon: <GroupWorkIcon />,
-			component: <DefaultTeamSettings />,
-		},
-		{
-			value: "40",
-			label: "Default Projects",
-			testId: "default-project-settings-tab",
-			panelTestId: "default-project-settings-panel",
-			icon: <FolderIcon />,
-			component: <DefaultProjectSettings />,
 		},
 		{
 			value: "99",

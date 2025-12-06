@@ -24,11 +24,5 @@ General application settings that affect the overall Lighthouse behavior, includ
 ### [Demo Data](demodata.html)
 Load sample scenarios to explore Lighthouse features or for training purposes. Various scenarios are available covering different team situations and use cases.
 
-### [Default Team Settings](defaultteamsettings.html)
-Configure default values used when creating new teams to streamline the team creation process and ensure consistency across your organization.
-
-### [Default Project Settings](defaultprojectsettings.html)
-Set up default values for project creation to make the process more efficient and prevent common configuration mistakes.
-
 ### [Logs](logs.html)
 Access detailed logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.

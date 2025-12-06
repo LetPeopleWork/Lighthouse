@@ -103,18 +103,6 @@ describe("SettingsService", () => {
 		);
 	});
 
-	it("should update default team settings", async () => {
-		const mockTeamSettings = createMockTeamSettings();
-		mockedAxios.put.mockResolvedValueOnce({});
-
-		await settingsService.updateDefaultTeamSettings(mockTeamSettings);
-
-		expect(mockedAxios.put).toHaveBeenCalledWith(
-			"/appsettings/defaultteamsettings",
-			mockTeamSettings,
-		);
-	});
-
 	it("should get default project settings", async () => {
 		const mockResponse = createMockProjectSettings();
 
@@ -125,19 +113,6 @@ describe("SettingsService", () => {
 		expect(projectSettings).toEqual(mockResponse);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/appsettings/defaultprojectsettings",
-		);
-	});
-
-	it("should update default project settings", async () => {
-		const mockProjectSettings = createMockProjectSettings();
-
-		mockedAxios.put.mockResolvedValueOnce({});
-
-		await settingsService.updateDefaultProjectSettings(mockProjectSettings);
-
-		expect(mockedAxios.put).toHaveBeenCalledWith(
-			"/appsettings/defaultprojectsettings",
-			mockProjectSettings,
 		);
 	});
 });

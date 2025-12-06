@@ -79,8 +79,7 @@ As mentioned above, use a *fixed* Throughput with caution, and ideally only temp
 In order to properly forecast, Lighthouse needs to know which items your team works on that are relevant for the forecast. Thus you can define the item types that should be taken into account for this specific team.
 
 {: .recommendation}
-Common examples for item types on team level are "User Story", "Bug", and "Product Backlog Item" for Azure DevOps, and "Story" as well as "Bug" for Jira.  
-Check [Default Team Settings](../settings/defaultteamsettings.html) to see how to adjust default values for every newly created team.
+Common examples for item types on team level are "User Story", "Bug", and "Product Backlog Item" for Azure DevOps, and "Story" as well as "Bug" for Jira.
 
 You can remove types by hitting the remove icon, and add new ones by typing them in and hit *Add Work Item Type*.
 

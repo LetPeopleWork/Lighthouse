@@ -51,35 +51,17 @@ namespace Lighthouse.Backend.API
             return Ok(settings);
         }
 
-        [HttpPut("DefaultTeamSettings")]
-        public async Task<ActionResult> UpdateDefaultTeamSettings(TeamSettingDto defaultTeamSetting)
-        {
-            await appSettingService.UpdateDefaultTeamSettings(defaultTeamSetting);
-            return Ok();
-        }
-
-        [HttpGet("DefaultProjectSettings")]
-        public ActionResult<ProjectSettingDto> GetDefaultProjectSettings()
-        {
-            var settings = appSettingService.GetDefaultProjectSettings();
-            return Ok(settings);
-        }
-
-        [HttpPut("DefaultProjectSettings")]
-        public async Task<ActionResult> UpdateDefaultProjectSettings(ProjectSettingDto defaultProjectSettings)
-        {
-            await appSettingService.UpdateDefaultProjectSettings(defaultProjectSettings);
-            return Ok();
-        }
-
-        [HttpGet("WorkTrackingSystemSettings")]
-        public ActionResult<WorkTrackingSystemSettings> GetWorkTrackingSystemSettings()
-        {
-            var settings = appSettingService.GetWorkTrackingSystemSettings();
-            return Ok(settings);
-        }
-
-        [HttpPut("WorkTrackingSystemSettings")]
+	[HttpGet("DefaultProjectSettings")]
+	public ActionResult<ProjectSettingDto> GetDefaultProjectSettings()
+	{
+		var settings = appSettingService.GetDefaultProjectSettings();
+		return Ok(settings);
+	}	[HttpGet("WorkTrackingSystemSettings")]
+	public ActionResult<WorkTrackingSystemSettings> GetWorkTrackingSystemSettings()
+	{
+		var settings = appSettingService.GetWorkTrackingSystemSettings();
+		return Ok(settings);
+	}        [HttpPut("WorkTrackingSystemSettings")]
         public async Task<ActionResult> UpdateWorkTrackingSystemSettings(WorkTrackingSystemSettings workTrackingSystemSettings)
         {
             await appSettingService.UpdateWorkTrackingSystemSettings(workTrackingSystemSettings);
