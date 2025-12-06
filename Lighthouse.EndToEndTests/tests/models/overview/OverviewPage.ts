@@ -117,6 +117,16 @@ export class OverviewPage {
 		return new TeamEditPage(this.page);
 	}
 
+	async cloneProject(projectName: string): Promise<ProjectEditPage> {
+		await this.search(projectName);
+
+		const projectCloneIcon = this.page.getByLabel("Clone");
+
+		await projectCloneIcon.click();
+
+		return new ProjectEditPage(this.page);
+	}
+
 	async showLicenseTooltip(): Promise<void> {
 		await this.page.getByTestId("license-status-button").hover();
 		await this.page

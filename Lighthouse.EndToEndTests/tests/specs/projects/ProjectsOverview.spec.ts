@@ -111,3 +111,22 @@ testWithData(
 		});
 	},
 );
+
+testWithData(
+	"should clone project when clicking on Clone icon",
+	async ({ testData, overviewPage }) => {
+		const [project1] = testData.projects;
+
+		await test.step(`Clone Project ${project1.name}`, async () => {
+			const projectEditPage = await overviewPage.cloneProject(project1.name);
+
+			// Verify we're on the new project page with cloneFrom parameter
+			expect(projectEditPage.page.url()).toContain("/projects/new");
+			expect(projectEditPage.page.url()).toContain(`cloneFrom=${project1.id}`);
+
+			// Verify the project name is prefixed with "Copy of"
+			const nameField = await projectEditPage.getName();
+			expect(nameField).toBe(`Copy of ${project1.name}`);
+		});
+	},
+);

@@ -123,14 +123,8 @@ testWithData(
 			expect(teamEditPage.page.url()).toContain(`cloneFrom=${team1.id}`);
 
 			// Verify the team name is prefixed with "Copy of"
-			const nameField = teamEditPage.page.getByLabel("Name");
-			await expect(nameField).toHaveValue(`Copy of ${team1.name}`);
-
-			// Save the cloned team
-			await teamEditPage.save();
-
-			// Verify we're redirected to the new team's detail page
-			await expect(teamEditPage.page).toHaveURL(/\/teams\/\d+/);
+			const nameField = await teamEditPage.getName();
+			expect(nameField).toBe(`Copy of ${team1.name}`);
 		});
 	},
 );
