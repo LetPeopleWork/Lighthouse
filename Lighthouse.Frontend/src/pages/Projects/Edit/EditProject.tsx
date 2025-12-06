@@ -21,6 +21,21 @@ const EditProject: React.FC = () => {
 	const pageTitle = isNewProject ? "Create Project" : "Update Project";
 
 	const getProjectSettings = async () => {
+		const urlParams = new URLSearchParams(window.location.search);
+		const cloneFromId = urlParams.get("cloneFrom");
+
+		if (isNewProject && cloneFromId) {
+			const cloneId = Number.parseInt(cloneFromId, 10);
+			if (!Number.isNaN(cloneId)) {
+				const sourceSettings = await projectService.getProjectSettings(cloneId);
+				return {
+					...sourceSettings,
+					id: 0,
+					name: `Copy of ${sourceSettings.name}`,
+				};
+			}
+		}
+
 		if (!isNewProject && id) {
 			return await projectService.getProjectSettings(Number.parseInt(id, 10));
 		}

@@ -349,7 +349,7 @@ describe("DataOverviewTable", () => {
 			expect(mockNavigate).toHaveBeenCalledWith("/teams/new?cloneFrom=1");
 		});
 
-		it("does not show Clone action for projects", () => {
+		it("shows Clone action for projects", () => {
 			renderWithRouter(
 				<DataOverviewTable
 					data={sampleProjectData}
@@ -360,7 +360,25 @@ describe("DataOverviewTable", () => {
 				/>,
 			);
 
-			expect(screen.queryByLabelText("Clone")).not.toBeInTheDocument();
+			const cloneButtons = screen.getAllByLabelText("Clone");
+			expect(cloneButtons).toHaveLength(sampleProjectData.length);
+		});
+
+		it("navigates to clone URL when Clone button is clicked for projects", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleProjectData}
+					title="projects"
+					api="projects"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+
+			const cloneButtons = screen.getAllByLabelText("Clone");
+			fireEvent.click(cloneButtons[0]);
+
+			expect(mockNavigate).toHaveBeenCalledWith("/projects/new?cloneFrom=1");
 		});
 
 		it("filters items by partial tag match", () => {

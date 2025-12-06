@@ -184,9 +184,13 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 
 	const handleClone = useCallback(
 		(item: IFeatureOwner) => {
-			navigate(`/teams/new?cloneFrom=${item.id}`);
+			if (api === "teams") {
+				navigate(`/teams/new?cloneFrom=${item.id}`);
+			} else if (api === "projects") {
+				navigate(`/projects/new?cloneFrom=${item.id}`);
+			}
 		},
-		[navigate],
+		[navigate, api],
 	);
 
 	// Define DataGrid columns - dynamically include project-specific columns
@@ -349,7 +353,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									<EditIcon fontSize={isTablet ? "small" : "medium"} />
 								</IconButton>
 							</Tooltip>
-							{api === "teams" && (
+							{(api === "teams" || api === "projects") && (
 								<Tooltip title="Clone">
 									<IconButton
 										onClick={() => handleClone(row)}
