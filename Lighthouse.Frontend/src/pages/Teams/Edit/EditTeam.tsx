@@ -48,6 +48,21 @@ const EditTeamPage: React.FC = () => {
 	};
 
 	const getTeamSettings = async () => {
+		const urlParams = new URLSearchParams(window.location.search);
+		const cloneFromId = urlParams.get("cloneFrom");
+
+		if (isNewTeam && cloneFromId) {
+			const cloneId = Number.parseInt(cloneFromId, 10);
+			if (!Number.isNaN(cloneId)) {
+				const sourceSettings = await teamService.getTeamSettings(cloneId);
+				return {
+					...sourceSettings,
+					id: 0,
+					name: `Copy of ${sourceSettings.name}`,
+				};
+			}
+		}
+
 		if (!isNewTeam && id) {
 			return await teamService.getTeamSettings(Number.parseInt(id, 10));
 		}

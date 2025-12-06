@@ -1,15 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IProject } from "../../../models/Project/Project";
 import DataOverviewTable from "./DataOverviewTable";
 
+const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
 	const actual = await vi.importActual("react-router-dom");
 	return {
 		...actual,
-		useNavigate: vi.fn(),
+		useNavigate: () => mockNavigate,
 	};
 });
 
@@ -314,6 +315,52 @@ describe("DataOverviewTable", () => {
 
 			const tagChips = document.querySelectorAll(".MuiChip-outlined");
 			expect(tagChips.length).toEqual(2);
+		});
+
+		it("shows Clone action in Actions cell when rendering teams", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+
+			const cloneButtons = screen.getAllByLabelText("Clone");
+			expect(cloneButtons).toHaveLength(sampleTeamData.length);
+		});
+
+		it("navigates to clone URL when Clone button is clicked", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData.slice(0, 1)} // Only render one team for this test
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+
+			const cloneButton = screen.getByLabelText("Clone");
+			fireEvent.click(cloneButton);
+
+			expect(mockNavigate).toHaveBeenCalledWith("/teams/new?cloneFrom=1");
+		});
+
+		it("does not show Clone action for projects", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleProjectData}
+					title="projects"
+					api="projects"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+
+			expect(screen.queryByLabelText("Clone")).not.toBeInTheDocument();
 		});
 
 		it("filters items by partial tag match", () => {

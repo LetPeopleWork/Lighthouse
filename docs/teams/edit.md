@@ -7,6 +7,21 @@ nav_order: 2
 
 Whether you want to create a new team or edit an existing one, you can use this page to specify all the details that make up your team.
 
+Teams can be created from scratch with default settings, by cloning existing teams, or edited to modify their configuration.
+
+## Creating Teams by Cloning
+
+You can create a new team by cloning an existing team's settings. When you clone a team:
+
+* Navigate to the team overview page and click the "Clone" button next to the team you want to copy
+* This opens the team creation page pre-filled with the original team's settings
+* The team name is automatically prefixed with "Copy of " followed by the original team's name
+* All settings including work item query, work item types, states, throughput configuration, and other team-specific settings are copied
+* Only the team settings are copied - project assignments and other relationships are not automatically copied
+* You can modify any of the pre-filled settings before saving the new team
+
+Cloning is useful when setting up multiple teams with similar configurations or when you want to create variations of existing team setups.
+
 - TOC
 {:toc}
 

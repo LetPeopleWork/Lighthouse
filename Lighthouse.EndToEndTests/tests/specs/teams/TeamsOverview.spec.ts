@@ -109,3 +109,28 @@ testWithData(
 		});
 	},
 );
+
+testWithData(
+	"should clone team when clicking on Clone icon",
+	async ({ testData, overviewPage }) => {
+		const team1 = testData.teams[0];
+
+		await test.step(`Clone Team ${team1.name}`, async () => {
+			const teamEditPage = await overviewPage.cloneTeam(team1.name);
+
+			// Verify we're on the new team page with cloneFrom parameter
+			expect(teamEditPage.page.url()).toContain("/teams/new");
+			expect(teamEditPage.page.url()).toContain(`cloneFrom=${team1.id}`);
+
+			// Verify the team name is prefixed with "Copy of"
+			const nameField = teamEditPage.page.getByLabel("Name");
+			await expect(nameField).toHaveValue(`Copy of ${team1.name}`);
+
+			// Save the cloned team
+			await teamEditPage.save();
+
+			// Verify we're redirected to the new team's detail page
+			await expect(teamEditPage.page).toHaveURL(/\/teams\/\d+/);
+		});
+	},
+);

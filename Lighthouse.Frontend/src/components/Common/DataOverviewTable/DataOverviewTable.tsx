@@ -1,3 +1,4 @@
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
@@ -18,7 +19,7 @@ import {
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IProject } from "../../../models/Project/Project";
@@ -43,6 +44,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	filterText,
 }) => {
 	const theme = useTheme();
+	const navigate = useNavigate();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -180,6 +182,13 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 		);
 	}, []);
 
+	const handleClone = useCallback(
+		(item: IFeatureOwner) => {
+			navigate(`/teams/new?cloneFrom=${item.id}`);
+		},
+		[navigate],
+	);
+
 	// Define DataGrid columns - dynamically include project-specific columns
 	const columns: DataGridColumn<IFeatureOwner & GridValidRowModel>[] =
 		useMemo(() => {
@@ -300,7 +309,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				{
 					field: "actions",
 					headerName: "Actions",
-					width: isMobile ? 120 : 150,
+					width: isMobile ? 160 : 200,
 					sortable: false,
 					hideable: false,
 					renderCell: ({ row }) => (
@@ -340,6 +349,22 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									<EditIcon fontSize={isTablet ? "small" : "medium"} />
 								</IconButton>
 							</Tooltip>
+							{api === "teams" && (
+								<Tooltip title="Clone">
+									<IconButton
+										onClick={() => handleClone(row)}
+										size={isTablet ? "small" : "medium"}
+										sx={{
+											color: theme.palette.primary.main,
+											transition: "transform 0.2s",
+											"&:hover": { transform: "scale(1.1)" },
+										}}
+										aria-label="Clone"
+									>
+										<ContentCopyIcon fontSize={isTablet ? "small" : "medium"} />
+									</IconButton>
+								</Tooltip>
+							)}
 							<Tooltip title="Delete">
 								<IconButton
 									onClick={() => onDelete(row)}
@@ -373,6 +398,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 			renderProgressCell,
 			getKeyForecasts,
 			renderForecastsCell,
+			handleClone,
 		]);
 
 	return (

@@ -109,6 +109,14 @@ export class OverviewPage {
 		return new TeamDeletionDialog(this.page);
 	}
 
+	async cloneTeam(teamName: string): Promise<TeamEditPage> {
+		await this.search(teamName);
+		const teamCloneIcon = this.page.getByLabel("Clone");
+		await teamCloneIcon.click();
+
+		return new TeamEditPage(this.page);
+	}
+
 	async showLicenseTooltip(): Promise<void> {
 		await this.page.getByTestId("license-status-button").hover();
 		await this.page

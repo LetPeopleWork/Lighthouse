@@ -415,3 +415,4 @@ examples/postgres/data/*
 .DS_Store
 Lighthouse.EndToEndTests/temp-downloads/*
 tools/codesign/.secure_env/*
+Lighthouse.Backend/.idea/*

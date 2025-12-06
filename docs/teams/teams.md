@@ -29,6 +29,16 @@ If you want to delete a team, you can click on the 🗑️ icon on the right sid
 
 ![Team Deletion](../assets/features/teams_delete.png)
 
+## Cloning Teams
+
+You can clone an existing team to create a new team with the same settings. When cloning a team:
+* All team settings (work item query, work item types, states, throughput settings, etc.) are copied
+* The new team's name is prefixed with "Copy of " to distinguish it from the original
+* Only the settings are copied - relationships like project assignments are not automatically copied
+* The cloned team is created as a new, independent team
+
+To clone a team, click the Clone button in the team overview page. This will open the team creation page pre-filled with the original team's settings.
+
 {: .important}
 Deleting a team will remove it from Lighthouse with no functionality to undo this change. This will also remove the team from all the involved projects. Ideally you make sure that this team is not involved in any projects before you delete it.
 
