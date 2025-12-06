@@ -1,181 +1,128 @@
----
-applyTo: '**'
----
-### **Core Directive**
+# Development Guidelines for GitHub Copilot
 
-You are an expert AI pair programmer. Your primary goal is to make precise, high-quality, and safe code modifications. You must follow every rule meticulously. Your first action for any request is to follow Rule #0.
+> **About this repository:** This project uses C# for backend services and TypeScript/React/Vitest for frontend development. These instructions ensure consistent development practices across both stacks.
 
 ## Core Philosophy
 
-**TEST-DRIVEN DEVELOPMENT IS NON-NEGOTIABLE.** Every single line of production code must be written in response to a failing test. No exceptions. This is not a suggestion or a preference - it is the fundamental practice that enables all other principles in this document.
+**TEST-DRIVEN DEVELOPMENT IS NON-NEGOTIABLE.** Every single line of production code must be written in response to a failing test. No exceptions. This is the fundamental practice that enables all other principles in this document.
 
-I follow Test-Driven Development (TDD) with a strong emphasis on behavior-driven testing and functional programming principles. All work should be done in small, incremental changes that maintain a working state throughout development.
+Follow Test-Driven Development (TDD) with a strong emphasis on behavior-driven testing and functional programming principles. All work should be done in small, incremental changes that maintain a working state throughout development.
 
 ## Quick Reference
 
 **Key Principles:**
-
-- Write tests first (TDD)
+- Write tests first (TDD is mandatory)
 - Test behavior, not implementation
-- No `any` types or type assertions
+- No `any` types (TypeScript) or dynamic types without constraints (C#)
 - Immutable data only
 - Small, pure functions
-- TypeScript strict mode always
+- TypeScript strict mode and C# nullable reference types always enabled
 - Use real schemas/types in tests, never redefine them
 
+**Tech Stack:**
+- **Backend**: C# with .NET
+- **Frontend**: TypeScript (strict mode) + React + Vitest
+- **Testing**: xUnit/NUnit (C#), Vitest + React Testing Library (TypeScript)
+- **State Management**: Immutable patterns in both languages
 
-## Testing Principles
+## Path-Specific Instructions
 
-### Behavior-Driven Testing
+This repository contains additional path-specific instructions that apply to different parts of the codebase:
 
-- **No "unit tests"** - this term is not helpful. Tests should verify expected behavior, treating implementation as a black box
-- Test through the public API exclusively - internals should be invisible to tests
+- **Backend (C#)**: See `.github/instructions/backend-csharp.instructions.md`
+- **Frontend (TypeScript/React)**: See `.github/instructions/frontend-typescript.instructions.md`
+- **Testing Guidelines**: See `.github/instructions/testing.instructions.md`
+- **Code Style**: See `.github/instructions/code-style.instructions.md`
+- **Development Workflow**: See `.github/instructions/workflow.instructions.md`
+
+## Universal Principles (Both C# and TypeScript)
+
+### TDD Process - THE FUNDAMENTAL PRACTICE
+
+Follow RED-GREEN-REFACTOR strictly:
+
+1. **RED**: Write a failing test first - NO production code without a failing test
+2. **GREEN**: Write MINIMUM code to pass the test
+3. **REFACTOR**: Assess improvement opportunities (only refactor if adds value)
+
+### Testing Principles
+
+- Test behavior through public APIs, not implementation details
+- 100% coverage through business behavior testing
 - No 1:1 mapping between test files and implementation files
-- Tests that examine internal implementation details are wasteful and should be avoided
-- **Coverage targets**: 100% coverage should be expected at all times, but these tests must ALWAYS be based on business behaviour, not implementation details
-- Tests must document expected business behaviour
+- Use factory functions for test data (no shared mutable state)
+- Tests must document expected business behavior
 
+### Type Safety
 
+**TypeScript:**
+- No `any` types - use `unknown` if type is truly unknown
+- Strict mode always enabled
+- Schema-first at trust boundaries (Zod)
 
----
+**C#:**
+- Nullable reference types enabled
+- No dynamic types without constraints
+- Use record types for immutable data structures
 
-### **Section 1: The Planning Phase**
+### Immutability
 
-#### 0. Mandatory Implementation Plan
+- No data mutation in either language
+- Pure functions wherever possible
+- Use immutable collections in C# (ImmutableList, ImmutableDictionary)
+- Use spread operators and array methods in TypeScript
 
-You **MUST** begin every response with an internal implementation plan, formatted exactly as shown below. After the plan, proceed directly to the implementation without asking for approval.
+### Code Structure
 
-The plan's structure is defined by the following template. Adhere to all formatting details.
+- Maximum 2 levels of nesting
+- Early returns instead of nested conditionals
+- Functions focused on single responsibility
+- Self-documenting code (no comments unless necessary)
 
-**📜 INTERNAL IMPLEMENTATION PLAN 📜**  
-**🎯 GOAL:** A single sentence describing the final objective.  
-**🔬 SCOPE:** List of files/functions to be modified. State "None" if not applicable.  
-**⚖️ JUSTIFICATION:** A one-line reason for the chosen scope.  
-**⚠️ RISKS/AMBIGUITY:** Note any potential risks or ambiguities. State "None" if not applicable.  
-**🛠️ STEPS:** A numbered list of concise, high-level actions.
-  - 1. Start each step with a verb.
-  - 2. Keep each step to a single sentence.
-**💡 Learning:** If applicable, include a brief note on what you learned from this task and that you would add to the instructions file.
+## Working with Copilot
 
-**Key Rules:**
-*   **Conciseness:** Keep all fields as brief as possible.
-*   **Line Breaks:** The title and each field (`🎯 GOAL:`, `🔬 SCOPE:`, etc.) **must** start on a new line.
-*   **Spacing:** End the `GOAL`, `SCOPE`, `JUSTIFICATION`, and `RISKS` lines with two spaces.
-*   **Execution:** After the plan, add two horizontal rules (`---`) on new lines, then provide your final answer.
+**Expectations:**
+1. ALWAYS follow TDD - no production code without failing test
+2. Assess refactoring after every green (but only if adds value)
+3. Generate complete, working solutions (no placeholders)
+4. Verify type safety in both languages
+5. Check immutability violations
+6. Test behavior, never implementation details
 
----
+**When generating code:**
+- Start with test describing desired behavior
+- Write minimum implementation to pass test
+- Suggest refactoring only if HIGH or CRITICAL priority
+- Maintain immutability in all generated code
+- Use schema validation at trust boundaries
 
-### **Section 2: Execution & Safety Principles**
+**When generating tests:**
+- Test what code does, not how it does it
+- Use factory functions for test data
+- Import schemas from codebase - never redefine
+- Each test documents expected business behavior
 
-#### 1. Minimize Scope of Change
-*   Implement the smallest possible change that satisfies the request.
-*   Do not modify unrelated code or refactor for style unless explicitly asked.
+## Error Handling
 
-#### 2. Preserve Existing Behavior
-*   Ensure your changes are surgical and do not alter existing functionalities or APIs.
-*   Maintain the project's existing architectural and coding patterns.
+**TypeScript:**
+```typescript
+type Result<T, E = Error> = 
+  | { success: true; value: T }
+  | { success: false; error: E };
+```
 
-#### 3. Handle Ambiguity Safely
-*   If a request is unclear (e.g., "fix the helper"), identify the ambiguity in the `RISKS/AMBIGUITY` section of your plan.
-*   State your assumption, referencing exact file paths if possible (e.g., "Assuming 'the helper' refers to `src/utils/helpers.js`"), and proceed with the most logical interpretation.
+**C#:**
+```csharp
+public record Result<T, TError>
+{
+    public bool Success { get; init; }
+    public T? Value { get; init; }
+    public TError? Error { get; init; }
+}
+```
 
-#### 4. Ensure Reversibility
-*   Write changes in a way that makes them easy to understand and revert.
-*   Avoid cascading or tightly coupled edits that make rollback difficult.
+## Summary
 
-#### 5. Log, Don’t Implement, Unscoped Ideas
-*   If you identify a potential improvement outside the task's scope, add it as a code comment.
-*   **Example:** `// NOTE: This function could be further optimized by caching results.`
+Write clean, testable, functional code that evolves through small, safe increments. Every change is driven by a test describing desired behavior. Implementation is the simplest thing that makes the test pass.
 
-#### 6. Forbidden Actions (Unless Explicitly Permitted)
-*   Do not perform global refactoring.
-*   Do not add new dependencies (e.g., npm packages, Python libraries) on your own. If you believe a new dependency is necessary, log it as a comment and explain why it is needed. Ask for approval before proceeding.
-*   Do not change formatting or run a linter on an entire file.
-
----
-
-### **Section 3: Code Quality & Delivery**
-
-#### 7. Code Quality Standards
-*   **Clarity:** Use descriptive names. Keep functions short and single-purpose.
-*   **Consistency:** Match the style and patterns of the surrounding code.
-*   **Error Handling:** Use `try/catch` or `try/except` for operations that can fail.
-*   **Security:** Sanitize inputs. Never hardcode secrets.
-*   **Documentation:** Comment only complex, non-obvious logic.
-*   **Theming:** Always use colors from the application's color palette (src/utils/theme/colors.ts) to ensure proper light/dark mode support and accessibility.
-
-#### 8. Testing Requirements
-*   If you modify a function, add or update a corresponding test case.
-*   Cover both success and failure paths in your tests.
-*   Do not remove existing tests.
-*   Run the tests after making changes to ensure they pass. If they don't pass, fix them before proceeding.
-*   When tests fail, analyze the failure output, identify the root cause, and make focused changes to address the issue. Report the exact error and your solution.
-
-#### 9. Commit Message Format
-*   When providing a commit message, use the [Conventional Commits](
-https://www.conventionalcommits.org
-) format: `type(scope): summary`.
-*   **Examples:** `feat(auth): add password reset endpoint`, `fix(api): correct error status code`.
-
-#### 10. Work Item Management
-*   Do not automatically set work items to "Done" or "Closed" status after implementation.
-*   Follow the proper workflow: Implementation → Code Review → CI Validation → User Approval → Done.
-*   Always ask the user before changing work item states, especially final completion states.
-*   Suggested workflow states: New → Active → Resolved → Closed/Done.
-*   User should control final validation and closure of work items after testing and CI verification.
-
-#### Azure DevOps: Implementation-plan & Story handling rules
-
-- When working from an implementation plan, always reference the Azure DevOps elements by their IDs and roles (for example: Epic 2251, Story 3016).  Use the epic and story IDs/titles in plans, commits, PRs and comments so work traces back to Azure DevOps.
-- While implementing a story, update the corresponding Azure DevOps story frequently: set the work item state to reflect progress and add short comments documenting important events (what you started, key design choices, where code was pushed, CI results, and handoff notes).
-- Use the following state-transition convention for stories:
-  - "Started working" → set state to Active.
-  - When the item is ready and code has been pushed (PR opened or branch pushed) → set state to Resolved.
-  - After the CI/build is green and the user or product owner verifies the change → set state to Closed.
-
-Notes:
-- Make short, factual comments on stories at these milestone events: start of work, PR/branch push, CI pass/fail, and user acceptance.
-- Prefer explicit references (e.g., "PR #123 - implements Story 3016") in commits and PR descriptions so Azure DevOps can link work items automatically.
-- If CI is failing for unrelated reasons, leave a comment explaining the blocker and do not move the story to Closed until build green and user acceptance are recorded.
-
-#### Azure DevOps: Implementation Plans & Story Updates
-*   When authoring or updating an implementation plan, always reference the Azure DevOps elements it describes (Epic IDs and Child Story IDs).  Include the Epic ID (e.g., "Epic 2251") and explicit Story IDs for each child story in the plan's header or Child Stories Analysis section.
-*   Keep the implementation plan aligned with Azure DevOps: any changes to scope, acceptance criteria, or tasks in the plan should be mirrored as comments or field updates on the corresponding Azure DevOps Epic/Story work items.
-*   While working on individual stories, update the corresponding Azure DevOps story regularly: change the state to reflect progress and add short comments describing the current activity (for example: "Started working: investigating X", "Code pushed: PR #123 created on branch feature/xyz").
-*   Do not leave work items stale; make at least one state or comment update per active work session on a story.
-
-#### Required Story State Workflow
-Follow this explicit, minimal state progression when updating Azure DevOps work items while implementing a story:
-
-- "Started working" (informal comment) → set work item State = Active.
-- "Item ready, code pushed" (add comment with PR/branch link) → set work item State = Resolved.
-- After CI/build is green and automated checks pass (add comment: "Build green: CI passed on PR #..."), and the user has verified the behavior → set work item State = Closed.
-
-Notes:
-*   Always include useful comments when changing states (timestamp, brief summary, PR or build link) so reviewers and stakeholders can follow progress from Azure DevOps alone.
-*   Do not close an item without explicit user acceptance; a CI-green build alone should not close the work item unless a user/owner has confirmed acceptance in a comment.
-*   If an implementation step requires finer-grained tracking (for example, code review or QA verification), add comments or sub-tasks rather than inventing new global states.
-
-
-# Context
-
-Act like an intelligent coding assistant, who helps test and author tools, prompts and resources for the Azure DevOps MCP server. You prioritize consistency in the codebase, always looking for existing patterns and applying them to new code.
-
-If the user clearly intends to use a tool, do it.
-If the user wants to author a new one, help them.
-
-## Using MCP tools
-
-If the user intent relates to Azure DevOps, make sure to prioritize Azure DevOps MCP server tools.
-
-## Adding new tools
-
-When adding new tool, always prioritize using an Azure DevOps Typescript client that corresponds the the given Azure DevOps API.
-Only if the client or client method is not available, interact with the API directly.
-The tools are located in the `src/tools.ts` file.
-
-## Adding new prompts
-
-Ensure the instructions for the language model are clear and concise so that the language model can follow them reliably.
-The prompts are located in the `src/prompts.ts` file.
-
+**Remember:** TDD is not optional. Tests come first. Always.
