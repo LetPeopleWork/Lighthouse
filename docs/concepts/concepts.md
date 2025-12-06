@@ -5,21 +5,21 @@ nav_order: 60
 has_children: true
 ---
 
-This section will give you a brief overview over how to set up Lighthouse with connections to your work tracking system, add teams and create projects.
+This section will give you a brief overview over how to set up Lighthouse with connections to your work tracking system, add teams and create portfolios.
 
 Lighthouse currently works with [Jira](./worktrackingsystems/jira.html), [Azure DevOps](./worktrackingsystems/azuredevops.html), [CSV](./worktrackingsystems/csv.html) , and in a preview version with [Linear](./worktrackingsystems/linear.html). Check out the dedicated subpages for details on how to configure it Lighthouse for the respective systems.
 
 - TOC
 {:toc}
 
-Once you're done with the basics, check out the detailed description of the product areas such as [Teams](../teams/teams.html) and [Projects](../projects/projects.html).
+Once you're done with the basics, check out the detailed description of the product areas such as [Teams](../teams/teams.html) and [Portfolios](../portfolios/portfolios.html).
 
 # Overview
 Lighthouse has a few basic components that you need to be aware of:
 - Work Tracking Systems that define how to connect to your systems
-- Queries are how you can filter data for Teams and Projects
+- Queries are how you can filter data for Teams and Portfolios
 - Team are entities that have a Throughput and work on a dedicated backlog
-- Projects are having Features where one or more teams work on
+- Portfolios are having Features where one or more teams work on
 
 The following chart shows those building blocks and how they interact.
 
@@ -28,7 +28,7 @@ The following chart shows those building blocks and how they interact.
 flowchart TD
     A(Team) -->|has| G[Throughput]
     A -->|uses| B(Work Tracking System)
-    C(Project) -->|uses| B
+    C(Portfolio) -->|uses| B
     C -->|contains| H[Features]
     A -->|contributes to| C
     B -->|uses| F[Query]
@@ -38,19 +38,19 @@ flowchart TD
 ```
 
 # Work Tracking System
-The Work Tracking System is the place where your backlog lives. Lighthouse is designed to onboard more systems as needed (please [create a request](https://github.com/LetPeopleWork/Lighthouse/issues/new?assignees=&labels=enhancement&projects=&template=feature-request.yml&title=%5BFeature%5D%3A+) If you'd like to see a new system supported).
+The Work Tracking System is the place where your backlog lives. Lighthouse is designed to onboard more systems as needed, join our Slack or reach out via email if you'd like to see a new system supported.
 
 Currently supported are [Jira](./worktrackingsystems/jira.html) and [Azure DevOps](./worktrackingsystems/azuredevops.html). The general workflow is the same for any Work Tracking System, the difference is in the information required to connect to the system and how to write the [queries](#query).
 
 ## Creating a Work Tracking System Connection
-You can create a new connection to your work tracking system either during the creation of your teams and projects, or via the Settings tab.
+You can create a new connection to your work tracking system either during the creation of your teams and portfolios, or via the Settings tab.
 
-Once defined, you can reference them via name when you set up your teams and project. What information is needed for the connection depends on the specific Work Tracking System, please check in the subpages for your system to get more detailed information.
+Once defined, you can reference them via name when you set up your teams and portfolio. What information is needed for the connection depends on the specific Work Tracking System, please check in the subpages for your system to get more detailed information.
 
 ![Work Tracking Systems](../assets/concepts/worktrackingsystem_AzureDevOps.png)
 
 # Query
-Lighthouse is using the built-in query languages from the work tracking systems to fetch the data needed for the forecasts. This makes the tool flexible and allows you to define teams and projects in whatever way makes sense to you.
+Lighthouse is using the built-in query languages from the work tracking systems to fetch the data needed for the forecasts. This makes the tool flexible and allows you to define teams and portfolios in whatever way makes sense to you.
 
 For specifics on the query language as well as some examples and support, check the specific subpages for your system.
 
@@ -64,19 +64,19 @@ Lighthouse needs the Throughput to create forecasts. How to get this Throughput 
 
 It often make sense to use the same team definition that you have in your environment. However, there might be situation when you want to define it differently, for example 'merging' the Throughput of two teams and model it as a single team in Lighthouse.
 
-Most often also the team level items are something like *User Stories* and *Bugs*. However again, you can define what types should be included in this defintion. You may change this to other types. If you are looking to forecast completion dates of Epics, you may want to check out the use of [Projects](#projects).
+Most often also the team level items are something like *User Stories* and *Bugs*. However again, you can define what types should be included in this defintion. You may change this to other types. If you are looking to forecast completion dates of Epics, you may want to check out the use of [Portfolios](#portfolios).
 
 {: .note}
-> You need at least one team, and then you can start making use of Lighthouse. See [Teams](../teams/teams.html) and [Projects](../projects/projects.html) for details on product areas.
+> You need at least one team, and then you can start making use of Lighthouse. See [Teams](../teams/teams.html) and [Portfolios](../portfolios/portfolios.html) for details on product areas.
 
-# Projects
+# Portfolios
 
 {: .definition}
-> A Project as a collection of *Features*. A feature is a higher-level item that contains child-items. The child-items are the items that the [Teams](#teams) are working on. Each project must have at least one involved team. Many teams can contribute to a single project, and each team can be involved in many projects.
+> A Portfolio as a collection of *Features*. A feature is a higher-level item that contains child-items. The child-items are the items that the [Teams](#teams) are working on. Each portfolio must have at least one involved team. Many teams can contribute to a single portfolio, and each team can be involved in many portfolios.
 
-Projects allow to scale your forecasts beyond the team level. When you need to answer when your collection of *Features* will be done, defining a project is the way to go.
+Portfolios allow to scale your forecasts beyond the team level. When you need to answer when your collection of *Features* will be done, defining a portfolio is the way to go.
 
-Refer to [Projects](../projects/projects.html) to get more details on how to fine-tune and configure Projects.
+Refer to [Portfolios](../portfolios/portfolios.html) to get more details on how to fine-tune and configure Portfolios.
 
 # Forecast
 All of the above is done so that in the end we can run forecasts. Lighthouse is using *Monte Carlo Simulations* to run *How Many* (can be done for a specific team) as well as *When* forecasts. See [How Lighthouse Forecasts](./howlighthouseforecasts.html) for more details.

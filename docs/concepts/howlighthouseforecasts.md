@@ -66,22 +66,22 @@ We recommend reading our blog post [Using Flow Metrics](https://blog.letpeople.w
 Now that we've covered the basics, let's look at how Lighthouse is forecasting. We'll use an example to explain the interesting parts. We'll use some scenarios to explain how Lighthouse is running the forecast, starting from the most simple example to more complicated ones.
 
 {: .note}
-We'll look into how Lighthouse is running *When* forecasts for projects. The *How Many* and *When* on Team level are the basic operations that are also covered in the above mentioned blog post.
+We'll look into how Lighthouse is running *When* forecasts for portfolios. The *How Many* and *When* on Team level are the basic operations that are also covered in the above mentioned blog post.
 
-## Teams, Features, and Projects
-Forecasts will always be made for specific *Teams*. The forecast will calculate *When* a certain number of *Work Items* will be done. Those *Work Items* are automatically fetched based on the Team Backlog (see [Team Work Item Query](../teams/edit.html#work-item-query)) and that belong to a specific *Feature* of a *Project* (based on the [Project Work Item Query](../projects/edit.html#work-item-query)). 
+## Teams, Features, and Portfolios
+Forecasts will always be made for specific *Teams*. The forecast will calculate *When* a certain number of *Work Items* will be done. Those *Work Items* are automatically fetched based on the Team Backlog (see [Team Work Item Query](../teams/edit.html#work-item-query)) and that belong to a specific *Feature* of a *Portfolio* (based on the [Portfolio Work Item Query](../portfolios/edit.html#work-item-query)). 
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart LR
     T1[Team ] -->|Works on| W1(Work Item)
     W1 --> |Belongs to| F1(Feature)
-    F1 --> |Is part of| P1(Project)
+    F1 --> |Is part of| P1(Portfolio)
 ```
 
 {: .important}
-Lighthouse is only aware about Work Items if they are linked to a project. If your team is working on 5 Features, but only 3 of them are linked to Projects in Lighthouse, the other 2 Features and all the work items that belong to them will be ignored, and the forecast assumes you will **only** work on the 3 Features that are known.
-It is therefore important to make sure you have all the Features that are relevant to you covered within a Lighthouse Project.
+Lighthouse is only aware about Work Items if they are linked to a portfolio. If your team is working on 5 Features, but only 3 of them are linked to Portfolios in Lighthouse, the other 2 Features and all the work items that belong to them will be ignored, and the forecast assumes you will **only** work on the 3 Features that are known.
+It is therefore important to make sure you have all the Features that are relevant to you covered within a Lighthouse Portfolio.
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -96,19 +96,19 @@ flowchart LR
     W3 --> F2(Feature 2)
     W4 --> F3(Feature 3)
     W5 --> F3
-    F1 --> P1(Project 1)
+    F1 --> P1(Portfolio 1)
     F2 --> P1
-    F3 --> P2(Project 2)
+    F3 --> P2(Portfolio 2)
 ```
-*If Project 2 is not defined in Lighthouse, Work Item 2, 4, and 5 will also not be known to Lighthouse*.
+*If Portfolio 2 is not defined in Lighthouse, Work Item 2, 4, and 5 will also not be known to Lighthouse*.
 
 ## Why the Backlog Order Matters
-When Lighthouse is forecasting, it will always take all the Features of **all** Projects into account. If you set up a new Project, you want to know when this will be done taking into account all the other things that are going on. You **can't** make a forecast for a Project in isolation, but you will always look at the full known backlog.
+When Lighthouse is forecasting, it will always take all the Features of **all** Portfolios into account. If you set up a new Portfolio, you want to know when this will be done taking into account all the other things that are going on. You **can't** make a forecast for a Portfolio in isolation, but you will always look at the full known backlog.
 
 {: .note}
-That means, if you really want to ignore everything else, just remove all other Projects. That's not recommended though.
+That means, if you really want to ignore everything else, just remove all other Portfolios. That's not recommended though.
 
-Because Lighthouse works this way, this is also the reason why the order is so important. In the above image, you can see that *Feature 1* is ordered above *Feature 2*, which itself is above *Feature 3*. That means that Lighthouse assume we first focus all our efforts on *Feature 1* (assuming a [Feature WIP of 1](#the-impact-of-feature-wip)), then on *Feature 2*, and only then on *Feature 3*. If you forecast *Project 2*, the forecast will take into account that *Feature 1* and *Feature 2* must be done before that.
+Because Lighthouse works this way, this is also the reason why the order is so important. In the above image, you can see that *Feature 1* is ordered above *Feature 2*, which itself is above *Feature 3*. That means that Lighthouse assume we first focus all our efforts on *Feature 1* (assuming a [Feature WIP of 1](#the-impact-of-feature-wip)), then on *Feature 2*, and only then on *Feature 3*. If you forecast *Portfolio 2*, the forecast will take into account that *Feature 1* and *Feature 2* must be done before that.
 
 {: .recommendation}
 The [Feature View](../teams/detail.html#features) in the Teams Detail Page will show you **all** Features the team is contributing towards in their order.
@@ -150,7 +150,7 @@ We **highly** recommend to keeping your Feature WIP as low as possible. Lighthou
 So let's go through some scenarios to look at what happens when Lighthouse forecasts.
 
 {: .note}
-For simplicity, we'll talk only about Teams and Features. As you learned above, this is tied to Projects. However, when it comes to forecasting we just care about the Features in Order, independent of which Projects they are in. To simplify this a bit, we'll skip the Projects in the examples.
+For simplicity, we'll talk only about Teams and Features. As you learned above, this is tied to Portfolios. However, when it comes to forecasting we just care about the Features in Order, independent of which Portfolios they are in. To simplify this a bit, we'll skip the Portfolios in the examples.
 
 ### 1 Team - 1 Feature
 The most basic case is if we have a single team, working on a single Feature. This equals a simple *When* forecast. We take the remaining Work Items for this Feature (all items that belong to this Feature that are [Not Done](../teams/edit.html#states)).
@@ -227,7 +227,7 @@ Please have a look at the work of [Prateek Singh](https://www.linkedin.com/in/si
 Congrats, you made it to the end of this page! We understand that this may have been the opposite of *light reading*. As mentioned in the beginning, you don't *need* to know all of this when you start out with Lightouse. But as you go on, you may wonder why certain things they work how they do. And sometimes the answer can be found in the way Lighthouse works.
 
 {: .recommendation}
-You may wonder why this is so complicated. It would be a lot easier if there were no dependencies between teams, teams would only focus on one feature at a time, and could deliver projects without other teams. Also it would be nice if we could keep a proper order in our backlog. We just try to help you cope with reality...don't hate the player, hate the game. Or better yet, change how your organization plays the game.
+You may wonder why this is so complicated. It would be a lot easier if there were no dependencies between teams, teams would only focus on one feature at a time, and could deliver portfolios without other teams. Also it would be nice if we could keep a proper order in our backlog. We just try to help you cope with reality...don't hate the player, hate the game. Or better yet, change how your organization plays the game.
 
 # Further Resources
 See [Resources](../resources/resources.html) for an extensive list of resources around this topic.

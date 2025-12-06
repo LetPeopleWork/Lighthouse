@@ -26,9 +26,9 @@ The export can be useful for various reasons:
 When you click export, Lighthouse will create a *.json* file that includes the full configuration of your Lighthouse instance. The configuration includes:
 - Work Tracking Systems
 - Teams
-- Projects
+- Portfolios
 
-The export does *not* include any data (work items, features, metrics, etc.) for any team or project. It's just the settings itself. If you fetch the data from your work tracking system, you should then see the same information.
+The export does *not* include any data (work items, features, metrics, etc.) for any team or portfolio. It's just the settings itself. If you fetch the data from your work tracking system, you should then see the same information.
 
 As the config is stored as a file, you can easily share it, as well as store it in a version control system.
 
@@ -44,14 +44,14 @@ As a first step, Lighthouse will check if the file is valid. If it can't read it
 
 ![Invalid File](../../assets/settings/import/invalid_file.png)
 
-If it can be read, it will check whether the the Work Tracking Systems, Teams, and Projects are new or exist already. An update of an existing item will mean that the data is kept, and the settings like *work item query*, *states configuration*, etc. will be updated.
+If it can be read, it will check whether the the Work Tracking Systems, Teams, and Portfolios are new or exist already. An update of an existing item will mean that the data is kept, and the settings like *work item query*, *states configuration*, etc. will be updated.
 
 ![Updated Items](../../assets/settings/import/update.png)
 
 {: .note}
 The detection whether something exists already is done via checking the name. The name has to match exactly.
 
-You can also chose to *Clear* the existing configuration. This means, all Work Tracking Systems, Teams, and Projects that you may have configured will be removed as part of the import process.
+You can also chose to *Clear* the existing configuration. This means, all Work Tracking Systems, Teams, and Portfolios that you may have configured will be removed as part of the import process.
 
 ![New Items](../../assets/settings/import/new.png)
 
@@ -71,7 +71,7 @@ Once you have started the import, you can't undo the changes!
 #### Import Summary
 After you've imported, you'll see a summary and potential errors or problems. For every imported item, a validation is run to check whether it worked. If the validation failed, it means the import worked but some setting may need to be adjusted.
 
-At the end, you can choose whether you want to update all imported Teams and Projects or just close the dialog. If you decide to not update, you will not have any data for some time, until the period update kicks in. This may be desired if you want to double check the settings first (for example in case of validation errors).
+At the end, you can choose whether you want to update all imported Teams and Portfolios or just close the dialog. If you decide to not update, you will not have any data for some time, until the period update kicks in. This may be desired if you want to double check the settings first (for example in case of validation errors).
 
 ![Import Summary](../assets/settings/import/summary.png)
 
@@ -135,7 +135,7 @@ The terminology configuration allows you to customize the following terms:
 - **Team Alignment**: Involve your team in deciding on terminology to ensure everyone understands and agrees with the chosen terms
 - **Organizational Standards**: Align with existing terminology used in your organization's other tools and processes
 - **Documentation**: Update any team documentation or training materials to reflect the customized terminology
-- **Consistency**: Use the same terms consistently across all teams and projects in your Lighthouse instance
+- **Consistency**: Use the same terms consistently across all teams and portfolios in your Lighthouse instance
 
 {: .note}
 Changes to terminology are applied immediately throughout the entire application interface. All existing data and configurations remain unchanged - only the display labels are updated.
@@ -150,7 +150,7 @@ There are two types of refreshes:
 - Team
 - Feature
 
-The Team refresh fetches all items related to your team, and is doing what can manually be done via the [Update Team Data Button](../teams/detail.html#update-team-data), while the Features relate to the different projects and is doing what can be manually trigger via the [Refresh Feature Button](../projects/detail.html#refresh-features).
+The Team refresh fetches all items related to your team, and is doing what can manually be done via the [Update Team Data Button](../teams/detail.html#update-team-data), while the Features relate to the different portfolios and is doing what can be manually trigger via the [Refresh Feature Button](../portfolios/detail.html#refresh-features).
 
 ![Feature Refresh Settings](../assets/settings/featurerefreshsettings.png)
 

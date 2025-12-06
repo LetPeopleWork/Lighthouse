@@ -6,7 +6,7 @@ nav_order: 1
 ---
 
 # Work Tracking Systems
-While you can add new Work Tracking Systems via the [Teams](../teams/edit.html#work-tracking-system) and [Portfolio Creation Pages](../projects/edit.html#work-tracking-system), you can manage all Work Tracking Systems via the settings.
+While you can add new Work Tracking Systems via the [Teams](../teams/edit.html#work-tracking-system) and [Portfolio Creation Pages](../portfolios/edit.html#work-tracking-system), you can manage all Work Tracking Systems via the settings.
 
 ![Work Tracking Systems](../../assets/settings/worktrackingsystems.png)
 

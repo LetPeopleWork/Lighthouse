@@ -4,7 +4,7 @@ layout: home
 nav_order: 1
 ---
 
-Lighthouse is a tool that helps you run probabilistic forecasts using Monte Carlo Simulations in a continuous and simple way. It connects to your Work Tracking Tool (currently Jira, Azure DevOps, and CSV are supported) and will automatically update your team's Throughput and your project's forecasted delivery dates.
+Lighthouse is a tool that helps you run probabilistic forecasts using Monte Carlo Simulations in a continuous and simple way. It connects to your Work Tracking Tool (currently Jira, Azure DevOps, and CSV are supported) and will automatically update your team's Throughput and your portfolio's forecasted delivery dates.
 
 <div style="text-align: center;">
     <img src="./assets/features/teamdetail.png" alt="Team Forecasts" style="max-width: 500px;">
@@ -19,7 +19,7 @@ The documentation is structured into chapters. In [Installation](./installation/
 
 Under [Configuration](./installation/configuration.html) you'll find all options that are supported. This includes various ways of how to configure Lighthouse itself, as well as how you can connect to Work Tracking Systems like Jira and Azure DevOps.
 
-[Concepts](./concepts/concepts.html) guides you with your first steps in Lighthouse. For specific product areas see the top-level sections: [Teams](./teams/teams.html), [Portfolios](./projects/projects.html), [Metrics](./metrics/metrics.html), [AI Integration](./aiintegration.html), and [Settings](./settings/settings.html).
+[Concepts](./concepts/concepts.html) guides you with your first steps in Lighthouse. For specific product areas see the top-level sections: [Teams](./teams/teams.html), [Portfolios](./portfolios/portfolios.html), [Metrics](./metrics/metrics.html), [AI Integration](./aiintegration.html), and [Settings](./settings/settings.html).
 
 In [FAQ](./faq/faq.html) you find frequently asked questions.
 

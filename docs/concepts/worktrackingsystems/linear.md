@@ -37,8 +37,8 @@ When you create a new team, you will have to define a query that will get the it
 
 Lighthouse will then automatically fetch all issues for this team together that match the [Type](#types) and [State](#states) definitions.
 
-# Projects
-Projects are made up of items that have *child items* - in Lighthouse this is called a *Feature*. In a Linear context, you'll also have Projects. Please specify the **exact name of your project** in the *Work Item Query* field. Lighthouse will fetch all items that match the [Type](#types) and [State](#states) definitions and are part of this project.
+# Portfolios
+Portfolios are made up of items that have *child items* - in Lighthouse this is called a *Feature*. In a Linear context, you'll also have Projects. Please specify the **exact name of your project** in the *Work Item Query* field. Lighthouse will fetch all items that match the [Type](#types) and [State](#states) definitions and are part of this portfolio.
 
 # Types
 You can specify which item types you care about. As in Linear, all items are issues, this translates best to *Templates* that are applied. Add here the names of the templates you care about. Items that don't have a template will be treated as type of *Default*.

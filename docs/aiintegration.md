@@ -36,7 +36,7 @@ Lighthouse can act as an *MCP Server*, meaning that you can tell your LLM to run
 The Lighthouse MCP server enables your AI assistant to:
 
 - **Team Analytics**: Get team information, run forecasts, and analyze flow metrics
-- **Project Management**: Access project details, features, milestones, and completion forecasts  
+- **Portfolio Management**: Access portfolio details, features, milestones, and completion forecasts  
 - **Feature Tracking**: Get detailed feature information and delivery forecasts
 - **Expert Guidance**: Access specialized prompts for agile coaching and flow analysis
 - **Documentation**: Read comprehensive Lighthouse documentation for context
@@ -49,10 +49,10 @@ The Lighthouse MCP server enables your AI assistant to:
 - "Analyze our team's flow metrics for the last 30 days"
 - "What aging items need attention and why?"
 
-### Project-Level Insights  
-- "When will Project Alpha be completed?"
+### Portfolio-Level Insights  
+- "When will Portfolio Alpha be completed?"
 - "Show me the milestone likelihood for our Q1 release"
-- "Which teams are working on Project Beta?"
+- "Which teams are working on Portfolio Beta?"
 - "What features are planned for the next release?"
 
 ### Flow Coaching & Improvement
@@ -178,7 +178,7 @@ In your repository, create or update `.mcp/config.json`:
   "servers": {
     "lighthouse": {
       "url": "http://localhost:8080",
-      "description": "Lighthouse project management and forecasting tools"
+      "description": "Lighthouse portfolio management and forecasting tools"
     }
   }
 }
@@ -218,7 +218,7 @@ If you're running Lighthouse on a remote server, adjust the configuration accord
 After configuring your MCP client:
 
 1. **Check Connection**: Look for MCP server indicators in your client (usually a tool icon or status indicator)
-2. **Test Tools**: Try asking your AI assistant to "list all teams" or "get project information"
+2. **Test Tools**: Try asking your AI assistant to "list all teams" or "get portfolio information"
 3. **Review Logs**: Check your client's developer console or logs for any connection errors
 4. **Verify Resources**: Ask your AI to access Lighthouse documentation to confirm resource loading
 
@@ -283,58 +283,58 @@ Tools allow your AI assistant to execute specific actions and retrieve data from
 - **Returns**: Probabilistic item count forecasts with confidence intervals
 - **Business Value**: Capacity planning and scope management
 
-### Project Management Tools
+### Portfolio Management Tools
 
-**GetAllProjects**
-- **Purpose**: Lists all projects with summary information
-- **Usage**: "Show me all active projects"
-- **Returns**: Project names, team counts, feature counts, and milestone counts
-- **Business Value**: Portfolio visibility and project discovery
+**GetAllPortfolios**
+- **Purpose**: Lists all portfolios with summary information
+- **Usage**: "Show me all active portfolios"
+- **Returns**: Portfolio names, team counts, feature counts, and milestone counts
+- **Business Value**: Portfolio visibility and portfolio discovery
 
-**GetProjectByName**
-- **Purpose**: Retrieves detailed information about a specific project
-- **Parameters**: `projectName` (string) - Name or partial name of the project
-- **Usage**: "Get details about Project Apollo"
-- **Returns**: Complete project configuration, team assignments, feature counts, and settings
-- **Example**: `GetProjectByName("Apollo")` returns comprehensive project data
+**GetPortfolioByName**
+- **Purpose**: Retrieves detailed information about a specific portfolio
+- **Parameters**: `portfolioName` (string) - Name or partial name of the portfolio
+- **Usage**: "Get details about Portfolio Apollo"
+- **Returns**: Complete portfolio configuration, team assignments, feature counts, and settings
+- **Example**: `GetPortfolioByName("Apollo")` returns comprehensive portfolio data
 
-**GetProjectFeatures**
-- **Purpose**: Lists all features within a specific project
-- **Parameters**: `projectName` (string) - Name of the project
-- **Usage**: "What features are in Project Apollo?"
+**GetPortfolioFeatures**
+- **Purpose**: Lists all features within a specific portfolio
+- **Parameters**: `portfolioName` (string) - Name of the portfolio
+- **Usage**: "What features are in Portfolio Apollo?"
 - **Returns**: Feature names, states, owners, work item counts, and progress status
 - **Business Value**: Feature portfolio visibility and progress tracking
 
-**GetProjectTeams**
-- **Purpose**: Shows which teams are involved in a specific project
-- **Parameters**: `projectName` (string) - Name of the project
+**GetPortfolioTeams**
+- **Purpose**: Shows which teams are involved in a specific portfolio
+- **Parameters**: `portfolioName` (string) - Name of the portfolio
 - **Usage**: "Which teams are working on Project Apollo?"
-- **Returns**: Team names, IDs, and their relationship to the project (including owning team)
+- **Returns**: Team names, IDs, and their relationship to the portfolio (including owning team)
 - **Business Value**: Resource allocation visibility and team coordination
 
-**GetProjectMilestones**
-- **Purpose**: Analyzes project milestones with likelihood assessments
-- **Parameters**: `projectName` (string) - Name of the project
-- **Usage**: "Analyze milestones for Project Apollo"
+**GetPortfolioMilestones**
+- **Purpose**: Analyzes portfolio milestones with likelihood assessments
+- **Parameters**: `portfolioName` (string) - Name of the portfolio
+- **Usage**: "Analyze milestones for Portfolio Apollo"
 - **Returns**: Milestone dates, completion likelihoods, risk assessments, and recommendations
 - **Business Value**: Risk management and stakeholder communication
 
-**RunProjectWhenForecast**
-- **Purpose**: Forecasts when an entire project will be completed
-- **Parameters**: `projectName` (string) - Name of the project
-- **Usage**: "When will Project Apollo be completed?"
-- **Returns**: Project-level completion forecasts based on critical path analysis
-- **Business Value**: Executive reporting and project portfolio planning
+**RunPortfolioWhenForecast**
+- **Purpose**: Forecasts when an entire portfolio will be completed
+- **Parameters**: `portfolioName` (string) - Name of the portfolio
+- **Usage**: "When will Portfolio Apollo be completed?"
+- **Returns**: Portfolio-level completion forecasts based on critical path analysis
+- **Business Value**: Executive reporting and portfolio portfolio planning
 
-**GetProjectFlowMetrics**
-- **Purpose**: Analyzes flow metrics at the project level across multiple teams
+**GetPortfolioFlowMetrics**
+- **Purpose**: Analyzes flow metrics at the portfolio level across multiple teams
 - **Parameters**: 
-  - `projectName` (string) - Name of the project
+  - `portfolioName` (string) - Name of the portfolio
   - `startDate` (DateTime, optional) - Analysis start date
   - `endDate` (DateTime, optional) - Analysis end date
-- **Usage**: "Analyze Project Apollo's flow metrics for Q3"
+- **Usage**: "Analyze Portfolio Apollo's flow metrics for Q3"
 - **Returns**: Aggregated cycle times, throughput, WIP, and multi-team flow analysis
-- **Business Value**: Project health assessment and flow optimization
+- **Business Value**: Portfolio health assessment and flow optimization
 
 ### Feature Management Tools
 
@@ -386,12 +386,12 @@ Lighthouse provides specialized prompts designed by agile coaching experts follo
 - **Usage**: "Generate forecasting insights for Beta team with 30 items"
 - **Value**: Data-driven forecasting with expert interpretation
 
-**AnalyzeProjectCompletion**
-- **Purpose**: Analyzes project completion using portfolio flow metrics
-- **Parameters**: `projectName` (string) - Project to analyze
+**AnalyzePortfolioCompletion**
+- **Purpose**: Analyzes portfolio completion using portfolio flow metrics
+- **Parameters**: `portfolioName` (string) - Portfolio to analyze
 - **Expert Context**: Portfolio-level flow analysis considering team interdependencies
-- **Usage**: "Analyze Project Apollo completion dynamics"
-- **Value**: Executive-level insights on project delivery probability
+- **Usage**: "Analyze Portfolio Apollo completion dynamics"
+- **Value**: Executive-level insights on portfolio delivery probability
 
 **GenerateDataDrivenInsights**
 - **Purpose**: Facilitates data-driven retrospectives using actionable agile metrics
@@ -414,7 +414,7 @@ Resources provide your AI assistant with direct access to Lighthouse documentati
 - **Usage**: Provides foundational knowledge about Lighthouse capabilities
 
 **Core Concepts**
-- **Content**: Teams, projects, forecasting methodology, and flow metrics explanation
+- **Content**: Teams, portfolios, forecasting methodology, and flow metrics explanation
 - **URI**: `/docs/concepts/concepts.html`
 - **Usage**: Helps AI understand Lighthouse's fundamental concepts
 
@@ -423,10 +423,10 @@ Resources provide your AI assistant with direct access to Lighthouse documentati
 - **URI**: `/docs/teams/teams.html`
 - **Usage**: Provides guidance on team setup and configuration
 
-**Project Management**
-- **Content**: Project creation, feature management, and milestone tracking
-- **URI**: `/docs/projects/projects.html`
-- **Usage**: Comprehensive project management guidance
+**Portfolio Management**
+- **Content**: Portfolio creation, feature management, and milestone tracking
+- **URI**: `/docs/portfolios/portfolios.html`
+- **Usage**: Comprehensive portfolio management guidance
 
 **Metrics & Analytics**
 - **Content**: Understanding flow metrics, dashboard configuration, and interpretation
@@ -461,11 +461,11 @@ Resources provide your AI assistant with direct access to Lighthouse documentati
 3. `AnalyzeTeamMetrics("Alpha")` - Expert interpretation
 4. `AnalyzeTeamAging("Alpha")` - Identify problem areas
 
-**Project Status Review**:
-1. `GetProjectByName("Apollo")` - Project overview
-2. `GetProjectFeatures("Apollo")` - Feature inventory
-3. `GetProjectMilestones("Apollo")` - Risk assessment
-4. `RunProjectWhenForecast("Apollo")` - Completion forecast
+**Portfolio Status Review**:
+1. `GetPortfolioByName("Apollo")` - Portfolio overview
+2. `GetPortfolioFeatures("Apollo")` - Feature inventory
+3. `GetPortfolioMilestones("Apollo")` - Risk assessment
+4. `RunPortfolioWhenForecast("Apollo")` - Completion forecast
 
 **Sprint Planning Session**:
 1. `GetFlowMetricsForTeam("Beta")` - Historical performance
@@ -473,11 +473,11 @@ Resources provide your AI assistant with direct access to Lighthouse documentati
 3. `GenerateForecastingInsights("Beta", "capacity")` - Expert guidance
 
 **Executive Reporting**:
-1. `GetAllProjects()` - Portfolio overview
-2. `GetProjectMilestones(projectName)` for each project - Risk dashboard
-3. `AnalyzeProjectCompletion(projectName)` - Expert analysis per project
+1. `GetAllPortfolios()` - Portfolio overview
+2. `GetPortfolioMilestones(portfolioName)` for each portfolio - Risk dashboard
+3. `AnalyzePortfolioCompletion(portfolioName)` - Expert analysis per portfolio
 
-These tools, prompts, and resources work together to provide comprehensive project management intelligence through your AI assistant, combining real-time data with expert knowledge for informed decision-making.
+These tools, prompts, and resources work together to provide comprehensive portfolio management intelligence through your AI assistant, combining real-time data with expert knowledge for informed decision-making.
 
 # Troubleshooting Guide
 
@@ -622,19 +622,19 @@ This section covers common issues when setting up and using the Lighthouse MCP s
 **Diagnostic Steps**:
 
 1. **Check Tool Parameters**
-   - Verify team/project names exist in Lighthouse
+   - Verify team/portfolio names exist in Lighthouse
    - Use exact names or check for typos
-   - Team and project names are case-insensitive but must match
+   - Team and portfolio names are case-insensitive but must match
 
 2. **Data Availability**
    - Ensure teams have been synchronized with work tracking systems
-   - Verify projects have features and teams assigned
+   - Verify portfolios have features and teams assigned
    - Check that forecasting data is available (may take time after setup)
 
 3. **Common Error Messages**:
    - "No team found with name X" - Check team name spelling
    - "No forecast data available" - Wait for data synchronization or check team configuration
-   - "Project has no features" - Verify project setup and feature assignment
+   - "Portfolio has no features" - Verify portfolio setup and feature assignment
 
 ### Performance Issues
 
@@ -644,7 +644,7 @@ This section covers common issues when setting up and using the Lighthouse MCP s
 
 1. **Large Dataset Optimization**
    - Use date ranges for metric queries to limit data volume
-   - Request specific teams/projects rather than all data
+   - Request specific teams/portfolios rather than all data
    - Consider increasing client timeout settings
 
 2. **System Resources**
@@ -841,34 +841,34 @@ Tell stakeholders to expect delivery by March 21st for a realistic timeline with
 ```
 
 ### Portfolio-Level Planning
-**Scenario**: Managing multiple projects and resource allocation
+**Scenario**: Managing multiple portfolios and resource allocation
 
 **Conversation Example**:
 ```
-User: "I need an executive summary of all our projects for the board meeting."
+User: "I need an executive summary of all our portfolios for the board meeting."
 
-AI Response: [Calls GetAllProjects, then GetProjectMilestones for each]
+AI Response: [Calls GetAllPortfolios, then GetPortfolioMilestones for each]
 "Here's your portfolio status for the board:
 
-🚦 **Project Health Summary**:
+🚦 **Portfolio Health Summary**:
 
-**Project Apollo** ✅ Healthy
+**Portfolio Apollo** ✅ Healthy
 - Q2 launch: 85% confidence 
 - 3 teams, 12 features remaining
 - All milestones tracking well
 
-**Project Beta** ⚠️ At Risk  
+**Portfolio Beta** ⚠️ At Risk  
 - Q2 deadline: 45% confidence
 - Critical path: Payment integration
 - Recommend scope reduction or timeline adjustment
 
-**Project Gamma** ✅ Ahead of Schedule
+**Portfolio Gamma** ✅ Ahead of Schedule
 - Q3 target: 95% confidence
 - Could be delivered Q2 with current velocity
 
 🎯 **Board Recommendations**:
 1. Celebrate Gamma early delivery
-2. Address Beta project risks immediately
+2. Address Beta portfolio risks immediately
 3. Consider resource reallocation if needed"
 ```
 
@@ -913,12 +913,12 @@ AI Response: [Calls GetFlowMetricsForTeam for both teams]
 
 ⚖️ **Alpha Team Impact**:
 - Current velocity: 10 items/sprint with 5 members
-- Projected velocity after change: 8 items/sprint
+- Portfolioed velocity after change: 8 items/sprint
 - Risk: May affect Q2 deliverables if no backfill
 
 💪 **Beta Team Impact**:
 - Current velocity: 6 items/sprint with 4 members  
-- Projected velocity with John: 8-9 items/sprint
+- Portfolioed velocity with John: 8-9 items/sprint
 - Benefit: Could improve their Q2 delivery confidence
 
 🎯 **Recommendations**:
@@ -935,9 +935,9 @@ AI Response: [Calls GetFlowMetricsForTeam for both teams]
 
 **Conversation Example**:
 ```
-User: "We're considering adding a new major feature to Project Apollo. How will this affect our roadmap?"
+User: "We're considering adding a new major feature to Portfolio Apollo. How will this affect our roadmap?"
 
-AI Response: [Calls RunProjectWhenForecast and GetProjectMilestones]
+AI Response: [Calls RunPortfolioWhenForecast and GetPortfolioMilestones]
 "Let me analyze the current trajectory and potential impact:
 
 📊 **Current Apollo Status**:
@@ -950,7 +950,7 @@ AI Response: [Calls RunProjectWhenForecast and GetProjectMilestones]
 - Q3 GA milestone: Now at 45% confidence
 
 💰 **Strategic Implications**:
-- Pushes GA into Q4, affecting revenue projections
+- Pushes GA into Q4, affecting revenue portfolioions
 - May impact competitor response timing
 - Could require additional team resources
 
@@ -968,26 +968,26 @@ AI Response: [Calls RunProjectWhenForecast and GetProjectMilestones]
 ```
 User: "I need the monthly portfolio report for the board. Focus on delivery confidence and risks."
 
-AI Response: [Comprehensive analysis across all projects]
+AI Response: [Comprehensive analysis across all portfolios]
 "**Monthly Portfolio Report - March 2024**
 
 🎯 **Delivery Confidence Summary**:
-- 3 of 5 projects tracking to planned timelines (85%+ confidence)
-- 1 project at moderate risk (60% confidence)  
-- 1 project requiring immediate attention (30% confidence)
+- 3 of 5 portfolios tracking to planned timelines (85%+ confidence)
+- 1 portfolio at moderate risk (60% confidence)  
+- 1 portfolio requiring immediate attention (30% confidence)
 
 📊 **Key Metrics**:
 - Overall portfolio velocity: Stable month-over-month
-- Cross-project dependencies: 2 critical paths identified
+- Cross-portfolio dependencies: 2 critical paths identified
 - Resource utilization: 85% (healthy level)
 
 ⚠️ **Executive Attention Required**:
-1. **Project Beta**: Payment integration blocking Q2 milestone
+1. **Portfolio Beta**: Payment integration blocking Q2 milestone
 2. **Team Capacity**: Delta team approaching burnout indicators
-3. **Dependencies**: External API availability affecting 2 projects
+3. **Dependencies**: External API availability affecting 2 portfolios
 
 🚀 **Positive Indicators**:
-- Project Gamma ahead of schedule (could accelerate market entry)
+- Portfolio Gamma ahead of schedule (could accelerate market entry)
 - Team Alpha showing improved predictability
 - Technical debt reduction initiative showing ROI"
 ```
@@ -1009,8 +1009,8 @@ A comprehensive video demonstration is available showing real-world usage scenar
 - Identifying flow bottlenecks
 - Using forecasting for sprint planning
 
-**Part 3: Project Management Workflows (4 minutes)**
-- Multi-project portfolio analysis
+**Part 3: Portfolio Management Workflows (4 minutes)**
+- Multi-portfolio portfolio analysis
 - Feature delivery forecasting
 - Milestone risk assessment
 - Cross-team coordination insights
@@ -1049,7 +1049,7 @@ The video specifically demonstrates:
 You can follow along with the video using the sample data provided in Lighthouse's demo mode. This allows hands-on practice with:
 
 - Sample teams with realistic historical data
-- Multiple projects in various states
+- Multiple portfolios in various states
 - Features with different completion statuses
 - Realistic flow metrics and forecasting scenarios
 

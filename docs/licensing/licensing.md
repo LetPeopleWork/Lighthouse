@@ -25,11 +25,11 @@ Please check https://letpeople.work for the complete and up to date terms and co
 # Licensed Features
 There are two kind of "Premium Features" that you unlock with a license. Some features are constraints that are meant to be permanent, as they are mainly useful when the tool adoption is scaling within an organization. These are the constraints that are in place if you are a free user:
 - Maximum of three teams per Lighthouse instance (compared to unlimited teams with a license)
-- Maximum of one project per Lighthouse instance (compared to unlimited projects with a license)
+- Maximum of one portfolio per Lighthouse instance (compared to unlimited portfolios with a license)
 - No possibility to export and import the Lighthouse configuration through the settings
 
 {: .important}
-If you have more than the maximum amount of teams or projects, the continuous update for **all** teams and projects will stop, until you will get under the limit again.
+If you have more than the maximum amount of teams or portfolios, the continuous update for **all** teams and portfolios will stop, until you will get under the limit again.
 
 On top of those permanent constraints on the free version, there will be some features that become available to premium users first, and eventually will make their way to the free tier.
 

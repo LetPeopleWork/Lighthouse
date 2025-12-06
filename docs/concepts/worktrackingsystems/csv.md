@@ -12,7 +12,7 @@ This page will give you an overview of the specifics to CSV data sources when us
 {:toc}
 
 # Why use CSV?
-You may wonder, why even use CSV if you can directly connect Lighthouse to your Work Tracking System. Indeed, if you can, we always encourage having a direct connection, as file based options like CSV have the draw back that the data will not automatically update. Instead, you'd need to manually update your teams and projects.
+You may wonder, why even use CSV if you can directly connect Lighthouse to your Work Tracking System. Indeed, if you can, we always encourage having a direct connection, as file based options like CSV have the draw back that the data will not automatically update. Instead, you'd need to manually update your teams and portfolios.
 
 However, there may be the following reasons why you opt for the CSV connection:
 - Your work tracking system is not supported by Lighthouse
@@ -51,8 +51,8 @@ Below is a table of available options for configuring CSV work tracking connecto
 | Parent Reference Id Column | Name of the column containing parent reference IDs.              | Parent Reference Id  | Optional                                |
 | Tags Column                | Name of the column containing tags.                              | Tags                 | Optional                                |
 | Url Column                 | Name of the column containing URLs.                              | Url                  | Optional                                |
-| Owning Team Column         | Name of the column containing owning team information.           | Owning Team          | Optional (only needed for projects)     |
-| Estimated Size Column      | Name of the column containing estimated size values.             | Estimated Size       | Optional (only needed for projects)     |
+| Owning Team Column         | Name of the column containing owning team information.           | Owning Team          | Optional (only needed for portfolios)     |
+| Estimated Size Column      | Name of the column containing estimated size values.             | Estimated Size       | Optional (only needed for portfolios)     |
 
 All required columns must be specified and be available in the CSV for Lighthouse to work. Optional columns can be skipped. Your csv can contain more information, Lighthouse will just use the columns that are specified above and ignore others.
 
@@ -64,9 +64,9 @@ For common systems, Lighthouse will add a pre-configured connector by default. T
 If you want to have a default connector added, please let us know!
 
 # File Upload
-If you use CSV as a data source, you will not specify any query when you create/edit a team or project. Instead, you will have to upload a valid csv file that matches your [Configuration](#csv-work-tracking-options).
+If you use CSV as a data source, you will not specify any query when you create/edit a team or portfolio. Instead, you will have to upload a valid csv file that matches your [Configuration](#csv-work-tracking-options).
 
-If you want to update the data, simply edit the team/project and upload a new file.
+If you want to update the data, simply edit the team/portfolio and upload a new file.
 
 # Team Backlog
 When you create a new team, you will have to upload a file that will contain the items that belong to the specific team backlog. The file will be filtered based on the *Work Item Types* and *States* that you configure to be valid for this team. For example, you can have items that are *Canceled* in your CSV file, and they will be ignored if you chose to not map the state within the team configuration.
@@ -74,16 +74,16 @@ When you create a new team, you will have to upload a file that will contain the
 The file should only contain items for a specific team, as you will not have a way to filter this out. This means, if you have many teams, you will have to add multiple csv files - one for each team.
 
 {: .definition}
-The work items we look for on team level are the ones that you plan with on that level. Often this would be *User Stories* and *Bugs*. They should be delivering value and you should be able to consistently close them. *Tasks* tend to be too detailed and technical (so they do not deliver value), while *Epics* and *Features* may be too big (see [Projects](#projects) for more details on how to handle this). This is the general guidance, but your context might be different, so adjust this as needed.
+The work items we look for on team level are the ones that you plan with on that level. Often this would be *User Stories* and *Bugs*. They should be delivering value and you should be able to consistently close them. *Tasks* tend to be too detailed and technical (so they do not deliver value), while *Epics* and *Features* may be too big (see [Portfolios](#portfolios) for more details on how to handle this). This is the general guidance, but your context might be different, so adjust this as needed.
 
-# Projects
-Projects are made up of items that have *child items* - in Lighthouse this is called a *Feature*. In many contexts this means either *Epics* or *Features*. But it could be other (custom) types as well.
+# Portfolios
+Portfolios are made up of items that have *child items* - in Lighthouse this is called a *Feature*. In many contexts this means either *Epics* or *Features*. But it could be other (custom) types as well.
 
-For projects to work properly, the child items must be linked to these *Features*. This happens through the [Parent Column](#work-tracking-system-options). When you import a csv for a team, make sure that the parent item id is set if you want to make use the project feature.
+For portfolios to work properly, the child items must be linked to these *Features*. This happens through the [Parent Column](#work-tracking-system-options). When you import a csv for a team, make sure that the parent item id is set if you want to make use the portfolio feature.
 
 Each feature can have optionally an *Estimated Size*, which would be a number of how many child items you would expect a *Feature* to have if you have not broken it down. On top of that, you could specify which team is *owning* a *Feature*. This would be used to assign the work of not broken down *Features* to a specific team. Specify this in the *Owning Team* column by providing the team name of the owning team.
 
-As with the [Teams](#team-backlog), you do **not** have to specify work item type and state in the query itself when defining the project.
+As with the [Teams](#team-backlog), you do **not** have to specify work item type and state in the query itself when defining the portfolio.
 
 # Feature Order
 The Order of Features (be it *Epics*, *Features*, or anything else) is based on the order they appear in the csv file. The higher up, the more important the feature is.

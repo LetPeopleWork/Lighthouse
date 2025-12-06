@@ -16,7 +16,7 @@ Many Charts and Widgets are clickable and will provide you more details about th
 # Work Items In Progress
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | WIP, Work Item Age |
 | **Affected by Filtering** | No |
 
@@ -24,13 +24,13 @@ This widget shows details to the items in progress.
 
 ![Work Items In Progress](../assets/features/metrics/workitemsinprogress.png)
 
-First, you will see the total number of items in progress **right now**, based on the Work Items that are in a *Doing* state as per your configuration. If a *System WIP Limit* is specified for the Team or Project, this is visualized as well on the Widget and colored accordingly.
+First, you will see the total number of items in progress **right now**, based on the Work Items that are in a *Doing* state as per your configuration. If a *System WIP Limit* is specified for the Team or Portfolio, this is visualized as well on the Widget and colored accordingly.
 These are all the items that match your *Work Item Query* and are in a *Doing State*. You can see the total number of items in progress right now. If you want to know more details, you click on the widget, you can see the specific work items in progress, together with their *Work Item Age*.
 
 Then you will also see the number of the Features that are currently being worked on. With a click on it will reveal more details. The teams [Feature WIP](../teams/edit.html#feature-wip) is visualized as a *Goal* on the widget.
 
 {: .note}
-The number being shown here is based on the parent items that are currently *in progress*. It **does not** matter whether your Feature is in a *To Do*, *Doing*, or *Done* state. If you work on an item that links to a feature, that feature is being worked on, and it will show up here. Thus this metric is not available for *Projects*, but only for *Teams*.
+The number being shown here is based on the parent items that are currently *in progress*. It **does not** matter whether your Feature is in a *To Do*, *Doing*, or *Done* state. If you work on an item that links to a feature, that feature is being worked on, and it will show up here. Thus this metric is not available for *Portfolios*, but only for *Teams*.
 
 Lastly, you can see the number of items that are currently blocked. The *Goal* is always set to 0.
 
@@ -43,7 +43,7 @@ This widget is **not affected** by the date filtering. It always shows the **cur
 # WIP Over Time
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | WIP |
 | **Affected by Filtering** | Yes |
 
@@ -58,7 +58,7 @@ If you have defined a *System WIP Limit*, you can show this as a horizontal line
 # Work Item Aging Chart
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | WIP, Work Item Age |
 | **Affected by Filtering** | Yes |
 
@@ -66,7 +66,7 @@ The Work Item Aging Chart shows you all in progress items on a scatter plot:
 
 ![Work Item Aging Chart](../assets/features/metrics/workItemAgingChart.png)
 
-On the x-axis you will find the different states you've configured in the settings of your team/project.
+On the x-axis you will find the different states you've configured in the settings of your team/portfolio.
 On the y-axis, you'll see how long each particular item is in progress already.
 
 Similar to the [Cycle Time Scatterplot](#cycle-time-scatterplot), multiple items are grouped in a bubble that is shown bigger. If you want more details, you can click on a specific bubble.
@@ -78,12 +78,12 @@ The chart distinguishes items by type, using different colors for each item type
 If there is a blocked item, it will appear as a red dot in the chart.
 
 {: .note}
-Jira note: Lighthouse identifies blocked items using the blocked tags or blocked states configured on Teams/Projects. If you use Jira's built-in `Flag` feature, add a `Flagged` label to your blocked tags so flagged issues appear as blocked in charts and widgets.
+Jira note: Lighthouse identifies blocked items using the blocked tags or blocked states configured on Teams/Portfolios. If you use Jira's built-in `Flag` feature, add a `Flagged` label to your blocked tags so flagged issues appear as blocked in charts and widgets.
 
 # Work Distribution
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | WIP, Cycle Time |
 | **Affected by Filtering** | Yes |
 
@@ -119,7 +119,7 @@ The chart combines both completed work items (from the selected date range) and 
 # Started vs. Closed
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Throughput, WIP |
 | **Affected by Filtering** | Yes |
 
@@ -141,7 +141,7 @@ If you want to know more details, you can click on the widget, and it will show 
 # Throughput Run Chart
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Throughput |
 | **Affected by Filtering** | Yes |
 
@@ -158,7 +158,7 @@ On the top right, you will see the *Predictability Score*. If you click on it, a
 # Predictability Score
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Throughput |
 | **Affected by Filtering** | Yes |
 
@@ -184,7 +184,7 @@ The goal is not to be at 100%. In fact, that's far from realistic. We believe an
 # Cycle Time Percentiles
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Cycle Time |
 | **Affected by Filtering** | Yes |
 
@@ -203,7 +203,7 @@ If you click anywhere on the widget (independent if you look at percentiles or t
 # Cycle Time Scatterplot
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Cycle Time |
 | **Affected by Filtering** | Yes |
 
@@ -221,7 +221,7 @@ The chart also distinguishes items by type, using different colors for each item
 # Simplified Cumulative Flow Diagram (CFD)
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Cycle Time, WIP, Throughput |
 | **Affected by Filtering** | Yes |
 
@@ -237,7 +237,7 @@ If you enable the trend lines, the start and end points of both areas will be co
 # Total Work Item Age
 
 |--------------|-------------------------|
-| **Applies to** | Teams and Projects |
+| **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Work Item Age, WIP |
 | **Affected by Filtering** | No (Widget), Yes (Chart) |
 
@@ -276,7 +276,7 @@ The age calculation for historical dates shows how old each item was on that spe
 # Feature Size
 
 |--------------|-------------------------|
-| **Applies to** | Projects |
+| **Applies to** | Portfolios |
 | **Flow Metric** | Cycle Time, Work Item Age, Throughput |
 | **Affected by Filtering** | Yes |
 

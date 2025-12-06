@@ -43,7 +43,7 @@ You can use any kind of filtering you'd like and that is valid according to the 
 When you create a new team, you will have to define a query that will get the items that belong to the specific team backlog. The query should **not** specify *Work Item Types* (for example Story, Bug, etc.) nor specific *Work Item States* (like In Progress, Canceled), as those things will be specified outside the query.
 
 {: .definition}
-The work items we look for on team level are the ones that you plan with on that level. Often this would be *User Stories* and *Bugs*. They should be delivering value and you should be able to consistently close them. *Tasks* tend to be too detailed and technical (so they do not deliver value), while *Epics* and *Features* may be too big (see [Projects](#projects) for more details on how to handle this). This is the general guidance, but your context might be different, so adjust this as needed.
+The work items we look for on team level are the ones that you plan with on that level. Often this would be *User Stories* and *Bugs*. They should be delivering value and you should be able to consistently close them. *Tasks* tend to be too detailed and technical (so they do not deliver value), while *Epics* and *Features* may be too big (see [Portfolios](#portfolios) for more details on how to handle this). This is the general guidance, but your context might be different, so adjust this as needed.
 
 What should be in there is everything else that defines whether an item is belonging to a team or not, like:
 - Team Project (via *System.TeamProject*)
@@ -59,17 +59,17 @@ What should be in there is everything else that defines whether an item is belon
 {: .note}
 The whole syntax of WIQL is at your disposal. Remember, with great power comes great responsibility. Lighthouse will not be able to validate if what you write is making sense or not. There is a minimal verification on saving of a team, that makes sure that at least one item is found by the query. As long as that's the case, Lighthouse will assume it's correct.
 
-# Projects
-Projects are made up of items that have *child items* - in Lighthouse this is called a *Feature*. In an Azure DevOps context, this often means either *Epics* or *Features*. But it could be other (custom) types as well.
+# Portfolios
+Portfolios are made up of items that have *child items* - in Lighthouse this is called a *Feature*. In an Azure DevOps context, this often means either *Epics* or *Features*. But it could be other (custom) types as well.
 
-When creating a project, you need to specify a query that will fetch the features that are relevant for this project. This may be via:
+When creating a portfolio, you need to specify a query that will fetch the features that are relevant for this portfolio. This may be via:
 - AreaPath (*[System.AreaPath]*)
 - Tags (*[System.Tags]*)
-- Whatever else may identify a feature to belong to a specific project
+- Whatever else may identify a feature to belong to a specific portfolio
 
-As with the [Teams](#team-backlog), you do **not** have to specify work item type and state in the query itself when defining the project.
+As with the [Teams](#team-backlog), you do **not** have to specify work item type and state in the query itself when defining the portfolio.
 
-Example WIQL Queries for Projects could look like these:
+Example WIQL Queries for Portfolios could look like these:
 
 ```bash
 [System.TeamProject] = "Lighthouse Demo" AND [System.Tags] CONTAINS "Release 1.33.7"

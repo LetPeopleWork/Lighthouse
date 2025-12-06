@@ -36,7 +36,7 @@ You can modify the team settings by clicking on the *Edit Team* button on the to
 The *Forecasts* section is the default section. It shows you all things related to forecasting for this specific team.
 
 ## Features
-If a team is involved in one (or more) projects, all the features where this specific team has work for in their backlog are listed.
+If a team is involved in one (or more) portfolios, all the features where this specific team has work for in their backlog are listed.
 
 For every feature, you can see the following details.
 
@@ -57,7 +57,7 @@ If you have many Features that are already completed, you may not want to show a
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
 
 Furthermore, there can be two indicators for each feature:
-- A ⚠️ emoji symbolizes that this specific feature is using the *Default Feature Size* and is not broken down yet. Check the [Project Modification Page](../projects/edit.html#default-feature-size) for details on what that means.
+- A ⚠️ emoji symbolizes that this specific feature is using the *Default Feature Size* and is not broken down yet. Check the [Portfolio Modification Page](../portfolios/edit.html#default-feature-size) for details on what that means.
 - A ⚙️ emoji symbolizes that there are child items of this specific feature that are currently being **actively** worked on (meaning they are in a [Doing State](./edit.html#states)) by this team.
 
 ### Feature Progress

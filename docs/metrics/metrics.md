@@ -8,7 +8,7 @@ nav_order: 30
 Lighthouse collects metrics about your team, so you can inspect those numbers whenever needed and create experiment to improve your efficiency, effectiveness, and predictability.
 
 # About the Metrics
-In general the metrics collected are the same  (with some differences) for *Teams* and *Projects*. Lighthouse is using the respective settings of a team or project to get the information. It looks at all work items that fit your *Work Item Query*, takes into account the *Work Item Types*, and categorizes items based on the configured *States*.
+In general the metrics collected are the same  (with some differences) for *Teams* and *Portfolios*. Lighthouse is using the respective settings of a team or portfolio to get the information. It looks at all work items that fit your *Work Item Query*, takes into account the *Work Item Types*, and categorizes items based on the configured *States*.
 
 {: .note}
 Many metrics can only be collected on finished items. It is therefore important to make sure **not to exclude** done items in your query if you want to use the metrics.

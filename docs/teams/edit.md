@@ -17,7 +17,7 @@ You can create a new team by cloning an existing team's settings. When you clone
 * This opens the team creation page pre-filled with the original team's settings
 * The team name is automatically prefixed with "Copy of " followed by the original team's name
 * All settings including work item query, work item types, states, throughput configuration, and other team-specific settings are copied
-* Only the team settings are copied - project assignments and other relationships are not automatically copied
+* Only the team settings are copied - portfolio assignments and other relationships are not automatically copied
 * You can modify any of the pre-filled settings before saving the new team
 
 Cloning is useful when setting up multiple teams with similar configurations or when you want to create variations of existing team setups.
@@ -91,7 +91,7 @@ In order for Lighthouse to judge whether an item is *done*, *in progress*, or no
 
 | State Category | Description |
 |-------|-------------|
-| To Do | Items that are in this state are discovered as *pending* for this team. It is important to have all those states mapped as so Lighthouse can discover pending work for features in a project. |
+| To Do | Items that are in this state are discovered as *pending* for this team. It is important to have all those states mapped as so Lighthouse can discover pending work for features in a portfolio. |
 | Doing | Items that are in this state are actively being worked on. Lighthouse will mark features as *In Progress* based on these states. |
 | Done | Items that are done contribute to the Throughput. Based on this value forecasts are made. |
 
@@ -105,7 +105,7 @@ For Jira, the common states are: *To Do* (To Do), *In Progress* (Doing), *Done* 
 While Azure DevOps can handle if you specify states that don't exist, Jira will not execute a query with a state that is not in its system. That means for Jira you have make sure everything you mention does exist exactly as specified, as otherwise the [Validation](#validation-and-save) will fail.
 
 # Tags
-Tags allow you to add any kind of additional information that may be helpful for you to identify this team. This may be a specific project or initiative, a department, business unit, or tribe, or anything else that somehow might be useful. You can add as many tags as you want. Existing tags will be shown as proposal.
+Tags allow you to add any kind of additional information that may be helpful for you to identify this team. This may be a specific portfolio or initiative, a department, business unit, or tribe, or anything else that somehow might be useful. You can add as many tags as you want. Existing tags will be shown as proposal.
 
 Tags are checked when you use the search functionality.
 
@@ -124,7 +124,7 @@ Lighthouse is not allowing you to set state specific limits, it will check every
 A WIP limit is not just a maximum you should not exceed. It is what we think is our optimum capacity. Meaning that, while we should not exceed it, we should also not be below it, as this means, we're not running at our optimum. While we should take natural variability into account, we should aim to be **at** the limit we set, and neither below nor above.
 
 ## Feature WIP
-If your team is working on multiple Features at the same time, you want to adjust the Feature WIP to this number. This will impact your forecasts for projects, and will lead to different predicted delivery times.
+If your team is working on multiple Features at the same time, you want to adjust the Feature WIP to this number. This will impact your forecasts for portfolios, and will lead to different predicted delivery times.
 
 {: .note}
 Working on one Feature at a time does not mean only having one item in progress. It means that all items that are in progress belong to the same feature.
