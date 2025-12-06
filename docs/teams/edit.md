@@ -42,9 +42,9 @@ The general information contains the name of your team. This can be anything tha
 We suggest to use the same name as you use in your work tracking system to identify your team.
 
 ## Work Tracking System
-In order for Lighthouse to get the data it needs for forecasting, it needs to connect to your Work Tracking System. Work Tracking Systems are stored in the Lighthouse Settings and can be reused across Teams and Projects.
+In order for Lighthouse to get the data it needs for forecasting, it needs to connect to your Work Tracking System. Work Tracking Systems are stored in the Lighthouse Settings and can be reused across Teams and Portfolios.
 
-When creating or modifying both Teams or Projects, you can either choose an existing connection or create a new one.
+When creating or modifying both Teams or Portfolios, you can either choose an existing connection or create a new one.
 
 Each connection has a specific name and a type. Depending on the type, different configuration options have to be specified. Check the detailed pages on [Jira](../../concepts/worktrackingsystems/jira.html#work-tracking-system-connection), [Azure DevOps](../../concepts/worktrackingsystems/azuredevops.html#work-tracking-system-connection) or [Csv](../../concepts/worktrackingsystems/csv.html) for details.
 

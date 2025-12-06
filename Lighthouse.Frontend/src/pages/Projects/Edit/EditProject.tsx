@@ -4,7 +4,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 const EditProject: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
@@ -17,8 +19,12 @@ const EditProject: React.FC = () => {
 		workTrackingSystemService,
 		teamService,
 	} = useContext(ApiServiceContext);
+	const { getTerm } = useTerminology();
+	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	const pageTitle = isNewProject ? "Create Project" : "Update Project";
+	const pageTitle = isNewProject
+		? `Create ${portfolioTerm}`
+		: `Update ${portfolioTerm}`;
 
 	const getProjectSettings = async () => {
 		const urlParams = new URLSearchParams(window.location.search);

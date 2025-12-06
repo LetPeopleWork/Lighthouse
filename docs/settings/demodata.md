@@ -11,14 +11,14 @@ Whether you just installed Lighthouse and want to see how it works, or you look 
 ![Demo Data](../assets/settings/demodata.png)
 
 {: .important}
-Please be aware that loading demo data will remove any existing Projects and Teams.
+Please be aware that loading demo data will remove any existing Portfolios and Teams.
 
 There are various scenarios, some of them are available in the community edition, while others require you to have a license.
 
 
 | Scenario Name | Description | Use Cases | Free vs. Premium |
 |---------------|-------------|-----------|------------------|
-| When Will This Be Done? | One team with a decent throughput, that works on one projects with a set of epics. | Basic flow metrics and forecasting demonstrations, onboarding new users, showing Monte Carlo principles | Free |
+| When Will This Be Done? | One team with a decent throughput, that works on one portfolio with a set of epics. | Basic flow metrics and forecasting demonstrations, onboarding new users, showing Monte Carlo principles | Free |
 | Too Much WIP | A team that is super busy, but progress is slow. | Teaching WIP limits, demonstrating flow problems, capacity planning discussions | Free |
 | Product Launch | Two teams, one product they work on together. When can we launch? | Multi-team coordination, release planning with probabilistic forecasting | Free |
 | Flow in Scrum | A team that is focusing on delivering at the end of their Sprint. What does it do to their flow? | Show how it impacts *flow* if we're operating with bigger batches in the name of Scrum (*we're aware that this is a Scrum Antipattern - yet it's sadly how many teams operate*) | Premium |

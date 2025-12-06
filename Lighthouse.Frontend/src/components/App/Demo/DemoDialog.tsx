@@ -11,6 +11,8 @@ import {
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { Link } from "react-router-dom";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import LetPeopleWorkLogo from "../LetPeopleWork/LetPeopleWorkLogo";
 import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
 
@@ -25,6 +27,10 @@ const DemoDialog: React.FC<DemoDialogProps> = ({
 	onClose,
 	onDontShowAgain,
 }) => {
+	const { getTerm } = useTerminology();
+	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+
 	return (
 		<Dialog open={open} onClose={onClose}>
 			<DialogTitle>
@@ -48,7 +54,8 @@ const DemoDialog: React.FC<DemoDialogProps> = ({
 						This is a Demo Version of Lighthouse to show case how the tool
 						works. It's not using any real data and the forecasts you are
 						getting are randomly generated. You can go through all the
-						workflows, including creationg and editing of teams or projects, but
+						workflows, including creationg and editing of{" "}
+						{teamsTerm.toLowerCase()} or {portfoliosTerm.toLowerCase()}, but
 						nothing will be stored.
 					</Typography>
 					<Typography variant="body1" marginTop={2} marginBottom={2}>

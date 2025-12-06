@@ -13,7 +13,7 @@ The *Overview* page shows you all teams that are defined. As the name suggests, 
 ![Team Overview](../assets/features/overview.png)
 
 # Gain an Overview
-The overview, as the name suggests, shows you a rough overview over all the teams. You can see which teams are defined, and how many Features they are contributing to (based on the the features in all defined projects).
+The overview, as the name suggests, shows you a rough overview over all the teams. You can see which teams are defined, and how many Features they are contributing to (based on the the features in all defined portfolios).
 
 # Create a new Team
 If you want to create a new team, click on the *Add New* button on top. That will bring you to the [Team Creation Page](./edit.html).
@@ -34,13 +34,13 @@ If you want to delete a team, you can click on the 🗑️ icon on the right sid
 You can clone an existing team to create a new team with the same settings. When cloning a team:
 * All team settings (work item query, work item types, states, throughput settings, etc.) are copied
 * The new team's name is prefixed with "Copy of " to distinguish it from the original
-* Only the settings are copied - relationships like project assignments are not automatically copied
+* Only the settings are copied - relationships like portfolio assignments are not automatically copied
 * The cloned team is created as a new, independent team
 
 To clone a team, click the Clone button in the team overview page. This will open the team creation page pre-filled with the original team's settings.
 
 {: .important}
-Deleting a team will remove it from Lighthouse with no functionality to undo this change. This will also remove the team from all the involved projects. Ideally you make sure that this team is not involved in any projects before you delete it.
+Deleting a team will remove it from Lighthouse with no functionality to undo this change. This will also remove the team from all the involved portfolios. Ideally you make sure that this team is not involved in any portfolios before you delete it.
 
 {: .note}
 You can always add a team again using the same queries. Deleting a team has no effect at all on the data in your Work Tracking System.

@@ -21,6 +21,8 @@ export const TERMINOLOGY_KEYS = {
 	SLE: "sle",
 	TEAM: "team",
 	TEAMS: "teams",
+	PORTFOLIO: "portfolio",
+	PORTFOLIOS: "portfolios",
 } as const;
 
 export type TerminologyKey =

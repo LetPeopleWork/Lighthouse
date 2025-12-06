@@ -39,6 +39,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 
 	const parentMap = useParentWorkItems(features);
 
@@ -155,7 +156,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			},
 			{
 				field: "projects",
-				headerName: "Projects",
+				headerName: portfoliosTerm,
 				width: 200,
 				sortable: false,
 				renderCell: ({ row }) => (
@@ -183,7 +184,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				),
 			},
 		],
-		[featureTerm, team, featuresInProgress, parentMap],
+		[featureTerm, team, featuresInProgress, parentMap, portfoliosTerm],
 	);
 
 	return (

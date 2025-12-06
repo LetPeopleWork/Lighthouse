@@ -31,6 +31,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
 	const searchFilterBarId = useId();
 
@@ -101,7 +102,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
 					placeholder={
 						isMobile
 							? "Search"
-							: `Search by project or ${teamTerm} name (Ctrl+F)`
+							: `Search by ${portfolioTerm.toLowerCase()} or ${teamTerm} name (Ctrl+F)`
 					}
 					variant="standard"
 					value={localFilterText}

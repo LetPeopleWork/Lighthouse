@@ -32,6 +32,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddOrUpdate("sle", "SLE", "Abbreviation of 'Service Level Expectation'");
             AddOrUpdate("team", "Team", "The smallest groups in the organization that deliver 'Work Items'. Alternatives may be 'Squad' or 'Crew'");
             AddOrUpdate("teams", "Teams", "Plural form of 'Team'");
+            AddOrUpdate("portfolio", "Portfolio", "Collection of work items that belong together and are managed as a unit. Alternatives may be 'Project' or 'Initiative'");
+            AddOrUpdate("portfolios", "Portfolios", "Plural form of 'Portfolio'");
 
             RemoveIfExists("workItemQuery");
 

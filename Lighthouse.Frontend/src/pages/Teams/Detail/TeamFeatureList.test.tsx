@@ -19,6 +19,8 @@ vi.mock("../../../services/TerminologyContext", () => ({
 		getTerm: (key: string) => {
 			if (key === "feature") return "Feature";
 			if (key === "features") return "Features";
+			if (key === "portfolio") return "Portfolio";
+			if (key === "portfolios") return "Portfolios";
 			return "Unknown";
 		},
 	}),
@@ -211,11 +213,11 @@ describe("TeamFeatureList component", () => {
 		await screen.findByText(/Feature Name/);
 
 		expect(screen.getByText("Feature Name")).toBeInTheDocument();
-		expect(screen.getByText("Progress")).toBeInTheDocument();
-		expect(screen.getByText("Parent")).toBeInTheDocument();
-		expect(screen.getByText("Projects")).toBeInTheDocument();
-		expect(screen.getByText("Forecasts")).toBeInTheDocument();
-		expect(screen.getByText("Updated On")).toBeInTheDocument();
+  expect(screen.getByText("Progress")).toBeInTheDocument();
+  expect(screen.getByText("Parent")).toBeInTheDocument();
+  expect(screen.getByText("Portfolios")).toBeInTheDocument();
+  expect(screen.getByText("Forecasts")).toBeInTheDocument();
+  expect(screen.getByText("Updated On")).toBeInTheDocument();
 	});
 
 	it("should render toggle for hide completed features", async () => {

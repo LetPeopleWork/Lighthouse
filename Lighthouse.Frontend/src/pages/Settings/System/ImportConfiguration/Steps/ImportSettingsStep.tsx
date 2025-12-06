@@ -60,6 +60,7 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 
 	const { getTerm } = useTerminology();
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const workTrackingSystemsTerm = getTerm(
 		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
@@ -375,14 +376,15 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 							<Typography variant="body1" sx={{ mt: 1 }}>
 								{file.name}
 							</Typography>
-
 							{renderValidationSection(
 								workTrackingSystemsTerm,
 								validationResults.workTrackingSystems,
 							)}
 							{renderValidationSection(teamsTerm, validationResults.teams)}
-							{renderValidationSection("Projects", validationResults.projects)}
-
+							{renderValidationSection(
+								portfoliosTerm,
+								validationResults.projects,
+							)}{" "}
 							{hasValidationErrors() && (
 								<Alert severity="error" sx={{ mt: 2 }}>
 									There are validation errors in your configuration. Please fix

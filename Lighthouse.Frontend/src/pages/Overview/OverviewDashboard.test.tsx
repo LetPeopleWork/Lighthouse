@@ -109,6 +109,22 @@ const renderWithProviders = (component: React.ReactElement) => {
 	// Setup mock return values
 	mockProjectService.getProjects = vi.fn().mockResolvedValue(mockProjects);
 	mockTeamService.getTeams = vi.fn().mockResolvedValue(mockTeams);
+	mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+		{
+			id: 1,
+			key: "portfolio",
+			defaultValue: "Portfolio",
+			description: "Term used for individual portfolios",
+			value: "Portfolio",
+		},
+		{
+			id: 2,
+			key: "portfolios",
+			defaultValue: "Portfolios",
+			description: "Term used for multiple portfolios",
+			value: "Portfolios",
+		},
+	]);
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -156,20 +172,18 @@ describe("OverviewDashboard", () => {
 
 		// Wait for loading to complete and project table to appear
 		await waitFor(() => {
-			expect(screen.getByText("Projects")).toBeInTheDocument();
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
 		});
 	});
 
 	it("renders dashboard header with add buttons", async () => {
 		renderWithProviders(<OverviewDashboard />);
 
-		// Wait for loading to complete first
-		await waitFor(() => {
-			expect(screen.getByText("Projects")).toBeInTheDocument();
-		});
-
-		// Now check for the dashboard header and buttons
-		expect(screen.getByText("Add Project")).toBeInTheDocument();
+  // Wait for loading to complete first
+  await waitFor(() => {
+   expect(screen.getByText("Portfolios")).toBeInTheDocument();
+  });		// Now check for the dashboard header and buttons
+		expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
 		expect(screen.getByText("Add team")).toBeInTheDocument();
 		expect(screen.getByText("Update All")).toBeInTheDocument();
 	});
@@ -190,7 +204,7 @@ describe("OverviewDashboard", () => {
 
 		// Wait for loading to complete first
 		await waitFor(() => {
-			expect(screen.getByText("Projects")).toBeInTheDocument();
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
 		});
 
 		// Click the Update All button

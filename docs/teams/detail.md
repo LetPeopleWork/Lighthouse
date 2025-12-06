@@ -7,7 +7,7 @@ nav_order: 1
 
 Once you have created your team, you can see all the details on this page. It's split into *Forecasts* and *Metrics*.
 
-In the [Forecasts Tab](#forecasts), you can browse through all the features from the various projects the team is involved in, and see how many items are left to do for this team in each feature. Furthermore, you can run manual forecasts.
+In the [Forecasts Tab](#forecasts), you can browse through all the features from the various portfolios the team is involved in, and see how many items are left to do for this team in each feature. Furthermore, you can run manual forecasts.
 In the [Metrics Tab](../metrics/metrics.html), you can see various charts for Metrics for this team.
 
 - TOC
@@ -22,7 +22,7 @@ You can directly go to the team detail page if you bookmark the specific URL. Ev
 On top you can see general team information, which includes the Team name, an indication if a [fixed Throughput](./edit.html#throughput-start-and-end-date) is used, and when it was the last time this team was updated.
 
 ## Update Team Data
-While teams are continuously updated, you can trigger an update manually by clicking on the *Update Team Data* button. This will update all data related to the team, including the forecasts for any project the team is involved in, as well as the Metrics.
+While teams are continuously updated, you can trigger an update manually by clicking on the *Update Team Data* button. This will update all data related to the team, including the forecasts for any portfolio the team is involved in, as well as the Metrics.
 
 A manual update can be useful if you just made significant changes (for example closed a couple of item for this team) and do not want to wait for the periodic update to kick in.
 
@@ -84,7 +84,7 @@ The first question is: When will 'x' items be done? If you have a certain number
 The second question is: How many items will you get done by a certain date? You might have an important customer visit coming up, or simply want to know what is a sensible number of items to plan for in your next sprint.
 
 ### Usage
-Forecasts done on team-level are *on-demand*, meaning you have to trigger them as needed. Only forecasts for projects will be re-run continuously. This is still useful if you want to quickly check something without setting up a full project. Examples could be:
+Forecasts done on team-level are *on-demand*, meaning you have to trigger them as needed. Only forecasts for portfolios will be re-run continuously. This is still useful if you want to quickly check something without setting up a full portfolio. Examples could be:
 - How much will fit into the next Sprint (for example as preparation for a Sprint Planning)
 - When will this Feature most likely be done?
 - Will an additional feature fit for a release without having to move a target date?

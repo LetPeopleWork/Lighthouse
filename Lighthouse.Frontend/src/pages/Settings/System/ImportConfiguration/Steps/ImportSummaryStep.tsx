@@ -43,6 +43,7 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 
 	const { getTerm } = useTerminology();
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 	const workTrackingSystemsTerm = getTerm(
 		TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS,
 	);
@@ -214,7 +215,7 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 						<Typography variant="body2">Errors: {teamsCounts.Error}</Typography>
 					</Paper>
 					<Paper sx={{ p: 2, flex: 1 }} elevation={2}>
-						<Typography variant="subtitle1">Projects</Typography>
+						<Typography variant="subtitle1">{portfoliosTerm}</Typography>
 						<Typography variant="body2">
 							Success: {projectsCounts.Success}
 						</Typography>
@@ -239,7 +240,7 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 					importResults.workTrackingSystems,
 				)}
 				{renderEntityTable(teamsTerm, importResults.teams)}
-				{renderEntityTable("Projects", importResults.projects)}
+				{renderEntityTable(portfoliosTerm, importResults.projects)}
 			</Box>
 			<Divider sx={{ my: 2 }} />
 			<Box

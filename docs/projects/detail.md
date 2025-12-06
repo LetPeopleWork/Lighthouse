@@ -1,47 +1,47 @@
 ---
-title: Project Details
+title: Portfolio Details
 layout: home
-parent: Projects
+parent: Portfolios
 nav_order: 1
 ---
 
-Once you have created your project, you can see all the details on this page.
+Once you have created your portfolio, you can see all the details on this page.
                 
-Browse through all the features from this project and see which teams are involved, which features are being actively worked on, and what the progress as well as the projected completion is.
+Browse through all the features from this portfolio and see which teams are involved, which features are being actively worked on, and what the progress as well as the projected completion is.
 
 - TOC
 {:toc}
 
 {: .note}
-You can directly go to the project detail page if you bookmark the specific URL. Even if the project name changes, the URL will stay the same.
+You can directly go to the portfolio detail page if you bookmark the specific URL. Even if the portfolio name changes, the URL will stay the same.
 
-![Project Details](../../assets/features/projectdetail.png)
+![Portfolio Details](../../assets/features/projectdetail.png)
 
-# General Project Information and Actions
-On top you can see general project information, which includes the name of the project and it was last updated.
+# General Portfolio Information and Actions
+On top you can see general portfolio information, which includes the name of the portfolio and it was last updated.
 
 ## Refresh Features
-While projects are continuously updated, you can trigger a refresh manually by clicking on the *Refresh Features* button. This will update the [Features](#features) and all associated forecasts.
+While portfolios are continuously updated, you can trigger a refresh manually by clicking on the *Refresh Features* button. This will update the [Features](#features) and all associated forecasts.
 
-A manual update can be useful if you just made significant changes (for example added new features to the projects) and do not want to wait for the periodic update to kick in.
+A manual update can be useful if you just made significant changes (for example added new features to the portfolios) and do not want to wait for the periodic update to kick in.
 
 {: .note}
-After you trigger the manual update, the button *Refresh Features* will be disabled while the project is updated. Depending on the load of the server and other operations which might be in progress, it can take a while. While every context and project is different, an update should normally not take longer than two minutes.
+After you trigger the manual update, the button *Refresh Features* will be disabled while the portfolio is updated. Depending on the load of the server and other operations which might be in progress, it can take a while. While every context and portfolio is different, an update should normally not take longer than two minutes.
 
-## Edit Project
-You can modify the project settings by clicking on the *Edit Project* button on the top right. This will bring you to the [Project Modification Page](./edit.html).
+## Edit Portfolio
+You can modify the portfolio settings by clicking on the *Edit Portfolio* button on the top right. This will bring you to the [Portfolio Modification Page](./edit.html).
 
 # Forecasts
 
 ## Features
-For every project, all the features are listed with additional details.
+For every portfolio, all the features are listed with additional details.
 
 ### Table Options
 The Feature table offers two options that you can toggle on/off:
 - Group Features by Parent
 - Hide Completed Features
 
-The settings will be stored for this specific project, so next time you won't have to toggle it off/on again.
+The settings will be stored for this specific portfolio, so next time you won't have to toggle it off/on again.
 
 #### Group Features by Parent
 If this is toggled on, the Features will not be shown in a flat list, but grouped by their respective parents. This can be useful if your Features (for example *Epics*) have parent items that are of relevance to you. This could be something like an *Initiative* or *Objective* (if you use OKRs or some kind of quarterly planning).
@@ -63,7 +63,7 @@ If you have toggled on the [Group Features by Parent](#group-features-by-parent)
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
 
 Furthermore, there can be two indicators for each feature:
-- A ⚠️ emoji symbolizes that this specific feature is using the *Default Feature Size* and is not broken down yet. Check the [Project Modification Page](./edit.html#default-feature-size) for details on what that means.
+- A ⚠️ emoji symbolizes that this specific feature is using the *Default Feature Size* and is not broken down yet. Check the [Portfolio Modification Page](./edit.html#default-feature-size) for details on what that means.
 - A ⚙️ emoji symbolizes that there are child items of this specific feature that are currently being **actively** worked on (meaning they are in a [Doing State](./edit.html#states)) by any involved team.
 
 {: .recommendation}
@@ -102,7 +102,7 @@ We know sometimes life happens, and things may shift. You can always adjust the 
 Milestones that are in the past will not be displayed in the Features to save space.
 
 ## Feature WIP
-[Lighthouse forecasts](../../concepts/howlighthouseforecasts.html) based on the [Order](#feature-order) and the [Feature WIP](../teams/edit.html#feature-wip) of each involved team. You can change this via the [Edit Page of a Team](../teams/edit.html#feature-wip) or directly in the Project Detail View. If you expand the *Involved Teams (Feature WIP)* box, you can see the current Feature WIP for each team of this project.  
+[Lighthouse forecasts](../../concepts/howlighthouseforecasts.html) based on the [Order](#feature-order) and the [Feature WIP](../teams/edit.html#feature-wip) of each involved team. You can change this via the [Edit Page of a Team](../teams/edit.html#feature-wip) or directly in the Portfolio Detail View. If you expand the *Involved Teams (Feature WIP)* box, you can see the current Feature WIP for each team of this portfolio.  
 
 You can adjust the Feature WIP, and it will automatically reforecast the completion dates and likelihoods for each milestone:
 
@@ -120,4 +120,4 @@ You may use Lighthouse to make it transparent what a change in Feature WIP can m
 If a team is configured to [Automatically Adjust Feature WIP](../teams/edit.html#automatically-adjust-feature-wip), you can still change the settings manually. However, they will be overridden the next time the Team Data will be updated.
 
 # Metrics
-Similar to the Team Details, the Project contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Project. Check the [Metrics Page](../metrics/metrics.html) for more details.
+Similar to the Team Details, the Portfolio contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Portfolio. Check the [Metrics Page](../metrics/metrics.html) for more details.

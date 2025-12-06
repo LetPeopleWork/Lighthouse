@@ -35,6 +35,7 @@ const OverviewDashboard: React.FC = () => {
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
 	const { projectService, teamService } = useContext(ApiServiceContext);
 	const {
@@ -171,7 +172,7 @@ const OverviewDashboard: React.FC = () => {
 						<Tooltip title={createProjectTooltip} arrow>
 							<span>
 								<ActionButton
-									buttonText="Add Project"
+									buttonText={`Add ${portfolioTerm}`}
 									startIcon={<AddIcon />}
 									onClickHandler={handleAddProject}
 									buttonVariant="contained"
@@ -215,7 +216,7 @@ const OverviewDashboard: React.FC = () => {
 				>
 					<DataOverviewTable
 						data={projects}
-						title="Projects"
+						title={`${portfolioTerm}s`}
 						api="projects"
 						onDelete={handleProjectDelete}
 						filterText={filterText}

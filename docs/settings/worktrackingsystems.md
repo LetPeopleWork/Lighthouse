@@ -6,7 +6,7 @@ nav_order: 1
 ---
 
 # Work Tracking Systems
-While you can add new Work Tracking Systems via the [Teams](../teams/edit.html#work-tracking-system) and [Project Creation Pages](../projects/edit.html#work-tracking-system), you can manage all Work Tracking Systems via the settings.
+While you can add new Work Tracking Systems via the [Teams](../teams/edit.html#work-tracking-system) and [Portfolio Creation Pages](../projects/edit.html#work-tracking-system), you can manage all Work Tracking Systems via the settings.
 
 ![Work Tracking Systems](../../assets/settings/worktrackingsystems.png)
 
@@ -25,7 +25,7 @@ As the secret information (like API Tokens) are not available to the end user, y
 You can also delete Work Tracking Systems if they are not needed anymore. To do so, you can click on the 🗑️ icon on the right side of the work tracking system. This will permantenly delete this work tracking system.
 
 {: .note}
-You can only delete a Work Tracking System if no team and project is using this. Either remove those teams and projects, or change them to use a different work tracking system.
+You can only delete a Work Tracking System if no team and portfolio is using this. Either remove those teams and portfolios, or change them to use a different work tracking system.
 
 ## Work Tracking System Settings
 There are settings that apply to any configured Work Tracking System setting. These you can find below the available and configured systems. Those settings are *advanced* settings, and in general, you ideally never need to adjust them. However, there are situations where this may be coming in handy.

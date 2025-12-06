@@ -7,6 +7,19 @@ import type { ITeamSettings } from "../../../../../models/Team/TeamSettings";
 import type { IConfigurationService } from "../../../../../services/Api/ConfigurationService";
 import ImportSettingsStep from "./ImportSettingsStep";
 
+// Mock the terminology hook to return predictable terms
+vi.mock("../../../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => {
+			if (key === "portfolio") return "Portfolio";
+			if (key === "portfolios") return "Portfolios";
+			if (key === "feature") return "Feature";
+			if (key === "features") return "Features";
+			return key;
+		},
+	}),
+}));
+
 // Create a mock configuration service
 const createMockConfigurationService = () => {
 	return {
@@ -132,9 +145,9 @@ describe("ImportSettingsStep", () => {
 		// Wait for the validation to complete
 		await waitFor(() => {
 			expect(mockConfigurationService.validateConfiguration).toHaveBeenCalled();
-			expect(screen.getByText("Work Tracking Systems")).toBeInTheDocument();
-			expect(screen.getByText("Teams")).toBeInTheDocument();
-			expect(screen.getByText("Projects")).toBeInTheDocument();
+			expect(screen.getByText("workTrackingSystems")).toBeInTheDocument();
+		expect(screen.getByText("teams")).toBeInTheDocument();
+		expect(screen.getByText("Portfolios")).toBeInTheDocument();
 			expect(screen.getByText("Work Tracking System 1")).toBeInTheDocument();
 			expect(screen.getByText("Team 1")).toBeInTheDocument();
 			expect(screen.getByText("Project 1")).toBeInTheDocument();

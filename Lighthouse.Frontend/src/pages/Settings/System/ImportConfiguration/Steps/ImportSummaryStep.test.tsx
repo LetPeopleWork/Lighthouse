@@ -9,6 +9,19 @@ import {
 import type { ImportResults } from "../ImportResults";
 import ImportSummaryStep from "./ImportSummaryStep";
 
+// Mock the terminology hook to return predictable terms
+vi.mock("../../../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => {
+			if (key === "portfolio") return "Portfolio";
+			if (key === "portfolios") return "Portfolios";
+			if (key === "feature") return "Feature";
+			if (key === "features") return "Features";
+			return key;
+		},
+	}),
+}));
+
 // Mock services
 const createMockTeamService = () => {
 	return {
@@ -207,13 +220,11 @@ describe("ImportSummaryStep", () => {
 		// Second "Success: 1" is for projects
 		expect(successCounts[1]).toBeInTheDocument();
 		// Check that entity tables are rendered
-		const wtsHeadings = screen.getAllByText("Work Tracking Systems");
-		const teamHeadings = screen.getAllByText("Teams");
-		const projectHeadings = screen.getAllByText("Projects");
-
-		expect(wtsHeadings.length).toBeGreaterThanOrEqual(1);
-		expect(teamHeadings.length).toBeGreaterThanOrEqual(1);
-		expect(projectHeadings.length).toBeGreaterThanOrEqual(1);
+  const wtsHeadings = screen.getAllByText("workTrackingSystems");
+  const teamHeadings = screen.getAllByText("teams");
+  const portfolioHeadings = screen.getAllByText("Portfolios");  expect(wtsHeadings.length).toBeGreaterThanOrEqual(1);
+  expect(teamHeadings.length).toBeGreaterThanOrEqual(1);
+  expect(portfolioHeadings.length).toBeGreaterThanOrEqual(1);
 
 		// Check that the entity names are shown in the tables
 		expect(screen.getByText("Azure DevOps")).toBeInTheDocument();
@@ -442,22 +453,18 @@ describe("ImportSummaryStep", () => {
 				onClose={mockOnClose}
 			/>,
 		);
-		// Check that the work tracking systems and projects tables are rendered
-		const wtsHeadings = screen.getAllByText("Work Tracking Systems");
-		const projectsHeadings = screen.getAllByText("Projects");
-
-		// There should be at least the table heading for work tracking systems
+  // Check that the work tracking systems and portfolios tables are rendered
+  const wtsHeadings = screen.getAllByText("workTrackingSystems");
+  const portfoliosHeadings = screen.getAllByText("Portfolios");		// There should be at least the table heading for work tracking systems
 		expect(wtsHeadings.length).toBeGreaterThanOrEqual(1);
-		// There should be at least the table heading for projects
-		expect(projectsHeadings.length).toBeGreaterThanOrEqual(1);
+		// There should be at least the table heading for portfolios
+		expect(portfoliosHeadings.length).toBeGreaterThanOrEqual(1);
 
-		// Try to find a "Teams" heading for a table
+		// Try to find a "teams" heading for a table
 		// Teams table should not be rendered
-		const teamHeadings = screen.queryAllByText("Teams");
-		// There should be only one "Teams" text from the summary section, not another one for a table
-		expect(teamHeadings.length).toBe(1);
-
-		// Verify this "Teams" heading is not in a table but in the summary section
+  const teamHeadings = screen.queryAllByText("teams");
+  // There should be only one "teams" text from the summary section, not another one for a table
+  expect(teamHeadings.length).toBe(1);		// Verify this "Teams" heading is not in a table but in the summary section
 		expect(teamHeadings[0].closest("table")).toBeNull();
 	});
 });

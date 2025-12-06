@@ -37,6 +37,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase("sle", "SLE", "Abbreviation of 'Service Level Expectation'")]
         [TestCase("team", "Team", "The smallest groups in the organization that deliver 'Work Items'. Alternatives may be 'Squad' or 'Crew'")]
         [TestCase("teams", "Teams", "Plural form of 'Team'")]
+        [TestCase("portfolio", "Portfolio", "Collection of work items that belong together and are managed as a unit. Alternatives may be 'Project' or 'Initiative'")]
+        [TestCase("portfolios", "Portfolios", "Plural form of 'Portfolio'")]
         public async Task SeedTerminology_ContainsAllExpectedKeysWithDefaults(string key, string defaultValue, string description)
         {
             var subject = CreateSubject();

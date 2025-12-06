@@ -52,7 +52,22 @@ export const createMockApiServiceContext = (
 
 export const createMockTerminologyService = (): ITerminologyService => {
 	return {
-		getAllTerminology: vi.fn(),
+		getAllTerminology: vi.fn().mockResolvedValue([
+			{
+				id: 1,
+				key: "portfolio",
+				defaultValue: "Portfolio",
+				description: "Term used for individual portfolios",
+				value: "Portfolio",
+			},
+			{
+				id: 2,
+				key: "portfolios",
+				defaultValue: "Portfolios",
+				description: "Term used for multiple portfolios",
+				value: "Portfolios",
+			},
+		]),
 		updateTerminology: vi.fn(),
 	};
 };
