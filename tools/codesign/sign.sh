@@ -6,11 +6,14 @@ set -euo pipefail
 
 usage() {
   cat <<'USG'
-Usage: sign.sh <dir> [glob]
+Usage: sign.sh [--list-only] <dir> [glob ...]
 
 Arguments:
-  dir    Directory to search for files (defaults to current directory)
-  glob   Shell glob to filter files (default: 'Lighthouse*')
+  dir        Directory to search for files (defaults to current directory)
+  glob ...   One or more shell globs to filter files (default: 'Lighthouse*')
+
+Options:
+  --list-only  Don't actually sign, just list files that would be processed
 
 Environment variables:
   YUBIKEY_PIN       -- required pin for the PKCS#11 token (e.g., YubiKey)
@@ -24,13 +27,25 @@ Environment variables:
 USG
 }
 
+LIST_ONLY=false
 if [[ "${1:-}" =~ ^-h|--help$ ]]; then
   usage
   exit 0
 fi
 
+if [[ "${1:-}" == "--list-only" ]]; then
+  LIST_ONLY=true
+  shift
+fi
+
 DIR=${1:-.}
-GLOB=${2:-'Lighthouse*'}
+shift || true
+# accept multiple globs after dir
+if [ $# -gt 0 ]; then
+  GLOBS=("$@")
+else
+  GLOBS=("Lighthouse*")
+fi
 
 if [ -z "${YUBIKEY_PIN:-}" ]; then
   echo "Error: YUBIKEY_PIN environment variable must be set." >&2
@@ -54,13 +69,33 @@ if [ ! -d "$DIR" ]; then
 fi
 
 shopt -s nullglob
-FILES=("$DIR"/$GLOB)
+FILES=()
+for pat in "${GLOBS[@]}"; do
+  # If the pattern contains a slash, treat it as a path/pattern we should expand directly
+  if [[ "$pat" == */* ]]; then
+    for f in $pat; do
+      FILES+=("$f")
+    done
+  else
+    for f in "$DIR"/$pat; do
+      FILES+=("$f")
+    done
+  fi
+done
+
 if [ ${#FILES[@]} -eq 0 ]; then
-  echo "No files found matching $DIR/$GLOB" >&2
+  echo "No files found matching $DIR/${GLOBS[*]}" >&2
   exit 3
 fi
 
 echo "Found ${#FILES[@]} file(s) to sign"
+
+if [ "$LIST_ONLY" = true ]; then
+  for f in "${FILES[@]}"; do
+    echo "(list-only) $f"
+  done
+  exit 0
+fi
 
 failed=0
 for f in "${FILES[@]}"; do
@@ -112,6 +147,11 @@ for f in "${FILES[@]}"; do
 
   # Run osslsigncode
   echo "+ ${cmd[*]}"
+  if [ "$LIST_ONLY" = true ]; then
+    echo "(list-only) $f"
+    continue
+  fi
+
   if "${cmd[@]}"; then
     echo "Signed $f -> $out_tmp"
     # Atomically replace original file
