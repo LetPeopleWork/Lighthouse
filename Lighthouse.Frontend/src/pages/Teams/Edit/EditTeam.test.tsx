@@ -20,18 +20,16 @@ vi.mock("react-router-dom", async () => {
 
 // Mock URLSearchParams and window.location
 const mockSearchParams = vi.fn();
-Object.defineProperty(window, 'location', {
+Object.defineProperty(window, "location", {
 	value: {
-		search: '',
+		search: "",
 	},
 	writable: true,
 });
 
-global.URLSearchParams = vi.fn().mockImplementation(function(searchString) {
-	return {
-		get: mockSearchParams,
-	};
-});
+global.URLSearchParams = vi.fn().mockImplementation((_searchString) => ({
+	get: mockSearchParams,
+}));
 
 const mockTeamService = {
 	getTeamSettings: vi.fn(),
@@ -88,7 +86,7 @@ describe("EditTeam", () => {
 		vi.clearAllMocks();
 		mockSearchParams.mockReturnValue(null);
 		// Reset window.location.search
-		window.location.search = '';
+		window.location.search = "";
 		mockSettingsService.getDefaultTeamSettings.mockResolvedValue({
 			id: 0,
 			name: "",
@@ -156,7 +154,7 @@ describe("EditTeam", () => {
 
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
 		// Set window.location.search and mock URLSearchParams properly
-		window.location.search = '?cloneFrom=5';
+		window.location.search = "?cloneFrom=5";
 		mockSearchParams.mockReturnValue("5"); // Mock cloneFrom=5
 
 		renderEditTeamWithContext();
@@ -193,7 +191,7 @@ describe("EditTeam", () => {
 
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
 		// Set window.location.search and mock URLSearchParams properly
-		window.location.search = '?cloneFrom=5';
+		window.location.search = "?cloneFrom=5";
 		mockSearchParams.mockReturnValue("5"); // Mock cloneFrom=5
 
 		renderEditTeamWithContext();
