@@ -788,11 +788,12 @@ jobs:
         env:
           YUBIKEY_PIN: ${{ secrets.YUBIKEY_PIN }}
 
-      - name: Verify signatures
-        continue-on-error: true  # Self-signed cert will fail verification
-        run: |
-          # Verify EXE and DLL files in a single invocation
-          verify.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
+      # Self-signed cert will fail verification
+      # - name: Verify signatures
+      #  continue-on-error: true 
+      #  run: |
+      #    # Verify EXE and DLL files in a single invocation
+      #    verify.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
 
       - name: Delete unsigned artifact
         uses: geekyeggo/delete-artifact@v5
