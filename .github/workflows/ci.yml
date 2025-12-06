@@ -452,11 +452,23 @@ jobs:
         run: sudo chmod -R +x ./publish/linux-x64
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
-      - name: Upload artifact for deployment job
+      - name: Upload windows artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: ./Lighthouse.Backend/Lighthouse.Backend/publish      
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+          path: ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64
+
+      - name: Upload macOS artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-osx-x64-${{ needs.tag.outputs.version }}
+          path: ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64
+
+      - name: Upload linux artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-linux-x64-${{ needs.tag.outputs.version }}
+          path: ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64
 
   verifysqlite:
     name: Verify Standalone App against sqlite
@@ -472,8 +484,8 @@ jobs:
       
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: ./Lighthouse
+          name: Lighthouse-linux-x64-${{ needs.tag.outputs.version }}
+          path: ./Lighthouse/linux-x64
 
       - name: Enable Corepack and prepare pnpm
         run: |
@@ -659,8 +671,8 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: ./Lighthouse  
+          name: Lighthouse-linux-x64-${{ needs.tag.outputs.version }}
+          path: ./Lighthouse/linux-x64
 
       - name: Enable Corepack and prepare pnpm
         run: |
@@ -778,8 +790,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: ./artifacts
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+          path: ./artifacts/win-x64
 
       - name: Sign Windows executables
         run: |
@@ -795,16 +807,16 @@ jobs:
       #    # Verify EXE and DLL files in a single invocation
       #    verify.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
 
-      - name: Delete unsigned artifact
+      - name: Delete unsigned windows artifact
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
 
-      - name: Upload signed artifact
+      - name: Upload signed windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: ./artifacts
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+          path: ./artifacts/win-x64
       
   release:
     runs-on: ubuntu-latest
@@ -859,8 +871,18 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse ${{ needs.tag.outputs.version }}
-          path: LighthouseArtifacts
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+          path: LighthouseArtifacts/win-x64
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-osx-x64-${{ needs.tag.outputs.version }}
+          path: LighthouseArtifacts/osx-x64
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-linux-x64-${{ needs.tag.outputs.version }}
+          path: LighthouseArtifacts/linux-x64
 
       - uses: vimtor/action-zip@v1.2
         with:
