@@ -416,3 +416,4 @@ examples/postgres/data/*
 Lighthouse.EndToEndTests/temp-downloads/*
 tools/codesign/.secure_env/*
 Lighthouse.Backend/.idea/*
+Lighthouse.Backend/Lighthouse.Backend/DB_Backup/*
