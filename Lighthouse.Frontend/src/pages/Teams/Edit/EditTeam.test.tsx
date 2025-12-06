@@ -19,7 +19,8 @@ vi.mock("react-router-dom", async () => {
 });
 
 // Mock URLSearchParams and window.location
-const mockSearchParams = vi.fn();
+const mockGet = vi.fn();
+
 Object.defineProperty(window, "location", {
 	value: {
 		search: "",
@@ -27,9 +28,26 @@ Object.defineProperty(window, "location", {
 	writable: true,
 });
 
-global.URLSearchParams = vi.fn().mockImplementation((_searchString) => ({
-	get: mockSearchParams,
-}));
+// Mock URLSearchParams constructor using class approach
+class MockURLSearchParams {
+	get = mockGet;
+	append = vi.fn();
+	delete = vi.fn();
+	getAll = vi.fn();
+	has = vi.fn();
+	set = vi.fn();
+	sort = vi.fn();
+	toString = vi.fn();
+	keys = vi.fn();
+	values = vi.fn();
+	entries = vi.fn();
+	forEach = vi.fn();
+	size = 0;
+	[Symbol.iterator] = vi.fn();
+}
+
+global.URLSearchParams =
+	MockURLSearchParams as unknown as typeof URLSearchParams;
 
 const mockTeamService = {
 	getTeamSettings: vi.fn(),
@@ -84,7 +102,7 @@ const renderEditTeamWithContext = () => {
 describe("EditTeam", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockSearchParams.mockReturnValue(null);
+		mockGet.mockReturnValue(null);
 		// Reset window.location.search
 		window.location.search = "";
 		mockSettingsService.getDefaultTeamSettings.mockResolvedValue({
@@ -155,7 +173,7 @@ describe("EditTeam", () => {
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
 		// Set window.location.search and mock URLSearchParams properly
 		window.location.search = "?cloneFrom=5";
-		mockSearchParams.mockReturnValue("5"); // Mock cloneFrom=5
+		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
 
 		renderEditTeamWithContext();
 
@@ -192,7 +210,7 @@ describe("EditTeam", () => {
 		mockTeamService.getTeamSettings.mockResolvedValue(mockTeamSettings);
 		// Set window.location.search and mock URLSearchParams properly
 		window.location.search = "?cloneFrom=5";
-		mockSearchParams.mockReturnValue("5"); // Mock cloneFrom=5
+		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
 
 		renderEditTeamWithContext();
 
