@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
-using NuGet.Protocol;
+using Newtonsoft.Json;
 
 namespace Lighthouse.Backend.Tests.MCP
 {
@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var featureDetails = result.FromJson<dynamic>();
+                var featureDetails = JsonConvert.DeserializeObject<dynamic>(result);
 
                 Assert.That((int)featureDetails.Id, Is.EqualTo(feature.Id));
                 Assert.That((string)featureDetails.Name, Is.EqualTo(feature.Name));
@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var forecast = result.FromJson<dynamic>();
+                var forecast = JsonConvert.DeserializeObject<dynamic>(result);
 
                 Assert.That((string)forecast.Status, Is.EqualTo("Completed"));
                 Assert.That((string)forecast.Message, Is.EqualTo("Feature has no remaining work - already completed"));
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var forecast = result.FromJson<dynamic>();
+                var forecast = JsonConvert.DeserializeObject<dynamic>(result);
 
                 Assert.That((string)forecast.Status, Is.EqualTo("Active"));
                 Assert.That(forecast.Forecast.DaysToCompletion.Probability50, Is.Not.Null);
@@ -116,8 +116,6 @@ namespace Lighthouse.Backend.Tests.MCP
         public void GetFeatureWhenForecast_FeatureWithoutForecast_ReturnsNoForecastStatus()
         {
             var feature = CreateFeature();
-            // Create a feature where Forecast property would return null
-            // This might be a different scenario than just clearing Forecasts
             
             featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns(feature);
             featureRepositoryMock.Setup(x => x.GetById(feature.Id)).Returns(feature);
@@ -125,18 +123,11 @@ namespace Lighthouse.Backend.Tests.MCP
             var subject = CreateSubject();
             var result = subject.GetFeatureWhenForecast("Test Feature");
 
-            // Since the Forecast property always returns a non-null AggregatedWhenForecast,
-            // this test case might actually be testing impossible conditions.
-            // Let's check what actually gets returned and adjust the expectation
             using (Assert.EnterMultipleScope())
             {
-                var forecast = result.FromJson<dynamic>();
+                var forecast = JsonConvert.DeserializeObject<dynamic>(result);
 
-                // Based on the production code logic and Feature implementation,
-                // when Forecasts is empty, we still get a valid forecast object
-                // So the status should be feature.State which is "Active"
                 Assert.That((string)forecast.Status, Is.EqualTo("Active"));
-                // And there should be forecast data, just with potentially zero values
                 Assert.That(forecast.Forecast.DaysToCompletion.Probability50, Is.Not.Null);
             }
         }

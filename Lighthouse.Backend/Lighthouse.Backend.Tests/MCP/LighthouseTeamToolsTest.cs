@@ -8,7 +8,6 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Moq;
 using Newtonsoft.Json;
-using NuGet.Protocol;
 
 namespace Lighthouse.Backend.Tests.MCP
 {
@@ -42,7 +41,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var teams = result.FromJson<IEnumerable<dynamic>>().ToList();
+                var teams = (JsonConvert.DeserializeObject<IEnumerable<dynamic>>(result) ?? System.Linq.Enumerable.Empty<dynamic>()).ToList();
 
                 Assert.That(teams, Has.Count.EqualTo(1));
 
@@ -83,7 +82,7 @@ namespace Lighthouse.Backend.Tests.MCP
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.Not.Null);
-                var teamDetails = result.FromJson<Team>();
+                var teamDetails = JsonConvert.DeserializeObject<Team>(result);
                 Assert.That(teamDetails.Id, Is.EqualTo(1));
                 Assert.That(teamDetails.Name, Is.EqualTo("Test Team"));
                 Assert.That(teamDetails.FeatureWIP, Is.EqualTo(3));
@@ -121,8 +120,7 @@ namespace Lighthouse.Backend.Tests.MCP
             var subject = CreateSubject();
             var result = subject.RunHowManyForecast("Test Team", targetDate);
 
-
-            var forecast = result.FromJson<HowManyForecast>();
+            var forecast = JsonConvert.DeserializeObject<HowManyForecast>(result);
             Assert.That(forecast, Is.Not.Null);
         }
 
@@ -149,7 +147,7 @@ namespace Lighthouse.Backend.Tests.MCP
             var subject = CreateSubject();
             var result = subject.RunWhenForecast("Test Team", 10);
 
-            var forecast = result.FromJson<WhenForecast>();
+            var forecast = JsonConvert.DeserializeObject<WhenForecast>(result);
             Assert.That(forecast, Is.Not.Null);
         }
 
@@ -190,7 +188,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var metrics = result.FromJson<dynamic>();
+                var metrics = JsonConvert.DeserializeObject<dynamic>(result);
                 Assert.That(metrics, Is.Not.Null);
 
                 var actualPercentiles = ((Newtonsoft.Json.Linq.JArray)metrics.cycleTimePercentiles)

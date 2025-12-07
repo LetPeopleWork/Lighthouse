@@ -3,7 +3,6 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using ModelContextProtocol.Server;
-using NuGet.Protocol;
 using System.ComponentModel;
 
 namespace Lighthouse.Backend.MCP
@@ -22,13 +21,12 @@ namespace Lighthouse.Backend.MCP
             {
                 var teamRepo = GetServiceFromServiceScope<IRepository<Team>>(scope);
 
-                return teamRepo.GetAll()
+                return ToJson(teamRepo.GetAll()
                     .Select(t => new
                     {
                         t.Id,
                         t.Name,
-                    })
-                    .ToJson();
+                    }));
             }
         }
 

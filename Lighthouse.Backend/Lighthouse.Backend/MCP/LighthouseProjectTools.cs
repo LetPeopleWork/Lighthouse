@@ -2,7 +2,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using ModelContextProtocol.Server;
-using NuGet.Protocol;
 using System.ComponentModel;
 
 namespace Lighthouse.Backend.MCP
@@ -21,7 +20,7 @@ namespace Lighthouse.Backend.MCP
             {
                 var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
 
-                return projectRepo.GetAll()
+                return ToJson(projectRepo.GetAll()
                     .Select(p => new
                     {
                         p.Id,
@@ -29,8 +28,7 @@ namespace Lighthouse.Backend.MCP
                         TeamCount = p.Teams.Count,
                         FeatureCount = p.Features.Count,
                         MilestoneCount = p.Milestones.Count
-                    })
-                    .ToJson();
+                    }));
             }
         }
 
@@ -82,7 +80,7 @@ namespace Lighthouse.Backend.MCP
                     return $"No project found with name {projectName}";
                 }
 
-                return project.Features
+                return ToJson(project.Features
                     .Select(f => new
                     {
                         f.Id,
@@ -95,8 +93,7 @@ namespace Lighthouse.Backend.MCP
                         TotalWorkItems = f.FeatureWork.Sum(fw => fw.TotalWorkItems),
                         RemainingWorkItems = f.FeatureWork.Sum(fw => fw.RemainingWorkItems),
                         f.IsUnparentedFeature
-                    })
-                    .ToJson();
+                    }));
             }
         }
 
@@ -113,7 +110,7 @@ namespace Lighthouse.Backend.MCP
                     return $"No project found with name {projectName}";
                 }
 
-                return project.Teams
+                return ToJson(project.Teams
                     .Select(t => new
                     {
                         t.Id,
@@ -121,8 +118,7 @@ namespace Lighthouse.Backend.MCP
                         t.WorkTrackingSystemConnectionId,
                         IsOwningTeam = project.OwningTeamId == t.Id,
                         t.UpdateTime
-                    })
-                    .ToJson();
+                    }));
             }
         }
 

@@ -6,7 +6,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
-using NuGet.Protocol;
+using Newtonsoft.Json;
 
 namespace Lighthouse.Backend.Tests.MCP
 {
@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var projects = result.FromJson<IEnumerable<dynamic>>().ToList();
+                var projects = (JsonConvert.DeserializeObject<IEnumerable<dynamic>>(result) ?? Enumerable.Empty<dynamic>()).ToList();
 
                 Assert.That(projects, Has.Count.EqualTo(1));
 
@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var projectData = result.FromJson<dynamic>();
+                var projectData = JsonConvert.DeserializeObject<dynamic>(result);
 
                 int projectId = Convert.ToInt32(projectData.Id);
                 string projectName = Convert.ToString(projectData.Name);
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var features = result.FromJson<IEnumerable<dynamic>>().ToList();
+                var features = (JsonConvert.DeserializeObject<IEnumerable<dynamic>>(result) ?? Enumerable.Empty<dynamic>()).ToList();
 
                 Assert.That(features, Has.Count.EqualTo(1));
 
@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var teams = result.FromJson<IEnumerable<dynamic>>().ToList();
+                var teams = (JsonConvert.DeserializeObject<IEnumerable<dynamic>>(result) ?? Enumerable.Empty<dynamic>()).ToList();
 
                 Assert.That(teams, Has.Count.EqualTo(1));
 
@@ -313,7 +313,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var response = result.FromJson<dynamic>();
+                var response = JsonConvert.DeserializeObject<dynamic>(result);
                 
                 string message = Convert.ToString(response.Message);
                 string status = Convert.ToString(response.ProjectCompletionStatus);
@@ -335,7 +335,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var response = result.FromJson<dynamic>();
+                var response = JsonConvert.DeserializeObject<dynamic>(result);
                 
                 string projectName = Convert.ToString(response.ProjectName);
                 int projectId = Convert.ToInt32(response.ProjectId);
@@ -400,7 +400,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var response = result.FromJson<dynamic>();
+                var response = JsonConvert.DeserializeObject<dynamic>(result);
                 
                 string projectName = Convert.ToString(response.ProjectName);
                 int totalMilestones = Convert.ToInt32(response.TotalMilestones);
@@ -454,7 +454,7 @@ namespace Lighthouse.Backend.Tests.MCP
 
             using (Assert.EnterMultipleScope())
             {
-                var response = result.FromJson<dynamic>();
+                var response = JsonConvert.DeserializeObject<dynamic>(result);
                 
                 int totalMilestones = Convert.ToInt32(response.TotalMilestones);
                 int futureMilestones = Convert.ToInt32(response.FutureMilestones);
@@ -520,7 +520,7 @@ namespace Lighthouse.Backend.Tests.MCP
             // Assert
             using (Assert.EnterMultipleScope())
             {
-                var flowMetrics = result.FromJson<dynamic>();
+                var flowMetrics = JsonConvert.DeserializeObject<dynamic>(result);
 
                 string projectName = Convert.ToString(flowMetrics.ProjectName);
                 int projectId = Convert.ToInt32(flowMetrics.ProjectId);
@@ -597,7 +597,7 @@ namespace Lighthouse.Backend.Tests.MCP
             // Assert
             using (Assert.EnterMultipleScope())
             {
-                var flowMetrics = result.FromJson<dynamic>();
+                var flowMetrics = JsonConvert.DeserializeObject<dynamic>(result);
 
                 // Verify it returns data (not error message)
                 string projectName = Convert.ToString(flowMetrics.ProjectName);
