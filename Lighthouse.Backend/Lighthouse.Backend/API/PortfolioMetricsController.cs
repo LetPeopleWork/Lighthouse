@@ -23,44 +23,44 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("throughput")]
-        public ActionResult<RunChartData> GetThroughput(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartData> GetThroughput(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
                 projectMetricsService.GetThroughputForProject(project, startDate, endDate));
         }
 
         [HttpGet("started")]
-        public ActionResult<RunChartData> GetStartedItems(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartData> GetStartedItems(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) => projectMetricsService.GetStartedItemsForProject(project, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) => projectMetricsService.GetStartedItemsForProject(project, startDate, endDate));
         }
 
         [HttpGet("wipOverTime")]
-        public ActionResult<RunChartData> GetFeaturesInProgressOverTime(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartData> GetFeaturesInProgressOverTime(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
                 projectMetricsService.GetFeaturesInProgressOverTimeForProject(project, startDate, endDate));
         }
 
         [HttpGet("currentwip")]
-        public ActionResult<IEnumerable<FeatureDto>> GetInProgressFeatures(int projectId)
+        public ActionResult<IEnumerable<FeatureDto>> GetInProgressFeatures(int portfolioId)
         {
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
             {
                 var features = projectMetricsService.GetInProgressFeaturesForProject(project);
                 return features.Select(f => new FeatureDto(f));
@@ -68,26 +68,26 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("cycleTimePercentiles")]
-        public ActionResult<IEnumerable<PercentileValue>> GetCycleTimePercentiles(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<IEnumerable<PercentileValue>> GetCycleTimePercentiles(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
                 projectMetricsService.GetCycleTimePercentilesForProject(project, startDate, endDate));
         }
 
         [HttpGet("cycleTimeData")]
-        public ActionResult<IEnumerable<FeatureDto>> GetCycleTimeData(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<IEnumerable<FeatureDto>> GetCycleTimeData(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
             {
                 var features = projectMetricsService.GetCycleTimeDataForProject(project, startDate, endDate);
                 return features.Select(f => new FeatureDto(f));
@@ -95,14 +95,14 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("allFeaturesForSizeChart")]
-        public ActionResult<IEnumerable<FeatureDto>> GetAllFeaturesForSizeChart(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<IEnumerable<FeatureDto>> GetAllFeaturesForSizeChart(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
             {
                 var features = projectMetricsService.GetAllFeaturesForSizeChart(project, startDate, endDate);
                 return features.Select(f => new FeatureDto(f));
@@ -110,35 +110,35 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("sizePercentiles")]
-        public ActionResult<IEnumerable<PercentileValue>> GetSizePercentiles(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<IEnumerable<PercentileValue>> GetSizePercentiles(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, (project) =>
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, (project) =>
                 projectMetricsService.GetSizePercentilesForProject(project, startDate, endDate));
         }
 
         [HttpGet("multiitemforecastpredictabilityscore")]
-        public ActionResult<ForecastPredictabilityScore> GetMultiItemForecastPredictabilityScore(int projectId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<ForecastPredictabilityScore> GetMultiItemForecastPredictabilityScore(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, project =>
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, project =>
             {
                 return projectMetricsService.GetMultiItemForecastPredictabilityScoreForProject(project, startDate, endDate);
             });
         }
 
         [HttpGet("totalWorkItemAge")]
-        public ActionResult<int> GetTotalWorkItemAge(int projectId)
+        public ActionResult<int> GetTotalWorkItemAge(int portfolioId)
         {
-            return this.GetEntityByIdAnExecuteAction(projectRepository, projectId, projectMetricsService.GetTotalWorkItemAge);
+            return this.GetEntityByIdAnExecuteAction(projectRepository, portfolioId, projectMetricsService.GetTotalWorkItemAge);
         }
     }
 }

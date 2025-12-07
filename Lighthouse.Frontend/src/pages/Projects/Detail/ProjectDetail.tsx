@@ -112,7 +112,7 @@ const ProjectDetail: React.FC = () => {
 	) => {
 		setActiveView(newView);
 		const tabPath = newView === "forecast" ? "forecasts" : newView;
-		navigate(`/projects/${id}/${tabPath}`, { replace: true });
+		navigate(`/portfolios/${id}/${tabPath}`, { replace: true });
 	};
 
 	useEffect(() => {
