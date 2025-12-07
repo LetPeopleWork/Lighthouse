@@ -378,7 +378,7 @@ describe("DataOverviewTable", () => {
 			const cloneButtons = screen.getAllByLabelText("Clone");
 			fireEvent.click(cloneButtons[0]);
 
-			expect(mockNavigate).toHaveBeenCalledWith("/projects/new?cloneFrom=1");
+			expect(mockNavigate).toHaveBeenCalledWith("/portfolios/new?cloneFrom=1");
 		});
 
 		it("filters items by partial tag match", () => {
