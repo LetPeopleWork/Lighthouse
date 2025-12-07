@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private async Task SetupProjects(int numberOfProjects)
         {
-            var projectRepository = ServiceProvider.GetService<IRepository<Project>>();
+            var projectRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
 
             var workTrackingSystemConnection = new WorkTrackingSystemConnection
             {
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.API
 
             for (int i = 0; i < numberOfProjects; i++)
             {
-                var project = new Project
+                var project = new Portfolio
                 {
                     Name = $"Project {i + 1}",
                     WorkTrackingSystemConnection = workTrackingSystemConnection

@@ -47,9 +47,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             teamRepository.Add(team);
             await teamRepository.Save();
 
-            var project = new Project { Name = "MyProject", WorkTrackingSystemConnection = workTrackingSystemConnection };
+            var project = new Portfolio { Name = "MyProject", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
-            var projectRepository = ServiceProvider.GetService<IRepository<Project>>();
+            var projectRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
             projectRepository.Add(project);            
 
             await projectRepository.Save();
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Order = "12",
             };
 
-            feature.Projects.Add(project);
+            feature.Portfolios.Add(project);
 
             feature.FeatureWork.Add(new FeatureWork(team, 12, 12, feature));
             project.Features.Add(feature);
@@ -90,14 +90,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             teamRepository.Add(team);
             await teamRepository.Save();
 
-            var project = new Project { Name = "MyProject", WorkTrackingSystemConnection = workTrackingSystemConnection, };
+            var project = new Portfolio { Name = "MyProject", WorkTrackingSystemConnection = workTrackingSystemConnection, };
 
-            var milestone1 = new Milestone { Name = "Milestone", Date = DateTime.Now.AddDays(12), Project = project };
-            var milestone2 = new Milestone { Name = "Milestone2", Date = DateTime.Now.AddDays(42), Project = project };
+            var milestone1 = new Milestone { Name = "Milestone", Date = DateTime.Now.AddDays(12), Portfolio = project };
+            var milestone2 = new Milestone { Name = "Milestone2", Date = DateTime.Now.AddDays(42), Portfolio = project };
             project.Milestones.Add(milestone1);
             project.Milestones.Add(milestone2);
 
-            var projectRepository = ServiceProvider.GetService<IRepository<Project>>();
+            var projectRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
             projectRepository.Add(project);
 
             await projectRepository.Save();
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Order = "12",
             };
 
-            feature.Projects.Add(project);
+            feature.Portfolios.Add(project);
 
             feature.FeatureWork.Add(new FeatureWork(team, 12, 12, feature));
             project.Features.Add(feature);
@@ -143,9 +143,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             teamRepository.Add(team2);
             await teamRepository.Save();
 
-            var project = new Project { Name = "MyProject", WorkTrackingSystemConnection = workTrackingSystemConnection };
+            var project = new Portfolio { Name = "MyProject", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
-            var projectRepository = ServiceProvider.GetService<IRepository<Project>>();
+            var projectRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
             projectRepository.Add(project);
 
             await projectRepository.Save();
@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Order = "12",
             };
 
-            feature.Projects.Add(project);
+            feature.Portfolios.Add(project);
 
             feature.FeatureWork.Add(new FeatureWork(team1, 12, 21, feature));
             feature.FeatureWork.Add(new FeatureWork(team2, 7, 42, feature));

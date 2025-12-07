@@ -16,11 +16,11 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemRepositoryMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
-        private Mock<IRepository<Project>> projectRepositoryMock;
+        private Mock<IRepository<Portfolio>> projectRepositoryMock;
 
         private readonly List<WorkTrackingSystemConnection> workTrackingSystems = new List<WorkTrackingSystemConnection>();
         private readonly List<Team> teams = new List<Team>();
-        private readonly List<Project> projects = new List<Project>();
+        private readonly List<Portfolio> projects = new List<Portfolio>();
 
         private readonly JsonSerializerOptions deserializeOptions = new JsonSerializerOptions
         {
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             workTrackingSystemRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             teamRepositoryMock = new Mock<IRepository<Team>>();
-            projectRepositoryMock = new Mock<IRepository<Project>>();
+            projectRepositoryMock = new Mock<IRepository<Portfolio>>();
 
             workTrackingSystems.Clear();
             workTrackingSystemRepositoryMock.Setup(x => x.GetAll()).Returns(workTrackingSystems);
@@ -50,8 +50,8 @@ namespace Lighthouse.Backend.Tests.API
 
             projects.Clear();
             projectRepositoryMock.Setup(x => x.GetAll()).Returns(projects);
-            projectRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Project, bool>>>()))
-                .Returns((Expression<Func<Project, bool>> predicate) => projects.Where(predicate.Compile()).AsQueryable());
+            projectRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                .Returns((Expression<Func<Portfolio, bool>> predicate) => projects.Where(predicate.Compile()).AsQueryable());
         }
 
         [Test]
@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.API
             };
             teams.Add(team);
 
-            var project = new Project
+            var project = new Portfolio
             {
                 Id = 1,
                 Name = "Project A",
@@ -313,7 +313,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
             teams.Add(team);
 
-            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
             projects.Add(project);
 
             await subject.DeleteConfiguration();
@@ -336,7 +336,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
 
-            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
             project.Teams.Add(team);
 
             var subject = CreateSubject();
@@ -382,7 +382,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = 0 };
             teams.Add(team);
 
-            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 0 };
+            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 0 };
             project.Teams.Add(team);
             projects.Add(project);
 
@@ -501,7 +501,7 @@ namespace Lighthouse.Backend.Tests.API
             var workTrackingSystem = AddWorkTrackingSystemConnection();
             workTrackingSystems.Clear();
 
-            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 1337 };
+            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = 1337 };
             projects.Add(project);
 
             var subject = CreateSubject();
@@ -541,7 +541,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var team = new Team { Id = 1, Name = "Test Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
 
-            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
             project.Teams.Add(team);
             projects.Add(project);
 
@@ -580,7 +580,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var team2 = new Team { Id = 2, Name = "Another Team", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
 
-            var project = new Project { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
+            var project = new Portfolio { Id = 1, Name = "Test Project", WorkTrackingSystemConnectionId = workTrackingSystem.Id };
             project.Teams.Add(team);
             project.OwningTeam = team2;
 

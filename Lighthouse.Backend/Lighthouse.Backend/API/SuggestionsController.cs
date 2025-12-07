@@ -11,9 +11,9 @@ namespace Lighthouse.Backend.API
     {
         private readonly ILogger<SuggestionsController> logger;
         private readonly IRepository<Team> teamRepository;
-        private readonly IRepository<Project> projectRepository;
+        private readonly IRepository<Portfolio> projectRepository;
 
-        public SuggestionsController(ILogger<SuggestionsController> logger, IRepository<Team> teamRepository, IRepository<Project> projectRepository)
+        public SuggestionsController(ILogger<SuggestionsController> logger, IRepository<Team> teamRepository, IRepository<Portfolio> projectRepository)
         {
             this.logger = logger;
             this.teamRepository = teamRepository;

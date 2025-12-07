@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private readonly List<DemoDataScenario> scenarios = new List<DemoDataScenario>();
 
-        private readonly IRepository<Project> projectRepository;
+        private readonly IRepository<Portfolio> projectRepository;
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo;
         private readonly IDemoDataFactory demoDataFactory;
@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly Dictionary<string, List<Milestone>> milestones = new Dictionary<string, List<Milestone>>();
 
         public DemoDataService(
-            IRepository<Project> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDemoDataFactory demoDataFactory)
+            IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDemoDataFactory demoDataFactory)
         {
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
@@ -79,15 +79,15 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private void AddMilestonesToProject(Project project)
+        private void AddMilestonesToProject(Portfolio project)
         {
             if (milestones.ContainsKey(project.Name))
             {
                 var milestonesForProject = milestones[project.Name];
                 foreach (var milestone in milestonesForProject)
                 {
-                    milestone.Project = project;
-                    milestone.ProjectId = project.Id;
+                    milestone.Portfolio = project;
+                    milestone.PortfolioId = project.Id;
                     project.Milestones.Add(milestone);
                 }
             }

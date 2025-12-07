@@ -545,7 +545,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             return team;
         }
 
-        private Project CreateProject(params Feature[] features)
+        private Portfolio CreateProject(params Feature[] features)
         {
             var project = CreateProject(DateTime.UtcNow, features);
             project.Teams.AddRange(features.SelectMany(f => f.Teams).Distinct());
@@ -553,9 +553,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             return project;
         }
 
-        private Project CreateProject(DateTime lastUpdatedTime, params Feature[] features)
+        private Portfolio CreateProject(DateTime lastUpdatedTime, params Feature[] features)
         {
-            var project = new Project
+            var project = new Portfolio
             {
                 Name = "Project",
                 Id = idCounter++,

@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return workItems;
         }
 
-        public async Task<List<Feature>> GetFeaturesForProject(Project project)
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return await CreateFeaturesFromIssues(project, issues);
         }
 
-        public async Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds)
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", parentFeatureIds));
 
@@ -166,7 +166,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        public async Task<bool> ValidateProjectSettings(Project project)
+        public async Task<bool> ValidateProjectSettings(Portfolio project)
         {
             try
             {
@@ -187,7 +187,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private async Task<List<Feature>> CreateFeaturesFromIssues(Project project, IEnumerable<Issue> issues)
+        private async Task<List<Feature>> CreateFeaturesFromIssues(Portfolio project, IEnumerable<Issue> issues)
         {
             var features = new List<Feature>();
             foreach (var issue in issues)
@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return features;
         }
 
-        private async Task<int> GetEstimatedSizeForItem(string referenceId, Project project)
+        private async Task<int> GetEstimatedSizeForItem(string referenceId, Portfolio project)
         {
             if (string.IsNullOrEmpty(project.SizeEstimateField))
             {
@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return 0;
         }
 
-        private async Task<string> GetFeatureOwnerByField(string referenceId, Project project)
+        private async Task<string> GetFeatureOwnerByField(string referenceId, Portfolio project)
         {
             if (string.IsNullOrEmpty(project.FeatureOwnerField))
             {
@@ -234,7 +234,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return await GetFieldValue(referenceId, project, project.FeatureOwnerField);
         }
 
-        private async Task<string> GetFieldValue(string referenceId, Project project, string fieldName)
+        private async Task<string> GetFieldValue(string referenceId, Portfolio project, string fieldName)
         {
             try
             {

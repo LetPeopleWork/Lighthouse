@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             projectMetricsServiceMock = new Mock<IProjectMetricsService>();
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
 
             workItems = new List<WorkItem>();
 
@@ -416,7 +416,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var project = CreateProject(team1, team2);
 
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Project>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(It.IsAny<Portfolio>())).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForProject(project);
@@ -968,14 +968,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             return team;
         }
 
-        private Project CreateProject(params Team[] teams)
+        private Portfolio CreateProject(params Team[] teams)
         {
             return CreateProject(DateTime.Now, teams);
         }
 
-        private Project CreateProject(DateTime lastUpdateTime, params Team[] teams)
+        private Portfolio CreateProject(DateTime lastUpdateTime, params Team[] teams)
         {
-            var project = new Project
+            var project = new Portfolio
             {
                 Id = idCounter++,
                 Name = "Release 1",
@@ -986,7 +986,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             foreach (var team in teams)
             {
-                team.Projects.Add(project);
+                team.Portfolios.Add(project);
             }
 
             var workTrackingConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };

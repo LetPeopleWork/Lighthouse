@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             });
         }
 
-        public async Task<List<Feature>> GetFeaturesForProject(Project project)
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.WorkItemQuery);
 
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return features;
         }
 
-        public async Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds)
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             logger.LogInformation("Getting Parent Features with IDs {ParentFeatureIds} for Project {ProjectName}", string.Join(", ", parentFeatureIds), project.Name);
 
@@ -177,7 +177,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        public async Task<bool> ValidateProjectSettings(Project project)
+        public async Task<bool> ValidateProjectSettings(Portfolio project)
         {
             try
             {
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        private async Task<List<Feature>> GetFeaturesForProjectByQuery(Project project, string query)
+        private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio project, string query)
         {
             var adoWorkItems = await FetchAdoWorkItemsByQuery(project, query, project.SizeEstimateField ?? string.Empty, project.FeatureOwnerField ?? string.Empty, project.ParentOverrideField ?? string.Empty);
 

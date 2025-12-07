@@ -183,7 +183,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task ValidateProject_ChecksIfValidCsv(string csvFileName, bool expectedResult)
         {
             var subject = CreateSubject();
-            var project = new Project
+            var project = new Portfolio
             {
                 WorkItemQuery = LoadCsvFile(csvFileName),
                 WorkTrackingSystemConnection = CreateCsvWorkTrackingConnection(),
@@ -397,9 +397,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return team;
         }
 
-        private Project CreateProject(string csvFile)
+        private Portfolio CreateProject(string csvFile)
         {
-            var project = new Project
+            var project = new Portfolio
             {
                 Id = 1886,
                 WorkItemQuery = LoadCsvFile(csvFile),

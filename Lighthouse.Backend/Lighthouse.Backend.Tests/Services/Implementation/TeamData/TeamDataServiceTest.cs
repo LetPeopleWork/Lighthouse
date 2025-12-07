@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         public async Task ExecuteAsync_TeamPartOfProject_TriggersForecastForProject()
         {
             var team = CreateTeam(DateTime.Now.AddDays(-1));
-            team.Projects.Add(new Project { Id = 1, Name = "Project" });
+            team.Portfolios.Add(new Portfolio { Id = 1, Name = "Project" });
 
 
             var subject = CreateSubject();
@@ -56,8 +56,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         public async Task ExecuteAsync_TeamPartOfMultipleProjects_TriggersForecastForEachProject()
         {
             var team = CreateTeam(DateTime.Now.AddDays(-1));
-            team.Projects.Add(new Project { Id = 1, Name = "Project" });
-            team.Projects.Add(new Project { Id = 2, Name = "Project" });
+            team.Portfolios.Add(new Portfolio { Id = 1, Name = "Project" });
+            team.Portfolios.Add(new Portfolio { Id = 2, Name = "Project" });
 
 
             var subject = CreateSubject();

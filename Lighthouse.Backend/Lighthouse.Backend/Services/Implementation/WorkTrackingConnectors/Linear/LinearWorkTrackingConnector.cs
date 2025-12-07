@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
-        public async Task<List<Feature>> GetFeaturesForProject(Project project)
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
             logger.LogInformation("Getting Features for Project {ProjectName}", project.Name);
 
@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
-        public Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds)
+        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             logger.LogInformation("Getting Parent Feature is not supported in Linear Work Tracking Connector.");
 
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
-        public async Task<bool> ValidateProjectSettings(Project project)
+        public async Task<bool> ValidateProjectSettings(Portfolio project)
         {
             try
             {
@@ -301,7 +301,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return issues.Where(i => types.Contains(i.LastAppliedTemplate.Name) && states.Contains(i.State.Name)).ToList();
         }
 
-        private async Task<List<IssueNode>> GetIssuesForProject(Project project)
+        private async Task<List<IssueNode>> GetIssuesForProject(Portfolio project)
         {
             var projectNode = await GetProjectByName(project.WorkTrackingSystemConnection, project.WorkItemQuery);
 

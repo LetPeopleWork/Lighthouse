@@ -12,14 +12,14 @@ namespace Lighthouse.Backend.Tests.MCP
 {
     public class LighthouseProjectToolsTest : LighthosueToolsBaseTest
     {
-        private Mock<IRepository<Project>> projectRepositoryMock;
+        private Mock<IRepository<Portfolio>> projectRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IProjectMetricsService> projectMetricsServiceMock;
 
         [SetUp]
         public void Setup()
         {
-            projectRepositoryMock = new Mock<IRepository<Project>>();
+            projectRepositoryMock = new Mock<IRepository<Portfolio>>();
             forecastServiceMock = new Mock<IForecastService>();
             projectMetricsServiceMock = new Mock<IProjectMetricsService>();
             SetupServiceProviderMock(projectRepositoryMock.Object);
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.MCP
         {
             var project = CreateProject();
 
-            projectRepositoryMock.Setup(x => x.GetAll()).Returns(new List<Project> { project });
+            projectRepositoryMock.Setup(x => x.GetAll()).Returns(new List<Portfolio> { project });
 
             var subject = CreateSubject();
             var result = subject.GetAllProjects();
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.MCP
         {
             var project = CreateProject();
 
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(1)).Returns(project);
 
             var subject = CreateSubject();
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.MCP
         [Test]
         public void GetProjectByName_WithNonExistingProject_ReturnsNotFoundMessage()
         {
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns((Project?)null);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns((Portfolio?)null);
 
             var subject = CreateSubject();
             var result = subject.GetProjectByName("NonExistentProject");
@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Tests.MCP
         {
             var project = CreateProjectWithFeatures();
 
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(1)).Returns(project);
 
             var subject = CreateSubject();
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.MCP
         {
             var project = CreateProjectWithTeams();
 
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(1)).Returns(project);
 
             var subject = CreateSubject();
@@ -149,16 +149,16 @@ namespace Lighthouse.Backend.Tests.MCP
             return new LighthouseProjectTools(ServiceScopeFactory);
         }
 
-        private Project CreateProject()
+        private Portfolio CreateProject()
         {
-            return new Project
+            return new Portfolio
             {
                 Id = 1,
                 Name = "Test Project"
             };
         }
 
-        private Project CreateProjectWithFeatures()
+        private Portfolio CreateProjectWithFeatures()
         {
             var project = CreateProject();
             var feature = new Feature
@@ -175,7 +175,7 @@ namespace Lighthouse.Backend.Tests.MCP
             return project;
         }
 
-        private Project CreateProjectWithTeams()
+        private Portfolio CreateProjectWithTeams()
         {
             var project = CreateProject();
             var team = new Team
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Tests.MCP
             return project;
         }
 
-        private Project CreateProjectWithFeaturesAndForecasts()
+        private Portfolio CreateProjectWithFeaturesAndForecasts()
         {
             var project = CreateProject();
             
@@ -236,7 +236,7 @@ namespace Lighthouse.Backend.Tests.MCP
             return feature;
         }
 
-        private Project CreateProjectWithMilestones()
+        private Portfolio CreateProjectWithMilestones()
         {
             var project = CreateProjectWithFeaturesAndForecasts();
             
@@ -264,7 +264,7 @@ namespace Lighthouse.Backend.Tests.MCP
         [Test]
         public void RunProjectWhenForecast_ProjectDoesNotExist_ReturnsErrorMessage()
         {
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns((Project?)null);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns((Portfolio?)null);
 
             var subject = CreateSubject();
             var result = subject.RunProjectWhenForecast("NonExistentProject");
@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.MCP
         public void RunProjectWhenForecast_ProjectHasNoFeatures_ReturnsNoFeaturesMessage()
         {
             var project = CreateProject();
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
 
             var subject = CreateSubject();
@@ -305,7 +305,7 @@ namespace Lighthouse.Backend.Tests.MCP
             completedFeature.FeatureWork.Add(featureWork);
             project.Features.Add(completedFeature);
             
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
 
             var subject = CreateSubject();
@@ -327,7 +327,7 @@ namespace Lighthouse.Backend.Tests.MCP
         public void RunProjectWhenForecast_WithValidProject_ReturnsCriticalPathAnalysis()
         {
             var project = CreateProjectWithFeaturesAndForecasts();
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
 
             var subject = CreateSubject();
@@ -367,7 +367,7 @@ namespace Lighthouse.Backend.Tests.MCP
         [Test]
         public void GetProjectMilestones_ProjectDoesNotExist_ReturnsErrorMessage()
         {
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns((Project?)null);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns((Portfolio?)null);
 
             var subject = CreateSubject();
             var result = subject.GetProjectMilestones("NonExistentProject");
@@ -379,7 +379,7 @@ namespace Lighthouse.Backend.Tests.MCP
         public void GetProjectMilestones_ProjectHasNoMilestones_ReturnsNoMilestonesMessage()
         {
             var project = CreateProject();
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
 
             var subject = CreateSubject();
@@ -392,7 +392,7 @@ namespace Lighthouse.Backend.Tests.MCP
         public void GetProjectMilestones_WithValidProject_ReturnsMilestoneAnalysis()
         {
             var project = CreateProjectWithMilestones();
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
 
             var subject = CreateSubject();
@@ -446,7 +446,7 @@ namespace Lighthouse.Backend.Tests.MCP
             };
             project.Milestones.Add(pastMilestone);
             
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
 
             var subject = CreateSubject();
@@ -500,7 +500,7 @@ namespace Lighthouse.Backend.Tests.MCP
                 { 30, new List<WorkItemBase> { new WorkItem(), new WorkItem(), new WorkItem() } }
             });
 
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
             
             projectMetricsServiceMock.Setup(x => x.GetCycleTimePercentilesForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -560,7 +560,7 @@ namespace Lighthouse.Backend.Tests.MCP
         public void GetProjectFlowMetrics_WithNonExistingProject_ReturnsNotFoundMessage()
         {
             // Arrange
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns((Project?)null);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns((Portfolio?)null);
 
             var subject = CreateSubject();
 
@@ -577,7 +577,7 @@ namespace Lighthouse.Backend.Tests.MCP
             // Arrange
             var project = CreateProjectWithTeamsAndFeatures();
 
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Project, bool>>())).Returns(project);
+            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
             
             projectMetricsServiceMock.Setup(x => x.GetCycleTimePercentilesForProject(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -617,7 +617,7 @@ namespace Lighthouse.Backend.Tests.MCP
                 Times.Once);
         }
 
-        private Project CreateProjectWithTeamsAndFeatures()
+        private Portfolio CreateProjectWithTeamsAndFeatures()
         {
             var project = CreateProject();
             

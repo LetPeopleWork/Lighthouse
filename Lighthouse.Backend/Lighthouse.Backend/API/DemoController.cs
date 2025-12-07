@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Models;
+﻿﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DemoData;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
@@ -15,11 +15,11 @@ namespace Lighthouse.Backend.API
         private readonly IDemoDataService demoDataService;
         private readonly IRepository<Team> teamRepo;
         private readonly ITeamUpdater teamUpdater;
-        private readonly IRepository<Project> projectRepo;
+        private readonly IRepository<Portfolio> projectRepo;
         private readonly IProjectUpdater projectUpdater;
 
         public DemoController(
-            IDemoDataService demoDataService, IRepository<Team> teamRepo, ITeamUpdater teamUpdater, IRepository<Project> projectRepo, IProjectUpdater projectUpdater)
+            IDemoDataService demoDataService, IRepository<Team> teamRepo, ITeamUpdater teamUpdater, IRepository<Portfolio> projectRepo, IProjectUpdater projectUpdater)
         {
             this.demoDataService = demoDataService;
             this.teamRepo = teamRepo;

@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return Context.Teams
                 .Include(x => x.WorkTrackingSystemConnection)
                     .ThenInclude(wtsc => wtsc.Options)
-                .Include(x => x.Projects)
+                .Include(x => x.Portfolios)
                     .ThenInclude(p => p.Features)
                         .ThenInclude(f => f.FeatureWork)
                             .ThenInclude(rw => rw.Team);

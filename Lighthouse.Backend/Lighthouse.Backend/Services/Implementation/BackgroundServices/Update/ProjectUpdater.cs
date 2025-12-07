@@ -9,7 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkItems;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
-    public class ProjectUpdater : UpdateServiceBase<Project>, IProjectUpdater
+    public class ProjectUpdater : UpdateServiceBase<Portfolio>, IProjectUpdater
     {
         public ProjectUpdater(
             ILogger<ProjectUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
         }
 
-        protected override bool ShouldUpdateEntity(Project entity, RefreshSettings refreshSettings)
+        protected override bool ShouldUpdateEntity(Portfolio entity, RefreshSettings refreshSettings)
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - entity.UpdateTime).TotalMinutes;
 
@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
-            var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
+            var projectRepository = serviceProvider.GetRequiredService<IRepository<Portfolio>>();
 
             var licenseService = serviceProvider.GetRequiredService<ILicenseService>();
             var projectCount = projectRepository.GetAll().Count();

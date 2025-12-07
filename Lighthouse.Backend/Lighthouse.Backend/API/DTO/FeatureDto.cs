@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.API.DTO
                 TotalWork[work.TeamId] += work.TotalWorkItems;
             }
 
-            foreach (var project in feature.Projects)
+            foreach (var project in feature.Portfolios)
             {
                 Projects.Add(new EntityReferenceDto(project.Id, project.Name));
 

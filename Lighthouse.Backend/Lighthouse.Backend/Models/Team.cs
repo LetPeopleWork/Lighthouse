@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Models
+﻿﻿namespace Lighthouse.Backend.Models
 {
     public class Team : WorkTrackingSystemOptionsOwner
     {
@@ -16,7 +16,7 @@
 
         public int ThroughputHistory { get; set; } = 30;
 
-        public List<Project> Projects { get; } = [];
+        public List<Portfolio> Portfolios { get; } = [];
 
         public List<WorkItem> WorkItems { get; } = [];
 

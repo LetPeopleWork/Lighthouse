@@ -52,8 +52,8 @@ namespace Lighthouse.Backend.Tests.Models
         public void IsBlocked_TeamHasBlockedStates_ReturnsTrueIfItemIsInBlockedState(string itemState, string[] blockedStates, bool expectedResult)
         {
             var item = CreateSubject();
-            item.Projects.Add(
-                new Project
+            item.Portfolios.Add(
+                new Portfolio
                 {
                     BlockedStates = [.. blockedStates]
                 });
@@ -71,8 +71,8 @@ namespace Lighthouse.Backend.Tests.Models
         public void IsBlocked_TeamHasBlockedTags_ReturnsTrueIfItemHasBlockedTag(string[] itemTags, string[] blockedTags, bool expectedResult)
         {
             var item = CreateSubject();
-            item.Projects.Add(
-                new Project
+            item.Portfolios.Add(
+                new Portfolio
                 {
                     BlockedTags = [.. blockedTags]
                 });
@@ -92,8 +92,8 @@ namespace Lighthouse.Backend.Tests.Models
         {
 
             var item = CreateSubject();
-            item.Projects.Add(
-                new Project
+            item.Portfolios.Add(
+                new Portfolio
                 {
                     BlockedStates = [.. blockedStates],
                     BlockedTags = [.. blockedTags]

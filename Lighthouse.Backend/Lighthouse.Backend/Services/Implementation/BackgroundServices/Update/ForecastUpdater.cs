@@ -6,7 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
-    public class ForecastUpdater : UpdateServiceBase<Project>, IForecastUpdater
+    public class ForecastUpdater : UpdateServiceBase<Portfolio>, IForecastUpdater
     {
         public ForecastUpdater(
             ILogger<ForecastUpdater> logger, IServiceScopeFactory serviceScopeFactory, IUpdateQueueService updateQueueService)
@@ -19,14 +19,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
         }
 
-        protected override bool ShouldUpdateEntity(Project entity, RefreshSettings refreshSettings)
+        protected override bool ShouldUpdateEntity(Portfolio entity, RefreshSettings refreshSettings)
         {
             throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
         }
 
         protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
-            var projectRepository = serviceProvider.GetRequiredService<IRepository<Project>>();
+            var projectRepository = serviceProvider.GetRequiredService<IRepository<Portfolio>>();
 
             var project = projectRepository.GetById(id);
             if (project == null)

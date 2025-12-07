@@ -345,11 +345,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return team;
         }
 
-        private Project CreateProject()
+        private Portfolio CreateProject()
         {
             var connection = CreateConnection();
 
-            var project = new Project
+            var project = new Portfolio
             {
                 Name = "Test Project",
                 WorkItemQuery = "My Demo Project",

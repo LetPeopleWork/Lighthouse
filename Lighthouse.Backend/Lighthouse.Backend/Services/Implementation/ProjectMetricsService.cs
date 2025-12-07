@@ -24,12 +24,12 @@ namespace Lighthouse.Backend.Services.Implementation
             this.featureRepository = featureRepository;
         }
 
-        public RunChartData GetThroughputForProject(Project project, DateTime startDate, DateTime endDate)
+        public RunChartData GetThroughputForProject(Portfolio project, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Throughput for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
 
             var projectFeatures = featureRepository.GetAllByPredicate(f =>
-                f.Projects.Any(p => p.Id == project.Id) &&
+                f.Portfolios.Any(p => p.Id == project.Id) &&
                 f.StateCategory == StateCategories.Done);
 
             var throughputByDay = GenerateThroughputRunChart(
@@ -42,12 +42,12 @@ namespace Lighthouse.Backend.Services.Implementation
             return new RunChartData(throughputByDay);
         }
 
-        public RunChartData GetFeaturesInProgressOverTimeForProject(Project project, DateTime startDate, DateTime endDate)
+        public RunChartData GetFeaturesInProgressOverTimeForProject(Portfolio project, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Features In Progress Over Time for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
 
             var features = featureRepository.GetAllByPredicate(f =>
-                    f.Projects.Any(p => p.Id == project.Id) &&
+                    f.Portfolios.Any(p => p.Id == project.Id) &&
                     (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
                 .ToList();
 
@@ -61,11 +61,11 @@ namespace Lighthouse.Backend.Services.Implementation
             return new RunChartData(wipOverTime);
         }
 
-        public RunChartData GetStartedItemsForProject(Project project, DateTime startDate, DateTime endDate)
+        public RunChartData GetStartedItemsForProject(Portfolio project, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Started Items for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
 
-            var startedItems = featureRepository.GetAllByPredicate(f => f.Projects.Any(p => p.Id == project.Id) && (f.StateCategory == StateCategories.Done || f.StateCategory == StateCategories.Doing));
+            var startedItems = featureRepository.GetAllByPredicate(f => f.Portfolios.Any(p => p.Id == project.Id) && (f.StateCategory == StateCategories.Done || f.StateCategory == StateCategories.Doing));
             var startedItemsByDay = GenerateStartedRunChart(startDate, endDate, startedItems);
 
             var throughput = new RunChartData(startedItemsByDay);
@@ -73,20 +73,20 @@ namespace Lighthouse.Backend.Services.Implementation
             return throughput;
         }
 
-        public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForProject(Project project, DateTime startDate, DateTime endDate)
+        public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForProject(Portfolio project, DateTime startDate, DateTime endDate)
         {
             var throughput = GetThroughputForProject(project, startDate, endDate);
             return GetMultiItemForecastPredictabilityScore(throughput, startDate, endDate);
         }
 
-        public IEnumerable<Feature> GetInProgressFeaturesForProject(Project project)
+        public IEnumerable<Feature> GetInProgressFeaturesForProject(Portfolio project)
         {
             logger.LogDebug("Getting In Progress Features for Project {ProjectName}", project.Name);
 
-            return GetFromCacheIfExists<IEnumerable<Feature>, Project>(project, inProgressFeaturesMetricIdentifier, () =>
+            return GetFromCacheIfExists<IEnumerable<Feature>, Portfolio>(project, inProgressFeaturesMetricIdentifier, () =>
             {
                 var features = featureRepository.GetAllByPredicate(f =>
-                    f.Projects.Any(p => p.Id == project.Id) &&
+                    f.Portfolios.Any(p => p.Id == project.Id) &&
                     f.StateCategory == StateCategories.Doing)
                     .ToList();
 
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public IEnumerable<PercentileValue> GetCycleTimePercentilesForProject(Project project, DateTime startDate, DateTime endDate)
+        public IEnumerable<PercentileValue> GetCycleTimePercentilesForProject(Portfolio project, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Percentiles for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
 
@@ -116,14 +116,14 @@ namespace Lighthouse.Backend.Services.Implementation
             ];
         }
 
-        public IEnumerable<Feature> GetCycleTimeDataForProject(Project project, DateTime startDate, DateTime endDate)
+        public IEnumerable<Feature> GetCycleTimeDataForProject(Portfolio project, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Data for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
 
             return GetFeaturesClosedInDateRange(project, startDate, endDate).ToList();
         }
 
-        public IEnumerable<PercentileValue> GetSizePercentilesForProject(Project project, DateTime startDate, DateTime endDate)
+        public IEnumerable<PercentileValue> GetSizePercentilesForProject(Portfolio project, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Size Percentiles for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
 
@@ -144,12 +144,12 @@ namespace Lighthouse.Backend.Services.Implementation
             ];
         }
 
-        public IEnumerable<Feature> GetAllFeaturesForSizeChart(Project project, DateTime startDate, DateTime endDate)
+        public IEnumerable<Feature> GetAllFeaturesForSizeChart(Portfolio project, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting All Features For Size Chart for Project {ProjectName} between {StartDate} and {EndDate}", project.Name, startDate.Date, endDate.Date);
 
             var allFeatures = featureRepository.GetAllByPredicate(f =>
-                    f.Projects.Any(p => p.Id == project.Id) &&
+                    f.Portfolios.Any(p => p.Id == project.Id) &&
                     (f.StateCategory == StateCategories.Done || 
                      f.StateCategory == StateCategories.ToDo || 
                      f.StateCategory == StateCategories.Doing))
@@ -166,12 +166,12 @@ namespace Lighthouse.Backend.Services.Implementation
             ).ToList();
         }
 
-        public int GetTotalWorkItemAge(Project project)
+        public int GetTotalWorkItemAge(Portfolio project)
         {
             logger.LogDebug("Getting Total Work Item Age for Project {ProjectName}", project.Name);
 
             var inProgressFeatures = featureRepository.GetAllByPredicate(f =>
-                f.Projects.Any(p => p.Id == project.Id) &&
+                f.Portfolios.Any(p => p.Id == project.Id) &&
                 f.StateCategory == StateCategories.Doing);
 
             var totalAge = inProgressFeatures.Sum(feature => feature.WorkItemAge);
@@ -181,15 +181,15 @@ namespace Lighthouse.Backend.Services.Implementation
             return totalAge;
         }
 
-        public void InvalidateProjectMetrics(Project project)
+        public void InvalidateProjectMetrics(Portfolio project)
         {
             InvalidateMetrics(project, logger);
         }
 
-        private IEnumerable<Feature> GetFeaturesClosedInDateRange(Project project, DateTime startDate, DateTime endDate)
+        private IEnumerable<Feature> GetFeaturesClosedInDateRange(Portfolio project, DateTime startDate, DateTime endDate)
         {
             var closedFeaturesOfProject = featureRepository.GetAllByPredicate(f =>
-                    f.Projects.Any(p => p.Id == project.Id) &&
+                    f.Portfolios.Any(p => p.Id == project.Id) &&
                     f.StateCategory == StateCategories.Done)    
                 .ToList();
 

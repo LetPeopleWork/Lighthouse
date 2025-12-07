@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return fakeFeature.Forecast;
         }
 
-        public async Task UpdateForecastsForProject(Project project)
+        public async Task UpdateForecastsForProject(Portfolio project)
         {
             await UpdateForecastsForTeams(project.Teams);
         }

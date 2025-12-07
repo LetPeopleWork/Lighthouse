@@ -15,21 +15,21 @@ namespace Lighthouse.Backend.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
 
-            modelBuilder.Entity("FeatureProject", b =>
+            modelBuilder.Entity("FeaturePortfolio", b =>
                 {
                     b.Property<int>("FeaturesId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ProjectsId")
+                    b.Property<int>("PortfoliosId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("FeaturesId", "ProjectsId");
+                    b.HasKey("FeaturesId", "PortfoliosId");
 
-                    b.HasIndex("ProjectsId");
+                    b.HasIndex("PortfoliosId");
 
-                    b.ToTable("FeatureProject");
+                    b.ToTable("FeaturePortfolio");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.AppSetting", b =>
@@ -244,12 +244,12 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ProjectId")
+                    b.Property<int>("PortfolioId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProjectId");
+                    b.HasIndex("PortfolioId");
 
                     b.ToTable("Milestone");
                 });
@@ -281,7 +281,7 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("OptionalFeatures");
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.Project", b =>
+            modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -375,7 +375,7 @@ namespace Lighthouse.Backend.Migrations
 
                     b.HasIndex("WorkTrackingSystemConnectionId");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Portfolios");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>
@@ -603,19 +603,19 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("WorkTrackingSystemConnectionOption");
                 });
 
-            modelBuilder.Entity("ProjectTeam", b =>
+            modelBuilder.Entity("PortfolioTeam", b =>
                 {
-                    b.Property<int>("ProjectsId")
+                    b.Property<int>("PortfoliosId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("TeamsId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ProjectsId", "TeamsId");
+                    b.HasKey("PortfoliosId", "TeamsId");
 
                     b.HasIndex("TeamsId");
 
-                    b.ToTable("ProjectTeam");
+                    b.ToTable("PortfolioTeam");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.WhenForecast", b =>
@@ -638,7 +638,7 @@ namespace Lighthouse.Backend.Migrations
                     b.HasDiscriminator().HasValue("WhenForecast");
                 });
 
-            modelBuilder.Entity("FeatureProject", b =>
+            modelBuilder.Entity("FeaturePortfolio", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Feature", null)
                         .WithMany()
@@ -646,9 +646,9 @@ namespace Lighthouse.Backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Lighthouse.Backend.Models.Project", null)
+                    b.HasOne("Lighthouse.Backend.Models.Portfolio", null)
                         .WithMany()
-                        .HasForeignKey("ProjectsId")
+                        .HasForeignKey("PortfoliosId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -685,16 +685,16 @@ namespace Lighthouse.Backend.Migrations
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Milestone", b =>
                 {
-                    b.HasOne("Lighthouse.Backend.Models.Project", "Project")
+                    b.HasOne("Lighthouse.Backend.Models.Portfolio", "Portfolio")
                         .WithMany("Milestones")
-                        .HasForeignKey("ProjectId")
+                        .HasForeignKey("PortfolioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Project");
+                    b.Navigation("Portfolio");
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.Project", b =>
+            modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Team", "OwningTeam")
                         .WithMany()
@@ -745,11 +745,11 @@ namespace Lighthouse.Backend.Migrations
                     b.Navigation("WorkTrackingSystemConnection");
                 });
 
-            modelBuilder.Entity("ProjectTeam", b =>
+            modelBuilder.Entity("PortfolioTeam", b =>
                 {
-                    b.HasOne("Lighthouse.Backend.Models.Project", null)
+                    b.HasOne("Lighthouse.Backend.Models.Portfolio", null)
                         .WithMany()
-                        .HasForeignKey("ProjectsId")
+                        .HasForeignKey("PortfoliosId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -789,7 +789,7 @@ namespace Lighthouse.Backend.Migrations
                     b.Navigation("SimulationResults");
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.Project", b =>
+            modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
                 {
                     b.Navigation("Milestones");
                 });

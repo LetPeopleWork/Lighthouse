@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             this.projectMetricsService = projectMetricsService;
         }
 
-        public async Task UpdateFeaturesForProject(Project project)        
+        public async Task UpdateFeaturesForProject(Portfolio project)        
         {
             logger.LogInformation("Updating Features for Project {ProjectName}", project.Name);
 
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await RefreshWorkItems(team);
 
-            foreach (var project in team.Projects)
+            foreach (var project in team.Portfolios)
             {
                 var unparentedFeature = await GetOrAddUnparentedFeature(project);
                 await UpdateUnparentedItemsForTeam(project, unparentedFeature, team);
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await workItemRepository.Save();
         }
 
-        private async Task UpdateRemainingWorkForProject(Project project)
+        private async Task UpdateRemainingWorkForProject(Portfolio project)
         {
             logger.LogInformation("Updating Remaining Work for Project {ProjectName}", project.Name);
             defaultWorkItemsBasedOnPercentile.Remove(project.Id);
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             logger.LogInformation("Done Updating Remaining Work for Project {ProjectName}", project.Name);
         }
 
-        private void RefreshRemainingWork(Project project)
+        private void RefreshRemainingWork(Portfolio project)
         {
             foreach (var feature in project.Features)
             {
@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private void ExtrapolateNotBrokenDownFeatures(Project project)
+        private void ExtrapolateNotBrokenDownFeatures(Portfolio project)
         {
             foreach (var feature in project.GetFeaturesToOverrideWithDefaultSize())
             {
@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private void AssignExtrapolatedWorkToTeams(Project project, Feature feature, int remainingWork)
+        private void AssignExtrapolatedWorkToTeams(Portfolio project, Feature feature, int remainingWork)
         {
             var owningTeams = project.Teams.ToList();
 
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private int GetExtrapolatedRemainingWork(Project project, Feature feature)
+        private int GetExtrapolatedRemainingWork(Portfolio project, Feature feature)
         {
             if (feature.EstimatedSize > 0)
             {
@@ -198,7 +198,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return GetDefaultRemainingWork(project);
         }
 
-        private int GetDefaultRemainingWork(Project project)
+        private int GetDefaultRemainingWork(Portfolio project)
         {
             if (defaultWorkItemsBasedOnPercentile.TryGetValue(project.Id, out var defaultItems))
             {
@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return buckets;
         }
 
-        private async Task UpdateUnparentedItems(Project project)
+        private async Task UpdateUnparentedItems(Portfolio project)
         {
             logger.LogInformation("Getting Unparented Items for Project {ProjectName}", project.Name);
 
@@ -274,7 +274,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private async Task UpdateUnparentedItemsForTeam(Project project, Feature unparentedFeature, Team team)
+        private async Task UpdateUnparentedItemsForTeam(Portfolio project, Feature unparentedFeature, Team team)
         {
             if (string.IsNullOrEmpty(project.UnparentedItemsQuery))
             {
@@ -293,7 +293,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await workItemRepository.Save();
         }
 
-        private void AssignParentToWorkItem(Project project, Feature unparentedFeature, Team team, WorkItem? workItem)
+        private void AssignParentToWorkItem(Portfolio project, Feature unparentedFeature, Team team, WorkItem? workItem)
         {
             if (workItem != null)
             {
@@ -321,11 +321,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return false;
         }
 
-        private async Task<Feature> GetOrAddUnparentedFeature(Project project)
+        private async Task<Feature> GetOrAddUnparentedFeature(Portfolio project)
         {
             var referenceId = Guid.NewGuid().ToString();
             var unparentedFeature = new Feature() { Name = $"{project.Name} - Unparented", ReferenceId = referenceId, IsUnparentedFeature = true, State = "In Progress" };
-            unparentedFeature.Projects.Add(project);
+            unparentedFeature.Portfolios.Add(project);
 
             var unparentedFeatureId = project.Features.Find(f => f.IsUnparentedFeature)?.Id;
 
@@ -354,7 +354,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return unparentedFeature;
         }
 
-        private async Task RefreshFeatures(Project project)
+        private async Task RefreshFeatures(Portfolio project)
         {
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
 
@@ -393,7 +393,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return featureFromDatabase;
         }
 
-        private async Task RefreshParentFeatures(Project project)
+        private async Task RefreshParentFeatures(Portfolio project)
         {
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
             var parentFeatureIds = project.Features.Where(f => !string.IsNullOrEmpty(f.ParentReferenceId)).Select(f => f.ParentReferenceId).Distinct().ToList();
@@ -416,12 +416,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await featureRepository.Save();
         }
 
-        private static void AddProjectToFeature(Feature feature, Project project)
+        private static void AddProjectToFeature(Feature feature, Portfolio project)
         {
-            var featureIsAddedToProject = feature.Projects.Exists(p => p.Id == project.Id);
+            var featureIsAddedToProject = feature.Portfolios.Exists(p => p.Id == project.Id);
             if (!featureIsAddedToProject)
             {
-                feature.Projects.Add(project);
+                feature.Portfolios.Add(project);
             }
         }
 

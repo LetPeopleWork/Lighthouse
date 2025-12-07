@@ -16,7 +16,7 @@ public class LicenseGuardAttributeTest
 {
     private Mock<ILicenseService> licenseServiceMock = null!;
     private Mock<IRepository<Team>> teamRepositoryMock = null!;
-    private Mock<IRepository<Project>> projectRepositoryMock = null!;
+    private Mock<IRepository<Portfolio>> projectRepositoryMock = null!;
     private AuthorizationFilterContext context = null!;
 
     [SetUp]
@@ -24,7 +24,7 @@ public class LicenseGuardAttributeTest
     {
         licenseServiceMock = new Mock<ILicenseService>();
         teamRepositoryMock = new Mock<IRepository<Team>>();
-        projectRepositoryMock = new Mock<IRepository<Project>>();
+        projectRepositoryMock = new Mock<IRepository<Portfolio>>();
 
         var services = new ServiceCollection();
         services.AddSingleton(licenseServiceMock.Object);
@@ -117,7 +117,7 @@ public class LicenseGuardAttributeTest
         using (Assert.EnterMultipleScope())
         {
             Assert.That(context.Result, Is.InstanceOf<ObjectResult>());
-            Assert.That(((ObjectResult)context.Result).Value?.ToString(), Does.Contain("Free users can only use up to 1 Project"));
+            Assert.That(((ObjectResult)context.Result).Value?.ToString(), Does.Contain("Free users can only use up to 1 Portfolio"));
             Assert.That(((ObjectResult)context.Result).StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
         }
     }
@@ -125,6 +125,6 @@ public class LicenseGuardAttributeTest
     private IQueryable<Team> GetTeams(int count) =>
         Enumerable.Range(1, count).Select(i => new Team { Id = i, Name = $"Team {i}" }).AsQueryable();
 
-    private IQueryable<Project> GetProjects(int count) =>
-        Enumerable.Range(1, count).Select(i => new Project { Id = i, Name = $"Project {i}" }).AsQueryable();
+    private IQueryable<Portfolio> GetProjects(int count) =>
+        Enumerable.Range(1, count).Select(i => new Portfolio { Id = i, Name = $"Project {i}" }).AsQueryable();
 }

@@ -11,19 +11,19 @@ namespace Lighthouse.Backend.Tests.API
     public class SuggestionsControllerTest
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
-        private Mock<IRepository<Project>> projectRepositoryMock;
+        private Mock<IRepository<Portfolio>> projectRepositoryMock;
 
         private List<Team> teams;
-        private List<Project> projects;
+        private List<Portfolio> projects;
 
         [SetUp]
         public void Setup()
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
-            projectRepositoryMock = new Mock<IRepository<Project>>();
+            projectRepositoryMock = new Mock<IRepository<Portfolio>>();
 
             teams = new List<Team>();
-            projects = new List<Project>();
+            projects = new List<Portfolio>();
 
             teamRepositoryMock.Setup(repo => repo.GetAll()).Returns(teams);
             projectRepositoryMock.Setup(repo => repo.GetAll()).Returns(projects);
@@ -573,9 +573,9 @@ namespace Lighthouse.Backend.Tests.API
             };
         }
 
-        private Project CreateProject(params string[] tags)
+        private Portfolio CreateProject(params string[] tags)
         {
-            var project = new Project
+            var project = new Portfolio
             {
                 Id = 1,
                 Name = "Test Project",

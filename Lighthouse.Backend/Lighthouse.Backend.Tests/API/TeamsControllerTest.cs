@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API
     public class TeamsControllerTest
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
-        private Mock<IRepository<Project>> projectRepositoryMock;
+        private Mock<IRepository<Portfolio>> projectRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
-            projectRepositoryMock = new Mock<IRepository<Project>>();
+            projectRepositoryMock = new Mock<IRepository<Portfolio>>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepoMock = new Mock<IWorkItemRepository>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
@@ -772,12 +772,12 @@ namespace Lighthouse.Backend.Tests.API
             return new Team { Id = id, Name = name };
         }
 
-        private Project CreateProject(int id, string name)
+        private Portfolio CreateProject(int id, string name)
         {
-            return new Project { Id = id, Name = name };
+            return new Portfolio { Id = id, Name = name };
         }
 
-        private static Feature CreateFeature(Project project, Team team, int remainingWork)
+        private static Feature CreateFeature(Portfolio project, Team team, int remainingWork)
         {
             var feature = new Feature(team, remainingWork);
             project.Features.Add(feature);
@@ -785,7 +785,7 @@ namespace Lighthouse.Backend.Tests.API
             return feature;
         }
 
-        private TeamsController CreateSubject(Team[]? teams = null, Project[]? projects = null, Feature[]? features = null)
+        private TeamsController CreateSubject(Team[]? teams = null, Portfolio[]? projects = null, Feature[]? features = null)
         {
             teams ??= [];
             projects ??= [];

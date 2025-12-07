@@ -795,9 +795,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return team;
         }
 
-        private Project CreateProject(string query, params Team[] teams)
+        private Portfolio CreateProject(string query, params Team[] teams)
         {
-            var project = new Project
+            var project = new Portfolio
             {
                 Name = "TestProject",
                 WorkItemQuery = query,

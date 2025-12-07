@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.API.DTO
         {            
         }
 
-        public ProjectSettingDto(Project project) : base(project)
+        public ProjectSettingDto(Portfolio project) : base(project)
         {
             Milestones.AddRange(project.Milestones.Select(m => new MilestoneDto(m)));
             UnparentedItemsQuery = project.UnparentedItemsQuery;

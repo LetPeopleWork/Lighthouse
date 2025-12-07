@@ -190,9 +190,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var feature = new Feature { Name = "Name", Order = "12" };
 
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
-            var project = new Project { Name = "Project" };
+            var project = new Portfolio { Name = "Project" };
             project.WorkTrackingSystemConnection = workTrackingSystemConnection;
-            feature.Projects.Add(project);
+            feature.Portfolios.Add(project);
 
             return feature;
         }

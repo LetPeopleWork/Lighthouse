@@ -39,9 +39,9 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(subject.UpdateTime, Is.Not.EqualTo(initialUpdateTime));
         }
 
-        private Project CreateSubject()
+        private Portfolio CreateSubject()
         {
-            return new Project();
+            return new Portfolio();
         }
     }
 }

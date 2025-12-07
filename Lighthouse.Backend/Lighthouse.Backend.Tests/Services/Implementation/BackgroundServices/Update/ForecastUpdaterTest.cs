@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 {
     public class ForecastUpdaterTest : UpdateServiceTestBase
     {
-        private Mock<IRepository<Project>> projectRepositoryMock;
+        private Mock<IRepository<Portfolio>> projectRepositoryMock;
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IForecastService> forecastServiceMock;
 
@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [SetUp]
         public void Setup()
         {
-            projectRepositoryMock = new Mock<IRepository<Project>>();
+            projectRepositoryMock = new Mock<IRepository<Portfolio>>();
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = new Mock<IForecastService>();
 
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldDoNothing_WhenProjectNotFound()
         {
             // Arrange
-            projectRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns((Project)null);
+            projectRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns((Portfolio)null);
 
             var subject = CreateSubject();
 
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             // Assert
             projectRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once);
             projectRepositoryMock.VerifyNoOtherCalls();
-            forecastServiceMock.Verify(x => x.UpdateForecastsForProject(It.IsAny<Project>()), Times.Never);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForProject(It.IsAny<Portfolio>()), Times.Never);
         }
 
         [Test]
@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject();
 
             projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
-            forecastServiceMock.Setup(x => x.UpdateForecastsForProject(It.IsAny<Project>())).ThrowsAsync(new Exception("Test exception"));
+            forecastServiceMock.Setup(x => x.UpdateForecastsForProject(It.IsAny<Portfolio>())).ThrowsAsync(new Exception("Test exception"));
 
             var subject = CreateSubject();
 
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             return new ForecastUpdater(Mock.Of<ILogger<ForecastUpdater>>(), ServiceScopeFactory, UpdateQueueService);
         }
 
-        private Project CreateProject(params Feature[] features)
+        private Portfolio CreateProject(params Feature[] features)
         {
             var project = CreateProject(DateTime.UtcNow, features);
             project.Teams.AddRange(features.SelectMany(f => f.Teams).Distinct());
@@ -93,9 +93,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             return project;
         }
 
-        private Project CreateProject(DateTime lastUpdatedTime, params Feature[] features)
+        private Portfolio CreateProject(DateTime lastUpdatedTime, params Feature[] features)
         {
-            var project = new Project
+            var project = new Portfolio
             {
                 Name = "Project",
                 Id = idCounter++,

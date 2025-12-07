@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.MCP
                     }),
                     TotalRemainingWork = feature.FeatureWork.Sum(fw => fw.RemainingWorkItems),
                     TotalWork = feature.FeatureWork.Sum(fw => fw.TotalWorkItems),
-                    Projects = feature.Projects.Select(p => new
+                    Projects = feature.Portfolios.Select(p => new
                     {
                         p.Id,
                         p.Name

@@ -13,26 +13,26 @@ namespace Lighthouse.Backend.Tests.API
     [TestFixture]
     public class PortfolioMetricsControllerTests
     {
-        private Mock<IRepository<Project>> projectRepository;
+        private Mock<IRepository<Portfolio>> projectRepository;
         private Mock<IProjectMetricsService> projectMetricsService;
         private PortfolioMetricsController subject;
-        private Project project;
+        private Portfolio project;
 
         [SetUp]
         public void Setup()
         {
-            projectRepository = new Mock<IRepository<Project>>();
+            projectRepository = new Mock<IRepository<Portfolio>>();
             projectMetricsService = new Mock<IProjectMetricsService>();
             subject = new PortfolioMetricsController(projectRepository.Object, projectMetricsService.Object);
             
-            project = new Project
+            project = new Portfolio
             {
                 Id = 1,
                 Name = "Test Project"
             };
             
             projectRepository.Setup(x => x.GetById(1)).Returns(project);
-            projectRepository.Setup(x => x.GetById(999)).Returns((Project)null);
+            projectRepository.Setup(x => x.GetById(999)).Returns((Portfolio)null);
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetStartedItems_TeamExists_GetsStartedItemsFromTeamMetricsService()
         {
-            var project = new Project { Id = 1 };
+            var project = new Portfolio { Id = 1 };
             projectRepository.Setup(repo => repo.GetById(1)).Returns(project);
 
             var expectedStartedItems = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
@@ -287,7 +287,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetMultiItemForecastPredictabilityScore_ProjectExists_GetsPredictabilityScoreFromTeamMetricsService()
         {
-            var project = new Project { Id = 1 };
+            var project = new Portfolio { Id = 1 };
             projectRepository.Setup(repo => repo.GetById(1)).Returns(project);
 
             var howManyForecast = new HowManyForecast();

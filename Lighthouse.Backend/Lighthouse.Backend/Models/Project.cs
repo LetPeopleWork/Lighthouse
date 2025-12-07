@@ -1,6 +1,6 @@
 ﻿namespace Lighthouse.Backend.Models
 {
-    public class Project : WorkTrackingSystemOptionsOwner
+    public class Portfolio : WorkTrackingSystemOptionsOwner
     {
         public override List<string> WorkItemTypes { get; set; } = new List<string> { "Epic" };
 

@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             workTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "Key", Value = "Value" });
 
 
-            var project = new Project { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
+            var project = new Portfolio { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
             var team = new Team { Name = "Team1", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             workTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "Key", Value = "Value" });
 
-            var project = new Project { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
+            var project = new Portfolio { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
             var feature = new Feature { Name = "MyFeature", Order = "12" };
 
             project.Features.Add(feature);
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             workTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "Key", Value = "Value" });
 
-            var project = new Project { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
+            var project = new Portfolio { Name = "Name", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
             project.OverrideRealChildCountStates.Add("New");
             project.OverrideRealChildCountStates.Add("AnalysisInProgress");

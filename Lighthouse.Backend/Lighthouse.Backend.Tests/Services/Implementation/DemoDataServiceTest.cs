@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     public class DemoDataServiceTest
     {
-        private Mock<IRepository<Project>> projectRepoMock;
+        private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionsRepoMock;
 
@@ -17,18 +17,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [SetUp]
         public void SetUp()
         {
-            projectRepoMock = new Mock<IRepository<Project>>();
+            projectRepoMock = new Mock<IRepository<Portfolio>>();
             teamRepoMock = new Mock<IRepository<Team>>();
             workTrackingSystemConnectionsRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             demoDataFactoryMock = new Mock<IDemoDataFactory>();
 
-            projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Project>());
+            projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Portfolio>());
             teamRepoMock.Setup(x => x.GetAll()).Returns(new List<Team>());
             workTrackingSystemConnectionsRepoMock.Setup(x => x.GetAll()).Returns(new List<WorkTrackingSystemConnection>());
 
             demoDataFactoryMock.Setup(x => x.CreateDemoWorkTrackingSystemConnection()).Returns(new WorkTrackingSystemConnection { Id = 18 });
             demoDataFactoryMock.Setup(x => x.CreateDemoTeam(It.IsAny<string>())).Returns(new Team { Id = 86 });
-            demoDataFactoryMock.Setup(x => x.CreateDemoProject(It.IsAny<string>())).Returns(new Project { Id = 42, Name = "Projecto" });
+            demoDataFactoryMock.Setup(x => x.CreateDemoProject(It.IsAny<string>())).Returns(new Portfolio { Id = 42, Name = "Projecto" });
         }
 
         [Test]
@@ -73,11 +73,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public async Task LoadScenario_RemovesExistingProjects()
         {
-            var projects = new List<Project>
+            var projects = new List<Portfolio>
             {
-                new Project{ Id = 1 },
-                new Project{ Id = 2 },
-                new Project{ Id = 3 },
+                new Portfolio{ Id = 1 },
+                new Portfolio{ Id = 2 },
+                new Portfolio{ Id = 3 },
             };
 
             projectRepoMock.Setup(x => x.GetAll()).Returns(projects);
@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var demoTeam = new Team { Id = 12 };
             demoDataFactoryMock.Setup(x => x.CreateDemoTeam(It.IsAny<string>())).Returns(demoTeam);
 
-            var demoProject = new Project { Id = 1, Name = "Project64" };
+            var demoProject = new Portfolio { Id = 1, Name = "Project64" };
             demoDataFactoryMock.Setup(x => x.CreateDemoProject(It.IsAny<string>())).Returns(demoProject);
 
             var expectedWorkTrackingConnection = new WorkTrackingSystemConnection { Id = 1 };
@@ -243,7 +243,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var demoTeam = new Team { Id = 12 };
             demoDataFactoryMock.Setup(x => x.CreateDemoTeam(It.IsAny<string>())).Returns(demoTeam);
 
-            var demoProject = new Project { Id = 1, Name = "Project64" };
+            var demoProject = new Portfolio { Id = 1, Name = "Project64" };
             demoDataFactoryMock.Setup(x => x.CreateDemoProject(It.IsAny<string>())).Returns(demoProject);
 
             var expectedWorkTrackingConnection = new WorkTrackingSystemConnection { Id = 1 };

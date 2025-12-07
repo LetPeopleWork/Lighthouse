@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IDemoDataService> demoDataServiceMock;
 
         private Mock<IRepository<Team>> teamRepoMock;
-        private Mock<IRepository<Project>> projectRepoMock;
+        private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<ITeamUpdater> teamUpdaterMock;
         private Mock<IProjectUpdater> projectUpdaterMock;
 
@@ -28,12 +28,12 @@ namespace Lighthouse.Backend.Tests.API
             demoDataServiceMock = new Mock<IDemoDataService>();
 
             teamRepoMock = new Mock<IRepository<Team>>();
-            projectRepoMock = new Mock<IRepository<Project>>();
+            projectRepoMock = new Mock<IRepository<Portfolio>>();
             teamUpdaterMock = new Mock<ITeamUpdater>();
             projectUpdaterMock = new Mock<IProjectUpdater>();
 
             teamRepoMock.Setup(x => x.GetAll()).Returns(new List<Team>());
-            projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Project>());
+            projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Portfolio>());
 
             scenarios = new List<DemoDataScenario>();
 
@@ -124,10 +124,10 @@ namespace Lighthouse.Backend.Tests.API
         public async Task LoadScenario_UpdatesAllProjects()
         {
 
-            var project1 = new Project { Id = 1 };
-            var project2 = new Project { Id = 2 };
+            var project1 = new Portfolio { Id = 1 };
+            var project2 = new Portfolio { Id = 2 };
 
-            projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Project> { project1, project2 });
+            projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Portfolio> { project1, project2 });
 
             var scenario = CreateScenario("Una");
 

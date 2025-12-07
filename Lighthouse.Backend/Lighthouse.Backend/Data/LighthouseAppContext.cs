@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<Feature> Features { get; set; } = default!;
 
-        public DbSet<Project> Projects { get; set; } = default!;
+        public DbSet<Portfolio> Portfolios { get; set; } = default!;
 
         public DbSet<WorkTrackingSystemConnection> WorkTrackingSystemConnections { get; set; } = default!;
 
@@ -60,9 +60,9 @@ namespace Lighthouse.Backend.Data
                 .IsRequired();
 
             modelBuilder.Entity<Milestone>()
-                .HasOne(m => m.Project)
+                .HasOne(m => m.Portfolio)
                 .WithMany(p => p.Milestones)
-                .HasForeignKey(m => m.ProjectId)
+                .HasForeignKey(m => m.PortfolioId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FeatureWork>()
@@ -90,18 +90,18 @@ namespace Lighthouse.Backend.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Feature>()
-                .HasMany(f => f.Projects)
+                .HasMany(f => f.Portfolios)
                 .WithMany(p => p.Features);
 
             modelBuilder.Entity<Team>()
-                .HasMany(t => t.Projects)
+                .HasMany(t => t.Portfolios)
                 .WithMany(p => p.Teams);
 
             modelBuilder.Entity<Team>()
                 .HasMany(t => t.WorkItems)
                 .WithOne(wi => wi.Team);
 
-            modelBuilder.Entity<Project>()
+            modelBuilder.Entity<Portfolio>()
                 .HasOne(p => p.OwningTeam)
                 .WithMany()
                 .HasForeignKey(p => p.OwningTeamId)
@@ -182,8 +182,8 @@ namespace Lighthouse.Backend.Data
             logger.LogDebug("Removing orphaned features");
             var orphanedFeatures = Features
                 .Where(f => !f.IsParentFeature)
-                .Include(f => f.Projects)
-                .Where(f => f.Projects.Count == 0)
+                .Include(f => f.Portfolios)
+                .Where(f => f.Portfolios.Count == 0)
                 .ToList();
 
             if (orphanedFeatures.Count > 0)

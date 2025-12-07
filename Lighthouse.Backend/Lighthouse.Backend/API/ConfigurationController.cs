@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.API
         private readonly ILogger<ConfigurationController> logger;
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo;
         private readonly IRepository<Team> teamRepo;
-        private readonly IRepository<Project> projectRepo;
+        private readonly IRepository<Portfolio> projectRepo;
 
         private static readonly JsonSerializerOptions CachedJsonSerializerOptions = new JsonSerializerOptions
         {
@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API
         };
 
         public ConfigurationController(
-            ILogger<ConfigurationController> logger, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IRepository<Team> teamRepo, IRepository<Project> projectRepo)
+            ILogger<ConfigurationController> logger, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IRepository<Team> teamRepo, IRepository<Portfolio> projectRepo)
         {
             this.logger = logger;
             this.workTrackingSystemConnectionRepo = workTrackingSystemConnectionRepo;

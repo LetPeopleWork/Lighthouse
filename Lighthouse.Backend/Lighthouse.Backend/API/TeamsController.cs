@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.API
     public class TeamsController : ControllerBase
     {
         private readonly IRepository<Team> teamRepository;
-        private readonly IRepository<Project> projectRepository;
+        private readonly IRepository<Portfolio> projectRepository;
         private readonly IRepository<Feature> featureRepository;
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
         private readonly IWorkItemRepository workItemRepository;
@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.API
 
         public TeamsController(
             IRepository<Team> teamRepository,
-            IRepository<Project> projectRepository,
+            IRepository<Portfolio> projectRepository,
             IRepository<Feature> featureRepository,
             IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
             IWorkItemRepository workItemRepository,
@@ -251,7 +251,7 @@ namespace Lighthouse.Backend.API
             return list.Select(s => s.Trim()).ToList();
         }
 
-        private static TeamDto CreateTeamDto(List<Project> allProjects, List<Feature> allFeatures, Team team)
+        private static TeamDto CreateTeamDto(List<Portfolio> allProjects, List<Feature> allFeatures, Team team)
         {
             var teamDto = new TeamDto(team);
 

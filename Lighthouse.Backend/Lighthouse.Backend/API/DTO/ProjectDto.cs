@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public ProjectDto(Project project) : base(project)
+        public ProjectDto(Portfolio project) : base(project)
         {
             InvolvedTeams.AddRange(project.CreateInvolvedTeamDtos());
 

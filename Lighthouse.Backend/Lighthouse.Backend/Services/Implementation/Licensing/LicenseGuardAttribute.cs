@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
 
                 if (CheckProjectConstraint)
                 {
-                    EntityLimitExceeded<Project>(context, ProjectLimitOverride);
+                    EntityLimitExceeded<Portfolio>(context, ProjectLimitOverride);
                 }
             }
 

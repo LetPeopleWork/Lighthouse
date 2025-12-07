@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Models.Forecast;
+﻿﻿using Lighthouse.Backend.Models.Forecast;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models
@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Models
 
         public List<FeatureWork> FeatureWork { get; } = new List<FeatureWork>();
 
-        public List<Project> Projects { get; } = [];
+        public List<Portfolio> Portfolios { get; } = [];
 
         public bool IsUnparentedFeature { get; set; }
 
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Models
 
         public string OwningTeam { get; set; } = string.Empty;
 
-        public override bool IsBlocked => Projects.Any(p => p.BlockedStates.Contains(State) || p.BlockedTags.Any(Tags.Contains));
+        public override bool IsBlocked => Portfolios.Any(p => p.BlockedStates.Contains(State) || p.BlockedTags.Any(Tags.Contains));
 
         [NotMapped]
         public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);

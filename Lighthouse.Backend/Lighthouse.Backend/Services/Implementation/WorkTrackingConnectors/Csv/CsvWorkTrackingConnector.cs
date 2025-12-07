@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(workItems.AsEnumerable());
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Project project)
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
             var features = new List<Feature>();
 
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(features);
         }
 
-        public Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds)
+        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             return Task.FromResult(new List<Feature>());
         }
@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return ValidateCsv(team);
         }
 
-        public Task<bool> ValidateProjectSettings(Project project)
+        public Task<bool> ValidateProjectSettings(Portfolio project)
         {
             return ValidateCsv(project);
         }

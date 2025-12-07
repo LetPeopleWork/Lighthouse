@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Models;
+﻿﻿using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Factories
 {
@@ -8,6 +8,6 @@ namespace Lighthouse.Backend.Factories
 
         Team CreateDemoTeam(string name);
 
-        Project CreateDemoProject(string name);
+        Portfolio CreateDemoProject(string name);
     }
 }

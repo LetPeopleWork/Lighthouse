@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         public void CreateProjectDto_GivenLastUpdatedTime_ReturnsDateAsUTC()
         {
             var projectUpdateTime = DateTime.Now;
-            var project = new Project
+            var project = new Portfolio
             {
                 UpdateTime = projectUpdateTime
             };
@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void CreateProjectDto_ProjectWithNoFeatures_RemainingWorkIsZero()
         {
-            var project = new Project();
+            var project = new Portfolio();
 
             var subject = CreateSubject(project);
 
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void CreateProjectDto_ProjectWithNoFeatures_TotalWorkIsZero()
         {
-            var project = new Project();
+            var project = new Portfolio();
 
             var subject = CreateSubject(project);
 
@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team { Name = "Team A" };
             var feature = new Feature(team, 10);
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature]);
 
             var subject = CreateSubject(project);
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team { Name = "Team A" };
             var feature = new Feature(team, 15);
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature]);
 
             var subject = CreateSubject(project);
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var feature2 = new Feature(team, 15);
             var feature3 = new Feature(team, 7);
 
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature1, feature2, feature3]);
 
             var subject = CreateSubject(project);
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var feature2 = new Feature(team, 15);
             var feature3 = new Feature(team, 7);
 
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature1, feature2, feature3]);
 
             var subject = CreateSubject(project);
@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var teamB = new Team { Name = "Team B" };
             var feature = new Feature([(teamA, 10, 20), (teamB, 15, 25)]);
 
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature]);
 
             var subject = CreateSubject(project);
@@ -125,7 +125,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var teamB = new Team { Name = "Team B" };
             var feature = new Feature([(teamA, 10, 20), (teamB, 15, 25)]);
 
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature]);
 
             var subject = CreateSubject(project);
@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var feature2 = new Feature(teamA, 12);
             var feature3 = new Feature([(teamA, 7, 15), (teamB, 9, 20)]);
 
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature1, feature2, feature3]);
 
             var subject = CreateSubject(project);
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void CreateProjectDto_ProjectWithNoFeatures_ForecastsIsEmpty()
         {
-            var project = new Project();
+            var project = new Portfolio();
 
             var subject = CreateSubject(project);
 
@@ -171,7 +171,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var team = new Team { Name = "Team A" };
             var feature = CreateFeatureWithForecast(team, 10);
 
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature]);
 
             var subject = CreateSubject(project);
@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var team = new Team { Name = "Team A" };
             var feature = CreateFeatureWithForecast(team, 10);
 
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([feature]);
 
             var subject = CreateSubject(project);
@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var completedFeature = new Feature([(team, 0, 25)]); // No remaining work, 25 total
             var activeFeature = new Feature(team, 10);
 
-            var project = new Project();
+            var project = new Portfolio();
             project.UpdateFeatures([completedFeature, activeFeature]);
 
             var subject = CreateSubject(project);
@@ -223,7 +223,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             }
         }
 
-        private ProjectDto CreateSubject(Project project)
+        private ProjectDto CreateSubject(Portfolio project)
         {
             return new ProjectDto(project);
         }

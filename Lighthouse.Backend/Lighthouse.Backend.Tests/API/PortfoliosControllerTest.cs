@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.API
 {
     public class PortfoliosControllerTest
     {
-        private Mock<IRepository<Project>> projectRepoMock;
+        private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
 
         private Mock<IProjectUpdater> projectUpdaterMock;
@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API
         [SetUp]
         public void Setup()
         {
-            projectRepoMock = new Mock<IRepository<Project>>();
+            projectRepoMock = new Mock<IRepository<Portfolio>>();
             teamRepoMock = new Mock<IRepository<Team>>();
             projectUpdaterMock = new Mock<IProjectUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetProjectSettings_ProjectExists_ReturnsSettings()
         {
-            var project = new Project
+            var project = new Portfolio
             {
                 Id = 12,
                 Name = "El Projecto",
@@ -251,7 +251,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.CreateProject(newProjectSettings);
 
-            projectRepoMock.Verify(x => x.Add(It.IsAny<Project>()));
+            projectRepoMock.Verify(x => x.Add(It.IsAny<Portfolio>()));
             projectRepoMock.Verify(x => x.Save());
 
             using (Assert.EnterMultipleScope())
@@ -298,7 +298,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task UpdateProject_GivenNewProjectSettings_UpdatesProjectAsync()
         {
-            var existingProject = new Project { Id = 132 };
+            var existingProject = new Portfolio { Id = 132 };
             var existingTeam = new Team { Id = 42, Name = "My Team" };
 
             projectRepoMock.Setup(x => x.GetById(132)).Returns(existingProject);
@@ -415,7 +415,7 @@ namespace Lighthouse.Backend.Tests.API
             var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
             workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
-            workTrackingConnectorServiceMock.Setup(x => x.ValidateProjectSettings(It.IsAny<Project>())).ReturnsAsync(expectedResult);
+            workTrackingConnectorServiceMock.Setup(x => x.ValidateProjectSettings(It.IsAny<Portfolio>())).ReturnsAsync(expectedResult);
 
             var subject = CreateSubject();
 
@@ -465,12 +465,12 @@ namespace Lighthouse.Backend.Tests.API
             );
         }
 
-        private List<Project> GetTestProjects()
+        private List<Portfolio> GetTestProjects()
         {
-            return new List<Project>
+            return new List<Portfolio>
             {
-                new Project { Id = 12, Name = "Foo" },
-                new Project { Id = 42, Name = "Bar" }
+                new Portfolio { Id = 12, Name = "Foo" },
+                new Portfolio { Id = 42, Name = "Bar" }
             };
         }
     }

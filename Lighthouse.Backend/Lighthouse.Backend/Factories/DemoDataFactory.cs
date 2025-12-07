@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Models;
+﻿﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using System.Text.RegularExpressions;
@@ -14,9 +14,9 @@ namespace Lighthouse.Backend.Factories
             this.workTrackingSystemFactory = workTrackingSystemFactory;
         }
 
-        public Project CreateDemoProject(string name)
+        public Portfolio CreateDemoProject(string name)
         {
-            var demoProject = new Project
+            var demoProject = new Portfolio
             {
                 Name = name,
                 BlockedTags = new List<string> { "Blocked" },

@@ -13,10 +13,10 @@ namespace Lighthouse.Backend.API
     public class PortfolioMetricsController : ControllerBase
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
-        private readonly IRepository<Project> projectRepository;
+        private readonly IRepository<Portfolio> projectRepository;
         private readonly IProjectMetricsService projectMetricsService;
 
-        public PortfolioMetricsController(IRepository<Project> projectRepository, IProjectMetricsService projectMetricsService)
+        public PortfolioMetricsController(IRepository<Portfolio> projectRepository, IProjectMetricsService projectMetricsService)
         {
             this.projectRepository = projectRepository;
             this.projectMetricsService = projectMetricsService;

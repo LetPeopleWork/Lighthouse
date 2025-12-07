@@ -12,9 +12,9 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
     {
         Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team);
 
-        Task<List<Feature>> GetFeaturesForProject(Project project);
+        Task<List<Feature>> GetFeaturesForProject(Portfolio project);
 
-        Task<List<Feature>> GetParentFeaturesDetails(Project project, IEnumerable<string> parentFeatureIds);
+        Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds);
 
         Task<List<string>> GetWorkItemsIdsForTeamWithAdditionalQuery(Team team, string additionalQuery);
 
@@ -24,6 +24,6 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
         Task<bool> ValidateTeamSettings(Team team);
 
-        Task<bool> ValidateProjectSettings(Project project);
+        Task<bool> ValidateProjectSettings(Portfolio project);
     }
 }

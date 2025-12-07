@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation.TeamData
             await workItemService.UpdateWorkItemsForTeam(team);
             await teamMetricsService.UpdateTeamMetrics(team);
 
-            foreach (var project in team.Projects)
+            foreach (var project in team.Portfolios)
             {
                 forecastUpdater.TriggerUpdate(project.Id);
             }

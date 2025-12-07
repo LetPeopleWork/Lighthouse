@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class PortfoliosController : ControllerBase
     {
-        private readonly IRepository<Project> projectRepository;
+        private readonly IRepository<Portfolio> projectRepository;
         private readonly IRepository<Team> teamRepository;
         private readonly IProjectUpdater workItemUpdateService;
         private readonly IWorkTrackingConnectorFactory workTrackingConnectorFactory;
@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
 
         public PortfoliosController(
-            IRepository<Project> projectRepository,
+            IRepository<Portfolio> projectRepository,
             IRepository<Team> teamRepository,
             IProjectUpdater workItemUpdateService,
             IWorkTrackingConnectorFactory workTrackingConnectorFactory,
@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.API
                 milestone.Id = 0;
             }
 
-            var newProject = new Project();
+            var newProject = new Portfolio();
             SyncProjectWithProjectSettings(newProject, projectSetting);
 
             projectRepository.Add(newProject);
@@ -142,7 +142,7 @@ namespace Lighthouse.Backend.API
         {
             return await this.GetEntityByIdAnExecuteAction(workTrackingSystemConnectionRepository, projectSettingDto.WorkTrackingSystemConnectionId, async workTrackingSystem =>
             {
-                var project = new Project { WorkTrackingSystemConnection = workTrackingSystem };
+                var project = new Portfolio { WorkTrackingSystemConnection = workTrackingSystem };
                 SyncProjectWithProjectSettings(project, projectSettingDto);
 
                 var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(project.WorkTrackingSystemConnection.WorkTrackingSystem);
@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        private void SyncProjectWithProjectSettings(Project project, ProjectSettingDto projectSetting)
+        private void SyncProjectWithProjectSettings(Portfolio project, ProjectSettingDto projectSetting)
         {
             project.Name = projectSetting.Name;
             project.WorkItemTypes = projectSetting.WorkItemTypes;
@@ -181,14 +181,14 @@ namespace Lighthouse.Backend.API
             SyncBlockedItems(project, projectSetting);
         }
 
-        private static void SyncStates(Project project, ProjectSettingDto projectSetting)
+        private static void SyncStates(Portfolio project, ProjectSettingDto projectSetting)
         {
             project.ToDoStates = TrimListEntries(projectSetting.ToDoStates);
             project.DoingStates = TrimListEntries(projectSetting.DoingStates);
             project.DoneStates = TrimListEntries(projectSetting.DoneStates);
         }
 
-        private static void SyncBlockedItems(Project project, ProjectSettingDto projectSetting)
+        private static void SyncBlockedItems(Portfolio project, ProjectSettingDto projectSetting)
         {
             project.BlockedStates = TrimListEntries(projectSetting.BlockedStates);
             project.BlockedTags = projectSetting.BlockedTags;
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.API
             return list.Select(s => s.Trim()).ToList();
         }
 
-        private void SyncTeams(Project project, ProjectSettingDto projectSetting)
+        private void SyncTeams(Portfolio project, ProjectSettingDto projectSetting)
         {
             var teams = new List<Team>();
             foreach (var teamDto in projectSetting.InvolvedTeams)
@@ -220,7 +220,7 @@ namespace Lighthouse.Backend.API
             }
         }
 
-        private static void SyncMilestones(Project project, ProjectSettingDto projectSetting)
+        private static void SyncMilestones(Portfolio project, ProjectSettingDto projectSetting)
         {
             project.Milestones.Clear();
             foreach (var milestone in projectSetting.Milestones)
@@ -230,13 +230,13 @@ namespace Lighthouse.Backend.API
                     Id = milestone.Id,
                     Name = milestone.Name,
                     Date = DateTime.SpecifyKind(milestone.Date, DateTimeKind.Utc),
-                    Project = project,
-                    ProjectId = project.Id,
+                    Portfolio = project,
+                    PortfolioId = project.Id,
                 });
             }
         }
 
-        private static void SyncServiceLevelExpectation(Project project, ProjectSettingDto projectSetting)
+        private static void SyncServiceLevelExpectation(Portfolio project, ProjectSettingDto projectSetting)
         {
             project.ServiceLevelExpectationProbability = projectSetting.ServiceLevelExpectationProbability;
             project.ServiceLevelExpectationRange = projectSetting.ServiceLevelExpectationRange;

@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.MCP
         {
             using (var scope = CreateServiceScope())
             {
-                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+                var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
 
                 return ToJson(projectRepo.GetAll()
                     .Select(p => new
@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.MCP
         {
             using (var scope = CreateServiceScope())
             {
-                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+                var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
 
                 var project = GetProjectByName(name, projectRepo);
 
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.MCP
         {
             using (var scope = CreateServiceScope())
             {
-                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+                var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
 
                 var project = GetProjectByName(projectName, projectRepo);
                 if (project == null)
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.MCP
         {
             using (var scope = CreateServiceScope())
             {
-                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+                var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
 
                 var project = GetProjectByName(projectName, projectRepo);
                 if (project == null)
@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.MCP
         {
             using (var scope = CreateServiceScope())
             {
-                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+                var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
 
                 var project = GetProjectByName(projectName, projectRepo);
                 if (project == null)
@@ -220,7 +220,7 @@ namespace Lighthouse.Backend.MCP
         {
             using (var scope = CreateServiceScope())
             {
-                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+                var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
 
                 var project = GetProjectByName(projectName, projectRepo);
                 if (project == null)
@@ -302,7 +302,7 @@ namespace Lighthouse.Backend.MCP
 
             using (var scope = CreateServiceScope())
             {
-                var projectRepo = GetServiceFromServiceScope<IRepository<Project>>(scope);
+                var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
                 var projectMetricsService = GetServiceFromServiceScope<IProjectMetricsService>(scope);
 
                 var project = GetProjectByName(projectName, projectRepo);
@@ -342,7 +342,7 @@ namespace Lighthouse.Backend.MCP
             }
         }
 
-        private static Project? GetProjectByName(string name, IRepository<Project> projectRepo)
+        private static Portfolio? GetProjectByName(string name, IRepository<Portfolio> projectRepo)
         {
             var project = projectRepo.GetByPredicate(p => p.Name.Contains(name, StringComparison.InvariantCultureIgnoreCase));
             if (project == null)

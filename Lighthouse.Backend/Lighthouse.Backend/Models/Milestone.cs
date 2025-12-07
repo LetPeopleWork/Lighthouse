@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Models
+﻿﻿namespace Lighthouse.Backend.Models
 {
     public class Milestone
     {
@@ -8,8 +8,8 @@
 
         public DateTime Date { get; set; }
 
-        public Project? Project { get; set; }
+        public Portfolio? Portfolio { get; set; }
 
-        public int ProjectId { get; set; }
+        public int PortfolioId { get; set; }
     }
 }

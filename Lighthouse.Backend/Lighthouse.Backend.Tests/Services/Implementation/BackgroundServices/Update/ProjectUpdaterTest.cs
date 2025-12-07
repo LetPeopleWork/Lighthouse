@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 {
     public class ProjectUpdaterTest : UpdateServiceTestBase
     {
-        private Mock<IRepository<Project>> projectRepoMock;
+        private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IWorkItemService> workItemServiceMock;
         private Mock<IForecastService> forecastServiceMock;
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [SetUp]
         public void SetUp()
         {
-            projectRepoMock = new Mock<IRepository<Project>>();
+            projectRepoMock = new Mock<IRepository<Portfolio>>();
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = new Mock<IForecastService>();
             workItemServiceMock = new Mock<IWorkItemService>();
@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             workItemServiceMock.Verify(x => x.UpdateFeaturesForProject(project), Times.Once);
         }
 
-        private void SetupProjects(params Project[] projects)
+        private void SetupProjects(params Portfolio[] projects)
         {
             projectRepoMock.Setup(x => x.GetAll()).Returns(projects);
 
@@ -196,14 +196,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             return team;
         }
 
-        private Project CreateProject(params Team[] teams)
+        private Portfolio CreateProject(params Team[] teams)
         {
             return CreateProject(DateTime.Now, teams);
         }
 
-        private Project CreateProject(DateTime lastUpdateTime, params Team[] teams)
+        private Portfolio CreateProject(DateTime lastUpdateTime, params Team[] teams)
         {
-            var project = new Project
+            var project = new Portfolio
             {
                 Id = idCounter++,
                 Name = "Release 1",

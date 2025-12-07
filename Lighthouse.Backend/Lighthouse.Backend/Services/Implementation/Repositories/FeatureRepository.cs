@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         private IQueryable<Feature> GetFeatures()
         {
             return Context.Features
-                .Include(f => f.Projects)
+                .Include(f => f.Portfolios)
                     .ThenInclude(p => p.Milestones)
                 .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
                 .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults);

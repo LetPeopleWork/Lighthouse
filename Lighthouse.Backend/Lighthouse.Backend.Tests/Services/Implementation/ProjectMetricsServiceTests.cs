@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IForecastService> forecastServiceMock;
 
         private ProjectMetricsService subject;
-        private Project project;
+        private Portfolio project;
         private List<Feature> features;
 
         [SetUp]
@@ -300,7 +300,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = 1,
                 StateCategory = StateCategories.ToDo,
             };
-            feature1.Projects.Add(project);
+            feature1.Portfolios.Add(project);
             features.Add(feature1);
 
             var feature2 = new Feature
@@ -308,7 +308,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = 2,
                 StateCategory = StateCategories.Done,
             };
-            feature2.Projects.Add(project);
+            feature2.Portfolios.Add(project);
             features.Add(feature2);
 
             var totalAge = subject.GetTotalWorkItemAge(project);
@@ -319,7 +319,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetTotalWorkItemAge_FeaturesOfOtherProject_ReturnsZero()
         {
-            var otherProject = new Project { Id = 999, Name = "Other Project" };
+            var otherProject = new Portfolio { Id = 999, Name = "Other Project" };
             features.Clear();
             var feature = new Feature
             {
@@ -327,7 +327,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-5),
             };
-            feature.Projects.Add(otherProject);
+            feature.Portfolios.Add(otherProject);
             features.Add(feature);
 
             var totalAge = subject.GetTotalWorkItemAge(project);
@@ -345,7 +345,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-5),
             };
-            feature.Projects.Add(project);
+            feature.Portfolios.Add(project);
             features.Add(feature);
 
             var totalAge = subject.GetTotalWorkItemAge(project);
@@ -363,7 +363,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-10),
             };
-            feature1.Projects.Add(project);
+            feature1.Portfolios.Add(project);
             features.Add(feature1);
 
             var feature2 = new Feature
@@ -372,7 +372,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-5),
             };
-            feature2.Projects.Add(project);
+            feature2.Portfolios.Add(project);
             features.Add(feature2);
 
             var feature3 = new Feature
@@ -381,7 +381,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2),
             };
-            feature3.Projects.Add(project);
+            feature3.Portfolios.Add(project);
             features.Add(feature3);
 
             var totalAge = subject.GetTotalWorkItemAge(project);
@@ -400,7 +400,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-7),
             };
-            feature1.Projects.Add(project);
+            feature1.Portfolios.Add(project);
             features.Add(feature1);
 
             var feature2 = new Feature
@@ -410,7 +410,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StartedDate = DateTime.UtcNow.AddDays(-15),
                 ClosedDate = DateTime.UtcNow.AddDays(-3),
             };
-            feature2.Projects.Add(project);
+            feature2.Portfolios.Add(project);
             features.Add(feature2);
 
             var feature3 = new Feature
@@ -418,7 +418,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = 3,
                 StateCategory = StateCategories.ToDo,
             };
-            feature3.Projects.Add(project);
+            feature3.Portfolios.Add(project);
             features.Add(feature3);
 
             var totalAge = subject.GetTotalWorkItemAge(project);
@@ -437,7 +437,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StartedDate = null,
                 CreatedDate = DateTime.UtcNow.AddDays(-9),
             };
-            feature.Projects.Add(project);
+            feature.Portfolios.Add(project);
             features.Add(feature);
 
             var totalAge = subject.GetTotalWorkItemAge(project);
@@ -477,7 +477,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features.Last().Projects.Add(project);
+            features.Last().Portfolios.Add(project);
 
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
@@ -525,7 +525,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ClosedDate = new DateTime(2022, 12, 15),
                 StateCategory = StateCategories.Done,
             });
-            features.Last().Projects.Add(project);
+            features.Last().Portfolios.Add(project);
 
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
@@ -552,7 +552,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features.Last().Projects.Add(project);
+            features.Last().Portfolios.Add(project);
 
             features.Add(new Feature
             {
@@ -562,7 +562,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2)
             });
-            features.Last().Projects.Add(project);
+            features.Last().Portfolios.Add(project);
 
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
@@ -592,7 +592,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.ToDo,
                 CreatedDate = DateTime.UtcNow
             });
-            features.Last().Projects.Add(project);
+            features.Last().Portfolios.Add(project);
 
             features.Add(new Feature
             {
@@ -602,7 +602,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2)
             });
-            features.Last().Projects.Add(project);
+            features.Last().Portfolios.Add(project);
 
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
@@ -641,7 +641,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetAllFeaturesForSizeChart_FeaturesOfOtherProject_NotIncluded()
         {
             // Arrange
-            var otherProject = new Project { Id = 999, Name = "Other Project" };
+            var otherProject = new Portfolio { Id = 999, Name = "Other Project" };
             features.Add(new Feature
             {
                 Id = 8,
@@ -650,7 +650,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = StateCategories.Doing,
                 StartedDate = DateTime.UtcNow.AddDays(-2)
             });
-            features.Last().Projects.Add(otherProject);
+            features.Last().Portfolios.Add(otherProject);
 
             var startDate = new DateTime(2023, 1, 1);
             var endDate = new DateTime(2023, 1, 31);
@@ -667,7 +667,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private void SetupTestData()
         {
-            project = new Project
+            project = new Portfolio
             {
                 Id = 1,
                 Name = "Test Project"
@@ -708,7 +708,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 }
             };
 
-            features.ForEach(f => f.Projects.Add(project));
+            features.ForEach(f => f.Portfolios.Add(project));
         }
     }
 }
