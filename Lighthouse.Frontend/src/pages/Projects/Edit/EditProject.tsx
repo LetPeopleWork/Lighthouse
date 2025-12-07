@@ -71,7 +71,7 @@ const EditProject: React.FC = () => {
 			savedSettings = await projectService.updateProject(updatedSettings);
 		}
 
-		navigate(`/projects/${savedSettings.id}`);
+		navigate(`/portfolios/${savedSettings.id}`);
 	};
 
 	return (

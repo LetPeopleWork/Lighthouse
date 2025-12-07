@@ -127,9 +127,9 @@ const MockApiServiceProvider = ({
 const renderWithMockApiProvider = () => {
 	render(
 		<MockApiServiceProvider>
-			<MemoryRouter initialEntries={["/projects/2"]}>
+			<MemoryRouter initialEntries={["/portfolios/2"]}>
 				<Routes>
-					<Route path="/projects/:id" element={<ProjectDetail />} />
+					<Route path="/portfolios/:id" element={<ProjectDetail />} />
 				</Routes>
 			</MemoryRouter>
 		</MockApiServiceProvider>,

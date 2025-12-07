@@ -163,7 +163,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 					<Box>
 						{row.projects.map((project) => (
 							<Box key={project.id}>
-								<StyledLink to={`/projects/${project.id}`}>
+								<StyledLink to={`/portfolios/${project.id}`}>
 									{project.name}
 								</StyledLink>
 							</Box>

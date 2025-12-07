@@ -123,7 +123,7 @@ const OverviewDashboard: React.FC = () => {
 	};
 
 	const handleAddProject = async () => {
-		navigate("/projects/new");
+		navigate("/portfolios/new");
 	};
 
 	const handleAddTeam = async () => {
