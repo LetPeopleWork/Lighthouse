@@ -1,8 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
-import { ProjectEditPage } from "./ProjectEditPage";
+import { PortfolioEditPage } from "./PortfolioEditPage";
 
-export class ProjectDetailPage {
+export class PortfolioDetailPage {
 	page: Page;
 
 	constructor(page: Page) {
@@ -76,10 +76,10 @@ export class ProjectDetailPage {
 		await this.page.getByLabel(teamName).press("Enter");
 	}
 
-	async editProject(): Promise<ProjectEditPage> {
-		await this.editProjectButton.click();
+	async editPortfolio(): Promise<PortfolioEditPage> {
+		await this.editPorftolioButton.click();
 
-		return new ProjectEditPage(this.page);
+		return new PortfolioEditPage(this.page);
 	}
 
 	async refreshFeatures(): Promise<void> {
@@ -94,8 +94,8 @@ export class ProjectDetailPage {
 		return this.page.getByRole("button", { name: "Refresh Features" });
 	}
 
-	get editProjectButton(): Locator {
-		return this.page.getByRole("button", { name: "Edit Project" });
+	get editPorftolioButton(): Locator {
+		return this.page.getByRole("button", { name: "Edit Portfolio" });
 	}
 
 	get featureSizeWidget(): Locator {
@@ -122,9 +122,9 @@ export class ProjectDetailPage {
 			.nth(1);
 	}
 
-	get projectId(): number {
+	get portfolioId(): number {
 		const url = new URL(this.page.url());
-		const projectId = url.pathname.split("/").pop() ?? "0";
-		return Number.parseInt(projectId, 10);
+		const portfolioId = url.pathname.split("/").pop() ?? "0";
+		return Number.parseInt(portfolioId, 10);
 	}
 }

@@ -70,7 +70,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 {
 	private readonly api: string;
 
-	constructor(api: "teams" | "projects") {
+	constructor(api: "teams" | "portfolios") {
 		super();
 		this.api = api;
 	}

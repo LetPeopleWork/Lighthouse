@@ -7,15 +7,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
-    [Route("api/projects/{projectId}/metrics")]
+    [Route("api/portfolios/{portfolioId}/metrics")]
+    [Route("api/projects/{portfolioId}/metrics")] // Backward Compatibility
     [ApiController]
-    public class ProjectMetricsController : ControllerBase
+    public class PortfolioMetricsController : ControllerBase
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
         private readonly IRepository<Project> projectRepository;
         private readonly IProjectMetricsService projectMetricsService;
 
-        public ProjectMetricsController(IRepository<Project> projectRepository, IProjectMetricsService projectMetricsService)
+        public PortfolioMetricsController(IRepository<Project> projectRepository, IProjectMetricsService projectMetricsService)
         {
             this.projectRepository = projectRepository;
             this.projectMetricsService = projectMetricsService;

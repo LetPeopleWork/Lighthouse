@@ -179,10 +179,10 @@ describe("OverviewDashboard", () => {
 	it("renders dashboard header with add buttons", async () => {
 		renderWithProviders(<OverviewDashboard />);
 
-  // Wait for loading to complete first
-  await waitFor(() => {
-   expect(screen.getByText("Portfolios")).toBeInTheDocument();
-  });		// Now check for the dashboard header and buttons
+		// Wait for loading to complete first
+		await waitFor(() => {
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
+		}); // Now check for the dashboard header and buttons
 		expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
 		expect(screen.getByText("Add team")).toBeInTheDocument();
 		expect(screen.getByText("Update All")).toBeInTheDocument();

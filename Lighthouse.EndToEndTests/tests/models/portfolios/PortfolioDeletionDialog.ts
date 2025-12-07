@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-export class ProjectDeletionDialog {
+export class PortfolioDeletionDialog {
 	page: Page;
 
 	constructor(page: Page) {

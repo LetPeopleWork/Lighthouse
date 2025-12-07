@@ -217,7 +217,7 @@ const OverviewDashboard: React.FC = () => {
 					<DataOverviewTable
 						data={projects}
 						title={`${portfolioTerm}s`}
-						api="projects"
+						api="portfolios"
 						onDelete={handleProjectDelete}
 						filterText={filterText}
 					/>

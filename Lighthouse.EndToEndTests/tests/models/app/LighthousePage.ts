@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { OverviewPage } from "../overview/OverviewPage";
-import { ProjectEditPage } from "../projects/ProjectEditPage";
+import { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
 import { SettingsPage } from "../settings/SettingsPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
 
@@ -26,9 +26,9 @@ export class LighthousePage {
 		return new TeamEditPage(this.page);
 	}
 
-	async createNewProject(): Promise<ProjectEditPage> {
+	async createNewProject(): Promise<PortfolioEditPage> {
 		await this.page.goto("/projects/new");
-		return new ProjectEditPage(this.page);
+		return new PortfolioEditPage(this.page);
 	}
 
 	async goToSettings(): Promise<SettingsPage> {

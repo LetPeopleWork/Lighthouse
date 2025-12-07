@@ -18,28 +18,28 @@ export interface IProjectService {
 export class ProjectService extends BaseApiService implements IProjectService {
 	async getProjects(): Promise<Project[]> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IProject[]>("/projects");
+			const response = await this.apiService.get<IProject[]>("/portfolios");
 			return response.data.map(BaseApiService.deserializeProject);
 		});
 	}
 
 	async getProject(id: number): Promise<Project | null> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IProject>(`/projects/${id}`);
+			const response = await this.apiService.get<IProject>(`/portfolios/${id}`);
 			return BaseApiService.deserializeProject(response.data);
 		});
 	}
 
 	async deleteProject(id: number): Promise<void> {
 		return this.withErrorHandling(async () => {
-			await this.apiService.delete<void>(`/projects/${id}`);
+			await this.apiService.delete<void>(`/portfolios/${id}`);
 		});
 	}
 
 	async getProjectSettings(id: number): Promise<IProjectSettings> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IProjectSettings>(
-				`/projects/${id}/settings`,
+				`/portfolios/${id}/settings`,
 			);
 			return this.deserializeProjectSettings(response.data);
 		});
@@ -50,7 +50,7 @@ export class ProjectService extends BaseApiService implements IProjectService {
 	): Promise<IProjectSettings> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.put<IProjectSettings>(
-				`/projects/${projectSettings.id}`,
+				`/portfolios/${projectSettings.id}`,
 				projectSettings,
 			);
 			return this.deserializeProjectSettings(response.data);
@@ -62,7 +62,7 @@ export class ProjectService extends BaseApiService implements IProjectService {
 	): Promise<IProjectSettings> {
 		return await this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IProjectSettings>(
-				"/projects",
+				"/portfolios",
 				projectSettings,
 			);
 			return this.deserializeProjectSettings(response.data);
@@ -71,13 +71,13 @@ export class ProjectService extends BaseApiService implements IProjectService {
 
 	async refreshFeaturesForProject(id: number): Promise<void> {
 		await this.withErrorHandling(async () => {
-			await this.apiService.post<IProject>(`/projects/refresh/${id}`);
+			await this.apiService.post<IProject>(`/portfolios/refresh/${id}`);
 		});
 	}
 
 	async refreshFeaturesForAllProjects(): Promise<void> {
 		await this.withErrorHandling(async () => {
-			await this.apiService.post(`/projects/refresh-all`);
+			await this.apiService.post(`/portfolios/refresh-all`);
 		});
 	}
 
@@ -92,7 +92,7 @@ export class ProjectService extends BaseApiService implements IProjectService {
 	): Promise<boolean> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<boolean>(
-				"/projects/validate",
+				"/portfolios/validate",
 				projectSettings,
 			);
 			return response.data;

@@ -15,7 +15,7 @@ Browse through all the features from this portfolio and see which teams are invo
 {: .note}
 You can directly go to the portfolio detail page if you bookmark the specific URL. Even if the portfolio name changes, the URL will stay the same.
 
-![Portfolio Details](../../assets/features/projectdetail.png)
+![Portfolio Details](../../assets/features/portfoliodetail.png)
 
 # General Portfolio Information and Actions
 On top you can see general portfolio information, which includes the name of the portfolio and it was last updated.
@@ -94,7 +94,7 @@ Milestones are relevant events that have a specific date.
 
 You can define Milestones as you please when using Lighthouse. Simply give it a name and a date, and Lighthouse will automatically add it to the Feature View and display the [Milestone Probability](#milestone-probability):
 
-![Milestones](../../assets/features/projectdetail_milestones.png)
+![Milestones](../../assets/features/portfoliodetail_milestones.png)
 
 We know sometimes life happens, and things may shift. You can always adjust the date of a milestone. When doing so, Lighthousue will automatically reforecast and update the probabilities.
 
@@ -106,7 +106,7 @@ Milestones that are in the past will not be displayed in the Features to save sp
 
 You can adjust the Feature WIP, and it will automatically reforecast the completion dates and likelihoods for each milestone:
 
-![Feature WIP](../assets/features/projectdetail_team_feature_wip.png)
+![Feature WIP](../assets/features/portfoliodetail_team_feature_wip.png)
 
 If you compare the above picture to the one in [Milestones](#milestones), you can see that adjusting the Feature WIP for *The A-Team* from 1 to 3 caused the probabilities to change. In general, increasing the Feature WIP will mean that *lower ordered* features will be completed sooner, while *higher ordered features* take longer to finish.  
 A Feature WIP of 1 means, the team will **only** work on the top most feature, and move to the next one only when this is all done. The single focus of this team is on one feature.  

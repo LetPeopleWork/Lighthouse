@@ -49,41 +49,41 @@ const testData = [
 
 for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 	testWithUpdatedTeams(involvedTeams)(
-		`should show correct Features for ${name} project on refresh`,
+		`should show correct Features for ${name} portfolio on refresh`,
 		async ({ testData, overviewPage }) => {
-			const project = testData.projects[index];
+			const portfolio = testData.portfolios[index];
 
-			const projectDetailPage = await overviewPage.goToProject(project);
+			const portfolioDetailPage = await overviewPage.goToPortfolio(portfolio);
 
 			const involvedTeams: { [key: string]: string[] } = {};
 
 			await test.step("Refresh Features", async () => {
-				await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();
+				await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
 
-				await projectDetailPage.refreshFeatures();
-				await expect(projectDetailPage.refreshFeatureButton).toBeDisabled();
+				await portfolioDetailPage.refreshFeatures();
+				await expect(portfolioDetailPage.refreshFeatureButton).toBeDisabled();
 
 				// Wait for update to be done
-				await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();
+				await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
 
-				const lastUpdatedDate = await projectDetailPage.getLastUpdatedDate();
+				const lastUpdatedDate = await portfolioDetailPage.getLastUpdatedDate();
 				expectDateToBeRecent(lastUpdatedDate);
 			});
 
 			await test.step("Expected Features were loaded", async () => {
 				for (const feature of expectedFeatures) {
-					const featureLink = projectDetailPage.getFeatureLink(feature.name);
+					const featureLink = portfolioDetailPage.getFeatureLink(feature.name);
 					await expect(featureLink).toBeVisible();
 
 					if (feature.inProgress) {
-						const inProgressIcon = projectDetailPage.getFeatureInProgressIcon(
+						const inProgressIcon = portfolioDetailPage.getFeatureInProgressIcon(
 							feature.name,
 						);
 						await expect(inProgressIcon).toBeVisible();
 					}
 
 					if (feature.defaultSize) {
-						const defaultSizeIcon = projectDetailPage.getFeatureIsDefaultSize(
+						const defaultSizeIcon = portfolioDetailPage.getFeatureIsDefaultSize(
 							feature.name,
 						);
 						await expect(defaultSizeIcon).toBeVisible();
@@ -98,7 +98,7 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 
 						involvedTeams[team.name].push(feature.name);
 
-						const teamLink = projectDetailPage.getTeamLinkForFeature(
+						const teamLink = portfolioDetailPage.getTeamLinkForFeature(
 							team.name,
 							involvedTeams[team.name].length - 1,
 						);
@@ -125,15 +125,15 @@ for (const { index, name, involvedTeams, expectedFeatures } of testData) {
 }
 
 testWithData(
-	"should open Project Edit Page when clicking on Edit Button",
+	"should open Portfolio Edit Page when clicking on Edit Button",
 	async ({ testData, overviewPage }) => {
-		const [project] = testData.projects;
+		const [portfolio] = testData.portfolios;
 
-		const projectDetailPage = await overviewPage.goToProject(project);
+		const portfolioDetailPage = await overviewPage.goToPortfolio(portfolio);
 
-		const projectEditPage = await projectDetailPage.editProject();
-		expect(projectEditPage.page.url()).toContain(
-			`/projects/edit/${project.id}`,
+		const portfolioEditPage = await portfolioDetailPage.editPortfolio();
+		expect(portfolioEditPage.page.url()).toContain(
+			`/portfolios/edit/${portfolio.id}`,
 		);
 	},
 );
@@ -141,23 +141,23 @@ testWithData(
 testWithUpdatedTeams([3])(
 	"should include milestones and WIP in feature calculation",
 	async ({ testData, overviewPage }) => {
-		const project = testData.projects[2];
+		const portfolio = testData.portfolios[2];
 
-		const projectDetailPage = await overviewPage.goToProject(project);
+		const portfolioDetailPage = await overviewPage.goToPortfolio(portfolio);
 
-		await projectDetailPage.refreshFeatures();
-		await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();
+		await portfolioDetailPage.refreshFeatures();
+		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
 
 		const milestoneName = "My Milestone";
 
 		await test.step("Add Milestone", async () => {
-			await projectDetailPage.toggleMilestoneConfiguration();
+			await portfolioDetailPage.toggleMilestoneConfiguration();
 
 			const milestoneDate = new Date();
 			milestoneDate.setDate(milestoneDate.getDate() + 14);
 
-			await projectDetailPage.addMilestone(milestoneName, milestoneDate);
-			const milestoneColumn = projectDetailPage.getMilestoneColumn(
+			await portfolioDetailPage.addMilestone(milestoneName, milestoneDate);
+			const milestoneColumn = portfolioDetailPage.getMilestoneColumn(
 				milestoneName,
 				milestoneDate,
 			);
@@ -167,8 +167,8 @@ testWithUpdatedTeams([3])(
 		await test.step("Delete Milestone removes column", async () => {
 			const milestoneDate = new Date();
 			milestoneDate.setDate(new Date().getDate() + 7);
-			await projectDetailPage.removeMilestone();
-			const milestoneColumn = projectDetailPage.getMilestoneColumn(
+			await portfolioDetailPage.removeMilestone();
+			const milestoneColumn = portfolioDetailPage.getMilestoneColumn(
 				milestoneName,
 				milestoneDate,
 			);
@@ -179,15 +179,15 @@ testWithUpdatedTeams([3])(
 			const pastDate = new Date();
 			pastDate.setDate(new Date().getDate() - 14);
 
-			await projectDetailPage.addMilestone(milestoneName, pastDate);
+			await portfolioDetailPage.addMilestone(milestoneName, pastDate);
 
-			const milestoneColumn = projectDetailPage.getMilestoneColumn(
+			const milestoneColumn = portfolioDetailPage.getMilestoneColumn(
 				milestoneName,
 				pastDate,
 			);
 			await expect(milestoneColumn).not.toBeVisible();
 
-			await projectDetailPage.removeMilestone();
+			await portfolioDetailPage.removeMilestone();
 		});
 	},
 );

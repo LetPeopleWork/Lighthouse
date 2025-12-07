@@ -1,5 +1,5 @@
 import { type APIRequestContext, test as base } from "@playwright/test";
-import { createProject } from "../helpers/api/projects";
+import { createPortfolio } from "../helpers/api/portfolios";
 import { createTeam, updateTeam } from "../helpers/api/teams";
 import {
 	createAzureDevOpsConnection,
@@ -18,7 +18,7 @@ type LighthouseWithDataFixtures = {
 };
 
 type TestData = {
-	projects: ModelIdentifier[];
+	portfolios: ModelIdentifier[];
 	teams: ModelIdentifier[];
 	connections: ModelIdentifier[];
 };
@@ -102,7 +102,7 @@ async function generateTestData(
 
 	await updateTeamData(request, teamsToProcess);
 
-	const project1 = await createProject(
+	const project1 = await createPortfolio(
 		request,
 		generateRandomName(),
 		[lighthouseDevTeam],
@@ -112,7 +112,7 @@ async function generateTestData(
 		adoStates,
 		["Azure DevOps"],
 	);
-	const project2 = await createProject(
+	const project2 = await createPortfolio(
 		request,
 		generateRandomName(),
 		[lighthouseDevTeam, team2],
@@ -122,7 +122,7 @@ async function generateTestData(
 		adoStates,
 		["Azure DevOps"],
 	);
-	const project3 = await createProject(
+	const project3 = await createPortfolio(
 		request,
 		generateRandomName(),
 		[team3],
@@ -134,7 +134,7 @@ async function generateTestData(
 	);
 
 	return {
-		projects: [project1, project2, project3],
+		portfolios: [project1, project2, project3],
 		teams: [lighthouseDevTeam, team2, team3],
 		connections: [adoConnection, jiraConnection],
 	};

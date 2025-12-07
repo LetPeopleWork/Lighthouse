@@ -32,7 +32,7 @@ describe("ProjectService", () => {
 		const projects = await projectService.getProjects();
 
 		expect(projects).toEqual([project]);
-		expect(mockedAxios.get).toHaveBeenCalledWith("/projects");
+		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios");
 	});
 
 	it("should get a project by id", async () => {
@@ -47,7 +47,7 @@ describe("ProjectService", () => {
 		const mockResponse = await projectService.getProject(1);
 
 		expect(mockResponse).toEqual(project);
-		expect(mockedAxios.get).toHaveBeenCalledWith("/projects/1");
+		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios/1");
 	});
 
 	it("should delete a project by id", async () => {
@@ -55,7 +55,7 @@ describe("ProjectService", () => {
 
 		await projectService.deleteProject(1);
 
-		expect(mockedAxios.delete).toHaveBeenCalledWith("/projects/1");
+		expect(mockedAxios.delete).toHaveBeenCalledWith("/portfolios/1");
 	});
 
 	it("should get project settings by id", async () => {
@@ -66,7 +66,7 @@ describe("ProjectService", () => {
 		const settings = await projectService.getProjectSettings(1);
 
 		expect(settings).toEqual(mockSettings);
-		expect(mockedAxios.get).toHaveBeenCalledWith("/projects/1/settings");
+		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios/1/settings");
 	});
 
 	it("should update project settings", async () => {
@@ -78,7 +78,7 @@ describe("ProjectService", () => {
 
 		expect(updatedSettings).toEqual(projectSettings);
 		expect(mockedAxios.put).toHaveBeenCalledWith(
-			"/projects/1",
+			"/portfolios/1",
 			projectSettings,
 		);
 	});
@@ -95,7 +95,7 @@ describe("ProjectService", () => {
 
 		expect(createdSettings).toEqual(mockResponse);
 		expect(mockedAxios.post).toHaveBeenCalledWith(
-			"/projects",
+			"/portfolios",
 			newProjectSettings,
 		);
 	});
@@ -110,15 +110,15 @@ describe("ProjectService", () => {
 
 		await projectService.refreshFeaturesForProject(1);
 
-		expect(mockedAxios.post).toHaveBeenCalledWith("/projects/refresh/1");
+		expect(mockedAxios.post).toHaveBeenCalledWith("/portfolios/refresh/1");
 	});
 
-	it("should refresh features for all projects", async () => {
+	it("should refresh features for all portfolios", async () => {
 		mockedAxios.post.mockResolvedValueOnce({});
 
 		await projectService.refreshFeaturesForAllProjects();
 
-		expect(mockedAxios.post).toHaveBeenCalledWith("/projects/refresh-all");
+		expect(mockedAxios.post).toHaveBeenCalledWith("/portfolios/refresh-all");
 	});
 
 	it("should refresh forecasts for a project by id", async () => {
@@ -146,7 +146,7 @@ describe("ProjectService", () => {
 
 		expect(isValid).toBe(true);
 		expect(mockedAxios.post).toHaveBeenCalledWith(
-			"/projects/validate",
+			"/portfolios/validate",
 			mockProjectSettings,
 		);
 	});
@@ -161,7 +161,7 @@ describe("ProjectService", () => {
 
 		expect(isValid).toBe(false);
 		expect(mockedAxios.post).toHaveBeenCalledWith(
-			"/projects/validate",
+			"/portfolios/validate",
 			mockProjectSettings,
 		);
 	});

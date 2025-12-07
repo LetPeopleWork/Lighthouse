@@ -1,19 +1,19 @@
 import { expect, test } from "../../fixutres/LighthouseFixture";
 import {
-	createProjectCsvFile,
+	createPortfoliosCsvFile,
 	createTeamCsvFile,
 } from "../../helpers/csv/csvTestData";
 import { CsvUploadHelper } from "../../helpers/csv/csvUploadHelper";
 import { generateRandomName } from "../../helpers/names";
 
-test("should be able to handle teams and projects defined via CSV", async ({
+test("should be able to handle teams and portfolios defined via CSV", async ({
 	overviewPage,
 }) => {
 	let teamCsvFile: { filePath: string; cleanup: () => void } | null = null;
-	let projectCsvFile: { filePath: string; cleanup: () => void } | null = null;
+	let portfolioCsvFile: { filePath: string; cleanup: () => void } | null = null;
 
 	const newTeam = { id: 0, name: generateRandomName() };
-	const newProject = { id: 0, name: generateRandomName() };
+	const newPortfolio = { id: 0, name: generateRandomName() };
 
 	const workTrackingSystem = {
 		name: generateRandomName(),
@@ -146,37 +146,37 @@ test("should be able to handle teams and projects defined via CSV", async ({
 		expect(lastUpdated).toBeDefined();
 	});
 
-	await test.step("Create CSV Project with file upload", async () => {
+	await test.step("Create CSV Portfolio with file upload", async () => {
 		// Generate CSV data with current date to ensure consistent 30-day metrics
-		projectCsvFile = createProjectCsvFile();
+		portfolioCsvFile = createPortfoliosCsvFile();
 
-		const projectsPage = await overviewPage.lightHousePage.goToOverview();
-		const newProjectPage = await projectsPage.addNewProject();
-		const csvUploadHelper = new CsvUploadHelper(newProjectPage.page);
+		const portfoliosPage = await overviewPage.lightHousePage.goToOverview();
+		const newPortfolioPage = await portfoliosPage.addNewPortfolio();
+		const csvUploadHelper = new CsvUploadHelper(newPortfolioPage.page);
 
 		await test.step("Add general configuration", async () => {
-			await newProjectPage.setName(newProject.name);
+			await newPortfolioPage.setName(newPortfolio.name);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newProjectPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
 		await test.step("Add Work Item Type Configuration", async () => {
-			await newProjectPage.resetWorkItemTypes(["Epic"], ["Epic"]);
+			await newPortfolioPage.resetWorkItemTypes(["Epic"], ["Epic"]);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newProjectPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
 		await test.step("Add Involved Teams Configuration", async () => {
-			await newProjectPage.selectTeam(newTeam.name);
+			await newPortfolioPage.selectTeam(newTeam.name);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newProjectPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
 		await test.step("Add State Configuration", async () => {
-			await newProjectPage.resetStates(
+			await newPortfolioPage.resetStates(
 				{
 					toDo: ["New", "Proposed", "To Do"],
 					doing: ["Active", "Resolved", "In Progress", "Committed"],
@@ -190,20 +190,20 @@ test("should be able to handle teams and projects defined via CSV", async ({
 			);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newProjectPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
 		await test.step("Select CSV Work Tracking System", async () => {
-			await newProjectPage.selectWorkTrackingSystem(workTrackingSystem.name);
+			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
 
 			// CSV system should now show file upload component
 			await expect(csvUploadHelper.isFileUploadVisible()).resolves.toBe(true);
 
-			// Upload the CSV file - ensure projectCsvFile is not null
-			if (!projectCsvFile) {
-				throw new Error("Project CSV file not created");
+			// Upload the CSV file - ensure portfolioCsvFile is not null
+			if (!portfolioCsvFile) {
+				throw new Error("portfolio CSV file not created");
 			}
-			await csvUploadHelper.uploadCsvFile(projectCsvFile.filePath);
+			await csvUploadHelper.uploadCsvFile(portfolioCsvFile.filePath);
 			await csvUploadHelper.waitForUploadComplete();
 
 			// Verify file was uploaded
@@ -211,13 +211,13 @@ test("should be able to handle teams and projects defined via CSV", async ({
 			expect(selectedFile).toBeTruthy();
 
 			// Now we have all default configuration set
-			await expect(newProjectPage.validateButton).toBeEnabled();
+			await expect(newPortfolioPage.validateButton).toBeEnabled();
 		});
 
 		await test.step("Validate Settings", async () => {
-			await newProjectPage.validate();
-			await expect(newProjectPage.validateButton).toBeEnabled();
-			await expect(newProjectPage.saveButton).toBeEnabled();
+			await newPortfolioPage.validate();
+			await expect(newPortfolioPage.validateButton).toBeEnabled();
+			await expect(newPortfolioPage.saveButton).toBeEnabled();
 
 			// Check for any validation errors
 			const hasErrors = await csvUploadHelper.hasValidationErrors();
@@ -227,39 +227,39 @@ test("should be able to handle teams and projects defined via CSV", async ({
 			}
 		});
 
-		await test.step("Create New Project", async () => {
-			await newProjectPage.validate();
-			await expect(newProjectPage.saveButton).toBeEnabled();
-			const projectInfoPage = await newProjectPage.save();
+		await test.step("Create New portfolio", async () => {
+			await newPortfolioPage.validate();
+			await expect(newPortfolioPage.saveButton).toBeEnabled();
+			const portfolioInfoPage = await newPortfolioPage.save();
 
-			await expect(projectInfoPage.refreshFeatureButton).toBeEnabled();
-			newProject.id = projectInfoPage.projectId;
+			await expect(portfolioInfoPage.refreshFeatureButton).toBeEnabled();
+			newPortfolio.id = portfolioInfoPage.portfolioId;
 
-			const projectsPage = await overviewPage.lightHousePage.goToOverview();
-			await projectsPage.search(newProject.name);
-			const projectLink = await overviewPage.getProjectLink(newProject);
-			await expect(projectLink).toBeVisible();
+			const portfoliosPage = await overviewPage.lightHousePage.goToOverview();
+			await portfoliosPage.search(newPortfolio.name);
+			const portfolioLink = await overviewPage.getPortfolioLink(newPortfolio);
+			await expect(portfolioLink).toBeVisible();
 		});
 	});
 
-	await test.step("Wait for project metrics to load and verify features", async () => {
-		const projectInfoPage = await overviewPage.goToProject(newProject);
+	await test.step("Wait for portfolio metrics to load and verify features", async () => {
+		const portfolioInfoPage = await overviewPage.goToPortfolio(newPortfolio);
 
 		// Refresh features to load CSV data
-		await projectInfoPage.refreshFeatures();
+		await portfolioInfoPage.refreshFeatures();
 
 		// Wait for features to be loaded
-		await projectInfoPage.page.waitForTimeout(5000);
+		await portfolioInfoPage.page.waitForTimeout(5000);
 
 		// Verify that features refresh button is re-enabled (operation completed)
-		await expect(projectInfoPage.refreshFeatureButton).toBeEnabled();
+		await expect(portfolioInfoPage.refreshFeatureButton).toBeEnabled();
 
 		// Verify last updated date is recent
-		const lastUpdated = await projectInfoPage.getLastUpdatedDate();
+		const lastUpdated = await portfolioInfoPage.getLastUpdatedDate();
 		expect(lastUpdated).toBeDefined();
 	});
 
-	await test.step("Verify team shows project features correctly", async () => {
+	await test.step("Verify team shows portfolio features correctly", async () => {
 		// Navigate to team detail page
 		const teamsPage = await overviewPage.lightHousePage.goToOverview();
 		const teamInfoPage = await teamsPage.goToTeam(newTeam.name);
@@ -280,8 +280,8 @@ test("should be able to handle teams and projects defined via CSV", async ({
 		if (teamCsvFile) {
 			teamCsvFile.cleanup();
 		}
-		if (projectCsvFile) {
-			projectCsvFile.cleanup();
+		if (portfolioCsvFile) {
+			portfolioCsvFile.cleanup();
 		}
 	});
 });

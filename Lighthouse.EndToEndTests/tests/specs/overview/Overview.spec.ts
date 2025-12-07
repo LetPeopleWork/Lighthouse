@@ -1,53 +1,53 @@
 import { expect, test, testWithData } from "../../fixutres/LighthouseFixture";
 
 testWithData(
-	"should show all projects on dashboard",
+	"should show all portfolios on dashboard",
 	async ({ testData, overviewPage }) => {
-		const [project1, project2] = testData.projects;
+		const [portfolio1, portfolio2] = testData.portfolios;
 
-		await expect(await overviewPage.getProjectLink(project1)).toBeVisible();
-		await expect(await overviewPage.getProjectLink(project2)).toBeVisible();
+		await expect(await overviewPage.getPortfolioLink(portfolio1)).toBeVisible();
+		await expect(await overviewPage.getPortfolioLink(portfolio2)).toBeVisible();
 	},
 );
 
 testWithData(
-	"should filter projects on dashboard",
+	"should filter portfolios on dashboard",
 	async ({ testData, overviewPage }) => {
-		const [project1, project2] = testData.projects;
+		const [portfolio1, portfolio2] = testData.portfolios;
 
-		await test.step(`Search for Project ${project1.name}`, async () => {
-			await overviewPage.search(project1.name);
+		await test.step(`Search for Portfolio ${portfolio1.name}`, async () => {
+			await overviewPage.search(portfolio1.name);
 
-			const projectLink = await overviewPage.getProjectLink(project1);
+			const portfolioLink = await overviewPage.getPortfolioLink(portfolio1);
 
-			await expect(projectLink).toBeVisible();
+			await expect(portfolioLink).toBeVisible();
 		});
 
-		await test.step(`Search for Project ${project2.name}`, async () => {
-			await overviewPage.search(project2.name);
+		await test.step(`Search for Portfolio ${portfolio2.name}`, async () => {
+			await overviewPage.search(portfolio2.name);
 
-			const projectLink = await overviewPage.getProjectLink(project2);
-			await expect(projectLink).toBeVisible();
+			const portfolioLink = await overviewPage.getPortfolioLink(portfolio2);
+			await expect(portfolioLink).toBeVisible();
 		});
 
-		await test.step("Search for not existing Project", async () => {
+		await test.step("Search for not existing Portfolio", async () => {
 			await overviewPage.search("Jambalaya");
 
-			const projectLink1 = await overviewPage.getProjectLink(project1);
-			const projectLink2 = await overviewPage.getProjectLink(project2);
+			const portfolioLink1 = await overviewPage.getPortfolioLink(portfolio1);
+			const portfolioLink2 = await overviewPage.getPortfolioLink(portfolio2);
 
-			await expect(projectLink1).not.toBeVisible();
-			await expect(projectLink2).not.toBeVisible();
+			await expect(portfolioLink1).not.toBeVisible();
+			await expect(portfolioLink2).not.toBeVisible();
 		});
 
 		await test.step("Clear Search", async () => {
 			await overviewPage.search("");
 
-			const projectLink1 = await overviewPage.getProjectLink(project1);
-			const projectLink2 = await overviewPage.getProjectLink(project2);
+			const portfolioLink1 = await overviewPage.getPortfolioLink(portfolio1);
+			const portfolioLink2 = await overviewPage.getPortfolioLink(portfolio2);
 
-			await expect(projectLink1).toBeVisible();
-			await expect(projectLink2).toBeVisible();
+			await expect(portfolioLink1).toBeVisible();
+			await expect(portfolioLink2).toBeVisible();
 		});
 	},
 );

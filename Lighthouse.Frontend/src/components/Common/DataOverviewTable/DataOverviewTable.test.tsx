@@ -187,13 +187,13 @@ describe("DataOverviewTable", () => {
 		});
 	});
 
-	describe("with Projects data (using DataGrid)", () => {
-		it("renders DataGrid correctly for projects", () => {
+	describe("with Portfolios data (using DataGrid)", () => {
+		it("renders DataGrid correctly for portfolios", () => {
 			renderWithRouter(
 				<DataOverviewTable
 					data={sampleProjectData}
-					title="projects"
-					api="projects"
+					title="portfolios"
+					api="portfolios"
 					onDelete={vi.fn()}
 					filterText=""
 				/>,
@@ -201,12 +201,12 @@ describe("DataOverviewTable", () => {
 			expect(screen.getByTestId("datagrid-container")).toBeInTheDocument();
 		});
 
-		it("displays all project items in DataGrid", () => {
+		it("displays all portfolios items in DataGrid", () => {
 			renderWithRouter(
 				<DataOverviewTable
 					data={sampleProjectData}
-					title="projects"
-					api="projects"
+					title="portfolios"
+					api="portfolios"
 					onDelete={vi.fn()}
 					filterText=""
 				/>,
@@ -349,12 +349,12 @@ describe("DataOverviewTable", () => {
 			expect(mockNavigate).toHaveBeenCalledWith("/teams/new?cloneFrom=1");
 		});
 
-		it("shows Clone action for projects", () => {
+		it("shows Clone action for portfolios", () => {
 			renderWithRouter(
 				<DataOverviewTable
 					data={sampleProjectData}
-					title="projects"
-					api="projects"
+					title="portfolios"
+					api="portfolios"
 					onDelete={vi.fn()}
 					filterText=""
 				/>,
@@ -364,12 +364,12 @@ describe("DataOverviewTable", () => {
 			expect(cloneButtons).toHaveLength(sampleProjectData.length);
 		});
 
-		it("navigates to clone URL when Clone button is clicked for projects", () => {
+		it("navigates to clone URL when Clone button is clicked for portfolios", () => {
 			renderWithRouter(
 				<DataOverviewTable
 					data={sampleProjectData}
-					title="projects"
-					api="projects"
+					title="Portfolios"
+					api="portfolios"
 					onDelete={vi.fn()}
 					filterText=""
 				/>,
@@ -435,7 +435,7 @@ describe("DataOverviewTable", () => {
 				<DataOverviewTable
 					data={[]}
 					title="Test Items"
-					api="api"
+					api="teams"
 					onDelete={vi.fn()}
 					filterText=""
 				/>,

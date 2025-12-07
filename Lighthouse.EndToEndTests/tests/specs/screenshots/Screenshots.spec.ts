@@ -9,7 +9,7 @@ import {
 	test,
 	testWithData,
 } from "../../fixutres/LighthouseFixture";
-import { updateProject } from "../../helpers/api/projects";
+import { updatePortfolio } from "../../helpers/api/portfolios";
 import { updateTeam } from "../../helpers/api/teams";
 import {
 	takeDialogScreenshot,
@@ -84,32 +84,32 @@ const updateTeams = async (
 	}
 };
 
-const updateProjects = async (
+const updatePortfolios = async (
 	api: APIRequestContext,
 	overviewPage: OverviewPage,
-	projects: ModelIdentifier[],
+	portfolios: ModelIdentifier[],
 ) => {
-	const projectNames = ["Lighthouse Project", "2025.01", "Project 1886"];
+	const portfolioNames = ["Lighthouse Project", "2025.01", "Project 1886"];
 
-	for (const project of projects) {
-		const projectPage = await overviewPage.lightHousePage.goToOverview();
-		const editProject = await projectPage.editProject(project);
+	for (const portfolio of portfolios) {
+		const portfolioPage = await overviewPage.lightHousePage.goToOverview();
+		const editPortfolioPage = await portfolioPage.editPortfolio(portfolio);
 
-		const newProjectName = projectNames[projects.indexOf(project)];
-		await editProject.setName(newProjectName);
-		project.name = newProjectName;
+		const newPortfolioname = portfolioNames[portfolios.indexOf(portfolio)];
+		await editPortfolioPage.setName(newPortfolioname);
+		portfolio.name = newPortfolioname;
 
-		await editProject.validate();
-		await expect(editProject.saveButton).toBeEnabled();
+		await editPortfolioPage.validate();
+		await expect(editPortfolioPage.saveButton).toBeEnabled();
 
-		const projectDetailPage = await editProject.save();
+		const portfolioDetailPage = await editPortfolioPage.save();
 
-		updateTeam(api, project.id);
+		updateTeam(api, portfolio.id);
 
-		await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();
+		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
 	}
 
-	await updateProject(api, projects[0].id);
+	await updatePortfolio(api, portfolios[0].id);
 };
 
 test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
@@ -121,7 +121,7 @@ testWithData(
 	async ({ overviewPage, testData, request }) => {
 		await updateWorkTrackingSystems(overviewPage, testData.connections);
 		await updateTeams(request, overviewPage, testData.teams);
-		await updateProjects(request, overviewPage, testData.projects);
+		await updatePortfolios(request, overviewPage, testData.portfolios);
 
 		const settingsPage = await overviewPage.lightHousePage.goToSettings();
 		const systemSettings = await settingsPage.goToSystemSettings();
@@ -289,19 +289,6 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	const demoDataPage = await settingsPage.goToDemoData();
 	await takePageScreenshot(demoDataPage.page, "settings/demodata.png");
 
-	const defaultTeamSettingsPage = await settingsPage.goToDefaultTeamSettings();
-	await takePageScreenshot(
-		defaultTeamSettingsPage.page,
-		"settings/defaultteamsettings.png",
-	);
-
-	const defaultprojectSettingsPage =
-		await settingsPage.goToDefaultProjectSettings();
-	await takePageScreenshot(
-		defaultprojectSettingsPage.page,
-		"settings/defaultprojectsettings.png",
-	);
-
 	const systemSettings = await settingsPage.goToSystemSettings();
 
 	await takePageScreenshot(systemSettings.page, "settings/systemsettings.png");
@@ -335,10 +322,10 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 });
 
 testWithData(
-	"Take @screenshot of populated overview, teams overview, team detail, projects overview, and project detail pages",
+	"Take @screenshot of populated overview, teams overview, team detail, portfolios overview, and portfolio detail pages",
 	async ({ testData, overviewPage, request }) => {
 		await updateTeams(request, overviewPage, testData.teams);
-		await updateProjects(request, overviewPage, testData.projects);
+		await updatePortfolios(request, overviewPage, testData.portfolios);
 
 		// Team Deletion Dialog
 		const teamsPage = await overviewPage.lightHousePage.goToOverview();
@@ -455,59 +442,62 @@ testWithData(
 
 		overviewPage.lightHousePage.goToOverview();
 
-		// Project Deletion Dialog
-		const deleteProjectDialog = await overviewPage.deleteProject(
-			testData.projects[0],
+		// portfolio Deletion Dialog
+		const deletePortfolioDialog = await overviewPage.deletePortfolio(
+			testData.portfolios[0],
 		);
 
 		await takeElementScreenshot(
-			deleteProjectDialog.page.getByRole("dialog"),
-			"features/projects_delete.png",
+			deletePortfolioDialog.page.getByRole("dialog"),
+			"features/portfolios_delete.png",
 			0.5,
 			1000,
 		);
-		await deleteProjectDialog.cancel();
+		await deletePortfolioDialog.cancel();
 
-		// Project Detail Page
-		const projectDetailPage = await overviewPage.goToProject(
-			testData.projects[0],
+		// portfolio Detail Page
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			testData.portfolios[0],
 		);
 		await takePageScreenshot(
-			projectDetailPage.page,
-			"features/projectdetail.png",
+			portfolioDetailPage.page,
+			"features/portfoliodetail.png",
 			3,
 		);
 
 		// Expand Milestones
-		await projectDetailPage.toggleMilestoneConfiguration();
+		await portfolioDetailPage.toggleMilestoneConfiguration();
 		const inTwoWeeks = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-		await projectDetailPage.addMilestone("SB26 Milestone", inTwoWeeks);
-		await expect(projectDetailPage.refreshFeatureButton).toBeEnabled();
+		await portfolioDetailPage.addMilestone("SB26 Milestone", inTwoWeeks);
+		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
 
 		await takePageScreenshot(
-			projectDetailPage.page,
-			"features/projectdetail_milestones.png",
+			portfolioDetailPage.page,
+			"features/portfoliodetail_milestones.png",
 			5,
 			1000,
 		);
 
 		// Involved Teams
-		await projectDetailPage.toggleMilestoneConfiguration();
-		await projectDetailPage.toggleFeatureWIPConfiguration();
+		await portfolioDetailPage.toggleMilestoneConfiguration();
+		await portfolioDetailPage.toggleFeatureWIPConfiguration();
 
-		await projectDetailPage.changeFeatureWIPForTeam(testData.teams[0].name, 3);
+		await portfolioDetailPage.changeFeatureWIPForTeam(
+			testData.teams[0].name,
+			3,
+		);
 
 		await takePageScreenshot(
-			projectDetailPage.page,
-			"features/projectdetail_team_feature_wip.png",
+			portfolioDetailPage.page,
+			"features/portfoliodetail_team_feature_wip.png",
 			5,
 			1000,
 		);
 
-		await projectDetailPage.goToMetrics();
+		await portfolioDetailPage.goToMetrics();
 
 		await takeElementScreenshot(
-			projectDetailPage.featureSizeWidget,
+			portfolioDetailPage.featureSizeWidget,
 			"features/metrics/featuresize.png",
 		);
 	},
@@ -560,8 +550,8 @@ for (const {
 		`Take @screenshot of ${workTrackingSystemName} Work Tracking System Connection creation`,
 		async ({ testData, overviewPage }) => {
 			test.fail(
-				testData.projects.length < 1,
-				"Expected to have projects initiatilized to prevent tutorial page from being displayed",
+				testData.portfolios.length < 1,
+				"Expected to have portfolios initiatilized to prevent tutorial page from being displayed",
 			);
 			const settingsPage = await overviewPage.lighthousePage.goToSettings();
 

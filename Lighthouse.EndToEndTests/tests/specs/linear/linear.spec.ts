@@ -111,39 +111,39 @@ test("should be able to handle a team defined in Linear", async ({
 		});
 	});
 
-	await test.step("Create Linear Project", async () => {
-		const newProject = {
+	await test.step("Create Linear Portfolio", async () => {
+		const newPortfolio = {
 			id: 0,
 			name: "My Demo Project",
 		};
 
-		const projectPage = await overviewPage.lightHousePage.goToOverview();
+		const portfolioPage = await overviewPage.lightHousePage.goToOverview();
 
-		const newProjectPage = await projectPage.addNewProject();
+		const newPortfolioPage = await portfolioPage.addNewPortfolio();
 		await test.step("Add general configuration", async () => {
-			await newProjectPage.setName(newProject.name);
-			await newProjectPage.setWorkItemQuery(newProject.name);
+			await newPortfolioPage.setName(newPortfolio.name);
+			await newPortfolioPage.setWorkItemQuery(newPortfolio.name);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newProjectPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
 		await test.step("Add Work Item Type Configuration", async () => {
-			await newProjectPage.resetWorkItemTypes(["Epic"], ["Default"]);
+			await newPortfolioPage.resetWorkItemTypes(["Epic"], ["Default"]);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newProjectPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
 		await test.step("Add Involved Teams Configuration", async () => {
-			await newProjectPage.selectTeam(newTeam.name);
+			await newPortfolioPage.selectTeam(newTeam.name);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newProjectPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
 		await test.step("Add State Configuration", async () => {
-			await newProjectPage.resetStates(
+			await newPortfolioPage.resetStates(
 				{
 					toDo: ["New", "Proposed", "To Do"],
 					doing: ["Active", "Resolved", "In Progress", "Committed"],
@@ -157,36 +157,36 @@ test("should be able to handle a team defined in Linear", async ({
 			);
 
 			// Expect Validation to be disabled because mandatory config is still missing
-			await expect(newProjectPage.validateButton).toBeDisabled();
+			await expect(newPortfolioPage.validateButton).toBeDisabled();
 		});
 
 		await test.step("Select Work Tracking System", async () => {
-			await newProjectPage.selectWorkTrackingSystem(workTrackingSystem.name);
+			await newPortfolioPage.selectWorkTrackingSystem(workTrackingSystem.name);
 
-			await newProjectPage.setWorkItemQuery(newProject.name);
+			await newPortfolioPage.setWorkItemQuery(newPortfolio.name);
 
 			// Now we have all default configuration set
-			await expect(newProjectPage.validateButton).toBeEnabled();
+			await expect(newPortfolioPage.validateButton).toBeEnabled();
 		});
 
 		await test.step("Validate Settings", async () => {
-			await newProjectPage.validate();
-			await expect(newProjectPage.validateButton).toBeEnabled();
-			await expect(newProjectPage.saveButton).toBeEnabled();
+			await newPortfolioPage.validate();
+			await expect(newPortfolioPage.validateButton).toBeEnabled();
+			await expect(newPortfolioPage.saveButton).toBeEnabled();
 		});
 
-		await test.step("Create New Project", async () => {
-			await newProjectPage.validate();
-			await expect(newProjectPage.saveButton).toBeEnabled();
-			const projectInfoPage = await newProjectPage.save();
+		await test.step("Create New Portfolio", async () => {
+			await newPortfolioPage.validate();
+			await expect(newPortfolioPage.saveButton).toBeEnabled();
+			const portfolioInfoPage = await newPortfolioPage.save();
 
-			await expect(projectInfoPage.refreshFeatureButton).toBeDisabled();
-			newProject.id = projectInfoPage.projectId;
+			await expect(portfolioInfoPage.refreshFeatureButton).toBeDisabled();
+			newPortfolio.id = portfolioInfoPage.portfolioId;
 
-			const projectPage = await overviewPage.lightHousePage.goToOverview();
-			await projectPage.search(newProject.name);
-			const projectLink = await projectPage.getProjectLink(newProject);
-			await expect(projectLink).toBeVisible();
+			const portfolioPage = await overviewPage.lightHousePage.goToOverview();
+			await portfolioPage.search(newPortfolio.name);
+			const portfolioLink = await portfolioPage.getPortfolioLink(newPortfolio);
+			await expect(portfolioLink).toBeVisible();
 		});
 	});
 });

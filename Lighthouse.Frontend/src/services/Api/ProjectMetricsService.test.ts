@@ -37,7 +37,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/throughput?startDate=2023-01-01&endDate=2023-01-31`,
+				`/portfolios/${projectId}/metrics/throughput?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toBeInstanceOf(RunChartData);
 			expect(result.workItemsPerUnitOfTime).toEqual(workItems);
@@ -68,7 +68,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/started?startDate=2023-01-01&endDate=2023-01-31`,
+				`/portfolios/${projectId}/metrics/started?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toBeInstanceOf(RunChartData);
 			expect(result.workItemsPerUnitOfTime).toEqual(workItems);
@@ -99,7 +99,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/wipOverTime?startDate=2023-01-01&endDate=2023-01-31`,
+				`/portfolios/${projectId}/metrics/wipOverTime?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toBeInstanceOf(RunChartData);
 			expect(result.workItemsPerUnitOfTime).toEqual(workItems);
@@ -138,7 +138,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/currentwip`,
+				`/portfolios/${projectId}/metrics/currentwip`,
 			);
 			expect(result.length).toBe(2);
 			expect(result[0].id).toBe(1);
@@ -167,7 +167,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/cycleTimePercentiles?startDate=2023-01-01&endDate=2023-01-31`,
+				`/portfolios/${projectId}/metrics/cycleTimePercentiles?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toEqual(mockPercentiles);
 		});
@@ -192,7 +192,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/sizePercentiles?startDate=2023-01-01&endDate=2023-01-31`,
+				`/portfolios/${projectId}/metrics/sizePercentiles?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result).toEqual(mockPercentiles);
 		});
@@ -228,7 +228,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/cycleTimeData?startDate=2023-01-01&endDate=2023-01-31`,
+				`/portfolios/${projectId}/metrics/cycleTimeData?startDate=2023-01-01&endDate=2023-01-31`,
 			);
 			expect(result.length).toBe(2);
 			expect(result[0].id).toBe(3);
@@ -259,7 +259,7 @@ describe("ProjectMetricsService", () => {
 
 			// Assert
 			expect(mockGet).toHaveBeenCalledWith(
-				`/projects/${projectId}/metrics/totalWorkItemAge`,
+				`/portfolios/${projectId}/metrics/totalWorkItemAge`,
 			);
 			expect(result).toBe(250);
 		});

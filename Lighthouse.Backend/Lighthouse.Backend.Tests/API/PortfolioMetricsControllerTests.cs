@@ -11,11 +11,11 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API
 {
     [TestFixture]
-    public class ProjectMetricsControllerTests
+    public class PortfolioMetricsControllerTests
     {
         private Mock<IRepository<Project>> projectRepository;
         private Mock<IProjectMetricsService> projectMetricsService;
-        private ProjectMetricsController subject;
+        private PortfolioMetricsController subject;
         private Project project;
 
         [SetUp]
@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             projectRepository = new Mock<IRepository<Project>>();
             projectMetricsService = new Mock<IProjectMetricsService>();
-            subject = new ProjectMetricsController(projectRepository.Object, projectMetricsService.Object);
+            subject = new PortfolioMetricsController(projectRepository.Object, projectMetricsService.Object);
             
             project = new Project
             {

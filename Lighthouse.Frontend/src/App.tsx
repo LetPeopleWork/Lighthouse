@@ -90,6 +90,13 @@ const App: React.FC = () => {
 										<Route path="edit/:id" element={<EditTeam />} />
 										<Route path="new" element={<EditTeam />} />
 									</Route>
+									<Route path="/portfolios">
+										<Route path=":id/:tab?" element={<ProjectDetail />} />
+										<Route path="edit/:id" element={<EditProject />} />
+										<Route path="new" element={<EditProject />} />
+									</Route>
+
+									{/* Backward compatibility for old links */}
 									<Route path="/projects">
 										<Route path=":id/:tab?" element={<ProjectDetail />} />
 										<Route path="edit/:id" element={<EditProject />} />

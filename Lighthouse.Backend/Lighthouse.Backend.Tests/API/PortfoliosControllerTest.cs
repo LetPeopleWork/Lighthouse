@@ -11,7 +11,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API
 {
-    public class ProjectsControllerTest
+    public class PortfoliosControllerTest
     {
         private Mock<IRepository<Project>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
@@ -454,9 +454,9 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        private ProjectsController CreateSubject()
+        private PortfoliosController CreateSubject()
         {
-            return new ProjectsController(
+            return new PortfoliosController(
                 projectRepoMock.Object,
                 teamRepoMock.Object,
                 projectUpdaterMock.Object,

@@ -146,8 +146,8 @@ describe("ImportSettingsStep", () => {
 		await waitFor(() => {
 			expect(mockConfigurationService.validateConfiguration).toHaveBeenCalled();
 			expect(screen.getByText("workTrackingSystems")).toBeInTheDocument();
-		expect(screen.getByText("teams")).toBeInTheDocument();
-		expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			expect(screen.getByText("teams")).toBeInTheDocument();
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
 			expect(screen.getByText("Work Tracking System 1")).toBeInTheDocument();
 			expect(screen.getByText("Team 1")).toBeInTheDocument();
 			expect(screen.getByText("Project 1")).toBeInTheDocument();

@@ -1,10 +1,10 @@
 import type { Locator, Page } from "@playwright/test";
-import type { ProjectEditPage } from "../../projects/ProjectEditPage";
+import type { PortfolioEditPage } from "../../portfolios/PortfolioEditPage";
 import type { TeamEditPage } from "../../teams/TeamEditPage";
 import type { WorkTrackingSystemsSettingsPage } from "./WorkTrackingSystemsSettingsPage";
 
 export class EditWorkTrackingSystemDialog<
-	T extends ProjectEditPage | TeamEditPage | WorkTrackingSystemsSettingsPage,
+	T extends PortfolioEditPage | TeamEditPage | WorkTrackingSystemsSettingsPage,
 > {
 	page: Page;
 	createPageHandler: (page: Page) => T;

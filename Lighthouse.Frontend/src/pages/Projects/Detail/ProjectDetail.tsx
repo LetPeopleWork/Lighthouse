@@ -97,7 +97,7 @@ const ProjectDetail: React.FC = () => {
 	};
 
 	const onEditProject = () => {
-		navigate(`/projects/edit/${id}`);
+		navigate(`/portfolios/edit/${id}`);
 	};
 
 	const onTeamSettingsChange = async (updatedTeamSettings: ITeamSettings) => {
@@ -234,7 +234,7 @@ const ProjectDetail: React.FC = () => {
 													disabled={!canUpdateProjectSettings}
 													sx={{ maxHeight: "40px", minWidth: "120px" }}
 												>
-													Edit Project
+													Edit Portfolio
 												</Button>
 											</span>
 										</Tooltip>

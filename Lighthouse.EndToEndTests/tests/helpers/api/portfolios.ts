@@ -1,8 +1,8 @@
 import type { APIRequestContext } from "@playwright/test";
 
-export async function createProject(
+export async function createPortfolio(
 	api: APIRequestContext,
-	projectName: string,
+	portfolioName: string,
 	involvedTeams: { id: number; name: string }[],
 	workTrackingSystemConnectionId: number,
 	workItemQuery: string,
@@ -19,10 +19,10 @@ export async function createProject(
 		tags: [],
 	}));
 
-	const response = await api.post("/api/projects", {
+	const response = await api.post("/api/portfolios", {
 		data: {
 			id: 0,
-			name: projectName,
+			name: portfolioName,
 			workItemTypes: workItemTypes,
 			milestones: [],
 			toDoStates: states.toDo,
@@ -52,6 +52,9 @@ export async function createProject(
 	return response.json();
 }
 
-export async function updateProject(api: APIRequestContext, projectId: number) {
-	await api.post(`/api/projects/refresh/${projectId}`);
+export async function updatePortfolio(
+	api: APIRequestContext,
+	portfolioId: number,
+) {
+	await api.post(`/api/portfolios/refresh/${portfolioId}`);
 }

@@ -12,7 +12,7 @@ testWithData(
 
 		const workTrackingSystems = testData.connections;
 		const teams = testData.teams;
-		const projects = testData.projects;
+		const portfolios = testData.portfolios;
 
 		let exportedConfigFileName = "";
 		await test.step("Export should export file", async () => {
@@ -29,8 +29,8 @@ testWithData(
 				expect(fileContent).toContain(team.name);
 			}
 
-			for (const project of projects) {
-				expect(fileContent).toContain(project.name);
+			for (const portfolio of portfolios) {
+				expect(fileContent).toContain(portfolio.name);
 			}
 		});
 
@@ -76,8 +76,8 @@ testWithData(
 				);
 			}
 
-			for (const project of projects) {
-				expect(await importDialog.getImportElementStatus(project.name)).toBe(
+			for (const portfolio of portfolios) {
+				expect(await importDialog.getImportElementStatus(portfolio.name)).toBe(
 					"New",
 				);
 			}
@@ -117,8 +117,8 @@ testWithData(
 				);
 			}
 
-			for (const project of projects) {
-				expect(await importDialog.getImportElementStatus(project.name)).toBe(
+			for (const portfolio of portfolios) {
+				expect(await importDialog.getImportElementStatus(portfolio.name)).toBe(
 					"Update",
 				);
 			}

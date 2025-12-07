@@ -30,7 +30,7 @@ import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 
 interface DataOverviewTableProps<IFeatureOwner> {
 	data: IFeatureOwner[];
-	api: string;
+	api: "teams" | "portfolios";
 	title: string;
 	onDelete: (item: IFeatureOwner) => void;
 	filterText: string;
@@ -186,8 +186,8 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 		(item: IFeatureOwner) => {
 			if (api === "teams") {
 				navigate(`/teams/new?cloneFrom=${item.id}`);
-			} else if (api === "projects") {
-				navigate(`/projects/new?cloneFrom=${item.id}`);
+			} else if (api === "portfolios") {
+				navigate(`/portfolios/new?cloneFrom=${item.id}`);
 			}
 		},
 		[navigate, api],
@@ -353,7 +353,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 									<EditIcon fontSize={isTablet ? "small" : "medium"} />
 								</IconButton>
 							</Tooltip>
-							{(api === "teams" || api === "projects") && (
+							{(api === "teams" || api === "portfolios") && (
 								<Tooltip title="Clone">
 									<IconButton
 										onClick={() => handleClone(row)}

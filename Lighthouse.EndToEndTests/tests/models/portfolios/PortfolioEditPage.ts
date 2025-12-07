@@ -1,12 +1,12 @@
 import type { Locator } from "@playwright/test";
 import { BaseEditPage } from "../common/BaseEditPage";
 import { EditWorkTrackingSystemDialog } from "../settings/WorkTrackingSystems/EditWorkTrackingSystemDialog";
-import { ProjectDetailPage } from "./ProjectDetailPage";
+import { PortfolioDetailPage } from "./PortfolioDetailPage";
 
-export class ProjectEditPage extends BaseEditPage<ProjectDetailPage> {
-	override async save(): Promise<ProjectDetailPage> {
+export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
+	override async save(): Promise<PortfolioDetailPage> {
 		await this.saveButton.click();
-		return new ProjectDetailPage(this.page);
+		return new PortfolioDetailPage(this.page);
 	}
 
 	async toggleUnparentedWorkItemConfiguration(): Promise<void> {
@@ -150,7 +150,7 @@ export class ProjectEditPage extends BaseEditPage<ProjectDetailPage> {
 	}
 
 	async addNewWorkTrackingSystem(): Promise<
-		EditWorkTrackingSystemDialog<ProjectEditPage>
+		EditWorkTrackingSystemDialog<PortfolioEditPage>
 	> {
 		await this.page
 			.getByRole("button", { name: "Add New Work Tracking System" })
@@ -158,7 +158,7 @@ export class ProjectEditPage extends BaseEditPage<ProjectDetailPage> {
 
 		return new EditWorkTrackingSystemDialog(
 			this.page,
-			(page) => new ProjectEditPage(page),
+			(page) => new PortfolioEditPage(page),
 		);
 	}
 }

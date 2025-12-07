@@ -10,7 +10,7 @@ export class ProjectMetricsService
 	implements IProjectMetricsService
 {
 	constructor() {
-		super("projects");
+		super("portfolios");
 	}
 
 	async getSizePercentiles(
@@ -20,7 +20,7 @@ export class ProjectMetricsService
 	): Promise<IPercentileValue[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IPercentileValue[]>(
-				`/projects/${projectId}/metrics/sizePercentiles?${this.getDateFormatString(startDate, endDate)}`,
+				`/portfolios/${projectId}/metrics/sizePercentiles?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
 			return response.data;
@@ -34,7 +34,7 @@ export class ProjectMetricsService
 	): Promise<IFeature[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IFeature[]>(
-				`/projects/${projectId}/metrics/allFeaturesForSizeChart?${this.getDateFormatString(startDate, endDate)}`,
+				`/portfolios/${projectId}/metrics/allFeaturesForSizeChart?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
 			const features = response.data.map((feature) => {

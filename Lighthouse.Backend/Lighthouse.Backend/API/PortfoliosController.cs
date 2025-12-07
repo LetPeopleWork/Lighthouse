@@ -9,8 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lighthouse.Backend.API
 {
     [Route("api/[controller]")]
+    [Route("api/projects")] // Backward compatibility
     [ApiController]
-    public class ProjectsController : ControllerBase
+    public class PortfoliosController : ControllerBase
     {
         private readonly IRepository<Project> projectRepository;
         private readonly IRepository<Team> teamRepository;
@@ -19,7 +20,7 @@ namespace Lighthouse.Backend.API
 
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository;
 
-        public ProjectsController(
+        public PortfoliosController(
             IRepository<Project> projectRepository,
             IRepository<Team> teamRepository,
             IProjectUpdater workItemUpdateService,

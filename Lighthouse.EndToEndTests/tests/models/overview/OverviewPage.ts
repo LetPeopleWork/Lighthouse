@@ -1,8 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 import type { LighthousePage } from "../app/LighthousePage";
-import { ProjectDeletionDialog } from "../projects/ProjectDeletionDialog";
-import { ProjectDetailPage } from "../projects/ProjectDetailPage";
-import { ProjectEditPage } from "../projects/ProjectEditPage";
+import { PortfolioDeletionDialog } from "../portfolios/PortfolioDeletionDialog";
+import { PortfolioDetailPage } from "../portfolios/PortfolioDetailPage";
+import { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
 import { TeamDeletionDialog } from "../teams/TeamDeletionDialog";
 import { TeamDetailPage } from "../teams/TeamDetailPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
@@ -23,53 +23,53 @@ export class OverviewPage {
 		await this.page.getByPlaceholder("Search").fill(searchTerm);
 	}
 
-	async getProjectLink(project: {
+	async getPortfolioLink(portfolio: {
 		name: string;
 		id: number;
 	}): Promise<Locator> {
-		const projectLink = this.page.getByRole("link", { name: project.name });
-		return projectLink;
+		const portfolioLink = this.page.getByRole("link", { name: portfolio.name });
+		return portfolioLink;
 	}
 
-	async goToProject(project: {
+	async goToPortfolio(portfolio: {
 		name: string;
 		id: number;
-	}): Promise<ProjectDetailPage> {
-		await this.search(project.name);
+	}): Promise<PortfolioDetailPage> {
+		await this.search(portfolio.name);
 
-		const projectLink = await this.getProjectLink(project);
-		await projectLink.click();
+		const portfolioLink = await this.getPortfolioLink(portfolio);
+		await portfolioLink.click();
 
-		return new ProjectDetailPage(this.page);
+		return new PortfolioDetailPage(this.page);
 	}
 
-	async editProject(project: {
+	async editPortfolio(portfolio: {
 		name: string;
 		id: number;
-	}): Promise<ProjectEditPage> {
-		await this.search(project.name);
+	}): Promise<PortfolioEditPage> {
+		await this.search(portfolio.name);
 
-		const projectEditIcon = this.page.getByLabel("Edit");
-		await projectEditIcon.click();
+		const portfolioEditIcon = this.page.getByLabel("Edit");
+		await portfolioEditIcon.click();
 
-		return new ProjectEditPage(this.page);
+		return new PortfolioEditPage(this.page);
 	}
 
-	async addNewProject(): Promise<ProjectEditPage> {
-		await this.page.getByRole("button", { name: "Add Project" }).click();
+	async addNewPortfolio(): Promise<PortfolioEditPage> {
+		await this.page.getByRole("button", { name: "Add Portfolio" }).click();
 
-		return new ProjectEditPage(this.page);
+		return new PortfolioEditPage(this.page);
 	}
 
-	async deleteProject(project: {
+	async deletePortfolio(portfolio: {
 		name: string;
 		id: number;
-	}): Promise<ProjectDeletionDialog> {
-		await this.search(project.name);
-		const projectDeleteIcon = this.page.getByLabel("Delete");
-		await projectDeleteIcon.click();
+	}): Promise<PortfolioDeletionDialog> {
+		await this.search(portfolio.name);
+		const portfolioDeleteIcon = this.page.getByLabel("Delete");
+		await portfolioDeleteIcon.click();
 
-		return new ProjectDeletionDialog(this.page);
+		return new PortfolioDeletionDialog(this.page);
 	}
 
 	async getTeamLink(teamName: string): Promise<Locator> {
@@ -117,14 +117,14 @@ export class OverviewPage {
 		return new TeamEditPage(this.page);
 	}
 
-	async cloneProject(projectName: string): Promise<ProjectEditPage> {
-		await this.search(projectName);
+	async clonePortfolio(portfolioName: string): Promise<PortfolioEditPage> {
+		await this.search(portfolioName);
 
-		const projectCloneIcon = this.page.getByLabel("Clone");
+		const portfolioCloneIcon = this.page.getByLabel("Clone");
 
-		await projectCloneIcon.click();
+		await portfolioCloneIcon.click();
 
-		return new ProjectEditPage(this.page);
+		return new PortfolioEditPage(this.page);
 	}
 
 	async showLicenseTooltip(): Promise<void> {

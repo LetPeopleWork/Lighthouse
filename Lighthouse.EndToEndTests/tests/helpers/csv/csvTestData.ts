@@ -52,11 +52,11 @@ ITEM-023,Transaction security validation,To Do,Task,,,${formatDate(yesterday)},E
 }
 
 /**
- * Generates a CSV string for project data with dates calculated to provide consistent metrics
+ * Generates a CSV string for portfolio data with dates calculated to provide consistent metrics
  * @param baseDate - The base date to calculate from (defaults to now)
- * @returns CSV string with project features
+ * @returns CSV string with portfolio features
  */
-export function generateProjectCsvData(baseDate: Date = new Date()): string {
+export function generatePortfolioCsvData(baseDate: Date = new Date()): string {
 	// Calculate dates relative to the base date to ensure we have consistent last 30-day metrics
 	const today = new Date(baseDate);
 	const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -110,17 +110,17 @@ export function createTeamCsvFile(baseDate?: Date): {
 }
 
 /**
- * Creates a temporary CSV file with project data
+ * Creates a temporary CSV file with portfolio data
  * @param baseDate - The base date to calculate from (defaults to now)
  * @returns Object with file path and cleanup function
  */
-export function createProjectCsvFile(baseDate?: Date): {
+export function createPortfoliosCsvFile(baseDate?: Date): {
 	filePath: string;
 	cleanup: () => void;
 } {
-	const csvData = generateProjectCsvData(baseDate);
+	const csvData = generatePortfolioCsvData(baseDate);
 	const tempDir = os.tmpdir();
-	const fileName = `project-test-data-${Date.now()}.csv`;
+	const fileName = `portfolio-test-data-${Date.now()}.csv`;
 	const filePath = path.join(tempDir, fileName);
 
 	fs.writeFileSync(filePath, csvData);

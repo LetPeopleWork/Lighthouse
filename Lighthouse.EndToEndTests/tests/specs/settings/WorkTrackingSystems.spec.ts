@@ -28,11 +28,11 @@ for (const {
 	workTrackingSystemOptions,
 } of workTrackingSystemConfiguration) {
 	testWithData(
-		`Should add new ${workTrackingSystemName} Work Tracking System and make it available in Team and Project creation`,
+		`Should add new ${workTrackingSystemName} Work Tracking System and make it available in Team and portfolio creation`,
 		async ({ testData, overviewPage }) => {
 			test.fail(
-				testData.projects.length < 1,
-				"Expected to have projects initiatilized to prevent tutorial page from being displayed",
+				testData.portfolios.length < 1,
+				"Expected to have portfolios initiatilized to prevent tutorial page from being displayed",
 			);
 
 			let settingsPage = await overviewPage.lighthousePage.goToSettings();
@@ -79,7 +79,7 @@ for (const {
 				await expect(workTrackingSystemDialog.createButton).toBeEnabled();
 			});
 
-			await test.step("Create makes Work Tracking System available for teams and projects", async () => {
+			await test.step("Create makes Work Tracking System available for teams and portfolios", async () => {
 				await workTrackingSystemDialog.create();
 
 				const savedWorkTrackingSystem =
@@ -90,9 +90,10 @@ for (const {
 				const newTeamPage = await teamsPage.addNewTeam();
 				await newTeamPage.selectWorkTrackingSystem(wtsName);
 
-				const projectsPages = await overviewPage.lightHousePage.goToOverview();
-				const newProjectPage = await projectsPages.addNewProject();
-				await newProjectPage.selectWorkTrackingSystem(wtsName);
+				const portfoliosPages =
+					await overviewPage.lightHousePage.goToOverview();
+				const newPortfolioPage = await portfoliosPages.addNewPortfolio();
+				await newPortfolioPage.selectWorkTrackingSystem(wtsName);
 			});
 
 			await test.step("Delete Removes Work Tracking System", async () => {
@@ -155,7 +156,7 @@ testWithData(
 			).not.toBeVisible();
 		});
 
-		await test.step("Modify name will adjust name in projects and teams", async () => {
+		await test.step("Modify name will adjust name in portfolios and teams", async () => {
 			const modifyDialog =
 				await workTrackingSystemsPage.modifyWorkTryckingSystem(
 					connectionToModify.name,
@@ -186,9 +187,9 @@ testWithData(
 			const newTeamPage = await teamsPage.addNewTeam();
 			await newTeamPage.selectWorkTrackingSystem(newName);
 
-			const projectsPage = await overviewPage.lightHousePage.goToOverview();
-			const newProjectPage = await projectsPage.addNewProject();
-			await newProjectPage.selectWorkTrackingSystem(newName);
+			const portfoliosPage = await overviewPage.lightHousePage.goToOverview();
+			const newPortfolioPage = await portfoliosPage.addNewPortfolio();
+			await newPortfolioPage.selectWorkTrackingSystem(newName);
 		});
 	},
 );

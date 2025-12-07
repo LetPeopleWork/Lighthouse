@@ -27,7 +27,7 @@ If you want to modify the settings of an existing portfolio, click on the 🖊�
 # Delete a Portfolio
 If you want to delete a portfolio, you can click on the 🗑️ icon on the right side of the portfolio. This will permantenly delete this portfolio.
 
-![Portfolio Deletion](../assets/features/projects_delete.png)
+![Portfolio Deletion](../assets/features/portfolios_delete.png)
 
 {: .important}
 Deleting a portfolio will remove it from Lighthouse with no functionality to undo this change. This will not remove any of the involved teams in this portfolio though.
