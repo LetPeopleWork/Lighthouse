@@ -56,8 +56,8 @@ jobs:
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: ci.yml
-          name: Lighthouse ${{ steps.version.outputs.ARTIFACT_VERSION }}
-          path: ./Lighthouse
+          name: Lighthouse-linux-x64-${{ steps.version.outputs.ARTIFACT_VERSION }}
+          path: ./Lighthouse/linux-x64
           workflow_conclusion: ""
           
       - name: Set linux executable permission
