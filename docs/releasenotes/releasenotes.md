@@ -11,10 +11,34 @@ Preview
 {: .label .label-blue }
 -->
 
-# Lighthouse v25.11.23.1453
+# Lighthouse v25.12.7.1118
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Rename Project to Portfolio
+As a preparation for future changes, we started renaming what used to be called *Project* to **Portfolio**.
+
+The driver behind this change is that a Project has a dedicated start and end date. While you can use Lighthouse for this, it would mean, you will lose all the historic data (your metrics) for a new project. We plan to improve our milestones in the next release and we aim that you can track your *Projects* with Milestones while still having all your Portfolio level data in one place.
+
+We are aware that names have specific meanings in every context, so we also made sure you can override the name for *Portfolio* through the System Settings (so you can call it *Initiative*, *Project*, or whatever you like and makes sense in your context).
+
+⚠️ While this sounds like a simple change, we started cleaning up our code and also urls. While urls that point to */projects* will still work, eventually they will be turned off. If you find other things that don't work as before, please let us know. We did our best to verify everything, but can't rule out we missed something.
+
+## Cloning of Teams and Portfolios
+You can now *clone* existing Teams or **Portfolios** with a single click through the Overview. Just click on the clone icon, and you will get a copy of the settings that you can adjust to your liking.
+
+![Clone Teams](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/clone.png)
+
+⚠️ This functionality makes setting up *Default Teams* and *Default Projects* obsolete. In order to reduce our effort, we decided to **remove** this functionality with this release. If you want to quickly create new teams or portfolios based on a default, please use the clone functionality.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.11.23.1453...v25.12.7.1118)
+
+# Lighthouse v25.11.23.1453
 
 ## Data Grid Enhancements
 We've further improved the data grid component with additional convenience functions and column visibility controls. This includes:
