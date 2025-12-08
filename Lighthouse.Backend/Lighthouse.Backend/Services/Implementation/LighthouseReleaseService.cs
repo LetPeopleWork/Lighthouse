@@ -256,7 +256,30 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static LighthouseReleaseAsset? GetLatestReleaseAssetForOperatingSystem(LighthouseRelease latestRelease, string operatingSystem)
         {
-            return latestRelease.Assets.SingleOrDefault(a => a.Name.Contains(operatingSystem, StringComparison.OrdinalIgnoreCase));
+            if (operatingSystem != "osx")
+            {
+                return latestRelease.Assets.SingleOrDefault(a => a.Name.Contains(operatingSystem, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var (currentProcess, currentProcessPath, currentProcessDir) = GetProcessInformation();
+            var isAppBundle = currentProcessPath.Contains(".app/Contents/MacOS/", StringComparison.OrdinalIgnoreCase);
+
+            if (isAppBundle)
+            {
+                var appAsset = latestRelease.Assets.SingleOrDefault(a => a.Name.Contains("osx-x64-app", StringComparison.OrdinalIgnoreCase));
+                if (appAsset != null)
+                {
+                    return appAsset;
+                }
+
+                return latestRelease.Assets.SingleOrDefault(a => 
+                    a.Name.Contains("osx", StringComparison.OrdinalIgnoreCase) && 
+                    !a.Name.Contains("-app", StringComparison.OrdinalIgnoreCase));
+            }
+
+            return latestRelease.Assets.SingleOrDefault(a => 
+                a.Name.Contains("osx", StringComparison.OrdinalIgnoreCase) && 
+                !a.Name.Contains("-app", StringComparison.OrdinalIgnoreCase));
         }
 
         private static string GetOperatingSystemIdentifier()
