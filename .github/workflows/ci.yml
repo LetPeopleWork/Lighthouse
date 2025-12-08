@@ -688,7 +688,7 @@ jobs:
   codesign-macos:
     name: Sign and Notarize macOS Binaries
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     needs:
       - tag
       - docker
@@ -706,42 +706,11 @@ jobs:
           name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
           path: ./artifacts/osx-x64-binary
 
-      - name: Setup temporary keychain and import certificate
-        env:
-          CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          # Create temporary files for certificate
-          CERT_PATH="$RUNNER_TEMP/certificate.p12"
-          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
-          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
-          
-          # Decode certificate from base64
-          echo "$CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
-          
-          # Create temporary keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          
-          # Import certificate to keychain
-          security import "$CERT_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-          
-          # Set keychain search list
-          security list-keychain -d user -s "$KEYCHAIN_PATH"
-          
-          # Allow codesign to access the keychain
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          
-          # Export keychain path for subsequent steps
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
-          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
-          
-          # Clean up certificate file
-          rm "$CERT_PATH"
-          
-          echo "Keychain setup complete"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+      - name: Import code signing certificates
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
       - name: Sign the bare binary executable
         env:
@@ -750,11 +719,11 @@ jobs:
           BINARY_PATH="./artifacts/osx-x64-binary/Lighthouse"
           
           # Extract signing identity from keychain
-          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
           
           if [ -z "$IDENTITY" ]; then
             echo "Error: No Developer ID Application certificate found in keychain"
-            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+            security find-identity -v -p codesigning
             exit 1
           fi
           
@@ -807,14 +776,14 @@ jobs:
           fi
           
           echo "Submission ID: $SUBMISSION_ID"
-          echo "Waiting for notarization to complete (timeout: 20 minutes)..."
+          echo "Waiting for notarization to complete (timeout: 30 minutes)..."
           
           # Wait for notarization with extended timeout
           xcrun notarytool wait "$SUBMISSION_ID" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --timeout 20m \
+            --timeout 30m \
             --verbose
           
           NOTARIZE_EXIT=$?
