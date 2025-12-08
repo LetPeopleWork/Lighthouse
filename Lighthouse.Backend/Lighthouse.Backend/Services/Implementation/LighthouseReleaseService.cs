@@ -256,30 +256,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static LighthouseReleaseAsset? GetLatestReleaseAssetForOperatingSystem(LighthouseRelease latestRelease, string operatingSystem)
         {
-            if (operatingSystem != "osx")
-            {
-                return latestRelease.Assets.SingleOrDefault(a => a.Name.Contains(operatingSystem, StringComparison.OrdinalIgnoreCase));
-            }
-
-            var (currentProcess, currentProcessPath, currentProcessDir) = GetProcessInformation();
-            var isAppBundle = currentProcessPath.Contains(".app/Contents/MacOS/", StringComparison.OrdinalIgnoreCase);
-
-            if (isAppBundle)
-            {
-                var appAsset = latestRelease.Assets.SingleOrDefault(a => a.Name.Contains("osx-x64-app", StringComparison.OrdinalIgnoreCase));
-                if (appAsset != null)
-                {
-                    return appAsset;
-                }
-
-                return latestRelease.Assets.SingleOrDefault(a => 
-                    a.Name.Contains("osx", StringComparison.OrdinalIgnoreCase) && 
-                    !a.Name.Contains("-app", StringComparison.OrdinalIgnoreCase));
-            }
-
-            return latestRelease.Assets.SingleOrDefault(a => 
-                a.Name.Contains("osx", StringComparison.OrdinalIgnoreCase) && 
-                !a.Name.Contains("-app", StringComparison.OrdinalIgnoreCase));
+            return latestRelease.Assets.SingleOrDefault(a => a.Name.Contains(operatingSystem, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string GetOperatingSystemIdentifier()
@@ -322,7 +299,6 @@ exit";
                 {
                     scriptPath = Path.Combine(Path.GetTempPath(), $"lighthouse_update_{Guid.NewGuid()}.sh");
                     
-                    // Enhanced script that handles both regular installs and macOS .app bundles
                     scriptContent = $@"#!/bin/bash
 set -e
 
@@ -338,64 +314,16 @@ done
 
 echo ""Process has exited. Installing update...""
 
-# Check if the executable is running from inside a macOS .app bundle
-if [[ ""$EXECUTABLE"" == *"".app/Contents/MacOS/""* ]]; then
-    echo ""Detected macOS .app bundle installation""
-    
-    # Extract the .app bundle root path (e.g., /path/to/Lighthouse.app)
-    APP_ROOT=$(echo ""$EXECUTABLE"" | sed -E 's|(.*\.app)/Contents/MacOS/.*|\1|')
-    APP_PARENT=$(dirname ""$APP_ROOT"")
-    APP_NAME=$(basename ""$APP_ROOT"")
-    
-    echo ""App bundle: $APP_ROOT""
-    echo ""App parent directory: $APP_PARENT""
-    
-    # Check if the downloaded update contains a .app bundle
-    NEW_APP=$(find ""$SOURCE"" -maxdepth 1 -type d -name '*.app' -print -quit 2>/dev/null || true)
-    
-    if [[ -n ""$NEW_APP"" && -d ""$NEW_APP"" ]]; then
-        echo ""Found new .app bundle in update: $NEW_APP""
-        
-        # Remove the old .app bundle and replace with the new one
-        echo ""Removing old app bundle: $APP_ROOT""
-        rm -rf ""$APP_ROOT""
-        
-        echo ""Installing new app bundle to: $APP_PARENT/""
-        mv ""$NEW_APP"" ""$APP_PARENT/""
-        
-        # Ensure the executable is runnable
-        chmod +x ""$EXECUTABLE""
-        
-        echo ""App bundle updated successfully""
-    else
-        echo ""No .app bundle found in update, updating files inside existing bundle...""
-        
-        # Fallback: copy files directly into the MacOS directory (preserving bundle structure)
-        MACOS_DIR=""$APP_ROOT/Contents/MacOS""
-        cp -R ""$SOURCE/""* ""$MACOS_DIR/""
-        
-        if [ $? -ne 0 ]; then
-            echo ""Failed to copy files. Update aborted.""
-            exit 1
-        fi
-        
-        chmod +x ""$EXECUTABLE""
-        echo ""Bundle contents updated successfully""
-    fi
-else
-    echo ""Standard installation (not an .app bundle)""
-    
-    # Standard update: copy all files to destination
-    cp -R ""$SOURCE/""* ""$DEST/""
-    
-    if [ $? -ne 0 ]; then
-        echo ""Failed to copy files. Update aborted.""
-        exit 1
-    fi
-    
-    chmod +x ""$EXECUTABLE""
-    echo ""Files updated successfully""
+# Copy all files to destination
+cp -R ""$SOURCE/""* ""$DEST/""
+
+if [ $? -ne 0 ]; then
+    echo ""Failed to copy files. Update aborted.""
+    exit 1
 fi
+
+chmod +x ""$EXECUTABLE""
+echo ""Files updated successfully""
 
 echo ""Update installed successfully, restarting application...""
 ""$EXECUTABLE"" $ARGS &

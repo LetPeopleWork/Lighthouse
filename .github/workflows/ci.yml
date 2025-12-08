@@ -340,116 +340,19 @@ jobs:
         run: |
           sed -i 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.json
 
-      - name: Split macOS artifacts into binary and app variants
+      - name: Prepare macOS binary artifact
         run: |
           OSX_PUBLISH="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64"
           BINARY_DIR="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64-binary"
-          APP_DIR_ROOT="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64-app"
           
-          # Create binary directory with bare files (no .app bundle)
+          # Create binary directory with bare files
           mkdir -p "$BINARY_DIR"
           cp -R "$OSX_PUBLISH"/* "$BINARY_DIR/"
-          echo "Created bare binary directory"
-          
-          # Create .app bundle in app directory
-          APP_DIR="$APP_DIR_ROOT/Lighthouse.app"
-          CONTENTS_DIR="$APP_DIR/Contents"
-          MACOS_DIR="$CONTENTS_DIR/MacOS"
-          RESOURCES_DIR="$CONTENTS_DIR/Resources"
-          
-          mkdir -p "$MACOS_DIR"
-          mkdir -p "$RESOURCES_DIR"
-          
-          # Copy executable and supporting files into the bundle
-          cp "$OSX_PUBLISH/Lighthouse" "$MACOS_DIR/"
-          cp "$OSX_PUBLISH/appsettings.json" "$MACOS_DIR/"
-          cp -R "$OSX_PUBLISH/wwwroot" "$MACOS_DIR/" 2>/dev/null || true
-          
-          # Copy any other files (certs, etc.) into MacOS directory
-          for f in "$OSX_PUBLISH"/*; do
-            fname=$(basename "$f")
-            if [[ "$fname" != "Lighthouse" && "$fname" != "appsettings.json" && "$fname" != "wwwroot" ]]; then
-              if [[ -f "$f" ]]; then
-                cp "$f" "$MACOS_DIR/"
-              elif [[ -d "$f" ]]; then
-                cp -R "$f" "$MACOS_DIR/"
-              fi
-            fi
-          done
-          
-          # Copy app icons to Resources
-          cp ./Lighthouse.Frontend/public/icons/icon-512x512.png "$RESOURCES_DIR/AppIcon.png"
-          cp ./Lighthouse.Frontend/public/icons/icon-192x192.png "$RESOURCES_DIR/AppIcon-192.png"
-          
-          # Copy LICENSE and README to Resources
-          cp ./LICENSE "$RESOURCES_DIR/" 2>/dev/null || true
-          cp ./README.md "$RESOURCES_DIR/" 2>/dev/null || true
-          
-          # Create Info.plist
-          cat > "$CONTENTS_DIR/Info.plist" << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>CFBundleInfoDictionaryVersion</key>
-              <string>6.0</string>
-              <key>CFBundleExecutable</key>
-              <string>Lighthouse</string>
-              <key>CFBundleIdentifier</key>
-              <string>${{ secrets.APPLE_BUNDLE_ID }}</string>
-              <key>CFBundleName</key>
-              <string>Lighthouse</string>
-              <key>CFBundleDisplayName</key>
-              <string>Lighthouse</string>
-              <key>CFBundleVersion</key>
-              <string>${{ needs.tag.outputs.fileversion }}</string>
-              <key>CFBundleShortVersionString</key>
-              <string>${{ needs.tag.outputs.fileversion }}</string>
-              <key>CFBundlePackageType</key>
-              <string>APPL</string>
-              <key>CFBundleSignature</key>
-              <string>LPW1</string>
-              <key>CFBundleIconFile</key>
-              <string>AppIcon</string>
-              <key>LSMinimumSystemVersion</key>
-              <string>10.13</string>
-              <key>NSHighResolutionCapable</key>
-              <true/>
-              <key>LSApplicationCategoryType</key>
-              <string>public.app-category.developer-tools</string>
-              <key>NSHumanReadableCopyright</key>
-              <string>Copyright © LetPeopleWork GmbH. All rights reserved.</string>
-          </dict>
-          </plist>
-          EOF
-          
-          # Create entitlements file
-          cat > "$CONTENTS_DIR/entitlements.plist" << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>com.apple.security.cs.allow-jit</key>
-              <true/>
-              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-              <true/>
-              <key>com.apple.security.network.server</key>
-              <true/>
-              <key>com.apple.security.network.client</key>
-              <true/>
-              <key>com.apple.security.files.user-selected.read-write</key>
-              <true/>
-          </dict>
-          </plist>
-          EOF
           
           # Set executable permissions
           chmod +x "$BINARY_DIR/Lighthouse"
-          chmod +x "$MACOS_DIR/Lighthouse"
           
-          echo "Created Lighthouse.app bundle at $APP_DIR"
-          echo "Binary directory: $BINARY_DIR"
-          echo "App directory: $APP_DIR_ROOT"
+          echo "Created bare binary directory: $BINARY_DIR"
 
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
@@ -473,12 +376,6 @@ jobs:
         with:
           name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
           path: ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64-binary
-
-      - name: Upload macOS app artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lighthouse-osx-x64-app-${{ needs.tag.outputs.version }}
-          path: ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64-app
 
       - name: Upload linux artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -809,11 +706,6 @@ jobs:
           name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
           path: ./artifacts/osx-x64-binary
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: Lighthouse-osx-x64-app-${{ needs.tag.outputs.version }}
-          path: ./artifacts/osx-x64-app
-
       - name: Setup temporary keychain and import certificate
         env:
           CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
@@ -882,111 +774,6 @@ jobs:
           codesign --verify --strict --verbose=2 "$BINARY_PATH"
           
           echo "Binary signature verified successfully"
-
-      - name: Sign the .app bundle
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          APP_PATH="./artifacts/osx-x64-app/Lighthouse.app"
-          ENTITLEMENTS_PATH="$APP_PATH/Contents/entitlements.plist"
-          
-          # Extract signing identity from keychain
-          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
-          
-          if [ -z "$IDENTITY" ]; then
-            echo "Error: No Developer ID Application certificate found in keychain"
-            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
-            exit 1
-          fi
-          
-          echo "Signing with identity: $IDENTITY"
-          
-          # Sign the .app bundle with hardened runtime and entitlements
-          codesign --sign "$IDENTITY" \
-            --timestamp \
-            --options runtime \
-            --entitlements "$ENTITLEMENTS_PATH" \
-            --deep \
-            --force \
-            --verbose \
-            "$APP_PATH"
-          
-          echo "Signing complete, verifying signature..."
-          
-          # Verify the signature
-          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-          
-          echo "Signature verified successfully"
-          
-          # Check Gatekeeper acceptance
-          echo "Checking Gatekeeper assessment..."
-          spctl --assess --type execute --verbose "$APP_PATH" || echo "Note: Gatekeeper assessment may fail until notarization is complete"
-
-      - name: Notarize and staple the app bundle
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          APP_PATH="./artifacts/osx-x64-app/Lighthouse.app"
-          ZIP_PATH="./artifacts/Lighthouse.zip"
-          
-          echo "Creating zip archive for notarization..."
-          ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
-          
-          echo "Submitting for notarization (this may take 10-15 minutes)..."
-          
-          # Submit and capture the submission ID
-          SUBMIT_OUTPUT=$(xcrun notarytool submit "$ZIP_PATH" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --output-format json)
-          
-          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-          
-          if [ -z "$SUBMISSION_ID" ]; then
-            echo "Error: Failed to get submission ID"
-            echo "$SUBMIT_OUTPUT"
-            exit 1
-          fi
-          
-          echo "Submission ID: $SUBMISSION_ID"
-          echo "Waiting for notarization to complete (timeout: 20 minutes)..."
-          
-          # Wait for notarization with extended timeout
-          xcrun notarytool wait "$SUBMISSION_ID" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --timeout 20m \
-            --verbose
-          
-          NOTARIZE_EXIT=$?
-          
-          if [ $NOTARIZE_EXIT -ne 0 ]; then
-            echo "Error: Notarization failed or timed out with exit code $NOTARIZE_EXIT"
-            echo "Retrieving notarization log..."
-            xcrun notarytool log "$SUBMISSION_ID" \
-              --apple-id "$APPLE_ID" \
-              --password "$APPLE_APP_PASSWORD" \
-              --team-id "$APPLE_TEAM_ID" || true
-            exit 1
-          fi
-          
-          echo "Notarization successful, stapling ticket to app bundle..."
-          xcrun stapler staple "$APP_PATH"
-          
-          echo "Verifying stapled ticket..."
-          xcrun stapler validate "$APP_PATH"
-          
-          echo "Stapling complete, final Gatekeeper check..."
-          spctl --assess --type execute --verbose "$APP_PATH"
-          
-          echo "macOS app bundle successfully signed, notarized, and stapled!"
-          
-          # Clean up zip file
-          rm "$ZIP_PATH"
 
       - name: Notarize the bare binary
         env:
@@ -1057,17 +844,6 @@ jobs:
         with:
           name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
           path: ./artifacts/osx-x64-binary
-
-      - name: Delete unsigned macOS app artifact
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: Lighthouse-osx-x64-app-${{ needs.tag.outputs.version }}
-
-      - name: Upload signed macOS app artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lighthouse-osx-x64-app-${{ needs.tag.outputs.version }}
-          path: ./artifacts/osx-x64-app
 
   # Disabled codesign-windows job until a signing certificate is available
   #  codesign-windows:
@@ -1181,11 +957,6 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse-osx-x64-app-${{ needs.tag.outputs.version }}
-          path: LighthouseArtifacts/osx-x64-app
-
-      - uses: actions/download-artifact@v4
-        with:
           name: Lighthouse-linux-x64-${{ needs.tag.outputs.version }}
           path: LighthouseArtifacts/linux-x64
 
@@ -1201,17 +972,12 @@ jobs:
 
       - uses: vimtor/action-zip@v1.2
         with:
-          files: LighthouseArtifacts/osx-x64-app
-          dest: Lighthouse-osx-x64-app.zip
-
-      - uses: vimtor/action-zip@v1.2
-        with:
           files: LighthouseArtifacts/linux-x64
           dest: Lighthouse-linux-x64.zip
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx-x64.zip,Lighthouse-osx-x64-app.zip,Lighthouse-linux-x64.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx-x64.zip,Lighthouse-linux-x64.zip"
           tag: ${{ needs.tag.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.tag.outputs.version }}"

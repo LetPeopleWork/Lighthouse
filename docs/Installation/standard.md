@@ -80,9 +80,6 @@ You can simply replace the files in the directory. Download and extract the late
 {: .note }
 You must make sure to stop Lighthouse from running before updating.
 
-{: .note }
-On macOS, the release contains a `Lighthouse.app` bundle. Simply drag it to your Applications folder or run it from the extracted location.
-
 ## Troubleshoot Startup Issues
 If you follow the instructions, but Lighthouse is not available on the above port, something didn't go as expected.
 
