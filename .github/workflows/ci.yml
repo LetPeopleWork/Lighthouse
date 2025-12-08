@@ -379,16 +379,18 @@ jobs:
           cp ./LICENSE "$RESOURCES_DIR/" 2>/dev/null || true
           cp ./README.md "$RESOURCES_DIR/" 2>/dev/null || true
           
-          # Create Info.plist
-          cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
+          # Create Info.plist with Apple secrets
+          cat > "$CONTENTS_DIR/Info.plist" << EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
+              <key>CFBundleInfoDictionaryVersion</key>
+              <string>6.0</string>
               <key>CFBundleExecutable</key>
               <string>Lighthouse</string>
               <key>CFBundleIdentifier</key>
-              <string>work.letpeople.lighthouse</string>
+              <string>${{ secrets.APPLE_BUNDLE_ID }}</string>
               <key>CFBundleName</key>
               <string>Lighthouse</string>
               <key>CFBundleDisplayName</key>
@@ -400,7 +402,7 @@ jobs:
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleSignature</key>
-              <string>????</string>
+              <string>LPW1</string>
               <key>CFBundleIconFile</key>
               <string>AppIcon</string>
               <key>LSMinimumSystemVersion</key>
@@ -410,7 +412,27 @@ jobs:
               <key>LSApplicationCategoryType</key>
               <string>public.app-category.developer-tools</string>
               <key>NSHumanReadableCopyright</key>
-              <string>Copyright © Let People Work. All rights reserved.</string>
+              <string>Copyright © LetPeopleWork GmbH. All rights reserved.</string>
+          </dict>
+          </plist>
+          EOF
+          
+          # Create entitlements file
+          cat > "$CONTENTS_DIR/entitlements.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>com.apple.security.cs.allow-jit</key>
+              <true/>
+              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+              <true/>
+              <key>com.apple.security.network.server</key>
+              <true/>
+              <key>com.apple.security.network.client</key>
+              <true/>
+              <key>com.apple.security.files.user-selected.read-write</key>
+              <true/>
           </dict>
           </plist>
           EOF
@@ -428,18 +450,6 @@ jobs:
           ls -la "$CONTENTS_DIR"
           ls -la "$MACOS_DIR"
           ls -la "$RESOURCES_DIR"
-
-      # TODO: Add macOS code signing and notarization here
-      # This requires a macOS runner and Apple Developer credentials.
-      # Steps needed:
-      # 1. Switch to runs-on: macos-latest for this job (or a separate signing job)
-      # 2. Import Developer ID Application certificate from secrets
-      # 3. Sign the app bundle: codesign --deep --force --options runtime --sign "Developer ID Application: ..." Lighthouse.app
-      # 4. Create a DMG (optional): hdiutil create -volname "Lighthouse" -srcfolder Lighthouse.app -ov -format UDZO Lighthouse.dmg
-      # 5. Notarize: xcrun notarytool submit Lighthouse.dmg --apple-id ... --team-id ... --password ...
-      # 6. Staple: xcrun stapler staple Lighthouse.dmg (or Lighthouse.app)
-      # Reference: https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution
-      # TODO: Generate proper .icns icon file using iconutil on macOS runner
 
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
@@ -772,6 +782,162 @@ jobs:
           rm -rf ./linux-x64/logs
         working-directory: ./Lighthouse
 
+  codesign-macos:
+    name: Sign and Notarize macOS App Bundle
+    runs-on: macos-latest
+    timeout-minutes: 15
+    needs:
+      - tag
+      - docker
+      - verifysqlite
+      - verifypostgres
+
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    environment:
+      name: Release
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-osx-x64-${{ needs.tag.outputs.version }}
+          path: ./artifacts/osx-x64
+
+      - name: Setup temporary keychain and import certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Create temporary files for certificate
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          
+          # Decode certificate from base64
+          echo "$CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+          
+          # Create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Import certificate to keychain
+          security import "$CERT_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          
+          # Set keychain search list
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          
+          # Allow codesign to access the keychain
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Export keychain path for subsequent steps
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
+          
+          # Clean up certificate file
+          rm "$CERT_PATH"
+          
+          echo "Keychain setup complete"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Sign the .app bundle
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_PATH="./artifacts/osx-x64/Lighthouse.app"
+          ENTITLEMENTS_PATH="$APP_PATH/Contents/entitlements.plist"
+          
+          # Extract signing identity from keychain
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+          
+          if [ -z "$IDENTITY" ]; then
+            echo "Error: No Developer ID Application certificate found in keychain"
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+            exit 1
+          fi
+          
+          echo "Signing with identity: $IDENTITY"
+          
+          # Sign the .app bundle with hardened runtime and entitlements
+          codesign --sign "$IDENTITY" \
+            --timestamp \
+            --options runtime \
+            --entitlements "$ENTITLEMENTS_PATH" \
+            --deep \
+            --force \
+            --verbose \
+            "$APP_PATH"
+          
+          echo "Signing complete, verifying signature..."
+          
+          # Verify the signature
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          
+          echo "Signature verified successfully"
+          
+          # Check Gatekeeper acceptance
+          echo "Checking Gatekeeper assessment..."
+          spctl --assess --type execute --verbose "$APP_PATH" || echo "Note: Gatekeeper assessment may fail until notarization is complete"
+
+      - name: Notarize and staple the app bundle
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_PATH="./artifacts/osx-x64/Lighthouse.app"
+          ZIP_PATH="./artifacts/Lighthouse.zip"
+          
+          echo "Creating zip archive for notarization..."
+          ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
+          
+          echo "Submitting for notarization (this may take several minutes)..."
+          xcrun notarytool submit "$ZIP_PATH" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait \
+            --timeout 10m \
+            --verbose
+          
+          NOTARIZE_EXIT=$?
+          
+          if [ $NOTARIZE_EXIT -ne 0 ]; then
+            echo "Error: Notarization failed with exit code $NOTARIZE_EXIT"
+            echo "Attempting to retrieve notarization log..."
+            # Get the submission ID from the last submission
+            SUBMISSION_ID=$(xcrun notarytool history --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" | grep -m 1 "id:" | awk '{print $2}')
+            if [ -n "$SUBMISSION_ID" ]; then
+              xcrun notarytool log "$SUBMISSION_ID" --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" || true
+            fi
+            exit 1
+          fi
+          
+          echo "Notarization successful, stapling ticket to app bundle..."
+          xcrun stapler staple "$APP_PATH"
+          
+          echo "Verifying stapled ticket..."
+          xcrun stapler validate "$APP_PATH"
+          
+          echo "Stapling complete, final Gatekeeper check..."
+          spctl --assess --type execute --verbose "$APP_PATH"
+          
+          echo "macOS app bundle successfully signed, notarized, and stapled!"
+          
+          # Clean up zip file
+          rm "$ZIP_PATH"
+
+      - name: Delete unsigned macOS artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: Lighthouse-osx-x64-${{ needs.tag.outputs.version }}
+
+      - name: Upload signed macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-osx-x64-${{ needs.tag.outputs.version }}
+          path: ./artifacts/osx-x64
+
   # Disabled codesign-windows job until a signing certificate is available
   #  codesign-windows:
   #    name: Sign Windows Binaries
@@ -825,6 +991,7 @@ jobs:
     - docker
     - verifysqlite
     - verifypostgres
+    - codesign-macos
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
