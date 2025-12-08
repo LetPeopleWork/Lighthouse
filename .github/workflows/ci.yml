@@ -785,7 +785,7 @@ jobs:
   codesign-macos:
     name: Sign and Notarize macOS App Bundle
     runs-on: macos-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     needs:
       - tag
       - docker
@@ -891,25 +891,43 @@ jobs:
           echo "Creating zip archive for notarization..."
           ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
           
-          echo "Submitting for notarization (this may take several minutes)..."
-          xcrun notarytool submit "$ZIP_PATH" \
+          echo "Submitting for notarization (this may take 10-15 minutes)..."
+          
+          # Submit and capture the submission ID
+          SUBMIT_OUTPUT=$(xcrun notarytool submit "$ZIP_PATH" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait \
-            --timeout 10m \
+            --output-format json)
+          
+          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+          
+          if [ -z "$SUBMISSION_ID" ]; then
+            echo "Error: Failed to get submission ID"
+            echo "$SUBMIT_OUTPUT"
+            exit 1
+          fi
+          
+          echo "Submission ID: $SUBMISSION_ID"
+          echo "Waiting for notarization to complete (timeout: 20 minutes)..."
+          
+          # Wait for notarization with extended timeout
+          xcrun notarytool wait "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --timeout 20m \
             --verbose
           
           NOTARIZE_EXIT=$?
           
           if [ $NOTARIZE_EXIT -ne 0 ]; then
-            echo "Error: Notarization failed with exit code $NOTARIZE_EXIT"
-            echo "Attempting to retrieve notarization log..."
-            # Get the submission ID from the last submission
-            SUBMISSION_ID=$(xcrun notarytool history --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" | grep -m 1 "id:" | awk '{print $2}')
-            if [ -n "$SUBMISSION_ID" ]; then
-              xcrun notarytool log "$SUBMISSION_ID" --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" || true
-            fi
+            echo "Error: Notarization failed or timed out with exit code $NOTARIZE_EXIT"
+            echo "Retrieving notarization log..."
+            xcrun notarytool log "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" || true
             exit 1
           fi
           
