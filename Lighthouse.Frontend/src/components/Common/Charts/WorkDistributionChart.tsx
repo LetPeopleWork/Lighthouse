@@ -45,6 +45,7 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 			: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 	const { featureService } = useContext(ApiServiceContext);
 
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
@@ -349,9 +350,11 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 				items={selectedItems}
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				additionalColumnTitle={cycleTimeTerm}
+				additionalColumnTitle={`${cycleTimeTerm}/${workItemAgeTerm}`}
 				additionalColumnDescription="days"
-				additionalColumnContent={(item) => item.cycleTime}
+				additionalColumnContent={(item) =>
+					item.cycleTime > 0 ? item.cycleTime : item.workItemAge
+				}
 			/>
 		</>
 	);

@@ -22,7 +22,7 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
 							<th>Name</th>
 							<th>Type</th>
 							<th>State</th>
-							<th>Cycle Time</th>
+							<th>Cycle Time / Work Item Age</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -31,7 +31,9 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
 								<td>{item.name}</td>
 								<td>{item.type}</td>
 								<td>{item.state}</td>
-								<td>{item.cycleTime} days</td>
+								<td>
+									{item.cycleTime > 0 ? item.cycleTime : item.workItemAge} days
+								</td>
 							</tr>
 						))}
 					</tbody>
@@ -371,7 +373,7 @@ describe("WorkDistributionChart component", () => {
 	});
 
 	describe("Dialog Integration", () => {
-		it("should pass cycle time to dialog", () => {
+		it("should pass cycle time to dialog for done items", () => {
 			const workItems = [
 				generateMockWorkItem(1, "PARENT-1", 10),
 				generateMockWorkItem(2, "PARENT-1", 15),
@@ -384,6 +386,52 @@ describe("WorkDistributionChart component", () => {
 			// Verify cycle times are displayed
 			expect(screen.getByText("10 days")).toBeInTheDocument();
 			expect(screen.getByText("15 days")).toBeInTheDocument();
+		});
+
+		it("should pass work item age for in-progress items and cycle time for done items", () => {
+			// Create mix of done items (with cycleTime) and in-progress items (cycleTime = 0)
+			const doneItem: IWorkItem = {
+				id: 1,
+				name: "Done Item",
+				referenceId: "WI-1",
+				url: "https://example.com/work-item/1",
+				state: "Done",
+				stateCategory: "Done",
+				type: "Task",
+				workItemAge: 3,
+				startedDate: new Date(2025, 0, 1),
+				closedDate: new Date(2025, 0, 11),
+				cycleTime: 10,
+				parentWorkItemReference: "PARENT-1",
+				isBlocked: false,
+			};
+
+			const inProgressItem: IWorkItem = {
+				id: 2,
+				name: "In Progress Item",
+				referenceId: "WI-2",
+				url: "https://example.com/work-item/2",
+				state: "In Progress",
+				stateCategory: "Doing",
+				type: "Task",
+				workItemAge: 7,
+				startedDate: new Date(2025, 0, 1),
+				closedDate: new Date(),
+				cycleTime: 0,
+				parentWorkItemReference: "PARENT-1",
+				isBlocked: false,
+			};
+
+			renderWithContext(
+				<WorkDistributionChart workItems={[doneItem, inProgressItem]} />,
+			);
+
+			fireEvent.click(screen.getByTestId("pie-slice-0"));
+
+			// Verify cycle time is displayed for done item (10 days)
+			expect(screen.getByText("10 days")).toBeInTheDocument();
+			// Verify work item age is displayed for in-progress item (7 days)
+			expect(screen.getByText("7 days")).toBeInTheDocument();
 		});
 
 		it("should display correct dialog title format", () => {
