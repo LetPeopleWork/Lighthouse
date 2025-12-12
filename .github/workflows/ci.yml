@@ -868,6 +868,20 @@ jobs:
             echo "======================="
           fi
 
+      - name: Staple notarization ticket
+        run: |
+          echo "Stapling notarization ticket to binary..."
+          xcrun stapler staple ./artifacts/osx-x64-binary/Lighthouse
+          
+          echo "Verifying staple..."
+          xcrun stapler validate ./artifacts/osx-x64-binary/Lighthouse
+          
+          echo "Ensuring execute permissions..."
+          chmod +x ./artifacts/osx-x64-binary/Lighthouse
+          
+          echo "Final verification..."
+          spctl -a -vv -t install ./artifacts/osx-x64-binary/Lighthouse
+
       - name: Upload notarization log as artifact
         if: always() && env.SUBMISSION_ID != ''
         uses: actions/upload-artifact@v4
