@@ -668,6 +668,10 @@ jobs:
     needs:
       - tag
 
+    # Expose notarization submission id so other jobs can query notarytool
+    outputs:
+      submission_id: ${{ steps.notarize.outputs.submission_id }}
+
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     environment:
@@ -806,6 +810,9 @@ jobs:
           echo "Submission ID: $SUBMISSION_ID"
           echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
 
+          # Export the submission id as a step output so downstream jobs can use it
+          echo "submission_id=$SUBMISSION_ID" >> $GITHUB_OUTPUT
+
           echo "Waiting for notarization to complete (timeout: 30 minutes)..."
           xcrun notarytool wait "$SUBMISSION_ID" \
             --apple-id "$APPLE_ID" \
@@ -874,6 +881,104 @@ jobs:
   # Disabled codesign-windows job until a signing certificate is available
   #  codesign-windows:
   #    name: Sign Windows Binaries
+
+  verifymacos:
+    name: Verify macOS signed + notarized binary
+    runs-on: macos-latest
+    # Requires APPLE_ID, APPLE_APP_PASSWORD, APPLE_TEAM_ID secrets in repository settings
+    needs:
+      - codesign-macos
+      - tag
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download signed macOS universal binary
+        uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-osx-universal-${{ needs.tag.outputs.version }}
+          path: ./publish
+
+      - name: Unzip universal binary
+        run: |
+          mkdir -p ./publish/universal
+          unzip -q ./publish/Lighthouse-universal.zip -d ./publish/universal
+
+      - name: Verify codesign on binary
+        run: |
+          BINARY=./publish/universal/Lighthouse
+          echo "Verifying codesign for $BINARY"
+          codesign --verify --deep --strict --verbose=4 "$BINARY"
+          codesign -dvvv "$BINARY" || true
+          spctl -a -vvv --type execute "$BINARY"
+
+      - name: Retrieve notarization info using submission id
+        id: notaryinfo
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          SUBMISSION_ID="${{ needs.codesign-macos.outputs.submission_id }}"
+          echo "Using submission id: $SUBMISSION_ID"
+
+          if [ -z "$SUBMISSION_ID" ]; then
+            echo "Error: submission id missing"
+            exit 1
+          fi
+
+          xcrun notarytool info "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --output-format json > notarization-info.json
+
+          cat notarization-info.json
+
+          STATUS=$(echo "$(cat notarization-info.json)" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "Notarization status: $STATUS"
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "Error: Notarization status is not Accepted"
+            exit 1
+          fi
+
+      - name: Set executable permission
+        run: chmod +x ./publish/universal/Lighthouse
+
+      - name: Run Lighthouse (sqlite)
+        run: |
+          ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: ./publish/universal
+        env:
+          Database__Provider: sqlite
+          Database__ConnectionString: 'Data Source=lighthouse.db'
+
+      - name: Wait for Lighthouse to start
+        run: |
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5002; do sleep 1; done'
+          echo "Server is ready!"
+
+          cat lighthouse.log
+        working-directory: ./publish/universal
+
+      - name: Upload notarization & verification artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: notarization-verify-report-${{ needs.tag.outputs.version }}
+          path: |
+            notarization-info.json
+            publish/universal/lighthouse.log
+            
+      - name: Stop Lighthouse Server
+        if: always()
+        run: |
+          pkill Lighthouse || true
+          cat ./publish/universal/lighthouse.log || true
+          rm -rf ./publish/universal/logs
+          rm -f ./publish/universal/lighthouse.log
   #    runs-on: [self-hosted, codesign]
   #    timeout-minutes: 5
   #    needs:
@@ -922,6 +1027,7 @@ jobs:
     - docker
     - verifysqlite
     - verifypostgres
+    - verifymacos
     - codesign-macos
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
