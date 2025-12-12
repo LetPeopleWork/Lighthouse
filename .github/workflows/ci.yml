@@ -719,12 +719,10 @@ jobs:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
-      - name: Sign the bare binary executable
+      - name: Sign all binaries and libraries
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          BINARY_PATH="./artifacts/osx-x64-binary/Lighthouse"
-          
           # Extract signing identity from keychain
           IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
           
@@ -734,22 +732,49 @@ jobs:
             exit 1
           fi
           
-          echo "Signing bare binary with identity: $IDENTITY"
+          echo "Signing identity: $IDENTITY"
+          echo "Signing all binaries and libraries in ./artifacts/osx-x64-binary"
           
-          # Sign the binary with hardened runtime
-          codesign --sign "$IDENTITY" \
-            --timestamp \
-            --options runtime \
-            --force \
-            --verbose \
-            "$BINARY_PATH"
+          # Find and sign all binaries: dylibs, executables, and other binary files
+          # Sign in order: dylibs first, then executables
           
-          echo "Signing complete, verifying signature..."
+          # 1. Sign all .dylib files first
+          echo "=== Signing .dylib files ==="
+          find ./artifacts/osx-x64-binary -name "*.dylib" -type f | while read file; do
+            echo "Signing: $file"
+            codesign --sign "$IDENTITY" \
+              --timestamp \
+              --options runtime \
+              --force \
+              --verbose \
+              "$file"
+            codesign --verify --strict --verbose=2 "$file"
+            echo "✓ Signed: $file"
+          done
           
-          # Verify the signature
-          codesign --verify --strict --verbose=2 "$BINARY_PATH"
+          # 2. Sign all executable files (Mach-O binaries without extension)
+          echo "=== Signing executable files ==="
+          find ./artifacts/osx-x64-binary -type f -perm +111 ! -name "*.dylib" ! -name "*.json" ! -name "*.config" ! -name "*.pdb" ! -name "*.csv" | while read file; do
+            # Check if it's actually a Mach-O binary
+            if file "$file" | grep -q "Mach-O"; then
+              echo "Signing: $file"
+              codesign --sign "$IDENTITY" \
+                --timestamp \
+                --options runtime \
+                --force \
+                --verbose \
+                "$file"
+              codesign --verify --strict --verbose=2 "$file"
+              echo "✓ Signed: $file"
+            fi
+          done
           
-          echo "Binary signature verified successfully"
+          # 3. Verify the main executable with deep verification
+          echo "=== Final verification ==="
+          BINARY_PATH="./artifacts/osx-x64-binary/Lighthouse"
+          codesign --verify --deep --strict --verbose=2 "$BINARY_PATH"
+          
+          echo "All binaries signed and verified successfully"
 
       - name: Notarize the bare binary
         id: notarize
