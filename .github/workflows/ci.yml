@@ -685,6 +685,17 @@ jobs:
         with:
           dotnet-version: ${{env.DOTNET_VERSION}}
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Build Frontend
+        run: pnpm run build
+        working-directory: ./Lighthouse.Frontend
+
       - name: Restore dependencies
         run: dotnet restore ./Lighthouse.Backend
 
