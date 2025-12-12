@@ -336,31 +336,6 @@ jobs:
       - name: Remove development settings from win-x64
         run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json
 
-      - name: publish osx-x64
-        run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfContained=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
-        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
-
-      - name: Remove development settings from osx-x64
-        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.Development.json
-
-      - name: Adjust HTTP port for macOS (AirPlay conflict)
-        run: |
-          sed -i 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.json
-
-      - name: Prepare macOS binary artifact
-        run: |
-          OSX_PUBLISH="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64"
-          BINARY_DIR="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64-binary"
-          
-          # Create binary directory with bare files
-          mkdir -p "$BINARY_DIR"
-          cp -R "$OSX_PUBLISH"/* "$BINARY_DIR/"
-          
-          # Set executable permissions
-          chmod +x "$BINARY_DIR/Lighthouse"
-          
-          echo "Created bare binary directory: $BINARY_DIR"
-
       - name: publish linux-x64
         run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/linux-x64
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
@@ -377,12 +352,6 @@ jobs:
         with:
           name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
           path: ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64
-
-      - name: Upload macOS binary artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
-          path: ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64-binary
 
       - name: Upload linux artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -698,7 +667,7 @@ jobs:
     timeout-minutes: 45
     needs:
       - tag
-      - packageapp
+      #- packageapp
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
@@ -706,10 +675,64 @@ jobs:
       name: CodeSign
 
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
         with:
-          name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
-          path: ./artifacts/osx-x64-binary
+          dotnet-version: ${{env.DOTNET_VERSION}}
+
+      - name: Restore dependencies
+        run: dotnet restore ./Lighthouse.Backend/Lighthouse.Backend
+
+      # --- Publish x64 ---
+      - name: Publish osx-x64
+        run: |
+          dotnet publish -c Release -r osx-x64 \
+            --self-contained \
+            -p:PublishSingleFile=true \
+            -p:PublishReadyToRun=true \
+            -p:IncludeNativeLibrariesForSelfContained=true \
+            -p:Version=${{ github.ref_name }} \
+            -o ./publish/osx-x64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
+      # --- Publish arm64 ---
+      - name: Publish osx-arm64
+        run: |
+          dotnet publish -c Release -r osx-arm64 \
+            --self-contained \
+            -p:PublishSingleFile=true \
+            -p:PublishReadyToRun=true \
+            -p:IncludeNativeLibrariesForSelfContained=true \
+            -p:Version=${{ github.ref_name }} \
+            -o ./publish/osx-arm64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
+      # --- Create universal binary ---
+      - name: Create universal binary
+        run: |
+          UNIVERSAL_DIR="./publish/osx-universal"
+          mkdir -p "$UNIVERSAL_DIR"
+
+          # Merge single-file binaries
+          lipo -create ./publish/osx-x64/Lighthouse ./publish/osx-arm64/Lighthouse -output "$UNIVERSAL_DIR/Lighthouse"
+
+          # Copy remaining files from x64 build
+          cp -R ./publish/osx-x64/* "$UNIVERSAL_DIR/"
+
+          # Set executable permission
+          chmod +x "$UNIVERSAL_DIR/Lighthouse"
+
+      # --- Remove development settings ---
+      - name: Remove development settings
+        run: rm -f ./publish/osx-universal/appsettings.Development.json
+
+      # --- Adjust HTTP port ---
+      - name: Adjust HTTP port
+        run: |
+          sed -i '' 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./publish/osx-universal/appsettings.json
 
       - name: Import code signing certificates
         uses: apple-actions/import-codesign-certs@v3
@@ -721,106 +744,71 @@ jobs:
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # Extract signing identity from keychain
           IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
-          
           if [ -z "$IDENTITY" ]; then
             echo "Error: No Developer ID Application certificate found in keychain"
             security find-identity -v -p codesigning
             exit 1
           fi
-          
           echo "Signing identity: $IDENTITY"
-          echo "Signing all binaries and libraries in ./artifacts/osx-x64-binary"
-          
-          # 1. Sign all .dylib files first
+
+          UNIVERSAL_DIR="./publish/osx-universal"
+
           echo "=== Signing .dylib files ==="
-          find ./artifacts/osx-x64-binary -name "*.dylib" -type f | while read file; do
+          find "$UNIVERSAL_DIR" -name "*.dylib" -type f | while read file; do
             echo "Signing: $file"
-            codesign --sign "$IDENTITY" \
-              --timestamp \
-              --options runtime \
-              --force \
-              --verbose \
-              "$file" 2>&1
-            codesign --verify --strict --verbose=2 "$file" 2>&1
+            codesign --sign "$IDENTITY" --timestamp --options runtime --force --verbose "$file"
+            codesign --verify --strict --verbose=2 "$file"
             echo "✓ Signed and verified: $file"
           done
-          
-          # 2. Sign the main Lighthouse executable explicitly
+
           echo "=== Signing main Lighthouse executable ==="
-          BINARY_PATH="./artifacts/osx-x64-binary/Lighthouse"
-          
+          BINARY_PATH="$UNIVERSAL_DIR/Lighthouse"
           if [ ! -f "$BINARY_PATH" ]; then
             echo "Error: Lighthouse binary not found at $BINARY_PATH"
-            ls -la ./artifacts/osx-x64-binary/
+            ls -la "$UNIVERSAL_DIR/"
             exit 1
           fi
-          
-          echo "File info:"
-          file "$BINARY_PATH"
-          ls -lah "$BINARY_PATH"
-          
-          echo ""
-          echo "Signing main binary..."
-          codesign --sign "$IDENTITY" \
-            --timestamp \
-            --options runtime \
-            --force \
-            --verbose=4 \
-            "$BINARY_PATH" 2>&1
-          
-          if [ $? -ne 0 ]; then
-            echo "Error: Failed to sign main binary"
-            exit 1
-          fi
-          
-          echo ""
-          echo "Verifying signature..."
-          codesign --verify --strict --verbose=2 "$BINARY_PATH" 2>&1
-          codesign --verify --deep --strict --verbose=2 "$BINARY_PATH" 2>&1
-          
-          echo ""
-          echo "Signature details:"
-          codesign -dvvv "$BINARY_PATH" 2>&1 | grep -E "(Signature|timestamp|runtime|Authority)"
-          
-          echo ""
+
+          chmod +x "$BINARY_PATH"
+          codesign --sign "$IDENTITY" --timestamp --options runtime --force --verbose=4 "$BINARY_PATH"
+          codesign --verify --strict --verbose=2 "$BINARY_PATH"
+          codesign --verify --deep --strict --verbose=2 "$BINARY_PATH"
+          codesign -dvvv "$BINARY_PATH" | grep -E "(Signature|timestamp|runtime|Authority)"
           echo "✓ All binaries signed and verified successfully"
 
-      - name: Notarize the bare binary
+      - name: Notarize the universal binary
         id: notarize
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          BINARY_PATH="./artifacts/osx-x64-binary/Lighthouse"
-          ZIP_PATH="./artifacts/Lighthouse-binary.zip"
-          
+          UNIVERSAL_DIR="./publish/osx-universal"
+          ZIP_PATH="./publish/Lighthouse-universal.zip"
+
           echo "Creating zip archive for notarization..."
-          cd ./artifacts/osx-x64-binary
-          zip -r ../Lighthouse-binary.zip .
+          cd "$UNIVERSAL_DIR"
+          zip -r "../Lighthouse-universal.zip" .
           cd ../..
-          
-          echo "Submitting for notarization (this may take 10-15 minutes)..."
+
+          echo "Submitting for notarization..."
           SUBMIT_OUTPUT=$(xcrun notarytool submit "$ZIP_PATH" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
             --output-format json)
-          
+
           SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-          
           if [ -z "$SUBMISSION_ID" ]; then
             echo "Error: Failed to get submission ID"
             echo "$SUBMIT_OUTPUT"
             exit 1
           fi
-          
+
           echo "Submission ID: $SUBMISSION_ID"
-          # Save submission ID for later steps
           echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
-          
+
           echo "Waiting for notarization to complete (timeout: 30 minutes)..."
           xcrun notarytool wait "$SUBMISSION_ID" \
             --apple-id "$APPLE_ID" \
@@ -828,23 +816,19 @@ jobs:
             --team-id "$APPLE_TEAM_ID" \
             --timeout 30m \
             --verbose
-          
-          # Check the actual notarization status
-          echo "Checking notarization status..."
+
           STATUS_OUTPUT=$(xcrun notarytool info "$SUBMISSION_ID" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
             --output-format json)
-          
           STATUS=$(echo "$STATUS_OUTPUT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
-          echo "Notarization status: $STATUS"
-          
+
           if [ "$STATUS" != "Accepted" ]; then
             echo "Error: Notarization failed with status: $STATUS"
             exit 1
           fi
-          
+
           echo "Binary notarization successful!"
           rm "$ZIP_PATH"
 
@@ -876,16 +860,19 @@ jobs:
           path: notarization-log.json
           if-no-files-found: ignore
 
-      - name: Delete unsigned macOS binary artifact
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
+      - name: Package and upload signed macOS universal binary
+        run: |
+          UNIVERSAL_DIR="./publish/osx-universal"
+          OUTPUT_ZIP="./publish/Lighthouse-universal.zip"
 
-      - name: Upload signed macOS binary artifact
+          # Use ditto to preserve executable bits and macOS metadata
+          ditto -c -k --sequesterRsrc --keepParent "$UNIVERSAL_DIR" "$OUTPUT_ZIP"
+
+      - name: Upload signed macOS universal binary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
-          path: ./artifacts/osx-x64-binary
+          name: Lighthouse-osx-universal-${{ needs.tag.outputs.version }}
+          path: ./publish/Lighthouse-universal.zip
 
   # Disabled codesign-windows job until a signing certificate is available
   #  codesign-windows:
@@ -992,8 +979,8 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse-osx-x64-binary-${{ needs.tag.outputs.version }}
-          path: LighthouseArtifacts/osx-x64-binary
+          name: Lighthouse-osx-universal-${{ needs.tag.outputs.version }}
+          path: LighthouseArtifacts/osx-universal-binary
 
       - uses: actions/download-artifact@v4
         with:
@@ -1007,7 +994,7 @@ jobs:
 
       - uses: vimtor/action-zip@v1.2
         with:
-          files: LighthouseArtifacts/osx-x64-binary
+          files: LighthouseArtifacts/osx-universal-binary
           dest: Lighthouse-osx-x64.zip
 
       - uses: vimtor/action-zip@v1.2
