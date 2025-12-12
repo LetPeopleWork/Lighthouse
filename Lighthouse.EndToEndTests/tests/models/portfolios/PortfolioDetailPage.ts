@@ -43,30 +43,6 @@ export class PortfolioDetailPage {
 		return getLastUpdatedDateFromText(lastUpdatedText);
 	}
 
-	async toggleMilestoneConfiguration(): Promise<void> {
-		await this.page.getByLabel("toggle").first().click();
-	}
-
-	async addMilestone(name: string, date: Date): Promise<void> {
-		await this.page.getByLabel("New Milestone Name").fill(name);
-		await this.page
-			.getByLabel("New Milestone Date")
-			.fill(date.toISOString().split("T")[0]);
-		await this.page.getByRole("button", { name: "Add Milestone" }).click();
-	}
-
-	async removeMilestone(): Promise<void> {
-		await this.page.getByLabel("delete").click();
-	}
-
-	getMilestoneColumn(milestoneName: string, milestoneDate: Date): Locator {
-		const dateString = milestoneDate.toLocaleDateString("en-US");
-
-		return this.page
-			.getByRole("columnheader")
-			.filter({ hasText: `${milestoneName} (${dateString})` });
-	}
-
 	async toggleFeatureWIPConfiguration(): Promise<void> {
 		await this.page.getByLabel("toggle").nth(1).click();
 	}

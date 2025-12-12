@@ -68,7 +68,7 @@ export class SettingsService
 				"/appsettings/defaultprojectsettings",
 			);
 
-			return this.deserializeProjectSettings(response.data);
+			return response.data;
 		});
 	}
 

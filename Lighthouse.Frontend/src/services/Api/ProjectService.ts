@@ -41,7 +41,7 @@ export class ProjectService extends BaseApiService implements IProjectService {
 			const response = await this.apiService.get<IProjectSettings>(
 				`/portfolios/${id}/settings`,
 			);
-			return this.deserializeProjectSettings(response.data);
+			return response.data;
 		});
 	}
 
@@ -53,7 +53,7 @@ export class ProjectService extends BaseApiService implements IProjectService {
 				`/portfolios/${projectSettings.id}`,
 				projectSettings,
 			);
-			return this.deserializeProjectSettings(response.data);
+			return response.data;
 		});
 	}
 
@@ -65,7 +65,7 @@ export class ProjectService extends BaseApiService implements IProjectService {
 				"/portfolios",
 				projectSettings,
 			);
-			return this.deserializeProjectSettings(response.data);
+			return response.data;
 		});
 	}
 

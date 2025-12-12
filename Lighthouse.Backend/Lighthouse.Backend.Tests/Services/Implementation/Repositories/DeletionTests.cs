@@ -92,10 +92,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             var project = new Portfolio { Name = "MyProject", WorkTrackingSystemConnection = workTrackingSystemConnection, };
 
-            var milestone1 = new Milestone { Name = "Milestone", Date = DateTime.Now.AddDays(12), Portfolio = project };
-            var milestone2 = new Milestone { Name = "Milestone2", Date = DateTime.Now.AddDays(42), Portfolio = project };
-            project.Milestones.Add(milestone1);
-            project.Milestones.Add(milestone2);
 
             var projectRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
             projectRepository.Add(project);

@@ -11,7 +11,7 @@ env:
 
 on:
   push:
-    branches: [ "main" ]    
+    branches: [ "main", "features/**" ]    
     paths:
       - "Lighthouse.Backend/**"
       - "Lighthouse.Backend.Tests/**"

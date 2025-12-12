@@ -24,19 +24,12 @@ namespace Lighthouse.Backend.API.DTO
                 forecasts.Add(feature.Forecast);
             }
 
-            foreach (var milestone in project.Milestones)
-            {
-                Milestones.Add(new MilestoneDto(milestone));
-            }
-
             Forecasts = GetLatestForecasts(forecasts);
         }
 
         public List<EntityReferenceDto> Features { get; } = new List<EntityReferenceDto>();
 
         public List<EntityReferenceDto> InvolvedTeams { get; } = new List<EntityReferenceDto>();
-
-        public List<MilestoneDto> Milestones { get; } = new List<MilestoneDto>();
 
         public List<WhenForecastDto> Forecasts { get; }
 

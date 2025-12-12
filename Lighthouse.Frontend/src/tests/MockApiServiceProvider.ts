@@ -1,7 +1,6 @@
 import { vi } from "vitest";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IConfigurationService } from "../services/Api/ConfigurationService";
-import { DemoApiService } from "../services/Api/DemoApiService";
 import type { IFeatureService } from "../services/Api/FeatureService";
 import type { ILicensingService } from "../services/Api/LicensingService";
 import type { ILogService } from "../services/Api/LogService";
@@ -34,7 +33,8 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["workTrackingSystemService"],
 		optionalFeatureService:
 			null as unknown as IApiServiceContext["optionalFeatureService"],
-		updateSubscriptionService: new DemoApiService(false, false),
+		updateSubscriptionService:
+			null as unknown as IApiServiceContext["updateSubscriptionService"],
 		projectMetricsService:
 			null as unknown as IApiServiceContext["projectMetricsService"],
 		suggestionService:

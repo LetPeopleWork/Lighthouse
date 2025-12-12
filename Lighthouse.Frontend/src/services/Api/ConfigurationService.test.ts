@@ -180,7 +180,6 @@ describe("ConfigurationService", () => {
 				{
 					id: 3,
 					name: "Project X",
-					milestones: [],
 					unparentedItemsQuery: "",
 					involvedTeams: [],
 					overrideRealChildCountStates: [],

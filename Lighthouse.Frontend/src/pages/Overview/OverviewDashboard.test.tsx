@@ -54,7 +54,6 @@ const renderWithProviders = (component: React.ReactElement) => {
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
 			remainingFeatures: 0,
-			milestones: [],
 		},
 		{
 			id: 2,
@@ -67,7 +66,6 @@ const renderWithProviders = (component: React.ReactElement) => {
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
 			remainingFeatures: 0,
-			milestones: [],
 		},
 	];
 

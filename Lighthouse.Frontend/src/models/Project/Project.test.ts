@@ -1,7 +1,6 @@
 import { Feature } from "../Feature";
 import { WhenForecast } from "../Forecasts/WhenForecast";
 import { Team } from "../Team/Team";
-import { Milestone } from "./Milestone";
 import { Project } from "./Project";
 
 describe("Project Class", () => {
@@ -49,14 +48,6 @@ describe("Project Class", () => {
 		];
 		lastUpdated = new Date("2023-07-11");
 
-		const milestone = (() => {
-			const milestone = new Milestone();
-			milestone.id = 0;
-			milestone.name = "Milestone 1";
-			milestone.date = new Date(Date.now() + 14 * 24 * 60 * 60);
-			return milestone;
-		})();
-
 		const feature1 = (() => {
 			const feature = new Feature();
 			feature.name = "Feature 1";
@@ -68,7 +59,6 @@ describe("Project Class", () => {
 			feature.projects = [{ id: 1, name: name }];
 			feature.remainingWork = { 1: 10, 2: 20 };
 			feature.totalWork = { 1: 10, 2: 20 };
-			feature.milestoneLikelihood = { 0: 88.7 };
 			feature.forecasts = [
 				(() => {
 					const forecast = new WhenForecast();
@@ -94,7 +84,6 @@ describe("Project Class", () => {
 			feature.projects = [{ id: 1, name: name }];
 			feature.remainingWork = { 1: 5, 2: 15 };
 			feature.totalWork = { 1: 5, 2: 15 };
-			feature.milestoneLikelihood = { 0: 54.3 };
 			feature.forecasts = [
 				(() => {
 					const forecast = new WhenForecast();
@@ -117,7 +106,6 @@ describe("Project Class", () => {
 			project.id = id;
 			project.involvedTeams = involvedTeams;
 			project.features = features;
-			project.milestones = [milestone];
 			project.lastUpdated = lastUpdated;
 			return project;
 		})();

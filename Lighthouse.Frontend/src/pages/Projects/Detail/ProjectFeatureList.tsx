@@ -12,7 +12,6 @@ import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
-import ForecastLikelihood from "../../../components/Common/Forecasts/ForecastLikelihood";
 import LocalDateTimeDisplay from "../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import ParentWorkItemCell from "../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import ProgressIndicator from "../../../components/Common/ProgressIndicator/ProgressIndicator";
@@ -91,18 +90,6 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 
 		fetchFeaturesInProgress();
 	}, [project.involvedTeams, teamMetricsService]);
-
-	const currentOrFutureMilestones = useMemo(() => {
-		return project.milestones.filter((milestone) => {
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
-
-			const milestoneDate = new Date(milestone.date);
-			milestoneDate.setHours(0, 0, 0, 0);
-
-			return milestoneDate >= today;
-		});
-	}, [project.milestones]);
 
 	const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const newValue = event.target.checked;
@@ -196,24 +183,6 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 				},
 			];
 
-			// Add milestone columns dynamically
-			for (const milestone of currentOrFutureMilestones) {
-				baseColumns.push({
-					field: `milestone_${milestone.id}`,
-					headerName: `${milestone.name} (${milestone.date.toLocaleDateString()})`,
-					width: 150,
-					sortable: false,
-					renderCell: ({ row }) => (
-						<ForecastLikelihood
-							remainingItems={row.getRemainingWorkForFeature()}
-							targetDate={milestone.date}
-							likelihood={row.getMilestoneLikelihood(milestone.id)}
-							showText={false}
-						/>
-					),
-				});
-			}
-
 			// Add Updated On column
 			baseColumns.push({
 				field: "lastUpdated",
@@ -228,13 +197,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 				),
 			});
 			return baseColumns;
-		}, [
-			featureTerm,
-			project.involvedTeams,
-			featuresInProgress,
-			currentOrFutureMilestones,
-			parentMap,
-		]);
+		}, [featureTerm, project.involvedTeams, featuresInProgress, parentMap]);
 
 	return (
 		<TableContainer component={Paper}>

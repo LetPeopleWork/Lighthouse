@@ -465,21 +465,7 @@ testWithData(
 			3,
 		);
 
-		// Expand Milestones
-		await portfolioDetailPage.toggleMilestoneConfiguration();
-		const inTwoWeeks = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-		await portfolioDetailPage.addMilestone("SB26 Milestone", inTwoWeeks);
-		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled();
-
-		await takePageScreenshot(
-			portfolioDetailPage.page,
-			"features/portfoliodetail_milestones.png",
-			5,
-			1000,
-		);
-
 		// Involved Teams
-		await portfolioDetailPage.toggleMilestoneConfiguration();
 		await portfolioDetailPage.toggleFeatureWIPConfiguration();
 
 		await portfolioDetailPage.changeFeatureWIPForTeam(

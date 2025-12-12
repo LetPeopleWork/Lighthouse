@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
 import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
-import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
 import { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -178,28 +177,6 @@ describe("ProjectFeatureList component", () => {
 	const futureDate = new Date();
 	futureDate.setDate(futureDate.getDate() + 1);
 
-	const milestone1: Milestone = (() => {
-		const milestone = new Milestone();
-		milestone.id = 1;
-		milestone.name = "Milestone 1";
-		milestone.date = pastDate;
-		return milestone;
-	})();
-	const milestone2: Milestone = (() => {
-		const milestone = new Milestone();
-		milestone.id = 2;
-		milestone.name = "Milestone 2";
-		milestone.date = todayDate;
-		return milestone;
-	})();
-	const milestone3: Milestone = (() => {
-		const milestone = new Milestone();
-		milestone.id = 3;
-		milestone.name = "Milestone 3";
-		milestone.date = futureDate;
-		return milestone;
-	})();
-
 	const feature1: Feature = (() => {
 		const feature = new Feature();
 		feature.name = "Feature 1";
@@ -282,35 +259,9 @@ describe("ProjectFeatureList component", () => {
 		project.id = 1;
 		project.involvedTeams = [team1, team2];
 		project.features = [feature1, feature2, feature3];
-		project.milestones = [milestone1, milestone2, milestone3];
 		project.lastUpdated = new Date();
 		return project;
 	})();
-
-	it("should only render milestones that are today or in the future", async () => {
-		render(
-			<MockApiServiceProvider>
-				<MemoryRouter>
-					<ProjectFeatureList project={project} />
-				</MemoryRouter>
-			</MockApiServiceProvider>,
-		);
-
-		// Wait for the grid to render
-		const grid = await screen.findByRole("grid");
-		expect(grid).toBeInTheDocument();
-
-		// Check that column headers are rendered (DataGrid auto-generates these)
-		expect(screen.getByText("Feature Name")).toBeInTheDocument();
-		expect(screen.getByText("Progress")).toBeInTheDocument();
-		expect(screen.getByText("Forecasts")).toBeInTheDocument();
-		expect(screen.getByText("Updated On")).toBeInTheDocument();
-
-		// Milestone columns should be present for current/future milestones
-		expect(screen.queryByText(/Milestone 1/)).not.toBeInTheDocument();
-		expect(screen.getByText(/Milestone 2/)).toBeInTheDocument();
-		expect(screen.getByText(/Milestone 3/)).toBeInTheDocument();
-	});
 
 	it("should render all features with correct data", async () => {
 		render(
@@ -340,12 +291,6 @@ describe("ProjectFeatureList component", () => {
 		expect(forecastInfoListElements.length).toBeGreaterThanOrEqual(
 			project.features.length,
 		);
-
-		// Check for forecast likelihood elements (2 milestones × 3 features = 6)
-		const forecastLikelihoodElements = screen.getAllByTestId(
-			"forecast-likelihood",
-		);
-		expect(forecastLikelihoodElements.length).toBeGreaterThanOrEqual(6);
 	});
 
 	it("should render the correct number of features", async () => {

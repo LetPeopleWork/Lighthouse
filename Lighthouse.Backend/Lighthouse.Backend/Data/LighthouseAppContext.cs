@@ -59,12 +59,6 @@ namespace Lighthouse.Backend.Data
                 .Property(t => t.DefaultValue)
                 .IsRequired();
 
-            modelBuilder.Entity<Milestone>()
-                .HasOne(m => m.Portfolio)
-                .WithMany(p => p.Milestones)
-                .HasForeignKey(m => m.PortfolioId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<FeatureWork>()
                 .HasOne(fw => fw.Team)
                 .WithMany()

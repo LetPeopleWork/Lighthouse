@@ -95,7 +95,6 @@ describe("ImportSettingsStep", () => {
 				workTrackingSystemConnectionId: 1,
 				states: [],
 				stateMappings: [],
-				milestones: [],
 				teams: [],
 			} as unknown as IProjectSettings,
 		],

@@ -8,11 +8,6 @@ import {
 	ConfigurationService,
 	type IConfigurationService,
 } from "./ConfigurationService";
-import {
-	DemoApiService,
-	DemoProjectMetricsService,
-	DemoTeamMetricsService,
-} from "./DemoApiService";
 import { DemoDataService } from "./DemoDataService";
 import { FeatureService, type IFeatureService } from "./FeatureService";
 import { ForecastService, type IForecastService } from "./ForecastService";
@@ -89,37 +84,7 @@ const defaultServices: IApiServiceContext = {
 	demoDataService: new DemoDataService(),
 };
 
-const useDelay: boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
-const demoApiService = new DemoApiService(useDelay);
-const demoTeamMetricsService = new DemoTeamMetricsService();
-const demoProjectMetricsService = new DemoProjectMetricsService();
-
-const demoServices: IApiServiceContext = {
-	forecastService: demoApiService,
-	logService: demoApiService,
-	projectService: demoApiService,
-	settingsService: demoApiService,
-	teamService: demoApiService,
-	teamMetricsService: demoTeamMetricsService,
-	projectMetricsService: demoProjectMetricsService,
-	versionService: demoApiService,
-	workTrackingSystemService: demoApiService,
-	optionalFeatureService: demoApiService,
-	updateSubscriptionService: demoApiService,
-	suggestionService: demoApiService,
-	configurationService: demoApiService,
-	featureService: demoApiService,
-	terminologyService: demoApiService,
-	licensingService: demoApiService,
-	demoDataService: demoApiService,
-};
-
 export function getApiServices(): IApiServiceContext {
-	const isDemoMode = import.meta.env.VITE_API_SERVICE_TYPE === "DEMO";
-	if (isDemoMode) {
-		return demoServices;
-	}
-
 	initializeUpdateSubscriptionService();
 
 	return defaultServices;

@@ -51,7 +51,6 @@ export function createMockProjectSettings(): IProjectSettings {
 		id: 1,
 		name: "Project A",
 		workItemTypes: ["Epic"],
-		milestones: [],
 		workItemQuery: "Query",
 		unparentedItemsQuery: "Unparented Query",
 		usePercentileToCalculateDefaultAmountOfWorkItems: false,

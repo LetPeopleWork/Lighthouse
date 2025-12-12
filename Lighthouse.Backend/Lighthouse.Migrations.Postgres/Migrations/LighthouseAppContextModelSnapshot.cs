@@ -18,7 +18,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -245,31 +245,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("LicenseInformation");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.Milestone", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("PortfolioId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PortfolioId");
-
-                    b.ToTable("Milestone");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.OptionalFeatures.OptionalFeature", b =>
@@ -713,17 +688,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Navigation("Forecast");
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.Milestone", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.Portfolio", "Portfolio")
-                        .WithMany("Milestones")
-                        .HasForeignKey("PortfolioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Portfolio");
-                });
-
             modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Team", "OwningTeam")
@@ -817,11 +781,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.ForecastBase", b =>
                 {
                     b.Navigation("SimulationResults");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
-                {
-                    b.Navigation("Milestones");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>

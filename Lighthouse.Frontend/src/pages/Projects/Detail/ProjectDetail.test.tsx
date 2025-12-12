@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
-import { Milestone } from "../../../models/Project/Milestone";
 import { Project } from "../../../models/Project/Project";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -57,12 +56,6 @@ vi.mock("./ProjectFeatureList", () => ({
 vi.mock("./InvolvedTeamsList", () => ({
 	default: ({ teams }: { teams: ITeamSettings[] }) => (
 		<div data-testid="involved-teams-list">{teams.length} teams</div>
-	),
-}));
-
-vi.mock("../../../components/Common/Milestones/MilestonesComponent", () => ({
-	default: ({ milestones }: { milestones: Milestone[] }) => (
-		<div data-testid="milestone-component">{milestones.length} milestones</div>
 	),
 }));
 
@@ -153,14 +146,12 @@ describe("ProjectDetail component", () => {
 		feature2.referenceId = "FTR-2";
 
 		project.features = [feature1, feature2];
-		project.milestones = [Milestone.new(1, "Milestone", new Date())];
 
 		mockGetProject.mockResolvedValue(project);
 		mockGetProjectSettings.mockResolvedValue({
 			id: 2,
 			name: "Release Codename Daniel",
 			workItemTypes: [],
-			milestones: [],
 			workItemQuery: "Query",
 			unparentedItemsQuery: "Unparented Query",
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,

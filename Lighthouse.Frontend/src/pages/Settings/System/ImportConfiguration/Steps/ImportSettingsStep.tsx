@@ -278,12 +278,6 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 				new Map<number, number>(),
 			);
 
-			for (const project of newProjects) {
-				for (const milestone of project.milestones) {
-					milestone.id = 0;
-				}
-			}
-
 			removeSecretOptionsFromUpdatedWorkTrackingSystems(
 				updatedWorkTrackingSystems,
 			);

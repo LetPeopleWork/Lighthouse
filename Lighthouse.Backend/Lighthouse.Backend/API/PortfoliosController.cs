@@ -121,10 +121,6 @@ namespace Lighthouse.Backend.API
         public async Task<ActionResult<ProjectSettingDto>> CreateProject(ProjectSettingDto projectSetting)
         {
             projectSetting.Id = 0;
-            foreach (var milestone in projectSetting.Milestones)
-            {
-                milestone.Id = 0;
-            }
 
             var newProject = new Portfolio();
             SyncProjectWithProjectSettings(newProject, projectSetting);
@@ -175,7 +171,6 @@ namespace Lighthouse.Backend.API
             project.ParentOverrideField = projectSetting.ParentOverrideField;
 
             SyncStates(project, projectSetting);
-            SyncMilestones(project, projectSetting);
             SyncTeams(project, projectSetting);
             SyncServiceLevelExpectation(project, projectSetting);
             SyncBlockedItems(project, projectSetting);
@@ -217,22 +212,6 @@ namespace Lighthouse.Backend.API
             if (projectSetting.OwningTeam != null)
             {
                 project.OwningTeam = teamRepository.GetById(projectSetting.OwningTeam.Id);
-            }
-        }
-
-        private static void SyncMilestones(Portfolio project, ProjectSettingDto projectSetting)
-        {
-            project.Milestones.Clear();
-            foreach (var milestone in projectSetting.Milestones)
-            {
-                project.Milestones.Add(new Milestone
-                {
-                    Id = milestone.Id,
-                    Name = milestone.Name,
-                    Date = DateTime.SpecifyKind(milestone.Date, DateTimeKind.Utc),
-                    Portfolio = project,
-                    PortfolioId = project.Id,
-                });
             }
         }
 

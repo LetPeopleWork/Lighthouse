@@ -159,7 +159,6 @@ const mockFeatures: IFeature[] = [
 		size: 8,
 		remainingWork: { 1: 10, 2: 5 },
 		totalWork: { 1: 20, 2: 15 },
-		milestoneLikelihood: { 1: 0.85, 2: 0.92 },
 		projects: [
 			{ id: 1, name: "Project A" },
 			{ id: 2, name: "Project B" },
@@ -169,7 +168,6 @@ const mockFeatures: IFeature[] = [
 		getRemainingWorkForTeam: (id: number) => (id === 1 ? 10 : 5),
 		getTotalWorkForFeature: () => 35,
 		getTotalWorkForTeam: (id: number) => (id === 1 ? 20 : 15),
-		getMilestoneLikelihood: (id: number) => (id === 1 ? 0.85 : 0.92),
 	},
 	{
 		id: 11,
@@ -191,14 +189,12 @@ const mockFeatures: IFeature[] = [
 		size: 5,
 		remainingWork: { 3: 8 },
 		totalWork: { 3: 12 },
-		milestoneLikelihood: { 3: 0.75 },
 		projects: [{ id: 3, name: "Project C" }],
 		forecasts: [],
 		getRemainingWorkForFeature: () => 8,
 		getRemainingWorkForTeam: (id: number) => (id === 3 ? 8 : 0),
 		getTotalWorkForFeature: () => 12,
 		getTotalWorkForTeam: (id: number) => (id === 3 ? 12 : 0),
-		getMilestoneLikelihood: (id: number) => (id === 3 ? 0.75 : 0),
 	},
 	{
 		id: 12,
@@ -220,14 +216,12 @@ const mockFeatures: IFeature[] = [
 		size: 3,
 		remainingWork: {},
 		totalWork: {},
-		milestoneLikelihood: {},
 		projects: [],
 		forecasts: [],
 		getRemainingWorkForFeature: () => 0,
 		getRemainingWorkForTeam: () => 0,
 		getTotalWorkForFeature: () => 0,
 		getTotalWorkForTeam: () => 0,
-		getMilestoneLikelihood: () => 0,
 	},
 ];
 

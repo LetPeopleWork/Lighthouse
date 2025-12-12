@@ -11,7 +11,6 @@ import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpe
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IProject, Project } from "../../../models/Project/Project";
-import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -35,8 +34,6 @@ const ProjectDetail: React.FC = () => {
 		tab === "metrics" ? "metrics" : "forecast",
 	);
 
-	const [projectSettings, setProjectSettings] =
-		useState<IProjectSettings | null>(null);
 	const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
 
 	const { projectService, teamService, updateSubscriptionService } =
@@ -71,7 +68,6 @@ const ProjectDetail: React.FC = () => {
 
 		if (projectData && settings) {
 			setProject(projectData);
-			setProjectSettings(settings);
 			setInvolvedTeams(involvedTeamData);
 		}
 
@@ -85,15 +81,6 @@ const ProjectDetail: React.FC = () => {
 
 		setIsProjectUpdating(true);
 		await projectService.refreshFeaturesForProject(project.id);
-	};
-
-	const onMilestonesChanged = async (
-		updatedProjectSettings: IProjectSettings,
-	) => {
-		setProjectSettings(updatedProjectSettings);
-		await projectService.updateProject(updatedProjectSettings);
-
-		await projectService.refreshForecastsForProject(projectId);
 	};
 
 	const onEditProject = () => {
@@ -244,12 +231,10 @@ const ProjectDetail: React.FC = () => {
 						</Grid>
 
 						<Grid size={{ xs: 12 }}>
-							{activeView === "forecast" && project && projectSettings && (
+							{activeView === "forecast" && project && (
 								<ProjectForecastView
 									project={project}
-									projectSettings={projectSettings}
 									involvedTeams={involvedTeams}
-									onMilestonesChanged={onMilestonesChanged}
 									onTeamSettingsChange={onTeamSettingsChange}
 								/>
 							)}

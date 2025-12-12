@@ -202,7 +202,6 @@ Projects have defined scopes and end dates, but we can still apply flow thinking
 **Analysis Instructions:**
 - Use `GetProjectByName` for project structure and status
 - Use `GetProjectFlowMetrics` for aggregated flow data
-- Use `GetProjectMilestones` for timeline analysis
 - Apply Little's Law at the project level where applicable
 
 **Key Metrics to Examine:**
@@ -220,9 +219,8 @@ Projects have defined scopes and end dates, but we can still apply flow thinking
 **Expected Analysis:**
 1. **Completion Probability**: Based on current flow patterns
 2. **Critical Path Analysis**: Where are the real bottlenecks?
-3. **Milestone Risk Assessment**: Which milestones are at risk?
-4. **Flow Improvement Opportunities**: How to improve predictability
-5. **Communication Strategy**: How to discuss uncertainty with stakeholders
+3. **Flow Improvement Opportunities**: How to improve predictability
+4. **Communication Strategy**: How to discuss uncertainty with stakeholders
 
 Remember: Projects are temporary, but good flow principles still apply. Focus on improving predictability within the project constraints.";
 
