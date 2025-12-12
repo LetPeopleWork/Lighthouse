@@ -698,6 +698,7 @@ jobs:
     timeout-minutes: 45
     needs:
       - tag
+      - packageapp
       # - docker
       # - verifysqlite
       # - verifypostgres
