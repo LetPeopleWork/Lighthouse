@@ -891,7 +891,7 @@ jobs:
 
       - name: Verify codesign on binary
         run: |
-          BINARY=./publish/universal/Lighthouse
+          BINARY=./publish/Lighthouse
           echo "Verifying codesign for $BINARY"
           codesign --verify --deep --strict --verbose=4 "$BINARY"
           codesign -dvvv "$BINARY" || true
@@ -928,12 +928,12 @@ jobs:
           fi
 
       - name: Set executable permission
-        run: chmod +x ./publish/universal/Lighthouse
+        run: chmod +x ./publish/Lighthouse
 
       - name: Run Lighthouse (sqlite)
         run: |
           ./Lighthouse > lighthouse.log 2>&1 &
-        working-directory: ./publish/universal
+        working-directory: ./publish
         env:
           Database__Provider: sqlite
           Database__ConnectionString: 'Data Source=lighthouse.db'
@@ -945,7 +945,7 @@ jobs:
           echo "Server is ready!"
 
           cat lighthouse.log
-        working-directory: ./publish/universal
+        working-directory: ./publish
 
       - name: Upload notarization & verification artifacts
         if: ${{ !cancelled() }}
