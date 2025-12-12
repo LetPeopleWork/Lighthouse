@@ -668,7 +668,6 @@ jobs:
     needs:
       - tag
 
-    # Expose notarization submission id so other jobs can query notarytool
     outputs:
       submission_id: ${{ steps.notarize.outputs.submission_id }}
 
@@ -687,7 +686,11 @@ jobs:
           dotnet-version: ${{env.DOTNET_VERSION}}
 
       - name: Restore dependencies
-        run: dotnet restore ./Lighthouse.Backend/Lighthouse.Backend
+        run: dotnet restore ./Lighthouse.Backend
+
+      - name: Build Backend Solution
+        run: dotnet build -c Release -p:Version=${{ needs.tag.outputs.fileversion }}
+        working-directory: ./Lighthouse.Backend
 
       # --- Publish x64 ---
       - name: Publish osx-x64
@@ -867,30 +870,24 @@ jobs:
       - name: Upload signed macOS universal binary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Lighthouse-osx-universal-${{ needs.tag.outputs.version }}
+          name: Lighthouse-osx-${{ needs.tag.outputs.version }}
           path: ./publish/osx-universal
 
   verifymacos:
-    name: Verify macOS signed + notarized binary
+    name: Verify macOS version
     runs-on: macos-latest
     needs:
       - codesign-macos
       - tag
+
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download signed macOS universal binary
         uses: actions/download-artifact@v4
         with:
-          name: Lighthouse-osx-universal-${{ needs.tag.outputs.version }}
+          name: Lighthouse-osx-${{ needs.tag.outputs.version }}
           path: ./publish
-
-      - name: Unzip universal binary
-        run: |
-          mkdir -p ./publish/universal
-          unzip -q ./publish/Lighthouse-universal.zip -d ./publish/universal
 
       - name: Verify codesign on binary
         run: |
@@ -1075,7 +1072,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: Lighthouse-osx-universal-${{ needs.tag.outputs.version }}
+          name: Lighthouse-osx-${{ needs.tag.outputs.version }}
           path: LighthouseArtifacts/osx-universal-binary
 
       - uses: actions/download-artifact@v4
