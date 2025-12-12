@@ -1099,7 +1099,7 @@ jobs:
       - uses: vimtor/action-zip@v1.2
         with:
           files: LighthouseArtifacts/osx-universal-binary
-          dest: Lighthouse-osx-x64.zip
+          dest: Lighthouse-osx.zip
 
       - uses: vimtor/action-zip@v1.2
         with:
