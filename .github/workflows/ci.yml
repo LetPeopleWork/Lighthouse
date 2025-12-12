@@ -691,7 +691,6 @@ jobs:
           dotnet publish -c Release -r osx-x64 \
             --self-contained \
             -p:PublishSingleFile=true \
-            -p:PublishReadyToRun=true \
             -p:IncludeNativeLibrariesForSelfContained=true \
             -p:Version=${{ needs.tag.outputs.fileversion }} \
             -o ./publish/osx-x64
@@ -703,7 +702,6 @@ jobs:
           dotnet publish -c Release -r osx-arm64 \
             --self-contained \
             -p:PublishSingleFile=true \
-            -p:PublishReadyToRun=true \
             -p:IncludeNativeLibrariesForSelfContained=true \
             -p:Version=${{ needs.tag.outputs.fileversion }} \
             -o ./publish/osx-arm64
@@ -716,10 +714,10 @@ jobs:
           mkdir -p "$UNIVERSAL_DIR"
 
           # Merge single-file binaries
-          lipo -create ./publish/osx-x64/Lighthouse ./publish/osx-arm64/Lighthouse -output "$UNIVERSAL_DIR/Lighthouse"
+          lipo -create ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse -output "$UNIVERSAL_DIR/Lighthouse"
 
           # Copy remaining files from x64 build
-          cp -R ./publish/osx-x64/* "$UNIVERSAL_DIR/"
+          cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/* "$UNIVERSAL_DIR/"
 
           # Set executable permission
           chmod +x "$UNIVERSAL_DIR/Lighthouse"
