@@ -699,14 +699,11 @@ jobs:
     needs:
       - tag
       - packageapp
-      # - docker
-      # - verifysqlite
-      # - verifypostgres
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
     environment:
-      name: Release
+      name: CodeSign
 
     steps:
       - uses: actions/download-artifact@v4
@@ -897,14 +894,12 @@ jobs:
   #    timeout-minutes: 5
   #    needs:
   #      - tag
-  #      - docker
-  #      - verifysqlite
-  #      - verifypostgres
+  #      - packageapp
   #
   #    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
   #
   #    environment:
-  #      name: Release
+  #      name: CodeSign
   #
   #    steps:
   #      - uses: actions/download-artifact@v4
