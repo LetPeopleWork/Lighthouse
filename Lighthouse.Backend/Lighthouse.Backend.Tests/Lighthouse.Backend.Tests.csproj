@@ -42,7 +42,7 @@
 	  <None Update="Services\Implementation\Licensing\invalid_license.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="Services\Implementation\Licensing\valid_license.json">
+	  <None Update="Services\Implementation\Licensing\valid_expired_license.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\adodata.csv">
@@ -76,6 +76,9 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-with-optional.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Services\Implementation\Licensing\valid_not_expired_license.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

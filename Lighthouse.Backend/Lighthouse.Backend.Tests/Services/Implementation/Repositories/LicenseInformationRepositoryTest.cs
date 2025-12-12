@@ -65,6 +65,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             licenseInfo.Email = "newemail@test.com";
             licenseInfo.Organization = "LetPeopleWork AG";
             licenseInfo.ExpiryDate = DateTime.Now.AddYears(2);
+            licenseInfo.ValidFrom = DateTime.Now.AddYears(20);
             licenseInfo.LicenseNumber = "1886";
             licenseInfo.Signature = "HoppGC!";
             subject.Add(licenseInfo);
@@ -79,6 +80,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Assert.That(savedLicense.LicenseNumber, Is.EqualTo(licenseInfo.LicenseNumber));
                 Assert.That(savedLicense.Organization, Is.EqualTo(licenseInfo.Organization));
                 Assert.That(savedLicense.ExpiryDate, Is.EqualTo(licenseInfo.ExpiryDate));
+                Assert.That(savedLicense.ValidFrom, Is.EqualTo(licenseInfo.ValidFrom));
                 Assert.That(savedLicense.Signature, Is.EqualTo(licenseInfo.Signature));
             }
         }

@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task ImportLicense_ValidJsonFile_ReturnsOkWithLicenseInformation()
         {
-            var validLicenseJson = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
+            var validLicenseJson = File.ReadAllText("Services/Implementation/Licensing/valid_expired_license.json");
             var expectedLicenseInfo = new LicenseInformation
             {
                 Name = "Benjamin Huser-Berta",
@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.API
                 Signature = "D+oa9Gs7ZyHkAcPaa2527TposTvJjJoqRmZ9bkWPs+exf2N6n5kIMcJuNWMfhEq24BuHaBO6idz9AfkLlsbJ9qMBf7ykOEQLu27PDkLG8TFX/5/L53OEiojte/A/AmO36UGttIS6cBxP6nbif7nfhSWNCmD8C5nksLy74yJdol4n7EVdIsowvSFoAYVFGSKex0CltlIyc4DNmFjy2MWS5FnTmVZs3fs0emxSUH9eHtnL5yah4h3A2+zwV7st76x5EZDDdLS9hOeb0Qp3LKSyLTMJg57tdD8eusU18OupmyOrY16SfoN54JkwCSpL6e2NF97w6btUQl4q8mvFKJB98w=="
             };
 
-            var formFile = CreateMockFormFile("valid_license.json", validLicenseJson);
+            var formFile = CreateMockFormFile("valid_expired_license.json", validLicenseJson);
             licenseServiceMock.Setup(s => s.ImportLicense(validLicenseJson))
                               .ReturnsAsync(expectedLicenseInfo);
 

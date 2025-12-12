@@ -10,10 +10,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public void VerifyLicense_ValidLicenseWithoutValidFrom_ReturnsTrue()
         {
             var verifier = new LicenseVerifier();
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
             
             // Extract license from file
-            using var doc = System.Text.Json.JsonDocument.Parse(licenseContent);
+            using var doc = System.Text.Json.JsonDocument.Parse(TestLicenseData.ValidExpiredLicense);
             var licenseElement = doc.RootElement.GetProperty("license");
             var signature = doc.RootElement.GetProperty("signature").GetString();
             

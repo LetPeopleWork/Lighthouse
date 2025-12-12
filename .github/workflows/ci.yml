@@ -101,6 +101,13 @@ jobs:
         java-version: 17
         distribution: 'zulu'
 
+    - name: Write private key to file
+      run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
+
+    - name: Generate license for backend Tests
+      run: |
+        python Scripts/generate_license.py private_key.pem Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+2 days' '+%Y-%m-%d')" "$(date -d '-3 days' '+%Y-%m-%d')"
+
     - name: Install SonarCloud scanner
       if: needs.changes.outputs.backend == 'true'
       run: |

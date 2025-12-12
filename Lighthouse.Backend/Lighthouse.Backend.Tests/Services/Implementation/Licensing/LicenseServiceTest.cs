@@ -4,7 +4,6 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Threading.Tasks;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
 {
@@ -45,9 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         {
             var licenseService = CreateSubject();
 
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
-
-            var result = await licenseService.ImportLicense(licenseContent);
+            var result = await licenseService.ImportLicense(TestLicenseData.ValidExpiredLicense);
 
             Assert.That(result, Is.Not.Null);
         }
@@ -56,9 +53,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public async Task ImportLicense_InvalidLicense_ReturnsNull()
         {
             var licenseService = CreateSubject();
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/invalid_license.json");
-
-            var result = await licenseService.ImportLicense(licenseContent);
+            
+            var result = await licenseService.ImportLicense(TestLicenseData.InvalidLicense);
 
             Assert.That(result, Is.Null);
         }
@@ -67,9 +63,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public async Task ImportLicense_ValidLicense_StoresInDatabase()
         {
             var licenseService = CreateSubject();
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
-
-            await licenseService.ImportLicense(licenseContent);
+            
+            await licenseService.ImportLicense(TestLicenseData.ValidExpiredLicense);
 
             licenseRepoMock.Verify(repo => repo.Add(It.IsAny<LicenseInformation>()), Times.Once);
             licenseRepoMock.Verify(repo => repo.Save(), Times.Once);
@@ -94,9 +89,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public async Task GetLicenseData_ValidLicense_ReturnsLicenseInformationAndTrue()
         {
             var licenseService = CreateSubject();
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
-
-            var licenseInfo = await licenseService.ImportLicense(licenseContent) ?? throw new ArgumentNullException("LicenseInfo cannot be null");
+            
+            var licenseInfo = await licenseService.ImportLicense(TestLicenseData.ValidExpiredLicense) ?? throw new ArgumentNullException("LicenseInfo cannot be null");
             licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
 
             var (result, isValid) = licenseService.GetLicenseData();
@@ -138,8 +132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         {
             var licenseService = CreateSubject();
 
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/invalid_license.json");
-            await licenseService.ImportLicense(licenseContent);
+            await licenseService.ImportLicense(TestLicenseData.InvalidLicense);
 
             var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
             Assert.That(canUsePremiumFeatures, Is.False);
@@ -150,8 +143,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         {
             var licenseService = CreateSubject();
 
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
-            await licenseService.ImportLicense(licenseContent);
+            await licenseService.ImportLicense(TestLicenseData.ValidExpiredLicense);
 
             var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
             Assert.That(canUsePremiumFeatures, Is.False);
@@ -315,11 +307,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public async Task ImportLicense_LicenseWithoutValidFrom_SetsValidFromToNull()
         {
             var licenseService = CreateSubject();
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
+            
+            var result = await licenseService.ImportLicense(TestLicenseData.ValidExpiredLicense);
 
-            var result = await licenseService.ImportLicense(licenseContent);
-
-            // The valid_license.json doesn't have valid_from, so it should be null
+            // The valid_expired_license.json doesn't have valid_from, so it should be null
             Assert.That(result, Is.Not.Null);
             Assert.That(result!.ValidFrom, Is.Null);
         }
@@ -362,8 +353,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         public async Task ClearLicense_WithLicense_SubsequentGetLicenseDataReturnsNull()
         {
             var licenseService = CreateSubject();
-            var licenseContent = File.ReadAllText("Services/Implementation/Licensing/valid_license.json");
-            var licenseInfo = await licenseService.ImportLicense(licenseContent);
+            var licenseInfo = await licenseService.ImportLicense(TestLicenseData.ValidExpiredLicense);
 
             // Setup: Initially has license
             licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo! });
