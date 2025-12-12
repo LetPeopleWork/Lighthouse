@@ -859,14 +859,6 @@ jobs:
             echo "======================="
           fi
 
-      - name: Upload notarization log as artifact
-        if: always() && env.SUBMISSION_ID != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: notarization-log
-          path: notarization-log.json
-          if-no-files-found: ignore
-
       - name: Upload signed macOS universal binary artifact
         uses: actions/upload-artifact@v4
         with:
@@ -944,21 +936,19 @@ jobs:
 
       - name: Wait for Lighthouse to start
         run: |
-          echo "Waiting for server to be ready..."
-          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5002; do sleep 1; done'
-          echo "Server is ready!"
+          end=$((SECONDS+30))
+          while [ $SECONDS -lt $end ]; do
+            if curl --silent --fail --insecure https://localhost:5002; then
+              echo "Service is up!"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Timeout waiting for service"
+          exit 1
 
           cat lighthouse.log
         working-directory: ./publish
-
-      - name: Upload notarization & verification artifacts
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: notarization-verify-report-${{ needs.tag.outputs.version }}
-          path: |
-            notarization-info.json
-            publish/universal/lighthouse.log
             
       - name: Stop Lighthouse Server
         if: always()
