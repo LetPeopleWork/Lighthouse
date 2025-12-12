@@ -752,6 +752,7 @@ jobs:
           echo "Binary signature verified successfully"
 
       - name: Notarize the bare binary
+        id: notarize
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
@@ -766,8 +767,6 @@ jobs:
           cd ../..
           
           echo "Submitting for notarization (this may take 10-15 minutes)..."
-          
-          # Submit and capture the submission ID
           SUBMIT_OUTPUT=$(xcrun notarytool submit "$ZIP_PATH" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
@@ -783,9 +782,10 @@ jobs:
           fi
           
           echo "Submission ID: $SUBMISSION_ID"
-          echo "Waiting for notarization to complete (timeout: 30 minutes)..."
+          # Save submission ID for later steps
+          echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
           
-          # Wait for notarization with extended timeout
+          echo "Waiting for notarization to complete (timeout: 30 minutes)..."
           xcrun notarytool wait "$SUBMISSION_ID" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
@@ -793,22 +793,52 @@ jobs:
             --timeout 30m \
             --verbose
           
-          NOTARIZE_EXIT=$?
+          # Check the actual notarization status
+          echo "Checking notarization status..."
+          STATUS_OUTPUT=$(xcrun notarytool info "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --output-format json)
           
-          if [ $NOTARIZE_EXIT -ne 0 ]; then
-            echo "Error: Notarization failed or timed out with exit code $NOTARIZE_EXIT"
-            echo "Retrieving notarization log..."
-            xcrun notarytool log "$SUBMISSION_ID" \
-              --apple-id "$APPLE_ID" \
-              --password "$APPLE_APP_PASSWORD" \
-              --team-id "$APPLE_TEAM_ID" || true
+          STATUS=$(echo "$STATUS_OUTPUT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "Notarization status: $STATUS"
+          
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "Error: Notarization failed with status: $STATUS"
             exit 1
           fi
           
           echo "Binary notarization successful!"
-          
-          # Clean up zip file
           rm "$ZIP_PATH"
+
+      - name: Retrieve notarization log
+        if: always() && env.SUBMISSION_ID != ''
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          echo "Retrieving notarization log for submission: $SUBMISSION_ID"
+          xcrun notarytool log "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            notarization-log.json || echo "Failed to retrieve log"
+          
+          if [ -f notarization-log.json ]; then
+            echo "=== Notarization Log ==="
+            cat notarization-log.json
+            echo "======================="
+          fi
+
+      - name: Upload notarization log as artifact
+        if: always() && env.SUBMISSION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: notarization-log
+          path: notarization-log.json
+          if-no-files-found: ignore
 
       - name: Delete unsigned macOS binary artifact
         uses: geekyeggo/delete-artifact@v5
