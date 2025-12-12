@@ -337,7 +337,12 @@ jobs:
         run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json
 
       - name: publish osx-x64
-        run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ needs.tag.outputs.fileversion }} -o ./publish/osx-x64
+        run: dotnet publish -c Release -r osx-x64 --self-contained \
+              -p:PublishSingleFile=true \
+              -p:PublishReadyToRun=true \
+              -p:IncludeNativeLibrariesForSelfContained=true \
+              -p:Version=${{ needs.tag.outputs.fileversion }} \
+              -o ./publish/osx-x64
         working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
       - name: Remove development settings from osx-x64
@@ -867,20 +872,6 @@ jobs:
             cat notarization-log.json
             echo "======================="
           fi
-
-      - name: Staple notarization ticket
-        run: |
-          echo "Stapling notarization ticket to binary..."
-          xcrun stapler staple ./artifacts/osx-x64-binary/Lighthouse
-          
-          echo "Verifying staple..."
-          xcrun stapler validate ./artifacts/osx-x64-binary/Lighthouse
-          
-          echo "Ensuring execute permissions..."
-          chmod +x ./artifacts/osx-x64-binary/Lighthouse
-          
-          echo "Final verification..."
-          spctl -a -vv -t install ./artifacts/osx-x64-binary/Lighthouse
 
       - name: Upload notarization log as artifact
         if: always() && env.SUBMISSION_ID != ''
