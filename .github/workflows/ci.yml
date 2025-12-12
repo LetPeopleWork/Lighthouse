@@ -938,7 +938,7 @@ jobs:
         run: |
           end=$((SECONDS+30))
           while [ $SECONDS -lt $end ]; do
-            if curl --silent --fail --insecure https://localhost:5002; then
+            if curl --silent --fail --insecure https://localhost:5001; then
               echo "Service is up!"
               exit 0
             fi
@@ -954,9 +954,9 @@ jobs:
         if: always()
         run: |
           pkill Lighthouse || true
-          cat ./publish/universal/lighthouse.log || true
-          rm -rf ./publish/universal/logs
-          rm -f ./publish/universal/lighthouse.log
+          cat ./publish/lighthouse.log || true
+          rm -rf ./publish/logs
+          rm -f ./publish/lighthouse.log
 
 
 
