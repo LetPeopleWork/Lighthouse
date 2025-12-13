@@ -23,21 +23,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("DeliveryFeature", b =>
-                {
-                    b.Property<int>("DeliveryId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("FeaturesId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("DeliveryId", "FeaturesId");
-
-                    b.HasIndex("FeaturesId");
-
-                    b.ToTable("DeliveryFeature");
-                });
-
             modelBuilder.Entity("FeaturePortfolio", b =>
                 {
                     b.Property<int>("FeaturesId")
@@ -68,31 +53,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.HasKey("Key");
 
                     b.ToTable("AppSettings");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("PortfolioId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PortfolioId");
-
-                    b.ToTable("Deliveries");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Feature", b =>
@@ -683,21 +643,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.HasDiscriminator().HasValue("WhenForecast");
                 });
 
-            modelBuilder.Entity("DeliveryFeature", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.Delivery", null)
-                        .WithMany()
-                        .HasForeignKey("DeliveryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Lighthouse.Backend.Models.Feature", null)
-                        .WithMany()
-                        .HasForeignKey("FeaturesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("FeaturePortfolio", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Feature", null)
@@ -711,17 +656,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasForeignKey("PortfoliosId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.Portfolio", "Portfolio")
-                        .WithMany()
-                        .HasForeignKey("PortfolioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Portfolio");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.FeatureWork", b =>
