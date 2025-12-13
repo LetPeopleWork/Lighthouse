@@ -36,6 +36,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<LicenseInformation> LicenseInformation { get; set; } = default!;
 
+        public DbSet<Delivery> Deliveries { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AppSetting>().HasKey(a => a.Key);
@@ -108,6 +110,16 @@ namespace Lighthouse.Backend.Data
                       .HasForeignKey(option => option.WorkTrackingSystemConnectionId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<Delivery>()
+                .HasOne(d => d.Portfolio)
+                .WithMany()
+                .HasForeignKey(d => d.PortfolioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Delivery>()
+                .HasMany(d => d.Features)
+                .WithMany();
         }
 
         public override int SaveChanges()
