@@ -898,9 +898,6 @@ jobs:
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
-    environment:
-      name: CodeSign
-
     steps:
       - name: Download signed macOS universal binary
         uses: actions/download-artifact@v4
@@ -955,25 +952,24 @@ jobs:
           # Set executable permission
           chmod +x "Lighthouse.app/Contents/MacOS/Lighthouse"
 
+      - name: Import code signing certificates
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
       - name: Sign App Bundle
-        env:
-          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          # Import certificate
-          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > certificate.p12
-          
-          # Create temporary keychain
-          security create-keychain -p temp_password temp.keychain
-          security default-keychain -s temp.keychain
-          security unlock-keychain -p temp_password temp.keychain
-          
-          # Import certificate
-          security import certificate.p12 -k temp.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k temp_password temp.keychain
-          
+        run: |          
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+          if [ -z "$IDENTITY" ]; then
+            echo "Error: No Developer ID Application certificate found in keychain"
+            security find-identity -v -p codesigning
+            exit 1
+          fi
+          echo "Signing identity: $IDENTITY"
+
           # Sign the app bundle
-          codesign --force --options runtime --deep --timestamp --sign "Developer ID Application" "Lighthouse.app"
+          codesign --force --options runtime --deep --timestamp --sign "$IDENTITY" "Lighthouse.app"
           
           # Verify signing
           codesign --verify --deep --strict --verbose=4 "Lighthouse.app"
@@ -1013,24 +1009,17 @@ jobs:
                    Lighthouse-${{ needs.tag.outputs.version }}.pkg
 
       - name: Sign .pkg installer
-        env:
-          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          # Import certificate again
-          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > certificate.p12
-          
-          # Create temporary keychain
-          security create-keychain -p temp_password temp.keychain
-          security default-keychain -s temp.keychain
-          security unlock-keychain -p temp_password temp.keychain
-          
-          # Import certificate
-          security import certificate.p12 -k temp.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/productsign
-          security set-key-partition-list -S apple-tool:,apple:,productsign: -s -k temp_password temp.keychain
-          
+        run: |          
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+            if [ -z "$IDENTITY" ]; then
+              echo "Error: No Developer ID Application certificate found in keychain"
+              security find-identity -v -p codesigning
+              exit 1
+            fi
+            echo "Signing identity: $IDENTITY"
+
           # Sign the installer
-          productsign --timestamp --sign "Developer ID Installer" "Lighthouse-${{ needs.tag.outputs.version }}.pkg" "Lighthouse-${{ needs.tag.outputs.version }}-signed.pkg"
+          productsign --timestamp --sign "$IDENTITY" "Lighthouse-${{ needs.tag.outputs.version }}.pkg" "Lighthouse-${{ needs.tag.outputs.version }}-signed.pkg"
           
           # Replace unsigned with signed
           mv "Lighthouse-${{ needs.tag.outputs.version }}-signed.pkg" "Lighthouse-${{ needs.tag.outputs.version }}.pkg"
