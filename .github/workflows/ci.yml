@@ -889,14 +889,17 @@ jobs:
           name: Lighthouse-osx-${{ needs.tag.outputs.version }}
           path: ./publish/osx-universal
 
-  verifymacos:
-    name: Verify macOS version
+  pkg-macos:
+    name: Create macOS .pkg installer
     runs-on: macos-latest
     needs:
       - codesign-macos
       - tag
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    environment:
+      name: CodeSign
 
     steps:
       - name: Download signed macOS universal binary
@@ -905,84 +908,257 @@ jobs:
           name: Lighthouse-osx-${{ needs.tag.outputs.version }}
           path: ./publish
 
-      - name: Verify codesign on binary
+      - name: Create App Bundle Structure
         run: |
-          BINARY=./publish/Lighthouse
-          echo "Verifying codesign for $BINARY"
-          codesign --verify --deep --strict --verbose=4 "$BINARY"
-          codesign -dvvv "$BINARY" || true
+          # Create the .app bundle structure
+          mkdir -p "Lighthouse.app/Contents/MacOS"
+          mkdir -p "Lighthouse.app/Contents/Resources"
           
-          # For standalone executables, spctl --type execute expects app bundles
-          # Instead, verify the signature is valid and check if it would be allowed
-          echo "Checking if binary would pass Gatekeeper (standalone executable)..."
-          spctl --assess --type execute --verbose=4 "$BINARY" || echo "Note: spctl rejection is expected for standalone executables outside app bundles"
+          # Move the executable into the bundle
+          mv "./publish/Lighthouse" "Lighthouse.app/Contents/MacOS/Lighthouse"
+          
+          # Copy other files to Resources
+          cp "./publish/appsettings.json" "Lighthouse.app/Contents/Resources/"
+          
+          # Create Info.plist
+          cat > "Lighthouse.app/Contents/Info.plist" << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>Lighthouse</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.letpeoplework.lighthouse</string>
+              <key>CFBundleName</key>
+              <string>Lighthouse</string>
+              <key>CFBundleDisplayName</key>
+              <string>Lighthouse</string>
+              <key>CFBundleVersion</key>
+              <string>${{ needs.tag.outputs.fileversion }}</string>
+              <key>CFBundleShortVersionString</key>
+              <string>${{ needs.tag.outputs.version }}</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleSignature</key>
+              <string>????</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>10.15</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>LSUIElement</key>
+              <false/>
+          </dict>
+          </plist>
+          EOF
+          
+          # Set executable permission
+          chmod +x "Lighthouse.app/Contents/MacOS/Lighthouse"
 
-      - name: Retrieve notarization info using submission id
-        id: notaryinfo
+      - name: Sign App Bundle
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Import certificate
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+          
+          # Create temporary keychain
+          security create-keychain -p temp_password temp.keychain
+          security default-keychain -s temp.keychain
+          security unlock-keychain -p temp_password temp.keychain
+          
+          # Import certificate
+          security import certificate.p12 -k temp.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k temp_password temp.keychain
+          
+          # Sign the app bundle
+          codesign --force --options runtime --deep --timestamp --sign "Developer ID Application" "Lighthouse.app"
+          
+          # Verify signing
+          codesign --verify --deep --strict --verbose=4 "Lighthouse.app"
+          
+          # Clean up
+          rm certificate.p12
+          security delete-keychain temp.keychain
+
+      - name: Create .pkg installer
+        run: |
+          # Create the installer package
+          pkgbuild --root . \
+                   --install-location /Applications \
+                   --identifier com.letpeoplework.lighthouse \
+                   --version ${{ needs.tag.outputs.fileversion }} \
+                   --scripts ./scripts \
+                   Lighthouse-${{ needs.tag.outputs.version }}.pkg
+          
+          # Create scripts directory for post-install
+          mkdir -p scripts
+          cat > scripts/postinstall << 'EOF'
+          #!/bin/bash
+          # Make sure the app is executable after installation
+          chmod +x "/Applications/Lighthouse.app/Contents/MacOS/Lighthouse"
+          # Register the app with the system
+          /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "/Applications/Lighthouse.app"
+          exit 0
+          EOF
+          chmod +x scripts/postinstall
+          
+          # Rebuild with scripts
+          pkgbuild --root . \
+                   --install-location /Applications \
+                   --identifier com.letpeoplework.lighthouse \
+                   --version ${{ needs.tag.outputs.fileversion }} \
+                   --scripts ./scripts \
+                   Lighthouse-${{ needs.tag.outputs.version }}.pkg
+
+      - name: Sign .pkg installer
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Import certificate again
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+          
+          # Create temporary keychain
+          security create-keychain -p temp_password temp.keychain
+          security default-keychain -s temp.keychain
+          security unlock-keychain -p temp_password temp.keychain
+          
+          # Import certificate
+          security import certificate.p12 -k temp.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/productsign
+          security set-key-partition-list -S apple-tool:,apple:,productsign: -s -k temp_password temp.keychain
+          
+          # Sign the installer
+          productsign --timestamp --sign "Developer ID Installer" "Lighthouse-${{ needs.tag.outputs.version }}.pkg" "Lighthouse-${{ needs.tag.outputs.version }}-signed.pkg"
+          
+          # Replace unsigned with signed
+          mv "Lighthouse-${{ needs.tag.outputs.version }}-signed.pkg" "Lighthouse-${{ needs.tag.outputs.version }}.pkg"
+          
+          # Verify signing
+          pkgutil --check-signature "Lighthouse-${{ needs.tag.outputs.version }}.pkg"
+          
+          # Clean up
+          rm certificate.p12
+          security delete-keychain temp.keychain
+
+      - name: Notarize .pkg installer
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          SUBMISSION_ID="${{ needs.codesign-macos.outputs.submission_id }}"
-          echo "Using submission id: $SUBMISSION_ID"
-
-          if [ -z "$SUBMISSION_ID" ]; then
-            echo "Error: submission id missing"
-            exit 1
-          fi
-
-          xcrun notarytool info "$SUBMISSION_ID" \
+          # Submit for notarization
+          xcrun notarytool submit "Lighthouse-${{ needs.tag.outputs.version }}.pkg" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --output-format json > notarization-info.json
+            --wait
+          
+          # Staple the notarization ticket
+          xcrun stapler staple "Lighthouse-${{ needs.tag.outputs.version }}.pkg"
+          
+          # Verify stapling
+          xcrun stapler validate "Lighthouse-${{ needs.tag.outputs.version }}.pkg"
 
-          cat notarization-info.json
+      - name: Upload .pkg installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-osx-pkg-${{ needs.tag.outputs.version }}
+          path: "Lighthouse-${{ needs.tag.outputs.version }}.pkg"
 
-          STATUS=$(echo "$(cat notarization-info.json)" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
-          echo "Notarization status: $STATUS"
-          if [ "$STATUS" != "Accepted" ]; then
-            echo "Error: Notarization status is not Accepted"
+
+  verifymacos:
+    name: Verify macOS .pkg installer
+    runs-on: macos-latest
+    needs:
+      - pkg-macos
+      - tag
+
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Download .pkg installer
+        uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-osx-pkg-${{ needs.tag.outputs.version }}
+          path: ./pkg
+
+      - name: Verify .pkg is signed and notarized
+        run: |
+          PKG_FILE="./pkg/Lighthouse-${{ needs.tag.outputs.version }}.pkg"
+          echo "Verifying .pkg signature and notarization..."
+          
+          # Check signature
+          pkgutil --check-signature "$PKG_FILE"
+          
+          # Verify notarization (stapled ticket)
+          xcrun stapler validate "$PKG_FILE"
+          
+          # Test Gatekeeper assessment
+          spctl --assess --type install "$PKG_FILE"
+          echo "✅ .pkg installer is properly signed, notarized, and stapled"
+
+      - name: Install Lighthouse.app
+        run: |
+          PKG_FILE="./pkg/Lighthouse-${{ needs.tag.outputs.version }}.pkg"
+          echo "Installing Lighthouse.app..."
+          sudo installer -pkg "$PKG_FILE" -target /
+          
+          # Verify installation
+          if [ -f "/Applications/Lighthouse.app/Contents/MacOS/Lighthouse" ]; then
+            echo "✅ Lighthouse.app installed successfully"
+            ls -la "/Applications/Lighthouse.app/Contents/MacOS/"
+          else
+            echo "❌ Installation failed - executable not found"
             exit 1
           fi
 
-      - name: Set executable permission
-        run: chmod +x ./publish/Lighthouse
-
-      - name: Run Lighthouse (sqlite)
+      - name: Run installed Lighthouse
         run: |
+          echo "Starting Lighthouse from installed location..."
+          cd "/Applications/Lighthouse.app/Contents/MacOS"
+          
+          # Run Lighthouse in background
           ./Lighthouse > lighthouse.log 2>&1 &
-        working-directory: ./publish
+          LIGHTHOUSE_PID=$!
+          echo "Lighthouse started with PID: $LIGHTHOUSE_PID"
         env:
           Database__Provider: sqlite
-          Database__ConnectionString: 'Data Source=lighthouse.db'
+          Database__ConnectionString: 'Data Source=~/Library/Application Support/Lighthouse/LighthouseAppContext.db'
 
       - name: Wait for Lighthouse to start
         run: |
+          echo "Waiting for Lighthouse to be ready..."
           end=$((SECONDS+30))
           while [ $SECONDS -lt $end ]; do
-            if curl --silent --fail --insecure https://localhost:5001; then
-              echo "Service is up!"
+            if curl --silent --fail --insecure https://localhost:5002; then
+              echo "✅ Lighthouse is running on port 5002!"
               exit 0
             fi
             sleep 1
           done
-          echo "Timeout waiting for service"
+          echo "❌ Timeout waiting for Lighthouse to start"
           exit 1
 
-          cat lighthouse.log
-        working-directory: ./publish
-            
-      - name: Stop Lighthouse Server
+      - name: Stop Lighthouse and show logs
         if: always()
         run: |
+          echo "Stopping Lighthouse..."
           pkill Lighthouse || true
-          cat ./publish/lighthouse.log || true
-          rm -rf ./publish/logs
-          rm -f ./publish/lighthouse.log
-
-
+          
+          echo "=== Application logs from MacOS directory ==="
+          cat "/Applications/Lighthouse.app/Contents/MacOS/lighthouse.log" 2>/dev/null || echo "No log file in MacOS directory"
+          
+          echo "=== Application logs from Library directory ==="
+          find "$HOME/Library/Application Support/Lighthouse" -name "*.txt" -type f 2>/dev/null | while read logfile; do
+            echo "--- $logfile ---"
+            cat "$logfile"
+          done || echo "No log files found in Library directory"
+          
+          echo "=== Cleanup ==="
+          rm -rf "/Applications/Lighthouse.app/Contents/MacOS/lighthouse.log" 2>/dev/null || true
+          rm -rf "$HOME/Library/Application Support/Lighthouse" 2>/dev/null || true
 
   # Disabled codesign-windows job until a signing certificate is available
   #  codesign-windows:
@@ -1037,6 +1213,7 @@ jobs:
     - verifypostgres
     - verifymacos
     - codesign-macos
+    - pkg-macos
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
@@ -1098,6 +1275,11 @@ jobs:
           name: Lighthouse-linux-x64-${{ needs.tag.outputs.version }}
           path: LighthouseArtifacts/linux-x64
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-osx-pkg-${{ needs.tag.outputs.version }}
+          path: LighthouseArtifacts/osx-pkg
+
       - uses: vimtor/action-zip@v1.2
         with:
           files: LighthouseArtifacts/win-x64
@@ -1113,9 +1295,12 @@ jobs:
           files: LighthouseArtifacts/linux-x64
           dest: Lighthouse-linux-x64.zip
 
+      - name: Copy .pkg file to root
+        run: cp LighthouseArtifacts/osx-pkg/Lighthouse-${{ needs.tag.outputs.version }}.pkg ./
+
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx-x64.zip,Lighthouse-linux-x64.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx.zip,Lighthouse-linux-x64.zip,Lighthouse-${{ needs.tag.outputs.version }}.pkg"
           tag: ${{ needs.tag.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.tag.outputs.version }}"
