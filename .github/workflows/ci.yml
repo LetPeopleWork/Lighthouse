@@ -750,10 +750,17 @@ jobs:
       - name: Remove development settings
         run: rm -f ./publish/osx-universal/appsettings.Development.json
 
-      # --- Adjust HTTP port ---
-      - name: Adjust HTTP port
+      # --- Adjust HTTP port and macOS paths ---
+      - name: Adjust HTTP port and macOS paths
         run: |
+          # Adjust HTTP port for macOS (5000 -> 5002) to avoid AirPlay conflicts
           sed -i '' 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./publish/osx-universal/appsettings.json
+          
+          # Adjust log path to use macOS Application Support directory
+          sed -i '' 's|"path": "./logs/log-.txt"|"path": "~/Library/Application Support/Lighthouse/logs/log-.txt"|' ./publish/osx-universal/appsettings.json
+          
+          # Adjust database path to use macOS Application Support directory
+          sed -i '' 's|"ConnectionString": "Data Source=LighthouseAppContext.db"|"ConnectionString": "Data Source=~/Library/Application Support/Lighthouse/LighthouseAppContext.db"|' ./publish/osx-universal/appsettings.json
 
       - name: Import code signing certificates
         uses: apple-actions/import-codesign-certs@v3
