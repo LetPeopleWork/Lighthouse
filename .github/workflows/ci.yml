@@ -816,8 +816,6 @@ jobs:
             "$UNIVERSAL_DIR" \
             "$ZIP_PATH"
 
-          cd ../..
-
           echo "Submitting for notarization..."
           SUBMIT_OUTPUT=$(xcrun notarytool submit "$ZIP_PATH" \
             --apple-id "$APPLE_ID" \
