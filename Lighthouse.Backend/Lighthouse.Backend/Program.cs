@@ -230,6 +230,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
             builder.Services.AddScoped<IRepository<TerminologyEntry>, TerminologyRepository>();
             builder.Services.AddScoped<IRepository<LicenseInformation>, LicenseInformationRepository>();
+            builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
 
             // Factories
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
