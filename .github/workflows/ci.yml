@@ -810,7 +810,6 @@ jobs:
 
           echo "Creating Apple-correct zip archive with ditto..."
           ditto -c -k \
-            --keepParent \
             --sequesterRsrc \
             --preserveHFSCompression \
             "$UNIVERSAL_DIR" \
