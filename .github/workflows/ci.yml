@@ -976,14 +976,6 @@ jobs:
 
       - name: Create .pkg installer
         run: |
-          # Create the installer package
-          pkgbuild --root . \
-                   --install-location /Applications \
-                   --identifier com.letpeoplework.lighthouse \
-                   --version ${{ needs.tag.outputs.fileversion }} \
-                   --scripts ./scripts \
-                   Lighthouse-${{ needs.tag.outputs.version }}.pkg
-          
           # Create scripts directory for post-install
           mkdir -p scripts
           cat > scripts/postinstall << 'EOF'
@@ -996,7 +988,7 @@ jobs:
           EOF
           chmod +x scripts/postinstall
           
-          # Rebuild with scripts
+          # Create the installer package
           pkgbuild --root . \
                    --install-location /Applications \
                    --identifier com.letpeoplework.lighthouse \
