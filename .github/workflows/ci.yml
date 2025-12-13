@@ -973,10 +973,6 @@ jobs:
           
           # Verify signing
           codesign --verify --deep --strict --verbose=4 "Lighthouse.app"
-          
-          # Clean up
-          rm certificate.p12
-          security delete-keychain temp.keychain
 
       - name: Create .pkg installer
         run: |
@@ -1026,10 +1022,6 @@ jobs:
           
           # Verify signing
           pkgutil --check-signature "Lighthouse-${{ needs.tag.outputs.version }}.pkg"
-          
-          # Clean up
-          rm certificate.p12
-          security delete-keychain temp.keychain
 
       - name: Notarize .pkg installer
         env:
