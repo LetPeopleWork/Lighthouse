@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
-import { Project } from "../models/Project/Project";
+import { Portfolio } from "../models/Project/Portfolio";
 import { Team } from "../models/Team/Team";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
 import { useLicenseRestrictions } from "./useLicenseRestrictions";
@@ -26,24 +26,24 @@ const mockTeamService = {
 	updateForecast: vi.fn(),
 };
 
-const mockProjectService = {
-	getProjects: vi.fn(),
-	getProject: vi.fn(),
-	deleteProject: vi.fn(),
-	getProjectSettings: vi.fn(),
-	validateProjectSettings: vi.fn(),
-	updateProject: vi.fn(),
-	createProject: vi.fn(),
-	updateProjectData: vi.fn(),
-	refreshForecastsForProject: vi.fn(),
-	refreshFeaturesForAllProjects: vi.fn(),
-	refreshFeaturesForProject: vi.fn(),
+const mockPortfolioService = {
+	getPortfolios: vi.fn(),
+	getPortfolio: vi.fn(),
+	deletePortfolio: vi.fn(),
+	getPortfolioSettings: vi.fn(),
+	validatePortfolioSettings: vi.fn(),
+	updatePortfolio: vi.fn(),
+	createPortfolio: vi.fn(),
+	updatePortfolioData: vi.fn(),
+	refreshForecastsForPortfolio: vi.fn(),
+	refreshFeaturesForAllPortfolios: vi.fn(),
+	refreshFeaturesForPortfolio: vi.fn(),
 };
 
 const mockApiServiceContext = createMockApiServiceContext({
 	licensingService: mockLicensingService,
 	teamService: mockTeamService,
-	projectService: mockProjectService,
+	portfolioService: mockPortfolioService,
 });
 
 // Mock useContext
@@ -69,19 +69,19 @@ describe("useLicenseRestrictions", () => {
 		});
 	};
 
-	const createProjects = (count: number): Project[] => {
+	const createPortfolios = (count: number): Portfolio[] => {
 		return Array.from({ length: count }, (_, i) => {
-			const project = new Project();
-			project.id = i + 1;
-			project.name = `Project ${i + 1}`;
-			return project;
+			const portfolio = new Portfolio();
+			portfolio.id = i + 1;
+			portfolio.name = `Project ${i + 1}`;
+			return portfolio;
 		});
 	};
 
 	const neverResolvePromise = () => new Promise(() => {});
 
 	describe("Premium License Users", () => {
-		it("should allow all operations for premium users with any number of teams and projects", async () => {
+		it("should allow all operations for premium users with any number of teams and Portfolios", async () => {
 			const premiumLicense: ILicenseStatus = {
 				hasLicense: true,
 				isValid: true,
@@ -89,11 +89,11 @@ describe("useLicenseRestrictions", () => {
 			};
 
 			const teams = createTeams(5);
-			const projects = createProjects(2);
+			const portfolios = createPortfolios(2);
 
 			mockLicensingService.getLicenseStatus.mockResolvedValue(premiumLicense);
 			mockTeamService.getTeams.mockResolvedValue(teams);
-			mockProjectService.getProjects.mockResolvedValue(projects);
+			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
@@ -104,21 +104,21 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
 			expect(result.current.canUpdateTeamSettings).toBe(true);
-			expect(result.current.canCreateProject).toBe(true);
-			expect(result.current.canUpdateProjectData).toBe(true);
-			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canCreatePortfolio).toBe(true);
+			expect(result.current.canUpdatePortfolioData).toBe(true);
+			expect(result.current.canUpdatePortfolioSettings).toBe(true);
 			expect(result.current.canUseNewItemForecaster).toBe(true);
-			expect(result.current.canUpdateAllTeamsAndProjects).toBe(true);
+			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(true);
 			expect(result.current.teamCount).toBe(5);
-			expect(result.current.projectCount).toBe(2);
+			expect(result.current.portfolioCount).toBe(2);
 			expect(result.current.createTeamTooltip).toBe("");
 			expect(result.current.updateTeamDataTooltip).toBe("");
 			expect(result.current.updateTeamSettingsTooltip).toBe("");
-			expect(result.current.createProjectTooltip).toBe("");
-			expect(result.current.updateProjectDataTooltip).toBe("");
-			expect(result.current.updateProjectSettingsTooltip).toBe("");
+			expect(result.current.createPortfolioTooltip).toBe("");
+			expect(result.current.updatePortfolioDataTooltip).toBe("");
+			expect(result.current.updatePortfolioSettingsTooltip).toBe("");
 			expect(result.current.newItemForecasterTooltip).toBe("");
-			expect(result.current.updateAllTeamsAndProjectsTooltip).toBe("");
+			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe("");
 			expect(result.current.licenseStatus).toEqual(premiumLicense);
 		});
 	});
@@ -138,9 +138,9 @@ describe("useLicenseRestrictions", () => {
 
 		it("should allow team creation when user has less than 3 teams", async () => {
 			const teams = createTeams(2);
-			const projects = createProjects(0);
+			const portfolios = createPortfolios(0);
 			mockTeamService.getTeams.mockResolvedValue(teams);
-			mockProjectService.getProjects.mockResolvedValue(projects);
+			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
@@ -151,32 +151,32 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
 			expect(result.current.canUpdateTeamSettings).toBe(true);
-			expect(result.current.canCreateProject).toBe(true);
-			expect(result.current.canUpdateProjectData).toBe(true);
-			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canCreatePortfolio).toBe(true);
+			expect(result.current.canUpdatePortfolioData).toBe(true);
+			expect(result.current.canUpdatePortfolioSettings).toBe(true);
 			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndProjects).toBe(false);
+			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(2);
-			expect(result.current.projectCount).toBe(0);
+			expect(result.current.portfolioCount).toBe(0);
 			expect(result.current.createTeamTooltip).toBe("");
 			expect(result.current.updateTeamDataTooltip).toBe("");
 			expect(result.current.updateTeamSettingsTooltip).toBe("");
-			expect(result.current.createProjectTooltip).toBe("");
-			expect(result.current.updateProjectDataTooltip).toBe("");
-			expect(result.current.updateProjectSettingsTooltip).toBe("");
+			expect(result.current.createPortfolioTooltip).toBe("");
+			expect(result.current.updatePortfolioDataTooltip).toBe("");
+			expect(result.current.updatePortfolioSettingsTooltip).toBe("");
 			expect(result.current.newItemForecasterTooltip).toBe(
 				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
 			);
-			expect(result.current.updateAllTeamsAndProjectsTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and projects.",
+			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
 			);
 		});
 
 		it("should block team creation when user has exactly 3 teams", async () => {
 			const teams = createTeams(3);
-			const projects = createProjects(0);
+			const portfolios = createPortfolios(0);
 			mockTeamService.getTeams.mockResolvedValue(teams);
-			mockProjectService.getProjects.mockResolvedValue(projects);
+			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
@@ -187,13 +187,13 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateTeam).toBe(false);
 			expect(result.current.canUpdateTeamData).toBe(true);
 			expect(result.current.canUpdateTeamSettings).toBe(true);
-			expect(result.current.canCreateProject).toBe(true);
-			expect(result.current.canUpdateProjectData).toBe(true);
-			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canCreatePortfolio).toBe(true);
+			expect(result.current.canUpdatePortfolioData).toBe(true);
+			expect(result.current.canUpdatePortfolioSettings).toBe(true);
 			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndProjects).toBe(false);
+			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(3);
-			expect(result.current.projectCount).toBe(0);
+			expect(result.current.portfolioCount).toBe(0);
 			expect(result.current.createTeamTooltip).toBe(
 				"Free users can only create up to 3 teams. You currently have 3 teams. Please obtain a premium license to create more teams.",
 			);
@@ -202,16 +202,16 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.newItemForecasterTooltip).toBe(
 				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
 			);
-			expect(result.current.updateAllTeamsAndProjectsTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and projects.",
+			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
 			);
 		});
 
 		it("should block all team operations when user has more than 3 teams", async () => {
 			const teams = createTeams(5);
-			const projects = createProjects(0);
+			const portfolios = createPortfolios(0);
 			mockTeamService.getTeams.mockResolvedValue(teams);
-			mockProjectService.getProjects.mockResolvedValue(projects);
+			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
@@ -222,13 +222,13 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateTeam).toBe(false);
 			expect(result.current.canUpdateTeamData).toBe(false);
 			expect(result.current.canUpdateTeamSettings).toBe(false);
-			expect(result.current.canCreateProject).toBe(true);
-			expect(result.current.canUpdateProjectData).toBe(true);
-			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canCreatePortfolio).toBe(true);
+			expect(result.current.canUpdatePortfolioData).toBe(true);
+			expect(result.current.canUpdatePortfolioSettings).toBe(true);
 			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndProjects).toBe(false);
+			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(5);
-			expect(result.current.projectCount).toBe(0);
+			expect(result.current.portfolioCount).toBe(0);
 			expect(result.current.createTeamTooltip).toBe(
 				"Free users can only create up to 3 teams. You currently have 5 teams. Please obtain a premium license to create more teams.",
 			);
@@ -241,16 +241,16 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.newItemForecasterTooltip).toBe(
 				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
 			);
-			expect(result.current.updateAllTeamsAndProjectsTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and projects.",
+			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
 			);
 		});
 
-		it("should block project creation when user has exactly 1 project", async () => {
+		it("should block Portfolio creation when user has exactly 1 Portfolio", async () => {
 			const teams = createTeams(0);
-			const projects = createProjects(1);
+			const portfolios = createPortfolios(1);
 			mockTeamService.getTeams.mockResolvedValue(teams);
-			mockProjectService.getProjects.mockResolvedValue(projects);
+			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
@@ -261,31 +261,31 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
 			expect(result.current.canUpdateTeamSettings).toBe(true);
-			expect(result.current.canCreateProject).toBe(false);
-			expect(result.current.canUpdateProjectData).toBe(true);
-			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canCreatePortfolio).toBe(false);
+			expect(result.current.canUpdatePortfolioData).toBe(true);
+			expect(result.current.canUpdatePortfolioSettings).toBe(true);
 			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndProjects).toBe(false);
+			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(0);
-			expect(result.current.projectCount).toBe(1);
-			expect(result.current.createProjectTooltip).toBe(
-				"Free users can only create up to 1 project. You currently have 1 project. Please obtain a premium license to create more projects.",
+			expect(result.current.portfolioCount).toBe(1);
+			expect(result.current.createPortfolioTooltip).toBe(
+				"Free users can only create up to 1 portfolio. You currently have 1 portfolio. Please obtain a premium license to create more portfolios.",
 			);
-			expect(result.current.updateProjectDataTooltip).toBe("");
-			expect(result.current.updateProjectSettingsTooltip).toBe("");
+			expect(result.current.updatePortfolioDataTooltip).toBe("");
+			expect(result.current.updatePortfolioSettingsTooltip).toBe("");
 			expect(result.current.newItemForecasterTooltip).toBe(
 				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
 			);
-			expect(result.current.updateAllTeamsAndProjectsTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and projects.",
+			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
 			);
 		});
 
-		it("should block all project operations when user has more than 1 project", async () => {
+		it("should block all portfolio operations when user has more than 1 portfolios", async () => {
 			const teams = createTeams(0);
-			const projects = createProjects(2);
+			const portfolios = createPortfolios(2);
 			mockTeamService.getTeams.mockResolvedValue(teams);
-			mockProjectService.getProjects.mockResolvedValue(projects);
+			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
@@ -296,27 +296,27 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
 			expect(result.current.canUpdateTeamSettings).toBe(true);
-			expect(result.current.canCreateProject).toBe(false);
-			expect(result.current.canUpdateProjectData).toBe(false);
-			expect(result.current.canUpdateProjectSettings).toBe(false);
+			expect(result.current.canCreatePortfolio).toBe(false);
+			expect(result.current.canUpdatePortfolioData).toBe(false);
+			expect(result.current.canUpdatePortfolioSettings).toBe(false);
 			expect(result.current.canUseNewItemForecaster).toBe(false);
-			expect(result.current.canUpdateAllTeamsAndProjects).toBe(false);
+			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(false);
 			expect(result.current.teamCount).toBe(0);
-			expect(result.current.projectCount).toBe(2);
-			expect(result.current.createProjectTooltip).toBe(
-				"Free users can only create up to 1 project. You currently have 2 projects. Please obtain a premium license to create more projects.",
+			expect(result.current.portfolioCount).toBe(2);
+			expect(result.current.createPortfolioTooltip).toBe(
+				"Free users can only create up to 1 portfolio. You currently have 2 portfolios. Please obtain a premium license to create more portfolios.",
 			);
-			expect(result.current.updateProjectDataTooltip).toBe(
-				"Free users can only update project data for up to 1 project. You currently have 2 projects. Please delete some projects or obtain a premium license.",
+			expect(result.current.updatePortfolioDataTooltip).toBe(
+				"Free users can only update portfolio data for up to 1 portfolio. You currently have 2 portfolios. Please delete some portfolios or obtain a premium license.",
 			);
-			expect(result.current.updateProjectSettingsTooltip).toBe(
-				"Free users can only update project settings for up to 1 project. You currently have 2 projects. Please delete some projects or obtain a premium license.",
+			expect(result.current.updatePortfolioSettingsTooltip).toBe(
+				"Free users can only update portfolio settings for up to 1 portfolio. You currently have 2 portfolios. Please delete some portfolios or obtain a premium license.",
 			);
 			expect(result.current.newItemForecasterTooltip).toBe(
 				"This feature requires a premium license. Please obtain a premium license to use new item forecasting.",
 			);
-			expect(result.current.updateAllTeamsAndProjectsTooltip).toBe(
-				"This feature requires a premium license. Please obtain a premium license to update all teams and projects.",
+			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe(
+				"This feature requires a premium license. Please obtain a premium license to update all teams and portfolios.",
 			);
 		});
 
@@ -325,7 +325,9 @@ describe("useLicenseRestrictions", () => {
 				new Error("API Error"),
 			);
 			mockTeamService.getTeams.mockRejectedValue(new Error("API Error"));
-			mockProjectService.getProjects.mockRejectedValue(new Error("API Error"));
+			mockPortfolioService.getPortfolios.mockRejectedValue(
+				new Error("API Error"),
+			);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
@@ -336,16 +338,16 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canCreateTeam).toBe(true);
 			expect(result.current.canUpdateTeamData).toBe(true);
 			expect(result.current.canUpdateTeamSettings).toBe(true);
-			expect(result.current.canCreateProject).toBe(true);
-			expect(result.current.canUpdateProjectData).toBe(true);
-			expect(result.current.canUpdateProjectSettings).toBe(true);
+			expect(result.current.canCreatePortfolio).toBe(true);
+			expect(result.current.canUpdatePortfolioData).toBe(true);
+			expect(result.current.canUpdatePortfolioSettings).toBe(true);
 			expect(result.current.canUseNewItemForecaster).toBe(true);
-			expect(result.current.canUpdateAllTeamsAndProjects).toBe(true);
+			expect(result.current.canUpdateAllTeamsAndPortfolios).toBe(true);
 			expect(result.current.teamCount).toBe(0);
-			expect(result.current.projectCount).toBe(0);
+			expect(result.current.portfolioCount).toBe(0);
 			expect(result.current.licenseStatus).toBe(null);
 			expect(result.current.newItemForecasterTooltip).toBe("");
-			expect(result.current.updateAllTeamsAndProjectsTooltip).toBe("");
+			expect(result.current.updateAllTeamsAndPortfoliosTooltip).toBe("");
 		});
 	});
 
@@ -355,7 +357,9 @@ describe("useLicenseRestrictions", () => {
 				neverResolvePromise,
 			);
 			mockTeamService.getTeams.mockImplementation(neverResolvePromise);
-			mockProjectService.getProjects.mockImplementation(neverResolvePromise);
+			mockPortfolioService.getPortfolios.mockImplementation(
+				neverResolvePromise,
+			);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 
@@ -371,7 +375,7 @@ describe("useLicenseRestrictions", () => {
 
 			mockLicensingService.getLicenseStatus.mockResolvedValue(license);
 			mockTeamService.getTeams.mockResolvedValue([]);
-			mockProjectService.getProjects.mockResolvedValue([]);
+			mockPortfolioService.getPortfolios.mockResolvedValue([]);
 
 			const { result } = renderHook(() => useLicenseRestrictions());
 

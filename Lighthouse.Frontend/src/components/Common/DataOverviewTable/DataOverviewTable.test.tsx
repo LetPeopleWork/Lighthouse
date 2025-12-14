@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import type { IProject } from "../../../models/Project/Project";
+import type { IPortfolio } from "../../../models/Project/Portfolio";
 import DataOverviewTable from "./DataOverviewTable";
 
 const mockNavigate = vi.fn();
@@ -73,7 +73,7 @@ const sampleTeamData: IFeatureOwner[] = [
 ];
 
 // Sample project data (with project-specific fields)
-const sampleProjectData: IProject[] = [
+const sampleProjectData: IPortfolio[] = [
 	{
 		id: 1,
 		name: "Project 1",

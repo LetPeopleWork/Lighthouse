@@ -2,7 +2,7 @@ import { FormControlLabel, Switch, TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../models/Project/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
@@ -10,9 +10,9 @@ import InputGroup from "../../InputGroup/InputGroup";
 import ItemListManager from "../../ItemListManager/ItemListManager";
 
 interface FeatureSizeComponentProps {
-	projectSettings: IProjectSettings | null;
+	projectSettings: IPortfolioSettings | null;
 	onProjectSettingsChange: (
-		key: keyof IProjectSettings,
+		key: keyof IPortfolioSettings,
 		value: string | number | boolean | string[],
 	) => void;
 }

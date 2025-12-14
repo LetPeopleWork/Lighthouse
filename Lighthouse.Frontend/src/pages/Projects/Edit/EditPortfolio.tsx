@@ -3,37 +3,38 @@ import { useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
-import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../models/Project/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 
-const EditProject: React.FC = () => {
+const EditPortfolio: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
-	const isNewProject = id === undefined;
+	const isNewPortfolio = id === undefined;
 
 	const navigate = useNavigate();
 	const {
 		settingsService,
-		projectService,
+		portfolioService,
 		workTrackingSystemService,
 		teamService,
 	} = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	const pageTitle = isNewProject
+	const pageTitle = isNewPortfolio
 		? `Create ${portfolioTerm}`
 		: `Update ${portfolioTerm}`;
 
-	const getProjectSettings = async () => {
+	const getPortfolioSettings = async () => {
 		const urlParams = new URLSearchParams(window.location.search);
 		const cloneFromId = urlParams.get("cloneFrom");
 
-		if (isNewProject && cloneFromId) {
+		if (isNewPortfolio && cloneFromId) {
 			const cloneId = Number.parseInt(cloneFromId, 10);
 			if (!Number.isNaN(cloneId)) {
-				const sourceSettings = await projectService.getProjectSettings(cloneId);
+				const sourceSettings =
+					await portfolioService.getPortfolioSettings(cloneId);
 				return {
 					...sourceSettings,
 					id: 0,
@@ -42,8 +43,10 @@ const EditProject: React.FC = () => {
 			}
 		}
 
-		if (!isNewProject && id) {
-			return await projectService.getProjectSettings(Number.parseInt(id, 10));
+		if (!isNewPortfolio && id) {
+			return await portfolioService.getPortfolioSettings(
+				Number.parseInt(id, 10),
+			);
 		}
 		return await settingsService.getDefaultProjectSettings();
 	};
@@ -57,18 +60,20 @@ const EditProject: React.FC = () => {
 	};
 
 	const validateProjectSettings = async (
-		updatedProjectSettings: IProjectSettings,
+		updatedProjectSettings: IPortfolioSettings,
 	) => {
-		return await projectService.validateProjectSettings(updatedProjectSettings);
+		return await portfolioService.validatePortfolioSettings(
+			updatedProjectSettings,
+		);
 	};
 
-	const saveProjectSettings = async (updatedSettings: IProjectSettings) => {
-		let savedSettings: IProjectSettings;
-		if (isNewProject) {
-			savedSettings = await projectService.createProject(updatedSettings);
-			await projectService.refreshFeaturesForProject(savedSettings.id);
+	const saveProjectSettings = async (updatedSettings: IPortfolioSettings) => {
+		let savedSettings: IPortfolioSettings;
+		if (isNewPortfolio) {
+			savedSettings = await portfolioService.createPortfolio(updatedSettings);
+			await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
 		} else {
-			savedSettings = await projectService.updateProject(updatedSettings);
+			savedSettings = await portfolioService.updatePortfolio(updatedSettings);
 		}
 
 		navigate(`/portfolios/${savedSettings.id}`);
@@ -78,7 +83,7 @@ const EditProject: React.FC = () => {
 		<SnackbarErrorHandler>
 			<ModifyProjectSettings
 				title={pageTitle}
-				getProjectSettings={getProjectSettings}
+				getProjectSettings={getPortfolioSettings}
 				getWorkTrackingSystems={getWorkTrackingSystems}
 				getAllTeams={getAllTeams}
 				validateProjectSettings={validateProjectSettings}
@@ -88,4 +93,4 @@ const EditProject: React.FC = () => {
 	);
 };
 
-export default EditProject;
+export default EditPortfolio;

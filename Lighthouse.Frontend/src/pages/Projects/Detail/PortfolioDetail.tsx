@@ -10,7 +10,7 @@ import LoadingAnimation from "../../../components/Common/LoadingAnimation/Loadin
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import type { IProject, Project } from "../../../models/Project/Project";
+import type { IPortfolio, Portfolio } from "../../../models/Project/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -19,40 +19,41 @@ import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService"
 import ProjectForecastView from "./ProjectForecastView";
 import ProjectMetricsView from "./ProjectMetricsView";
 
-const ProjectDetail: React.FC = () => {
+const PortfolioDetail: React.FC = () => {
 	const navigate = useNavigate();
 	const { id, tab } = useParams<{ id: string; tab?: string }>();
-	const projectId = Number(id);
+	const portfolioId = Number(id);
 
 	let subscribedToUpdates = false;
 
-	const [project, setProject] = useState<Project>();
+	const [portfolio, setPortfolio] = useState<Portfolio>();
 
 	const [isLoading, setIsLoading] = useState<boolean>(true);
-	const [isProjectUpdating, setIsProjectUpdating] = useState<boolean>(false);
+	const [isPortfolioUpdating, setIsPortfolioUpdating] =
+		useState<boolean>(false);
 	const [activeView, setActiveView] = useState<"forecast" | "metrics">(
 		tab === "metrics" ? "metrics" : "forecast",
 	);
 
 	const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
 
-	const { projectService, teamService, updateSubscriptionService } =
+	const { portfolioService, teamService, updateSubscriptionService } =
 		useContext(ApiServiceContext);
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const {
-		canUpdateProjectData,
-		updateProjectDataTooltip,
-		canUpdateProjectSettings,
-		updateProjectSettingsTooltip,
+		canUpdatePortfolioData,
+		updatePortfolioDataTooltip,
+		canUpdatePortfolioSettings,
+		updatePortfolioSettingsTooltip,
 	} = useLicenseRestrictions();
 
-	const fetchProject = useCallback(async () => {
-		const fetchInvolvedTeams = async (projectData: IProject | null) => {
+	const fetchPortfolio = useCallback(async () => {
+		const fetchInvolvedTeams = async (portfolioData: IPortfolio | null) => {
 			const teamSettings: ITeamSettings[] = [];
 
-			for (const involvedTeam of projectData?.involvedTeams ?? []) {
+			for (const involvedTeam of portfolioData?.involvedTeams ?? []) {
 				const involvedTeamSetting = await teamService.getTeamSettings(
 					involvedTeam.id,
 				);
@@ -62,35 +63,35 @@ const ProjectDetail: React.FC = () => {
 			return teamSettings;
 		};
 
-		const projectData = await projectService.getProject(projectId);
-		const settings = await projectService.getProjectSettings(projectId);
-		const involvedTeamData = await fetchInvolvedTeams(projectData);
+		const portfolioData = await portfolioService.getPortfolio(portfolioId);
+		const settings = await portfolioService.getPortfolioSettings(portfolioId);
+		const involvedTeamData = await fetchInvolvedTeams(portfolioData);
 
-		if (projectData && settings) {
-			setProject(projectData);
+		if (portfolioData && settings) {
+			setPortfolio(portfolioData);
 			setInvolvedTeams(involvedTeamData);
 		}
 
 		setIsLoading(false);
-	}, [projectService, teamService, projectId]);
+	}, [portfolioService, teamService, portfolioId]);
 
 	const onRefreshFeatures = async () => {
-		if (project == null) {
+		if (portfolio == null) {
 			return;
 		}
 
-		setIsProjectUpdating(true);
-		await projectService.refreshFeaturesForProject(project.id);
+		setIsPortfolioUpdating(true);
+		await portfolioService.refreshFeaturesForPortfolio(portfolio.id);
 	};
 
-	const onEditProject = () => {
+	const onEditPortfolio = () => {
 		navigate(`/portfolios/edit/${id}`);
 	};
 
 	const onTeamSettingsChange = async (updatedTeamSettings: ITeamSettings) => {
 		await teamService.updateTeam(updatedTeamSettings);
 
-		await projectService.refreshForecastsForProject(projectId);
+		await portfolioService.refreshForecastsForPortfolio(portfolioId);
 	};
 
 	const handleViewChange = (
@@ -103,17 +104,17 @@ const ProjectDetail: React.FC = () => {
 	};
 
 	useEffect(() => {
-		const setUpProjectUpdateSubscription = async () => {
-			const handleProjectUpdate = async (update: IUpdateStatus) => {
+		const setUpPortfolioUpdateSubscription = async () => {
+			const handlePortfolioUpdate = async (update: IUpdateStatus) => {
 				if (update.status === "Completed") {
-					// Project was updated - reload data!
-					await fetchProject();
+					// Portfolio was updated - reload data!
+					await fetchPortfolio();
 				}
 
-				updateProjectRefreshButton(update);
+				updatePortfolioRefreshButton(update);
 			};
 
-			const updateProjectRefreshButton = (update: IUpdateStatus | null) => {
+			const updatePortfolioRefreshButton = (update: IUpdateStatus | null) => {
 				const isFeatureUpdate =
 					update?.updateType === "Features" ||
 					update?.updateType === "Forecasts";
@@ -121,43 +122,49 @@ const ProjectDetail: React.FC = () => {
 				if (isFeatureUpdate) {
 					const isUpdating =
 						update?.status === "Queued" || update?.status === "InProgress";
-					setIsProjectUpdating(isUpdating);
+					setIsPortfolioUpdating(isUpdating);
 				}
 			};
 
 			await updateSubscriptionService.subscribeToFeatureUpdates(
-				projectId,
-				handleProjectUpdate,
+				portfolioId,
+				handlePortfolioUpdate,
 			);
 			await updateSubscriptionService.subscribeToForecastUpdates(
-				projectId,
-				handleProjectUpdate,
+				portfolioId,
+				handlePortfolioUpdate,
 			);
 
-			const projectUpdateStatus =
-				await updateSubscriptionService.getUpdateStatus("Features", projectId);
-			updateProjectRefreshButton(projectUpdateStatus);
+			const portfolioUpdateStatus =
+				await updateSubscriptionService.getUpdateStatus(
+					"Features",
+					portfolioId,
+				);
+			updatePortfolioRefreshButton(portfolioUpdateStatus);
 
 			const forecastUpdateStatus =
-				await updateSubscriptionService.getUpdateStatus("Forecasts", projectId);
-			updateProjectRefreshButton(forecastUpdateStatus);
+				await updateSubscriptionService.getUpdateStatus(
+					"Forecasts",
+					portfolioId,
+				);
+			updatePortfolioRefreshButton(forecastUpdateStatus);
 		};
 
-		if (project && !subscribedToUpdates) {
+		if (portfolio && !subscribedToUpdates) {
 			subscribedToUpdates = true;
-			setUpProjectUpdateSubscription();
+			setUpPortfolioUpdateSubscription();
 		} else {
-			fetchProject();
+			fetchPortfolio();
 		}
 
 		return () => {
-			updateSubscriptionService.unsubscribeFromFeatureUpdates(projectId);
-			updateSubscriptionService.unsubscribeFromForecastUpdates(projectId);
+			updateSubscriptionService.unsubscribeFromFeatureUpdates(portfolioId);
+			updateSubscriptionService.unsubscribeFromForecastUpdates(portfolioId);
 		};
 	}, [
-		project,
-		projectId,
-		fetchProject,
+		portfolio,
+		portfolioId,
+		fetchPortfolio,
 		updateSubscriptionService,
 		subscribedToUpdates,
 	]);
@@ -165,25 +172,25 @@ const ProjectDetail: React.FC = () => {
 	return (
 		<LoadingAnimation hasError={false} isLoading={isLoading}>
 			<Container maxWidth={false}>
-				{project && (
+				{portfolio && (
 					<Grid container spacing={3}>
 						<Grid size={{ xs: 12 }}>
 							<DetailHeader
 								leftContent={
 									<Stack spacing={1} direction="row">
-										<FeatureOwnerHeader featureOwner={project} />
+										<FeatureOwnerHeader featureOwner={portfolio} />
 										<Stack
 											direction={{ xs: "column", sm: "row" }}
 											spacing={1}
 											alignItems={{ xs: "flex-start", sm: "center" }}
 										>
 											<ServiceLevelExpectation
-												featureOwner={project}
+												featureOwner={portfolio}
 												hide={activeView !== "forecast"}
 												itemTypeKey={TERMINOLOGY_KEYS.FEATURES}
 											/>
 											<SystemWIPLimitDisplay
-												featureOwner={project}
+												featureOwner={portfolio}
 												hide={activeView !== "forecast"}
 											/>
 										</Stack>
@@ -193,7 +200,7 @@ const ProjectDetail: React.FC = () => {
 									<Tabs
 										value={activeView}
 										onChange={handleViewChange}
-										aria-label="project view tabs"
+										aria-label="portfolio view tabs"
 									>
 										<Tab label="Forecasts" value="forecast" />
 										<Tab label="Metrics" value="metrics" />
@@ -201,24 +208,24 @@ const ProjectDetail: React.FC = () => {
 								}
 								rightContent={
 									<>
-										<Tooltip title={updateProjectDataTooltip} arrow>
+										<Tooltip title={updatePortfolioDataTooltip} arrow>
 											<span>
 												<ActionButton
 													buttonText={`Refresh ${featuresTerm}`}
 													onClickHandler={onRefreshFeatures}
 													maxHeight="40px"
 													minWidth="120px"
-													externalIsWaiting={isProjectUpdating}
-													disabled={!canUpdateProjectData}
+													externalIsWaiting={isPortfolioUpdating}
+													disabled={!canUpdatePortfolioData}
 												/>
 											</span>
 										</Tooltip>
-										<Tooltip title={updateProjectSettingsTooltip} arrow>
+										<Tooltip title={updatePortfolioSettingsTooltip} arrow>
 											<span>
 												<Button
 													variant="contained"
-													onClick={onEditProject}
-													disabled={!canUpdateProjectSettings}
+													onClick={onEditPortfolio}
+													disabled={!canUpdatePortfolioSettings}
 													sx={{ maxHeight: "40px", minWidth: "120px" }}
 												>
 													Edit Portfolio
@@ -231,16 +238,16 @@ const ProjectDetail: React.FC = () => {
 						</Grid>
 
 						<Grid size={{ xs: 12 }}>
-							{activeView === "forecast" && project && (
+							{activeView === "forecast" && portfolio && (
 								<ProjectForecastView
-									project={project}
+									project={portfolio}
 									involvedTeams={involvedTeams}
 									onTeamSettingsChange={onTeamSettingsChange}
 								/>
 							)}
 
-							{activeView === "metrics" && project && (
-								<ProjectMetricsView project={project} />
+							{activeView === "metrics" && portfolio && (
+								<ProjectMetricsView project={portfolio} />
 							)}
 						</Grid>
 					</Grid>
@@ -250,4 +257,4 @@ const ProjectDetail: React.FC = () => {
 	);
 };
 
-export default ProjectDetail;
+export default PortfolioDetail;

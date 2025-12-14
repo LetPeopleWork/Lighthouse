@@ -6,7 +6,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
 	createMockConfigurationService,
-	createMockProjectService,
+	createMockPortfolioService,
 	createMockTeamService,
 	createMockWorkTrackingSystemService,
 } from "../../../../tests/MockApiServiceProvider";
@@ -151,7 +151,7 @@ vi.mock("./Steps/ImportSummaryStep", () => ({
 const mockConfigurationService = createMockConfigurationService();
 const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
 const mockTeamService = createMockTeamService();
-const mockProjectService = createMockProjectService();
+const mockProjectService = createMockPortfolioService();
 
 // Helper function for rendering with mocked services
 const renderWithMockApiProvider = (open = true, onClose = vi.fn()) => {
@@ -159,7 +159,7 @@ const renderWithMockApiProvider = (open = true, onClose = vi.fn()) => {
 		configurationService: mockConfigurationService,
 		workTrackingSystemService: mockWorkTrackingSystemService,
 		teamService: mockTeamService,
-		projectService: mockProjectService,
+		portfolioService: mockProjectService,
 	});
 
 	return render(

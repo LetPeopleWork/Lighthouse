@@ -18,14 +18,14 @@ import ProgressIndicator from "../../../components/Common/ProgressIndicator/Prog
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
-import type { IProject } from "../../../models/Project/Project";
+import type { IPortfolio } from "../../../models/Project/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 
 interface ProjectFeatureListProps {
-	project: IProject;
+	project: IPortfolio;
 }
 
 const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {

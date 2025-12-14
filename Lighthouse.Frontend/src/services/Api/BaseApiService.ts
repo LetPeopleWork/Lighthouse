@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance } from "axios";
 import { Feature, type IFeature } from "../../models/Feature";
-import { type IProject, Project } from "../../models/Project/Project";
+import { type IPortfolio, Portfolio } from "../../models/Project/Portfolio";
 import { type ITeam, Team } from "../../models/Team/Team";
 import { ApiError } from "./ApiError";
 
@@ -69,8 +69,8 @@ export class BaseApiService {
 		return Team.fromBackend(item);
 	}
 
-	protected static deserializeProject(item: IProject): Project {
-		return Project.fromBackend(item);
+	protected static deserializePortfolio(item: IPortfolio): Portfolio {
+		return Portfolio.fromBackend(item);
 	}
 
 	protected static deserializeFeatures(featureData: IFeature[]): Feature[] {

@@ -21,8 +21,8 @@ import {
 	type IOptionalFeatureService,
 	OptionalFeatureService,
 } from "./OptionalFeatureService";
+import { type IPortfolioService, PortfolioService } from "./PortfolioService";
 import { ProjectMetricsService } from "./ProjectMetricsService";
-import { type IProjectService, ProjectService } from "./ProjectService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
 import {
 	type ISuggestionService,
@@ -43,7 +43,7 @@ import {
 export interface IApiServiceContext {
 	forecastService: IForecastService;
 	logService: ILogService;
-	projectService: IProjectService;
+	portfolioService: IPortfolioService;
 	settingsService: ISettingsService;
 	teamService: ITeamService;
 	teamMetricsService: ITeamMetricsService;
@@ -67,7 +67,7 @@ const initializeUpdateSubscriptionService = async () => {
 const defaultServices: IApiServiceContext = {
 	forecastService: new ForecastService(),
 	logService: new LogService(),
-	projectService: new ProjectService(),
+	portfolioService: new PortfolioService(),
 	settingsService: new SettingsService(),
 	teamService: new TeamService(),
 	teamMetricsService: new TeamMetricsService(),

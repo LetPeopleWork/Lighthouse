@@ -22,7 +22,7 @@ import { useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import type { IProject } from "../../../models/Project/Project";
+import type { IPortfolio } from "../../../models/Project/Portfolio";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
@@ -67,7 +67,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	}
 
 	// Type guard to check if item is a Project
-	const isProject = useCallback((item: IFeatureOwner): item is IProject => {
+	const isProject = useCallback((item: IFeatureOwner): item is IPortfolio => {
 		return (
 			"totalWorkItems" in item &&
 			"remainingWorkItems" in item &&
@@ -79,7 +79,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	const hasAnyProjects = data.some(isProject);
 
 	// Get the key forecasts (50/70/85/95 percentile)
-	const getKeyForecasts = useCallback((project: IProject) => {
+	const getKeyForecasts = useCallback((project: IPortfolio) => {
 		return [50, 70, 85, 95]
 			.map((percentile) =>
 				project.forecasts.find((f) => f.probability === percentile),
@@ -88,7 +88,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	}, []);
 
 	const renderProgressCell = useCallback(
-		(item: IProject) => {
+		(item: IPortfolio) => {
 			return (
 				<Box sx={{ width: "100%" }}>
 					<Box

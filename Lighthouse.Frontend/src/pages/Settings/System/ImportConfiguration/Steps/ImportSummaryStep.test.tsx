@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { IProjectService } from "../../../../../services/Api/ProjectService";
+import type { IPortfolioService } from "../../../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../../../services/Api/TeamService";
 import {
 	createMockProjectSettings,
@@ -34,11 +34,11 @@ const createMockTeamService = () => {
 
 const createMockProjectService = () => {
 	return {
-		refreshFeaturesForProject: vi.fn().mockResolvedValue(undefined),
-		createProject: vi.fn(),
-		updateProject: vi.fn(),
-		validateProjectSettings: vi.fn(),
-	} as unknown as IProjectService;
+		refreshFeaturesForPortfolio: vi.fn().mockResolvedValue(undefined),
+		createPortfolio: vi.fn(),
+		updatePortfolio: vi.fn(),
+		validatePortfolioSettings: vi.fn(),
+	} as unknown as IPortfolioService;
 };
 
 describe("ImportSummaryStep", () => {
@@ -413,9 +413,9 @@ describe("ImportSummaryStep", () => {
 			// Check that services were called for each successful entity
 			expect(mockTeamService.updateTeamData).toHaveBeenCalledWith(1);
 			expect(mockTeamService.updateTeamData).toHaveBeenCalledWith(2);
-			expect(mockProjectService.refreshFeaturesForProject).toHaveBeenCalledWith(
-				1,
-			);
+			expect(
+				mockProjectService.refreshFeaturesForPortfolio,
+			).toHaveBeenCalledWith(1);
 
 			// onClose should be called after updating data
 			expect(mockOnClose).toHaveBeenCalled();

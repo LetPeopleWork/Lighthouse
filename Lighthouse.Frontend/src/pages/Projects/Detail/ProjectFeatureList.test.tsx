@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
 import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
-import { Project } from "../../../models/Project/Project";
+import { Portfolio } from "../../../models/Project/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IFeatureService } from "../../../services/Api/FeatureService";
@@ -253,8 +253,8 @@ describe("ProjectFeatureList component", () => {
 		return feature;
 	})();
 
-	const project: Project = (() => {
-		const project = new Project();
+	const project: Portfolio = (() => {
+		const project = new Portfolio();
 		project.name = "Project 1";
 		project.id = 1;
 		project.involvedTeams = [team1, team2];

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Project } from "../../../models/Project/Project";
+import { Portfolio } from "../../../models/Project/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
@@ -36,7 +36,7 @@ vi.mock("./InvolvedTeamsList", () => ({
 }));
 
 vi.mock("./ProjectFeatureList", () => ({
-	default: ({ project }: { project: Project }) => (
+	default: ({ project }: { project: Portfolio }) => (
 		<div data-testid="project-feature-list">
 			<div data-testid="project-name">{project.name}</div>
 			<div data-testid="features-count">{project.features.length}</div>
@@ -74,7 +74,7 @@ describe("ProjectForecastView component", () => {
 	})();
 
 	const mockProject = (() => {
-		const project = new Project();
+		const project = new Portfolio();
 		project.name = "Test Project";
 		project.id = 1;
 		project.involvedTeams = [mockTeam1, mockTeam2];

@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useContext, useId, useState } from "react";
-import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../models/Project/PortfolioSettings";
 import type { ITeamSettings } from "../../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
@@ -38,8 +38,8 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 	>([]);
 	const [newTeams, setNewTeams] = useState<ITeamSettings[]>([]);
 	const [updatedTeams, setUpdatedTeams] = useState<ITeamSettings[]>([]);
-	const [newProjects, setNewProjects] = useState<IProjectSettings[]>([]);
-	const [updatedProjects, setUpdatedProjects] = useState<IProjectSettings[]>(
+	const [newProjects, setNewProjects] = useState<IPortfolioSettings[]>([]);
+	const [updatedProjects, setUpdatedProjects] = useState<IPortfolioSettings[]>(
 		[],
 	);
 
@@ -59,7 +59,7 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		configurationService,
 		workTrackingSystemService,
 		teamService,
-		projectService,
+		portfolioService: projectService,
 	} = useContext(ApiServiceContext);
 
 	const onCancel = () => {
@@ -82,8 +82,8 @@ const ImportConfigurationDialog: React.FC<ImportConfigurationDialogProps> = ({
 		updatedWorkTrackingSystems: IWorkTrackingSystemConnection[],
 		newTeams: ITeamSettings[],
 		updatedTeams: ITeamSettings[],
-		newProjects: IProjectSettings[],
-		updatedProjects: IProjectSettings[],
+		newProjects: IPortfolioSettings[],
+		updatedProjects: IPortfolioSettings[],
 		workTrackingSystemsIdMapping: Map<number, number>,
 		teamIdMapping: Map<number, number>,
 		clearConfiguration: boolean,

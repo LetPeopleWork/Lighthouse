@@ -11,8 +11,8 @@ import OverviewDashboard from "./pages/Overview/OverviewDashboard";
 import Settings from "./pages/Settings/Settings";
 import "./App.css";
 import DemoDialog from "./components/App/Demo/DemoDialog";
-import ProjectDetail from "./pages/Projects/Detail/ProjectDetail";
-import EditProject from "./pages/Projects/Edit/EditProject";
+import PortfolioDetail from "./pages/Projects/Detail/PortfolioDetail";
+import EditPortfolio from "./pages/Projects/Edit/EditPortfolio";
 import TeamDetail from "./pages/Teams/Detail/TeamDetail";
 import EditTeam from "./pages/Teams/Edit/EditTeam";
 import {
@@ -91,16 +91,16 @@ const App: React.FC = () => {
 										<Route path="new" element={<EditTeam />} />
 									</Route>
 									<Route path="/portfolios">
-										<Route path=":id/:tab?" element={<ProjectDetail />} />
-										<Route path="edit/:id" element={<EditProject />} />
-										<Route path="new" element={<EditProject />} />
+										<Route path=":id/:tab?" element={<PortfolioDetail />} />
+										<Route path="edit/:id" element={<EditPortfolio />} />
+										<Route path="new" element={<EditPortfolio />} />
 									</Route>
 
 									{/* Backward compatibility for old links */}
 									<Route path="/projects">
-										<Route path=":id/:tab?" element={<ProjectDetail />} />
-										<Route path="edit/:id" element={<EditProject />} />
-										<Route path="new" element={<EditProject />} />
+										<Route path=":id/:tab?" element={<PortfolioDetail />} />
+										<Route path="edit/:id" element={<EditPortfolio />} />
+										<Route path="new" element={<EditPortfolio />} />
 									</Route>
 									<Route path="/settings" element={<Settings />} />
 								</Routes>

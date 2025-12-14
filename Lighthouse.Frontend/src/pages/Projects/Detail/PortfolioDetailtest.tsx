@@ -2,21 +2,21 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
-import { Project } from "../../../models/Project/Project";
+import { Portfolio } from "../../../models/Project/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
-import type { IProjectService } from "../../../services/Api/ProjectService";
+import type { IPortfolioService } from "../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import type { IUpdateSubscriptionService } from "../../../services/UpdateSubscriptionService";
 import {
 	createMockApiServiceContext,
 	createMockOptionalFeatureService,
-	createMockProjectService,
+	createMockPortfolioService,
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
-import ProjectDetail from "./ProjectDetail";
+import PortfolioDetail from "./PortfolioDetail";
 
 vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
 	default: ({
@@ -46,7 +46,7 @@ vi.mock(
 );
 
 vi.mock("./ProjectFeatureList", () => ({
-	default: ({ project }: { project: Project }) => (
+	default: ({ project }: { project: Portfolio }) => (
 		<div data-testid="project-feature-list">
 			{project.features.length} features
 		</div>
@@ -75,7 +75,7 @@ vi.mock("../../../components/Common/ActionButton/ActionButton", () => ({
 	),
 }));
 
-const mockProjectService: IProjectService = createMockProjectService();
+const mockProjectService: IPortfolioService = createMockPortfolioService();
 const mockTeamService: ITeamService = createMockTeamService();
 const mockOptionalFeatureService: IOptionalFeatureService =
 	createMockOptionalFeatureService();
@@ -89,8 +89,8 @@ const mockSubscribeToFeatureUpdates = vi.fn();
 const mockSubscribeToForecastUpdates = vi.fn();
 const mockGetUpdateStatus = vi.fn();
 
-mockProjectService.getProject = mockGetProject;
-mockProjectService.getProjectSettings = mockGetProjectSettings;
+mockProjectService.getPortfolio = mockGetProject;
+mockProjectService.getPortfolioSettings = mockGetProjectSettings;
 
 mockUpdateSubscriptionService.subscribeToFeatureUpdates =
 	mockSubscribeToFeatureUpdates;
@@ -104,7 +104,7 @@ const MockApiServiceProvider = ({
 	children: React.ReactNode;
 }) => {
 	const mockContext = createMockApiServiceContext({
-		projectService: mockProjectService,
+		portfolioService: mockProjectService,
 		teamService: mockTeamService,
 		optionalFeatureService: mockOptionalFeatureService,
 		updateSubscriptionService: mockUpdateSubscriptionService,
@@ -122,7 +122,7 @@ const renderWithMockApiProvider = () => {
 		<MockApiServiceProvider>
 			<MemoryRouter initialEntries={["/portfolios/2"]}>
 				<Routes>
-					<Route path="/portfolios/:id" element={<ProjectDetail />} />
+					<Route path="/portfolios/:id" element={<PortfolioDetail />} />
 				</Routes>
 			</MemoryRouter>
 		</MockApiServiceProvider>,
@@ -131,7 +131,7 @@ const renderWithMockApiProvider = () => {
 
 describe("ProjectDetail component", () => {
 	beforeEach(() => {
-		const project = new Project();
+		const project = new Portfolio();
 		project.id = 2;
 		project.name = "Release Codename Daniel";
 

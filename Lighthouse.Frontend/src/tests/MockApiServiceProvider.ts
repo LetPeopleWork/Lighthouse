@@ -9,7 +9,7 @@ import type {
 	ITeamMetricsService,
 } from "../services/Api/MetricsService";
 import type { IOptionalFeatureService } from "../services/Api/OptionalFeatureService";
-import type { IProjectService } from "../services/Api/ProjectService";
+import type { IPortfolioService } from "../services/Api/PortfolioService";
 import type { ISettingsService } from "../services/Api/SettingsService";
 import type { ISuggestionService } from "../services/Api/SuggestionService";
 import type { ITeamService } from "../services/Api/TeamService";
@@ -23,7 +23,7 @@ export const createMockApiServiceContext = (
 	return {
 		forecastService: null as unknown as IApiServiceContext["forecastService"],
 		logService: null as unknown as IApiServiceContext["logService"],
-		projectService: null as unknown as IApiServiceContext["projectService"],
+		portfolioService: null as unknown as IApiServiceContext["portfolioService"],
 		settingsService: null as unknown as IApiServiceContext["settingsService"],
 		teamService: null as unknown as IApiServiceContext["teamService"],
 		teamMetricsService:
@@ -93,18 +93,18 @@ export const createMockSettingsService = (): ISettingsService => {
 	};
 };
 
-export const createMockProjectService = (): IProjectService => {
+export const createMockPortfolioService = (): IPortfolioService => {
 	return {
-		getProjectSettings: vi.fn(),
-		createProject: vi.fn(),
-		updateProject: vi.fn(),
-		getProjects: vi.fn(),
-		deleteProject: vi.fn(),
-		getProject: vi.fn(),
-		refreshFeaturesForProject: vi.fn(),
-		refreshForecastsForProject: vi.fn(),
-		refreshFeaturesForAllProjects: vi.fn(),
-		validateProjectSettings: vi.fn(),
+		getPortfolioSettings: vi.fn(),
+		createPortfolio: vi.fn(),
+		updatePortfolio: vi.fn(),
+		getPortfolios: vi.fn(),
+		deletePortfolio: vi.fn(),
+		getPortfolio: vi.fn(),
+		refreshFeaturesForPortfolio: vi.fn(),
+		refreshForecastsForPortfolio: vi.fn(),
+		refreshFeaturesForAllPortfolios: vi.fn(),
+		validatePortfolioSettings: vi.fn(),
 	};
 };
 

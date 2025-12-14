@@ -2,12 +2,12 @@ import { render, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import type { MockedFunction } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../models/Project/PortfolioSettings";
 import {
 	ApiServiceContext,
 	type IApiServiceContext,
 } from "../../../services/Api/ApiServiceContext";
-import EditProject from "./EditProject";
+import EditPortfolio from "./EditPortfolio";
 
 // Mock the router navigation
 const mockNavigate = vi.fn();
@@ -52,27 +52,29 @@ global.URLSearchParams =
 	MockURLSearchParams as unknown as typeof URLSearchParams;
 
 const mockLicenseRestrictions = {
-	canCreateProject: true,
-	canUpdateProjectSettings: true,
-	createProjectTooltip: "",
-	updateProjectSettingsTooltip: "",
+	canCreatePortfolio: true,
+	canUpdatePortfolioSettings: true,
+	createPortfolioTooltip: "",
+	updatePortfolioSettingsTooltip: "",
 };
 
 vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: () => mockLicenseRestrictions,
 }));
 
-describe("EditProject", () => {
-	let mockProjectService: {
-		getProjectSettings: MockedFunction<() => Promise<IProjectSettings>>;
-		validateProjectSettings: MockedFunction<() => Promise<boolean>>;
-		createProject: MockedFunction<() => Promise<IProjectSettings>>;
-		updateProject: MockedFunction<() => Promise<IProjectSettings>>;
-		refreshFeaturesForProject: MockedFunction<() => Promise<void>>;
+describe("EditPortfolio", () => {
+	let mockPortfolioService: {
+		getPortfolioSettings: MockedFunction<() => Promise<IPortfolioSettings>>;
+		validatePortfolioSettings: MockedFunction<() => Promise<boolean>>;
+		createPortfolio: MockedFunction<() => Promise<IPortfolioSettings>>;
+		updatePortfolio: MockedFunction<() => Promise<IPortfolioSettings>>;
+		refreshFeaturesForPortfolio: MockedFunction<() => Promise<void>>;
 	};
 
 	let mockSettingsService: {
-		getDefaultProjectSettings: MockedFunction<() => Promise<IProjectSettings>>;
+		getDefaultProjectSettings: MockedFunction<
+			() => Promise<IPortfolioSettings>
+		>;
 	};
 
 	let mockWorkTrackingSystemService: {
@@ -83,9 +85,9 @@ describe("EditProject", () => {
 		getTeams: MockedFunction<() => Promise<unknown[]>>;
 	};
 
-	const renderEditProjectWithContext = () => {
+	const renderEditPortfolioWithContext = () => {
 		const mockApiServiceContext = {
-			projectService: mockProjectService,
+			portfolioService: mockPortfolioService,
 			settingsService: mockSettingsService,
 			workTrackingSystemService: mockWorkTrackingSystemService,
 			teamService: mockTeamService,
@@ -94,7 +96,7 @@ describe("EditProject", () => {
 		return render(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiServiceContext}>
-					<EditProject />
+					<EditPortfolio />
 				</ApiServiceContext.Provider>
 			</BrowserRouter>,
 		);
@@ -106,12 +108,12 @@ describe("EditProject", () => {
 		// Reset window.location.search
 		window.location.search = "";
 
-		mockProjectService = {
-			getProjectSettings: vi.fn(),
-			validateProjectSettings: vi.fn(),
-			createProject: vi.fn(),
-			updateProject: vi.fn(),
-			refreshFeaturesForProject: vi.fn(),
+		mockPortfolioService = {
+			getPortfolioSettings: vi.fn(),
+			validatePortfolioSettings: vi.fn(),
+			createPortfolio: vi.fn(),
+			updatePortfolio: vi.fn(),
+			refreshFeaturesForPortfolio: vi.fn(),
 		};
 
 		mockSettingsService = {
@@ -157,16 +159,16 @@ describe("EditProject", () => {
 		mockTeamService.getTeams.mockResolvedValue([]);
 	});
 
-	it("loads default project settings for new project when no cloneFrom param", async () => {
-		renderEditProjectWithContext();
+	it("loads default Portfolio settings for new Portfolio when no cloneFrom param", async () => {
+		renderEditPortfolioWithContext();
 
 		await waitFor(() => {
 			expect(mockSettingsService.getDefaultProjectSettings).toHaveBeenCalled();
 		});
 	});
 
-	it("calls getProjectSettings when cloneFrom param is present for new project", async () => {
-		const mockProjectSettings: IProjectSettings = {
+	it("calls getPortfolioSettings when cloneFrom param is present for new Portfolio", async () => {
+		const mockPortfolioSettings: IPortfolioSettings = {
 			id: 5,
 			name: "Original Project",
 			workItemQuery: "project = TEST",
@@ -191,22 +193,22 @@ describe("EditProject", () => {
 			percentileHistoryInDays: 30,
 		};
 
-		mockProjectService.getProjectSettings.mockResolvedValue(
-			mockProjectSettings,
+		mockPortfolioService.getPortfolioSettings.mockResolvedValue(
+			mockPortfolioSettings,
 		);
 		// Set window.location.search and mock URLSearchParams properly
 		window.location.search = "?cloneFrom=5";
 		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
 
-		renderEditProjectWithContext();
+		renderEditPortfolioWithContext();
 
 		await waitFor(() => {
-			expect(mockProjectService.getProjectSettings).toHaveBeenCalledWith(5);
+			expect(mockPortfolioService.getPortfolioSettings).toHaveBeenCalledWith(5);
 		});
 	});
 
-	it("prefixes name with 'Copy of' when cloning project", async () => {
-		const mockProjectSettings: IProjectSettings = {
+	it("prefixes name with 'Copy of' when cloning Portfolio", async () => {
+		const mockPortfolioSettings: IPortfolioSettings = {
 			id: 5,
 			name: "Original Project",
 			workItemQuery: "project = TEST",
@@ -231,19 +233,17 @@ describe("EditProject", () => {
 			percentileHistoryInDays: 30,
 		};
 
-		mockProjectService.getProjectSettings.mockResolvedValue(
-			mockProjectSettings,
+		mockPortfolioService.getPortfolioSettings.mockResolvedValue(
+			mockPortfolioSettings,
 		);
 		// Set window.location.search and mock URLSearchParams properly
 		window.location.search = "?cloneFrom=5";
 		mockGet.mockReturnValue("5"); // Mock cloneFrom=5
 
-		renderEditProjectWithContext();
+		renderEditPortfolioWithContext();
 
 		await waitFor(() => {
-			expect(mockProjectService.getProjectSettings).toHaveBeenCalledWith(5);
+			expect(mockPortfolioService.getPortfolioSettings).toHaveBeenCalledWith(5);
 		});
-
-		// TODO: Verify the name field shows "Copy of Original Project" once UI is implemented
 	});
 });

@@ -2,12 +2,12 @@ import { Box, Button, LinearProgress, Typography } from "@mui/material";
 import type React from "react";
 import { useState } from "react";
 import type { IBaseSettings } from "../../../../../models/Common/BaseSettings";
-import type { IProjectSettings } from "../../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../../models/Project/PortfolioSettings";
 import type { ITeamSettings } from "../../../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IConfigurationService } from "../../../../../services/Api/ConfigurationService";
-import type { IProjectService } from "../../../../../services/Api/ProjectService";
+import type { IPortfolioService } from "../../../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../../../services/Api/TeamService";
 import type { IWorkTrackingSystemService } from "../../../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../../../services/TerminologyContext";
@@ -18,14 +18,14 @@ interface ImportStepProps {
 	updatedWorkTrackingSystems: IWorkTrackingSystemConnection[];
 	newTeams: ITeamSettings[];
 	updatedTeams: ITeamSettings[];
-	newProjects: IProjectSettings[];
-	updatedProjects: IProjectSettings[];
+	newProjects: IPortfolioSettings[];
+	updatedProjects: IPortfolioSettings[];
 	workTrackingSystemsIdMapping: Map<number, number>;
 	teamIdMapping: Map<number, number>;
 	clearConfiguration: boolean;
 	workTrackingSystemService: IWorkTrackingSystemService;
 	teamService: ITeamService;
-	projectService: IProjectService;
+	projectService: IPortfolioService;
 	configurationService: IConfigurationService;
 	onNext: (results: ImportResults) => void;
 	onCancel: () => void;
@@ -204,9 +204,9 @@ const ImportStep: React.FC<ImportStepProps> = ({
 		for (const project of newProjects) {
 			try {
 				const validationResult =
-					await projectService.validateProjectSettings(project);
+					await projectService.validatePortfolioSettings(project);
 
-				const addedProject = await projectService.createProject(project);
+				const addedProject = await projectService.createPortfolio(project);
 				importResult.projects.push({
 					entity: addedProject,
 					status: validationResult ? "Success" : "Validation Failed",
@@ -228,9 +228,9 @@ const ImportStep: React.FC<ImportStepProps> = ({
 		for (const project of updatedProjects) {
 			try {
 				const validationResult =
-					await projectService.validateProjectSettings(project);
+					await projectService.validatePortfolioSettings(project);
 
-				const updatedProject = await projectService.updateProject(project);
+				const updatedProject = await projectService.updatePortfolio(project);
 				importResult.projects.push({
 					entity: updatedProject,
 					status: validationResult ? "Success" : "Validation Failed",

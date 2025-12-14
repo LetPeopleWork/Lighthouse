@@ -1,10 +1,10 @@
 import { Feature } from "../Feature";
 import { WhenForecast } from "../Forecasts/WhenForecast";
 import { Team } from "../Team/Team";
-import { Project } from "./Project";
+import { Portfolio } from "./Portfolio";
 
 describe("Project Class", () => {
-	let project: Project;
+	let project: Portfolio;
 	let name: string;
 	let id: number;
 	let involvedTeams: Team[];
@@ -101,7 +101,7 @@ describe("Project Class", () => {
 
 		features = [feature1, feature2];
 		project = (() => {
-			const project = new Project();
+			const project = new Portfolio();
 			project.name = name;
 			project.id = id;
 			project.involvedTeams = involvedTeams;

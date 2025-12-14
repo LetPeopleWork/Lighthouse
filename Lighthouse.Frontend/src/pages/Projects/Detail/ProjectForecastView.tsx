@@ -1,12 +1,12 @@
 import { Grid } from "@mui/material";
 import type React from "react";
-import type { IProject } from "../../../models/Project/Project";
+import type { IPortfolio } from "../../../models/Project/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import InvolvedTeamsList from "./InvolvedTeamsList";
 import ProjectFeatureList from "./ProjectFeatureList";
 
 interface ProjectForecastViewProps {
-	project: IProject;
+	project: IPortfolio;
 	involvedTeams: ITeamSettings[];
 	onTeamSettingsChange: (updatedTeamSettings: ITeamSettings) => Promise<void>;
 }

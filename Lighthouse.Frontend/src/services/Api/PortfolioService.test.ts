@@ -1,50 +1,50 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type IProject, Project } from "../../models/Project/Project";
+import { type IPortfolio, Portfolio } from "../../models/Project/Portfolio";
 import { createMockProjectSettings } from "../../tests/TestDataProvider";
-import { ProjectService } from "./ProjectService";
+import { PortfolioService } from "./PortfolioService";
 
 vi.mock("axios");
 const mockedAxios = vi.mocked(axios, true);
 
-describe("ProjectService", () => {
-	let projectService: ProjectService;
+describe("PortfolioService", () => {
+	let portfolioService: PortfolioService;
 
 	beforeEach(() => {
 		mockedAxios.create.mockReturnThis();
-		projectService = new ProjectService();
+		portfolioService = new PortfolioService();
 	});
 
 	afterEach(() => {
 		vi.resetAllMocks();
 	});
 
-	it("should get all projects", async () => {
-		const project = new Project();
-		project.name = "Project 1";
-		project.id = 1;
-		project.lastUpdated = new Date("2023-09-01T12:00:00Z");
+	it("should get all portfolios", async () => {
+		const portfolio = new Portfolio();
+		portfolio.name = "Project 1";
+		portfolio.id = 1;
+		portfolio.lastUpdated = new Date("2023-09-01T12:00:00Z");
 
-		const mockResponse: IProject[] = [project];
+		const mockResponse: IPortfolio[] = [portfolio];
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
-		const projects = await projectService.getProjects();
+		const portfolios = await portfolioService.getPortfolios();
 
-		expect(projects).toEqual([project]);
+		expect(portfolios).toEqual([portfolio]);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios");
 	});
 
 	it("should get a project by id", async () => {
-		const project = new Project();
+		const project = new Portfolio();
 		project.name = "Project 1";
 		project.id = 1;
 		project.lastUpdated = new Date("2023-09-01T12:00:00Z");
 
-		const mockProject: IProject = project;
+		const mockProject: IPortfolio = project;
 		mockedAxios.get.mockResolvedValueOnce({ data: mockProject });
 
-		const mockResponse = await projectService.getProject(1);
+		const mockResponse = await portfolioService.getPortfolio(1);
 
 		expect(mockResponse).toEqual(project);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios/1");
@@ -53,7 +53,7 @@ describe("ProjectService", () => {
 	it("should delete a project by id", async () => {
 		mockedAxios.delete.mockResolvedValueOnce({});
 
-		await projectService.deleteProject(1);
+		await portfolioService.deletePortfolio(1);
 
 		expect(mockedAxios.delete).toHaveBeenCalledWith("/portfolios/1");
 	});
@@ -63,7 +63,7 @@ describe("ProjectService", () => {
 
 		mockedAxios.get.mockResolvedValueOnce({ data: mockSettings });
 
-		const settings = await projectService.getProjectSettings(1);
+		const settings = await portfolioService.getPortfolioSettings(1);
 
 		expect(settings).toEqual(mockSettings);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios/1/settings");
@@ -74,7 +74,8 @@ describe("ProjectService", () => {
 
 		mockedAxios.put.mockResolvedValueOnce({ data: projectSettings });
 
-		const updatedSettings = await projectService.updateProject(projectSettings);
+		const updatedSettings =
+			await portfolioService.updatePortfolio(projectSettings);
 
 		expect(updatedSettings).toEqual(projectSettings);
 		expect(mockedAxios.put).toHaveBeenCalledWith(
@@ -91,7 +92,7 @@ describe("ProjectService", () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
 
 		const createdSettings =
-			await projectService.createProject(newProjectSettings);
+			await portfolioService.createPortfolio(newProjectSettings);
 
 		expect(createdSettings).toEqual(mockResponse);
 		expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -101,14 +102,14 @@ describe("ProjectService", () => {
 	});
 
 	it("should refresh features for a project by id", async () => {
-		const mockProject: IProject = new Project();
+		const mockProject: IPortfolio = new Portfolio();
 		mockProject.name = "Project 1";
 		mockProject.id = 1;
 		mockProject.lastUpdated = new Date("2023-09-01T12:00:00Z");
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockProject });
 
-		await projectService.refreshFeaturesForProject(1);
+		await portfolioService.refreshFeaturesForPortfolio(1);
 
 		expect(mockedAxios.post).toHaveBeenCalledWith("/portfolios/refresh/1");
 	});
@@ -116,22 +117,22 @@ describe("ProjectService", () => {
 	it("should refresh features for all portfolios", async () => {
 		mockedAxios.post.mockResolvedValueOnce({});
 
-		await projectService.refreshFeaturesForAllProjects();
+		await portfolioService.refreshFeaturesForAllPortfolios();
 
 		expect(mockedAxios.post).toHaveBeenCalledWith("/portfolios/refresh-all");
 	});
 
 	it("should refresh forecasts for a project by id", async () => {
-		const project = new Project();
+		const project = new Portfolio();
 		project.name = "Project 1";
 		project.id = 1;
 		project.lastUpdated = new Date("2023-09-01T12:00:00Z");
 
-		const mockProject: IProject = project;
+		const mockProject: IPortfolio = project;
 
 		mockedAxios.post.mockResolvedValueOnce({ data: mockProject });
 
-		await projectService.refreshForecastsForProject(1);
+		await portfolioService.refreshForecastsForPortfolio(1);
 
 		expect(mockedAxios.post).toHaveBeenCalledWith("/forecast/update/1");
 	});
@@ -142,7 +143,7 @@ describe("ProjectService", () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
 
 		const isValid =
-			await projectService.validateProjectSettings(mockProjectSettings);
+			await portfolioService.validatePortfolioSettings(mockProjectSettings);
 
 		expect(isValid).toBe(true);
 		expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -157,7 +158,7 @@ describe("ProjectService", () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: false });
 
 		const isValid =
-			await projectService.validateProjectSettings(mockProjectSettings);
+			await portfolioService.validatePortfolioSettings(mockProjectSettings);
 
 		expect(isValid).toBe(false);
 		expect(mockedAxios.post).toHaveBeenCalledWith(

@@ -4,14 +4,14 @@ import type { IEntityReference } from "../EntityReference";
 import { type IWhenForecast, WhenForecast } from "../Forecasts/WhenForecast";
 import type { IFeatureOwner } from "../IFeatureOwner";
 
-export interface IProject extends IFeatureOwner {
+export interface IPortfolio extends IFeatureOwner {
 	involvedTeams: IEntityReference[];
 	totalWorkItems: number;
 	remainingWorkItems: number;
 	forecasts: IWhenForecast[];
 }
 
-export class Project implements IProject {
+export class Portfolio implements IPortfolio {
 	name!: string;
 	id!: number;
 
@@ -40,7 +40,7 @@ export class Project implements IProject {
 		return this.features.length;
 	}
 
-	static fromBackend(data: IProject): Project {
-		return plainToInstance(Project, data);
+	static fromBackend(data: IPortfolio): Portfolio {
+		return plainToInstance(Portfolio, data);
 	}
 }

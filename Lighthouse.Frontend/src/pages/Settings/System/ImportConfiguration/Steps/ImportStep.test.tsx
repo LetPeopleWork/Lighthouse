@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { IProjectSettings } from "../../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../../models/Project/PortfolioSettings";
 import type { ITeamSettings } from "../../../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IConfigurationService } from "../../../../../services/Api/ConfigurationService";
-import type { IProjectService } from "../../../../../services/Api/ProjectService";
+import type { IPortfolioService } from "../../../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../../../services/Api/TeamService";
 import type { IWorkTrackingSystemService } from "../../../../../services/Api/WorkTrackingSystemService";
 import ImportStep from "./ImportStep";
@@ -47,18 +47,18 @@ const createMockTeamService = () => {
 
 const createMockProjectService = () => {
 	return {
-		createProject: vi
+		createPortfolio: vi
 			.fn()
 			.mockImplementation((project) =>
 				Promise.resolve({ ...project, id: project.id ?? 300 }),
 			),
-		updateProject: vi
+		updatePortfolio: vi
 			.fn()
 			.mockImplementation((project) =>
 				Promise.resolve({ ...project, id: project.id }),
 			),
-		validateProjectSettings: vi.fn().mockResolvedValue(true),
-	} as unknown as IProjectService;
+		validatePortfolioSettings: vi.fn().mockResolvedValue(true),
+	} as unknown as IPortfolioService;
 };
 
 const createMockConfigurationService = () => {
@@ -74,7 +74,7 @@ describe("ImportStep", () => {
 	const mockOnCancel = vi.fn();
 	const mockWorkTrackingSystemService = createMockWorkTrackingSystemService();
 	const mockTeamService = createMockTeamService();
-	const mockProjectService = createMockProjectService();
+	const mockPortfolioService = createMockProjectService();
 	const mockConfigurationService = createMockConfigurationService();
 
 	// Sample data for testing
@@ -112,7 +112,7 @@ describe("ImportStep", () => {
 		} as unknown as ITeamSettings,
 	];
 
-	const mockProjects: IProjectSettings[] = [
+	const mockProjects: IPortfolioSettings[] = [
 		{
 			id: 1,
 			name: "Project 1",
@@ -121,7 +121,7 @@ describe("ImportStep", () => {
 			stateMappings: [],
 			teams: [],
 			involvedTeams: [], // Added this since it's used in the component
-		} as unknown as IProjectSettings,
+		} as unknown as IPortfolioSettings,
 	];
 
 	const workTrackingSystemsIdMapping = new Map<number, number>();
@@ -145,7 +145,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -174,7 +174,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -214,7 +214,7 @@ describe("ImportStep", () => {
 				clearConfiguration={true}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -245,7 +245,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -278,7 +278,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -311,7 +311,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -345,7 +345,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -379,7 +379,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -391,10 +391,10 @@ describe("ImportStep", () => {
 
 		// Wait for the import to complete
 		await waitFor(() => {
-			expect(mockProjectService.createProject).toHaveBeenCalledWith(
+			expect(mockPortfolioService.createPortfolio).toHaveBeenCalledWith(
 				expect.objectContaining({ name: "Project 1" }),
 			);
-			expect(mockProjectService.validateProjectSettings).toHaveBeenCalled();
+			expect(mockPortfolioService.validatePortfolioSettings).toHaveBeenCalled();
 			expect(mockOnNext).toHaveBeenCalled();
 		});
 	});
@@ -413,7 +413,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -425,10 +425,10 @@ describe("ImportStep", () => {
 
 		// Wait for the import to complete
 		await waitFor(() => {
-			expect(mockProjectService.updateProject).toHaveBeenCalledWith(
+			expect(mockPortfolioService.updatePortfolio).toHaveBeenCalledWith(
 				expect.objectContaining({ name: "Project 1" }),
 			);
-			expect(mockProjectService.validateProjectSettings).toHaveBeenCalled();
+			expect(mockPortfolioService.validatePortfolioSettings).toHaveBeenCalled();
 			expect(mockOnNext).toHaveBeenCalled();
 		});
 	});
@@ -452,7 +452,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -494,7 +494,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -531,7 +531,7 @@ describe("ImportStep", () => {
 				clearConfiguration={false}
 				workTrackingSystemService={mockWorkTrackingSystemService}
 				teamService={mockTeamService}
-				projectService={mockProjectService}
+				projectService={mockPortfolioService}
 				configurationService={mockConfigurationService}
 				onNext={mockOnNext}
 				onCancel={mockOnCancel}
@@ -547,7 +547,7 @@ describe("ImportStep", () => {
 				mockWorkTrackingSystemService.addNewWorkTrackingSystemConnection,
 			).toHaveBeenCalled();
 			expect(mockTeamService.createTeam).toHaveBeenCalled();
-			expect(mockProjectService.createProject).toHaveBeenCalled();
+			expect(mockPortfolioService.createPortfolio).toHaveBeenCalled();
 
 			// Check that the mapping happens (this is somewhat implementation-specific)
 			// We can't easily check the map directly, but we can verify that the system calls happened in order

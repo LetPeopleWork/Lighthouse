@@ -1,13 +1,13 @@
 import { Feature } from "../Feature";
 import { WhenForecast } from "../Forecasts/WhenForecast";
-import { Project } from "../Project/Project";
+import { Portfolio } from "../Project/Portfolio";
 import { Team } from "./Team";
 
 describe("Team Class", () => {
 	let team: Team;
 	let name: string;
 	let id: number;
-	let projects: Project[];
+	let projects: Portfolio[];
 	let features: Feature[];
 
 	beforeEach(() => {
@@ -15,14 +15,14 @@ describe("Team Class", () => {
 		id = 1;
 
 		const project1 = (() => {
-			const project = new Project();
+			const project = new Portfolio();
 			project.name = "Project 1";
 			project.id = 1;
 			project.lastUpdated = new Date("2023-07-11");
 			return project;
 		})();
 		const project2 = (() => {
-			const project = new Project();
+			const project = new Portfolio();
 			project.name = "Project 2";
 			project.id = 2;
 			project.lastUpdated = new Date("2023-07-10");

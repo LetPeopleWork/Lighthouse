@@ -1,6 +1,6 @@
 import type { IRefreshSettings } from "../../models/AppSettings/RefreshSettings";
 import type { IWorkTrackingSystemSettings } from "../../models/AppSettings/WorkTrackingSystemSettings";
-import type { IProjectSettings } from "../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../models/Project/PortfolioSettings";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
 import { BaseApiService } from "./BaseApiService";
 
@@ -11,7 +11,7 @@ export interface ISettingsService {
 		refreshSettings: IRefreshSettings,
 	): Promise<void>;
 	getDefaultTeamSettings(): Promise<ITeamSettings>;
-	getDefaultProjectSettings(): Promise<IProjectSettings>;
+	getDefaultProjectSettings(): Promise<IPortfolioSettings>;
 	getWorkTrackingSystemSettings(): Promise<IWorkTrackingSystemSettings>;
 	updateWorkTrackingSystemSettings(
 		workTrackingSystemSettings: IWorkTrackingSystemSettings,
@@ -62,9 +62,9 @@ export class SettingsService
 		});
 	}
 
-	async getDefaultProjectSettings(): Promise<IProjectSettings> {
+	async getDefaultProjectSettings(): Promise<IPortfolioSettings> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IProjectSettings>(
+			const response = await this.apiService.get<IPortfolioSettings>(
 				"/appsettings/defaultprojectsettings",
 			);
 

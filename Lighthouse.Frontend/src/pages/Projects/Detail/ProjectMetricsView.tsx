@@ -1,18 +1,18 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import type { IProject } from "../../../models/Project/Project";
+import type { IPortfolio } from "../../../models/Project/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
 
 interface ProjectMetricsViewProps {
-	project: IProject;
+	project: IPortfolio;
 }
 
 const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
-	const { projectMetricsService, projectService } =
+	const { projectMetricsService, portfolioService: projectService } =
 		useContext(ApiServiceContext);
 
 	const { getTerm } = useTerminology();
@@ -21,7 +21,7 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 	useEffect(() => {
 		const fetchProjectSettings = async () => {
 			try {
-				const settings = await projectService.getProjectSettings(project.id);
+				const settings = await projectService.getPortfolioSettings(project.id);
 				setDoingStates(settings.doingStates);
 			} catch (err) {
 				console.error("Error fetching project settings:", err);
