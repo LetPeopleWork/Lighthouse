@@ -139,6 +139,31 @@ namespace Lighthouse.Backend.Tests.API
             }).ToList();
         }
 
+        [Test]
+        public void GetByPortfolio_ValidPortfolioId_ReturnsDeliveries()
+        {
+            // Arrange
+            var portfolioId = 1;
+            var expectedDeliveries = new List<Delivery>
+            {
+                new Delivery("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId),
+                new Delivery("Q2 Release", DateTime.UtcNow.AddDays(90), portfolioId)
+            };
+            
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
+                .Returns(expectedDeliveries);
+            
+            var controller = CreateSubject();
+
+            // Act
+            var result = controller.GetByPortfolio(portfolioId);
+
+            // Assert
+            Assert.That(result, Is.InstanceOf<OkObjectResult>());
+            var okResult = (OkObjectResult)result;
+            Assert.That(okResult.Value, Is.EqualTo(expectedDeliveries));
+        }
+
         private Delivery GetTestDelivery()
         {
             return new Delivery("Existing Delivery", DateTime.UtcNow.AddDays(60), 1);

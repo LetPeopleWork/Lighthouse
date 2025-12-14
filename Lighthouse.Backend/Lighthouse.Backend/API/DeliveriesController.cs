@@ -23,6 +23,13 @@ namespace Lighthouse.Backend.API
             this.licenseService = licenseService;
         }
 
+        [HttpGet("portfolio/{portfolioId}")]
+        public IActionResult GetByPortfolio(int portfolioId)
+        {
+            var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
+            return Ok(deliveries);
+        }
+
         [HttpPost("portfolio/{portfolioId}")]
         public async Task<IActionResult> CreateDelivery(
             int portfolioId, 
