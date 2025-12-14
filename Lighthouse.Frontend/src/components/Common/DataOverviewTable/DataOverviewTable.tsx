@@ -22,7 +22,7 @@ import { useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import type { IPortfolio } from "../../../models/Project/Portfolio";
+import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";

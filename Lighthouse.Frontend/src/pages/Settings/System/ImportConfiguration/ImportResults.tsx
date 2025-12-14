@@ -1,4 +1,4 @@
-import type { IPortfolioSettings } from "../../../../models/Project/PortfolioSettings";
+import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { ITeamSettings } from "../../../../models/Team/TeamSettings";
 import type { WorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 

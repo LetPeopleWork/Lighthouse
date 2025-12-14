@@ -35,8 +35,8 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["optionalFeatureService"],
 		updateSubscriptionService:
 			null as unknown as IApiServiceContext["updateSubscriptionService"],
-		projectMetricsService:
-			null as unknown as IApiServiceContext["projectMetricsService"],
+		portfolioMetricsService:
+			null as unknown as IApiServiceContext["portfolioMetricsService"],
 		suggestionService:
 			null as unknown as IApiServiceContext["suggestionService"],
 		configurationService:

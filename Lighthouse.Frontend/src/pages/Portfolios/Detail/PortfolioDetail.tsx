@@ -10,15 +10,18 @@ import LoadingAnimation from "../../../components/Common/LoadingAnimation/Loadin
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import type { IPortfolio, Portfolio } from "../../../models/Project/Portfolio";
+import type {
+	IPortfolio,
+	Portfolio,
+} from "../../../models/Portfolio/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import PortfolioDeliveryView from "./PortfolioDeliveryView";
-import ProjectForecastView from "./ProjectForecastView";
-import ProjectMetricsView from "./ProjectMetricsView";
+import PortfolioForecastView from "./PortfolioForecastView";
+import PortfolioMetricsView from "./PortfolioMetricsView";
 
 const PortfolioDetail: React.FC = () => {
 	const navigate = useNavigate();
@@ -253,8 +256,8 @@ const PortfolioDetail: React.FC = () => {
 
 						<Grid size={{ xs: 12 }}>
 							{activeView === "forecast" && portfolio && (
-								<ProjectForecastView
-									project={portfolio}
+								<PortfolioForecastView
+									portfolio={portfolio}
 									involvedTeams={involvedTeams}
 									onTeamSettingsChange={onTeamSettingsChange}
 								/>
@@ -265,7 +268,7 @@ const PortfolioDetail: React.FC = () => {
 							)}
 
 							{activeView === "metrics" && portfolio && (
-								<ProjectMetricsView project={portfolio} />
+								<PortfolioMetricsView portfolio={portfolio} />
 							)}
 						</Grid>
 					</Grid>

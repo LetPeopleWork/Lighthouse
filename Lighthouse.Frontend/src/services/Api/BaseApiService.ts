@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance } from "axios";
 import { Feature, type IFeature } from "../../models/Feature";
-import { type IPortfolio, Portfolio } from "../../models/Project/Portfolio";
+import { type IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import { type ITeam, Team } from "../../models/Team/Team";
 import { ApiError } from "./ApiError";
 

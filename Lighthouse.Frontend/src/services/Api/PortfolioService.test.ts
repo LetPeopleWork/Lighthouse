@@ -1,6 +1,6 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type IPortfolio, Portfolio } from "../../models/Project/Portfolio";
+import { type IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import { createMockProjectSettings } from "../../tests/TestDataProvider";
 import { PortfolioService } from "./PortfolioService";
 

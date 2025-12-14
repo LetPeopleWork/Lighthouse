@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
-import { Portfolio } from "../../../models/Project/Portfolio";
+import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
@@ -45,10 +45,10 @@ vi.mock(
 	}),
 );
 
-vi.mock("./ProjectFeatureList", () => ({
-	default: ({ project }: { project: Portfolio }) => (
-		<div data-testid="project-feature-list">
-			{project.features.length} features
+vi.mock("./PortfolioFeatureList", () => ({
+	default: ({ portfolio }: { portfolio: Portfolio }) => (
+		<div data-testid="portfolio-feature-list">
+			{portfolio.features.length} features
 		</div>
 	),
 }));
@@ -75,22 +75,22 @@ vi.mock("../../../components/Common/ActionButton/ActionButton", () => ({
 	),
 }));
 
-const mockProjectService: IPortfolioService = createMockPortfolioService();
+const mockPortfolioService: IPortfolioService = createMockPortfolioService();
 const mockTeamService: ITeamService = createMockTeamService();
 const mockOptionalFeatureService: IOptionalFeatureService =
 	createMockOptionalFeatureService();
 const mockUpdateSubscriptionService: IUpdateSubscriptionService =
 	createMockUpdateSubscriptionService();
 
-const mockGetProject = vi.fn();
-const mockGetProjectSettings = vi.fn();
+const mockGetPortfolio = vi.fn();
+const mockGetPortfolioSettings = vi.fn();
 
 const mockSubscribeToFeatureUpdates = vi.fn();
 const mockSubscribeToForecastUpdates = vi.fn();
 const mockGetUpdateStatus = vi.fn();
 
-mockProjectService.getPortfolio = mockGetProject;
-mockProjectService.getPortfolioSettings = mockGetProjectSettings;
+mockPortfolioService.getPortfolio = mockGetPortfolio;
+mockPortfolioService.getPortfolioSettings = mockGetPortfolioSettings;
 
 mockUpdateSubscriptionService.subscribeToFeatureUpdates =
 	mockSubscribeToFeatureUpdates;
@@ -104,7 +104,7 @@ const MockApiServiceProvider = ({
 	children: React.ReactNode;
 }) => {
 	const mockContext = createMockApiServiceContext({
-		portfolioService: mockProjectService,
+		portfolioService: mockPortfolioService,
 		teamService: mockTeamService,
 		optionalFeatureService: mockOptionalFeatureService,
 		updateSubscriptionService: mockUpdateSubscriptionService,
@@ -129,11 +129,11 @@ const renderWithMockApiProvider = () => {
 	);
 };
 
-describe("ProjectDetail component", () => {
+describe("PortfolioDetail component", () => {
 	beforeEach(() => {
-		const project = new Portfolio();
-		project.id = 2;
-		project.name = "Release Codename Daniel";
+		const portfolio = new Portfolio();
+		portfolio.id = 2;
+		portfolio.name = "Release Codename Daniel";
 
 		const feature1 = new Feature();
 		feature1.id = 0;
@@ -145,10 +145,10 @@ describe("ProjectDetail component", () => {
 		feature2.name = "Feature 2";
 		feature2.referenceId = "FTR-2";
 
-		project.features = [feature1, feature2];
+		portfolio.features = [feature1, feature2];
 
-		mockGetProject.mockResolvedValue(project);
-		mockGetProjectSettings.mockResolvedValue({
+		mockGetPortfolio.mockResolvedValue(portfolio);
+		mockGetPortfolioSettings.mockResolvedValue({
 			id: 2,
 			name: "Release Codename Daniel",
 			workItemTypes: [],
@@ -166,7 +166,7 @@ describe("ProjectDetail component", () => {
 		});
 	});
 
-	it("should render project details after loading", async () => {
+	it("should render portfolio details after loading", async () => {
 		renderWithMockApiProvider();
 
 		expect(screen.getByText("Loading...")).toBeInTheDocument();
@@ -175,7 +175,7 @@ describe("ProjectDetail component", () => {
 			expect(screen.getByText("Release Codename Daniel")).toBeInTheDocument();
 		});
 
-		expect(screen.getByTestId("project-feature-list")).toHaveTextContent(
+		expect(screen.getByTestId("portfolio-feature-list")).toHaveTextContent(
 			"2 features",
 		);
 	});

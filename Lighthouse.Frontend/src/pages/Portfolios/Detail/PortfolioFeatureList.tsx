@@ -18,17 +18,19 @@ import ProgressIndicator from "../../../components/Common/ProgressIndicator/Prog
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
-import type { IPortfolio } from "../../../models/Project/Portfolio";
+import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 
-interface ProjectFeatureListProps {
-	project: IPortfolio;
+interface PortfolioFeatureListProps {
+	portfolio: IPortfolio;
 }
 
-const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
+const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
+	portfolio,
+}) => {
 	const { teamMetricsService, featureService } = useContext(ApiServiceContext);
 
 	const [featuresInProgress, setFeaturesInProgress] = useState<
@@ -45,18 +47,18 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 	const parentMap = useParentWorkItems(features);
 
 	// Storage key for toggle
-	const storageKey = `lighthouse_hide_completed_features_project_${project.id}`;
+	const storageKey = `lighthouse_hide_completed_features_portfolio_${portfolio.id}`;
 
 	// Load features
 	useEffect(() => {
 		const fetchFeatures = async () => {
-			const featureIds = project.features.map((fr) => fr.id);
+			const featureIds = portfolio.features.map((fr) => fr.id);
 			const featureData = await featureService.getFeaturesByIds(featureIds);
 			setFeatures(featureData);
 		};
 
 		fetchFeatures();
-	}, [project.features, featureService]);
+	}, [portfolio.features, featureService]);
 
 	// Load toggle preference from localStorage
 	useEffect(() => {
@@ -71,7 +73,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 		const fetchFeaturesInProgress = async () => {
 			const featuresByTeam: Record<string, string[]> = {};
 
-			for (const team of project.involvedTeams) {
+			for (const team of portfolio.involvedTeams) {
 				try {
 					const features = await teamMetricsService.getFeaturesInProgress(
 						team.id,
@@ -89,7 +91,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 		};
 
 		fetchFeaturesInProgress();
-	}, [project.involvedTeams, teamMetricsService]);
+	}, [portfolio.involvedTeams, teamMetricsService]);
 
 	const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const newValue = event.target.checked;
@@ -120,7 +122,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 							url={row.url ?? ""}
 							stateCategory={row.stateCategory}
 							isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-							teamsWorkIngOnFeature={project.involvedTeams.filter((team) =>
+							teamsWorkIngOnFeature={portfolio.involvedTeams.filter((team) =>
 								featuresInProgress[team.id]?.includes(row.referenceId),
 							)}
 						/>
@@ -140,7 +142,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 									totalWork: row.getTotalWorkForFeature(),
 								}}
 							/>
-							{project.involvedTeams
+							{portfolio.involvedTeams
 								.filter((team) => row.getTotalWorkForTeam(team.id) > 0)
 								.map((team) => (
 									<Box key={team.id}>
@@ -197,7 +199,7 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 				),
 			});
 			return baseColumns;
-		}, [featureTerm, project.involvedTeams, featuresInProgress, parentMap]);
+		}, [featureTerm, portfolio.involvedTeams, featuresInProgress, parentMap]);
 
 	return (
 		<TableContainer component={Paper}>
@@ -217,11 +219,11 @@ const ProjectFeatureList: React.FC<ProjectFeatureListProps> = ({ project }) => {
 			<DataGridBase
 				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
 				columns={columns}
-				storageKey={`portfolio-features-${project.id}`}
+				storageKey={`portfolio-features-${portfolio.id}`}
 				loading={features.length === 0}
 			/>
 		</TableContainer>
 	);
 };
 
-export default ProjectFeatureList;
+export default PortfolioFeatureList;

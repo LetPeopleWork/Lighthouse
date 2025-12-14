@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import type { IPortfolio } from "../../../models/Project/Portfolio";
+import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import DataOverviewTable from "./DataOverviewTable";
 
 const mockNavigate = vi.fn();

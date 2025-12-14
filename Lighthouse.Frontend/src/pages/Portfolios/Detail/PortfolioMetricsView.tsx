@@ -1,40 +1,44 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import type { IPortfolio } from "../../../models/Project/Portfolio";
+import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
 
-interface ProjectMetricsViewProps {
-	project: IPortfolio;
+interface PortfolioMetricsViewProps {
+	portfolio: IPortfolio;
 }
 
-const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
+const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
+	portfolio,
+}) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
-	const { projectMetricsService, portfolioService: projectService } =
+	const { portfolioMetricsService, portfolioService } =
 		useContext(ApiServiceContext);
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	useEffect(() => {
-		const fetchProjectSettings = async () => {
+		const fetchPortfolioSettings = async () => {
 			try {
-				const settings = await projectService.getPortfolioSettings(project.id);
+				const settings = await portfolioService.getPortfolioSettings(
+					portfolio.id,
+				);
 				setDoingStates(settings.doingStates);
 			} catch (err) {
-				console.error("Error fetching project settings:", err);
+				console.error("Error fetching portfolio settings:", err);
 			}
 		};
 
-		fetchProjectSettings();
-	}, [project.id, projectService]);
+		fetchPortfolioSettings();
+	}, [portfolio.id, portfolioService]);
 
 	return (
 		<BaseMetricsView
-			entity={project}
-			metricsService={projectMetricsService}
+			entity={portfolio}
+			metricsService={portfolioMetricsService}
 			title={featuresTerm}
 			defaultDateRange={90}
 			doingStates={doingStates}
@@ -42,4 +46,4 @@ const ProjectMetricsView: React.FC<ProjectMetricsViewProps> = ({ project }) => {
 	);
 };
 
-export default ProjectMetricsView;
+export default PortfolioMetricsView;

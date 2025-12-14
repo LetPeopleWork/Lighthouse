@@ -1,18 +1,18 @@
 import { Grid } from "@mui/material";
 import type React from "react";
-import type { IPortfolio } from "../../../models/Project/Portfolio";
+import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import InvolvedTeamsList from "./InvolvedTeamsList";
-import ProjectFeatureList from "./ProjectFeatureList";
+import PortfolioFeatureList from "./PortfolioFeatureList";
 
-interface ProjectForecastViewProps {
-	project: IPortfolio;
+interface PortfolioForecastViewProps {
+	portfolio: IPortfolio;
 	involvedTeams: ITeamSettings[];
 	onTeamSettingsChange: (updatedTeamSettings: ITeamSettings) => Promise<void>;
 }
 
-const ProjectForecastView: React.FC<ProjectForecastViewProps> = ({
-	project,
+const PortfolioForecastView: React.FC<PortfolioForecastViewProps> = ({
+	portfolio,
 	involvedTeams,
 	onTeamSettingsChange,
 }) => {
@@ -25,10 +25,10 @@ const ProjectForecastView: React.FC<ProjectForecastViewProps> = ({
 				/>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
-				<ProjectFeatureList project={project} />
+				<PortfolioFeatureList portfolio={portfolio} />
 			</Grid>
 		</Grid>
 	);
 };
 
-export default ProjectForecastView;
+export default PortfolioForecastView;

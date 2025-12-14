@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
 import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
-import { Portfolio } from "../../../models/Project/Portfolio";
+import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IFeatureService } from "../../../services/Api/FeatureService";
@@ -13,7 +13,7 @@ import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
 } from "../../../tests/MockApiServiceProvider";
-import ProjectFeatureList from "./ProjectFeatureList";
+import PortfolioFeatureList from "./PortfolioFeatureList";
 
 vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
 	default: ({
@@ -136,7 +136,7 @@ const MockApiServiceProvider = ({
 	);
 };
 
-describe("ProjectFeatureList component", () => {
+describe("PortfolioFeatureList component", () => {
 	const team1: Team = (() => {
 		const team = new Team();
 		team.name = "Team A";
@@ -253,21 +253,21 @@ describe("ProjectFeatureList component", () => {
 		return feature;
 	})();
 
-	const project: Portfolio = (() => {
-		const project = new Portfolio();
-		project.name = "Project 1";
-		project.id = 1;
-		project.involvedTeams = [team1, team2];
-		project.features = [feature1, feature2, feature3];
-		project.lastUpdated = new Date();
-		return project;
+	const portfolio: Portfolio = (() => {
+		const portfolio = new Portfolio();
+		portfolio.name = "Project 1";
+		portfolio.id = 1;
+		portfolio.involvedTeams = [team1, team2];
+		portfolio.features = [feature1, feature2, feature3];
+		portfolio.lastUpdated = new Date();
+		return portfolio;
 	})();
 
 	it("should render all features with correct data", async () => {
 		render(
 			<MockApiServiceProvider>
 				<MemoryRouter>
-					<ProjectFeatureList project={project} />
+					<PortfolioFeatureList portfolio={portfolio} />
 				</MemoryRouter>
 			</MockApiServiceProvider>,
 		);
@@ -289,7 +289,7 @@ describe("ProjectFeatureList component", () => {
 			"forecast-info-list-",
 		);
 		expect(forecastInfoListElements.length).toBeGreaterThanOrEqual(
-			project.features.length,
+			portfolio.features.length,
 		);
 	});
 
@@ -297,7 +297,7 @@ describe("ProjectFeatureList component", () => {
 		render(
 			<MockApiServiceProvider>
 				<MemoryRouter>
-					<ProjectFeatureList project={project} />
+					<PortfolioFeatureList portfolio={portfolio} />
 				</MemoryRouter>
 			</MockApiServiceProvider>,
 		);
@@ -319,7 +319,7 @@ describe("ProjectFeatureList component", () => {
 		render(
 			<MockApiServiceProvider>
 				<MemoryRouter>
-					<ProjectFeatureList project={project} />
+					<PortfolioFeatureList portfolio={portfolio} />
 				</MemoryRouter>
 			</MockApiServiceProvider>,
 		);

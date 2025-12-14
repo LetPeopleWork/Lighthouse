@@ -2,7 +2,7 @@ import { render, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import type { MockedFunction } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IPortfolioSettings } from "../../../models/Project/PortfolioSettings";
+import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import {
 	ApiServiceContext,
 	type IApiServiceContext,

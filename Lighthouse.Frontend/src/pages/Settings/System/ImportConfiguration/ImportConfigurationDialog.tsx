@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useContext, useId, useState } from "react";
-import type { IPortfolioSettings } from "../../../../models/Project/PortfolioSettings";
+import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { ITeamSettings } from "../../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";

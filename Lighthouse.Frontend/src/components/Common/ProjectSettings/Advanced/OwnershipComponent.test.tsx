@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IEntityReference } from "../../../../models/EntityReference";
-import type { IPortfolioSettings } from "../../../../models/Project/PortfolioSettings";
+import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../../models/Team/Team";
 import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import OwnershipComponent from "./OwnershipComponent";

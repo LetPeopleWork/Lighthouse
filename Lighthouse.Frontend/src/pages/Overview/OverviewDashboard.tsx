@@ -11,7 +11,7 @@ import FilterBar from "../../components/Common/FilterBar/FilterBar";
 import LoadingAnimation from "../../components/Common/LoadingAnimation/LoadingAnimation";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
-import type { Portfolio } from "../../models/Project/Portfolio";
+import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";

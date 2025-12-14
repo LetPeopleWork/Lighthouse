@@ -9,7 +9,7 @@ import {
 } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
-import { Portfolio } from "../../../models/Project/Portfolio";
+import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";

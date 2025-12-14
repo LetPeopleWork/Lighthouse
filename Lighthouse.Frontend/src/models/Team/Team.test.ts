@@ -1,6 +1,6 @@
 import { Feature } from "../Feature";
 import { WhenForecast } from "../Forecasts/WhenForecast";
-import { Portfolio } from "../Project/Portfolio";
+import { Portfolio } from "../Portfolio/Portfolio";
 import { Team } from "./Team";
 
 describe("Team Class", () => {

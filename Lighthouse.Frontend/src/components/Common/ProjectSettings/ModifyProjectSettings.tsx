@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import type { IPortfolioSettings } from "../../../models/Project/PortfolioSettings";
+import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";

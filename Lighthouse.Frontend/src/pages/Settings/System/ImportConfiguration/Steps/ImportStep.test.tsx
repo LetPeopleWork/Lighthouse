@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { IPortfolioSettings } from "../../../../../models/Project/PortfolioSettings";
+import type { IPortfolioSettings } from "../../../../../models/Portfolio/PortfolioSettings";
 import type { ITeamSettings } from "../../../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IConfigurationService } from "../../../../../services/Api/ConfigurationService";

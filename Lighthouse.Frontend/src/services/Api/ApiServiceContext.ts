@@ -48,7 +48,7 @@ export interface IApiServiceContext {
 	settingsService: ISettingsService;
 	teamService: ITeamService;
 	teamMetricsService: ITeamMetricsService;
-	projectMetricsService: IProjectMetricsService;
+	portfolioMetricsService: IProjectMetricsService;
 	versionService: IVersionService;
 	workTrackingSystemService: IWorkTrackingSystemService;
 	optionalFeatureService: IOptionalFeatureService;
@@ -73,7 +73,7 @@ const defaultServices: IApiServiceContext = {
 	settingsService: new SettingsService(),
 	teamService: new TeamService(),
 	teamMetricsService: new TeamMetricsService(),
-	projectMetricsService: new ProjectMetricsService(),
+	portfolioMetricsService: new ProjectMetricsService(),
 	versionService: new VersionService(),
 	workTrackingSystemService: new WorkTrackingSystemService(),
 	optionalFeatureService: new OptionalFeatureService(),

@@ -19,7 +19,7 @@ import type {
 	ConfigurationValidation,
 	ConfigurationValidationItem,
 } from "../../../../../models/Configuration/ConfigurationValidation";
-import type { IPortfolioSettings } from "../../../../../models/Project/PortfolioSettings";
+import type { IPortfolioSettings } from "../../../../../models/Portfolio/PortfolioSettings";
 import type { ITeamSettings } from "../../../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../../../models/WorkTracking/WorkTrackingSystemConnection";

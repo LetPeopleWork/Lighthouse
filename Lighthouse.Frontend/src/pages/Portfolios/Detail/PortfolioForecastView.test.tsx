@@ -1,11 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Portfolio } from "../../../models/Project/Portfolio";
+import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
-import ProjectForecastView from "./ProjectForecastView";
+import PortfolioForecastView from "./PortfolioForecastView";
 
 vi.mock("./InvolvedTeamsList", () => ({
 	default: ({
@@ -35,16 +35,16 @@ vi.mock("./InvolvedTeamsList", () => ({
 	),
 }));
 
-vi.mock("./ProjectFeatureList", () => ({
-	default: ({ project }: { project: Portfolio }) => (
-		<div data-testid="project-feature-list">
-			<div data-testid="project-name">{project.name}</div>
-			<div data-testid="features-count">{project.features.length}</div>
+vi.mock("./PortfolioFeatureList", () => ({
+	default: ({ portfolio }: { portfolio: Portfolio }) => (
+		<div data-testid="portfolio-feature-list">
+			<div data-testid="portfolio-name">{portfolio.name}</div>
+			<div data-testid="features-count">{portfolio.features.length}</div>
 		</div>
 	),
 }));
 
-describe("ProjectForecastView component", () => {
+describe("PortfolioForecastView component", () => {
 	const mockTeam1: Team = (() => {
 		const team = new Team();
 		team.name = "Team A";
@@ -73,13 +73,13 @@ describe("ProjectForecastView component", () => {
 		return team;
 	})();
 
-	const mockProject = (() => {
-		const project = new Portfolio();
-		project.name = "Test Project";
-		project.id = 1;
-		project.involvedTeams = [mockTeam1, mockTeam2];
-		project.lastUpdated = new Date();
-		return project;
+	const mockPortfolio = (() => {
+		const portfolio = new Portfolio();
+		portfolio.name = "Test Project";
+		portfolio.id = 1;
+		portfolio.involvedTeams = [mockTeam1, mockTeam2];
+		portfolio.lastUpdated = new Date();
+		return portfolio;
 	})();
 
 	const mockTeamSettings1 = createMockTeamSettings();
@@ -104,8 +104,8 @@ describe("ProjectForecastView component", () => {
 	it("renders all components correctly", () => {
 		render(
 			<MemoryRouter>
-				<ProjectForecastView
-					project={mockProject}
+				<PortfolioForecastView
+					portfolio={mockPortfolio}
 					involvedTeams={mockInvolvedTeams}
 					onTeamSettingsChange={mockOnTeamSettingsChange}
 				/>
@@ -113,18 +113,20 @@ describe("ProjectForecastView component", () => {
 		);
 
 		expect(screen.getByTestId("involved-teams-list")).toBeInTheDocument();
-		expect(screen.getByTestId("project-feature-list")).toBeInTheDocument();
+		expect(screen.getByTestId("portfolio-feature-list")).toBeInTheDocument();
 
 		// Check if data is passed correctly
 		expect(screen.getByTestId("teams-count").textContent).toBe("2");
-		expect(screen.getByTestId("project-name").textContent).toBe("Test Project");
+		expect(screen.getByTestId("portfolio-name").textContent).toBe(
+			"Test Project",
+		);
 	});
 
 	it("updates team settings correctly", async () => {
 		render(
 			<MemoryRouter>
-				<ProjectForecastView
-					project={mockProject}
+				<PortfolioForecastView
+					portfolio={mockPortfolio}
 					involvedTeams={mockInvolvedTeams}
 					onTeamSettingsChange={mockOnTeamSettingsChange}
 				/>

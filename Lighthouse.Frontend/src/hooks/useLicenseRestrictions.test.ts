@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
-import { Portfolio } from "../models/Project/Portfolio";
+import { Portfolio } from "../models/Portfolio/Portfolio";
 import { Team } from "../models/Team/Team";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
 import { useLicenseRestrictions } from "./useLicenseRestrictions";

@@ -1,5 +1,5 @@
-import type { IPortfolio, Portfolio } from "../../models/Project/Portfolio";
-import type { IPortfolioSettings } from "../../models/Project/PortfolioSettings";
+import type { IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
+import type { IPortfolioSettings } from "../../models/Portfolio/PortfolioSettings";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IPortfolioService {

@@ -11,8 +11,8 @@ import OverviewDashboard from "./pages/Overview/OverviewDashboard";
 import Settings from "./pages/Settings/Settings";
 import "./App.css";
 import DemoDialog from "./components/App/Demo/DemoDialog";
-import PortfolioDetail from "./pages/Projects/Detail/PortfolioDetail";
-import EditPortfolio from "./pages/Projects/Edit/EditPortfolio";
+import PortfolioDetail from "./pages/Portfolios/Detail/PortfolioDetail";
+import EditPortfolio from "./pages/Portfolios/Edit/EditPortfolio";
 import TeamDetail from "./pages/Teams/Detail/TeamDetail";
 import EditTeam from "./pages/Teams/Edit/EditTeam";
 import {

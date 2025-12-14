@@ -11,7 +11,7 @@ import {
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import type { Delivery } from "../../../models/Delivery";
-import type { Portfolio } from "../../../models/Project/Portfolio";
+import type { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
 interface PortfolioDeliveryViewProps {
