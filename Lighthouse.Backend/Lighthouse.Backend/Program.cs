@@ -56,9 +56,8 @@ namespace Lighthouse.Backend
                 ConfigureServices(builder);
                 ConfigureDatabase(builder);
 
-                var optionalFeatureRepository = GetOptionalFeatureRepository(builder);
+                var mcpFeature = TryGetOptionalFeature(builder);
 
-                var mcpFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
                 ConfigureOptionalServices(builder, mcpFeature);
 
                 var app = builder.Build();
@@ -75,18 +74,27 @@ namespace Lighthouse.Backend
             }
         }
 
-        private static IRepository<OptionalFeature> GetOptionalFeatureRepository(WebApplicationBuilder builder)
+        private static OptionalFeature? TryGetOptionalFeature(WebApplicationBuilder builder)
         {
-            var serviceProvider = builder.Services?.BuildServiceProvider();
-            var optionalFeatureRepository = serviceProvider?.GetRequiredService<IRepository<OptionalFeature>>();
-
-            if (optionalFeatureRepository == null)
+            try
             {
-                Log.Error("OptionalFeatureRepository is not registered in the service collection.");
-                throw new InvalidOperationException("OptionalFeatureRepository is required but not registered.");
+                var serviceProvider = builder.Services.BuildServiceProvider();
+                using var scope = serviceProvider.CreateScope();
+                var optionalFeatureRepository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
+
+                // Check if database is accessible
+                var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                if (dbContext.Database.CanConnect())
+                {
+                    return optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Could not retrieve MCP feature setting. MCP server will not be configured.");
             }
 
-            return optionalFeatureRepository;
+            return null;
         }
 
         private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature)
@@ -128,6 +136,46 @@ namespace Lighthouse.Backend
             if (mcpFeature?.Enabled ?? false)
             {
                 app.MapMcp();
+            }
+        }
+
+        private static void ConfigureOptionalServices(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
+        {
+            ConfigureMcpServer(builder, mcpFeature);
+        }
+
+        private static void ConfigureMcpServer(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
+        {
+            if (mcpFeature?.Enabled ?? false)
+            {
+                // Only configure MCP server if user has premium license
+                var tempServiceProvider = builder.Services.BuildServiceProvider();
+                using var scope = tempServiceProvider.CreateScope();
+                var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
+
+                if (licenseService.CanUsePremiumFeatures())
+                {
+                    builder.Services.AddMcpServer()
+                        .WithHttpTransport()
+                        .WithTools<LighthouseTeamTools>()
+                        .WithTools<LighthouseProjectTools>()
+                        .WithTools<LighthouseFeatureTools>()
+                        .WithPrompts<LighthousePrompts>()
+                        .WithReadResourceHandler(async (request, cancellationToken) =>
+                        {
+                            var serviceProvider = builder.Services.BuildServiceProvider();
+                            using var scope = serviceProvider.CreateScope();
+                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                            return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
+                        })
+                        .WithListResourcesHandler(async (request, cancellationToken) =>
+                        {
+                            var serviceProvider = builder.Services.BuildServiceProvider();
+                            using var scope = serviceProvider.CreateScope();
+                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                            return await resources.ListDocumentationResources();
+                        });
+                }
             }
         }
 
@@ -176,46 +224,6 @@ namespace Lighthouse.Backend
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
                 EnableMultipleHttp2Connections = true
             });
-        }
-
-        private static void ConfigureOptionalServices(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
-        {
-            ConfigureMcpServer(builder, mcpFeature);
-        }
-
-        private static void ConfigureMcpServer(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
-        {
-            if (mcpFeature?.Enabled ?? false)
-            {
-                // Only configure MCP server if user has premium license
-                var tempServiceProvider = builder.Services.BuildServiceProvider();
-                using var scope = tempServiceProvider.CreateScope();
-                var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
-                
-                if (licenseService.CanUsePremiumFeatures())
-                {
-                    builder.Services.AddMcpServer()
-                        .WithHttpTransport()
-                        .WithTools<LighthouseTeamTools>()
-                        .WithTools<LighthouseProjectTools>()
-                        .WithTools<LighthouseFeatureTools>()
-                        .WithPrompts<LighthousePrompts>()
-                        .WithReadResourceHandler(async (request, cancellationToken) => 
-                        {
-                            var serviceProvider = builder.Services.BuildServiceProvider();
-                            using var scope = serviceProvider.CreateScope();
-                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
-                            return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
-                        })
-                        .WithListResourcesHandler(async (request, cancellationToken) => 
-                        {
-                            var serviceProvider = builder.Services.BuildServiceProvider();
-                            using var scope = serviceProvider.CreateScope();
-                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
-                            return await resources.ListDocumentationResources();
-                        });
-                }
-            }
         }
 
         private static void RegisterServices(WebApplicationBuilder builder)
