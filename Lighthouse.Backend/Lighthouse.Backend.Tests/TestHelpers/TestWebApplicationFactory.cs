@@ -20,6 +20,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            // Set test environment to skip migrations in Program.cs
+            builder.UseEnvironment("Testing");
+            
             builder.ConfigureServices(services =>
             {
                 RemoveServices(services);

@@ -186,16 +186,18 @@ namespace Lighthouse.Backend.Data
         private void RemoveOrphanedFeatures()
         {
             logger.LogDebug("Removing orphaned features");
-            var orphanedFeatures = Features
-                .Where(f => !f.IsParentFeature)
-                .Include(f => f.Portfolios)
-                .Where(f => f.Portfolios.Count == 0)
+    
+            // Only look at the change tracker, don't query the database
+            var orphanedFeatures = ChangeTracker.Entries<Feature>()
+                .Where(e => e.State != EntityState.Deleted && e.State != EntityState.Detached)
+                .Select(e => e.Entity)
+                .Where(f => !f.IsParentFeature && f.Portfolios.Count == 0)
                 .ToList();
 
-            if (orphanedFeatures.Count > 0)
+            if (orphanedFeatures.Any())
             {
                 Features.RemoveRange(orphanedFeatures);
-                logger.LogInformation("Removed {OrphanedFeatureCount} orphaned features", orphanedFeatures.Count);
+                logger.LogInformation("Removed {Count} orphaned features", orphanedFeatures.Count);
             }
         }
     }

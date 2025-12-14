@@ -316,13 +316,16 @@ namespace Lighthouse.Backend
                 }
             });
 
-            // Run migration
-            using var scope = builder.Services.BuildServiceProvider().CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            if (!builder.Environment.IsEnvironment("Testing"))
+            {
+                // Run migration
+                using var scope = builder.Services.BuildServiceProvider().CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-            logger.LogInformation("Migrating Database");
-            context.Database.Migrate();
+                logger.LogInformation("Migrating Database");
+                context.Database.Migrate();
+            }
         }
 
         private static void ConfigureLogging(WebApplicationBuilder builder)
