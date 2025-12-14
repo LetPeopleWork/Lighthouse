@@ -36,13 +36,13 @@ const PortfolioDetail: React.FC = () => {
 	const [isPortfolioUpdating, setIsPortfolioUpdating] =
 		useState<boolean>(false);
 	const [activeView, setActiveView] = useState<
-		"forecast" | "metrics" | "deliveries"
+		"features" | "metrics" | "deliveries"
 	>(
 		tab === "metrics"
 			? "metrics"
 			: tab === "deliveries"
 				? "deliveries"
-				: "forecast",
+				: "features",
 	);
 
 	const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
@@ -107,12 +107,12 @@ const PortfolioDetail: React.FC = () => {
 
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
-		newView: "forecast" | "metrics" | "deliveries",
+		newView: "features" | "metrics" | "deliveries",
 	) => {
 		setActiveView(newView);
 		const tabPath =
-			newView === "forecast"
-				? "forecasts"
+			newView === "features"
+				? "features"
 				: newView === "deliveries"
 					? "deliveries"
 					: newView;
@@ -202,12 +202,12 @@ const PortfolioDetail: React.FC = () => {
 										>
 											<ServiceLevelExpectation
 												featureOwner={portfolio}
-												hide={activeView !== "forecast"}
+												hide={activeView !== "features"}
 												itemTypeKey={TERMINOLOGY_KEYS.FEATURES}
 											/>
 											<SystemWIPLimitDisplay
 												featureOwner={portfolio}
-												hide={activeView !== "forecast"}
+												hide={activeView !== "features"}
 											/>
 										</Stack>
 									</Stack>
@@ -218,7 +218,7 @@ const PortfolioDetail: React.FC = () => {
 										onChange={handleViewChange}
 										aria-label="portfolio view tabs"
 									>
-										<Tab label="Forecasts" value="forecast" />
+										<Tab label={featuresTerm} value="features" />
 										<Tab label={deliveriesTerm} value="deliveries" />
 										<Tab label="Metrics" value="metrics" />
 									</Tabs>
@@ -255,7 +255,7 @@ const PortfolioDetail: React.FC = () => {
 						</Grid>
 
 						<Grid size={{ xs: 12 }}>
-							{activeView === "forecast" && portfolio && (
+							{activeView === "features" && portfolio && (
 								<PortfolioForecastView
 									portfolio={portfolio}
 									involvedTeams={involvedTeams}
