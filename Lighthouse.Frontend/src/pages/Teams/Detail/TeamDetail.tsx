@@ -17,6 +17,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
+import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
 
@@ -27,6 +28,8 @@ const TeamDetail: React.FC = () => {
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+
 	const {
 		canUpdateTeamData,
 		updateTeamDataTooltip,
@@ -39,8 +42,14 @@ const TeamDetail: React.FC = () => {
 	const [team, setTeam] = useState<Team>();
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
-	const [activeView, setActiveView] = useState<"forecast" | "metrics">(
-		tab === "metrics" ? "metrics" : "forecast",
+	const [activeView, setActiveView] = useState<
+		"features" | "forecasts" | "metrics"
+	>(
+		tab === "metrics"
+			? "metrics"
+			: tab === "forecasts"
+				? "forecasts"
+				: "features",
 	);
 
 	const { teamService, updateSubscriptionService } =
@@ -116,11 +125,10 @@ const TeamDetail: React.FC = () => {
 
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
-		newView: "forecast" | "metrics",
+		newView: "features" | "forecasts" | "metrics",
 	) => {
 		setActiveView(newView);
-		const tabPath = newView === "forecast" ? "forecasts" : newView;
-		navigate(`/teams/${id}/${tabPath}`, { replace: true });
+		navigate(`/teams/${id}/${newView}`, { replace: true });
 	};
 
 	return (
@@ -143,11 +151,11 @@ const TeamDetail: React.FC = () => {
 												<ForecastConfiguration team={team} />
 												<ServiceLevelExpectation
 													featureOwner={team}
-													hide={activeView !== "forecast"}
+													hide={activeView !== "forecasts"}
 												/>
 												<SystemWIPLimitDisplay
 													featureOwner={team}
-													hide={activeView !== "forecast"}
+													hide={activeView !== "forecasts"}
 												/>
 											</Stack>
 										</Stack>
@@ -158,7 +166,8 @@ const TeamDetail: React.FC = () => {
 											onChange={handleViewChange}
 											aria-label="team view tabs"
 										>
-											<Tab label="Forecasts" value="forecast" />
+											<Tab label={featureTerm} value="features" />
+											<Tab label="Forecasts" value="forecasts" />
 											<Tab label="Metrics" value="metrics" />
 										</Tabs>
 									}
@@ -194,7 +203,11 @@ const TeamDetail: React.FC = () => {
 							</Grid>
 
 							<Grid size={{ xs: 12 }}>
-								{activeView === "forecast" && team && (
+								{activeView === "features" && team && (
+									<TeamFeaturesView team={team} />
+								)}
+
+								{activeView === "forecasts" && team && (
 									<TeamForecastView team={team} />
 								)}
 
