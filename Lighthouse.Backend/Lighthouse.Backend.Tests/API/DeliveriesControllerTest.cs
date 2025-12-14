@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -13,6 +14,8 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IDeliveryRepository> deliveryRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
+        
         private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
@@ -20,7 +23,10 @@ namespace Lighthouse.Backend.Tests.API
         {
             deliveryRepositoryMock = new Mock<IDeliveryRepository>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
+            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
+            
+            portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Portfolio());
         }
 
         [Test]
@@ -161,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API
 
             // Assert
             Assert.That(result, Is.InstanceOf<NoContentResult>());
-            deliveryRepositoryMock.Verify(x => x.Remove(deliveryId), Times.Once);
+            deliveryRepositoryMock.Verify(x => x.Remove(existingDelivery), Times.Once);
             deliveryRepositoryMock.Verify(x => x.Save(), Times.Once);
         }
 
@@ -180,7 +186,7 @@ namespace Lighthouse.Backend.Tests.API
             var result = await controller.DeleteDelivery(deliveryId);
 
             // Assert
-            Assert.That(result, Is.InstanceOf<NotFoundResult>());
+            Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
             deliveryRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
             deliveryRepositoryMock.Verify(x => x.Save(), Times.Never);
         }
@@ -190,6 +196,7 @@ namespace Lighthouse.Backend.Tests.API
             return new DeliveriesController(
                 deliveryRepositoryMock.Object,
                 featureRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
                 licenseServiceMock.Object);
         }
 

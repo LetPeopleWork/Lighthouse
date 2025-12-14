@@ -7,15 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Json;
 
-namespace Lighthouse.Backend.Tests.API
+namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class TeamsControllerAuthorizationTests : IntegrationTestBase
+    public class TeamsControllerAuthorizationTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
-        public TeamsControllerAuthorizationTests()
-            : base(new TestWebApplicationFactory<Program>())
-        {
-        }
-
         [Test]
         public async Task CreateTeam_AsNonPremiumUser_Returns403()
         {

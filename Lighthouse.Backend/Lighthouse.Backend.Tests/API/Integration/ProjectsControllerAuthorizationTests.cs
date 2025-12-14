@@ -5,17 +5,11 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
-using System.Net.Http.Json;
 
-namespace Lighthouse.Backend.Tests.API
+namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class ProjectsControllerAuthorizationTests : IntegrationTestBase
+    public class ProjectsControllerAuthorizationTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
-        public ProjectsControllerAuthorizationTests()
-            : base(new TestWebApplicationFactory<Program>())
-        {
-        }
-
         [Test]
         public async Task CreateProject_AsNonPremiumUser_AboveLimit_Returns403()
         {

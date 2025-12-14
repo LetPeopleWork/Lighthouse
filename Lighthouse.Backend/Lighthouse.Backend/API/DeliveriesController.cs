@@ -3,46 +3,42 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 
 namespace Lighthouse.Backend.API
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DeliveriesController : ControllerBase
+    public class DeliveriesController(
+        IDeliveryRepository deliveryRepository,
+        IRepository<Feature> featureRepository,
+        IRepository<Portfolio> portfolioRepository,
+        ILicenseService licenseService)
+        : ControllerBase
     {
-        private readonly IDeliveryRepository deliveryRepository;
-        private readonly IRepository<Feature> featureRepository;
-        private readonly ILicenseService licenseService;
-
-        public DeliveriesController(
-            IDeliveryRepository deliveryRepository,
-            IRepository<Feature> featureRepository,
-            ILicenseService licenseService)
-        {
-            this.deliveryRepository = deliveryRepository;
-            this.featureRepository = featureRepository;
-            this.licenseService = licenseService;
-        }
-
-        [HttpGet("portfolio/{portfolioId}")]
+        [HttpGet("portfolio/{portfolioId:int}")]
         public IActionResult GetByPortfolio(int portfolioId)
         {
             var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
             return Ok(deliveries);
         }
 
-        [HttpPost("portfolio/{portfolioId}")]
+        [HttpPost("portfolio/{portfolioId:int}")]
         public async Task<IActionResult> CreateDelivery(
-            int portfolioId, 
+            int portfolioId,
             [FromBody] CreateDeliveryRequest request)
         {
-            // Validate date is in future
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                return BadRequest("Name is required");
+            }
+            
             if (request.Date <= DateTime.UtcNow)
             {
                 return BadRequest("Delivery date must be in the future");
             }
 
-            // Check licensing constraints
             if (!licenseService.CanUsePremiumFeatures())
             {
                 var existingDeliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
@@ -51,42 +47,37 @@ namespace Lighthouse.Backend.API
                     return StatusCode(403, "Free users can only have 1 delivery per portfolio");
                 }
             }
-
-            try
+            
+            var featureList = new List<Feature>();
+            foreach (var featureId in request.FeatureIds)
             {
-                // Create delivery
-                var delivery = new Delivery(request.Name, request.Date, portfolioId);
-
-                // Add features to delivery
-                foreach (var featureId in request.FeatureIds)
+                var feature = featureRepository.GetById(featureId);
+                if (feature == null)
                 {
-                    var feature = featureRepository.GetById(featureId);
-                    if (feature != null)
-                    {
-                        delivery.Features.Add(feature);
-                    }
+                    return NotFound($"Feature with ID {featureId} does not exist");
                 }
-
-                deliveryRepository.Add(delivery);
-                await deliveryRepository.Save();
-
-                return Ok();
+                
+                featureList.Add(feature);
             }
-            catch (ArgumentException ex)
+            
+            var portfolio = portfolioRepository.GetById(portfolioId);
+            if (portfolio == null)
             {
-                return BadRequest(ex.Message);
+                return NotFound($"Portfolio with ID {portfolioId} not found");
             }
+            
+            var delivery = new Delivery(request.Name, request.Date, portfolioId);
+            delivery.Features.AddRange(featureList);
+
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            return Ok();
         }
 
-        [HttpDelete("{deliveryId}")]
+        [HttpDelete("{deliveryId:int}")]
         public async Task<IActionResult> DeleteDelivery(int deliveryId)
         {
-            var delivery = deliveryRepository.GetById(deliveryId);
-            if (delivery == null)
-            {
-                return NotFound();
-            }
-
             deliveryRepository.Remove(deliveryId);
             await deliveryRepository.Save();
 

@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 {
-    public class DeletionTests : IntegrationTestBase
+    public class DeletionTests() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
         private WorkTrackingSystemConnection workTrackingSystemConnection;
 
@@ -15,10 +15,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         public void Setup()
         {
             workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
-        }
-
-        public DeletionTests() : base(new TestWebApplicationFactory<Program>())
-        {
         }
 
         [Test]

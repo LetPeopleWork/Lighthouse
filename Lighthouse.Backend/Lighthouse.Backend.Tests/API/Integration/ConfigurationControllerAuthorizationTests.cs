@@ -2,15 +2,11 @@
 using Lighthouse.Backend.Tests.TestHelpers;
 using System.Net;
 
-namespace Lighthouse.Backend.Tests.API
+namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class ConfigurationControllerAuthorizationTests : IntegrationTestBase
+    public class ConfigurationControllerAuthorizationTests()
+        : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
-        public ConfigurationControllerAuthorizationTests()
-            : base(new TestWebApplicationFactory<Program>())
-        {
-        }
-
         [Test]
         public async Task ExportConfiguration_AsNonPremiumUser_Returns403()
         {

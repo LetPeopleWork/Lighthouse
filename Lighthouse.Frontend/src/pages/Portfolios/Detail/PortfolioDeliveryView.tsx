@@ -10,6 +10,8 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
+import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
+import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { Delivery } from "../../../models/Delivery";
 import type { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -23,8 +25,13 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 }) => {
 	const [deliveries, setDeliveries] = useState<Delivery[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [deliveryToDelete, setDeliveryToDelete] = useState<Delivery | null>(
+		null,
+	);
 
 	const { deliveryService } = useContext(ApiServiceContext);
+	const { showError } = useErrorSnackbar();
 
 	const fetchDeliveries = useCallback(async () => {
 		setIsLoading(true);
@@ -33,12 +40,12 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 				project.id,
 			);
 			setDeliveries(portfolioDeliveries);
-		} catch (error) {
-			console.error("Failed to fetch deliveries:", error);
+		} catch (_error) {
+			showError("Failed to fetch deliveries");
 		} finally {
 			setIsLoading(false);
 		}
-	}, [deliveryService, project.id]);
+	}, [deliveryService, project.id, showError]);
 
 	const handleAddDelivery = async () => {
 		try {
@@ -58,19 +65,29 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 
 			// Refresh deliveries list
 			await fetchDeliveries();
-		} catch (error) {
-			console.error("Failed to create delivery:", error);
+		} catch (_error) {
+			showError("Failed to create delivery");
 		}
 	};
 
-	const handleDeleteDelivery = async (deliveryId: number) => {
-		try {
-			await deliveryService.delete(deliveryId);
-			// Refresh deliveries list
-			await fetchDeliveries();
-		} catch (error) {
-			console.error("Failed to delete delivery:", error);
+	const handleDeleteDelivery = (delivery: Delivery) => {
+		setDeliveryToDelete(delivery);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleDeleteConfirmation = async (confirmed: boolean) => {
+		if (confirmed && deliveryToDelete) {
+			try {
+				await deliveryService.delete(deliveryToDelete.id);
+				// Refresh deliveries list
+				await fetchDeliveries();
+			} catch (_error) {
+				showError("Failed to delete delivery");
+			}
 		}
+
+		setDeleteDialogOpen(false);
+		setDeliveryToDelete(null);
 	};
 
 	useEffect(() => {
@@ -109,7 +126,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 								<IconButton
 									edge="end"
 									aria-label="delete"
-									onClick={() => handleDeleteDelivery(delivery.id)}
+									onClick={() => handleDeleteDelivery(delivery)}
 								>
 									<DeleteIcon />
 								</IconButton>
@@ -132,6 +149,13 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 						</ListItem>
 					))}
 				</List>
+			)}
+			{deliveryToDelete && (
+				<DeleteConfirmationDialog
+					open={deleteDialogOpen}
+					itemName={deliveryToDelete.name}
+					onClose={handleDeleteConfirmation}
+				/>
 			)}
 		</Box>
 	);

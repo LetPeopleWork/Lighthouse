@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Repository
 {
-    public class DeliveryRepositoryTest : IntegrationTestBase
+    public class DeliveryRepositoryTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
         private WorkTrackingSystemConnection workTrackingSystemConnection;
 
@@ -14,10 +14,6 @@ namespace Lighthouse.Backend.Tests.Repository
         public void Setup()
         {
             workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
-        }
-
-        public DeliveryRepositoryTest() : base(new TestWebApplicationFactory<Program>())
-        {
         }
 
         [Test]
@@ -92,10 +88,13 @@ namespace Lighthouse.Backend.Tests.Repository
             var result = repository.GetByPortfolioAsync(portfolio.Id);
 
             // Assert
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count(), Is.EqualTo(2));
-            Assert.That(result.Any(d => d.Name == "First Delivery"), Is.True);
-            Assert.That(result.Any(d => d.Name == "Second Delivery"), Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Count(), Is.EqualTo(2));
+                Assert.That(result.Any(d => d.Name == "First Delivery"), Is.True);
+                Assert.That(result.Any(d => d.Name == "Second Delivery"), Is.True);
+            }
         }
 
         [Test]
@@ -119,6 +118,51 @@ namespace Lighthouse.Backend.Tests.Repository
             var result = repository.GetById(delivery.Id);
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Name, Is.EqualTo(delivery.Name));
+        }
+
+        [Test]
+        public async Task Remove_AddedValidDelivery_RemovesFromDatabase()
+        {
+            var repository = ServiceProvider.GetService<IDeliveryRepository>();
+            var portfolioRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
+            var featureRepository = ServiceProvider.GetService<IRepository<Feature>>();
+
+            // Add Portfolio
+            var portfolio = GetTestPortfolio();
+            portfolioRepository.Add(portfolio);
+            await portfolioRepository.Save();
+            
+            // Add Feature
+            var feature = new Feature
+            {
+                Id = 0,
+                Name = "My Feature",
+                Portfolios = { portfolio },
+                Order = "12",
+            };
+            featureRepository.Add(feature);
+            portfolio.UpdateFeatures([feature]);
+            await featureRepository.Save();
+
+            // Add Delivery
+            var delivery = GetTestDelivery(portfolio.Id);
+            delivery.Features.Add(feature);
+            repository.Add(delivery);
+            
+            await repository.Save();
+            
+            var result = repository.GetById(delivery.Id);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Name, Is.EqualTo(delivery.Name));
+            Assert.That(result.Features, Has.Count.EqualTo(1));
+
+            // Remove Delivery
+            repository.Remove(delivery);
+            await repository.Save();
+            
+            // Assert
+            var deletedResult = repository.GetById(delivery.Id);
+            Assert.That(deletedResult, Is.Null);
         }
 
         private Portfolio GetTestPortfolio()

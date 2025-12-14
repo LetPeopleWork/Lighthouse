@@ -8,6 +8,7 @@ import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import ServiceLevelExpectation from "../../../components/Common/ServiceLevelExpectation/ServiceLevelExpectation";
+import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import SystemWIPLimitDisplay from "../../../components/Common/SystemWipLimitDisplay/SystemWipLimitDisplay";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type {
@@ -186,95 +187,97 @@ const PortfolioDetail: React.FC = () => {
 	]);
 
 	return (
-		<LoadingAnimation hasError={false} isLoading={isLoading}>
-			<Container maxWidth={false}>
-				{portfolio && (
-					<Grid container spacing={3}>
-						<Grid size={{ xs: 12 }}>
-							<DetailHeader
-								leftContent={
-									<Stack spacing={1} direction="row">
-										<FeatureOwnerHeader featureOwner={portfolio} />
-										<Stack
-											direction={{ xs: "column", sm: "row" }}
-											spacing={1}
-											alignItems={{ xs: "flex-start", sm: "center" }}
-										>
-											<ServiceLevelExpectation
-												featureOwner={portfolio}
-												hide={activeView !== "features"}
-												itemTypeKey={TERMINOLOGY_KEYS.FEATURES}
-											/>
-											<SystemWIPLimitDisplay
-												featureOwner={portfolio}
-												hide={activeView !== "features"}
-											/>
-										</Stack>
-									</Stack>
-								}
-								centerContent={
-									<Tabs
-										value={activeView}
-										onChange={handleViewChange}
-										aria-label="portfolio view tabs"
-									>
-										<Tab label={featuresTerm} value="features" />
-										<Tab label={deliveriesTerm} value="deliveries" />
-										<Tab label="Metrics" value="metrics" />
-									</Tabs>
-								}
-								rightContent={
-									<>
-										<Tooltip title={updatePortfolioDataTooltip} arrow>
-											<span>
-												<ActionButton
-													buttonText={`Refresh ${featuresTerm}`}
-													onClickHandler={onRefreshFeatures}
-													maxHeight="40px"
-													minWidth="120px"
-													externalIsWaiting={isPortfolioUpdating}
-													disabled={!canUpdatePortfolioData}
+		<SnackbarErrorHandler>
+			<LoadingAnimation hasError={false} isLoading={isLoading}>
+				<Container maxWidth={false}>
+					{portfolio && (
+						<Grid container spacing={3}>
+							<Grid size={{ xs: 12 }}>
+								<DetailHeader
+									leftContent={
+										<Stack spacing={1} direction="row">
+											<FeatureOwnerHeader featureOwner={portfolio} />
+											<Stack
+												direction={{ xs: "column", sm: "row" }}
+												spacing={1}
+												alignItems={{ xs: "flex-start", sm: "center" }}
+											>
+												<ServiceLevelExpectation
+													featureOwner={portfolio}
+													hide={activeView !== "features"}
+													itemTypeKey={TERMINOLOGY_KEYS.FEATURES}
 												/>
-											</span>
-										</Tooltip>
-										<Tooltip title={updatePortfolioSettingsTooltip} arrow>
-											<span>
-												<Button
-													variant="contained"
-													onClick={onEditPortfolio}
-													disabled={!canUpdatePortfolioSettings}
-													sx={{ maxHeight: "40px", minWidth: "120px" }}
-												>
-													Edit Portfolio
-												</Button>
-											</span>
-										</Tooltip>
-									</>
-								}
-							/>
-						</Grid>
-
-						<Grid size={{ xs: 12 }}>
-							{activeView === "features" && portfolio && (
-								<PortfolioForecastView
-									portfolio={portfolio}
-									involvedTeams={involvedTeams}
-									onTeamSettingsChange={onTeamSettingsChange}
+												<SystemWIPLimitDisplay
+													featureOwner={portfolio}
+													hide={activeView !== "features"}
+												/>
+											</Stack>
+										</Stack>
+									}
+									centerContent={
+										<Tabs
+											value={activeView}
+											onChange={handleViewChange}
+											aria-label="portfolio view tabs"
+										>
+											<Tab label={featuresTerm} value="features" />
+											<Tab label={deliveriesTerm} value="deliveries" />
+											<Tab label="Metrics" value="metrics" />
+										</Tabs>
+									}
+									rightContent={
+										<>
+											<Tooltip title={updatePortfolioDataTooltip} arrow>
+												<span>
+													<ActionButton
+														buttonText={`Refresh ${featuresTerm}`}
+														onClickHandler={onRefreshFeatures}
+														maxHeight="40px"
+														minWidth="120px"
+														externalIsWaiting={isPortfolioUpdating}
+														disabled={!canUpdatePortfolioData}
+													/>
+												</span>
+											</Tooltip>
+											<Tooltip title={updatePortfolioSettingsTooltip} arrow>
+												<span>
+													<Button
+														variant="contained"
+														onClick={onEditPortfolio}
+														disabled={!canUpdatePortfolioSettings}
+														sx={{ maxHeight: "40px", minWidth: "120px" }}
+													>
+														Edit Portfolio
+													</Button>
+												</span>
+											</Tooltip>
+										</>
+									}
 								/>
-							)}
+							</Grid>
 
-							{activeView === "deliveries" && portfolio && (
-								<PortfolioDeliveryView project={portfolio} />
-							)}
+							<Grid size={{ xs: 12 }}>
+								{activeView === "features" && portfolio && (
+									<PortfolioForecastView
+										portfolio={portfolio}
+										involvedTeams={involvedTeams}
+										onTeamSettingsChange={onTeamSettingsChange}
+									/>
+								)}
 
-							{activeView === "metrics" && portfolio && (
-								<PortfolioMetricsView portfolio={portfolio} />
-							)}
+								{activeView === "deliveries" && portfolio && (
+									<PortfolioDeliveryView project={portfolio} />
+								)}
+
+								{activeView === "metrics" && portfolio && (
+									<PortfolioMetricsView portfolio={portfolio} />
+								)}
+							</Grid>
 						</Grid>
-					</Grid>
-				)}
-			</Container>
-		</LoadingAnimation>
+					)}
+				</Container>
+			</LoadingAnimation>
+		</SnackbarErrorHandler>
 	);
 };
 
