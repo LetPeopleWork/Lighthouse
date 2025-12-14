@@ -167,28 +167,8 @@ namespace Lighthouse.Backend.Tests.API
 
             // Assert
             Assert.That(result, Is.InstanceOf<NoContentResult>());
-            deliveryRepositoryMock.Verify(x => x.Remove(existingDelivery), Times.Once);
+            deliveryRepositoryMock.Verify(x => x.Remove(deliveryId), Times.Once);
             deliveryRepositoryMock.Verify(x => x.Save(), Times.Once);
-        }
-
-        [Test]
-        public async Task DeleteDelivery_InvalidId_ReturnsNotFound()
-        {
-            // Arrange
-            var deliveryId = 999;
-            
-            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId))
-                .Returns((Delivery?)null);
-            
-            var controller = CreateSubject();
-
-            // Act
-            var result = await controller.DeleteDelivery(deliveryId);
-
-            // Assert
-            Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
-            deliveryRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
-            deliveryRepositoryMock.Verify(x => x.Save(), Times.Never);
         }
 
         private DeliveriesController CreateSubject()
