@@ -8,6 +8,7 @@ import {
 	ConfigurationService,
 	type IConfigurationService,
 } from "./ConfigurationService";
+import { DeliveryService, type IDeliveryService } from "./DeliveryService";
 import { DemoDataService } from "./DemoDataService";
 import { FeatureService, type IFeatureService } from "./FeatureService";
 import { ForecastService, type IForecastService } from "./ForecastService";
@@ -58,6 +59,7 @@ export interface IApiServiceContext {
 	terminologyService: ITerminologyService;
 	licensingService: ILicensingService;
 	demoDataService: IDemoDataService;
+	deliveryService: IDeliveryService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -82,6 +84,7 @@ const defaultServices: IApiServiceContext = {
 	terminologyService: new TerminologyService(),
 	licensingService: new LicensingService(),
 	demoDataService: new DemoDataService(),
+	deliveryService: new DeliveryService(),
 };
 
 export function getApiServices(): IApiServiceContext {

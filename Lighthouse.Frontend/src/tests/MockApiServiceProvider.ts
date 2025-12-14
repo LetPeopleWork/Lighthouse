@@ -46,6 +46,7 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["terminologyService"],
 		licensingService: null as unknown as IApiServiceContext["licensingService"],
 		demoDataService: null as unknown as IApiServiceContext["demoDataService"],
+		deliveryService: null as unknown as IApiServiceContext["deliveryService"],
 		...overrides,
 	};
 };
