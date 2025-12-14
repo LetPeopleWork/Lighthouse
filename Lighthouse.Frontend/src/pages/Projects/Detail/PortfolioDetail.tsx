@@ -16,6 +16,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
+import PortfolioDeliveryView from "./PortfolioDeliveryView";
 import ProjectForecastView from "./ProjectForecastView";
 import ProjectMetricsView from "./ProjectMetricsView";
 
@@ -31,8 +32,14 @@ const PortfolioDetail: React.FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isPortfolioUpdating, setIsPortfolioUpdating] =
 		useState<boolean>(false);
-	const [activeView, setActiveView] = useState<"forecast" | "metrics">(
-		tab === "metrics" ? "metrics" : "forecast",
+	const [activeView, setActiveView] = useState<
+		"forecast" | "metrics" | "deliveries"
+	>(
+		tab === "metrics"
+			? "metrics"
+			: tab === "deliveries"
+				? "deliveries"
+				: "forecast",
 	);
 
 	const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
@@ -42,6 +49,7 @@ const PortfolioDetail: React.FC = () => {
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const deliveriesTerm = getTerm(TERMINOLOGY_KEYS.DELIVERIES);
 	const {
 		canUpdatePortfolioData,
 		updatePortfolioDataTooltip,
@@ -96,10 +104,15 @@ const PortfolioDetail: React.FC = () => {
 
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
-		newView: "forecast" | "metrics",
+		newView: "forecast" | "metrics" | "deliveries",
 	) => {
 		setActiveView(newView);
-		const tabPath = newView === "forecast" ? "forecasts" : newView;
+		const tabPath =
+			newView === "forecast"
+				? "forecasts"
+				: newView === "deliveries"
+					? "deliveries"
+					: newView;
 		navigate(`/portfolios/${id}/${tabPath}`, { replace: true });
 	};
 
@@ -203,6 +216,7 @@ const PortfolioDetail: React.FC = () => {
 										aria-label="portfolio view tabs"
 									>
 										<Tab label="Forecasts" value="forecast" />
+										<Tab label={deliveriesTerm} value="deliveries" />
 										<Tab label="Metrics" value="metrics" />
 									</Tabs>
 								}
@@ -244,6 +258,10 @@ const PortfolioDetail: React.FC = () => {
 									involvedTeams={involvedTeams}
 									onTeamSettingsChange={onTeamSettingsChange}
 								/>
+							)}
+
+							{activeView === "deliveries" && portfolio && (
+								<PortfolioDeliveryView project={portfolio} />
 							)}
 
 							{activeView === "metrics" && portfolio && (
