@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -33,12 +34,10 @@ namespace Lighthouse.Backend.API
         [HttpPost("portfolio/{portfolioId}")]
         public async Task<IActionResult> CreateDelivery(
             int portfolioId, 
-            string name, 
-            DateTime date, 
-            List<int> featureIds)
+            [FromBody] CreateDeliveryRequest request)
         {
             // Validate date is in future
-            if (date <= DateTime.UtcNow)
+            if (request.Date <= DateTime.UtcNow)
             {
                 return BadRequest("Delivery date must be in the future");
             }
@@ -56,10 +55,10 @@ namespace Lighthouse.Backend.API
             try
             {
                 // Create delivery
-                var delivery = new Delivery(name, date, portfolioId);
+                var delivery = new Delivery(request.Name, request.Date, portfolioId);
 
                 // Add features to delivery
-                foreach (var featureId in featureIds)
+                foreach (var featureId in request.FeatureIds)
                 {
                     var feature = featureRepository.GetById(featureId);
                     if (feature != null)

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -40,7 +41,13 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
 
             // Act
-            var result = await controller.CreateDelivery(portfolioId, name, date, featureIds);
+            var request = new CreateDeliveryRequest
+            {
+                Name = name,
+                Date = date,
+                FeatureIds = featureIds
+            };
+            var result = await controller.CreateDelivery(portfolioId, request);
 
             // Assert
             Assert.That(result, Is.InstanceOf<OkResult>());
@@ -62,7 +69,13 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
 
             // Act
-            var result = await controller.CreateDelivery(portfolioId, name, pastDate, featureIds);
+            var request = new CreateDeliveryRequest
+            {
+                Name = name,
+                Date = pastDate,
+                FeatureIds = featureIds
+            };
+            var result = await controller.CreateDelivery(portfolioId, request);
 
             // Assert
             Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
@@ -86,7 +99,13 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
 
             // Act
-            var result = await controller.CreateDelivery(portfolioId, name, date, featureIds);
+            var request = new CreateDeliveryRequest
+            {
+                Name = name,
+                Date = date,
+                FeatureIds = featureIds
+            };
+            var result = await controller.CreateDelivery(portfolioId, request);
 
             // Assert
             Assert.That(result, Is.InstanceOf<ObjectResult>());
@@ -111,7 +130,13 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
 
             // Act
-            var result = await controller.CreateDelivery(portfolioId, name, date, featureIds);
+            var request = new CreateDeliveryRequest
+            {
+                Name = name,
+                Date = date,
+                FeatureIds = featureIds
+            };
+            var result = await controller.CreateDelivery(portfolioId, request);
 
             // Assert
             Assert.That(result, Is.InstanceOf<OkResult>());
