@@ -78,5 +78,20 @@ namespace Lighthouse.Backend.API
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpDelete("{deliveryId}")]
+        public async Task<IActionResult> DeleteDelivery(int deliveryId)
+        {
+            var delivery = deliveryRepository.GetById(deliveryId);
+            if (delivery == null)
+            {
+                return NotFound();
+            }
+
+            deliveryRepository.Remove(deliveryId);
+            await deliveryRepository.Save();
+
+            return NoContent();
+        }
     }
 }
