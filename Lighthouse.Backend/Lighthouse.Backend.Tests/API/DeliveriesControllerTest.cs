@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -27,6 +28,59 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock = new Mock<ILicenseService>();
             
             portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Portfolio());
+        }
+
+        [Test]
+        public void GetByPortfolio_WithForecastedFeatures_ReturnsDeliveriesWithLikelihood()
+        {
+            // Arrange
+            var portfolioId = 1;
+            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            
+            // Create feature with 80% likelihood forecast
+            var simulationResult = new Dictionary<int, int>
+            {
+                { 10, 20 },
+                { 20, 30 },
+                { 30, 30 }, // Total: 80 out of 100 = 80%
+                { 40, 20 }
+            };
+            var forecast = new WhenForecast();
+            forecast.GetType()
+                .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+                .Invoke(forecast, new object[] { simulationResult });
+            
+            var feature = new Feature();
+            feature.Forecasts.Add(forecast);
+            
+            var delivery = new Delivery
+            {
+                Id = 1,
+                Name = "Q1 Release",
+                Date = deliveryDate
+            };
+            delivery.Features.Add(feature);
+            
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
+                .Returns(new[] { delivery });
+            
+            var controller = CreateSubject();
+            
+            // Act
+            var result = controller.GetByPortfolio(portfolioId);
+            
+            // Assert
+            Assert.That(result, Is.InstanceOf<OkObjectResult>());
+            var okResult = result as OkObjectResult;
+            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto>;
+            
+            Assert.That(deliveries, Is.Not.Null);
+            Assert.That(deliveries.Count(), Is.EqualTo(1));
+            
+            var deliveryDto = deliveries.First();
+            Assert.That(deliveryDto.Id, Is.EqualTo(1));
+            Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
+            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(80.0));
         }
 
         [Test]
@@ -214,7 +268,12 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = (OkObjectResult)result;
-            Assert.That(okResult.Value, Is.EqualTo(expectedDeliveries));
+            var deliveryDtos = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto>;
+            
+            Assert.That(deliveryDtos, Is.Not.Null);
+            Assert.That(deliveryDtos.Count(), Is.EqualTo(2));
+            Assert.That(deliveryDtos.First().Name, Is.EqualTo("Q1 Release"));
+            Assert.That(deliveryDtos.Last().Name, Is.EqualTo("Q2 Release"));
         }
 
         private Delivery GetTestDelivery()
