@@ -5,6 +5,8 @@ import { useMemo } from "react";
 import DataGridBase from "../../../../../components/Common/DataGrid/DataGridBase";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
 import type { Delivery } from "../../../../../models/Delivery";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
+import { useTerminology } from "../../../../../services/TerminologyContext";
 import { hexToRgba } from "../../../../../utils/theme/colors";
 
 interface DeliveryGridProps {
@@ -19,6 +21,8 @@ export const DeliveryGrid: React.FC<DeliveryGridProps> = ({
 	onDelete,
 }) => {
 	const theme = useTheme();
+	const { getTerm } = useTerminology();
+	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 
 	// Filter out past deliveries and sort by date (soonest first)
 	const filteredDeliveries = useMemo(() => {
@@ -33,7 +37,7 @@ export const DeliveryGrid: React.FC<DeliveryGridProps> = ({
 		() => [
 			{
 				field: "name",
-				headerName: "Delivery",
+				headerName: deliveryTerm,
 				flex: 1,
 				minWidth: 200,
 			},
@@ -94,7 +98,7 @@ export const DeliveryGrid: React.FC<DeliveryGridProps> = ({
 				),
 			},
 		],
-		[theme, onDelete],
+		[theme, onDelete, deliveryTerm],
 	);
 
 	return (

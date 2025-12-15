@@ -7,7 +7,7 @@ import DeliverySection from "./DeliverySection";
 // Mock dependencies
 vi.mock("../../../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) => key === 'feature' ? 'Feature' : key,
+		getTerm: (key: string) => (key === "feature" ? "Feature" : key),
 	}),
 }));
 
@@ -63,6 +63,8 @@ describe("DeliverySection", () => {
 
 		render(<DeliverySection {...emptyProps} />);
 
-		expect(screen.getByText("No features in this delivery.")).toBeInTheDocument();
+		expect(
+			screen.getByText("No Features in this delivery."),
+		).toBeInTheDocument();
 	});
 });

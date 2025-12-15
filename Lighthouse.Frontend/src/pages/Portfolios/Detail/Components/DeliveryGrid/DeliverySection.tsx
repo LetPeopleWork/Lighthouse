@@ -44,6 +44,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 
 	// Define feature grid columns (adapted from PortfolioFeatureList)
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
@@ -241,7 +242,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							</Typography>
 						) : features.length === 0 ? (
 							<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-								No features in this delivery.
+								No {featureTerm}s in this {deliveryTerm.toLowerCase()}.
 							</Typography>
 						) : (
 							<DataGridBase
