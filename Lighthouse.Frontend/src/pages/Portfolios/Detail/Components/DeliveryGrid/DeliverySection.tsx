@@ -94,14 +94,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				),
 			},
 			{
-				field: "deadline",
-				headerName: "Deadline",
-				width: 120,
-				renderCell: () => (
-					<Typography variant="body2">{delivery.getFormattedDate()}</Typography>
-				),
-			},
-			{
 				field: "forecast",
 				headerName: "Forecast",
 				width: 150,

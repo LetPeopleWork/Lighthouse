@@ -28,19 +28,22 @@ describe("DeliveryService", () => {
 					name: "Q1 Release",
 					date: "2025-03-15T10:00:00Z",
 					portfolioId,
-					features: [
-						{ id: 1, name: "Feature 1" },
-						{ id: 2, name: "Feature 2" },
-					],
+					features: [1, 2], // Feature IDs
 					likelihoodPercentage: 75.5,
+					progress: 60.0,
+					remainingWork: 8,
+					totalWork: 20,
 				},
 				{
 					id: 2,
 					name: "Q2 Release",
 					date: "2025-06-15T10:00:00Z",
 					portfolioId,
-					features: [{ id: 3, name: "Feature 3" }],
+					features: [3], // Feature IDs
 					likelihoodPercentage: 60.0,
+					progress: 30.0,
+					remainingWork: 14,
+					totalWork: 20,
 				},
 			];
 

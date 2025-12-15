@@ -3,8 +3,11 @@ export interface IDelivery {
 	name: string;
 	date: string; // ISO date string from backend
 	portfolioId: number;
-	features: { id: number; name: string }[]; // Simplified feature reference
+	features: number[]; // Feature IDs - details fetched separately via FeatureService
 	likelihoodPercentage: number; // Probability of delivery completion on time
+	progress: number; // Completion percentage
+	remainingWork: number; // Remaining work items
+	totalWork: number; // Total work items
 }
 
 export class Delivery implements IDelivery {
@@ -12,8 +15,11 @@ export class Delivery implements IDelivery {
 	name!: string;
 	date!: string;
 	portfolioId!: number;
-	features!: { id: number; name: string }[];
+	features!: number[];
 	likelihoodPercentage!: number;
+	progress!: number;
+	remainingWork!: number;
+	totalWork!: number;
 
 	static fromBackend(data: IDelivery): Delivery {
 		const delivery = new Delivery();
@@ -23,6 +29,9 @@ export class Delivery implements IDelivery {
 		delivery.portfolioId = data.portfolioId;
 		delivery.features = data.features || [];
 		delivery.likelihoodPercentage = data.likelihoodPercentage;
+		delivery.progress = data.progress || 0;
+		delivery.remainingWork = data.remainingWork || 0;
+		delivery.totalWork = data.totalWork || 0;
 		return delivery;
 	}
 

@@ -52,7 +52,8 @@ export const useDeliveryManagement = ({
 			setLoadingFeaturesByDelivery((prev) => new Set(prev).add(delivery.id));
 
 			try {
-				const featureIds = delivery.features.map((f) => f.id);
+				// delivery.features is now an array of feature IDs
+				const featureIds = delivery.features;
 				const features = await featureService.getFeaturesByIds(featureIds);
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
 			} catch (_error) {

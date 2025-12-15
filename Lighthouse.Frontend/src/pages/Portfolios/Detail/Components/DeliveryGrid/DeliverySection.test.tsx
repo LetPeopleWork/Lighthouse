@@ -16,8 +16,11 @@ describe("DeliverySection", () => {
 	mockDelivery.id = 1;
 	mockDelivery.name = "Test Delivery";
 	mockDelivery.date = new Date("2025-01-31").toISOString();
-	mockDelivery.features = [{ id: 1, name: "Test Feature" }];
+	mockDelivery.features = [1]; // Feature IDs
 	mockDelivery.likelihoodPercentage = 75;
+	mockDelivery.progress = 60;
+	mockDelivery.remainingWork = 4;
+	mockDelivery.totalWork = 10;
 
 	const mockFeature = new Feature();
 	mockFeature.id = 1;
