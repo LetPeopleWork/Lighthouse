@@ -33,6 +33,7 @@ using System.Globalization;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
+using Microsoft.Data.Sqlite;
 
 namespace Lighthouse.Backend
 {
@@ -299,7 +300,6 @@ namespace Lighthouse.Backend
             builder.Services.AddDbContext<LighthouseAppContext>((provider, options) =>
             {
                 var dbConfig = provider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
-
                 switch (dbConfig.Provider.ToLower())
                 {
                     case "postgresql":
@@ -309,14 +309,41 @@ namespace Lighthouse.Backend
                             {
                                 npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                                 npgsql.MigrationsAssembly("Lighthouse.Migrations.Postgres");
+                                npgsql.EnableRetryOnFailure(
+                                    maxRetryCount: 3,
+                                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                                    errorCodesToAdd: null);
+                                npgsql.CommandTimeout(30);
                             });
+
+                        // Log slow queries in development
+                        if (builder.Environment.IsDevelopment())
+                        {
+                            options.EnableSensitiveDataLogging();
+                            options.EnableDetailedErrors();
+                        }
                         break;
                     case "sqlite":
-                        options.UseSqlite(dbConfig.ConnectionString,
-                            options =>
+                        // Create and configure SQLite connection with WAL mode
+                        var connection = new SqliteConnection(dbConfig.ConnectionString);
+                        connection.Open();
+
+                        // Enable WAL mode and other optimizations
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = @"
+                    PRAGMA journal_mode=WAL;
+                    PRAGMA busy_timeout=10000;
+                    PRAGMA synchronous=NORMAL;
+                ";
+                            command.ExecuteNonQuery();
+                        }
+
+                        options.UseSqlite(connection,
+                            sqliteOptions =>
                             {
-                                options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                                options.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
+                                sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                                sqliteOptions.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
                             });
                         break;
                     default:
