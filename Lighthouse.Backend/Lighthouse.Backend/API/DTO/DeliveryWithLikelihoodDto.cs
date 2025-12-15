@@ -7,18 +7,29 @@ namespace Lighthouse.Backend.API.DTO
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public DateTime Date { get; set; }
+        public int PortfolioId { get; set; }
         public double LikelihoodPercentage { get; set; }
+        public double Progress { get; set; }
+        public int RemainingWork { get; set; }
+        public int TotalWork { get; set; }
+        public List<int> Features { get; set; } = new List<int>();
 
         public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery)
         {
             var likelihoodPercentage = CalculateDeliveryLikelihood(delivery);
+            var (progress, remainingWork, totalWork) = CalculateDeliveryWork(delivery);
 
             return new DeliveryWithLikelihoodDto
             {
                 Id = delivery.Id,
                 Name = delivery.Name,
                 Date = delivery.Date,
-                LikelihoodPercentage = likelihoodPercentage
+                PortfolioId = delivery.PortfolioId,
+                LikelihoodPercentage = likelihoodPercentage,
+                Progress = progress,
+                RemainingWork = remainingWork,
+                TotalWork = totalWork,
+                Features = delivery.Features.Select(f => f.Id).ToList()
             };
         }
 
@@ -46,6 +57,25 @@ namespace Lighthouse.Backend.API.DTO
 
             // Return the minimum likelihood (most conservative estimate)
             return featureLikelihoods.Min();
+        }
+
+        private static (double progress, int remainingWork, int totalWork) CalculateDeliveryWork(Delivery delivery)
+        {
+            var totalWork = 0;
+            var remainingWork = 0;
+
+            foreach (var feature in delivery.Features)
+            {
+                foreach (var featureWork in feature.FeatureWork)
+                {
+                    totalWork += featureWork.TotalWorkItems;
+                    remainingWork += featureWork.RemainingWorkItems;
+                }
+            }
+
+            var progress = totalWork == 0 ? 0.0 : Math.Round((double)(totalWork - remainingWork) / totalWork * 100.0, 2);
+            
+            return (progress, remainingWork, totalWork);
         }
     }
 }

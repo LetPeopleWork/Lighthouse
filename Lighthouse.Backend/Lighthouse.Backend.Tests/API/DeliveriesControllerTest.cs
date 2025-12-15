@@ -247,6 +247,74 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetByPortfolio_WithFeaturesAndWork_ReturnsDeliveriesWithProgressAndFeatures()
+        {
+            // Arrange
+            var portfolioId = 1;
+            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            
+            // Create team and feature work
+            var team = new Team { Id = 1, Name = "Test Team" };
+            
+            // Create feature with forecast and work
+            var simulationResult = new Dictionary<int, int>
+            {
+                { 10, 20 },
+                { 20, 30 },
+                { 30, 30 }, // Total: 80 out of 100 = 80%
+                { 40, 20 }
+            };
+            var forecast = new WhenForecast();
+            forecast.GetType()
+                .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+                .Invoke(forecast, new object[] { simulationResult });
+            
+            var feature = new Feature
+            {
+                Id = 1,
+                Name = "Test Feature"
+            };
+            feature.Forecasts.Add(forecast);
+            
+            var featureWork = new FeatureWork(team, 20, 100, feature); // 80% progress (80/100 completed)
+            feature.FeatureWork.Add(featureWork);
+            
+            var delivery = new Delivery("Q1 Release", deliveryDate, portfolioId)
+            {
+                Id = 1
+            };
+            delivery.Features.Add(feature);
+            
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
+                .Returns(new[] { delivery });
+            
+            var controller = CreateSubject();
+
+            // Act
+            var result = controller.GetByPortfolio(portfolioId);
+
+            // Assert
+            Assert.That(result, Is.InstanceOf<OkObjectResult>());
+            var okResult = result as OkObjectResult;
+            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto>;
+            
+            Assert.That(deliveries, Is.Not.Null);
+            Assert.That(deliveries.Count(), Is.EqualTo(1));
+            
+            var deliveryDto = deliveries.First();
+            Assert.That(deliveryDto.Id, Is.EqualTo(1));
+            Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
+            Assert.That(deliveryDto.PortfolioId, Is.EqualTo(portfolioId));
+            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(80.0));
+            Assert.That(deliveryDto.Progress, Is.EqualTo(80.0)); // (100-20)/100 * 100 = 80%
+            Assert.That(deliveryDto.RemainingWork, Is.EqualTo(20));
+            Assert.That(deliveryDto.TotalWork, Is.EqualTo(100));
+            Assert.That(deliveryDto.Features, Is.Not.Null);
+            Assert.That(deliveryDto.Features.Count, Is.EqualTo(1));
+            Assert.That(deliveryDto.Features.First(), Is.EqualTo(1)); // Feature ID
+        }
+
+        [Test]
         public void GetByPortfolio_ValidPortfolioId_ReturnsDeliveries()
         {
             // Arrange

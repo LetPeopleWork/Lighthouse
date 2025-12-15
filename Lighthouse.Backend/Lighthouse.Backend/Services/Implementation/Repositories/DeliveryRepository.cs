@@ -37,7 +37,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         {
             return Context.Deliveries
                     .Include(d => d.Portfolio)
-                    .Include(d => d.Features);
+                    .Include(d => d.Features).ThenInclude(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
+                    .Include(d => d.Features).ThenInclude(f => f.FeatureWork).ThenInclude(fw => fw.Team);
         }
     }
 }
