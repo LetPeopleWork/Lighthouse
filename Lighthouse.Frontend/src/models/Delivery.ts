@@ -4,6 +4,7 @@ export interface IDelivery {
 	date: string; // ISO date string from backend
 	portfolioId: number;
 	features: { id: number; name: string }[]; // Simplified feature reference
+	likelihoodPercentage: number; // Probability of delivery completion on time
 }
 
 export class Delivery implements IDelivery {
@@ -12,6 +13,7 @@ export class Delivery implements IDelivery {
 	date!: string;
 	portfolioId!: number;
 	features!: { id: number; name: string }[];
+	likelihoodPercentage!: number;
 
 	static fromBackend(data: IDelivery): Delivery {
 		const delivery = new Delivery();
@@ -20,6 +22,7 @@ export class Delivery implements IDelivery {
 		delivery.date = data.date;
 		delivery.portfolioId = data.portfolioId;
 		delivery.features = data.features || [];
+		delivery.likelihoodPercentage = data.likelihoodPercentage;
 		return delivery;
 	}
 
@@ -29,5 +32,12 @@ export class Delivery implements IDelivery {
 
 	getFeatureCount(): number {
 		return this.features.length;
+	}
+
+	getLikelihoodLevel(): "risky" | "realistic" | "likely" | "certain" {
+		if (this.likelihoodPercentage < 50) return "risky";
+		if (this.likelihoodPercentage < 70) return "realistic";
+		if (this.likelihoodPercentage < 85) return "likely";
+		return "certain";
 	}
 }

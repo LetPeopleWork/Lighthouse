@@ -19,7 +19,7 @@ describe("DeliveryService", () => {
 	});
 
 	describe("getByPortfolio", () => {
-		it("should return deliveries for a portfolio", async () => {
+		it("should return deliveries with likelihood percentage", async () => {
 			// Arrange
 			const portfolioId = 1;
 			const mockDeliveries: IDelivery[] = [
@@ -28,15 +28,22 @@ describe("DeliveryService", () => {
 					name: "Q1 Release",
 					date: "2025-03-15T10:00:00Z",
 					portfolioId,
-					features: [{ id: 1, name: "Feature 1" }],
+					features: [
+						{ id: 1, name: "Feature 1" },
+						{ id: 2, name: "Feature 2" }
+					],
+					likelihoodPercentage: 75.5
 				},
 				{
 					id: 2,
-					name: "Q2 Release",
+					name: "Q2 Release", 
 					date: "2025-06-15T10:00:00Z",
 					portfolioId,
-					features: [{ id: 2, name: "Feature 2" }],
-				},
+					features: [
+						{ id: 3, name: "Feature 3" }
+					],
+					likelihoodPercentage: 60.0
+				}
 			];
 
 			mockedAxios.get.mockResolvedValue({
@@ -52,7 +59,9 @@ describe("DeliveryService", () => {
 			);
 			expect(result).toHaveLength(2);
 			expect(result[0].name).toBe("Q1 Release");
+			expect(result[0].likelihoodPercentage).toBe(75.5);
 			expect(result[1].name).toBe("Q2 Release");
+			expect(result[1].likelihoodPercentage).toBe(60.0);
 		});
 	});
 
