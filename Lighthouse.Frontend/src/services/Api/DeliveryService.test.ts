@@ -30,20 +30,18 @@ describe("DeliveryService", () => {
 					portfolioId,
 					features: [
 						{ id: 1, name: "Feature 1" },
-						{ id: 2, name: "Feature 2" }
+						{ id: 2, name: "Feature 2" },
 					],
-					likelihoodPercentage: 75.5
+					likelihoodPercentage: 75.5,
 				},
 				{
 					id: 2,
-					name: "Q2 Release", 
+					name: "Q2 Release",
 					date: "2025-06-15T10:00:00Z",
 					portfolioId,
-					features: [
-						{ id: 3, name: "Feature 3" }
-					],
-					likelihoodPercentage: 60.0
-				}
+					features: [{ id: 3, name: "Feature 3" }],
+					likelihoodPercentage: 60.0,
+				},
 			];
 
 			mockedAxios.get.mockResolvedValue({
