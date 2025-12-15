@@ -267,12 +267,9 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 		// Verify team can be updated (basic validation that it works with CSV)
 		await expect(teamInfoPage.updateTeamDataButton).toBeEnabled();
 
-		// Check that features can be toggled (indicating features are present)
-		await teamInfoPage.toggleFeatures();
-		await teamInfoPage.page.waitForTimeout(1000);
-
-		// Toggle back to show features
-		await teamInfoPage.toggleFeatures();
+		// Check if we have features
+		const numberOfFeatures = await teamInfoPage.getNumberOfFeatures();
+		expect(numberOfFeatures).toBeGreaterThan(0);
 	});
 
 	// Cleanup step - ensure CSV files are deleted

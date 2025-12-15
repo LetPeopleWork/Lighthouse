@@ -228,8 +228,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var csv = new CsvReader(new StringReader(owner.WorkItemQuery), csvConfig);
 
             var dateFormat = GetAdditionalDateTimeFormat(owner.WorkTrackingSystemConnection);
-            var options = csv.Context.TypeConverterOptionsCache.GetOptions<DateTime?>();
-            options.Formats = [dateFormat];
+
+            var formats = string.IsNullOrWhiteSpace(dateFormat)
+                ? ["yyyy-MM-dd"]
+                : new[] { dateFormat, "yyyy-MM-dd" };
+
+            csv.Context.TypeConverterOptionsCache.GetOptions<DateTime>().Formats = formats;
+            csv.Context.TypeConverterOptionsCache.GetOptions<DateTime?>().Formats = formats;
 
             csv.Read();
             csv.ReadHeader();
