@@ -140,55 +140,75 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 
 	return (
 		<Paper elevation={1} sx={{ mb: 2 }}>
-			<Accordion
-				expanded={isExpanded}
-				onChange={() => onToggleExpanded(delivery.id)}
-				slotProps={{
-					transition: {
-						unmountOnExit: false, // Keep content mounted for better performance
-					},
-				}}
-			>
-				<AccordionSummary
-					expandIcon={<ExpandMoreIcon />}
+			<Box sx={{ position: "relative" }}>
+				<IconButton
+					size="small"
+					onClick={(e) => {
+						e.stopPropagation();
+						onDelete(delivery);
+					}}
+					aria-label="delete"
 					sx={{
-						minHeight: 64,
-						"&.Mui-expanded": {
-							minHeight: 64,
-						},
-						"& .MuiAccordionSummary-content": {
-							alignItems: "center",
-							margin: "12px 0",
-							"&.Mui-expanded": {
-								margin: "12px 0",
-							},
+						position: "absolute",
+						top: 8,
+						right: 8,
+						zIndex: 1,
+						bgcolor: "background.paper",
+						"&:hover": {
+							bgcolor: "error.light",
 						},
 					}}
 				>
-					<Box
+					<DeleteIcon />
+				</IconButton>
+				<Accordion
+					expanded={isExpanded}
+					onChange={() => onToggleExpanded(delivery.id)}
+					slotProps={{
+						transition: {
+							unmountOnExit: false, // Keep content mounted for better performance
+						},
+					}}
+				>
+					<AccordionSummary
+						expandIcon={<ExpandMoreIcon />}
 						sx={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							width: "100%",
-							pr: 2,
+							minHeight: 64,
+							"&.Mui-expanded": {
+								minHeight: 64,
+							},
+							"& .MuiAccordionSummary-content": {
+								alignItems: "center",
+								margin: "12px 0",
+								"&.Mui-expanded": {
+									margin: "12px 0",
+								},
+							},
+							pr: 8, // Add padding right for the delete button
 						}}
 					>
-						<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-							<Typography variant="h6" component="h3">
-								{delivery.name}
-							</Typography>
-							<Chip
-								label={delivery.getFormattedDate()}
-								size="small"
-								variant="outlined"
-							/>
-							<Chip
-								label={`${delivery.getFeatureCount()} ${featureTerm}${delivery.getFeatureCount() !== 1 ? "s" : ""}`}
-								size="small"
-							/>
-						</Box>
-						<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								width: "100%",
+							}}
+						>
+							<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+								<Typography variant="h6" component="h3">
+									{delivery.name}
+								</Typography>
+								<Chip
+									label={delivery.getFormattedDate()}
+									size="small"
+									variant="outlined"
+								/>
+								<Chip
+									label={`${delivery.getFeatureCount()} ${featureTerm}${delivery.getFeatureCount() !== 1 ? "s" : ""}`}
+									size="small"
+								/>
+							</Box>
 							<Box
 								sx={{
 									minWidth: 80,
@@ -221,41 +241,39 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									{delivery.likelihoodPercentage}%
 								</Typography>
 							</Box>
-							<IconButton
-								size="small"
-								onClick={(e) => {
-									e.stopPropagation();
-									onDelete(delivery);
-								}}
-								aria-label="delete"
-							>
-								<DeleteIcon />
-							</IconButton>
 						</Box>
-					</Box>
-				</AccordionSummary>
-				<AccordionDetails sx={{ p: 0 }}>
-					<Box sx={{ px: 2, pb: 2 }}>
-						{isLoadingFeatures ? (
-							<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-								Loading features...
-							</Typography>
-						) : features.length === 0 ? (
-							<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-								No {featureTerm}s in this {deliveryTerm.toLowerCase()}.
-							</Typography>
-						) : (
-							<DataGridBase
-								rows={features as (IFeature & GridValidRowModel)[]}
-								columns={columns}
-								storageKey={`delivery-features-${delivery.id}`}
-								loading={false}
-								emptyStateMessage={`No ${featureTerm}s found`}
-							/>
-						)}
-					</Box>
-				</AccordionDetails>
-			</Accordion>
+					</AccordionSummary>
+					<AccordionDetails sx={{ p: 0 }}>
+						<Box sx={{ px: 2, pb: 2 }}>
+							{isLoadingFeatures ? (
+								<Typography
+									variant="body2"
+									color="text.secondary"
+									sx={{ p: 2 }}
+								>
+									Loading features...
+								</Typography>
+							) : features.length === 0 ? (
+								<Typography
+									variant="body2"
+									color="text.secondary"
+									sx={{ p: 2 }}
+								>
+									No {featureTerm}s in this {deliveryTerm.toLowerCase()}.
+								</Typography>
+							) : (
+								<DataGridBase
+									rows={features as (IFeature & GridValidRowModel)[]}
+									columns={columns}
+									storageKey={`delivery-features-${delivery.id}`}
+									loading={false}
+									emptyStateMessage={`No ${featureTerm}s found`}
+								/>
+							)}
+						</Box>
+					</AccordionDetails>
+				</Accordion>
+			</Box>
 		</Paper>
 	);
 };

@@ -266,7 +266,7 @@ const PortfolioDetail: React.FC = () => {
 								)}
 
 								{activeView === "deliveries" && portfolio && (
-									<PortfolioDeliveryView project={portfolio} />
+									<PortfolioDeliveryView portfolio={portfolio} />
 								)}
 
 								{activeView === "metrics" && portfolio && (

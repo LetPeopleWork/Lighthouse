@@ -95,8 +95,23 @@ export const useDeliveryManagement = ({
 		setSelectedDelivery(delivery);
 	};
 
-	const onDeliveryUpdate = () => {
-		fetchDeliveries();
+	const handleCreateDelivery = async (deliveryData: {
+		name: string;
+		date: string;
+		featureIds: number[];
+	}) => {
+		try {
+			await deliveryService.create(
+				portfolio.id,
+				deliveryData.name,
+				new Date(deliveryData.date),
+				deliveryData.featureIds,
+			);
+			setShowCreateModal(false);
+			await fetchDeliveries();
+		} catch (_error) {
+			showError("Failed to create delivery");
+		}
 	};
 
 	const handleDeleteConfirmation = async (confirmed: boolean) => {
@@ -177,7 +192,7 @@ export const useDeliveryManagement = ({
 		handleDeleteConfirmation,
 		handleCloseCreateModal,
 		handleCloseEditModal,
-		onDeliveryUpdate,
+		handleCreateDelivery,
 		// New expansion action
 		handleToggleExpanded,
 	};

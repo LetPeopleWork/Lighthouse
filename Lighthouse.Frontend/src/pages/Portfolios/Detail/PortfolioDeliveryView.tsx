@@ -9,30 +9,27 @@ import {
 import DeliverySection from "./Components/DeliveryGrid/DeliverySection";
 
 interface PortfolioDeliveryViewProps {
-	project: Portfolio;
+	portfolio: Portfolio;
 }
 
 const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
-	project,
+	portfolio,
 }) => {
 	const {
 		deliveries,
 		showCreateModal,
-		selectedDelivery,
 		deleteDialogOpen,
 		deliveryToDelete,
 		handleAddDelivery,
 		handleDeleteDelivery,
 		handleDeleteConfirmation,
 		handleCloseCreateModal,
-		handleCloseEditModal,
-		onDeliveryUpdate,
-		// New expansion state
+		handleCreateDelivery,
 		expandedDeliveries,
 		loadedFeatures,
 		loadingFeaturesByDelivery,
 		handleToggleExpanded,
-	} = useDeliveryManagement({ portfolio: project });
+	} = useDeliveryManagement({ portfolio });
 
 	return (
 		<Box>
@@ -60,14 +57,12 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 			</Box>
 
 			<DeliveryModals
-				portfolio={project}
+				portfolio={portfolio}
 				showCreateModal={showCreateModal}
-				selectedDelivery={selectedDelivery}
 				deliveryToDelete={deliveryToDelete}
 				deleteDialogOpen={deleteDialogOpen}
 				onCloseCreateModal={handleCloseCreateModal}
-				onCloseEditModal={handleCloseEditModal}
-				onDeliveryUpdate={onDeliveryUpdate}
+				onCreateDelivery={handleCreateDelivery}
 				onDeleteConfirmation={handleDeleteConfirmation}
 			/>
 		</Box>
