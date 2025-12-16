@@ -1,3 +1,8 @@
+export interface IFeatureLikelihood {
+	featureId: number;
+	likelihoodPercentage: number;
+}
+
 export interface IDelivery {
 	id: number;
 	name: string;
@@ -8,6 +13,7 @@ export interface IDelivery {
 	progress: number; // Completion percentage
 	remainingWork: number; // Remaining work items
 	totalWork: number; // Total work items
+	featureLikelihoods: IFeatureLikelihood[]; // Individual feature likelihoods
 }
 
 export class Delivery implements IDelivery {
@@ -20,6 +26,7 @@ export class Delivery implements IDelivery {
 	progress!: number;
 	remainingWork!: number;
 	totalWork!: number;
+	featureLikelihoods!: IFeatureLikelihood[];
 
 	static fromBackend(data: IDelivery): Delivery {
 		const delivery = new Delivery();
@@ -32,6 +39,7 @@ export class Delivery implements IDelivery {
 		delivery.progress = data.progress || 0;
 		delivery.remainingWork = data.remainingWork || 0;
 		delivery.totalWork = data.totalWork || 0;
+		delivery.featureLikelihoods = data.featureLikelihoods || [];
 		return delivery;
 	}
 
@@ -48,5 +56,12 @@ export class Delivery implements IDelivery {
 		if (this.likelihoodPercentage < 70) return "realistic";
 		if (this.likelihoodPercentage < 85) return "likely";
 		return "certain";
+	}
+
+	getFeatureLikelihood(featureId: number): number {
+		const featureLikelihood = this.featureLikelihoods.find(
+			(fl) => fl.featureId === featureId,
+		);
+		return featureLikelihood?.likelihoodPercentage ?? 0;
 	}
 }

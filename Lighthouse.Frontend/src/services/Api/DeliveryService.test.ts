@@ -33,6 +33,10 @@ describe("DeliveryService", () => {
 					progress: 60.0,
 					remainingWork: 8,
 					totalWork: 20,
+					featureLikelihoods: [
+						{ featureId: 1, likelihoodPercentage: 80.0 },
+						{ featureId: 2, likelihoodPercentage: 75.5 },
+					],
 				},
 				{
 					id: 2,
@@ -44,6 +48,7 @@ describe("DeliveryService", () => {
 					progress: 30.0,
 					remainingWork: 14,
 					totalWork: 20,
+					featureLikelihoods: [{ featureId: 3, likelihoodPercentage: 60.0 }],
 				},
 			];
 

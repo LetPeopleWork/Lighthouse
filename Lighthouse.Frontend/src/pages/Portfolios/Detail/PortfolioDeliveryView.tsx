@@ -33,7 +33,10 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 
 	return (
 		<Box>
-			<DeliveryHeader onAddDelivery={handleAddDelivery} />
+			<DeliveryHeader
+				onAddDelivery={handleAddDelivery}
+				deliveries={deliveries}
+			/>
 
 			{/* Render delivery sections instead of a grid */}
 			<Box sx={{ mt: 2 }}>
@@ -51,6 +54,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 							isLoadingFeatures={isLoadingFeatures}
 							onToggleExpanded={handleToggleExpanded}
 							onDelete={handleDeleteDelivery}
+							teams={portfolio.involvedTeams}
 						/>
 					);
 				})}

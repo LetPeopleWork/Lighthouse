@@ -9,7 +9,6 @@ import {
 	IconButton,
 	Paper,
 	Typography,
-	useTheme,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
@@ -17,9 +16,12 @@ import { useMemo } from "react";
 import DataGridBase from "../../../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../../../components/Common/DataGrid/types";
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
+import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
 import ForecastLikelihood from "../../../../../components/Common/Forecasts/ForecastLikelihood";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
+import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import type { Delivery } from "../../../../../models/Delivery";
+import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../../services/TerminologyContext";
@@ -31,6 +33,7 @@ interface DeliverySectionProps {
 	isLoadingFeatures: boolean;
 	onToggleExpanded: (deliveryId: number) => void;
 	onDelete: (delivery: Delivery) => void;
+	teams: IEntityReference[];
 }
 
 const DeliverySection: React.FC<DeliverySectionProps> = ({
@@ -40,8 +43,8 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	isLoadingFeatures,
 	onToggleExpanded,
 	onDelete,
+	teams,
 }) => {
-	const theme = useTheme();
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
@@ -69,11 +72,30 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				field: "owningTeam",
 				headerName: "Team",
 				width: 150,
-				renderCell: ({ row }) => (
-					<Typography variant="body2">
-						{row.owningTeam || "Unassigned"}
-					</Typography>
-				),
+				renderCell: ({ row }) => {
+					// Find teams that have work for this feature
+					const teamsWithWork = teams.filter(
+						(team) => row.getTotalWorkForTeam(team.id) > 0,
+					);
+
+					if (teamsWithWork.length === 0) {
+						return (
+							<Typography variant="body2" color="text.secondary">
+								Unassigned
+							</Typography>
+						);
+					}
+
+					return (
+						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+							{teamsWithWork.map((team) => (
+								<StyledLink key={team.id} to={`/teams/${team.id}`}>
+									<Typography variant="body2">{team.name}</Typography>
+								</StyledLink>
+							))}
+						</Box>
+					);
+				},
 			},
 			{
 				field: "progress",
@@ -90,6 +112,24 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							}}
 							showDetails={false}
 						/>
+						{teams
+							.filter((team) => row.getTotalWorkForTeam(team.id) > 0)
+							.map((team) => (
+								<Box key={team.id}>
+									<ProgressIndicator
+										title={
+											<StyledLink to={`/teams/${team.id}`}>
+												{team.name}
+											</StyledLink>
+										}
+										progressableItem={{
+											remainingWork: row.getRemainingWorkForTeam(team.id),
+											totalWork: row.getTotalWorkForTeam(team.id),
+										}}
+										showDetails={false}
+									/>
+								</Box>
+							))}
 					</Box>
 				),
 			},
@@ -127,8 +167,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				},
 			},
 		],
-		[featureTerm, delivery],
+		[featureTerm, delivery, teams],
 	);
+
+	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
 
 	return (
 		<Paper elevation={1} sx={{ mb: 2 }}>
@@ -201,42 +243,55 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									size="small"
 								/>
 							</Box>
-							<Box
+							<Chip
+								label={`${Math.round(delivery.likelihoodPercentage)}%`}
+								size="small"
 								sx={{
-									minWidth: 80,
-									px: 1.5,
-									py: 0.5,
-									borderRadius: 2,
-									bgColor: (() => {
-										const level = delivery.getLikelihoodLevel();
-										switch (level) {
-											case "risky":
-												return theme.palette.error.main;
-											case "realistic":
-												return theme.palette.warning.main;
-											case "likely":
-												return theme.palette.info.main;
-											case "certain":
-												return theme.palette.success.main;
-											default:
-												return theme.palette.grey[500];
-										}
-									})(),
-									color: theme.palette.getContrastText(
-										theme.palette.success.main,
-									),
-									fontWeight: 600,
-									textAlign: "center",
+									bgcolor: forecastLevel.color,
+									color: "#fff",
+									fontWeight: "bold",
 								}}
-							>
-								<Typography variant="body2">
-									{delivery.likelihoodPercentage}%
-								</Typography>
-							</Box>
+							/>
 						</Box>
 					</AccordionSummary>
 					<AccordionDetails sx={{ p: 0 }}>
 						<Box sx={{ px: 2, pb: 2 }}>
+							{/* Feature likelihood chips */}
+							{delivery.featureLikelihoods.length > 0 && (
+								<Box sx={{ mb: 2 }}>
+									<Typography
+										variant="body2"
+										color="text.secondary"
+										sx={{ mb: 1 }}
+									>
+										{featureTerm} Likelihood:
+									</Typography>
+									<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+										{delivery.featureLikelihoods.map((fl) => {
+											const feature = features.find(
+												(f) => f.id === fl.featureId,
+											);
+											const featureForecastLevel = new ForecastLevel(
+												fl.likelihoodPercentage,
+											);
+											return (
+												<Chip
+													key={fl.featureId}
+													label={`${feature?.name || `Feature ${fl.featureId}`}: ${Math.round(fl.likelihoodPercentage)}%`}
+													size="small"
+													sx={{
+														bgcolor: featureForecastLevel.color,
+														color: "#fff",
+														fontWeight: "bold",
+														fontSize: "0.7rem",
+													}}
+												/>
+											);
+										})}
+									</Box>
+								</Box>
+							)}
+
 							{isLoadingFeatures ? (
 								<Typography
 									variant="body2"

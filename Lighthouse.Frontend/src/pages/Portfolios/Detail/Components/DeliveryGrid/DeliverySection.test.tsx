@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
+import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
 import DeliverySection from "./DeliverySection";
 
@@ -21,12 +23,20 @@ describe("DeliverySection", () => {
 	mockDelivery.progress = 60;
 	mockDelivery.remainingWork = 4;
 	mockDelivery.totalWork = 10;
+	mockDelivery.featureLikelihoods = [
+		{ featureId: 1, likelihoodPercentage: 75 },
+	];
 
 	const mockFeature = new Feature();
 	mockFeature.id = 1;
 	mockFeature.name = "Test Feature";
 	mockFeature.remainingWork = { "1": 5 };
 	mockFeature.totalWork = { "1": 10 };
+
+	const mockTeams: IEntityReference[] = [
+		{ id: 1, name: "Team Alpha" },
+		{ id: 2, name: "Team Beta" },
+	];
 
 	const mockProps = {
 		delivery: mockDelivery,
@@ -35,10 +45,15 @@ describe("DeliverySection", () => {
 		isLoadingFeatures: false,
 		onToggleExpanded: vi.fn(),
 		onDelete: vi.fn(),
+		teams: mockTeams,
 	};
 
 	it("should render delivery section with correct information", () => {
-		render(<DeliverySection {...mockProps} />);
+		render(
+			<MemoryRouter>
+				<DeliverySection {...mockProps} />
+			</MemoryRouter>,
+		);
 
 		expect(screen.getByText("Test Delivery")).toBeInTheDocument();
 		expect(screen.getByText("75%")).toBeInTheDocument();
@@ -52,7 +67,11 @@ describe("DeliverySection", () => {
 			isLoadingFeatures: true,
 		};
 
-		render(<DeliverySection {...loadingProps} />);
+		render(
+			<MemoryRouter>
+				<DeliverySection {...loadingProps} />
+			</MemoryRouter>,
+		);
 
 		expect(screen.getByText("Loading features...")).toBeInTheDocument();
 	});
@@ -64,7 +83,11 @@ describe("DeliverySection", () => {
 			isExpanded: true,
 		};
 
-		render(<DeliverySection {...emptyProps} />);
+		render(
+			<MemoryRouter>
+				<DeliverySection {...emptyProps} />
+			</MemoryRouter>,
+		);
 
 		expect(
 			screen.getByText("No Features in this delivery."),
