@@ -2,6 +2,12 @@ using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.API.DTO
 {
+    public class FeatureLikelihoodDto
+    {
+        public int FeatureId { get; set; }
+        public double LikelihoodPercentage { get; set; }
+    }
+
     public class DeliveryWithLikelihoodDto
     {
         public int Id { get; set; }
@@ -13,10 +19,12 @@ namespace Lighthouse.Backend.API.DTO
         public int RemainingWork { get; set; }
         public int TotalWork { get; set; }
         public List<int> Features { get; set; } = new List<int>();
+        public List<FeatureLikelihoodDto> FeatureLikelihoods { get; set; } = new List<FeatureLikelihoodDto>();
 
         public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery)
         {
-            var likelihoodPercentage = CalculateDeliveryLikelihood(delivery);
+            var featureLikelihoods = CalculateFeatureLikelihoods(delivery);
+            var likelihoodPercentage = GetMinimumLikelihood(featureLikelihoods);
             var (progress, remainingWork, totalWork) = CalculateDeliveryWork(delivery);
 
             return new DeliveryWithLikelihoodDto
@@ -29,34 +37,26 @@ namespace Lighthouse.Backend.API.DTO
                 Progress = progress,
                 RemainingWork = remainingWork,
                 TotalWork = totalWork,
-                Features = delivery.Features.Select(f => f.Id).ToList()
+                Features = delivery.Features.Select(f => f.Id).ToList(),
+                FeatureLikelihoods = featureLikelihoods
             };
         }
 
-        private static double CalculateDeliveryLikelihood(Delivery delivery)
+        private static double GetMinimumLikelihood(List<FeatureLikelihoodDto> featureLikelihoods)
         {
-            var daysToTarget = (int)(delivery.Date - DateTime.UtcNow).TotalDays;
-            
-            var featureLikelihoods = new List<double>();
-
-            foreach (var feature in delivery.Features)
-            {
-                var featureForecast = feature.Forecast;
-                if (featureForecast != null && featureForecast.TotalTrials > 0)
-                {
-                    var likelihood = featureForecast.GetLikelihood(daysToTarget);
-                    featureLikelihoods.Add(likelihood);
-                }
-            }
+            var likelihoods = featureLikelihoods
+                .Where(fl => fl.LikelihoodPercentage > 0)
+                .Select(fl => fl.LikelihoodPercentage)
+                .ToList();
 
             // Return 0 if no features have forecasts
-            if (featureLikelihoods.Count == 0)
+            if (likelihoods.Count == 0)
             {
                 return 0.0;
             }
 
             // Return the minimum likelihood (most conservative estimate)
-            return featureLikelihoods.Min();
+            return likelihoods.Min();
         }
 
         private static (double progress, int remainingWork, int totalWork) CalculateDeliveryWork(Delivery delivery)
@@ -76,6 +76,31 @@ namespace Lighthouse.Backend.API.DTO
             var progress = totalWork == 0 ? 0.0 : Math.Round((double)(totalWork - remainingWork) / totalWork * 100.0, 2);
             
             return (progress, remainingWork, totalWork);
+        }
+
+        private static List<FeatureLikelihoodDto> CalculateFeatureLikelihoods(Delivery delivery)
+        {
+            var daysToTarget = (int)(delivery.Date - DateTime.UtcNow).TotalDays;
+            var featureLikelihoods = new List<FeatureLikelihoodDto>();
+
+            foreach (var feature in delivery.Features)
+            {
+                var featureForecast = feature.Forecast;
+                var likelihood = 0.0;
+                
+                if (featureForecast != null && featureForecast.TotalTrials > 0)
+                {
+                    likelihood = featureForecast.GetLikelihood(daysToTarget);
+                }
+
+                featureLikelihoods.Add(new FeatureLikelihoodDto
+                {
+                    FeatureId = feature.Id,
+                    LikelihoodPercentage = likelihood
+                });
+            }
+
+            return featureLikelihoods;
         }
     }
 }
