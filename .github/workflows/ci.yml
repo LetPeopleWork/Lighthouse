@@ -1084,58 +1084,60 @@ jobs:
             }
 
         - name: Run Lighthouse (sqlite)
-          shell: powershell
+          shell: bash
           run: |
-            $env:Database__Provider = "sqlite"
-            $env:Database__ConnectionString = "Data Source=lighthouse.db"
-            
-            Start-Process -FilePath ".\publish\Lighthouse.exe" -RedirectStandardOutput "lighthouse.log" -RedirectStandardError "lighthouse-error.log" -NoNewWindow
+            cd publish
+            ./Lighthouse.exe > lighthouse.log 2>&1 &
+            echo $! > lighthouse.pid
+            echo "Started Lighthouse with PID $(cat lighthouse.pid)"
+          env:
+            Database__Provider: sqlite
+            Database__ConnectionString: "Data Source=lighthouse.db"
 
         - name: Wait for Lighthouse to start
-          shell: powershell
+          shell: bash
           run: |
-            $timeout = 30
-            $elapsed = 0
-            $success = $false
+            timeout=60
+            elapsed=0
             
-            Write-Host "Waiting for service to start..."
-            while ($elapsed -lt $timeout) {
-              try {
-                $response = Invoke-WebRequest -Uri "https://localhost:5001" -SkipCertificateCheck -ErrorAction SilentlyContinue
-                Write-Host "Service is up!"
-                $success = $true
-                break
-              } catch {
-                Start-Sleep -Seconds 1
-                $elapsed++
-              }
-            }
+            echo "Waiting for service to start..."
+            while [ $elapsed -lt $timeout ]; do
+              if curl -k -s -f https://localhost:5001 > /dev/null 2>&1; then
+                echo "Service is up!"
+                exit 0
+              fi
+              
+              # Check if process is still running
+              if [ -f publish/lighthouse.pid ]; then
+                pid=$(cat publish/lighthouse.pid)
+                if ! kill -0 $pid 2>/dev/null; then
+                  echo "Process died unexpectedly!"
+                  cat publish/lighthouse.log
+                  exit 1
+                fi
+              fi
+              
+              sleep 2
+              elapsed=$((elapsed + 2))
+            done
             
-            if (-not $success) {
-              Write-Error "Timeout waiting for service"
-              if (Test-Path ".\publish\lighthouse.log") {
-                Get-Content ".\publish\lighthouse.log"
-              }
-              if (Test-Path ".\publish\lighthouse-error.log") {
-                Get-Content ".\publish\lighthouse-error.log"
-              }
-              exit 1
-            }
+            echo "Timeout waiting for service"
+            cat publish/lighthouse.log
+            exit 1
 
         - name: Stop Lighthouse Server
           if: always()
-          shell: powershell
+          shell: bash
           run: |
-            Get-Process -Name "Lighthouse" -ErrorAction SilentlyContinue | Stop-Process -Force
-            if (Test-Path ".\publish\lighthouse.log") {
-              Write-Host "=== Lighthouse Log ==="
-              Get-Content ".\publish\lighthouse.log"
-            }
-            if (Test-Path ".\publish\lighthouse-error.log") {
-              Write-Host "=== Lighthouse Error Log ==="
-              Get-Content ".\publish\lighthouse-error.log"
-            }
-      
+            if [ -f publish/lighthouse.pid ]; then
+              pid=$(cat publish/lighthouse.pid)
+              echo "Stopping process $pid"
+              kill $pid 2>/dev/null || true
+            fi
+            
+            # Show logs
+            echo "=== Lighthouse Log ==="
+            cat publish/lighthouse.log || true      
   release:
     runs-on: ubuntu-latest
     needs:
