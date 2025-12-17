@@ -1015,7 +1015,7 @@ jobs:
           $thumbprint = $env:CERT_THUMBPRINT
           if (-not $thumbprint) { throw "CERT_THUMBPRINT environment variable is not set" }
 
-          $files = Get-ChildItem -Path ./artifacts/win-x64 -Filter "Lighthouse*.exe","Lighthouse*.dll"
+          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe","Lighthouse*.dll"
           foreach ($file in $files) {
               Write-Host "Signing $file with certificate thumbprint $thumbprint"
               & "signtool.exe" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint $file.FullName
