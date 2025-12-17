@@ -994,7 +994,8 @@ jobs:
     timeout-minutes: 10
     needs:
       - tag
-      - packageapp
+      - verifysqlite
+      - verifypostgres
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
     environment:
       name: CodeSign
@@ -1143,8 +1144,6 @@ jobs:
     needs:
     - tag
     - docker
-    - verifysqlite
-    - verifypostgres
     - verifymacos
     - verifywindows
 
