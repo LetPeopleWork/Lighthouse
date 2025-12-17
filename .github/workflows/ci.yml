@@ -1014,8 +1014,6 @@ jobs:
           sign.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
         env:
           YUBIKEY_PIN: ${{ secrets.YUBIKEY_PIN }}
-          PKCS11_CERT: 'pkcs11:id=%02;type=cert'
-          PKCS11_KEY: 'pkcs11:id=%02;type=private'
 
       - name: Verify signatures
         continue-on-error: true 
