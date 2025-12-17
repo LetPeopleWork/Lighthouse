@@ -989,49 +989,48 @@ jobs:
           cat ./publish/Lighthouse-universal/lighthouse.log || true
 
 
-  # Disabled codesign-windows job until a signing certificate is available
-  #  codesign-windows:
-  #    name: Sign Windows Binaries
-  #    runs-on: [self-hosted, codesign]
-  #    timeout-minutes: 5
-  #    needs:
-  #      - tag
-  #      - packageapp
-  #
-  #    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
-  #
-  #    environment:
-  #      name: CodeSign
-  #
-  #    steps:
-  #      - uses: actions/download-artifact@v4
-  #        with:
-  #          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
-  #          path: ./artifacts/win-x64
-  #
-  #      - name: Sign Windows executables
-  #        run: |
-  #          # Sign both EXE and DLL files in a single invocation
-  #          sign.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
-  #        env:
-  #          YUBIKEY_PIN: ${{ secrets.YUBIKEY_PIN }}
-  #
-  #      - name: Verify signatures
-  #        continue-on-error: true 
-  #        run: |
-  #          # Verify EXE and DLL files in a single invocation
-  #          verify.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
-  #
-  #      - name: Delete unsigned windows artifact
-  #        uses: geekyeggo/delete-artifact@v5
-  #        with:
-  #          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
-  #
-  #      - name: Upload signed windows artifact
-  #        uses: actions/upload-artifact@v4
-  #        with:
-  #          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
-  #          path: ./artifacts/win-x64
+  codesign-windows:
+    name: Sign Windows Binaries
+    runs-on: [self-hosted, codesign]
+    timeout-minutes: 5
+    needs:
+      - tag
+      - packageapp
+
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    environment:
+      name: CodeSign
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+          path: ./artifacts/win-x64
+
+      - name: Sign Windows executables
+        run: |
+          # Sign both EXE and DLL files in a single invocation
+          sign.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
+        env:
+          YUBIKEY_PIN: ${{ secrets.YUBIKEY_PIN }}
+
+      - name: Verify signatures
+        continue-on-error: true 
+        run: |
+          # Verify EXE and DLL files in a single invocation
+          verify.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
+
+      - name: Delete unsigned windows artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+
+      - name: Upload signed windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+          path: ./artifacts/win-x64
       
   release:
     runs-on: ubuntu-latest
@@ -1042,6 +1041,7 @@ jobs:
     - verifypostgres
     - verifymacos
     - codesign-macos
+    - codesign-windows
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
