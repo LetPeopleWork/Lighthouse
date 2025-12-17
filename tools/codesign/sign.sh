@@ -17,8 +17,8 @@ Options:
 
 Environment variables:
   YUBIKEY_PIN       -- required pin for the PKCS#11 token (e.g., YubiKey)
-  PKCS11_CERT       -- pkcs11 uri to certificate (default: pkcs11:id=%01;type=cert)
-  PKCS11_KEY        -- pkcs11 uri to private key (default: pkcs11:id=%01;type=private)
+  PKCS11_CERT       -- pkcs11 uri to certificate (default: pkcs11:id=%02;type=cert)
+  PKCS11_KEY        -- pkcs11 uri to private key (default: pkcs11:id=%02;type=private)
   PKCS11_MODULE     -- path to the opensc PKCS#11 module (auto-detected by default)
   PROVIDER_PATH     -- path to OpenSSL pkcs11 provider (auto-detected)
   TIMESTAMP_URL     -- timestamp authority (default: http://timestamp.digicert.com)
@@ -52,8 +52,8 @@ if [ -z "${YUBIKEY_PIN:-}" ]; then
   exit 2
 fi
 
-PKCS11_CERT=${PKCS11_CERT:-'pkcs11:id=%01;type=cert'}
-PKCS11_KEY=${PKCS11_KEY:-'pkcs11:id=%01;type=private'}
+PKCS11_CERT=${PKCS11_CERT:-'pkcs11:id=%02;type=cert'}
+PKCS11_KEY=${PKCS11_KEY:-'pkcs11:id=%02;type=private'}
 
 PKCS11_MODULE=${PKCS11_MODULE:-$(find /usr/lib -name 'opensc-pkcs11.so' 2>/dev/null | head -n1 || true)}
 PROVIDER_PATH=${PROVIDER_PATH:-$(find /usr/lib -path '*/ossl-modules/pkcs11.so' 2>/dev/null | head -n1 || true)}
@@ -116,7 +116,12 @@ for f in "${FILES[@]}"; do
   elif [ -n "$ENGINE_PATH" ] && [ -n "$PKCS11_MODULE" ] && [ -f "$ENGINE_PATH" ] && [ -f "$PKCS11_MODULE" ]; then
     echo "Using PKCS#11 engine mode: engine=$ENGINE_PATH pkcs11module=$PKCS11_MODULE"
     use_engine=true
-    cmd=(osslsigncode sign -pkcs11engine "$ENGINE_PATH" -pkcs11module "$PKCS11_MODULE" -pkcs11cert "$PKCS11_CERT" -key "$PKCS11_KEY")
+    # For engine mode, also embed PIN in the PKCS#11 URI (same as provider mode)
+    pkcs11_key_with_pin="$PKCS11_KEY"
+    if [ -n "${YUBIKEY_PIN:-}" ]; then
+      pkcs11_key_with_pin="${PKCS11_KEY};pin-value=${YUBIKEY_PIN}"
+    fi
+    cmd=(osslsigncode sign -pkcs11engine "$ENGINE_PATH" -pkcs11module "$PKCS11_MODULE" -pkcs11cert "$PKCS11_CERT" -key "$pkcs11_key_with_pin")
   else
     if [ -n "${PKCS12_FILE:-}" ] && [ -f "$PKCS12_FILE" ]; then
       echo "Provider not available but PKCS12_FILE provided; using PKCS#12: $PKCS12_FILE"
@@ -131,10 +136,8 @@ for f in "${FILES[@]}"; do
   # Common options
   cmd+=( -n "$PRODUCT_NAME" -i "$PRODUCT_URL" -t "$TIMESTAMP_URL" -in "$f" )
 
-  # Supply PIN via engineCtrl only for engine mode (provider mode uses URI)
-  if [ "$use_engine" = true ] && [ -n "${YUBIKEY_PIN:-}" ]; then
-    cmd+=( -pass "${YUBIKEY_PIN}" )
-  fi
+  # Note: PIN is now embedded in the URI for both provider and engine modes
+  # No need for -pass parameter with PKCS#11
 
   # Temporary unique output filename to avoid overwrite errors
   # mktemp creates an empty file, but osslsigncode refuses to overwrite existing files
