@@ -1031,6 +1031,98 @@ jobs:
         with:
           name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
           path: ./artifacts/win-x64
+
+  verifywindows:
+      name: Verify Windows version
+      runs-on: windows-latest
+      needs:
+        - codesign-windows
+        - tag
+
+      if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+      steps:
+        - name: Download signed Windows binary
+          uses: actions/download-artifact@v4
+          with:
+            name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+            path: ./publish
+
+        - name: Verify code signature
+          shell: powershell
+          run: |
+            $binary = ".\publish\Lighthouse.exe"
+            if (-not (Test-Path $binary)) {
+              Write-Error "Error: binary not found at $binary"
+              Get-ChildItem .\publish
+              exit 1
+            }
+
+            Write-Host "Verifying code signature for $binary"
+            $signature = Get-AuthenticodeSignature $binary
+            
+            Write-Host "Signature Status: $($signature.Status)"
+            Write-Host "Signer Certificate Subject: $($signature.SignerCertificate.Subject)"
+            Write-Host "Signer Certificate Issuer: $($signature.SignerCertificate.Issuer)"
+            Write-Host "Timestamp: $($signature.TimeStamperCertificate.NotAfter)"
+            
+            if ($signature.Status -ne "Valid") {
+              Write-Error "Error: Signature status is not Valid"
+              exit 1
+            }
+
+        - name: Run Lighthouse (sqlite)
+          shell: powershell
+          run: |
+            $env:Database__Provider = "sqlite"
+            $env:Database__ConnectionString = "Data Source=lighthouse.db"
+            
+            Start-Process -FilePath ".\publish\Lighthouse.exe" -RedirectStandardOutput "lighthouse.log" -RedirectStandardError "lighthouse-error.log" -NoNewWindow
+
+        - name: Wait for Lighthouse to start
+          shell: powershell
+          run: |
+            $timeout = 30
+            $elapsed = 0
+            $success = $false
+            
+            Write-Host "Waiting for service to start..."
+            while ($elapsed -lt $timeout) {
+              try {
+                $response = Invoke-WebRequest -Uri "https://localhost:5001" -SkipCertificateCheck -ErrorAction SilentlyContinue
+                Write-Host "Service is up!"
+                $success = $true
+                break
+              } catch {
+                Start-Sleep -Seconds 1
+                $elapsed++
+              }
+            }
+            
+            if (-not $success) {
+              Write-Error "Timeout waiting for service"
+              if (Test-Path ".\publish\lighthouse.log") {
+                Get-Content ".\publish\lighthouse.log"
+              }
+              if (Test-Path ".\publish\lighthouse-error.log") {
+                Get-Content ".\publish\lighthouse-error.log"
+              }
+              exit 1
+            }
+
+        - name: Stop Lighthouse Server
+          if: always()
+          shell: powershell
+          run: |
+            Get-Process -Name "Lighthouse" -ErrorAction SilentlyContinue | Stop-Process -Force
+            if (Test-Path ".\publish\lighthouse.log") {
+              Write-Host "=== Lighthouse Log ==="
+              Get-Content ".\publish\lighthouse.log"
+            }
+            if (Test-Path ".\publish\lighthouse-error.log") {
+              Write-Host "=== Lighthouse Error Log ==="
+              Get-Content ".\publish\lighthouse-error.log"
+            }
       
   release:
     runs-on: ubuntu-latest
@@ -1040,8 +1132,7 @@ jobs:
     - verifysqlite
     - verifypostgres
     - verifymacos
-    - codesign-macos
-    - codesign-windows
+    - verifywindows
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
