@@ -1,4 +1,5 @@
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
 	Accordion,
@@ -34,6 +35,7 @@ interface DeliverySectionProps {
 	isLoadingFeatures: boolean;
 	onToggleExpanded: (deliveryId: number) => void;
 	onDelete: (delivery: Delivery) => void;
+	onEdit: (delivery: Delivery) => void;
 	teams: IEntityReference[];
 }
 
@@ -44,6 +46,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	isLoadingFeatures,
 	onToggleExpanded,
 	onDelete,
+	onEdit,
 	teams,
 }) => {
 	const { getTerm } = useTerminology();
@@ -206,6 +209,27 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							pr: 8, // Add padding right for the delete button
 						}}
 					>
+						<IconButton
+							size="small"
+							onClick={(e) => {
+								e.stopPropagation();
+								onEdit(delivery);
+							}}
+							aria-label="edit"
+							sx={{
+								position: "absolute",
+								top: "50%",
+								transform: "translateY(-50%)",
+								right: 48, // Position to the left of delete button
+								zIndex: 1,
+								bgcolor: "background.paper",
+								"&:hover": {
+									bgcolor: "primary.light",
+								},
+							}}
+						>
+							<EditIcon />
+						</IconButton>
 						<IconButton
 							size="small"
 							onClick={(e) => {

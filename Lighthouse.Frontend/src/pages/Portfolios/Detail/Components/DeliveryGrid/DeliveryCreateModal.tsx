@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { IDelivery } from "../../../../../models/Delivery";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
@@ -20,8 +21,15 @@ import { useTerminology } from "../../../../../services/TerminologyContext";
 interface DeliveryCreateModalProps {
 	open: boolean;
 	portfolio: Portfolio;
+	editingDelivery?: IDelivery | null;
 	onClose: () => void;
 	onSave: (deliveryData: {
+		name: string;
+		date: string;
+		featureIds: number[];
+	}) => void;
+	onUpdate?: (deliveryData: {
+		id: number;
 		name: string;
 		date: string;
 		featureIds: number[];
@@ -31,12 +39,15 @@ interface DeliveryCreateModalProps {
 export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	open,
 	portfolio,
+	editingDelivery,
 	onClose,
 	onSave,
+	onUpdate,
 }) => {
 	const { featureService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+	const isEditMode = !!editingDelivery;
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const [name, setName] = useState("");
@@ -97,11 +108,20 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 
 	const handleSave = () => {
 		if (validateForm()) {
-			onSave({
-				name: name.trim(),
-				date,
-				featureIds: selectedFeatureIds,
-			});
+			if (isEditMode && editingDelivery && onUpdate) {
+				onUpdate({
+					id: editingDelivery.id,
+					name: name.trim(),
+					date,
+					featureIds: selectedFeatureIds,
+				});
+			} else {
+				onSave({
+					name: name.trim(),
+					date,
+					featureIds: selectedFeatureIds,
+				});
+			}
 		}
 	};
 
@@ -121,6 +141,15 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setErrors({});
 	}, []);
 
+	// Initialize form with editing delivery data
+	useEffect(() => {
+		if (open && editingDelivery) {
+			setName(editingDelivery.name);
+			setDate(editingDelivery.date.split("T")[0]); // Extract date part from ISO string
+			setSelectedFeatureIds(editingDelivery.features || []);
+		}
+	}, [open, editingDelivery]);
+
 	useEffect(() => {
 		if (!open) {
 			resetForm();
@@ -129,7 +158,9 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-			<DialogTitle>Add {deliveryTerm}</DialogTitle>
+			<DialogTitle>
+				{isEditMode ? `Edit ${deliveryTerm}` : `Add ${deliveryTerm}`}
+			</DialogTitle>
 			<DialogContent>
 				<Box sx={{ pt: 1 }}>
 					<TextField
@@ -203,7 +234,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			<DialogActions>
 				<Button onClick={onClose}>Cancel</Button>
 				<Button onClick={handleSave} variant="contained">
-					Save
+					{isEditMode ? "Update" : "Save"}
 				</Button>
 			</DialogActions>
 		</Dialog>

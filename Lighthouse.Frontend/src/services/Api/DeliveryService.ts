@@ -9,6 +9,12 @@ export interface IDeliveryService {
 		date: Date,
 		featureIds: number[],
 	): Promise<void>;
+	update(
+		deliveryId: number,
+		name: string,
+		date: Date,
+		featureIds: number[],
+	): Promise<void>;
 	delete(deliveryId: number): Promise<void>;
 }
 
@@ -33,6 +39,21 @@ export class DeliveryService
 	): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post<void>(`/deliveries/portfolio/${portfolioId}`, {
+				name,
+				date: date.toISOString(),
+				featureIds,
+			});
+		});
+	}
+
+	async update(
+		deliveryId: number,
+		name: string,
+		date: Date,
+		featureIds: number[],
+	): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.put<void>(`/deliveries/${deliveryId}`, {
 				name,
 				date: date.toISOString(),
 				featureIds,

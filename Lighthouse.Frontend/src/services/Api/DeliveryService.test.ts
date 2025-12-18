@@ -96,6 +96,52 @@ describe("DeliveryService", () => {
 		});
 	});
 
+	describe("update", () => {
+		it("should update a delivery with correct data", async () => {
+			// Arrange
+			const deliveryId = 1;
+			const name = "Updated Delivery";
+			const date = new Date("2025-12-25");
+			const featureIds = [1, 2, 3];
+
+			mockedAxios.put.mockResolvedValue({});
+
+			// Act
+			await deliveryService.update(deliveryId, name, date, featureIds);
+
+			// Assert
+			expect(mockedAxios.put).toHaveBeenCalledWith(
+				`/deliveries/${deliveryId}`,
+				{
+					name,
+					date: date.toISOString(),
+					featureIds,
+				},
+			);
+		});
+
+		it("should handle API errors gracefully", async () => {
+			// Arrange
+			const deliveryId = 1;
+			const name = "Test Delivery";
+			const date = new Date("2025-12-25");
+			const featureIds = [1];
+			const errorResponse = {
+				response: {
+					status: 400,
+					data: { message: "Invalid data" },
+				},
+			};
+
+			mockedAxios.put.mockRejectedValue(errorResponse);
+
+			// Act & Assert
+			await expect(
+				deliveryService.update(deliveryId, name, date, featureIds),
+			).rejects.toThrow();
+		});
+	});
+
 	describe("delete", () => {
 		it("should delete a delivery by ID", async () => {
 			// Arrange

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
@@ -47,6 +47,7 @@ describe("DeliverySection", () => {
 		isLoadingFeatures: false,
 		onToggleExpanded: vi.fn(),
 		onDelete: vi.fn(),
+		onEdit: vi.fn(),
 		teams: mockTeams,
 	};
 
@@ -95,5 +96,58 @@ describe("DeliverySection", () => {
 		expect(
 			screen.getByText("No features in this delivery."),
 		).toBeInTheDocument();
+	});
+
+	it("should call onEdit when edit button is clicked", () => {
+		render(
+			<MemoryRouter>
+				<DeliverySection {...mockProps} />
+			</MemoryRouter>,
+		);
+
+		const editButton = screen.getByLabelText("edit");
+		fireEvent.click(editButton);
+
+		expect(mockProps.onEdit).toHaveBeenCalledWith(mockDelivery);
+		expect(mockProps.onEdit).toHaveBeenCalledTimes(1);
+	});
+
+	it("should call onDelete when delete button is clicked", () => {
+		render(
+			<MemoryRouter>
+				<DeliverySection {...mockProps} />
+			</MemoryRouter>,
+		);
+
+		const deleteButton = screen.getByLabelText("delete");
+		fireEvent.click(deleteButton);
+
+		expect(mockProps.onDelete).toHaveBeenCalledWith(mockDelivery);
+		expect(mockProps.onDelete).toHaveBeenCalledTimes(1);
+	});
+
+	it("should have both edit and delete buttons", () => {
+		render(
+			<MemoryRouter>
+				<DeliverySection {...mockProps} />
+			</MemoryRouter>,
+		);
+
+		expect(screen.getByLabelText("edit")).toBeInTheDocument();
+		expect(screen.getByLabelText("delete")).toBeInTheDocument();
+	});
+
+	it("should not call onToggleExpanded when edit button is clicked", () => {
+		render(
+			<MemoryRouter>
+				<DeliverySection {...mockProps} />
+			</MemoryRouter>,
+		);
+
+		const editButton = screen.getByLabelText("edit");
+		fireEvent.click(editButton);
+
+		// onToggleExpanded should not be called when clicking edit button
+		expect(mockProps.onToggleExpanded).not.toHaveBeenCalled();
 	});
 });

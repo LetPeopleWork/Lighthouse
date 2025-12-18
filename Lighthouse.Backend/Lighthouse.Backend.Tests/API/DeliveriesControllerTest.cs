@@ -343,6 +343,158 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(deliveryDtos.First().Name, Is.EqualTo("Q1 Release"));
             Assert.That(deliveryDtos.Last().Name, Is.EqualTo("Q2 Release"));
         }
+        
+        [Test]
+        public async Task UpdateDelivery_WithValidRequest_ReturnsOk()
+        {
+            // Arrange
+            var deliveryId = 1;
+            var existingDelivery = new Delivery("Original Name", DateTime.UtcNow.AddDays(10), 1);
+            var feature1 = new Feature { Id = 1, Name = "Feature 1" };
+            var feature2 = new Feature { Id = 2, Name = "Feature 2" };
+            
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Updated Delivery",
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = new List<int> { 1, 2 }
+            };
+
+            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+            featureRepositoryMock.Setup(x => x.GetById(1)).Returns(feature1);
+            featureRepositoryMock.Setup(x => x.GetById(2)).Returns(feature2);
+            deliveryRepositoryMock.Setup(x => x.Save()).Returns(Task.CompletedTask);
+
+            var controller = new DeliveriesController(
+                deliveryRepositoryMock.Object,
+                featureRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
+                licenseServiceMock.Object);
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<OkResult>());
+            Assert.That(existingDelivery.Name, Is.EqualTo("Updated Delivery"));
+            Assert.That(existingDelivery.Date, Is.EqualTo(request.Date));
+            Assert.That(existingDelivery.Features.Count, Is.EqualTo(2));
+            deliveryRepositoryMock.Verify(x => x.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateDelivery_WithPastDate_ReturnsBadRequest()
+        {
+            // Arrange
+            var deliveryId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Test Delivery",
+                Date = DateTime.UtcNow.AddDays(-1), // Past date
+                FeatureIds = new List<int> { 1 }
+            };
+
+            var controller = new DeliveriesController(
+                deliveryRepositoryMock.Object,
+                featureRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
+                licenseServiceMock.Object);
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+            var badRequest = result as BadRequestObjectResult;
+            Assert.That(badRequest.Value, Is.EqualTo("Delivery date must be in the future"));
+        }
+
+        [Test]
+        public async Task UpdateDelivery_WithEmptyName_ReturnsBadRequest()
+        {
+            // Arrange
+            var deliveryId = 1;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "",
+                Date = DateTime.UtcNow.AddDays(10),
+                FeatureIds = new List<int> { 1 }
+            };
+
+            var controller = new DeliveriesController(
+                deliveryRepositoryMock.Object,
+                featureRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
+                licenseServiceMock.Object);
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+            var badRequest = result as BadRequestObjectResult;
+            Assert.That(badRequest.Value, Is.EqualTo("Name is required"));
+        }
+
+        [Test]
+        public async Task UpdateDelivery_WithNonExistentDelivery_ReturnsNotFound()
+        {
+            // Arrange
+            var deliveryId = 999;
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Test Delivery",
+                Date = DateTime.UtcNow.AddDays(10),
+                FeatureIds = new List<int> { 1 }
+            };
+
+            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns((Delivery)null);
+
+            var controller = new DeliveriesController(
+                deliveryRepositoryMock.Object,
+                featureRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
+                licenseServiceMock.Object);
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+            var notFound = result as NotFoundObjectResult;
+            Assert.That(notFound.Value, Is.EqualTo("Delivery with ID 999 not found"));
+        }
+
+        [Test]
+        public async Task UpdateDelivery_WithNonExistentFeature_ReturnsNotFound()
+        {
+            // Arrange
+            var deliveryId = 1;
+            var existingDelivery = new Delivery("Test", DateTime.UtcNow.AddDays(10), 1);
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Test Delivery",
+                Date = DateTime.UtcNow.AddDays(10),
+                FeatureIds = new List<int> { 999 }
+            };
+
+            deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
+            featureRepositoryMock.Setup(x => x.GetById(999)).Returns((Feature)null);
+
+            var controller = new DeliveriesController(
+                deliveryRepositoryMock.Object,
+                featureRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
+                licenseServiceMock.Object);
+
+            // Act
+            var result = await controller.UpdateDelivery(deliveryId, request);
+
+            // Assert
+            Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+            var notFound = result as NotFoundObjectResult;
+            Assert.That(notFound.Value, Is.EqualTo("Feature with ID 999 does not exist"));
+        }
 
         private Delivery GetTestDelivery()
         {

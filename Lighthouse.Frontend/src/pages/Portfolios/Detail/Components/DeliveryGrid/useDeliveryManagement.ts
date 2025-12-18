@@ -115,6 +115,26 @@ export const useDeliveryManagement = ({
 		}
 	};
 
+	const handleUpdateDelivery = async (deliveryData: {
+		id: number;
+		name: string;
+		date: string;
+		featureIds: number[];
+	}) => {
+		try {
+			await deliveryService.update(
+				deliveryData.id,
+				deliveryData.name,
+				new Date(deliveryData.date),
+				deliveryData.featureIds,
+			);
+			setSelectedDelivery(null);
+			await fetchDeliveries();
+		} catch (_error) {
+			showError("Failed to update delivery");
+		}
+	};
+
 	const handleDeleteConfirmation = async (confirmed: boolean) => {
 		if (confirmed && deliveryToDelete) {
 			try {
@@ -194,6 +214,7 @@ export const useDeliveryManagement = ({
 		handleCloseCreateModal,
 		handleCloseEditModal,
 		handleCreateDelivery,
+		handleUpdateDelivery,
 		// New expansion action
 		handleToggleExpanded,
 	};

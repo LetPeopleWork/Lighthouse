@@ -76,6 +76,49 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        [HttpPut("{deliveryId:int}")]
+        public async Task<IActionResult> UpdateDelivery(
+            int deliveryId,
+            [FromBody] UpdateDeliveryRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                return BadRequest("Name is required");
+            }
+            
+            if (request.Date <= DateTime.UtcNow)
+            {
+                return BadRequest("Delivery date must be in the future");
+            }
+
+            var existingDelivery = deliveryRepository.GetById(deliveryId);
+            if (existingDelivery == null)
+            {
+                return NotFound($"Delivery with ID {deliveryId} not found");
+            }
+            
+            var featureList = new List<Feature>();
+            foreach (var featureId in request.FeatureIds)
+            {
+                var feature = featureRepository.GetById(featureId);
+                if (feature == null)
+                {
+                    return NotFound($"Feature with ID {featureId} does not exist");
+                }
+                
+                featureList.Add(feature);
+            }
+            
+            existingDelivery.Name = request.Name;
+            existingDelivery.Date = request.Date;
+            existingDelivery.Features.Clear();
+            existingDelivery.Features.AddRange(featureList);
+
+            await deliveryRepository.Save();
+
+            return Ok();
+        }
+
         [HttpDelete("{deliveryId:int}")]
         public async Task<IActionResult> DeleteDelivery(int deliveryId)
         {

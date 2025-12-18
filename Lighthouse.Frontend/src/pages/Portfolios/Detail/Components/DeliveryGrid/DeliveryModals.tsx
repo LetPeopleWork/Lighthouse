@@ -7,10 +7,18 @@ import { DeliveryCreateModal } from "./DeliveryCreateModal";
 interface DeliveryModalsProps {
 	portfolio: Portfolio;
 	showCreateModal: boolean;
+	selectedDelivery: Delivery | null;
 	deliveryToDelete: Delivery | null;
 	deleteDialogOpen: boolean;
 	onCloseCreateModal: () => void;
+	onCloseEditModal: () => void;
 	onCreateDelivery: (deliveryData: {
+		name: string;
+		date: string;
+		featureIds: number[];
+	}) => Promise<void>;
+	onUpdateDelivery: (deliveryData: {
+		id: number;
 		name: string;
 		date: string;
 		featureIds: number[];
@@ -21,12 +29,26 @@ interface DeliveryModalsProps {
 export const DeliveryModals: React.FC<DeliveryModalsProps> = ({
 	portfolio,
 	showCreateModal,
+	selectedDelivery,
 	deliveryToDelete,
 	deleteDialogOpen,
 	onCloseCreateModal,
+	onCloseEditModal,
 	onCreateDelivery,
+	onUpdateDelivery,
 	onDeleteConfirmation,
 }) => {
+	const isModalOpen = showCreateModal || !!selectedDelivery;
+	const editingDelivery = selectedDelivery;
+
+	const handleClose = () => {
+		if (selectedDelivery) {
+			onCloseEditModal();
+		} else {
+			onCloseCreateModal();
+		}
+	};
+
 	return (
 		<>
 			{deliveryToDelete && (
@@ -38,13 +60,13 @@ export const DeliveryModals: React.FC<DeliveryModalsProps> = ({
 			)}
 
 			<DeliveryCreateModal
-				open={showCreateModal}
+				open={isModalOpen}
 				portfolio={portfolio}
-				onClose={onCloseCreateModal}
+				editingDelivery={editingDelivery}
+				onClose={handleClose}
 				onSave={onCreateDelivery}
+				onUpdate={onUpdateDelivery}
 			/>
-
-			{/* TODO: Add DeliveryEditModal when it exists */}
 		</>
 	);
 };

@@ -21,7 +21,12 @@ const mockGetFeaturesByIds = vi.fn();
 mockFeatureService.getFeaturesByIds = mockGetFeaturesByIds;
 
 const mockApiServiceContext = createMockApiServiceContext({
-	deliveryService: mockDeliveryService,
+	deliveryService: {
+		getByPortfolio: mockDeliveryService.getByPortfolio,
+		create: mockDeliveryService.create,
+		update: vi.fn(),
+		delete: mockDeliveryService.delete,
+	},
 	featureService: mockFeatureService,
 });
 
@@ -447,6 +452,77 @@ describe("useDeliveryManagement", () => {
 			});
 
 			expect(mockShowError).toHaveBeenCalledWith("Failed to create delivery");
+		});
+	});
+
+	describe("Delivery Update", () => {
+		it("should update delivery and refresh list", async () => {
+			const portfolio = getMockPortfolio();
+			const deliveryData = {
+				id: 1,
+				name: "Updated Delivery",
+				date: "2025-12-25",
+				featureIds: [1, 2],
+			};
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+			const updateSpy = vi.fn().mockResolvedValue(undefined);
+			mockApiServiceContext.deliveryService.update = updateSpy;
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleEditDelivery(getMockDelivery({ id: 1 }));
+			});
+
+			expect(result.current.selectedDelivery).not.toBeNull();
+
+			await act(async () => {
+				await result.current.handleUpdateDelivery(deliveryData);
+			});
+
+			expect(updateSpy).toHaveBeenCalledWith(
+				deliveryData.id,
+				deliveryData.name,
+				new Date("2025-12-25"),
+				[1, 2],
+			);
+
+			expect(result.current.selectedDelivery).toBeNull();
+			expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledTimes(2); // Initial load + refresh
+		});
+
+		it("should handle update delivery error", async () => {
+			const portfolio = getMockPortfolio();
+			const deliveryData = {
+				id: 1,
+				name: "Updated Delivery",
+				date: "2025-12-25",
+				featureIds: [1],
+			};
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+			const updateSpy = vi.fn().mockRejectedValue(new Error("Update failed"));
+			mockApiServiceContext.deliveryService.update = updateSpy;
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleEditDelivery(getMockDelivery({ id: 1 }));
+			});
+
+			await act(async () => {
+				await result.current.handleUpdateDelivery(deliveryData);
+			});
+
+			expect(mockShowError).toHaveBeenCalledWith("Failed to update delivery");
+			expect(result.current.selectedDelivery).not.toBeNull(); // Should remain open on error
 		});
 	});
 

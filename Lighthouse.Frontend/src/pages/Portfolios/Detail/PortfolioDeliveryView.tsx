@@ -18,13 +18,17 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 	const {
 		deliveries,
 		showCreateModal,
+		selectedDelivery,
 		deleteDialogOpen,
 		deliveryToDelete,
 		handleAddDelivery,
 		handleDeleteDelivery,
+		handleEditDelivery,
 		handleDeleteConfirmation,
 		handleCloseCreateModal,
+		handleCloseEditModal,
 		handleCreateDelivery,
+		handleUpdateDelivery,
 		expandedDeliveries,
 		loadedFeatures,
 		loadingFeaturesByDelivery,
@@ -51,6 +55,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 							isLoadingFeatures={isLoadingFeatures}
 							onToggleExpanded={handleToggleExpanded}
 							onDelete={handleDeleteDelivery}
+							onEdit={handleEditDelivery}
 							teams={portfolio.involvedTeams}
 						/>
 					);
@@ -60,10 +65,13 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 			<DeliveryModals
 				portfolio={portfolio}
 				showCreateModal={showCreateModal}
+				selectedDelivery={selectedDelivery}
 				deliveryToDelete={deliveryToDelete}
 				deleteDialogOpen={deleteDialogOpen}
 				onCloseCreateModal={handleCloseCreateModal}
+				onCloseEditModal={handleCloseEditModal}
 				onCreateDelivery={handleCreateDelivery}
+				onUpdateDelivery={handleUpdateDelivery}
 				onDeleteConfirmation={handleDeleteConfirmation}
 			/>
 		</Box>
