@@ -37,11 +37,13 @@ export const useDeliveryManagement = ({
 	const { showError } = useErrorSnackbar();
 
 	const loadFeaturesForDelivery = useCallback(
-		async (delivery: Delivery) => {
-			// Skip if features are already loaded
-			if (loadedFeatures.has(delivery.id)) {
+		async (delivery: Delivery): Promise<void> => {
+			// Skip if already loading or already have features loaded
+			if (
+				loadingFeaturesByDelivery.has(delivery.id) ||
+				loadedFeatures.has(delivery.id)
+			)
 				return;
-			}
 
 			// Skip if no feature IDs
 			if (!delivery.features || delivery.features.length === 0) {
@@ -66,7 +68,38 @@ export const useDeliveryManagement = ({
 				});
 			}
 		},
-		[featureService, loadedFeatures, showError],
+		[featureService, showError, loadingFeaturesByDelivery, loadedFeatures],
+	);
+
+	const forceReloadFeaturesForDelivery = useCallback(
+		async (delivery: Delivery): Promise<void> => {
+			// Skip if already loading
+			if (loadingFeaturesByDelivery.has(delivery.id)) return;
+
+			// Skip if no feature IDs
+			if (!delivery.features || delivery.features.length === 0) {
+				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, []));
+				return;
+			}
+
+			setLoadingFeaturesByDelivery((prev) => new Set(prev).add(delivery.id));
+
+			try {
+				// delivery.features is now an array of feature IDs
+				const featureIds = delivery.features;
+				const features = await featureService.getFeaturesByIds(featureIds);
+				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
+			} catch (_error) {
+				showError("Failed to load features for delivery");
+			} finally {
+				setLoadingFeaturesByDelivery((prev) => {
+					const next = new Set(prev);
+					next.delete(delivery.id);
+					return next;
+				});
+			}
+		},
+		[featureService, showError, loadingFeaturesByDelivery],
 	);
 
 	const fetchDeliveries = useCallback(async () => {
@@ -122,6 +155,8 @@ export const useDeliveryManagement = ({
 		featureIds: number[];
 	}) => {
 		try {
+			const wasExpanded = expandedDeliveries.has(deliveryData.id);
+
 			await deliveryService.update(
 				deliveryData.id,
 				deliveryData.name,
@@ -129,7 +164,27 @@ export const useDeliveryManagement = ({
 				deliveryData.featureIds,
 			);
 			setSelectedDelivery(null);
+			// Clear cached features for edited delivery to force refresh
+			setLoadedFeatures((prev) => {
+				const next = new Map(prev);
+				next.delete(deliveryData.id);
+				return next;
+			});
 			await fetchDeliveries();
+
+			// If the delivery was expanded, reload its features immediately
+			if (wasExpanded) {
+				// Find the updated delivery and reload its features
+				const updatedDeliveries = await deliveryService.getByPortfolio(
+					portfolio.id,
+				);
+				const updatedDelivery = updatedDeliveries.find(
+					(d) => d.id === deliveryData.id,
+				);
+				if (updatedDelivery) {
+					await forceReloadFeaturesForDelivery(updatedDelivery);
+				}
+			}
 		} catch (_error) {
 			showError("Failed to update delivery");
 		}

@@ -524,6 +524,110 @@ describe("useDeliveryManagement", () => {
 			expect(mockShowError).toHaveBeenCalledWith("Failed to update delivery");
 			expect(result.current.selectedDelivery).not.toBeNull(); // Should remain open on error
 		});
+
+		it("should clear cached features when updating delivery and reload if expanded", async () => {
+			const portfolio = getMockPortfolio();
+			const deliveryData = {
+				id: 1,
+				name: "Updated Delivery",
+				date: "2025-12-25",
+				featureIds: [3, 4], // Different feature IDs to simulate changed features
+			};
+
+			const mockDelivery = getMockDelivery({ id: 1, features: [1, 2] });
+			const updatedMockDelivery = getMockDelivery({ id: 1, features: [3, 4] });
+			const mockFeatures = [
+				getMockFeature({ id: 1 }),
+				getMockFeature({ id: 2 }),
+			];
+			const updatedFeatures = [
+				getMockFeature({ id: 3 }),
+				getMockFeature({ id: 4 }),
+			];
+
+			// Track call counts
+			let getByPortfolioCallCount = 0;
+			let getFeaturesByIdsCallCount = 0;
+
+			// Setup delivery service
+			mockDeliveryService.getByPortfolio.mockImplementation(() => {
+				getByPortfolioCallCount++;
+				// First call: initial load
+				// Second call: fetchDeliveries() in handleUpdateDelivery
+				// Third call: direct call in handleUpdateDelivery for feature reload
+				if (getByPortfolioCallCount <= 2) {
+					return Promise.resolve([mockDelivery]);
+				}
+				return Promise.resolve([updatedMockDelivery]);
+			});
+
+			// Setup feature service to return different features based on IDs
+			mockGetFeaturesByIds.mockImplementation((ids) => {
+				getFeaturesByIdsCallCount++;
+				if (JSON.stringify(ids) === JSON.stringify([1, 2])) {
+					return Promise.resolve(mockFeatures);
+				}
+				if (JSON.stringify(ids) === JSON.stringify([3, 4])) {
+					return Promise.resolve(updatedFeatures);
+				}
+				return Promise.resolve([]);
+			});
+
+			const updateSpy = vi.fn().mockResolvedValue(undefined);
+			mockApiServiceContext.deliveryService.update = updateSpy;
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			// Expand delivery to load features into cache
+			act(() => {
+				result.current.handleToggleExpanded(1);
+			});
+
+			await waitFor(() => {
+				expect(result.current.loadedFeatures.has(1)).toBe(true);
+				expect(result.current.loadedFeatures.get(1)).toEqual(mockFeatures);
+			});
+
+			expect(getFeaturesByIdsCallCount).toBe(1);
+			expect(getByPortfolioCallCount).toBe(1);
+
+			// Update the delivery
+			act(() => {
+				result.current.handleEditDelivery(mockDelivery);
+			});
+
+			await act(async () => {
+				await result.current.handleUpdateDelivery(deliveryData);
+			});
+
+			// Verify update was called
+			expect(updateSpy).toHaveBeenCalledWith(
+				deliveryData.id,
+				deliveryData.name,
+				new Date("2025-12-25"),
+				[3, 4],
+			);
+
+			// Should have called getByPortfolio twice more (fetchDeliveries + direct call)
+			expect(getByPortfolioCallCount).toBe(3);
+
+			// Wait for features to be reloaded with updated feature IDs
+			await waitFor(
+				() => {
+					expect(result.current.loadedFeatures.has(1)).toBe(true);
+					const loadedFeatures = result.current.loadedFeatures.get(1);
+					expect(loadedFeatures).toEqual(updatedFeatures);
+				},
+				{ timeout: 3000 },
+			);
+
+			// Should have called getFeaturesByIds twice (initial + reload)
+			expect(getFeaturesByIdsCallCount).toBe(2);
+		});
 	});
 
 	describe("Feature Expansion", () => {
