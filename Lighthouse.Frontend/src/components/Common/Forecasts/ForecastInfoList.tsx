@@ -22,7 +22,7 @@ const ForecastInfoList: React.FC<ForecastInfoListProps> = ({
 	return (
 		<Grid size={{ xs: 12 }}>
 			<ForecastsHeader variant="body1">{title}</ForecastsHeader>
-			{forecasts
+			{(forecasts ?? [])
 				.slice()
 				.reverse()
 				.map((forecast) => (

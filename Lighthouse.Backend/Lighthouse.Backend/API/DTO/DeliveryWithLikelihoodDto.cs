@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.API.DTO
                 var featureForecast = feature.Forecast;
                 var likelihood = 0.0;
                 
-                if (featureForecast != null && featureForecast.TotalTrials > 0)
+                if (featureForecast != null)
                 {
                     likelihood = featureForecast.GetLikelihood(daysToTarget);
                 }

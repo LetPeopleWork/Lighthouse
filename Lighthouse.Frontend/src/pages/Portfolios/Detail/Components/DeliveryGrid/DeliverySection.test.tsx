@@ -32,6 +32,8 @@ describe("DeliverySection", () => {
 	mockFeature.name = "Test Feature";
 	mockFeature.remainingWork = { "1": 5 };
 	mockFeature.totalWork = { "1": 10 };
+	mockFeature.forecasts = [];
+	mockFeature.forecasts = [];
 
 	const mockTeams: IEntityReference[] = [
 		{ id: 1, name: "Team Alpha" },
@@ -56,7 +58,7 @@ describe("DeliverySection", () => {
 		);
 
 		expect(screen.getByText("Test Delivery")).toBeInTheDocument();
-		expect(screen.getByText("Likelyhood: 75%")).toBeInTheDocument();
+		expect(screen.getByText("Likelihood: 75%")).toBeInTheDocument();
 		expect(screen.getByText("Target Date: 1/31/2025")).toBeInTheDocument();
 		expect(screen.getByText(/1 Feature/i)).toBeInTheDocument();
 	});
@@ -91,7 +93,7 @@ describe("DeliverySection", () => {
 		);
 
 		expect(
-			screen.getByText("No Features in this delivery."),
+			screen.getByText("No features in this delivery."),
 		).toBeInTheDocument();
 	});
 });

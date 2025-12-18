@@ -8,6 +8,7 @@ import {
 	Chip,
 	IconButton,
 	Paper,
+	TableContainer,
 	Typography,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
@@ -16,8 +17,8 @@ import { useMemo } from "react";
 import DataGridBase from "../../../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../../../components/Common/DataGrid/types";
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
+import ForecastInfoList from "../../../../../components/Common/Forecasts/ForecastInfoList";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
-import ForecastLikelihood from "../../../../../components/Common/Forecasts/ForecastLikelihood";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import type { Delivery } from "../../../../../models/Delivery";
@@ -57,7 +58,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				field: "name",
 				headerName: `${featureTerm} Name`,
 				hideable: false,
-				width: 300,
+				minWidth: 120,
 				flex: 1,
 				renderCell: ({ row }) => (
 					<FeatureName
@@ -72,7 +73,8 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 			{
 				field: "owningTeam",
 				headerName: "Team",
-				width: 150,
+				minWidth: 100,
+				flex: 0.5,
 				renderCell: ({ row }) => {
 					// Find teams that have work for this feature
 					const teamsWithWork = teams.filter(
@@ -101,7 +103,8 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 			{
 				field: "progress",
 				headerName: "Progress",
-				width: 400,
+				minWidth: 200,
+				flex: 1,
 				sortable: false,
 				renderCell: ({ row }) => (
 					<Box sx={{ width: "100%" }}>
@@ -111,7 +114,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								remainingWork: row.getRemainingWorkForFeature(),
 								totalWork: row.getTotalWorkForFeature(),
 							}}
-							showDetails={false}
+							showDetails={true}
 						/>
 						{teams
 							.filter((team) => row.getTotalWorkForTeam(team.id) > 0)
@@ -127,7 +130,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 											remainingWork: row.getRemainingWorkForTeam(team.id),
 											totalWork: row.getTotalWorkForTeam(team.id),
 										}}
-										showDetails={false}
+										showDetails={true}
 									/>
 								</Box>
 							))}
@@ -137,35 +140,34 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 			{
 				field: "forecast",
 				headerName: "Forecast",
-				width: 150,
+				minWidth: 100,
+				flex: 0.5,
 				sortable: false,
-				renderCell: ({ row }) => {
-					// Find forecast for delivery date
-					const deliveryDate = new Date(delivery.date);
-					const relevantForecast = row.forecasts?.find(
-						(f) =>
-							Math.abs(
-								new Date(f.expectedDate).getTime() - deliveryDate.getTime(),
-							) <
-							24 * 60 * 60 * 1000, // Within 1 day
-					);
-
-					if (!relevantForecast) {
-						return (
-							<Typography variant="body2" color="text.secondary">
-								No forecast
-							</Typography>
-						);
-					}
-
-					return (
-						<ForecastLikelihood
-							remainingItems={0}
-							targetDate={new Date(delivery.date)}
-							likelihood={relevantForecast.probability ?? 0}
-						/>
-					);
-				},
+				renderCell: ({ row }) => (
+					<ForecastInfoList title={""} forecasts={row.forecasts} />
+				),
+			},
+			{
+				field: "likelihood",
+				headerName: "Likelihood",
+				minWidth: 100,
+				flex: 0.3,
+				sortable: false,
+				renderCell: ({ row }) =>
+					delivery.featureLikelihoods
+						.filter((fl) => fl.featureId === row.id)
+						.map((fl) => (
+							<Chip
+								key={fl.featureId}
+								label={`${Math.round(fl.likelihoodPercentage)}%`}
+								size="small"
+								sx={{
+									bgcolor: new ForecastLevel(fl.likelihoodPercentage).color,
+									color: "#fff",
+									fontWeight: "bold",
+								}}
+							/>
+						)),
 			},
 		],
 		[featureTerm, delivery, teams],
@@ -174,32 +176,12 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
 
 	return (
-		<Paper elevation={1} sx={{ mb: 2 }}>
+		<Paper elevation={1} sx={{ mb: 2, overflow: "hidden" }}>
 			<Box sx={{ position: "relative" }}>
-				<IconButton
-					size="small"
-					onClick={(e) => {
-						e.stopPropagation();
-						onDelete(delivery);
-					}}
-					aria-label="delete"
-					sx={{
-						position: "absolute",
-						top: "50%",
-						transform: "translateY(-50%)",
-						right: 8,
-						zIndex: 1,
-						bgcolor: "background.paper",
-						"&:hover": {
-							bgcolor: "error.light",
-						},
-					}}
-				>
-					<DeleteIcon />
-				</IconButton>
 				<Accordion
 					expanded={isExpanded}
 					onChange={() => onToggleExpanded(delivery.id)}
+					sx={{ overflow: "hidden" }}
 					slotProps={{
 						transition: {
 							unmountOnExit: false, // Keep content mounted for better performance
@@ -210,6 +192,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						expandIcon={<ExpandMoreIcon />}
 						sx={{
 							minHeight: 64,
+							position: "relative",
 							"&.Mui-expanded": {
 								minHeight: 64,
 							},
@@ -223,6 +206,27 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							pr: 8, // Add padding right for the delete button
 						}}
 					>
+						<IconButton
+							size="small"
+							onClick={(e) => {
+								e.stopPropagation();
+								onDelete(delivery);
+							}}
+							aria-label="delete"
+							sx={{
+								position: "absolute",
+								top: "50%",
+								transform: "translateY(-50%)",
+								right: 8,
+								zIndex: 1,
+								bgcolor: "background.paper",
+								"&:hover": {
+									bgcolor: "error.light",
+								},
+							}}
+						>
+							<DeleteIcon />
+						</IconButton>
 						<Box
 							sx={{
 								display: "flex",
@@ -253,7 +257,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									size="small"
 								/>
 								<Chip
-									label={`Likelyhood: ${Math.round(delivery.likelihoodPercentage)}%`}
+									label={`Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
 									size="small"
 									sx={{
 										bgcolor: forecastLevel.color,
@@ -283,69 +287,29 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						</Box>
 					</AccordionSummary>
 					<AccordionDetails sx={{ p: 0 }}>
-						<Box sx={{ px: 2, pb: 2 }}>
-							{/* Feature likelihood chips */}
-							{delivery.featureLikelihoods.length > 0 && (
-								<Box sx={{ mb: 2 }}>
-									<Typography
-										variant="body2"
-										color="text.secondary"
-										sx={{ mb: 1 }}
-									>
-										{featureTerm} Likelihood:
-									</Typography>
-									<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-										{delivery.featureLikelihoods.map((fl) => {
-											const feature = features.find(
-												(f) => f.id === fl.featureId,
-											);
-											const featureForecastLevel = new ForecastLevel(
-												fl.likelihoodPercentage,
-											);
-											return (
-												<Chip
-													key={fl.featureId}
-													label={`${feature?.name || `Feature ${fl.featureId}`}: ${Math.round(fl.likelihoodPercentage)}%`}
-													size="small"
-													sx={{
-														bgcolor: featureForecastLevel.color,
-														color: "#fff",
-														fontWeight: "bold",
-														fontSize: "0.7rem",
-													}}
-												/>
-											);
-										})}
-									</Box>
-								</Box>
-							)}
-
-							{isLoadingFeatures ? (
-								<Typography
-									variant="body2"
-									color="text.secondary"
-									sx={{ p: 2 }}
-								>
-									Loading features...
-								</Typography>
-							) : features.length === 0 ? (
-								<Typography
-									variant="body2"
-									color="text.secondary"
-									sx={{ p: 2 }}
-								>
-									No {featureTerm}s in this {deliveryTerm.toLowerCase()}.
-								</Typography>
-							) : (
+						{isLoadingFeatures ? (
+							<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+								{`Loading ${featuresTerm}...`}
+							</Typography>
+						) : features.length === 0 ? (
+							<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+								No {featuresTerm} in this {deliveryTerm}.
+							</Typography>
+						) : (
+							<TableContainer
+								component={Paper}
+								elevation={0}
+								sx={{ mx: 2, mb: 2 }}
+							>
 								<DataGridBase
 									rows={features as (IFeature & GridValidRowModel)[]}
 									columns={columns}
 									storageKey={`delivery-features-${delivery.id}`}
 									loading={false}
-									emptyStateMessage={`No ${featureTerm}s found`}
+									emptyStateMessage={`No ${featuresTerm} found`}
 								/>
-							)}
-						</Box>
+							</TableContainer>
+						)}
 					</AccordionDetails>
 				</Accordion>
 			</Box>

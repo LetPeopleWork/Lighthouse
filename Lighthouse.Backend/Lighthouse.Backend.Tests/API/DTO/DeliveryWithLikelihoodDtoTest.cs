@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
         
         [Test]
-        public void Should_Return_Zero_Likelihood_When_No_Features_Have_Forecasts()
+        public void Should_Return_Hundred_Likelihood_When_No_Features_Have_Forecasts()
         {
             // Arrange
             var deliveryDate = DateTime.UtcNow.AddDays(30);
@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
             
             // Assert
-            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(0.0));
+            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(100.0));
         }
         
         [Test]
@@ -183,7 +183,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(deliveryDto.FeatureLikelihoods[1].FeatureId, Is.EqualTo(2));
             Assert.That(deliveryDto.FeatureLikelihoods[1].LikelihoodPercentage, Is.EqualTo(60.0));
             Assert.That(deliveryDto.FeatureLikelihoods[2].FeatureId, Is.EqualTo(3));
-            Assert.That(deliveryDto.FeatureLikelihoods[2].LikelihoodPercentage, Is.EqualTo(0.0));
+            Assert.That(deliveryDto.FeatureLikelihoods[2].LikelihoodPercentage, Is.EqualTo(100.0));
         }
     }
 }
