@@ -47,6 +47,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 
 	// Define feature grid columns (adapted from PortfolioFeatureList)
@@ -184,7 +185,8 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 					aria-label="delete"
 					sx={{
 						position: "absolute",
-						top: 8,
+						top: "50%",
+						transform: "translateY(-50%)",
 						right: 8,
 						zIndex: 1,
 						bgcolor: "background.paper",
@@ -227,31 +229,57 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								alignItems: "center",
 								justifyContent: "space-between",
 								width: "100%",
+								gap: 4, // Add gap between left and right sections
 							}}
 						>
-							<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+							<Box
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									gap: 2,
+									flexShrink: 0,
+								}}
+							>
 								<Typography variant="h6" component="h3">
 									{delivery.name}
 								</Typography>
 								<Chip
-									label={delivery.getFormattedDate()}
+									label={`Target Date: ${delivery.getFormattedDate()}`}
 									size="small"
 									variant="outlined"
 								/>
 								<Chip
-									label={`${delivery.getFeatureCount()} ${featureTerm}${delivery.getFeatureCount() !== 1 ? "s" : ""}`}
+									label={`Scope: ${delivery.getFeatureCount()} ${delivery.getFeatureCount() !== 1 ? featuresTerm : featureTerm}`}
 									size="small"
 								/>
+								<Chip
+									label={`Likelyhood: ${Math.round(delivery.likelihoodPercentage)}%`}
+									size="small"
+									sx={{
+										bgcolor: forecastLevel.color,
+										color: "#fff",
+										fontWeight: "bold",
+									}}
+								/>
 							</Box>
-							<Chip
-								label={`${Math.round(delivery.likelihoodPercentage)}%`}
-								size="small"
+							<Box
 								sx={{
-									bgcolor: forecastLevel.color,
-									color: "#fff",
-									fontWeight: "bold",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "flex-end",
+									flex: 1, // Take up remaining space
+									minWidth: 0, // Allow shrinking if needed
 								}}
-							/>
+							>
+								<ProgressIndicator
+									title=""
+									progressableItem={{
+										remainingWork: delivery.remainingWork,
+										totalWork: delivery.totalWork,
+									}}
+									showDetails={true}
+								/>
+							</Box>
 						</Box>
 					</AccordionSummary>
 					<AccordionDetails sx={{ p: 0 }}>

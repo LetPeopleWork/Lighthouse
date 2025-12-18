@@ -33,10 +33,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 
 	return (
 		<Box>
-			<DeliveryHeader
-				onAddDelivery={handleAddDelivery}
-				deliveries={deliveries}
-			/>
+			<DeliveryHeader onAddDelivery={handleAddDelivery} />
 
 			{/* Render delivery sections instead of a grid */}
 			<Box sx={{ mt: 2 }}>

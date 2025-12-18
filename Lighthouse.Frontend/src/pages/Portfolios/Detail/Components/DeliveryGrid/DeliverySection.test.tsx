@@ -56,7 +56,8 @@ describe("DeliverySection", () => {
 		);
 
 		expect(screen.getByText("Test Delivery")).toBeInTheDocument();
-		expect(screen.getByText("75%")).toBeInTheDocument();
+		expect(screen.getByText("Likelyhood: 75%")).toBeInTheDocument();
+		expect(screen.getByText("Target Date: 1/31/2025")).toBeInTheDocument();
 		expect(screen.getByText(/1 Feature/i)).toBeInTheDocument();
 	});
 
