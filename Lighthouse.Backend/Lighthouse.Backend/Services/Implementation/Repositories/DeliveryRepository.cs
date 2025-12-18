@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +21,14 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
             return GetAllDeliveriesWithIncludes()
                     .SingleOrDefault(x => x.Id == id);
+        }
+        
+        public override IEnumerable<Delivery> GetAll()
+        {
+            logger.LogDebug("Get All Deliveries");
+
+            return GetAllDeliveriesWithIncludes()
+                    .ToList();
         }
 
         public IEnumerable<Delivery> GetByPortfolioAsync(int portfolioId)

@@ -24,6 +24,14 @@ namespace Lighthouse.Backend.API
             var deliveryDtos = deliveries.Select(DeliveryWithLikelihoodDto.FromDelivery);
             return Ok(deliveryDtos);
         }
+        
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            var deliveries = deliveryRepository.GetAll();
+            var deliveryDtos = deliveries.Select(DeliveryWithLikelihoodDto.FromDelivery);
+            return Ok(deliveryDtos);
+        }
 
         [HttpPost("portfolio/{portfolioId:int}")]
         public async Task<IActionResult> CreateDelivery(

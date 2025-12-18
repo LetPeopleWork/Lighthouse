@@ -69,7 +69,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						url={row.url ?? ""}
 						stateCategory={row.stateCategory}
 						isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-						teamsWorkIngOnFeature={[]} // TODO: Add team data if needed
+						teamsWorkIngOnFeature={[]}
 					/>
 				),
 			},

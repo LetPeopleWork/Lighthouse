@@ -2,11 +2,9 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -81,6 +79,47 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(deliveryDto.Id, Is.EqualTo(1));
             Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
             Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(80.0));
+        }
+
+        [Test]
+        public void GetAll_ReturnsFromAllPortfolios()
+        {
+            var delivery = new Delivery
+            {
+                Id = 1,
+                Name = "Q1 Release",
+                Date = DateTime.UtcNow.AddDays(30)
+            };
+            var delivery2 = new Delivery
+            {
+                Id = 2,
+                Name = "Q2 Release",
+                Date = DateTime.UtcNow.AddDays(120)
+            };
+            
+            deliveryRepositoryMock.Setup(x => x.GetAll())
+                .Returns([delivery, delivery2]);
+            
+            var controller = CreateSubject();
+            
+            // Act
+            var result = controller.GetAll();
+            
+            // Assert
+            Assert.That(result, Is.InstanceOf<OkObjectResult>());
+            var okResult = result as OkObjectResult;
+            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto>;
+            
+            Assert.That(deliveries, Is.Not.Null);
+            Assert.That(deliveries.Count(), Is.EqualTo(2));
+            
+            var deliveryDto = deliveries.First();
+            Assert.That(deliveryDto.Id, Is.EqualTo(1));
+            Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
+            
+            var deliveryDto2 = deliveries.Last();
+            Assert.That(deliveryDto2.Id, Is.EqualTo(2));
+            Assert.That(deliveryDto2.Name, Is.EqualTo("Q2 Release"));
         }
 
         [Test]

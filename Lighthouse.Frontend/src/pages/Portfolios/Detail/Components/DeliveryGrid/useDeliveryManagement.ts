@@ -249,14 +249,12 @@ export const useDeliveryManagement = ({
 	}, [fetchDeliveries]);
 
 	return {
-		// State
 		deliveries,
 		isLoading,
 		showCreateModal,
 		selectedDelivery,
 		deleteDialogOpen,
 		deliveryToDelete,
-		// New expansion state
 		expandedDeliveries,
 		loadedFeatures,
 		loadingFeaturesByDelivery,

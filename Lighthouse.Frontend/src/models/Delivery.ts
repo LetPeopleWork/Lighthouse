@@ -6,14 +6,14 @@ export interface IFeatureLikelihood {
 export interface IDelivery {
 	id: number;
 	name: string;
-	date: string; // ISO date string from backend
+	date: string;
 	portfolioId: number;
-	features: number[]; // Feature IDs - details fetched separately via FeatureService
-	likelihoodPercentage: number; // Probability of delivery completion on time
-	progress: number; // Completion percentage
-	remainingWork: number; // Remaining work items
-	totalWork: number; // Total work items
-	featureLikelihoods: IFeatureLikelihood[]; // Individual feature likelihoods
+	features: number[];
+	likelihoodPercentage: number;
+	progress: number;
+	remainingWork: number;
+	totalWork: number;
+	featureLikelihoods: IFeatureLikelihood[];
 }
 
 export class Delivery implements IDelivery {

@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
-                var projectDto = okResult.Value as ProjectDto;
+                var projectDto = okResult.Value as PortfolioDto;
 
                 Assert.That(projectDto.Id, Is.EqualTo(testProject.Id));
                 Assert.That(projectDto.Name, Is.EqualTo(testProject.Name));

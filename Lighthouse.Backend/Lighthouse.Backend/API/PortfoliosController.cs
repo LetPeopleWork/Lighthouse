@@ -35,15 +35,15 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet]
-        public IEnumerable<ProjectDto> GetProjects()
+        public IEnumerable<PortfolioDto> GetProjects()
         {
-            var projectDtos = new List<ProjectDto>();
+            var projectDtos = new List<PortfolioDto>();
 
             var allProjects = projectRepository.GetAll();
 
             foreach (var project in allProjects)
             {
-                var projectDto = new ProjectDto(project);
+                var projectDto = new PortfolioDto(project);
                 projectDtos.Add(projectDto);
             }
 
@@ -51,11 +51,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("{id}")]
-        public ActionResult<ProjectDto> Get(int id)
+        public ActionResult<PortfolioDto> Get(int id)
         {
             return this.GetEntityByIdAnExecuteAction(projectRepository, id, project =>
             {
-                return new ProjectDto(project);
+                return new PortfolioDto(project);
             });
         }
 

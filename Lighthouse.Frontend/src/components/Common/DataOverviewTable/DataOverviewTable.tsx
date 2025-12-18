@@ -9,7 +9,6 @@ import {
 	Container,
 	Fade,
 	IconButton,
-	LinearProgress,
 	Link as MuiLink,
 	Tooltip,
 	Typography,
@@ -20,13 +19,14 @@ import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { IWhenForecast } from "../../../models/Forecasts/WhenForecast";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
-import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
+import { DeliveriesChips } from "./DeliveriesChips";
 
 interface DataOverviewTableProps<IFeatureOwner> {
 	data: IFeatureOwner[];
@@ -47,6 +47,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	const navigate = useNavigate();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+	const { getTerm } = useTerminology();
 
 	const filteredData = data
 		.filter((item) => isMatchingFilterText(item))
@@ -66,121 +67,13 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 		return false;
 	}
 
-	// Type guard to check if item is a Project
-	const isProject = useCallback((item: IFeatureOwner): item is IPortfolio => {
-		return (
-			"totalWorkItems" in item &&
-			"remainingWorkItems" in item &&
-			"forecasts" in item
-		);
+	// Type guard to check if item is a Portfolio
+	const isPortfolio = useCallback((item: IFeatureOwner): item is IPortfolio => {
+		return "involvedTeams" in item;
 	}, []);
 
-	// Check if any of the data items are projects
-	const hasAnyProjects = data.some(isProject);
-
-	// Get the key forecasts (50/70/85/95 percentile)
-	const getKeyForecasts = useCallback((project: IPortfolio) => {
-		return [50, 70, 85, 95]
-			.map((percentile) =>
-				project.forecasts.find((f) => f.probability === percentile),
-			)
-			.filter((f) => f !== undefined);
-	}, []);
-
-	const renderProgressCell = useCallback(
-		(item: IPortfolio) => {
-			return (
-				<Box sx={{ width: "100%" }}>
-					<Box
-						sx={{
-							display: "flex",
-							justifyContent: "space-between",
-							mb: 0.5,
-						}}
-					>
-						<Typography variant="caption" color="text.secondary">
-							{item.totalWorkItems - item.remainingWorkItems} done out of{" "}
-							{item.totalWorkItems}
-						</Typography>
-						<Typography variant="caption" color="text.secondary">
-							{item.totalWorkItems > 0
-								? Math.round(
-										((item.totalWorkItems - item.remainingWorkItems) /
-											item.totalWorkItems) *
-											100,
-									)
-								: 0}
-							%
-						</Typography>
-					</Box>
-					<LinearProgress
-						variant="determinate"
-						value={
-							item.totalWorkItems > 0
-								? ((item.totalWorkItems - item.remainingWorkItems) /
-										item.totalWorkItems) *
-									100
-								: 0
-						}
-						sx={{
-							height: 8,
-							borderRadius: 1,
-							bgcolor: theme.palette.grey[200],
-							"& .MuiLinearProgress-bar": {
-								bgcolor: theme.palette.primary.main,
-							},
-						}}
-					/>
-				</Box>
-			);
-		},
-		[theme],
-	);
-
-	const renderForecastsCell = useCallback((keyForecasts: IWhenForecast[]) => {
-		if (keyForecasts.length === 0) {
-			return (
-				<Typography variant="body2" color="text.secondary">
-					—
-				</Typography>
-			);
-		}
-
-		return (
-			<Box
-				sx={{
-					display: "flex",
-					flexWrap: "wrap",
-					gap: 0.5,
-					alignItems: "center",
-				}}
-			>
-				{keyForecasts.map((forecast) => {
-					const forecastLevel = new ForecastLevel(forecast.probability);
-					const date = new Date(forecast.expectedDate);
-					const formattedDate = date.toLocaleDateString();
-
-					return (
-						<Tooltip
-							key={forecast.probability}
-							title={`${forecast.probability}% confidence: ${date.toLocaleDateString()}`}
-						>
-							<Chip
-								label={`${formattedDate}`}
-								size="small"
-								sx={{
-									bgcolor: forecastLevel.color,
-									color: "#fff",
-									fontWeight: "bold",
-									fontSize: "0.7rem",
-								}}
-							/>
-						</Tooltip>
-					);
-				})}
-			</Box>
-		);
-	}, []);
+	// Check if any of the data items are portfolios
+	const hasAnyPortfolios = data.some(isPortfolio);
 
 	const handleClone = useCallback(
 		(item: IFeatureOwner) => {
@@ -193,7 +86,6 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 		[navigate, api],
 	);
 
-	// Define DataGrid columns - dynamically include project-specific columns
 	const columns: DataGridColumn<IFeatureOwner & GridValidRowModel>[] =
 		useMemo(() => {
 			const baseColumns: DataGridColumn<IFeatureOwner & GridValidRowModel>[] = [
@@ -259,45 +151,18 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				},
 			];
 
-			// Add project-specific columns if we have projects
-			if (hasAnyProjects) {
-				baseColumns.push(
-					{
-						field: "progress",
-						headerName: "Progress",
-						width: 220,
-						hideable: !isMobile,
-						sortable: false,
-						renderCell: ({ row }) => {
-							if (!isProject(row)) {
-								return (
-									<Typography variant="body2" color="text.secondary">
-										—
-									</Typography>
-								);
-							}
-							return renderProgressCell(row);
-						},
+			if (hasAnyPortfolios) {
+				baseColumns.push({
+					field: "deliveries",
+					headerName: getTerm(TERMINOLOGY_KEYS.DELIVERIES),
+					width: 300,
+					hideable: !isMobile,
+					sortable: false,
+					renderCell: ({ row }) => {
+						if (!isPortfolio(row)) return null;
+						return <DeliveriesChips portfolioId={row.id} />;
 					},
-					{
-						field: "forecasts",
-						headerName: "Forecasts",
-						width: 280,
-						hideable: !isTablet,
-						sortable: false,
-						renderCell: ({ row }) => {
-							if (!isProject(row)) {
-								return (
-									<Typography variant="body2" color="text.secondary">
-										—
-									</Typography>
-								);
-							}
-							const keyForecasts = getKeyForecasts(row);
-							return renderForecastsCell(keyForecasts);
-						},
-					},
-				);
+				});
 			}
 
 			// Add common columns
@@ -396,12 +261,10 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 			theme,
 			isMobile,
 			isTablet,
-			hasAnyProjects,
+			hasAnyPortfolios,
+			getTerm,
+			isPortfolio,
 			onDelete,
-			isProject,
-			renderProgressCell,
-			getKeyForecasts,
-			renderForecastsCell,
 			handleClone,
 		]);
 

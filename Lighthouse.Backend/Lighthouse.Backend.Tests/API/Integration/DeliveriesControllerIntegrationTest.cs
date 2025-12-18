@@ -158,6 +158,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 new JsonSerializerOptions
                     { PropertyNameCaseInsensitive = true }
             );
+
+            if (deliveries == null)
+            {
+                throw new ArgumentNullException("Deliveries deserialization resulted in null");
+            }
+            
             var createdDelivery = deliveries.FirstOrDefault(d => d.Name == "Release 1");
             Assert.That(createdDelivery, Is.Not.Null);
 

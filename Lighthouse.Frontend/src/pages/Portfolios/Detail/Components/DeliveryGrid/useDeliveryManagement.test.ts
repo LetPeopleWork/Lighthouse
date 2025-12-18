@@ -23,6 +23,7 @@ mockFeatureService.getFeaturesByIds = mockGetFeaturesByIds;
 const mockApiServiceContext = createMockApiServiceContext({
 	deliveryService: {
 		getByPortfolio: mockDeliveryService.getByPortfolio,
+		getAll: vi.fn(),
 		create: mockDeliveryService.create,
 		update: vi.fn(),
 		delete: mockDeliveryService.delete,
@@ -56,9 +57,6 @@ describe("useDeliveryManagement", () => {
 		portfolio.features = [];
 		portfolio.involvedTeams = [];
 		portfolio.tags = [];
-		portfolio.totalWorkItems = 0;
-		portfolio.remainingWorkItems = 0;
-		portfolio.forecasts = [];
 
 		return Object.assign(portfolio, overrides);
 	};

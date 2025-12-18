@@ -96,6 +96,37 @@ namespace Lighthouse.Backend.Tests.Repository
                 Assert.That(result.Any(d => d.Name == "Second Delivery"), Is.True);
             }
         }
+        
+        [Test]
+        public async Task GetAll_ReturnsAllDeliveriesWithIncludes()
+        {
+            // Arrange
+            var repository = ServiceProvider.GetService<IDeliveryRepository>();
+            var portfolioRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
+
+            var portfolio = GetTestPortfolio();
+            portfolioRepository.Add(portfolio);
+            await portfolioRepository.Save();
+
+            var delivery1 = GetTestDelivery(portfolio.Id, "First Delivery");
+            var delivery2 = GetTestDelivery(portfolio.Id, "Second Delivery");
+            
+            repository.Add(delivery1);
+            repository.Add(delivery2);
+            await repository.Save();
+
+            // Act
+            var result = repository.GetAll();
+
+            // Assert
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Count(), Is.GreaterThanOrEqualTo(2));
+                Assert.That(result.Any(d => d.Name == "First Delivery"), Is.True);
+                Assert.That(result.Any(d => d.Name == "Second Delivery"), Is.True);
+            }
+        }
 
         [Test]
         public async Task Add_ValidDelivery_AddsToDatabase()

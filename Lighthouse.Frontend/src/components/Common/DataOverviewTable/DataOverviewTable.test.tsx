@@ -72,8 +72,8 @@ const sampleTeamData: IFeatureOwner[] = [
 	},
 ];
 
-// Sample project data (with project-specific fields)
-const sampleProjectData: IPortfolio[] = [
+// Sample portfolio data (with portfolio-specific fields)
+const samplePortfolioData: IPortfolio[] = [
 	{
 		id: 1,
 		name: "Project 1",
@@ -85,9 +85,6 @@ const sampleProjectData: IPortfolio[] = [
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
 		involvedTeams: [],
-		totalWorkItems: 100,
-		remainingWorkItems: 50,
-		forecasts: [],
 	},
 	{
 		id: 2,
@@ -100,9 +97,6 @@ const sampleProjectData: IPortfolio[] = [
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
 		involvedTeams: [],
-		totalWorkItems: 200,
-		remainingWorkItems: 100,
-		forecasts: [],
 	},
 ];
 
@@ -189,7 +183,7 @@ describe("DataOverviewTable", () => {
 		it("renders DataGrid correctly for portfolios", () => {
 			renderWithRouter(
 				<DataOverviewTable
-					data={sampleProjectData}
+					data={samplePortfolioData}
 					title="portfolios"
 					api="portfolios"
 					onDelete={vi.fn()}
@@ -202,14 +196,14 @@ describe("DataOverviewTable", () => {
 		it("displays all portfolios items in DataGrid", () => {
 			renderWithRouter(
 				<DataOverviewTable
-					data={sampleProjectData}
+					data={samplePortfolioData}
 					title="portfolios"
 					api="portfolios"
 					onDelete={vi.fn()}
 					filterText=""
 				/>,
 			);
-			for (const item of sampleProjectData) {
+			for (const item of samplePortfolioData) {
 				expect(screen.getByText(item.name)).toBeInTheDocument();
 			}
 		});
@@ -350,7 +344,7 @@ describe("DataOverviewTable", () => {
 		it("shows Clone action for portfolios", () => {
 			renderWithRouter(
 				<DataOverviewTable
-					data={sampleProjectData}
+					data={samplePortfolioData}
 					title="portfolios"
 					api="portfolios"
 					onDelete={vi.fn()}
@@ -359,13 +353,13 @@ describe("DataOverviewTable", () => {
 			);
 
 			const cloneButtons = screen.getAllByLabelText("Clone");
-			expect(cloneButtons).toHaveLength(sampleProjectData.length);
+			expect(cloneButtons).toHaveLength(samplePortfolioData.length);
 		});
 
 		it("navigates to clone URL when Clone button is clicked for portfolios", () => {
 			renderWithRouter(
 				<DataOverviewTable
-					data={sampleProjectData}
+					data={samplePortfolioData}
 					title="Portfolios"
 					api="portfolios"
 					onDelete={vi.fn()}
