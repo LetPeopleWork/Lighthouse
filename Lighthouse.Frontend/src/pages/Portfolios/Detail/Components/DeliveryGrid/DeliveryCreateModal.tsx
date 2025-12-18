@@ -9,12 +9,12 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { FeatureSelector } from "../../../../../components/Common/FeatureSelector";
 import type { IDelivery } from "../../../../../models/Delivery";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
-import type { StateCategory } from "../../../../../models/WorkItem";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 
@@ -59,14 +59,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		date?: string;
 		features?: string;
 	}>({});
-
-	// Filter features to only show ToDo and Doing
-	const eligibleFeatures = useMemo(() => {
-		const validStates: StateCategory[] = ["ToDo", "Doing"];
-		return allFeatures.filter((feature) =>
-			validStates.includes(feature.stateCategory),
-		);
-	}, [allFeatures]);
 
 	useEffect(() => {
 		if (open && portfolio.features.length > 0) {
@@ -123,15 +115,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 				});
 			}
 		}
-	};
-
-	const handleFeatureToggle = (featureId: number) => {
-		setSelectedFeatureIds((prev) => {
-			if (prev.includes(featureId)) {
-				return prev.filter((id) => id !== featureId);
-			}
-			return [...prev, featureId];
-		});
 	};
 
 	const resetForm = useCallback(() => {
@@ -200,34 +183,13 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						</Typography>
 					)}
 
-					<Box sx={{ maxHeight: 300, overflow: "auto" }}>
-						{eligibleFeatures.map((feature) => (
-							<Box
-								key={feature.id}
-								sx={{
-									display: "flex",
-									alignItems: "center",
-									mb: 1,
-									p: 1,
-									border: "1px solid #ddd",
-									borderRadius: 1,
-								}}
-							>
-								<input
-									type="checkbox"
-									id={`feature-${feature.id}`}
-									checked={selectedFeatureIds.includes(feature.id)}
-									onChange={() => handleFeatureToggle(feature.id)}
-									aria-label={`${feature.name}`}
-								/>
-								<Box sx={{ ml: 1 }}>
-									<Typography variant="body2">{feature.name}</Typography>
-									<Typography variant="caption" color="text.secondary">
-										ID: {feature.id} | State: {feature.state}
-									</Typography>
-								</Box>
-							</Box>
-						))}
+					<Box sx={{ height: 300 }}>
+						<FeatureSelector
+							features={allFeatures}
+							selectedFeatureIds={selectedFeatureIds}
+							onChange={setSelectedFeatureIds}
+							storageKey={`delivery-create-features-${portfolio.id}`}
+						/>
 					</Box>
 				</Box>
 			</DialogContent>

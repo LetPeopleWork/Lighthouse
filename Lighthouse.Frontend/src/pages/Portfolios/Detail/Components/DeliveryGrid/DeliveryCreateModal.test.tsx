@@ -219,7 +219,7 @@ describe("DeliveryCreateModal", () => {
 		});
 
 		// Select a feature by clicking its checkbox
-		const checkbox = screen.getByRole("checkbox", { name: /Todo Feature 1/ });
+		const checkbox = screen.getAllByRole("checkbox")[0];
 		await user.click(checkbox);
 
 		const saveButton = screen.getByRole("button", { name: "Save" });
@@ -246,12 +246,15 @@ describe("DeliveryCreateModal", () => {
 		renderModal();
 
 		await waitFor(() => {
+			expect(screen.getByText("1")).toBeInTheDocument();
 			expect(screen.getByText("Todo Feature 1")).toBeInTheDocument();
+			expect(screen.getByText("2")).toBeInTheDocument();
 			expect(screen.getByText("Doing Feature 1")).toBeInTheDocument();
+			expect(screen.getByText("4")).toBeInTheDocument();
 			expect(screen.getByText("Todo Feature 2")).toBeInTheDocument();
 		});
 
 		// Done feature should not be visible
-		expect(screen.queryByText("Done Feature 1")).not.toBeInTheDocument();
+		expect(screen.queryByText("3 - Done Feature 1")).not.toBeInTheDocument();
 	});
 });

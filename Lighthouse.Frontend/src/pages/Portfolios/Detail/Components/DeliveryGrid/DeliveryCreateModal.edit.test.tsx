@@ -152,6 +152,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 
 		await waitFor(() => {
 			// Features should be loaded and checkboxes available
+			expect(screen.getByText("1")).toBeInTheDocument();
 			expect(screen.getByText("Test Feature 1")).toBeInTheDocument();
 		});
 
@@ -178,6 +179,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		renderModal(undefined, mockOnSave);
 
 		await waitFor(() => {
+			expect(screen.getByText("1")).toBeInTheDocument();
 			expect(screen.getByText("Test Feature 1")).toBeInTheDocument();
 		});
 
@@ -189,8 +191,8 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		fireEvent.change(dateInput, { target: { value: "2025-12-30" } });
 
 		// Select a feature
-		const feature1Checkbox = screen.getByLabelText("Test Feature 1");
-		fireEvent.click(feature1Checkbox);
+		const checkboxes = screen.getAllByRole("checkbox");
+		fireEvent.click(checkboxes[0]); // Click first feature
 
 		// Click Save button
 		const saveButton = screen.getByText("Save");
@@ -210,15 +212,10 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 
 		await waitFor(() => {
 			// Both features should be selected since they're in mockEditingDelivery.features
-			const feature1Checkbox = screen.getByLabelText(
-				"Test Feature 1",
-			) as HTMLInputElement;
-			const feature2Checkbox = screen.getByLabelText(
-				"Test Feature 2",
-			) as HTMLInputElement;
+			const checkboxes = screen.getAllByRole("checkbox") as HTMLInputElement[];
 
-			expect(feature1Checkbox.checked).toBe(true);
-			expect(feature2Checkbox.checked).toBe(true);
+			expect(checkboxes[0]?.checked).toBe(true);
+			expect(checkboxes[1]?.checked).toBe(true);
 		});
 	});
 });
