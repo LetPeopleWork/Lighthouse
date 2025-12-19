@@ -988,60 +988,164 @@ jobs:
           pkill Lighthouse || true
           cat ./publish/Lighthouse-universal/lighthouse.log || true
 
+  codesign-windows:
+    name: Sign Windows Binaries
+    runs-on: [self-hosted, windows, codesign]
+    timeout-minutes: 10
+    needs:
+      - tag
+      - verifysqlite
+      - verifypostgres
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    environment:
+      name: CodeSign
 
-  # Disabled codesign-windows job until a signing certificate is available
-  #  codesign-windows:
-  #    name: Sign Windows Binaries
-  #    runs-on: [self-hosted, codesign]
-  #    timeout-minutes: 5
-  #    needs:
-  #      - tag
-  #      - packageapp
-  #
-  #    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
-  #
-  #    environment:
-  #      name: CodeSign
-  #
-  #    steps:
-  #      - uses: actions/download-artifact@v4
-  #        with:
-  #          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
-  #          path: ./artifacts/win-x64
-  #
-  #      - name: Sign Windows executables
-  #        run: |
-  #          # Sign both EXE and DLL files in a single invocation
-  #          sign.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
-  #        env:
-  #          YUBIKEY_PIN: ${{ secrets.YUBIKEY_PIN }}
-  #
-  #      - name: Verify signatures
-  #        continue-on-error: true 
-  #        run: |
-  #          # Verify EXE and DLL files in a single invocation
-  #          verify.sh ./artifacts/win-x64 "Lighthouse*.exe" "Lighthouse*.dll"
-  #
-  #      - name: Delete unsigned windows artifact
-  #        uses: geekyeggo/delete-artifact@v5
-  #        with:
-  #          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
-  #
-  #      - name: Upload signed windows artifact
-  #        uses: actions/upload-artifact@v4
-  #        with:
-  #          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
-  #          path: ./artifacts/win-x64
-      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+          path: ./artifacts/win-x64
+
+      - name: Sign EXE and DLL files
+        shell: pwsh
+        run: |
+          $thumbprint = $env:CERT_THUMBPRINT
+          if (-not $thumbprint) { throw "CERT_THUMBPRINT environment variable is not set" }
+
+          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe","Lighthouse*.dll"
+          foreach ($file in $files) {
+              Write-Host "Signing $file with certificate thumbprint $thumbprint"
+              & "signtool.exe" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint $file.FullName
+          }
+        env:
+          CERT_THUMBPRINT: ${{ secrets.CERT_THUMBPRINT }}
+
+      - name: Verify signatures
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe","Lighthouse*.dll"
+          foreach ($file in $files) {
+              Write-Host "Verifying $file"
+              & "signtool.exe" verify /pa $file.FullName
+          }
+
+      - name: Delete unsigned artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+          path: ./artifacts/win-x64
+
+  verifywindows:
+      name: Verify Windows version
+      runs-on: windows-latest
+      needs:
+        - codesign-windows
+        - tag
+
+      if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+      steps:
+        - name: Download signed Windows binary
+          uses: actions/download-artifact@v4
+          with:
+            name: Lighthouse-win-x64-${{ needs.tag.outputs.version }}
+            path: ./publish
+
+        - name: Verify code signature
+          shell: powershell
+          run: |
+            $binary = ".\publish\Lighthouse.exe"
+            if (-not (Test-Path $binary)) {
+              Write-Error "Error: binary not found at $binary"
+              Get-ChildItem .\publish
+              exit 1
+            }
+
+            Write-Host "Verifying code signature for $binary"
+            $signature = Get-AuthenticodeSignature $binary
+            
+            Write-Host "Signature Status: $($signature.Status)"
+            Write-Host "Signer Certificate Subject: $($signature.SignerCertificate.Subject)"
+            Write-Host "Signer Certificate Issuer: $($signature.SignerCertificate.Issuer)"
+            Write-Host "Timestamp: $($signature.TimeStamperCertificate.NotAfter)"
+            
+            if ($signature.Status -ne "Valid") {
+              Write-Error "Error: Signature status is not Valid"
+              exit 1
+            }
+
+        - name: Run Lighthouse (sqlite)
+          shell: bash
+          run: |
+            cd publish
+            ./Lighthouse.exe > lighthouse.log 2>&1 &
+            echo $! > lighthouse.pid
+            echo "Started Lighthouse with PID $(cat lighthouse.pid)"
+          env:
+            Database__Provider: sqlite
+            Database__ConnectionString: "Data Source=lighthouse.db"
+
+        - name: Wait for Lighthouse to start
+          shell: bash
+          run: |
+            timeout=60
+            elapsed=0
+            
+            echo "Waiting for service to start..."
+            while [ $elapsed -lt $timeout ]; do
+              if curl -k -s -f https://localhost:5001 > /dev/null 2>&1; then
+                echo "Service is up!"
+                exit 0
+              fi
+              
+              # Check if process is still running
+              if [ -f publish/lighthouse.pid ]; then
+                pid=$(cat publish/lighthouse.pid)
+                if ! kill -0 $pid 2>/dev/null; then
+                  echo "Process died unexpectedly!"
+                  cat publish/lighthouse.log
+                  exit 1
+                fi
+              fi
+              
+              sleep 2
+              elapsed=$((elapsed + 2))
+            done
+            
+            echo "Timeout waiting for service"
+            cat publish/lighthouse.log
+            exit 1
+
+        - name: Stop Lighthouse Server
+          if: always()
+          shell: bash
+          run: |
+            if [ -f publish/lighthouse.pid ]; then
+              pid=$(cat publish/lighthouse.pid)
+              echo "Stopping process $pid"
+              kill $pid 2>/dev/null || true
+            fi
+            
+            # Show logs
+            echo "=== Lighthouse Log ==="
+            cat publish/lighthouse.log || true      
   release:
     runs-on: ubuntu-latest
     needs:
     - tag
     - docker
-    - verifysqlite
-    - verifypostgres
     - verifymacos
-    - codesign-macos
+    - verifywindows
 
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
