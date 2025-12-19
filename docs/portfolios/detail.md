@@ -84,31 +84,14 @@ For each Feature you will see the forecasted completion date. You'll get four di
 {: .note}
 The completion dates of each feature will take into account **all teams** that are involved. If a single item is planned to be done by one team, but this is far down their priority, this will mean that the feature completion will be moving backwards. Lighthouse cares about delivering complete features. You may be able to use such scenarios to kick off a discussion about how work or teams are sliced (as less dependencies mean more effective delivery).
 
-### Milestone Probability
-If you have [Milestones](#milestones) defined, you will see the likelihood to get the Feature done in time for each milestone.
-
-## Milestones  
-
-{: .definition}
-Milestones are relevant events that have a specific date.
-
-You can define Milestones as you please when using Lighthouse. Simply give it a name and a date, and Lighthouse will automatically add it to the Feature View and display the [Milestone Probability](#milestone-probability):
-
-![Milestones](../../assets/features/portfoliodetail_milestones.png)
-
-We know sometimes life happens, and things may shift. You can always adjust the date of a milestone. When doing so, Lighthousue will automatically reforecast and update the probabilities.
-
-{: .note}
-Milestones that are in the past will not be displayed in the Features to save space.
-
 ## Feature WIP
 [Lighthouse forecasts](../../concepts/howlighthouseforecasts.html) based on the [Order](#feature-order) and the [Feature WIP](../teams/edit.html#feature-wip) of each involved team. You can change this via the [Edit Page of a Team](../teams/edit.html#feature-wip) or directly in the Portfolio Detail View. If you expand the *Involved Teams (Feature WIP)* box, you can see the current Feature WIP for each team of this portfolio.  
 
-You can adjust the Feature WIP, and it will automatically reforecast the completion dates and likelihoods for each milestone:
+You can adjust the Feature WIP, and it will automatically reforecast the completion dates:
 
 ![Feature WIP](../assets/features/portfoliodetail_team_feature_wip.png)
 
-If you compare the above picture to the one in [Milestones](#milestones), you can see that adjusting the Feature WIP for *The A-Team* from 1 to 3 caused the probabilities to change. In general, increasing the Feature WIP will mean that *lower ordered* features will be completed sooner, while *higher ordered features* take longer to finish.  
+Adjusting the Feature WIP for *The A-Team* from 1 to 3 caused the probabilities to change. In general, increasing the Feature WIP will mean that *lower ordered* features will be completed sooner, while *higher ordered features* take longer to finish.  
 A Feature WIP of 1 means, the team will **only** work on the top most feature, and move to the next one only when this is all done. The single focus of this team is on one feature.  
 On the other side of the extreme, if we have a Feature WIP of 10, we will split our efforts across ten things, dilluting any kind of focus, and doing many things in parallel.
 
