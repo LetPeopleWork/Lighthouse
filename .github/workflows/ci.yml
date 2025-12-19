@@ -142,6 +142,13 @@ jobs:
         with:
           fetch-depth: '0'
       
+      - name: Setup pnpm
+        if: needs.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+      
       - name: Use Node.js
         if: needs.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
@@ -149,30 +156,7 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
           cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
-      
-      - name: Setup pnpm
-        if: needs.changes.outputs.frontend == 'true'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9  # or your preferred version
-          run_install: false
-      
-      - name: Get pnpm store directory
-        if: needs.changes.outputs.frontend == 'true'
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-      
-      - name: Setup pnpm cache
-        if: needs.changes.outputs.frontend == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      
+            
       - name: Cache Vitest
         if: needs.changes.outputs.frontend == 'true'
         uses: actions/cache@v4
