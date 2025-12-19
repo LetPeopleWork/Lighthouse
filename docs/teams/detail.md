@@ -32,45 +32,42 @@ After you trigger the manual update, the button *Update Team Data* will be disab
 ## Edit Team
 You can modify the team settings by clicking on the *Edit Team* button on the top right. This will bring you to the [Team Modification Page](./edit.html).
 
-# Forecasts
-The *Forecasts* section is the default section. It shows you all things related to forecasting for this specific team.
-
-## Features
-If a team is involved in one (or more) portfolios, all the features where this specific team has work for in their backlog are listed.
+# Features
+The *Features* section is the default section. If a team is involved in one (or more) portfolios, all the features where this specific team has work for in their backlog are listed.
 
 For every feature, you can see the following details.
 
-### Table Options
+## Table Options
 The Feature table offers two options that you can toggle on/off:
 - Group Features by Parent
 - Hide Completed Features
 
 The settings will be stored for this specific team, so next time you won't have to toggle it off/on again.
 
-#### Group Features by Parent
-If this is toggled on, the Features will not be shown in a flat list, but grouped by their respective parents. This can be useful if your Features (for example *Epics*) have parent items that are of relevance to you. This could be something like an *Initiative* or *Objective* (if you use OKRs or some kind of quarterly planning).
-
-#### Hide Completed Features
+### Hide Completed Features
 If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features.
 
-### Feature Name
+## Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
 
 Furthermore, there can be two indicators for each feature:
 - A ⚠️ emoji symbolizes that this specific feature is using the *Default Feature Size* and is not broken down yet. Check the [Portfolio Modification Page](../portfolios/edit.html#default-feature-size) for details on what that means.
 - A ⚙️ emoji symbolizes that there are child items of this specific feature that are currently being **actively** worked on (meaning they are in a [Doing State](./edit.html#states)) by this team.
 
-### Feature Progress
+## Feature Progress
 In the progress column, you can see how many items are done and how many are pending for this feature. This is split by the total amount (containing all  items that including the ones from other teams working on the same feature) and items that are specifically relevant for the current team.
 
 {: .note}
 If a team is working solo on a feature, both bars will show the same numbers. If not, this means at least one other team is involved in this feature.
 
-### Feature Forecasts
+## Feature Forecasts
 For each Feature you will see the forecasted completion date. You'll get [four different probabilities](../index.html#projected-completion), from *Certain* to *Risky*.
 
 {: .note}
 The completion dates of each feature will take into account **all teams** that are involved, not just the one you are currently looking at.
+
+# Forecasts
+It shows you all things related to forecasting for this specific team.
 
 ## Manual Forecasts
 Based on the team's [throughput](#metrics), you can run [Monte Carlo Simulations](../../concepts/montecarlosimulations.html) to answer two important questions for many teams and organizations.
