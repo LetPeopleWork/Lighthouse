@@ -3,6 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import {
+	createMockApiServiceContext,
+	createMockLicensingService,
+	createMockPortfolioService,
+	createMockSuggestionService,
+	createMockTeamService,
+} from "../../../tests/MockApiServiceProvider";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
@@ -167,6 +175,47 @@ describe("ModifyProjectSettings", () => {
 	const mockSaveProjectSettings = vi.fn();
 	const mockValidateProjectSettings = vi.fn();
 
+	const mockLicensingService = createMockLicensingService();
+	const mockSuggestionService = createMockSuggestionService();
+	const mockTeamService = createMockTeamService();
+	const mockPortfolioService = createMockPortfolioService();
+
+	mockLicensingService.getLicenseStatus = vi.fn().mockResolvedValue({
+		hasLicense: true,
+		isValid: true,
+		canUsePremiumFeatures: true,
+	});
+	mockTeamService.getTeams = vi.fn().mockResolvedValue([]);
+	mockPortfolioService.getPortfolios = vi.fn().mockResolvedValue([]);
+	mockSuggestionService.getStatesForProjects = vi.fn().mockResolvedValue({
+		toDoStates: ["New", "Ready", "Backlog"],
+		doingStates: ["Active", "In Progress", "In Review"],
+		doneStates: ["Done", "Closed", "Completed"],
+	});
+
+	const mockApiServiceContext = createMockApiServiceContext({
+		licensingService: mockLicensingService,
+		suggestionService: mockSuggestionService,
+		teamService: mockTeamService,
+		portfolioService: mockPortfolioService,
+	});
+
+	const MockApiServiceProvider = ({
+		children,
+	}: {
+		children: React.ReactNode;
+	}) => {
+		return (
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				{children}
+			</ApiServiceContext.Provider>
+		);
+	};
+
+	const renderWithProvider = (component: React.ReactElement) => {
+		return render(<MockApiServiceProvider>{component}</MockApiServiceProvider>);
+	};
+
 	const workTrackingSystems: IWorkTrackingSystemConnection[] = [
 		{
 			id: 1,
@@ -241,7 +290,7 @@ describe("ModifyProjectSettings", () => {
 	});
 
 	it("renders loading state initially", () => {
-		render(
+		renderWithProvider(
 			<ModifyProjectSettings
 				title="Modify Project Settings"
 				getWorkTrackingSystems={mockGetWorkTrackingSystems}
@@ -256,7 +305,7 @@ describe("ModifyProjectSettings", () => {
 	});
 
 	it("renders components correctly after loading", async () => {
-		render(
+		renderWithProvider(
 			<ModifyProjectSettings
 				title="Modify Project Settings"
 				getWorkTrackingSystems={mockGetWorkTrackingSystems}

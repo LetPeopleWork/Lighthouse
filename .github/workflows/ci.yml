@@ -135,61 +135,89 @@ jobs:
   frontend:
     name: Verify Frontend
     needs: changes
-    
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-      if: needs.changes.outputs.frontend == 'true'
-      with:
-        fetch-depth: '0'
-
-    - name: Use Node.js
-      if: needs.changes.outputs.frontend == 'true'
-      uses: actions/setup-node@v4
-
-    - name: Enable Corepack and prepare pnpm
-      if: needs.changes.outputs.frontend == 'true'
-      run: |
-        mkdir -p "$HOME/.local/share/pnpm"
-        echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
-        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
-        export PNPM_HOME="$HOME/.local/share/pnpm"
-        export PATH="$PNPM_HOME:$PATH"
-        corepack enable
-        corepack prepare pnpm@latest --activate
-      working-directory: ./Lighthouse.Frontend
-
-    - name: Install pnpm dependencies
-      if: needs.changes.outputs.frontend == 'true'
-      run: pnpm install --frozen-lockfile
-      working-directory: ./Lighthouse.Frontend
-
-    - name: Build Frontend
-      if: needs.changes.outputs.frontend == 'true'
-      run: pnpm run build
-      working-directory: ./Lighthouse.Frontend
-
-    - name: Test Frontend
-      if: needs.changes.outputs.frontend == 'true'
-      run: pnpm run sonarreport
-      working-directory: ./Lighthouse.Frontend
-
-    - name: Frontend SonarCloud
-      if: needs.changes.outputs.frontend == 'true'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      working-directory: ./Lighthouse.Frontend
-      run: |
-        # Ensure pnpm global bin directory exists in CI before attempting global installs
-        # Create the directory, export PNPM_HOME for other steps, and append it to PATH
-        mkdir -p "$HOME/.local/share/pnpm"
-        echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
-        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
-        pnpm setup
-        pnpm add -g sonarqube-scanner
-        sonar-scanner
+      - uses: actions/checkout@v4
+        if: needs.changes.outputs.frontend == 'true'
+        with:
+          fetch-depth: '0'
+      
+      - name: Use Node.js
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+      
+      - name: Setup pnpm
+        if: needs.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9  # or your preferred version
+          run_install: false
+      
+      - name: Get pnpm store directory
+        if: needs.changes.outputs.frontend == 'true'
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      
+      - name: Setup pnpm cache
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      
+      - name: Cache Vitest
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./Lighthouse.Frontend/node_modules/.vitest
+            ./Lighthouse.Frontend/.vitest
+          key: ${{ runner.os }}-vitest-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-vitest-
+      
+      - name: Install dependencies
+        if: needs.changes.outputs.frontend == 'true'
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+      
+      - name: Build Frontend
+        if: needs.changes.outputs.frontend == 'true'
+        run: pnpm run build
+        working-directory: ./Lighthouse.Frontend
+      
+      - name: Test Frontend
+        if: needs.changes.outputs.frontend == 'true'
+        run: pnpm run sonarreport
+        working-directory: ./Lighthouse.Frontend
+        env:
+          CI: true
+      
+      - name: Setup SonarQube Scanner
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: |
+            ${{ runner.os }}-sonar
+      
+      - name: Frontend SonarCloud
+        if: needs.changes.outputs.frontend == 'true'
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: ./Lighthouse.Frontend
 
   e2etests:
     name: Verify End to End Tests

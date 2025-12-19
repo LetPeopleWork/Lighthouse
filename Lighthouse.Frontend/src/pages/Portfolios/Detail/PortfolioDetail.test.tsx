@@ -5,12 +5,14 @@ import { Feature } from "../../../models/Feature";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { ILicensingService } from "../../../services/Api/LicensingService";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import type { IPortfolioService } from "../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import type { IUpdateSubscriptionService } from "../../../services/UpdateSubscriptionService";
 import {
 	createMockApiServiceContext,
+	createMockLicensingService,
 	createMockOptionalFeatureService,
 	createMockPortfolioService,
 	createMockTeamService,
@@ -77,6 +79,7 @@ vi.mock("../../../components/Common/ActionButton/ActionButton", () => ({
 
 const mockPortfolioService: IPortfolioService = createMockPortfolioService();
 const mockTeamService: ITeamService = createMockTeamService();
+const mockLicensingService: ILicensingService = createMockLicensingService();
 const mockOptionalFeatureService: IOptionalFeatureService =
 	createMockOptionalFeatureService();
 const mockUpdateSubscriptionService: IUpdateSubscriptionService =
@@ -106,6 +109,7 @@ const MockApiServiceProvider = ({
 	const mockContext = createMockApiServiceContext({
 		portfolioService: mockPortfolioService,
 		teamService: mockTeamService,
+		licensingService: mockLicensingService,
 		optionalFeatureService: mockOptionalFeatureService,
 		updateSubscriptionService: mockUpdateSubscriptionService,
 	});

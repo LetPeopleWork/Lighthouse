@@ -25,5 +25,24 @@ export default defineConfig({
                 inline: ['@mui/x-data-grid'],
             },
         },
+
+        // GitHub Actions optimized settings
+        pool: 'threads',
+        poolOptions: {
+            threads: {
+                singleThread: false,
+                isolate: true,
+                maxThreads: process.env.CI ? undefined : 4,
+                minThreads: 1,
+            },
+        },
+        fileParallelism: true,
+
+        // CI-specific optimizations
+        ...(process.env.CI && {
+            // Reduce memory usage on CI
+            pool: 'forks',  // More stable than threads on CI
+            bail: 1,        // Optional: fail fast
+        }),
     },
 });
