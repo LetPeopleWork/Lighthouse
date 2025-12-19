@@ -304,7 +304,7 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.teamCount).toBe(0);
 			expect(result.current.portfolioCount).toBe(2);
 			expect(result.current.createPortfolioTooltip).toBe(
-				"Free users can only create up to 1 portfolio. You currently have 2 portfolios. Please obtain a premium license to create more portfolios.",
+				"Free users can only create up to 1 portfolio. You currently have 2 portfolio. Please obtain a premium license to create more portfolios.",
 			);
 			expect(result.current.updatePortfolioDataTooltip).toBe(
 				"Free users can only update portfolio data for up to 1 portfolio. You currently have 2 portfolios. Please delete some portfolios or obtain a premium license.",

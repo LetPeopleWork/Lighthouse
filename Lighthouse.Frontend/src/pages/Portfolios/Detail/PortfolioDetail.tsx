@@ -24,6 +24,8 @@ import PortfolioDeliveryView from "./PortfolioDeliveryView";
 import PortfolioForecastView from "./PortfolioForecastView";
 import PortfolioMetricsView from "./PortfolioMetricsView";
 
+type PortfolioViewType = "features" | "metrics" | "deliveries";
+
 const PortfolioDetail: React.FC = () => {
 	const navigate = useNavigate();
 	const { id, tab } = useParams<{ id: string; tab?: string }>();
@@ -36,14 +38,15 @@ const PortfolioDetail: React.FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isPortfolioUpdating, setIsPortfolioUpdating] =
 		useState<boolean>(false);
-	const [activeView, setActiveView] = useState<
-		"features" | "metrics" | "deliveries"
-	>(
-		tab === "metrics"
-			? "metrics"
-			: tab === "deliveries"
-				? "deliveries"
-				: "features",
+
+	const getInitialActiveView = (tabParam?: string): PortfolioViewType => {
+		if (tabParam === "metrics") return "metrics";
+		if (tabParam === "deliveries") return "deliveries";
+		return "features";
+	};
+
+	const [activeView, setActiveView] = useState<PortfolioViewType>(
+		getInitialActiveView(tab),
 	);
 
 	const [involvedTeams, setInvolvedTeams] = useState<ITeamSettings[]>([]);
@@ -106,17 +109,18 @@ const PortfolioDetail: React.FC = () => {
 		await portfolioService.refreshForecastsForPortfolio(portfolioId);
 	};
 
+	const getTabPath = (newView: PortfolioViewType): string => {
+		if (newView === "features") return "features";
+		if (newView === "deliveries") return "deliveries";
+		return newView;
+	};
+
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
-		newView: "features" | "metrics" | "deliveries",
+		newView: PortfolioViewType,
 	) => {
 		setActiveView(newView);
-		const tabPath =
-			newView === "features"
-				? "features"
-				: newView === "deliveries"
-					? "deliveries"
-					: newView;
+		const tabPath = getTabPath(newView);
 		navigate(`/portfolios/${id}/${tabPath}`, { replace: true });
 	};
 

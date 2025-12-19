@@ -12,12 +12,9 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 	onChange,
 	storageKey,
 }) => {
-	// Filter features to only show ToDo and Doing
 	const eligibleFeatures = useMemo(() => {
-		const validStates: StateCategory[] = ["ToDo", "Doing"];
-		return features.filter((feature) =>
-			validStates.includes(feature.stateCategory),
-		);
+		const validStates: Set<StateCategory> = new Set(["ToDo", "Doing"]);
+		return features.filter((feature) => validStates.has(feature.stateCategory));
 	}, [features]);
 
 	// Transform features into rows for DataGrid
@@ -30,16 +27,14 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 		}));
 	}, [eligibleFeatures, selectedFeatureIds]);
 
-	const handleSelectionChange = (featureId: number, isSelected: boolean) => {
-		if (isSelected) {
-			// Add to selection
-			const newSelection = [...selectedFeatureIds, featureId];
-			onChange(newSelection);
-		} else {
-			// Remove from selection
-			const newSelection = selectedFeatureIds.filter((id) => id !== featureId);
-			onChange(newSelection);
-		}
+	const handleAddToSelection = (featureId: number) => {
+		const newSelection = [...selectedFeatureIds, featureId];
+		onChange(newSelection);
+	};
+
+	const handleRemoveFromSelection = (featureId: number) => {
+		const newSelection = selectedFeatureIds.filter((id) => id !== featureId);
+		onChange(newSelection);
 	};
 
 	const columns: DataGridColumn<FeatureSelectorRow>[] = [
@@ -53,7 +48,9 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 				<Checkbox
 					checked={row.selected}
 					onChange={(event) =>
-						handleSelectionChange(row.id, event.target.checked)
+						event.target.checked
+							? handleAddToSelection(row.id)
+							: handleRemoveFromSelection(row.id)
 					}
 					aria-label={`Select ${row.name}`}
 				/>

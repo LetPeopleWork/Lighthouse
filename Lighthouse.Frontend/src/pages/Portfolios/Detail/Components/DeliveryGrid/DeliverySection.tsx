@@ -277,7 +277,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									variant="outlined"
 								/>
 								<Chip
-									label={`Scope: ${delivery.getFeatureCount()} ${delivery.getFeatureCount() !== 1 ? featuresTerm : featureTerm}`}
+									label={`Scope: ${delivery.getFeatureCount()} ${delivery.getFeatureCount() === 1 ? featureTerm : featuresTerm}`}
 									size="small"
 								/>
 								<Chip
@@ -311,29 +311,47 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						</Box>
 					</AccordionSummary>
 					<AccordionDetails sx={{ p: 0 }}>
-						{isLoadingFeatures ? (
-							<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-								{`Loading ${featuresTerm}...`}
-							</Typography>
-						) : features.length === 0 ? (
-							<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-								No {featuresTerm} in this {deliveryTerm}.
-							</Typography>
-						) : (
-							<TableContainer
-								component={Paper}
-								elevation={0}
-								sx={{ mx: 2, mb: 2 }}
-							>
-								<DataGridBase
-									rows={features as (IFeature & GridValidRowModel)[]}
-									columns={columns}
-									storageKey={`delivery-features-${delivery.id}`}
-									loading={false}
-									emptyStateMessage={`No ${featuresTerm} found`}
-								/>
-							</TableContainer>
-						)}
+						{(() => {
+							let content: React.ReactNode;
+							if (isLoadingFeatures) {
+								content = (
+									<Typography
+										variant="body2"
+										color="text.secondary"
+										sx={{ p: 2 }}
+									>
+										{`Loading ${featuresTerm}...`}
+									</Typography>
+								);
+							} else if (features.length === 0) {
+								content = (
+									<Typography
+										variant="body2"
+										color="text.secondary"
+										sx={{ p: 2 }}
+									>
+										No {featuresTerm} in this {deliveryTerm}.
+									</Typography>
+								);
+							} else {
+								content = (
+									<TableContainer
+										component={Paper}
+										elevation={0}
+										sx={{ mx: 2, mb: 2 }}
+									>
+										<DataGridBase
+											rows={features as (IFeature & GridValidRowModel)[]}
+											columns={columns}
+											storageKey={`delivery-features-${delivery.id}`}
+											loading={false}
+											emptyStateMessage={`No ${featuresTerm} found`}
+										/>
+									</TableContainer>
+								);
+							}
+							return content;
+						})()}
 					</AccordionDetails>
 				</Accordion>
 			</Box>

@@ -77,9 +77,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			newErrors.name = `${deliveryTerm} name is required`;
 		}
 
-		if (!date) {
-			newErrors.date = `${deliveryTerm} date is required`;
-		} else {
+		if (date) {
 			const selectedDate = new Date(date);
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
@@ -88,6 +86,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			if (selectedDate <= today) {
 				newErrors.date = `${deliveryTerm} date must be in the future`;
 			}
+		} else {
+			newErrors.date = `${deliveryTerm} date is required`;
 		}
 
 		if (selectedFeatureIds.length === 0) {
@@ -170,7 +170,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						onChange={(e) => setDate(e.target.value)}
 						error={!!errors.date}
 						helperText={errors.date}
-						InputLabelProps={{ shrink: true }}
 						sx={{ mb: 2 }}
 					/>
 

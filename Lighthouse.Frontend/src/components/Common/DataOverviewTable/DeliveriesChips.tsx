@@ -28,8 +28,8 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 				const fetchedDeliveries =
 					await deliveryService.getByPortfolio(portfolioId);
 				setDeliveries(fetchedDeliveries);
-			} catch (_error) {
-				// Silently fail - show empty state
+			} catch (error) {
+				console.error("Error fetching deliveries:", error);
 				setDeliveries([]);
 			}
 		};

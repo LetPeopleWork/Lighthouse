@@ -21,6 +21,8 @@ import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
 
+type TeamViewType = "features" | "forecasts" | "metrics";
+
 const TeamDetail: React.FC = () => {
 	const navigate = useNavigate();
 	const { id, tab } = useParams<{ id: string; tab?: string }>();
@@ -39,17 +41,23 @@ const TeamDetail: React.FC = () => {
 
 	let subscribedToUpdates = false;
 
+	const getInitialView = (tabParam: string | undefined): TeamViewType => {
+		if (tabParam === "metrics") {
+			return "metrics";
+		}
+
+		if (tabParam === "forecasts") {
+			return "forecasts";
+		}
+
+		return "features";
+	};
+
 	const [team, setTeam] = useState<Team>();
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
-	const [activeView, setActiveView] = useState<
-		"features" | "forecasts" | "metrics"
-	>(
-		tab === "metrics"
-			? "metrics"
-			: tab === "forecasts"
-				? "forecasts"
-				: "features",
+	const [activeView, setActiveView] = useState<TeamViewType>(
+		getInitialView(tab),
 	);
 
 	const { teamService, updateSubscriptionService } =
@@ -125,7 +133,7 @@ const TeamDetail: React.FC = () => {
 
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
-		newView: "features" | "forecasts" | "metrics",
+		newView: TeamViewType,
 	) => {
 		setActiveView(newView);
 		navigate(`/teams/${id}/${newView}`, { replace: true });

@@ -145,7 +145,7 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 
 	const createPortfolioTooltip = canCreatePortfolio
 		? ""
-		: `Free users can only create up to ${MAX_PORTFOLIOS_WITHOUT_PREMIUM} portfolio. You currently have ${portfolioCount} portfolio${portfolioCount === 1 ? "" : "s"}. Please obtain a premium license to create more portfolios.`;
+		: `Free users can only create up to ${MAX_PORTFOLIOS_WITHOUT_PREMIUM} portfolio. You currently have ${portfolioCount} portfolio. Please obtain a premium license to create more portfolios.`;
 
 	const portfolioPlural = portfolioCount === 1 ? "" : "s";
 	const updatePortfolioDataTooltip = canUpdatePortfolioData

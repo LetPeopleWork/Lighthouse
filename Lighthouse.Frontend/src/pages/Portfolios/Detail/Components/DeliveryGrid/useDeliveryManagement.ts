@@ -58,7 +58,8 @@ export const useDeliveryManagement = ({
 				const featureIds = delivery.features;
 				const features = await featureService.getFeaturesByIds(featureIds);
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
-			} catch (_error) {
+			} catch (error) {
+				console.error("Failed to load features for delivery:", error);
 				showError("Failed to load features for delivery");
 			} finally {
 				setLoadingFeaturesByDelivery((prev) => {
@@ -89,7 +90,8 @@ export const useDeliveryManagement = ({
 				const featureIds = delivery.features;
 				const features = await featureService.getFeaturesByIds(featureIds);
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
-			} catch (_error) {
+			} catch (error) {
+				console.error("Failed to load features for delivery:", error);
 				showError("Failed to load features for delivery");
 			} finally {
 				setLoadingFeaturesByDelivery((prev) => {
@@ -109,7 +111,8 @@ export const useDeliveryManagement = ({
 				portfolio.id,
 			);
 			setDeliveries(portfolioDeliveries);
-		} catch (_error) {
+		} catch (error) {
+			console.error("Failed to fetch deliveries:", error);
 			showError("Failed to fetch deliveries");
 		} finally {
 			setIsLoading(false);
@@ -143,7 +146,8 @@ export const useDeliveryManagement = ({
 			);
 			setShowCreateModal(false);
 			await fetchDeliveries();
-		} catch (_error) {
+		} catch (error) {
+			console.error("Failed to create delivery:", error);
 			showError("Failed to create delivery");
 		}
 	};
@@ -185,7 +189,8 @@ export const useDeliveryManagement = ({
 					await forceReloadFeaturesForDelivery(updatedDelivery);
 				}
 			}
-		} catch (_error) {
+		} catch (error) {
+			console.error("Failed to update delivery:", error);
 			showError("Failed to update delivery");
 		}
 	};
@@ -205,7 +210,8 @@ export const useDeliveryManagement = ({
 					return next;
 				});
 				await fetchDeliveries();
-			} catch (_error) {
+			} catch (error) {
+				console.error("Failed to delete delivery:", error);
 				showError("Failed to delete delivery");
 			}
 		}
