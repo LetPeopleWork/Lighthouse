@@ -11,10 +11,52 @@ Preview
 {: .label .label-blue }
 -->
 
-# Lighthouse v25.12.7.1118
+# Lighthouse v25.12.19.1534
 {: .d-inline-block }
 Latest
 {: .label .label-green }
+
+## Deliveries
+
+Deliveries are named milestone dates for a portfolio that group a set of Features intended to be released together. They help you communicate target dates, track which features belong to a delivery, and see delivery-level progress alongside feature forecasts.
+
+⚠️ **Milestones have been removed and replaced with Deliveries.** Deliveries are the new way to group features for release milestones.
+
+Deliveries appear in their own view for each Portfolio, including target date and the list of included features.
+
+![Delivery Details](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/delivery_detail.png)
+
+The delivery row shows the delivery name and date, an expand control to reveal included features and their statuses, and action buttons to edit or delete the delivery. Expanding a delivery displays each feature and its forecasted completion so you can assess delivery risk and progress at a glance.
+
+Use deliveries to communicate release milestones and to group related features — this makes it easier to discuss release risk and progress with stakeholders.
+
+Deliveries are also shown in the overview page for each Portfolio.
+
+**Note:** If you are using the community edition, you can create one delivery. With a premium license, you get unlimited deliveries.
+
+## Digital Code Signing
+The versions for Windows and macOS are now digitally signed. This means you can trust that the executables are coming from LetPeopleWork GmbH. On Windows, this means that you won't see the "Unknown Publisher" warning anymore, but can verify that the executable is trustworthy.
+
+![Digital Signature on Windows](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/digitalsignature.png)
+
+On macOS, you may still get a warning (after the download), but you could check through the commandline that it's signed and notarized through Apple. In a next release, this will improve also on macOS.
+
+## Bug Fixes and other Improvements
+- Update of third party software to latest versions
+- Work Distribution Chart details displayed Cycle Time for all Items. This lead to always showing 0 for in Progress work. For those item, now the Item Age is displayed.
+- If you had an expired license, the update to a newer license was causing an error. This is fixed now.
+- Reworked the tab structure in the *Teams* view, splitting *Forecasts* and *Features* into dedicated tabs.
+
+## Contributions ❤️ 
+Special Thanks to everyone who contributed their feedback to this release:
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/) 
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v25.12.7.1118...v25.12.19.1534)
+
+# Lighthouse v25.12.7.1118
 
 ## Rename Project to Portfolio
 As a preparation for future changes, we started renaming what used to be called *Project* to **Portfolio**.
@@ -118,7 +160,7 @@ For premium users, the data grid also offers the possibility to export the data 
 
 ## Contributions ❤️ 
 Special Thanks to everyone who contributed their feedback to this release:
-- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)- 
+- [Agnieszka Reginek](https://www.linkedin.com/in/agnieszka-reginek/)
 - [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
 - [Mihajlo Vilajić](https://www.linkedin.com/in/mihajlo-v-6804ba162/)
 - [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
