@@ -54,12 +54,6 @@ vi.mock("../../../components/Common/InputGroup/InputGroup", () => ({
 	),
 }));
 
-vi.mock("./TeamFeatureList", () => ({
-	default: ({ team }: { team: Team }) => (
-		<div data-testid="team-feature-list">TeamFeatureList for {team.name}</div>
-	),
-}));
-
 vi.mock("./ManualForecaster", () => ({
 	default: ({ onRunManualForecast }: { onRunManualForecast: () => void }) => (
 		<div data-testid="manual-forecaster">
@@ -158,12 +152,10 @@ describe("TeamForecastView component", () => {
 	it("should render without errors", () => {
 		renderWithProviders(<TeamForecastView team={mockTeam} />);
 
-		expect(screen.getByText("Features")).toBeInTheDocument();
 		expect(screen.getByText("Team Forecast")).toBeInTheDocument();
 		expect(
 			screen.getByText("New Work Items Creation Forecast"),
 		).toBeInTheDocument();
-		expect(screen.getByTestId("team-feature-list")).toBeInTheDocument();
 		expect(screen.getByTestId("manual-forecaster")).toBeInTheDocument();
 		expect(screen.getByTestId("new-item-forecaster")).toBeInTheDocument();
 	});

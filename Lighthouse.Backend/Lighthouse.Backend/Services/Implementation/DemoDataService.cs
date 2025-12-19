@@ -15,8 +15,6 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo;
         private readonly IDemoDataFactory demoDataFactory;
 
-        private readonly Dictionary<string, List<Milestone>> milestones = new Dictionary<string, List<Milestone>>();
-
         public DemoDataService(
             IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDemoDataFactory demoDataFactory)
         {
@@ -68,28 +66,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 project.WorkTrackingSystemConnection = workTrackingSystemConnection;
                 project.WorkTrackingSystemConnectionId = workTrackingSystemConnection.Id;
 
-                AddMilestonesToProject(project);
-
                 var teamsForProject = teams.Where(t => scenario.Teams.Contains(t.Name)).ToList();
                 project.UpdateTeams(teamsForProject);
 
                 projectRepository.Add(project);
 
                 addedProjects.Add(projectName);
-            }
-        }
-
-        private void AddMilestonesToProject(Portfolio project)
-        {
-            if (milestones.ContainsKey(project.Name))
-            {
-                var milestonesForProject = milestones[project.Name];
-                foreach (var milestone in milestonesForProject)
-                {
-                    milestone.Portfolio = project;
-                    milestone.PortfolioId = project.Id;
-                    project.Milestones.Add(milestone);
-                }
             }
         }
 
@@ -174,9 +156,6 @@ namespace Lighthouse.Backend.Services.Implementation
             whenWillItBeDone.Projects.Add(DemoProjectNames.EpicForecast);
             freeScenarios.Add(whenWillItBeDone);
 
-            // One Milestone in 7 weeks
-            milestones.Add(DemoProjectNames.EpicForecast, new List<Milestone> { new Milestone { Name = "Important Customer Meeting", Date = DateTime.Now.AddDays(7 * 7) } });
-
             var overloadedTeams = CreatesScenario(1, "Too Much WIP", "A team that is super busy, but progress is slow.");
             overloadedTeams.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);
             freeScenarios.Add(overloadedTeams);
@@ -186,13 +165,6 @@ namespace Lighthouse.Backend.Services.Implementation
             productLaunch.Teams.Add(DemoTeamNames.ConstantlyIncreasingWip);
             productLaunch.Projects.Add(DemoProjectNames.LaunchAlignment);
             freeScenarios.Add(productLaunch);
-
-            milestones.Add(DemoProjectNames.LaunchAlignment, new List<Milestone>
-            {
-                new Milestone { Name = "First Demo", Date = DateTime.Now.AddDays(7*2) },
-                new Milestone { Name = "Customer Presentation", Date = DateTime.Now.AddDays(7*4) },
-                new Milestone { Name = "Launch", Date = DateTime.Now.AddDays(7*6) },
-            });
 
             return freeScenarios;
         }
@@ -222,12 +194,6 @@ namespace Lighthouse.Backend.Services.Implementation
 
             projectDependencies.Projects.Add(DemoProjectNames.ProjectWithDependencies);
 
-            // Milestone 6 weeks in Future
-            milestones.Add(DemoProjectNames.ProjectWithDependencies, new List<Milestone> 
-            {
-                new Milestone { Name = "Release", Date = DateTime.Now.AddDays(7*6) },
-            });
-
             premiumScenarios.Add(projectDependencies);
 
             var quarterlyPlanning = CreatesScenario(13, "Quarterly Planning", "See how a Quarterly Planning could look like for a Team that uses Monte Carlo Forecasts");
@@ -237,17 +203,6 @@ namespace Lighthouse.Backend.Services.Implementation
             quarterlyPlanning.Projects.Add(DemoProjectNames.QuarterlyPlanning);
 
             premiumScenarios.Add(quarterlyPlanning);
-
-            // Milestones for every Sprint (2 weeks)
-            milestones.Add(DemoProjectNames.QuarterlyPlanning, new List<Milestone>
-            {
-                new Milestone { Name = "Sprint 1", Date = DateTime.Now.AddDays(7*2) },
-                new Milestone { Name = "Sprint 2", Date = DateTime.Now.AddDays(7*4) },
-                new Milestone { Name = "Sprint 3", Date = DateTime.Now.AddDays(7*6) },
-                new Milestone { Name = "Sprint 4", Date = DateTime.Now.AddDays(7*8) },
-                new Milestone { Name = "Sprint 5", Date = DateTime.Now.AddDays(7*10) },
-                new Milestone { Name = "Quarterly Demo", Date = DateTime.Now.AddDays(7*12) },
-            });
 
             var newProductInitiative = CreatesScenario(14, "New Product Initiative", "Look at how you could forecast if you don't have any refined Features yet");
             newProductInitiative.IsPremium = true;

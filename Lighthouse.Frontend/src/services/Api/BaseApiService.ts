@@ -1,8 +1,6 @@
 import axios, { type AxiosInstance } from "axios";
 import { Feature, type IFeature } from "../../models/Feature";
-import { type IMilestone, Milestone } from "../../models/Project/Milestone";
-import { type IProject, Project } from "../../models/Project/Project";
-import type { IProjectSettings } from "../../models/Project/ProjectSettings";
+import { type IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import { type ITeam, Team } from "../../models/Team/Team";
 import { ApiError } from "./ApiError";
 
@@ -71,25 +69,13 @@ export class BaseApiService {
 		return Team.fromBackend(item);
 	}
 
-	protected static deserializeProject(item: IProject): Project {
-		return Project.fromBackend(item);
+	protected static deserializePortfolio(item: IPortfolio): Portfolio {
+		return Portfolio.fromBackend(item);
 	}
 
 	protected static deserializeFeatures(featureData: IFeature[]): Feature[] {
 		return featureData.map((feature: IFeature) => {
 			return Feature.fromBackend(feature);
 		});
-	}
-
-	protected deserializeProjectSettings(
-		item: IProjectSettings,
-	): IProjectSettings {
-		const milestones = item.milestones.map((milestone: IMilestone) => {
-			return Milestone.fromBackend(milestone);
-		});
-
-		item.milestones = milestones;
-
-		return item;
 	}
 }

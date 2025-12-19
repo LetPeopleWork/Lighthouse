@@ -8,11 +8,7 @@ import {
 	ConfigurationService,
 	type IConfigurationService,
 } from "./ConfigurationService";
-import {
-	DemoApiService,
-	DemoProjectMetricsService,
-	DemoTeamMetricsService,
-} from "./DemoApiService";
+import { DeliveryService, type IDeliveryService } from "./DeliveryService";
 import { DemoDataService } from "./DemoDataService";
 import { FeatureService, type IFeatureService } from "./FeatureService";
 import { ForecastService, type IForecastService } from "./ForecastService";
@@ -26,8 +22,8 @@ import {
 	type IOptionalFeatureService,
 	OptionalFeatureService,
 } from "./OptionalFeatureService";
+import { type IPortfolioService, PortfolioService } from "./PortfolioService";
 import { ProjectMetricsService } from "./ProjectMetricsService";
-import { type IProjectService, ProjectService } from "./ProjectService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
 import {
 	type ISuggestionService,
@@ -48,11 +44,11 @@ import {
 export interface IApiServiceContext {
 	forecastService: IForecastService;
 	logService: ILogService;
-	projectService: IProjectService;
+	portfolioService: IPortfolioService;
 	settingsService: ISettingsService;
 	teamService: ITeamService;
 	teamMetricsService: ITeamMetricsService;
-	projectMetricsService: IProjectMetricsService;
+	portfolioMetricsService: IProjectMetricsService;
 	versionService: IVersionService;
 	workTrackingSystemService: IWorkTrackingSystemService;
 	optionalFeatureService: IOptionalFeatureService;
@@ -63,6 +59,7 @@ export interface IApiServiceContext {
 	terminologyService: ITerminologyService;
 	licensingService: ILicensingService;
 	demoDataService: IDemoDataService;
+	deliveryService: IDeliveryService;
 }
 
 const initializeUpdateSubscriptionService = async () => {
@@ -72,11 +69,11 @@ const initializeUpdateSubscriptionService = async () => {
 const defaultServices: IApiServiceContext = {
 	forecastService: new ForecastService(),
 	logService: new LogService(),
-	projectService: new ProjectService(),
+	portfolioService: new PortfolioService(),
 	settingsService: new SettingsService(),
 	teamService: new TeamService(),
 	teamMetricsService: new TeamMetricsService(),
-	projectMetricsService: new ProjectMetricsService(),
+	portfolioMetricsService: new ProjectMetricsService(),
 	versionService: new VersionService(),
 	workTrackingSystemService: new WorkTrackingSystemService(),
 	optionalFeatureService: new OptionalFeatureService(),
@@ -87,39 +84,10 @@ const defaultServices: IApiServiceContext = {
 	terminologyService: new TerminologyService(),
 	licensingService: new LicensingService(),
 	demoDataService: new DemoDataService(),
-};
-
-const useDelay: boolean = import.meta.env.VITE_API_SERVICE_DELAY === "TRUE";
-const demoApiService = new DemoApiService(useDelay);
-const demoTeamMetricsService = new DemoTeamMetricsService();
-const demoProjectMetricsService = new DemoProjectMetricsService();
-
-const demoServices: IApiServiceContext = {
-	forecastService: demoApiService,
-	logService: demoApiService,
-	projectService: demoApiService,
-	settingsService: demoApiService,
-	teamService: demoApiService,
-	teamMetricsService: demoTeamMetricsService,
-	projectMetricsService: demoProjectMetricsService,
-	versionService: demoApiService,
-	workTrackingSystemService: demoApiService,
-	optionalFeatureService: demoApiService,
-	updateSubscriptionService: demoApiService,
-	suggestionService: demoApiService,
-	configurationService: demoApiService,
-	featureService: demoApiService,
-	terminologyService: demoApiService,
-	licensingService: demoApiService,
-	demoDataService: demoApiService,
+	deliveryService: new DeliveryService(),
 };
 
 export function getApiServices(): IApiServiceContext {
-	const isDemoMode = import.meta.env.VITE_API_SERVICE_TYPE === "DEMO";
-	if (isDemoMode) {
-		return demoServices;
-	}
-
 	initializeUpdateSubscriptionService();
 
 	return defaultServices;

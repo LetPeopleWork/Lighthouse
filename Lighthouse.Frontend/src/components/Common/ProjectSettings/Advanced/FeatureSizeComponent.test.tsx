@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -121,7 +121,7 @@ describe("FeatureSizeComponent", () => {
 	});
 
 	it("renders Feature Size Percentile and Historical Features Work Item Query when switch is on", () => {
-		const updatedSettings: IProjectSettings = {
+		const updatedSettings: IPortfolioSettings = {
 			...initialSettings,
 			usePercentileToCalculateDefaultAmountOfWorkItems: true,
 		};
@@ -140,7 +140,7 @@ describe("FeatureSizeComponent", () => {
 	});
 
 	it("calls onProjectSettingsChange with correct arguments when defaultWorkItemPercentile changes", () => {
-		const updatedSettings: IProjectSettings = {
+		const updatedSettings: IPortfolioSettings = {
 			...initialSettings,
 			usePercentileToCalculateDefaultAmountOfWorkItems: true,
 		};
@@ -188,7 +188,7 @@ describe("FeatureSizeComponent", () => {
 	});
 
 	it("removes an override state when delete is clicked", async () => {
-		const updatedSettings: IProjectSettings = {
+		const updatedSettings: IPortfolioSettings = {
 			...initialSettings,
 			overrideRealChildCountStates: ["Ready", "In Progress"],
 		};

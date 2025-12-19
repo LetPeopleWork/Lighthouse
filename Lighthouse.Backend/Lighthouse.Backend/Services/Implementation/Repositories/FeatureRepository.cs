@@ -34,7 +34,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         {
             return Context.Features
                 .Include(f => f.Portfolios)
-                    .ThenInclude(p => p.Milestones)
                 .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
                 .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults);
         }

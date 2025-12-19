@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
-                var projectDto = okResult.Value as ProjectDto;
+                var projectDto = okResult.Value as PortfolioDto;
 
                 Assert.That(projectDto.Id, Is.EqualTo(testProject.Id));
                 Assert.That(projectDto.Name, Is.EqualTo(testProject.Name));
@@ -165,10 +165,6 @@ namespace Lighthouse.Backend.Tests.API
                 DefaultAmountOfWorkItemsPerFeature = 5,
                 WorkTrackingSystemConnectionId = 101
             };
-            project.Milestones.AddRange([
-                new Milestone { Id = 1, Name = "Milestone 1" },
-                new Milestone { Id = 2, Name = "Milestone 2" },
-            ]);
 
             projectRepoMock.Setup(x => x.GetById(12)).Returns(project);
 
@@ -189,12 +185,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Id, Is.EqualTo(project.Id));
                 Assert.That(projectSettingDto.Name, Is.EqualTo(project.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(project.WorkItemTypes));
-                Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(project.Milestones.Count));
-                for (int i = 0; i < project.Milestones.Count; i++)
-                {
-                    Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(project.Milestones[i].Id));
-                    Assert.That(projectSettingDto.Milestones[i].Name, Is.EqualTo(project.Milestones[i].Name));
-                }
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(project.WorkItemQuery));
                 Assert.That(projectSettingDto.UnparentedItemsQuery, Is.EqualTo(project.UnparentedItemsQuery));
                 Assert.That(projectSettingDto.DefaultAmountOfWorkItemsPerFeature, Is.EqualTo(project.DefaultAmountOfWorkItemsPerFeature));
@@ -228,11 +218,6 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Name = "New Project",
                 WorkItemTypes = new List<string> { "Bug", "Feature" },
-                Milestones = new List<MilestoneDto>
-                {
-                    new MilestoneDto { Id = 1, Name = "Milestone 1" },
-                    new MilestoneDto { Id = 2, Name = "Milestone 2" }
-                },
                 WorkItemQuery = "SELECT * FROM WorkItems",
                 UnparentedItemsQuery = "SELECT * FROM UnparentedItems",
                 DefaultAmountOfWorkItemsPerFeature = 5,
@@ -266,12 +251,8 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(projectSettingDto.Name, Is.EqualTo(newProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(newProjectSettings.WorkItemTypes));
-                Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(newProjectSettings.Milestones.Count));
 
-                for (int i = 0; i < newProjectSettings.Milestones.Count; i++)
                 {
-                    Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(newProjectSettings.Milestones[i].Id));
-                    Assert.That(projectSettingDto.Milestones[i].Name, Is.EqualTo(newProjectSettings.Milestones[i].Name));
                 }
 
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(newProjectSettings.WorkItemQuery));
@@ -309,11 +290,6 @@ namespace Lighthouse.Backend.Tests.API
                 Id = 132,
                 Name = "Updated Project",
                 WorkItemTypes = new List<string> { "Feature", "Bug" },
-                Milestones = new List<MilestoneDto>
-                {
-                    new MilestoneDto { Id = 1, Name = "Updated Milestone 1" },
-                    new MilestoneDto { Id = 2, Name = "Updated Milestone 2" }
-                },
                 WorkItemQuery = "SELECT * FROM UpdatedWorkItems",
                 UnparentedItemsQuery = "SELECT * FROM UpdatedUnparentedItems",
                 DefaultAmountOfWorkItemsPerFeature = 10,
@@ -352,12 +328,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectSettingDto.Id, Is.EqualTo(updatedProjectSettings.Id));
                 Assert.That(projectSettingDto.Name, Is.EqualTo(updatedProjectSettings.Name));
                 Assert.That(projectSettingDto.WorkItemTypes, Is.EqualTo(updatedProjectSettings.WorkItemTypes));
-                Assert.That(projectSettingDto.Milestones, Has.Count.EqualTo(updatedProjectSettings.Milestones.Count));
 
-                for (int i = 0; i < updatedProjectSettings.Milestones.Count; i++)
                 {
-                    Assert.That(projectSettingDto.Milestones[i].Id, Is.EqualTo(updatedProjectSettings.Milestones[i].Id));
-                    Assert.That(projectSettingDto.Milestones[i].Name, Is.EqualTo(updatedProjectSettings.Milestones[i].Name));
                 }
 
                 Assert.That(projectSettingDto.WorkItemQuery, Is.EqualTo(updatedProjectSettings.WorkItemQuery));

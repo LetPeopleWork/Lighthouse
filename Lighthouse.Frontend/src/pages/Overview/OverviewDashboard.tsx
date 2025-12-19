@@ -11,20 +11,24 @@ import FilterBar from "../../components/Common/FilterBar/FilterBar";
 import LoadingAnimation from "../../components/Common/LoadingAnimation/LoadingAnimation";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
-import type { Project } from "../../models/Project/Project";
+import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../services/TerminologyContext";
 
 const OverviewDashboard: React.FC = () => {
-	const [projects, setProjects] = useState<Project[]>([]);
+	const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
 	const [teams, setTeams] = useState<Team[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasError, setHasError] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
-	const [selectedItem, setSelectedItem] = useState<Project | Team | null>(null);
-	const [deleteType, setDeleteType] = useState<"project" | "team" | null>(null);
+	const [selectedItem, setSelectedItem] = useState<Portfolio | Team | null>(
+		null,
+	);
+	const [deleteType, setDeleteType] = useState<"portfolio" | "team" | null>(
+		null,
+	);
 	const [isUpdatingAll, setIsUpdatingAll] = useState<boolean>(false);
 
 	const location = useLocation();
@@ -37,39 +41,39 @@ const OverviewDashboard: React.FC = () => {
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	const { projectService, teamService } = useContext(ApiServiceContext);
+	const { portfolioService, teamService } = useContext(ApiServiceContext);
 	const {
-		canCreateProject,
-		createProjectTooltip,
+		canCreatePortfolio,
+		createPortfolioTooltip,
 		canCreateTeam,
 		createTeamTooltip,
-		canUpdateAllTeamsAndProjects,
-		updateAllTeamsAndProjectsTooltip,
+		canUpdateAllTeamsAndPortfolios,
+		updateAllTeamsAndPortfoliosTooltip,
 	} = useLicenseRestrictions();
 
 	const fetchData = useCallback(async () => {
 		try {
 			setIsLoading(true);
-			const [projectData, teamData] = await Promise.all([
-				projectService.getProjects(),
+			const [portfolioData, teamData] = await Promise.all([
+				portfolioService.getPortfolios(),
 				teamService.getTeams(),
 			]);
-			setProjects(projectData);
+			setPortfolios(portfolioData);
 			setTeams(teamData);
 			setIsLoading(false);
 		} catch (error) {
 			console.error("Error fetching overview data:", error);
 			setHasError(true);
 		}
-	}, [projectService, teamService]);
+	}, [portfolioService, teamService]);
 
 	useEffect(() => {
 		fetchData();
 	}, [fetchData]);
 
-	const handleProjectDelete = (project: IFeatureOwner) => {
-		setSelectedItem(project as Project);
-		setDeleteType("project");
+	const handlePortfolioDelete = (portfolio: IFeatureOwner) => {
+		setSelectedItem(portfolio as Portfolio);
+		setDeleteType("portfolio");
 		setDeleteDialogOpen(true);
 	};
 
@@ -84,8 +88,8 @@ const OverviewDashboard: React.FC = () => {
 			try {
 				setIsLoading(true);
 
-				if (deleteType === "project") {
-					await projectService.deleteProject(selectedItem.id);
+				if (deleteType === "portfolio") {
+					await portfolioService.deletePortfolio(selectedItem.id);
 				} else if (deleteType === "team") {
 					await teamService.deleteTeam(selectedItem.id);
 				}
@@ -122,7 +126,7 @@ const OverviewDashboard: React.FC = () => {
 		);
 	};
 
-	const handleAddProject = async () => {
+	const handleAddPortfolio = async () => {
 		navigate("/portfolios/new");
 	};
 
@@ -134,9 +138,9 @@ const OverviewDashboard: React.FC = () => {
 		try {
 			setIsUpdatingAll(true);
 			await teamService.updateAllTeamData();
-			await projectService.refreshFeaturesForAllProjects();
+			await portfolioService.refreshFeaturesForAllPortfolios();
 		} catch (error) {
-			console.error("Error updating all teams and projects:", error);
+			console.error("Error updating all teams and portfolios:", error);
 			setHasError(true);
 		} finally {
 			setIsUpdatingAll(false);
@@ -169,14 +173,14 @@ const OverviewDashboard: React.FC = () => {
 						sx={{ fontWeight: 600 }}
 					></Typography>
 					<Box sx={{ display: "flex", gap: 2 }}>
-						<Tooltip title={createProjectTooltip} arrow>
+						<Tooltip title={createPortfolioTooltip} arrow>
 							<span>
 								<ActionButton
 									buttonText={`Add ${portfolioTerm}`}
 									startIcon={<AddIcon />}
-									onClickHandler={handleAddProject}
+									onClickHandler={handleAddPortfolio}
 									buttonVariant="contained"
-									disabled={!canCreateProject}
+									disabled={!canCreatePortfolio}
 								/>
 							</span>
 						</Tooltip>
@@ -191,14 +195,14 @@ const OverviewDashboard: React.FC = () => {
 								/>
 							</span>
 						</Tooltip>
-						<Tooltip title={updateAllTeamsAndProjectsTooltip} arrow>
+						<Tooltip title={updateAllTeamsAndPortfoliosTooltip} arrow>
 							<span>
 								<ActionButton
 									buttonText="Update All"
 									startIcon={<UpdateIcon />}
 									onClickHandler={handleUpdateAll}
 									buttonVariant="outlined"
-									disabled={!canUpdateAllTeamsAndProjects}
+									disabled={!canUpdateAllTeamsAndPortfolios}
 									externalIsWaiting={isUpdatingAll}
 								/>
 							</span>
@@ -215,10 +219,10 @@ const OverviewDashboard: React.FC = () => {
 					}}
 				>
 					<DataOverviewTable
-						data={projects}
+						data={portfolios}
 						title={`${portfolioTerm}s`}
 						api="portfolios"
-						onDelete={handleProjectDelete}
+						onDelete={handlePortfolioDelete}
 						filterText={filterText}
 					/>
 					<DataOverviewTable

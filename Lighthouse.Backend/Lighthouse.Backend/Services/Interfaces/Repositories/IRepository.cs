@@ -16,6 +16,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
 
         void Remove(int id);
 
+        void Remove(T? item);
+
         void Update(T item);
 
         Task Save();

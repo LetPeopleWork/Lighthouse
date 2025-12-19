@@ -48,13 +48,11 @@ namespace Lighthouse.Backend.Tests.MCP
                 string projectName = Convert.ToString(projectToVerify.Name);
                 int teamCount = Convert.ToInt32(projectToVerify.TeamCount);
                 int featureCount = Convert.ToInt32(projectToVerify.FeatureCount);
-                int milestoneCount = Convert.ToInt32(projectToVerify.MilestoneCount);
 
                 Assert.That(projectId, Is.EqualTo(project.Id));
                 Assert.That(projectName, Is.EqualTo(project.Name));
                 Assert.That(teamCount, Is.EqualTo(project.Teams.Count));
                 Assert.That(featureCount, Is.EqualTo(project.Features.Count));
-                Assert.That(milestoneCount, Is.EqualTo(project.Milestones.Count));
             }
         }
 
@@ -236,31 +234,6 @@ namespace Lighthouse.Backend.Tests.MCP
             return feature;
         }
 
-        private Portfolio CreateProjectWithMilestones()
-        {
-            var project = CreateProjectWithFeaturesAndForecasts();
-            
-            // Add milestones at different dates
-            var milestone1 = new Milestone
-            {
-                Id = 1,
-                Name = "Beta Release",
-                Date = DateTime.Today.AddDays(15)
-            };
-            
-            var milestone2 = new Milestone
-            {
-                Id = 2,
-                Name = "Final Release", 
-                Date = DateTime.Today.AddDays(35)
-            };
-            
-            project.Milestones.Add(milestone1);
-            project.Milestones.Add(milestone2);
-            
-            return project;
-        }
-
         [Test]
         public void RunProjectWhenForecast_ProjectDoesNotExist_ReturnsErrorMessage()
         {
@@ -361,106 +334,6 @@ namespace Lighthouse.Backend.Tests.MCP
                 // Verify completion dates are in the future
                 DateTime completionDate85 = Convert.ToDateTime(response.EstimatedCompletionDates.Probability85);
                 Assert.That(completionDate85, Is.GreaterThan(DateTime.Today));
-            }
-        }
-
-        [Test]
-        public void GetProjectMilestones_ProjectDoesNotExist_ReturnsErrorMessage()
-        {
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns((Portfolio?)null);
-
-            var subject = CreateSubject();
-            var result = subject.GetProjectMilestones("NonExistentProject");
-
-            Assert.That(result, Is.EqualTo("No project found with name NonExistentProject"));
-        }
-
-        [Test]
-        public void GetProjectMilestones_ProjectHasNoMilestones_ReturnsNoMilestonesMessage()
-        {
-            var project = CreateProject();
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
-            projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
-
-            var subject = CreateSubject();
-            var result = subject.GetProjectMilestones(project.Name);
-
-            Assert.That(result, Is.EqualTo("Project Test Project has no milestones defined"));
-        }
-
-        [Test]
-        public void GetProjectMilestones_WithValidProject_ReturnsMilestoneAnalysis()
-        {
-            var project = CreateProjectWithMilestones();
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
-            projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
-
-            var subject = CreateSubject();
-            var result = subject.GetProjectMilestones(project.Name);
-
-            using (Assert.EnterMultipleScope())
-            {
-                var response = JsonConvert.DeserializeObject<dynamic>(result);
-                
-                string projectName = Convert.ToString(response.ProjectName);
-                int totalMilestones = Convert.ToInt32(response.TotalMilestones);
-                int futureMilestones = Convert.ToInt32(response.FutureMilestones);
-                
-                Assert.That(projectName, Is.EqualTo(project.Name));
-                Assert.That(totalMilestones, Is.EqualTo(2));
-                Assert.That(futureMilestones, Is.EqualTo(2)); // Both milestones are in the future
-                
-                // Verify milestones array
-                var milestones = response.Milestones;
-                Assert.That(milestones, Is.Not.Null);
-                
-                // Convert to array for easier access
-                var milestonesArray = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic[]>(milestones.ToString());
-                Assert.That(milestonesArray, Has.Length.EqualTo(2));
-                
-                // Verify first milestone (Beta Release at day 15)
-                string firstMilestoneName = Convert.ToString(milestonesArray[0].Name);
-                int firstMilestoneDays = Convert.ToInt32(milestonesArray[0].DaysFromNow);
-                
-                Assert.That(firstMilestoneName, Is.EqualTo("Beta Release"));
-                Assert.That(firstMilestoneDays, Is.EqualTo(15));
-                
-                // Verify risk assessment exists
-                string riskAssessment = Convert.ToString(milestonesArray[0].RiskAssessment);
-                Assert.That(riskAssessment, Is.Not.Null);
-                Assert.That(riskAssessment, Is.Not.Empty);
-            }
-        }
-
-        [Test]
-        public void GetProjectMilestones_OnlyFutureMilestones_FiltersPastMilestones()
-        {
-            var project = CreateProjectWithMilestones();
-            
-            // Add a past milestone
-            var pastMilestone = new Milestone
-            {
-                Id = 3,
-                Name = "Past Milestone",
-                Date = DateTime.Today.AddDays(-10) // In the past
-            };
-            project.Milestones.Add(pastMilestone);
-            
-            projectRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Portfolio, bool>>())).Returns(project);
-            projectRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
-
-            var subject = CreateSubject();
-            var result = subject.GetProjectMilestones(project.Name);
-
-            using (Assert.EnterMultipleScope())
-            {
-                var response = JsonConvert.DeserializeObject<dynamic>(result);
-                
-                int totalMilestones = Convert.ToInt32(response.TotalMilestones);
-                int futureMilestones = Convert.ToInt32(response.FutureMilestones);
-                
-                Assert.That(totalMilestones, Is.EqualTo(3)); // All milestones
-                Assert.That(futureMilestones, Is.EqualTo(2)); // Only future milestones analyzed
             }
         }
 

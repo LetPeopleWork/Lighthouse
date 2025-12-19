@@ -1,4 +1,4 @@
-import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { ITeamSettings } from "../../../../models/Team/TeamSettings";
 import type { WorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 
@@ -13,5 +13,5 @@ export interface ImportResult<
 export interface ImportResults {
 	workTrackingSystems: ImportResult<WorkTrackingSystemConnection>[];
 	teams: ImportResult<ITeamSettings>[];
-	projects: ImportResult<IProjectSettings>[];
+	projects: ImportResult<IPortfolioSettings>[];
 }

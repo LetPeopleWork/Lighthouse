@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
@@ -40,9 +41,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             ServiceProvider = serviceScope.ServiceProvider;
 
             DatabaseContext = ServiceProvider.GetService<LighthouseAppContext>()
-                ?? throw new InvalidOperationException("Could not Find DB Context");
+                              ?? throw new InvalidOperationException("Could not Find DB Context");
 
-            // Ensure the database is created and migrations are applied
             DatabaseContext.Database.EnsureDeleted();
             DatabaseContext.Database.EnsureCreated();
         }
@@ -50,10 +50,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         [TearDown]
         protected virtual void TearDown()
         {
-            // Ensure we clean up before disposing
             if (DatabaseContext != null)
             {
-                Thread.Sleep(100);
                 DatabaseContext.Database.EnsureDeleted();
             }
 

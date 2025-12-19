@@ -9,7 +9,6 @@ describe("Feature Class", () => {
 	let lastUpdated: Date;
 	let remainingWork: { [key: number]: number };
 	let totalWork: { [key: number]: number };
-	let milestoneLikelihood: { [key: number]: number };
 	let forecasts: WhenForecast[];
 
 	beforeEach(() => {
@@ -19,7 +18,6 @@ describe("Feature Class", () => {
 		lastUpdated = new Date("2023-07-11");
 		remainingWork = { 1: 10, 2: 20, 3: 30 };
 		totalWork = { 1: 15, 2: 20, 3: 45 };
-		milestoneLikelihood = { 0: 97.1, 1: 35.6 };
 		forecasts = [
 			WhenForecast.new(0.8, new Date("2023-08-01")),
 			WhenForecast.new(0.6, new Date("2023-09-01")),
@@ -32,7 +30,6 @@ describe("Feature Class", () => {
 		feature.lastUpdated = lastUpdated;
 		feature.remainingWork = remainingWork;
 		feature.totalWork = totalWork;
-		feature.milestoneLikelihood = milestoneLikelihood;
 		feature.forecasts = forecasts;
 	});
 

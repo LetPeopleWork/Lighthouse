@@ -59,7 +59,6 @@ describe("FeatureService", () => {
 					projects: [{ id: 1, name: "Project A" }],
 					remainingWork: { 1: 5 },
 					totalWork: { 1: 10 },
-					milestoneLikelihood: { 1: 85.5 },
 					forecasts: [
 						{
 							probability: 0.85,
@@ -76,7 +75,6 @@ describe("FeatureService", () => {
 					getRemainingWorkForTeam: () => 5,
 					getTotalWorkForFeature: () => 10,
 					getTotalWorkForTeam: () => 10,
-					getMilestoneLikelihood: () => 85.5,
 					isBlocked: false,
 				},
 				{
@@ -93,7 +91,6 @@ describe("FeatureService", () => {
 					projects: [{ id: 1, name: "Project A" }],
 					remainingWork: { 1: 3 },
 					totalWork: { 1: 8 },
-					milestoneLikelihood: { 1: 90.2 },
 					forecasts: [
 						{
 							probability: 0.9,
@@ -110,7 +107,6 @@ describe("FeatureService", () => {
 					getRemainingWorkForTeam: () => 3,
 					getTotalWorkForFeature: () => 8,
 					getTotalWorkForTeam: () => 8,
-					getMilestoneLikelihood: () => 90.2,
 					isBlocked: false,
 				},
 			];
@@ -148,7 +144,6 @@ describe("FeatureService", () => {
 					projects: [{ id: 1, name: "Project A" }],
 					remainingWork: { 1: 5 },
 					totalWork: { 1: 10 },
-					milestoneLikelihood: { 1: 85.5 },
 					forecasts: [
 						{
 							probability: 0.85,
@@ -165,7 +160,6 @@ describe("FeatureService", () => {
 					getRemainingWorkForTeam: () => 5,
 					getTotalWorkForFeature: () => 10,
 					getTotalWorkForTeam: () => 10,
-					getMilestoneLikelihood: () => 85.5,
 					isBlocked: false,
 				},
 			];
@@ -205,7 +199,6 @@ describe("FeatureService", () => {
 					projects: [{ id: 1, name: "Project A" }],
 					remainingWork: { 1: 5 },
 					totalWork: { 1: 10 },
-					milestoneLikelihood: { 1: 85.5 },
 					forecasts: [
 						{
 							probability: 0.85,
@@ -222,7 +215,6 @@ describe("FeatureService", () => {
 					getRemainingWorkForTeam: () => 5,
 					getTotalWorkForFeature: () => 10,
 					getTotalWorkForTeam: () => 10,
-					getMilestoneLikelihood: () => 85.5,
 					isBlocked: false,
 				},
 				{
@@ -239,7 +231,6 @@ describe("FeatureService", () => {
 					projects: [{ id: 1, name: "Project A" }],
 					remainingWork: { 1: 3 },
 					totalWork: { 1: 8 },
-					milestoneLikelihood: { 1: 90.2 },
 					forecasts: [
 						{
 							probability: 0.9,
@@ -256,7 +247,6 @@ describe("FeatureService", () => {
 					getRemainingWorkForTeam: () => 3,
 					getTotalWorkForFeature: () => 8,
 					getTotalWorkForTeam: () => 8,
-					getMilestoneLikelihood: () => 90.2,
 					isBlocked: false,
 				},
 			];

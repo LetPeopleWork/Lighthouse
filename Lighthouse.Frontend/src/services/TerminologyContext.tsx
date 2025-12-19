@@ -92,6 +92,8 @@ const defaultTerminologyMap: Record<string, string> = {
 	[TERMINOLOGY_KEYS.TEAMS]: "Teams",
 	[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
 	[TERMINOLOGY_KEYS.PORTFOLIOS]: "Portfolios",
+	[TERMINOLOGY_KEYS.DELIVERY]: "Delivery",
+	[TERMINOLOGY_KEYS.DELIVERIES]: "Deliveries",
 	// Add more terminology mappings here as needed
 };
 

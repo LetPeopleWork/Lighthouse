@@ -7,16 +7,16 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface OwnershipComponentProps {
-	projectSettings: IProjectSettings | null;
+	projectSettings: IPortfolioSettings | null;
 	onProjectSettingsChange: (
-		key: keyof IProjectSettings,
+		key: keyof IPortfolioSettings,
 		value: string | ITeam | null,
 	) => void;
 	currentInvolvedTeams: ITeam[];

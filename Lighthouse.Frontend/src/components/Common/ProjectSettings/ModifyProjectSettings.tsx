@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -24,10 +24,10 @@ import UnparentedItemsComponent from "./Advanced/UnparentedItemsComponent";
 interface ModifyProjectSettingsProps {
 	title: string;
 	getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
-	getProjectSettings: () => Promise<IProjectSettings>;
+	getProjectSettings: () => Promise<IPortfolioSettings>;
 	getAllTeams: () => Promise<ITeam[]>;
-	saveProjectSettings: (settings: IProjectSettings) => Promise<void>;
-	validateProjectSettings: (settings: IProjectSettings) => Promise<boolean>;
+	saveProjectSettings: (settings: IPortfolioSettings) => Promise<void>;
+	validateProjectSettings: (settings: IPortfolioSettings) => Promise<boolean>;
 	modifyDefaultSettings?: boolean;
 }
 
@@ -42,7 +42,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 }) => {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [projectSettings, setProjectSettings] =
-		useState<IProjectSettings | null>(null);
+		useState<IPortfolioSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
 		IWorkTrackingSystemConnection[]
 	>([]);
@@ -55,8 +55,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const queryTerm = getTerm(TERMINOLOGY_KEYS.QUERY);
-	const { canUpdateProjectSettings, updateProjectSettingsTooltip } =
-		useLicenseRestrictions();
+	const {
+		canUpdatePortfolioSettings: canUpdateProjectSettings,
+		updatePortfolioSettingsTooltip: updateProjectSettingsTooltip,
+	} = useLicenseRestrictions();
 
 	const handleTeamSelectionChange = (teamIds: number[]) => {
 		setSelectedTeams(teamIds);
@@ -253,9 +255,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		);
 	};
 
-	const handleProjectSettingsChange = <K extends keyof IProjectSettings>(
+	const handleProjectSettingsChange = <K extends keyof IPortfolioSettings>(
 		key: K,
-		value: IProjectSettings[K] | null,
+		value: IPortfolioSettings[K] | null,
 	) => {
 		if (value === null) {
 			return;
@@ -269,7 +271,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			return;
 		}
 
-		const updatedSettings: IProjectSettings = {
+		const updatedSettings: IPortfolioSettings = {
 			...projectSettings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
 			involvedTeams: teams.filter((team) => selectedTeams.includes(team.id)),
@@ -283,7 +285,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			return false;
 		}
 
-		const updatedSettings: IProjectSettings = {
+		const updatedSettings: IPortfolioSettings = {
 			...projectSettings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
 			involvedTeams: teams.filter((team) => selectedTeams.includes(team.id)),

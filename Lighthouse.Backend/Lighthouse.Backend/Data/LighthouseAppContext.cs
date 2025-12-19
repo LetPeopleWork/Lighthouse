@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
@@ -6,35 +6,31 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 
 namespace Lighthouse.Backend.Data
 {
-    public class LighthouseAppContext : DbContext
+    public partial class LighthouseAppContext(
+        DbContextOptions<LighthouseAppContext> options,
+        ICryptoService cryptoService,
+        ILogger<LighthouseAppContext> logger)
+        : DbContext(options)
     {
-        private readonly ICryptoService cryptoService;
-        private readonly ILogger<LighthouseAppContext> logger;
+        public DbSet<Team> Teams { get; set; } = null!;
 
-        public LighthouseAppContext(DbContextOptions<LighthouseAppContext> options, ICryptoService cryptoService, ILogger<LighthouseAppContext> logger)
-            : base(options)
-        {
-            this.cryptoService = cryptoService;
-            this.logger = logger;
-        }
+        public DbSet<Feature> Features { get; set; } = null!;
 
-        public DbSet<Team> Teams { get; set; } = default!;
+        public DbSet<Portfolio> Portfolios { get; set; } = null!;
 
-        public DbSet<Feature> Features { get; set; } = default!;
+        public DbSet<WorkTrackingSystemConnection> WorkTrackingSystemConnections { get; set; } = null!;
 
-        public DbSet<Portfolio> Portfolios { get; set; } = default!;
+        public DbSet<AppSetting> AppSettings { get; set; } = null!;
 
-        public DbSet<WorkTrackingSystemConnection> WorkTrackingSystemConnections { get; set; } = default!;
+        public DbSet<OptionalFeature> OptionalFeatures { get; set; } = null!;
 
-        public DbSet<AppSetting> AppSettings { get; set; } = default!;
+        public DbSet<WorkItem> WorkItems { get; set; } = null!;
 
-        public DbSet<OptionalFeature> OptionalFeatures { get; set; } = default!;
+        public DbSet<TerminologyEntry> TerminologyEntries { get; set; } = null!;
 
-        public DbSet<WorkItem> WorkItems { get; set; } = default!;
+        public DbSet<LicenseInformation> LicenseInformation { get; set; } = null!;
 
-        public DbSet<TerminologyEntry> TerminologyEntries { get; set; } = default!;
-
-        public DbSet<LicenseInformation> LicenseInformation { get; set; } = default!;
+        public DbSet<Delivery> Deliveries { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -58,12 +54,6 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<TerminologyEntry>()
                 .Property(t => t.DefaultValue)
                 .IsRequired();
-
-            modelBuilder.Entity<Milestone>()
-                .HasOne(m => m.Portfolio)
-                .WithMany(p => p.Milestones)
-                .HasForeignKey(m => m.PortfolioId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FeatureWork>()
                 .HasOne(fw => fw.Team)
@@ -114,6 +104,16 @@ namespace Lighthouse.Backend.Data
                       .HasForeignKey(option => option.WorkTrackingSystemConnectionId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<Delivery>()
+                .HasOne(d => d.Portfolio)
+                .WithMany()
+                .HasForeignKey(d => d.PortfolioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Delivery>()
+                .HasMany(d => d.Features)
+                .WithMany();
         }
 
         public override int SaveChanges()
@@ -180,17 +180,22 @@ namespace Lighthouse.Backend.Data
         private void RemoveOrphanedFeatures()
         {
             logger.LogDebug("Removing orphaned features");
-            var orphanedFeatures = Features
-                .Where(f => !f.IsParentFeature)
-                .Include(f => f.Portfolios)
-                .Where(f => f.Portfolios.Count == 0)
+    
+            // Only look at the change tracker, don't query the database
+            var orphanedFeatures = ChangeTracker.Entries<Feature>()
+                .Where(e => e.State != EntityState.Deleted && e.State != EntityState.Detached)
+                .Select(e => e.Entity)
+                .Where(f => !f.IsParentFeature && f.Portfolios.Count == 0)
                 .ToList();
 
-            if (orphanedFeatures.Count > 0)
+            if (orphanedFeatures.Count != 0)
             {
                 Features.RemoveRange(orphanedFeatures);
-                logger.LogInformation("Removed {OrphanedFeatureCount} orphaned features", orphanedFeatures.Count);
+                LogRemovedOrphanedFeatures(orphanedFeatures.Count);
             }
         }
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "Removed {count} orphaned features")]
+        private partial void LogRemovedOrphanedFeatures(int count);
     }
 }

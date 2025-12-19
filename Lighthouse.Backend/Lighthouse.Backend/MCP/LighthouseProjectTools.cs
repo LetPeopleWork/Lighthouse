@@ -26,8 +26,7 @@ namespace Lighthouse.Backend.MCP
                         p.Id,
                         p.Name,
                         TeamCount = p.Teams.Count,
-                        FeatureCount = p.Features.Count,
-                        MilestoneCount = p.Milestones.Count
+                        FeatureCount = p.Features.Count
                     }));
             }
         }
@@ -61,7 +60,6 @@ namespace Lighthouse.Backend.MCP
                     project.DefaultWorkItemPercentile,
                     TeamCount = project.Teams.Count,
                     FeatureCount = project.Features.Count,
-                    MilestoneCount = project.Milestones.Count,
                     project.UpdateTime
                 });
             }
@@ -211,85 +209,6 @@ namespace Lighthouse.Backend.MCP
                         TotalRemainingWork = totalRemainingWork,
                         InvolvedTeams = project.Teams.Select(t => new { t.Id, t.Name }).ToList()
                     }
-                });
-            }
-        }
-
-        [McpServerTool, Description("Get project milestones with likelihood analysis")]
-        public string GetProjectMilestones(string projectName)
-        {
-            using (var scope = CreateServiceScope())
-            {
-                var projectRepo = GetServiceFromServiceScope<IRepository<Portfolio>>(scope);
-
-                var project = GetProjectByName(projectName, projectRepo);
-                if (project == null)
-                {
-                    return $"No project found with name {projectName}";
-                }
-
-                if (project.Milestones.Count == 0)
-                {
-                    return $"Project {projectName} has no milestones defined";
-                }
-
-                var milestoneAnalysis = project.Milestones
-                    .Where(m => m.Date >= DateTime.Today) // Only future milestones
-                    .OrderBy(m => m.Date)
-                    .Select(milestone =>
-                    {
-                        // Calculate overall project likelihood for this milestone
-                        var featureLikelihoods = project.Features
-                            .Where(f => f.FeatureWork.Sum(fw => fw.RemainingWorkItems) > 0)
-                            .Select(f => f.GetLikelhoodForDate(milestone.Date))
-                            .ToList();
-
-                        var averageLikelihood = featureLikelihoods.Count != 0 ? featureLikelihoods.Average() : 100.0;
-                        var minLikelihood = featureLikelihoods.Count != 0 ? featureLikelihoods.Min() : 100.0;
-                        var maxLikelihood = featureLikelihoods.Count != 0 ? featureLikelihoods.Max() : 100.0;
-
-                        return new
-                        {
-                            milestone.Id,
-                            milestone.Name,
-                            milestone.Date,
-                            DaysFromNow = (milestone.Date - DateTime.Today).Days,
-                            OverallLikelihood = Math.Round(averageLikelihood, 1),
-                            LikelihoodRange = new
-                            {
-                                Min = Math.Round(minLikelihood, 1),
-                                Max = Math.Round(maxLikelihood, 1),
-                                Average = Math.Round(averageLikelihood, 1)
-                            },
-                            RiskAssessment = averageLikelihood switch
-                            {
-                                >= 80 => "Low Risk - Very likely to be met",
-                                >= 60 => "Medium Risk - Likely to be met with some uncertainty",
-                                >= 40 => "High Risk - Uncertain, may require intervention",
-                                _ => "Very High Risk - Unlikely to be met without significant changes"
-                            },
-                            FeaturesAnalyzed = featureLikelihoods.Count,
-                            RemainingFeatures = project.Features.Count(f => f.FeatureWork.Sum(fw => fw.RemainingWorkItems) > 0)
-                        };
-                    })
-                    .ToList();
-
-                return ToJson(new
-                {
-                    ProjectName = project.Name,
-                    ProjectId = project.Id,
-                    TotalMilestones = project.Milestones.Count,
-                    FutureMilestones = milestoneAnalysis.Count,
-                    OverallProjectHealth = milestoneAnalysis.Count != 0 ? 
-                        milestoneAnalysis.Average(m => m.OverallLikelihood) switch
-                        {
-                            >= 80 => "Healthy - Most milestones likely to be met",
-                            >= 60 => "Moderate - Some milestones at risk",
-                            >= 40 => "At Risk - Many milestones uncertain",
-                            _ => "Critical - Most milestones unlikely to be met"
-                        } : "No future milestones to analyze",
-                    Milestones = milestoneAnalysis,
-                    LastUpdated = project.UpdateTime
                 });
             }
         }

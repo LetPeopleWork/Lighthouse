@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IProjectSettings } from "../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
@@ -14,7 +14,7 @@ vi.mock("../BaseSettings/GeneralSettingsComponent", () => ({
 		onNewWorkTrackingSystemConnectionAdded,
 		showWorkTrackingSystemSelection,
 	}: {
-		onSettingsChange: (key: keyof IProjectSettings, value: string) => void;
+		onSettingsChange: (key: keyof IPortfolioSettings, value: string) => void;
 		onWorkTrackingSystemChange?: (
 			event: React.ChangeEvent<{ value: unknown }>,
 		) => void;

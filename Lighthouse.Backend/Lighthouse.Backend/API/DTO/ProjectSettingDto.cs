@@ -11,7 +11,6 @@ namespace Lighthouse.Backend.API.DTO
 
         public ProjectSettingDto(Portfolio project) : base(project)
         {
-            Milestones.AddRange(project.Milestones.Select(m => new MilestoneDto(m)));
             UnparentedItemsQuery = project.UnparentedItemsQuery;
 
             UsePercentileToCalculateDefaultAmountOfWorkItems = project.UsePercentileToCalculateDefaultAmountOfWorkItems;
@@ -31,8 +30,6 @@ namespace Lighthouse.Backend.API.DTO
 
             FeatureOwnerField = project.FeatureOwnerField;
         }
-
-        public List<MilestoneDto> Milestones { get; set; } = [];
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];
 
