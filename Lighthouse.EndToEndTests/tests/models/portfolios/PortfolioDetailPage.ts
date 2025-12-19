@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
+import { DeliveriesPage } from "./Deliveries/DeliveriesPage";
 import { PortfolioEditPage } from "./PortfolioEditPage";
 
 export class PortfolioDetailPage {
@@ -64,6 +65,12 @@ export class PortfolioDetailPage {
 
 	async goToMetrics(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Metrics" }).click();
+	}
+
+	async goToDeliveries(): Promise<DeliveriesPage> {
+		await this.page.getByRole("tab", { name: "Deliveries" }).click();
+
+		return new DeliveriesPage(this.page);
 	}
 
 	get refreshFeatureButton(): Locator {

@@ -21,15 +21,14 @@ export class TeamDetailPage {
 	}
 
 	async getNumberOfFeatures(): Promise<number> {
-		const grid = this.page.getByRole('grid');
+		const grid = this.page.getByRole("grid");
 
 		// MUI puts data rows inside a rowgroup
-		const rows = grid.getByRole('row').filter({
-			hasNot: grid.getByRole('columnheader')
+		const rows = grid.getByRole("row").filter({
+			hasNot: grid.getByRole("columnheader"),
 		});
 
 		return await rows.count();
-
 	}
 
 	async forecast(howMany: number): Promise<number> {
