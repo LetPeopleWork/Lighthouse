@@ -102,5 +102,33 @@ You may use Lighthouse to make it transparent what a change in Feature WIP can m
 {: .note}
 If a team is configured to [Automatically Adjust Feature WIP](../teams/edit.html#automatically-adjust-feature-wip), you can still change the settings manually. However, they will be overridden the next time the Team Data will be updated.
 
+# Deliveries
+
+Deliveries are named milestone dates for a portfolio that group a set of Features intended to be released together. They help you communicate target dates, track which features belong to a delivery, and see delivery-level progress alongside feature forecasts.
+
+## Add a Delivery
+
+To add a delivery to a portfolio, open the portfolio and click the *Add Delivery* button. This opens the delivery form where you define the delivery name, target date and the features that should be part of that delivery.
+
+![Add Delivery](../assets/features/delivery_add.png)
+
+- Click **Add Delivery** to open the form.
+- Fill the required fields: **Name** (a clear title for the delivery), **Date** (target delivery date), and **Features** (select one or more features to include).
+- Click **Save** to create the delivery. The new delivery will appear in the Deliveries list and can be edited or removed later.
+
+{: .note}
+You can select multiple features for a single delivery — Lighthouse will show delivery-level progress and the forecasted completion of each included feature.
+
+## After it's added
+
+After creating a delivery it appears in the Deliveries view with its name, target date and the list of included features.
+
+![Delivery Details](../assets/features/delivery_detail.png)
+
+The delivery row shows the delivery name and date, an expand control to reveal included features and their statuses, and action buttons to edit or delete the delivery. Expanding a delivery displays each feature and its forecasted completion so you can assess delivery risk and progress at a glance.
+
+{: .recommendation}
+> Use deliveries to communicate release milestones and to group related features — this makes it easier to discuss release risk and progress with stakeholders.
+
 # Metrics
 Similar to the Team Details, the Portfolio contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Portfolio. Check the [Metrics Page](../metrics/metrics.html) for more details.
