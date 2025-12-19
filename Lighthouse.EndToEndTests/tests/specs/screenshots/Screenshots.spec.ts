@@ -341,6 +341,8 @@ testWithData(
 
 		// Team Detail Page
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		teamDetailPage.goToForecasts();
+
 		await teamDetailPage.forecast(10);
 		await takePageScreenshot(teamDetailPage.page, "features/teamdetail.png", 3);
 
@@ -485,6 +487,36 @@ testWithData(
 		await takeElementScreenshot(
 			portfolioDetailPage.featureSizeWidget,
 			"features/metrics/featuresize.png",
+		);
+
+		let deliveryPage = await portfolioDetailPage.goToDeliveries();
+		const addDeliveryPage = await deliveryPage.addDelivery();
+		await addDeliveryPage.setDeliveryName("Next Release");
+
+		const futureDate = new Date(
+			Date.now() + 24 * 60 * 60 * 1000
+		).toISOString().slice(0, 10);
+
+		await addDeliveryPage.setDeliveryDate(futureDate);
+
+		await addDeliveryPage.selectFeatureByIndex(0);
+		await addDeliveryPage.selectFeatureByIndex(1);
+
+		await takeDialogScreenshot(
+			addDeliveryPage.page.getByRole("dialog"),
+			"features/delivery_add.png",
+			0.5,
+			1000);
+
+		deliveryPage = await addDeliveryPage.save();
+		const delivery = await deliveryPage.getDeliveryByName("Next Release");;
+		await delivery.toggleDetails();
+
+		await takePageScreenshot(
+			deliveryPage.page,
+			"features/delivery_detail.png",
+			5,
+			1000,
 		);
 	},
 );

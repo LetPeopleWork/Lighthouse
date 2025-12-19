@@ -45,7 +45,7 @@ export class PortfolioDetailPage {
 	}
 
 	async toggleFeatureWIPConfiguration(): Promise<void> {
-		await this.page.getByLabel("toggle").nth(1).click();
+		await this.page.getByLabel("toggle").nth(0).click();
 	}
 
 	async changeFeatureWIPForTeam(teamName: string, featureWIP: number) {
