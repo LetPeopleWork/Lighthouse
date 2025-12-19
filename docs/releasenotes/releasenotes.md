@@ -37,7 +37,7 @@ Deliveries are also shown in the overview page for each Portfolio.
 ## Digital Code Signing
 The versions for Windows and macOS are now digitally signed. This means you can trust that the executables are coming from LetPeopleWork GmbH. On Windows, this means that you won't see the "Unknown Publisher" warning anymore, but can verify that the executable is trustworthy.
 
-![Digital Signature on Windows](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/digitalsignature.png)
+![Digital Signature on Windows](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/releasenotes/digitalsignature.jpg)
 
 On macOS, you may still get a warning (after the download), but you could check through the commandline that it's signed and notarized through Apple. In a next release, this will improve also on macOS.
 
