@@ -3,8 +3,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.Sqlite;
 
 namespace Lighthouse.Backend.API
 {
@@ -36,7 +34,7 @@ namespace Lighthouse.Backend.API
         [HttpPost("portfolio/{portfolioId:int}")]
         public async Task<IActionResult> CreateDelivery(
             int portfolioId,
-            [FromBody] CreateDeliveryRequest request)
+            [FromBody] UpdateDeliveryRequest request)
         {
             if (string.IsNullOrEmpty(request.Name))
             {

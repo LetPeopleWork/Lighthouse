@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var portfolio = await AddPortfolio();
             var features = await AddFeatures(portfolio);
             
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 // Missing Name
                 Date = DateTime.UtcNow.AddDays(30),
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var portfolio = await AddPortfolio();
             var features = await AddFeatures(portfolio);
             
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = "Release 1",
                 Date = DateTime.UtcNow.AddDays(30),
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             // Arrange
             var portfolio = await AddPortfolio();
             
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = "Release 1",
                 Date = DateTime.UtcNow.AddDays(30),
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             
             var features = await AddFeatures(portfolio);
             
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = "Release 1",
                 Date = DateTime.UtcNow.AddDays(30),
@@ -134,7 +134,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var portfolio = await AddPortfolio();
             var features = await AddFeatures(portfolio);
             
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = "Release 1",
                 Date = DateTime.UtcNow.AddDays(30),

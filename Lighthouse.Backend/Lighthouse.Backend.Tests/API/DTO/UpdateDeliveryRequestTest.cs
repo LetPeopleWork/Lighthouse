@@ -2,7 +2,7 @@ using Lighthouse.Backend.API.DTO;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
-    public class CreateDeliveryRequestTest
+    public class UpdateDeliveryRequestTest
     {
         [Test]
         public void CreateDeliveryRequest_WithValidData_CreatesSuccessfully()
@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var featureIds = new List<int> { 1, 2, 3 };
 
             // Act
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = name,
                 Date = date,
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         public void CreateDeliveryRequest_Properties_AreInitialized()
         {
             // Arrange & Act
-            var request = new CreateDeliveryRequest();
+            var request = new UpdateDeliveryRequest();
 
             // Assert - FeatureIds should be initialized as empty list
             using (Assert.EnterMultipleScope())

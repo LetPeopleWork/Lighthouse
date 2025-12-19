@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
 
             // Act
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = name,
                 Date = date,
@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
 
             // Act
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = name,
                 Date = pastDate,
@@ -198,7 +198,7 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
 
             // Act
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = name,
                 Date = date,
@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
 
             // Act
-            var request = new CreateDeliveryRequest
+            var request = new UpdateDeliveryRequest
             {
                 Name = name,
                 Date = date,
