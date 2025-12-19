@@ -5,16 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
-    public class DeliveryRepository : RepositoryBase<Delivery>, IDeliveryRepository
+    public class DeliveryRepository(LighthouseAppContext context, ILogger<DeliveryRepository> logger)
+        : RepositoryBase<Delivery>(context, (context) => context.Deliveries, logger), IDeliveryRepository
     {
-        private readonly ILogger<DeliveryRepository> logger;
-
-        public DeliveryRepository(LighthouseAppContext context, ILogger<DeliveryRepository> logger) 
-            : base(context, (context) => context.Deliveries, logger)
-        {
-            this.logger = logger;
-        }
-
         public override Delivery? GetById(int id)
         {
             logger.LogDebug("Get Delivery by Id. Id: {Id}", id);

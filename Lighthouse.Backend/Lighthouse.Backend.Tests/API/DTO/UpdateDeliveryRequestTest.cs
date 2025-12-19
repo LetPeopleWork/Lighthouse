@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(request.FeatureIds, Is.Not.Null);
-                Assert.That(request.FeatureIds.Count, Is.EqualTo(0));
+                Assert.That(request.FeatureIds, Has.Count.EqualTo(0));
             }
         }
     }

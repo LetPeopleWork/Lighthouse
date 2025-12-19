@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetByPortfolio_WithForecastedFeatures_ReturnsDeliveriesWithLikelihood()
         {
             // Arrange
-            var portfolioId = 1;
+            const int portfolioId = 1;
             var deliveryDate = DateTime.UtcNow.AddDays(30);
             
             // Create feature with 80% likelihood forecast
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.API
             var forecast = new WhenForecast();
             forecast.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(forecast, new object[] { simulationResult });
+                .Invoke(forecast, [simulationResult]);
             
             var feature = new Feature();
             feature.Forecasts.Add(forecast);
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API
             delivery.Features.Add(feature);
             
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
-                .Returns(new[] { delivery });
+                .Returns([delivery]);
             
             var controller = CreateSubject();
             
@@ -70,15 +70,19 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = result as OkObjectResult;
-            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto>;
+            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto> ?? throw new NullReferenceException("Deliveries is null");
             
             Assert.That(deliveries, Is.Not.Null);
             Assert.That(deliveries.Count(), Is.EqualTo(1));
             
             var deliveryDto = deliveries.First();
-            Assert.That(deliveryDto.Id, Is.EqualTo(1));
-            Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
-            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(80.0));
+            
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveryDto.Id, Is.EqualTo(1));
+                Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
+                Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(80.0));
+            }
         }
 
         [Test]
@@ -108,18 +112,21 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = result as OkObjectResult;
-            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto>;
+            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto> ?? throw new NullReferenceException("Deliveries is null");
             
-            Assert.That(deliveries, Is.Not.Null);
-            Assert.That(deliveries.Count(), Is.EqualTo(2));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveries, Is.Not.Null);
+                Assert.That(deliveries.Count(), Is.EqualTo(2));
             
-            var deliveryDto = deliveries.First();
-            Assert.That(deliveryDto.Id, Is.EqualTo(1));
-            Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
-            
-            var deliveryDto2 = deliveries.Last();
-            Assert.That(deliveryDto2.Id, Is.EqualTo(2));
-            Assert.That(deliveryDto2.Name, Is.EqualTo("Q2 Release"));
+                var deliveryDto = deliveries.First();
+                Assert.That(deliveryDto.Id, Is.EqualTo(1));
+                Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
+
+                var deliveryDto2 = deliveries.Last();
+                Assert.That(deliveryDto2.Id, Is.EqualTo(2));
+                Assert.That(deliveryDto2.Name, Is.EqualTo("Q2 Release"));
+            }
         }
 
         [Test]
@@ -158,8 +165,8 @@ namespace Lighthouse.Backend.Tests.API
         public async Task CreateDelivery_PastDate_ReturnsBadRequest()
         {
             // Arrange
-            var portfolioId = 1;
-            var name = "Past Release";
+            const int portfolioId = 1;
+            const string name = "Past Release";
             var pastDate = DateTime.UtcNow.AddDays(-1);
             var featureIds = new List<int>();
             
@@ -186,8 +193,8 @@ namespace Lighthouse.Backend.Tests.API
         public async Task CreateDelivery_NonPremiumWithExistingDelivery_ReturnsForbidden()
         {
             // Arrange
-            var portfolioId = 1;
-            var name = "Q2 Release";
+            const int portfolioId = 1;
+            const string name = "Q2 Release";
             var date = DateTime.UtcNow.AddDays(30);
             var featureIds = new List<int>();
             
@@ -204,21 +211,24 @@ namespace Lighthouse.Backend.Tests.API
                 Date = date,
                 FeatureIds = featureIds
             };
+            
             var result = await controller.CreateDelivery(portfolioId, request);
 
-            // Assert
-            Assert.That(result, Is.InstanceOf<ObjectResult>());
-            var objectResult = result as ObjectResult;
-            Assert.That(objectResult.StatusCode, Is.EqualTo(403));
-            Assert.That(objectResult.Value, Is.EqualTo("Free users can only have 1 delivery per portfolio"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ObjectResult>());
+                var objectResult = result as ObjectResult;
+                Assert.That(objectResult.StatusCode, Is.EqualTo(403));
+                Assert.That(objectResult.Value, Is.EqualTo("Free users can only have 1 delivery per portfolio"));
+            }
         }
 
         [Test]
         public async Task CreateDelivery_NonPremiumFirstDelivery_ReturnsOk()
         {
             // Arrange
-            var portfolioId = 1;
-            var name = "First Release";
+            const int portfolioId = 1;
+            const string name = "First Release";
             var date = DateTime.UtcNow.AddDays(30);
             var featureIds = new List<int>();
             
@@ -247,7 +257,7 @@ namespace Lighthouse.Backend.Tests.API
         public async Task DeleteDelivery_ValidId_ReturnsNoContent()
         {
             // Arrange
-            var deliveryId = 1;
+            const int deliveryId = 1;
             var existingDelivery = GetTestDelivery();
             
             deliveryRepositoryMock.Setup(x => x.GetById(deliveryId))
@@ -273,7 +283,7 @@ namespace Lighthouse.Backend.Tests.API
                 licenseServiceMock.Object);
         }
 
-        private List<Feature> GetTestFeatures(List<int> ids)
+        private static List<Feature> GetTestFeatures(List<int> ids)
         {
             return ids.Select(id => new Feature
             {
@@ -289,7 +299,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetByPortfolio_WithFeaturesAndWork_ReturnsDeliveriesWithProgressAndFeatures()
         {
             // Arrange
-            var portfolioId = 1;
+            const int portfolioId = 1;
             var deliveryDate = DateTime.UtcNow.AddDays(30);
             
             // Create team and feature work
@@ -306,7 +316,7 @@ namespace Lighthouse.Backend.Tests.API
             var forecast = new WhenForecast();
             forecast.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(forecast, new object[] { simulationResult });
+                .Invoke(forecast, [simulationResult]);
             
             var feature = new Feature
             {
@@ -325,7 +335,7 @@ namespace Lighthouse.Backend.Tests.API
             delivery.Features.Add(feature);
             
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
-                .Returns(new[] { delivery });
+                .Returns([delivery]);
             
             var controller = CreateSubject();
 
@@ -341,27 +351,33 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(deliveries.Count(), Is.EqualTo(1));
             
             var deliveryDto = deliveries.First();
-            Assert.That(deliveryDto.Id, Is.EqualTo(1));
-            Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
-            Assert.That(deliveryDto.PortfolioId, Is.EqualTo(portfolioId));
-            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(80.0));
-            Assert.That(deliveryDto.Progress, Is.EqualTo(80.0)); // (100-20)/100 * 100 = 80%
-            Assert.That(deliveryDto.RemainingWork, Is.EqualTo(20));
-            Assert.That(deliveryDto.TotalWork, Is.EqualTo(100));
-            Assert.That(deliveryDto.Features, Is.Not.Null);
-            Assert.That(deliveryDto.Features.Count, Is.EqualTo(1));
-            Assert.That(deliveryDto.Features.First(), Is.EqualTo(1)); // Feature ID
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveryDto.Id, Is.EqualTo(1));
+                Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
+                Assert.That(deliveryDto.PortfolioId, Is.EqualTo(portfolioId));
+                
+                Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(80.0));
+                Assert.That(deliveryDto.Progress, Is.EqualTo(80.0)); // (100-20)/100 * 100 = 80%
+                
+                Assert.That(deliveryDto.RemainingWork, Is.EqualTo(20));
+                Assert.That(deliveryDto.TotalWork, Is.EqualTo(100));
+                Assert.That(deliveryDto.Features, Is.Not.Null);
+                
+                Assert.That(deliveryDto.Features.Count, Is.EqualTo(1));
+                Assert.That(deliveryDto.Features[0], Is.EqualTo(1));
+            }
         }
 
         [Test]
         public void GetByPortfolio_ValidPortfolioId_ReturnsDeliveries()
         {
             // Arrange
-            var portfolioId = 1;
+            const int portfolioId = 1;
             var expectedDeliveries = new List<Delivery>
             {
-                new Delivery("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId),
-                new Delivery("Q2 Release", DateTime.UtcNow.AddDays(90), portfolioId)
+                new("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId),
+                new("Q2 Release", DateTime.UtcNow.AddDays(90), portfolioId)
             };
             
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
@@ -375,19 +391,22 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = (OkObjectResult)result;
-            var deliveryDtos = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto>;
+            var deliveryDtos = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto> ?? throw new NullReferenceException("DeliveryDtos is null");
             
-            Assert.That(deliveryDtos, Is.Not.Null);
-            Assert.That(deliveryDtos.Count(), Is.EqualTo(2));
-            Assert.That(deliveryDtos.First().Name, Is.EqualTo("Q1 Release"));
-            Assert.That(deliveryDtos.Last().Name, Is.EqualTo("Q2 Release"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveryDtos, Is.Not.Null);
+                Assert.That(deliveryDtos.Count(), Is.EqualTo(2));
+                Assert.That(deliveryDtos.First().Name, Is.EqualTo("Q1 Release"));
+                Assert.That(deliveryDtos.Last().Name, Is.EqualTo("Q2 Release"));
+            }
         }
         
         [Test]
         public async Task UpdateDelivery_WithValidRequest_ReturnsOk()
         {
             // Arrange
-            var deliveryId = 1;
+            const int deliveryId = 1;
             var existingDelivery = new Delivery("Original Name", DateTime.UtcNow.AddDays(10), 1);
             var feature1 = new Feature { Id = 1, Name = "Feature 1" };
             var feature2 = new Feature { Id = 2, Name = "Feature 2" };
@@ -396,7 +415,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Name = "Updated Delivery",
                 Date = DateTime.UtcNow.AddDays(30),
-                FeatureIds = new List<int> { 1, 2 }
+                FeatureIds = [1, 2]
             };
 
             deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
@@ -413,11 +432,14 @@ namespace Lighthouse.Backend.Tests.API
             // Act
             var result = await controller.UpdateDelivery(deliveryId, request);
 
-            // Assert
-            Assert.That(result, Is.TypeOf<OkResult>());
-            Assert.That(existingDelivery.Name, Is.EqualTo("Updated Delivery"));
-            Assert.That(existingDelivery.Date, Is.EqualTo(request.Date));
-            Assert.That(existingDelivery.Features.Count, Is.EqualTo(2));
+            using (Assert.EnterMultipleScope())
+            {
+                // Assert
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(existingDelivery.Name, Is.EqualTo("Updated Delivery"));
+                Assert.That(existingDelivery.Date, Is.EqualTo(request.Date));
+                Assert.That(existingDelivery.Features, Has.Count.EqualTo(2));
+            }
             deliveryRepositoryMock.Verify(x => x.Save(), Times.Once);
         }
 
@@ -425,12 +447,12 @@ namespace Lighthouse.Backend.Tests.API
         public async Task UpdateDelivery_WithPastDate_ReturnsBadRequest()
         {
             // Arrange
-            var deliveryId = 1;
+            const int deliveryId = 1;
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
                 Date = DateTime.UtcNow.AddDays(-1), // Past date
-                FeatureIds = new List<int> { 1 }
+                FeatureIds = [1]
             };
 
             var controller = new DeliveriesController(
@@ -452,12 +474,12 @@ namespace Lighthouse.Backend.Tests.API
         public async Task UpdateDelivery_WithEmptyName_ReturnsBadRequest()
         {
             // Arrange
-            var deliveryId = 1;
+            const int deliveryId = 1;
             var request = new UpdateDeliveryRequest
             {
                 Name = "",
                 Date = DateTime.UtcNow.AddDays(10),
-                FeatureIds = new List<int> { 1 }
+                FeatureIds = [1]
             };
 
             var controller = new DeliveriesController(
@@ -479,12 +501,12 @@ namespace Lighthouse.Backend.Tests.API
         public async Task UpdateDelivery_WithNonExistentDelivery_ReturnsNotFound()
         {
             // Arrange
-            var deliveryId = 999;
+            const int deliveryId = 999;
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
                 Date = DateTime.UtcNow.AddDays(10),
-                FeatureIds = new List<int> { 1 }
+                FeatureIds = [1]
             };
 
             deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns((Delivery)null);
@@ -508,13 +530,13 @@ namespace Lighthouse.Backend.Tests.API
         public async Task UpdateDelivery_WithNonExistentFeature_ReturnsNotFound()
         {
             // Arrange
-            var deliveryId = 1;
+            const int deliveryId = 1;
             var existingDelivery = new Delivery("Test", DateTime.UtcNow.AddDays(10), 1);
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
                 Date = DateTime.UtcNow.AddDays(10),
-                FeatureIds = new List<int> { 999 }
+                FeatureIds = [999]
             };
 
             deliveryRepositoryMock.Setup(x => x.GetById(deliveryId)).Returns(existingDelivery);
@@ -535,7 +557,7 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(notFound.Value, Is.EqualTo("Feature with ID 999 does not exist"));
         }
 
-        private Delivery GetTestDelivery()
+        public Delivery GetTestDelivery()
         {
             return new Delivery("Existing Delivery", DateTime.UtcNow.AddDays(60), 1);
         }

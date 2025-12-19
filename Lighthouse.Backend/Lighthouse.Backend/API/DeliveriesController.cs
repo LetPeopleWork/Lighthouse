@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
     {
         [HttpGet("portfolio/{portfolioId:int}")]
+        [ProducesResponseType<IEnumerable<DeliveryWithLikelihoodDto>>(StatusCodes.Status200OK)]
         public IActionResult GetByPortfolio(int portfolioId)
         {
             var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
@@ -24,6 +25,7 @@ namespace Lighthouse.Backend.API
         }
         
         [HttpGet]
+        [ProducesResponseType<IEnumerable<DeliveryWithLikelihoodDto>>(StatusCodes.Status200OK)]
         public IActionResult GetAll()
         {
             var deliveries = deliveryRepository.GetAll();

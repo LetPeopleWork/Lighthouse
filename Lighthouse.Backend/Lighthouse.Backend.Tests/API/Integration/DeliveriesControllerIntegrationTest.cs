@@ -12,6 +12,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     public class DeliveriesControllerIntegrationTest() : IntegrationTestBase(new TestWebApplicationFactory<Program>())
     {
+        private static readonly JsonSerializerOptions JsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
+
         [Test]
         public async Task CreateDelivery_WithMissingName_ReturnsBadRequest()
         {
@@ -155,13 +157,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             getResponse.EnsureSuccessStatusCode();
             var getResponseContent = await getResponse.Content.ReadAsStringAsync();
             var deliveries = JsonSerializer.Deserialize<List<Delivery>>(getResponseContent,
-                new JsonSerializerOptions
-                    { PropertyNameCaseInsensitive = true }
+                JsonSerializerOptions
             );
 
             if (deliveries == null)
             {
-                throw new ArgumentNullException("Deliveries deserialization resulted in null");
+                throw new NullReferenceException("Deliveries deserialization resulted in null");
             }
             
             var createdDelivery = deliveries.FirstOrDefault(d => d.Name == "Release 1");
@@ -176,8 +177,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             getResponse.EnsureSuccessStatusCode();
             getResponseContent = await getResponse.Content.ReadAsStringAsync();
             deliveries = JsonSerializer.Deserialize<List<Delivery>>(getResponseContent,
-                new JsonSerializerOptions
-                    { PropertyNameCaseInsensitive = true }
+                JsonSerializerOptions
             );
 
             // Assert

@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var forecast = new WhenForecast();
             forecast.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(forecast, new object[] { simulationResult });
+                .Invoke(forecast, [simulationResult]);
             
             var feature = new Feature();
             feature.Forecasts.Add(forecast);
@@ -39,11 +39,13 @@ namespace Lighthouse.Backend.Tests.API.DTO
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
             
-            // Assert
-            Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(75.0));
-            Assert.That(deliveryDto.Id, Is.EqualTo(1));
-            Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
-            Assert.That(deliveryDto.Date, Is.EqualTo(deliveryDate));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveryDto.LikelihoodPercentage, Is.EqualTo(75.0));
+                Assert.That(deliveryDto.Id, Is.EqualTo(1));
+                Assert.That(deliveryDto.Name, Is.EqualTo("Q1 Release"));
+                Assert.That(deliveryDto.Date, Is.EqualTo(deliveryDate));
+            }
         }
         
         [Test]
@@ -86,7 +88,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var forecast1 = new WhenForecast();
             forecast1.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(forecast1, new object[] { simulationResult1 });
+                .Invoke(forecast1, [simulationResult1]);
             
             // Feature 2: 60% likelihood to complete within 30 days
             var simulationResult2 = new Dictionary<int, int>
@@ -99,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var forecast2 = new WhenForecast();
             forecast2.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(forecast2, new object[] { simulationResult2 });
+                .Invoke(forecast2, [simulationResult2]);
             
             var feature1 = new Feature();
             feature1.Forecasts.Add(forecast1);
@@ -140,7 +142,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var forecast1 = new WhenForecast();
             forecast1.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(forecast1, new object[] { simulationResult1 });
+                .Invoke(forecast1, [simulationResult1]);
             
             // Feature 2: 60% likelihood
             var simulationResult2 = new Dictionary<int, int>
@@ -153,7 +155,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var forecast2 = new WhenForecast();
             forecast2.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(forecast2, new object[] { simulationResult2 });
+                .Invoke(forecast2, [simulationResult2]);
             
             var feature1 = new Feature { Id = 1 };
             feature1.Forecasts.Add(forecast1);
@@ -176,14 +178,16 @@ namespace Lighthouse.Backend.Tests.API.DTO
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
             
-            // Assert
-            Assert.That(deliveryDto.FeatureLikelihoods, Has.Count.EqualTo(3));
-            Assert.That(deliveryDto.FeatureLikelihoods[0].FeatureId, Is.EqualTo(1));
-            Assert.That(deliveryDto.FeatureLikelihoods[0].LikelihoodPercentage, Is.EqualTo(80.0));
-            Assert.That(deliveryDto.FeatureLikelihoods[1].FeatureId, Is.EqualTo(2));
-            Assert.That(deliveryDto.FeatureLikelihoods[1].LikelihoodPercentage, Is.EqualTo(60.0));
-            Assert.That(deliveryDto.FeatureLikelihoods[2].FeatureId, Is.EqualTo(3));
-            Assert.That(deliveryDto.FeatureLikelihoods[2].LikelihoodPercentage, Is.EqualTo(100.0));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveryDto.FeatureLikelihoods, Has.Count.EqualTo(3));
+                Assert.That(deliveryDto.FeatureLikelihoods[0].FeatureId, Is.EqualTo(1));
+                Assert.That(deliveryDto.FeatureLikelihoods[0].LikelihoodPercentage, Is.EqualTo(80.0));
+                Assert.That(deliveryDto.FeatureLikelihoods[1].FeatureId, Is.EqualTo(2));
+                Assert.That(deliveryDto.FeatureLikelihoods[1].LikelihoodPercentage, Is.EqualTo(60.0));
+                Assert.That(deliveryDto.FeatureLikelihoods[2].FeatureId, Is.EqualTo(3));
+                Assert.That(deliveryDto.FeatureLikelihoods[2].LikelihoodPercentage, Is.EqualTo(100.0));
+            }
         }
     }
 }

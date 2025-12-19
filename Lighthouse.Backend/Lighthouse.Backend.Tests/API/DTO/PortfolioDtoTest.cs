@@ -1,6 +1,5 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Forecast;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
@@ -22,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(subject.LastUpdated, Is.EqualTo(projectUpdateTime));
                 Assert.That(subject.LastUpdated.Kind, Is.EqualTo(DateTimeKind.Utc));
             }
-            ;
         }
 
         [Test]
@@ -39,13 +37,13 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(subject.InvolvedTeams.Count, Is.EqualTo(2));
+                Assert.That(subject.InvolvedTeams, Has.Count.EqualTo(2));
                 Assert.That(subject.InvolvedTeams.Any(t => t.Id == team1.Id && t.Name == team1.Name), Is.True);
                 Assert.That(subject.InvolvedTeams.Any(t => t.Id == team2.Id && t.Name == team2.Name), Is.True);
             }
         }
 
-        private PortfolioDto CreateSubject(Portfolio project)
+        private static PortfolioDto CreateSubject(Portfolio project)
         {
             return new PortfolioDto(project);
         }

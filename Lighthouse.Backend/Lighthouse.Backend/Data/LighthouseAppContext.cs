@@ -6,37 +6,31 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 
 namespace Lighthouse.Backend.Data
 {
-    public class LighthouseAppContext : DbContext
+    public class LighthouseAppContext(
+        DbContextOptions<LighthouseAppContext> options,
+        ICryptoService cryptoService,
+        ILogger<LighthouseAppContext> logger)
+        : DbContext(options)
     {
-        private readonly ICryptoService cryptoService;
-        private readonly ILogger<LighthouseAppContext> logger;
+        public DbSet<Team> Teams { get; set; } = null!;
 
-        public LighthouseAppContext(DbContextOptions<LighthouseAppContext> options, ICryptoService cryptoService, ILogger<LighthouseAppContext> logger)
-            : base(options)
-        {
-            this.cryptoService = cryptoService;
-            this.logger = logger;
-        }
+        public DbSet<Feature> Features { get; set; } = null!;
 
-        public DbSet<Team> Teams { get; set; } = default!;
+        public DbSet<Portfolio> Portfolios { get; set; } = null!;
 
-        public DbSet<Feature> Features { get; set; } = default!;
+        public DbSet<WorkTrackingSystemConnection> WorkTrackingSystemConnections { get; set; } = null!;
 
-        public DbSet<Portfolio> Portfolios { get; set; } = default!;
+        public DbSet<AppSetting> AppSettings { get; set; } = null!;
 
-        public DbSet<WorkTrackingSystemConnection> WorkTrackingSystemConnections { get; set; } = default!;
+        public DbSet<OptionalFeature> OptionalFeatures { get; set; } = null!;
 
-        public DbSet<AppSetting> AppSettings { get; set; } = default!;
+        public DbSet<WorkItem> WorkItems { get; set; } = null!;
 
-        public DbSet<OptionalFeature> OptionalFeatures { get; set; } = default!;
+        public DbSet<TerminologyEntry> TerminologyEntries { get; set; } = null!;
 
-        public DbSet<WorkItem> WorkItems { get; set; } = default!;
+        public DbSet<LicenseInformation> LicenseInformation { get; set; } = null!;
 
-        public DbSet<TerminologyEntry> TerminologyEntries { get; set; } = default!;
-
-        public DbSet<LicenseInformation> LicenseInformation { get; set; } = default!;
-
-        public DbSet<Delivery> Deliveries { get; set; } = default!;
+        public DbSet<Delivery> Deliveries { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -194,7 +188,7 @@ namespace Lighthouse.Backend.Data
                 .Where(f => !f.IsParentFeature && f.Portfolios.Count == 0)
                 .ToList();
 
-            if (orphanedFeatures.Any())
+            if (orphanedFeatures.Count != 0)
             {
                 Features.RemoveRange(orphanedFeatures);
                 logger.LogInformation("Removed {Count} orphaned features", orphanedFeatures.Count);

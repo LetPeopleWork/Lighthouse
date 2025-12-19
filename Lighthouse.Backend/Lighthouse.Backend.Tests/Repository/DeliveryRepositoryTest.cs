@@ -57,13 +57,15 @@ namespace Lighthouse.Backend.Tests.Repository
             // Act
             var result = repository.GetById(delivery.Id);
 
-            // Assert
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Name, Is.EqualTo(delivery.Name));
-            Assert.That(result.Portfolio, Is.Not.Null);
-            Assert.That(result.Portfolio.Name, Is.EqualTo(portfolio.Name));
-            Assert.That(result.Features, Is.Not.Null);
-            Assert.That(result.Features.Count, Is.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Name, Is.EqualTo(delivery.Name));
+                Assert.That(result.Portfolio, Is.Not.Null);
+                Assert.That(result.Portfolio.Name, Is.EqualTo(portfolio.Name));
+                Assert.That(result.Features, Is.Not.Null);
+                Assert.That(result.Features, Has.Count.EqualTo(1));
+            }
         }
 
         [Test]
@@ -183,9 +185,12 @@ namespace Lighthouse.Backend.Tests.Repository
             await repository.Save();
             
             var result = repository.GetById(delivery.Id);
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Name, Is.EqualTo(delivery.Name));
-            Assert.That(result.Features, Has.Count.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Name, Is.EqualTo(delivery.Name));
+                Assert.That(result.Features, Has.Count.EqualTo(1));
+            }
 
             // Remove Delivery
             repository.Remove(delivery);
@@ -206,7 +211,7 @@ namespace Lighthouse.Backend.Tests.Repository
             };
         }
 
-        private Feature GetTestFeature()
+        private static Feature GetTestFeature()
         {
             return new Feature
             {
@@ -217,7 +222,7 @@ namespace Lighthouse.Backend.Tests.Repository
             };
         }
 
-        private Delivery GetTestDelivery(int portfolioId, string name = "Test Delivery")
+        private static Delivery GetTestDelivery(int portfolioId, string name = "Test Delivery")
         {
             return new Delivery(name, DateTime.UtcNow.AddDays(30), portfolioId);
         }
