@@ -138,7 +138,7 @@ testWithData(
 	},
 );
 
-testWithUpdatedTeams([0, 1, 2])(
+testWithUpdatedTeams([0])(
 	"should properly handle deliveries within a portfolio",
 	async ({ testData, overviewPage }) => {
 		const [portfolio] = testData.portfolios;

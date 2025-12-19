@@ -493,9 +493,9 @@ testWithData(
 		const addDeliveryPage = await deliveryPage.addDelivery();
 		await addDeliveryPage.setDeliveryName("Next Release");
 
-		const futureDate = new Date(
-			Date.now() + 24 * 60 * 60 * 1000
-		).toISOString().slice(0, 10);
+		const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
+			.toISOString()
+			.slice(0, 10);
 
 		await addDeliveryPage.setDeliveryDate(futureDate);
 
@@ -506,10 +506,11 @@ testWithData(
 			addDeliveryPage.page.getByRole("dialog"),
 			"features/delivery_add.png",
 			0.5,
-			1000);
+			1000,
+		);
 
 		deliveryPage = await addDeliveryPage.save();
-		const delivery = await deliveryPage.getDeliveryByName("Next Release");;
+		const delivery = await deliveryPage.getDeliveryByName("Next Release");
 		await delivery.toggleDetails();
 
 		await takePageScreenshot(
