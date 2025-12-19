@@ -1,0 +1,282 @@
+import { useCallback, useContext, useEffect, useState } from "react";
+import { useErrorSnackbar } from "../../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import type { Delivery } from "../../../../../models/Delivery";
+import type { IFeature } from "../../../../../models/Feature";
+import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
+import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
+
+interface UseDeliveryManagementProps {
+	portfolio: Portfolio;
+}
+
+export const useDeliveryManagement = ({
+	portfolio,
+}: UseDeliveryManagementProps) => {
+	const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [showCreateModal, setShowCreateModal] = useState(false);
+	const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(
+		null,
+	);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [deliveryToDelete, setDeliveryToDelete] = useState<Delivery | null>(
+		null,
+	);
+	// New state for expansion and feature loading
+	const [expandedDeliveries, setExpandedDeliveries] = useState<Set<number>>(
+		new Set(),
+	);
+	const [loadedFeatures, setLoadedFeatures] = useState<Map<number, IFeature[]>>(
+		new Map(),
+	);
+	const [loadingFeaturesByDelivery, setLoadingFeaturesByDelivery] = useState<
+		Set<number>
+	>(new Set());
+
+	const { deliveryService, featureService } = useContext(ApiServiceContext);
+	const { showError } = useErrorSnackbar();
+
+	const loadFeaturesForDelivery = useCallback(
+		async (delivery: Delivery): Promise<void> => {
+			// Skip if already loading or already have features loaded
+			if (
+				loadingFeaturesByDelivery.has(delivery.id) ||
+				loadedFeatures.has(delivery.id)
+			)
+				return;
+
+			// Skip if no feature IDs
+			if (!delivery.features || delivery.features.length === 0) {
+				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, []));
+				return;
+			}
+
+			setLoadingFeaturesByDelivery((prev) => new Set(prev).add(delivery.id));
+
+			try {
+				// delivery.features is now an array of feature IDs
+				const featureIds = delivery.features;
+				const features = await featureService.getFeaturesByIds(featureIds);
+				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
+			} catch (error) {
+				console.error("Failed to load features for delivery:", error);
+				showError("Failed to load features for delivery");
+			} finally {
+				setLoadingFeaturesByDelivery((prev) => {
+					const next = new Set(prev);
+					next.delete(delivery.id);
+					return next;
+				});
+			}
+		},
+		[featureService, showError, loadingFeaturesByDelivery, loadedFeatures],
+	);
+
+	const forceReloadFeaturesForDelivery = useCallback(
+		async (delivery: Delivery): Promise<void> => {
+			// Skip if already loading
+			if (loadingFeaturesByDelivery.has(delivery.id)) return;
+
+			// Skip if no feature IDs
+			if (!delivery.features || delivery.features.length === 0) {
+				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, []));
+				return;
+			}
+
+			setLoadingFeaturesByDelivery((prev) => new Set(prev).add(delivery.id));
+
+			try {
+				// delivery.features is now an array of feature IDs
+				const featureIds = delivery.features;
+				const features = await featureService.getFeaturesByIds(featureIds);
+				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
+			} catch (error) {
+				console.error("Failed to load features for delivery:", error);
+				showError("Failed to load features for delivery");
+			} finally {
+				setLoadingFeaturesByDelivery((prev) => {
+					const next = new Set(prev);
+					next.delete(delivery.id);
+					return next;
+				});
+			}
+		},
+		[featureService, showError, loadingFeaturesByDelivery],
+	);
+
+	const fetchDeliveries = useCallback(async () => {
+		setIsLoading(true);
+		try {
+			const portfolioDeliveries = await deliveryService.getByPortfolio(
+				portfolio.id,
+			);
+			setDeliveries(portfolioDeliveries);
+		} catch (error) {
+			console.error("Failed to fetch deliveries:", error);
+			showError("Failed to fetch deliveries");
+		} finally {
+			setIsLoading(false);
+		}
+	}, [deliveryService, portfolio.id, showError]);
+
+	const handleAddDelivery = () => {
+		setShowCreateModal(true);
+	};
+
+	const handleDeleteDelivery = (delivery: Delivery) => {
+		setDeliveryToDelete(delivery);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleEditDelivery = (delivery: Delivery) => {
+		setSelectedDelivery(delivery);
+	};
+
+	const handleCreateDelivery = async (deliveryData: {
+		name: string;
+		date: string;
+		featureIds: number[];
+	}) => {
+		try {
+			await deliveryService.create(
+				portfolio.id,
+				deliveryData.name,
+				new Date(deliveryData.date),
+				deliveryData.featureIds,
+			);
+			setShowCreateModal(false);
+			await fetchDeliveries();
+		} catch (error) {
+			console.error("Failed to create delivery:", error);
+			showError("Failed to create delivery");
+		}
+	};
+
+	const handleUpdateDelivery = async (deliveryData: {
+		id: number;
+		name: string;
+		date: string;
+		featureIds: number[];
+	}) => {
+		try {
+			const wasExpanded = expandedDeliveries.has(deliveryData.id);
+
+			await deliveryService.update(
+				deliveryData.id,
+				deliveryData.name,
+				new Date(deliveryData.date),
+				deliveryData.featureIds,
+			);
+			setSelectedDelivery(null);
+			// Clear cached features for edited delivery to force refresh
+			setLoadedFeatures((prev) => {
+				const next = new Map(prev);
+				next.delete(deliveryData.id);
+				return next;
+			});
+			await fetchDeliveries();
+
+			// If the delivery was expanded, reload its features immediately
+			if (wasExpanded) {
+				// Find the updated delivery and reload its features
+				const updatedDeliveries = await deliveryService.getByPortfolio(
+					portfolio.id,
+				);
+				const updatedDelivery = updatedDeliveries.find(
+					(d) => d.id === deliveryData.id,
+				);
+				if (updatedDelivery) {
+					await forceReloadFeaturesForDelivery(updatedDelivery);
+				}
+			}
+		} catch (error) {
+			console.error("Failed to update delivery:", error);
+			showError("Failed to update delivery");
+		}
+	};
+
+	const handleDeleteConfirmation = async (confirmed: boolean) => {
+		if (confirmed && deliveryToDelete) {
+			try {
+				await deliveryService.delete(deliveryToDelete.id); // Clean up expansion state and loaded features
+				setExpandedDeliveries((prev) => {
+					const next = new Set(prev);
+					next.delete(deliveryToDelete.id);
+					return next;
+				});
+				setLoadedFeatures((prev) => {
+					const next = new Map(prev);
+					next.delete(deliveryToDelete.id);
+					return next;
+				});
+				await fetchDeliveries();
+			} catch (error) {
+				console.error("Failed to delete delivery:", error);
+				showError("Failed to delete delivery");
+			}
+		}
+
+		setDeleteDialogOpen(false);
+		setDeliveryToDelete(null);
+	};
+
+	const handleCloseCreateModal = () => {
+		setShowCreateModal(false);
+	};
+
+	const handleCloseEditModal = () => {
+		setSelectedDelivery(null);
+	};
+
+	const handleToggleExpanded = useCallback(
+		(deliveryId: number) => {
+			const isCurrentlyExpanded = expandedDeliveries.has(deliveryId);
+
+			setExpandedDeliveries((prev) => {
+				const next = new Set(prev);
+				if (isCurrentlyExpanded) {
+					next.delete(deliveryId);
+				} else {
+					next.add(deliveryId);
+					// Load features when expanding
+					const delivery = deliveries.find((d) => d.id === deliveryId);
+					if (delivery) {
+						loadFeaturesForDelivery(delivery);
+					}
+				}
+				return next;
+			});
+		},
+		[expandedDeliveries, deliveries, loadFeaturesForDelivery],
+	);
+
+	useEffect(() => {
+		fetchDeliveries();
+	}, [fetchDeliveries]);
+
+	return {
+		deliveries,
+		isLoading,
+		showCreateModal,
+		selectedDelivery,
+		deleteDialogOpen,
+		deliveryToDelete,
+		expandedDeliveries,
+		loadedFeatures,
+		loadingFeaturesByDelivery,
+
+		// Actions
+		handleAddDelivery,
+		handleDeleteDelivery,
+		handleEditDelivery,
+		handleDeleteConfirmation,
+		handleCloseCreateModal,
+		handleCloseEditModal,
+		handleCreateDelivery,
+		handleUpdateDelivery,
+		// New expansion action
+		handleToggleExpanded,
+	};
+};
+
+export default useDeliveryManagement;

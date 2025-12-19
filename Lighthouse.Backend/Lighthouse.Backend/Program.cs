@@ -33,6 +33,7 @@ using System.Globalization;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
+using Microsoft.Data.Sqlite;
 
 namespace Lighthouse.Backend
 {
@@ -56,9 +57,8 @@ namespace Lighthouse.Backend
                 ConfigureServices(builder);
                 ConfigureDatabase(builder);
 
-                var optionalFeatureRepository = GetOptionalFeatureRepository(builder);
+                var mcpFeature = TryGetOptionalFeature(builder);
 
-                var mcpFeature = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
                 ConfigureOptionalServices(builder, mcpFeature);
 
                 var app = builder.Build();
@@ -75,18 +75,27 @@ namespace Lighthouse.Backend
             }
         }
 
-        private static IRepository<OptionalFeature> GetOptionalFeatureRepository(WebApplicationBuilder builder)
+        private static OptionalFeature? TryGetOptionalFeature(WebApplicationBuilder builder)
         {
-            var serviceProvider = builder.Services?.BuildServiceProvider();
-            var optionalFeatureRepository = serviceProvider?.GetRequiredService<IRepository<OptionalFeature>>();
-
-            if (optionalFeatureRepository == null)
+            try
             {
-                Log.Error("OptionalFeatureRepository is not registered in the service collection.");
-                throw new InvalidOperationException("OptionalFeatureRepository is required but not registered.");
+                var serviceProvider = builder.Services.BuildServiceProvider();
+                using var scope = serviceProvider.CreateScope();
+                var optionalFeatureRepository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
+
+                // Check if database is accessible
+                var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                if (dbContext.Database.CanConnect())
+                {
+                    return optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.McpServerKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Could not retrieve MCP feature setting. MCP server will not be configured.");
             }
 
-            return optionalFeatureRepository;
+            return null;
         }
 
         private static void ConfigureApp(WebApplication app, OptionalFeature? mcpFeature)
@@ -128,6 +137,46 @@ namespace Lighthouse.Backend
             if (mcpFeature?.Enabled ?? false)
             {
                 app.MapMcp();
+            }
+        }
+
+        private static void ConfigureOptionalServices(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
+        {
+            ConfigureMcpServer(builder, mcpFeature);
+        }
+
+        private static void ConfigureMcpServer(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
+        {
+            if (mcpFeature?.Enabled ?? false)
+            {
+                // Only configure MCP server if user has premium license
+                var tempServiceProvider = builder.Services.BuildServiceProvider();
+                using var scope = tempServiceProvider.CreateScope();
+                var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
+
+                if (licenseService.CanUsePremiumFeatures())
+                {
+                    builder.Services.AddMcpServer()
+                        .WithHttpTransport()
+                        .WithTools<LighthouseTeamTools>()
+                        .WithTools<LighthouseProjectTools>()
+                        .WithTools<LighthouseFeatureTools>()
+                        .WithPrompts<LighthousePrompts>()
+                        .WithReadResourceHandler(async (request, cancellationToken) =>
+                        {
+                            var serviceProvider = builder.Services.BuildServiceProvider();
+                            using var scope = serviceProvider.CreateScope();
+                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                            return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
+                        })
+                        .WithListResourcesHandler(async (request, cancellationToken) =>
+                        {
+                            var serviceProvider = builder.Services.BuildServiceProvider();
+                            using var scope = serviceProvider.CreateScope();
+                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
+                            return await resources.ListDocumentationResources();
+                        });
+                }
             }
         }
 
@@ -178,46 +227,6 @@ namespace Lighthouse.Backend
             });
         }
 
-        private static void ConfigureOptionalServices(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
-        {
-            ConfigureMcpServer(builder, mcpFeature);
-        }
-
-        private static void ConfigureMcpServer(WebApplicationBuilder builder, OptionalFeature? mcpFeature)
-        {
-            if (mcpFeature?.Enabled ?? false)
-            {
-                // Only configure MCP server if user has premium license
-                var tempServiceProvider = builder.Services.BuildServiceProvider();
-                using var scope = tempServiceProvider.CreateScope();
-                var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
-                
-                if (licenseService.CanUsePremiumFeatures())
-                {
-                    builder.Services.AddMcpServer()
-                        .WithHttpTransport()
-                        .WithTools<LighthouseTeamTools>()
-                        .WithTools<LighthouseProjectTools>()
-                        .WithTools<LighthouseFeatureTools>()
-                        .WithPrompts<LighthousePrompts>()
-                        .WithReadResourceHandler(async (request, cancellationToken) => 
-                        {
-                            var serviceProvider = builder.Services.BuildServiceProvider();
-                            using var scope = serviceProvider.CreateScope();
-                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
-                            return await resources.ReadDocumentationResource(request.Params.Uri, cancellationToken);
-                        })
-                        .WithListResourcesHandler(async (request, cancellationToken) => 
-                        {
-                            var serviceProvider = builder.Services.BuildServiceProvider();
-                            using var scope = serviceProvider.CreateScope();
-                            var resources = scope.ServiceProvider.GetRequiredService<LighthouseResources>();
-                            return await resources.ListDocumentationResources();
-                        });
-                }
-            }
-        }
-
         private static void RegisterServices(WebApplicationBuilder builder)
         {
             // Repos
@@ -230,6 +239,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
             builder.Services.AddScoped<IRepository<TerminologyEntry>, TerminologyRepository>();
             builder.Services.AddScoped<IRepository<LicenseInformation>, LicenseInformationRepository>();
+            builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
 
             // Factories
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
@@ -290,7 +300,6 @@ namespace Lighthouse.Backend
             builder.Services.AddDbContext<LighthouseAppContext>((provider, options) =>
             {
                 var dbConfig = provider.GetRequiredService<IOptions<DatabaseConfiguration>>().Value;
-
                 switch (dbConfig.Provider.ToLower())
                 {
                     case "postgresql":
@@ -300,14 +309,41 @@ namespace Lighthouse.Backend
                             {
                                 npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                                 npgsql.MigrationsAssembly("Lighthouse.Migrations.Postgres");
+                                npgsql.EnableRetryOnFailure(
+                                    maxRetryCount: 3,
+                                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                                    errorCodesToAdd: null);
+                                npgsql.CommandTimeout(30);
                             });
+
+                        // Log slow queries in development
+                        if (builder.Environment.IsDevelopment())
+                        {
+                            options.EnableSensitiveDataLogging();
+                            options.EnableDetailedErrors();
+                        }
                         break;
                     case "sqlite":
-                        options.UseSqlite(dbConfig.ConnectionString,
-                            options =>
+                        // Create and configure SQLite connection with WAL mode
+                        var connection = new SqliteConnection(dbConfig.ConnectionString);
+                        connection.Open();
+
+                        // Enable WAL mode and other optimizations
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = @"
+                    PRAGMA journal_mode=WAL;
+                    PRAGMA busy_timeout=10000;
+                    PRAGMA synchronous=NORMAL;
+                ";
+                            command.ExecuteNonQuery();
+                        }
+
+                        options.UseSqlite(connection,
+                            sqliteOptions =>
                             {
-                                options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                                options.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
+                                sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                                sqliteOptions.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
                             });
                         break;
                     default:
@@ -315,13 +351,16 @@ namespace Lighthouse.Backend
                 }
             });
 
-            // Run migration
-            using var scope = builder.Services.BuildServiceProvider().CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            if (!builder.Environment.IsEnvironment("Testing"))
+            {
+                // Run migration
+                using var scope = builder.Services.BuildServiceProvider().CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-            logger.LogInformation("Migrating Database");
-            context.Database.Migrate();
+                logger.LogInformation("Migrating Database");
+                context.Database.Migrate();
+            }
         }
 
         private static void ConfigureLogging(WebApplicationBuilder builder)

@@ -15,7 +15,22 @@ namespace Lighthouse.Backend.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.1");
+
+            modelBuilder.Entity("DeliveryFeature", b =>
+                {
+                    b.Property<int>("DeliveryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FeaturesId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("DeliveryId", "FeaturesId");
+
+                    b.HasIndex("FeaturesId");
+
+                    b.ToTable("DeliveryFeature");
+                });
 
             modelBuilder.Entity("FeaturePortfolio", b =>
                 {
@@ -47,6 +62,29 @@ namespace Lighthouse.Backend.Migrations
                     b.HasKey("Key");
 
                     b.ToTable("AppSettings");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PortfolioId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PortfolioId");
+
+                    b.ToTable("Deliveries");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Feature", b =>
@@ -229,29 +267,6 @@ namespace Lighthouse.Backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("LicenseInformation");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.Milestone", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("PortfolioId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PortfolioId");
-
-                    b.ToTable("Milestone");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.OptionalFeatures.OptionalFeature", b =>
@@ -638,6 +653,21 @@ namespace Lighthouse.Backend.Migrations
                     b.HasDiscriminator().HasValue("WhenForecast");
                 });
 
+            modelBuilder.Entity("DeliveryFeature", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Delivery", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lighthouse.Backend.Models.Feature", null)
+                        .WithMany()
+                        .HasForeignKey("FeaturesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FeaturePortfolio", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Feature", null)
@@ -651,6 +681,17 @@ namespace Lighthouse.Backend.Migrations
                         .HasForeignKey("PortfoliosId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Portfolio", "Portfolio")
+                        .WithMany()
+                        .HasForeignKey("PortfolioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Portfolio");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.FeatureWork", b =>
@@ -681,17 +722,6 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Forecast");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.Milestone", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.Portfolio", "Portfolio")
-                        .WithMany("Milestones")
-                        .HasForeignKey("PortfolioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Portfolio");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
@@ -787,11 +817,6 @@ namespace Lighthouse.Backend.Migrations
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.ForecastBase", b =>
                 {
                     b.Navigation("SimulationResults");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
-                {
-                    b.Navigation("Milestones");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Team", b =>

@@ -19,7 +19,7 @@ Latest
 ## Rename Project to Portfolio
 As a preparation for future changes, we started renaming what used to be called *Project* to **Portfolio**.
 
-The driver behind this change is that a Project has a dedicated start and end date. While you can use Lighthouse for this, it would mean, you will lose all the historic data (your metrics) for a new project. We plan to improve our milestones in the next release and we aim that you can track your *Projects* with Milestones while still having all your Portfolio level data in one place.
+The driver behind this change is that a Project has a dedicated start and end date. While you can use Lighthouse for this, it would mean, you will lose all the historic data (your metrics) for a new project.
 
 We are aware that names have specific meanings in every context, so we also made sure you can override the name for *Portfolio* through the System Settings (so you can call it *Initiative*, *Project*, or whatever you like and makes sense in your context).
 
@@ -210,7 +210,7 @@ Use it in the LLM of your choice or create agentic workflows using the data comi
 ### Tools
 [Tools](https://modelcontextprotocol.io/specification/2025-06-18/server/tools) allow you to execute real time operations based on the data that is in Lighthouse. This includes:
 - **Team Management**: Get team details, analyze flow metrics, and run forecasts
-- **Project Analytics**: Access project information, features, milestones, and completion forecasts  
+- **Project Analytics**: Access project information, features, and completion forecasts  
 - **Feature Tracking**: Detailed feature information and delivery forecasts
 - **Flow Analysis**: Comprehensive cycle time, throughput, and WIP analysis
 

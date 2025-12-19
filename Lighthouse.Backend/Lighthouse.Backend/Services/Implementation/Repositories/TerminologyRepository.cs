@@ -34,6 +34,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             AddOrUpdate("teams", "Teams", "Plural form of 'Team'");
             AddOrUpdate("portfolio", "Portfolio", "Collection of work items that belong together and are managed as a unit. Alternatives may be 'Project' or 'Initiative'");
             AddOrUpdate("portfolios", "Portfolios", "Plural form of 'Portfolio'");
+            AddOrUpdate("delivery", "Delivery", "A delivery marks a specific point in time where a defined list of Features should be done. Alternative names may be Milestone, Checkpoint, etc.");
+            AddOrUpdate("deliveries", "Deliveries", "Plural form of 'Delivery'");
 
             RemoveIfExists("workItemQuery");
 

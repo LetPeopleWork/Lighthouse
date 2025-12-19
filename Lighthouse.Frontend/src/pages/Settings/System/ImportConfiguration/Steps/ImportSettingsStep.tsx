@@ -19,7 +19,7 @@ import type {
 	ConfigurationValidation,
 	ConfigurationValidationItem,
 } from "../../../../../models/Configuration/ConfigurationValidation";
-import type { IProjectSettings } from "../../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../../models/Portfolio/PortfolioSettings";
 import type { ITeamSettings } from "../../../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -33,8 +33,8 @@ interface ImportSettingsStepProps {
 		updatedWorkTrackingSystems: IWorkTrackingSystemConnection[],
 		newTeams: ITeamSettings[],
 		updatedTeams: ITeamSettings[],
-		newProjects: IProjectSettings[],
-		updatedProjects: IProjectSettings[],
+		newProjects: IPortfolioSettings[],
+		updatedProjects: IPortfolioSettings[],
 		workTrackingSystemsIdMapping: Map<number, number>,
 		teamIdMapping: Map<number, number>,
 		clearConfiguration: boolean,
@@ -251,8 +251,8 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 			const updatedWorkTrackingSystems: IWorkTrackingSystemConnection[] = [];
 			const newTeams: ITeamSettings[] = [];
 			const updatedTeams: ITeamSettings[] = [];
-			const newProjects: IProjectSettings[] = [];
-			const updatedProjects: IProjectSettings[] = [];
+			const newProjects: IPortfolioSettings[] = [];
+			const updatedProjects: IPortfolioSettings[] = [];
 
 			fetchNewAndUpdatedElements(
 				validationResults.workTrackingSystems,
@@ -277,12 +277,6 @@ const ImportSettingsStep: React.FC<ImportSettingsStepProps> = ({
 				updatedProjects,
 				new Map<number, number>(),
 			);
-
-			for (const project of newProjects) {
-				for (const milestone of project.milestones) {
-					milestone.id = 0;
-				}
-			}
 
 			removeSecretOptionsFromUpdatedWorkTrackingSystems(
 				updatedWorkTrackingSystems,

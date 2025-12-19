@@ -36,7 +36,6 @@ Lighthouse can act as an *MCP Server*, meaning that you can tell your LLM to run
 The Lighthouse MCP server enables your AI assistant to:
 
 - **Team Analytics**: Get team information, run forecasts, and analyze flow metrics
-- **Portfolio Management**: Access portfolio details, features, milestones, and completion forecasts  
 - **Feature Tracking**: Get detailed feature information and delivery forecasts
 - **Expert Guidance**: Access specialized prompts for agile coaching and flow analysis
 - **Documentation**: Read comprehensive Lighthouse documentation for context
@@ -51,7 +50,6 @@ The Lighthouse MCP server enables your AI assistant to:
 
 ### Portfolio-Level Insights  
 - "When will Portfolio Alpha be completed?"
-- "Show me the milestone likelihood for our Q1 release"
 - "Which teams are working on Portfolio Beta?"
 - "What features are planned for the next release?"
 
@@ -288,7 +286,6 @@ Tools allow your AI assistant to execute specific actions and retrieve data from
 **GetAllPortfolios**
 - **Purpose**: Lists all portfolios with summary information
 - **Usage**: "Show me all active portfolios"
-- **Returns**: Portfolio names, team counts, feature counts, and milestone counts
 - **Business Value**: Portfolio visibility and portfolio discovery
 
 **GetPortfolioByName**
@@ -312,11 +309,7 @@ Tools allow your AI assistant to execute specific actions and retrieve data from
 - **Returns**: Team names, IDs, and their relationship to the portfolio (including owning team)
 - **Business Value**: Resource allocation visibility and team coordination
 
-**GetPortfolioMilestones**
-- **Purpose**: Analyzes portfolio milestones with likelihood assessments
 - **Parameters**: `portfolioName` (string) - Name of the portfolio
-- **Usage**: "Analyze milestones for Portfolio Apollo"
-- **Returns**: Milestone dates, completion likelihoods, risk assessments, and recommendations
 - **Business Value**: Risk management and stakeholder communication
 
 **RunPortfolioWhenForecast**
@@ -424,7 +417,6 @@ Resources provide your AI assistant with direct access to Lighthouse documentati
 - **Usage**: Provides guidance on team setup and configuration
 
 **Portfolio Management**
-- **Content**: Portfolio creation, feature management, and milestone tracking
 - **URI**: `/docs/portfolios/portfolios.html`
 - **Usage**: Comprehensive portfolio management guidance
 
@@ -464,7 +456,6 @@ Resources provide your AI assistant with direct access to Lighthouse documentati
 **Portfolio Status Review**:
 1. `GetPortfolioByName("Apollo")` - Portfolio overview
 2. `GetPortfolioFeatures("Apollo")` - Feature inventory
-3. `GetPortfolioMilestones("Apollo")` - Risk assessment
 4. `RunPortfolioWhenForecast("Apollo")` - Completion forecast
 
 **Sprint Planning Session**:
@@ -474,7 +465,6 @@ Resources provide your AI assistant with direct access to Lighthouse documentati
 
 **Executive Reporting**:
 1. `GetAllPortfolios()` - Portfolio overview
-2. `GetPortfolioMilestones(portfolioName)` for each portfolio - Risk dashboard
 3. `AnalyzePortfolioCompletion(portfolioName)` - Expert analysis per portfolio
 
 These tools, prompts, and resources work together to provide comprehensive portfolio management intelligence through your AI assistant, combining real-time data with expert knowledge for informed decision-making.
@@ -847,7 +837,6 @@ Tell stakeholders to expect delivery by March 21st for a realistic timeline with
 ```
 User: "I need an executive summary of all our portfolios for the board meeting."
 
-AI Response: [Calls GetAllPortfolios, then GetPortfolioMilestones for each]
 "Here's your portfolio status for the board:
 
 🚦 **Portfolio Health Summary**:
@@ -855,7 +844,6 @@ AI Response: [Calls GetAllPortfolios, then GetPortfolioMilestones for each]
 **Portfolio Apollo** ✅ Healthy
 - Q2 launch: 85% confidence 
 - 3 teams, 12 features remaining
-- All milestones tracking well
 
 **Portfolio Beta** ⚠️ At Risk  
 - Q2 deadline: 45% confidence
@@ -937,17 +925,14 @@ AI Response: [Calls GetFlowMetricsForTeam for both teams]
 ```
 User: "We're considering adding a new major feature to Portfolio Apollo. How will this affect our roadmap?"
 
-AI Response: [Calls RunPortfolioWhenForecast and GetPortfolioMilestones]
 "Let me analyze the current trajectory and potential impact:
 
 📊 **Current Apollo Status**:
 - Baseline completion: July 15 (70% confidence)
-- Critical milestones: Q2 Beta (95% confidence), Q3 GA (70% confidence)
 
 ⚠️ **Impact of Major Feature Addition**:
 - Estimated delay: 3-4 weeks
 - New completion: August 10-15 (70% confidence)
-- Q3 GA milestone: Now at 45% confidence
 
 💰 **Strategic Implications**:
 - Pushes GA into Q4, affecting revenue portfolioions
@@ -982,7 +967,6 @@ AI Response: [Comprehensive analysis across all portfolios]
 - Resource utilization: 85% (healthy level)
 
 ⚠️ **Executive Attention Required**:
-1. **Portfolio Beta**: Payment integration blocking Q2 milestone
 2. **Team Capacity**: Delta team approaching burnout indicators
 3. **Dependencies**: External API availability affecting 2 portfolios
 
@@ -1012,7 +996,6 @@ A comprehensive video demonstration is available showing real-world usage scenar
 **Part 3: Portfolio Management Workflows (4 minutes)**
 - Multi-portfolio portfolio analysis
 - Feature delivery forecasting
-- Milestone risk assessment
 - Cross-team coordination insights
 
 **Part 4: Executive Reporting (3 minutes)**

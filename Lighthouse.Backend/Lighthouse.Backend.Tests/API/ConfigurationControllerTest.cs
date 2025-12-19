@@ -248,7 +248,6 @@ namespace Lighthouse.Backend.Tests.API
                 SystemWIPLimit = 1,
             };
 
-            project.Milestones.Add(new Milestone { Id = 1, Name = "Milestone 1", Date = DateTime.UtcNow.AddDays(30) });
 
             project.Teams.Add(team);
 
@@ -298,10 +297,6 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(projectToVerify.ServiceLevelExpectationRange, Is.EqualTo(21));
                 Assert.That(projectToVerify.SystemWIPLimit, Is.EqualTo(1));
 
-                Assert.That(projectToVerify.Milestones, Has.Count.EqualTo(1));
-                Assert.That(projectToVerify.Milestones[0].Id, Is.EqualTo(1));
-                Assert.That(projectToVerify.Milestones[0].Name, Is.EqualTo("Milestone 1"));
-                Assert.That(projectToVerify.Milestones[0].Date.Date, Is.EqualTo(DateTime.UtcNow.AddDays(30).Date));
             };
         }
 

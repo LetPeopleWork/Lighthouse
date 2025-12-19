@@ -39,6 +39,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [TestCase("teams", "Teams", "Plural form of 'Team'")]
         [TestCase("portfolio", "Portfolio", "Collection of work items that belong together and are managed as a unit. Alternatives may be 'Project' or 'Initiative'")]
         [TestCase("portfolios", "Portfolios", "Plural form of 'Portfolio'")]
+        [TestCase("delivery", "Delivery", "A delivery marks a specific point in time where a defined list of Features should be done. Alternative names may be Milestone, Checkpoint, etc.")]
+        [TestCase("deliveries", "Deliveries", "Plural form of 'Delivery'")]
         public async Task SeedTerminology_ContainsAllExpectedKeysWithDefaults(string key, string defaultValue, string description)
         {
             var subject = CreateSubject();

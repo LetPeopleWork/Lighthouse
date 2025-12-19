@@ -1,4 +1,4 @@
-import type { IProjectSettings } from "../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../models/Portfolio/PortfolioSettings";
 import type { ITeamSettings } from "../models/Team/TeamSettings";
 import type { IWorkItem } from "../models/WorkItem";
 
@@ -46,12 +46,11 @@ export function createMockTeamSettings(): ITeamSettings {
 	};
 }
 
-export function createMockProjectSettings(): IProjectSettings {
+export function createMockProjectSettings(): IPortfolioSettings {
 	return {
 		id: 1,
 		name: "Project A",
 		workItemTypes: ["Epic"],
-		milestones: [],
 		workItemQuery: "Query",
 		unparentedItemsQuery: "Unparented Query",
 		usePercentileToCalculateDefaultAmountOfWorkItems: false,

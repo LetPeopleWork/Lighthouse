@@ -12,7 +12,6 @@ export interface IFeature extends IWorkItem {
 	owningTeam: string;
 	remainingWork: { [key: number]: number };
 	totalWork: { [key: number]: number };
-	milestoneLikelihood: { [key: number]: number };
 	projects: IEntityReference[];
 	forecasts: IWhenForecast[];
 
@@ -20,7 +19,6 @@ export interface IFeature extends IWorkItem {
 	getRemainingWorkForTeam(id: number): number;
 	getTotalWorkForFeature(): number;
 	getTotalWorkForTeam(id: number): number;
-	getMilestoneLikelihood(milestoneId: number): number;
 }
 
 class DictionaryObject<TValue> {
@@ -45,9 +43,6 @@ export class Feature implements IFeature {
 
 	@Type(() => DictionaryObject<number>)
 	totalWork: { [key: number]: number } = {};
-
-	@Type(() => DictionaryObject<number>)
-	milestoneLikelihood: DictionaryObject<number> = {};
 
 	@Type(() => WhenForecast)
 	@Transform(({ value }) => value.map(WhenForecast.fromBackend), {
@@ -102,10 +97,6 @@ export class Feature implements IFeature {
 				this.getRemainingWorkForFeature()
 			).toFixed(2),
 		);
-	}
-
-	getMilestoneLikelihood(milestoneId: number) {
-		return this.milestoneLikelihood[milestoneId] ?? 0;
 	}
 
 	getAllWork(work: { [key: number]: number }): number {

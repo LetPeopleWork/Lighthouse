@@ -17,7 +17,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
-import type { IProjectService } from "../../../../../services/Api/ProjectService";
+import type { IPortfolioService } from "../../../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../../../services/Api/TeamService";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import type { ImportResults } from "../ImportResults";
@@ -25,14 +25,14 @@ import type { ImportResults } from "../ImportResults";
 interface ImportSummaryStepProps {
 	importResults: ImportResults;
 	teamService: ITeamService;
-	projectService: IProjectService;
+	projectService: IPortfolioService;
 	onClose: () => void;
 }
 
 const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 	importResults,
 	teamService,
-	projectService,
+	projectService: portfolioService,
 	onClose,
 }) => {
 	interface StatusCount {
@@ -96,7 +96,9 @@ const ImportSummaryStep: React.FC<ImportSummaryStepProps> = ({
 		);
 
 		for (const projectResult of successfulProjects) {
-			await projectService.refreshFeaturesForProject(projectResult.entity.id);
+			await portfolioService.refreshFeaturesForPortfolio(
+				projectResult.entity.id,
+			);
 		}
 
 		onClose();

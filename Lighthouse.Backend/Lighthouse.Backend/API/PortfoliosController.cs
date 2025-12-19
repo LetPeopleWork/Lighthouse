@@ -35,15 +35,15 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet]
-        public IEnumerable<ProjectDto> GetProjects()
+        public IEnumerable<PortfolioDto> GetProjects()
         {
-            var projectDtos = new List<ProjectDto>();
+            var projectDtos = new List<PortfolioDto>();
 
             var allProjects = projectRepository.GetAll();
 
             foreach (var project in allProjects)
             {
-                var projectDto = new ProjectDto(project);
+                var projectDto = new PortfolioDto(project);
                 projectDtos.Add(projectDto);
             }
 
@@ -51,11 +51,11 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("{id}")]
-        public ActionResult<ProjectDto> Get(int id)
+        public ActionResult<PortfolioDto> Get(int id)
         {
             return this.GetEntityByIdAnExecuteAction(projectRepository, id, project =>
             {
-                return new ProjectDto(project);
+                return new PortfolioDto(project);
             });
         }
 
@@ -121,10 +121,6 @@ namespace Lighthouse.Backend.API
         public async Task<ActionResult<ProjectSettingDto>> CreateProject(ProjectSettingDto projectSetting)
         {
             projectSetting.Id = 0;
-            foreach (var milestone in projectSetting.Milestones)
-            {
-                milestone.Id = 0;
-            }
 
             var newProject = new Portfolio();
             SyncProjectWithProjectSettings(newProject, projectSetting);
@@ -175,7 +171,6 @@ namespace Lighthouse.Backend.API
             project.ParentOverrideField = projectSetting.ParentOverrideField;
 
             SyncStates(project, projectSetting);
-            SyncMilestones(project, projectSetting);
             SyncTeams(project, projectSetting);
             SyncServiceLevelExpectation(project, projectSetting);
             SyncBlockedItems(project, projectSetting);
@@ -217,22 +212,6 @@ namespace Lighthouse.Backend.API
             if (projectSetting.OwningTeam != null)
             {
                 project.OwningTeam = teamRepository.GetById(projectSetting.OwningTeam.Id);
-            }
-        }
-
-        private static void SyncMilestones(Portfolio project, ProjectSettingDto projectSetting)
-        {
-            project.Milestones.Clear();
-            foreach (var milestone in projectSetting.Milestones)
-            {
-                project.Milestones.Add(new Milestone
-                {
-                    Id = milestone.Id,
-                    Name = milestone.Name,
-                    Date = DateTime.SpecifyKind(milestone.Date, DateTimeKind.Utc),
-                    Portfolio = project,
-                    PortfolioId = project.Id,
-                });
             }
         }
 

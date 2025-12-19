@@ -9,7 +9,7 @@ import {
 } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
-import { Project } from "../../../models/Project/Project";
+import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
@@ -565,7 +565,7 @@ describe("BaseMetricsView component", () => {
 
 	// Create two types of entities to test with
 	const mockProject = (() => {
-		const project = new Project();
+		const project = new Portfolio();
 		project.name = "Test Project";
 		project.id = 1;
 		project.lastUpdated = new Date();
@@ -1091,7 +1091,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("doesn't set serviceLevelExpectation when entity lacks SLE values", async () => {
-		const projectWithoutSLE = new Project();
+		const projectWithoutSLE = new Portfolio();
 		projectWithoutSLE.id = 5;
 		projectWithoutSLE.name = "Project without SLE";
 		projectWithoutSLE.lastUpdated = new Date();
@@ -1116,7 +1116,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	it("doesn't set serviceLevelExpectation when entity has partial SLE values", async () => {
-		const projectWithPartialSLE = new Project();
+		const projectWithPartialSLE = new Portfolio();
 		projectWithPartialSLE.id = 6;
 		projectWithPartialSLE.name = "Project with partial SLE";
 		projectWithPartialSLE.lastUpdated = new Date();

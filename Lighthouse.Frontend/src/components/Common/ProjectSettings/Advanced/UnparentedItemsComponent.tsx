@@ -1,15 +1,15 @@
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import type { IProjectSettings } from "../../../../models/Project/ProjectSettings";
+import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface UnparentedItemsComponentProps {
-	projectSettings: IProjectSettings | null;
+	projectSettings: IPortfolioSettings | null;
 	onProjectSettingsChange: (
-		key: keyof IProjectSettings,
+		key: keyof IPortfolioSettings,
 		value: string | number | boolean | string[],
 	) => void;
 }

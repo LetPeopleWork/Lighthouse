@@ -20,12 +20,15 @@ export class TeamDetailPage {
 		return new TeamEditPage(this.page);
 	}
 
-	async toggleFeatures(): Promise<void> {
-		await this.page.getByLabel("toggle").first().click();
-	}
+	async getNumberOfFeatures(): Promise<number> {
+		const grid = this.page.getByRole("grid");
 
-	async toggleForecast(): Promise<void> {
-		await this.page.getByLabel("toggle").nth(1).click();
+		// MUI puts data rows inside a rowgroup
+		const rows = grid.getByRole("row").filter({
+			hasNot: grid.getByRole("columnheader"),
+		});
+
+		return await rows.count();
 	}
 
 	async forecast(howMany: number): Promise<number> {
@@ -54,6 +57,10 @@ export class TeamDetailPage {
 		}
 
 		await this.page.getByRole("button", { name: "Forecast" }).nth(2).click();
+	}
+
+	async goToFeatures(): Promise<void> {
+		await this.page.getByRole("tab", { name: "Features" }).click();
 	}
 
 	async goToMetrics(): Promise<void> {

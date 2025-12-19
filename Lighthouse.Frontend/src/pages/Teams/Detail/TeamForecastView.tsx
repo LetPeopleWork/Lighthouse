@@ -12,7 +12,6 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import ManualForecaster from "./ManualForecaster";
 import NewItemForecaster from "./NewItemForecaster";
-import TeamFeatureList from "./TeamFeatureList";
 
 interface TeamForecastViewProps {
 	team: Team;
@@ -35,7 +34,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		useLicenseRestrictions();
 
 	const { getTerm } = useTerminology();
-	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
@@ -90,9 +88,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 
 	return (
 		<Grid container spacing={3}>
-			<InputGroup title={featuresTerm}>
-				<TeamFeatureList team={team} />
-			</InputGroup>
 			<InputGroup title={`${teamTerm} Forecast`}>
 				<ManualForecaster
 					remainingItems={remainingItems}

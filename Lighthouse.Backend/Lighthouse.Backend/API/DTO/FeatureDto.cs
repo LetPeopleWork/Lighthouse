@@ -27,12 +27,6 @@ namespace Lighthouse.Backend.API.DTO
             foreach (var project in feature.Portfolios)
             {
                 Projects.Add(new EntityReferenceDto(project.Id, project.Name));
-
-                foreach (var milestone in project.Milestones)
-                {
-                    var likelihood = feature.GetLikelhoodForDate(milestone.Date);
-                    MilestoneLikelihood.Add(milestone.Id, likelihood);
-                }
             }
         }
         
@@ -49,8 +43,6 @@ namespace Lighthouse.Backend.API.DTO
         public Dictionary<int, int> RemainingWork { get; } = new Dictionary<int, int>();
 
         public Dictionary<int, int> TotalWork { get; } = new Dictionary<int, int>();
-
-        public Dictionary<int, double> MilestoneLikelihood { get; } = new Dictionary<int, double>();
 
         public List<WhenForecastDto> Forecasts { get; } = new List<WhenForecastDto>();
     }

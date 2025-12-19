@@ -8,7 +8,7 @@ import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
-	createMockProjectService,
+	createMockPortfolioService,
 	createMockTeamService,
 	createMockTerminologyService,
 } from "../../tests/MockApiServiceProvider";
@@ -27,22 +27,22 @@ vi.mock("react-router-dom", async () => {
 // Mock the useLicenseRestrictions hook
 vi.mock("../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: () => ({
-		canCreateProject: true,
-		createProjectTooltip: "",
+		canCreatePortfolio: true,
+		createPortfolioTooltip: "",
 		canCreateTeam: true,
 		createTeamTooltip: "",
-		canUpdateAllTeamsAndProjects: true,
-		updateAllTeamsAndProjectsTooltip: "",
+		canUpdateAllTeamsAndPortfolios: true,
+		updateAllTeamsAndPortfoliosTooltip: "",
 	}),
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {
-	const mockProjectService = createMockProjectService();
+	const mockPortfolioService = createMockPortfolioService();
 	const mockTeamService = createMockTeamService();
 	const mockTerminologyService = createMockTerminologyService();
 
-	// Mock data for projects and teams
-	const mockProjects = [
+	// Mock data for portfolios and teams
+	const mockPortfolios = [
 		{
 			id: 1,
 			name: "Test Project 1",
@@ -54,7 +54,6 @@ const renderWithProviders = (component: React.ReactElement) => {
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
 			remainingFeatures: 0,
-			milestones: [],
 		},
 		{
 			id: 2,
@@ -67,7 +66,6 @@ const renderWithProviders = (component: React.ReactElement) => {
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
 			remainingFeatures: 0,
-			milestones: [],
 		},
 	];
 
@@ -107,7 +105,9 @@ const renderWithProviders = (component: React.ReactElement) => {
 	];
 
 	// Setup mock return values
-	mockProjectService.getProjects = vi.fn().mockResolvedValue(mockProjects);
+	mockPortfolioService.getPortfolios = vi
+		.fn()
+		.mockResolvedValue(mockPortfolios);
 	mockTeamService.getTeams = vi.fn().mockResolvedValue(mockTeams);
 	mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
 		{
@@ -134,7 +134,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 	});
 
 	const mockApiServiceContext = createMockApiServiceContext({
-		projectService: mockProjectService,
+		portfolioService: mockPortfolioService,
 		teamService: mockTeamService,
 		terminologyService: mockTerminologyService,
 		licensingService: {
@@ -167,10 +167,10 @@ describe("OverviewDashboard", () => {
 		).toBeInTheDocument();
 	});
 
-	it("renders projects section after loading", async () => {
+	it("renders portfolios section after loading", async () => {
 		renderWithProviders(<OverviewDashboard />);
 
-		// Wait for loading to complete and project table to appear
+		// Wait for loading to complete and portfolio table to appear
 		await waitFor(() => {
 			expect(screen.getByText("Portfolios")).toBeInTheDocument();
 		});

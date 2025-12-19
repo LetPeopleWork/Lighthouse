@@ -70,6 +70,8 @@ testWithData(
 		// Wait for update to be done
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
+		await teamDetailPage.goToForecasts();
+
 		const howMany = 20;
 		const likelihood = await teamDetailPage.forecast(howMany);
 
@@ -91,6 +93,8 @@ testWithData(
 
 		// Wait for update to be done
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
+
+		await teamDetailPage.goToForecasts();
 
 		await teamDetailPage.forecastNewWorkItems(["Bug"]);
 

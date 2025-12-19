@@ -8,8 +8,6 @@
 
         public List<Feature> Features { get; } = [];
 
-        public List<Milestone> Milestones { get; } = new List<Milestone>();
-
         public int DefaultAmountOfWorkItemsPerFeature { get; set; } = 25;
 
         public int? OwningTeamId { get; set; }

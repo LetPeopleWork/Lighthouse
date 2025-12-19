@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { getLastUpdatedDateFromText } from "../../helpers/dates";
+import { DeliveriesPage } from "./Deliveries/DeliveriesPage";
 import { PortfolioEditPage } from "./PortfolioEditPage";
 
 export class PortfolioDetailPage {
@@ -43,32 +44,8 @@ export class PortfolioDetailPage {
 		return getLastUpdatedDateFromText(lastUpdatedText);
 	}
 
-	async toggleMilestoneConfiguration(): Promise<void> {
-		await this.page.getByLabel("toggle").first().click();
-	}
-
-	async addMilestone(name: string, date: Date): Promise<void> {
-		await this.page.getByLabel("New Milestone Name").fill(name);
-		await this.page
-			.getByLabel("New Milestone Date")
-			.fill(date.toISOString().split("T")[0]);
-		await this.page.getByRole("button", { name: "Add Milestone" }).click();
-	}
-
-	async removeMilestone(): Promise<void> {
-		await this.page.getByLabel("delete").click();
-	}
-
-	getMilestoneColumn(milestoneName: string, milestoneDate: Date): Locator {
-		const dateString = milestoneDate.toLocaleDateString("en-US");
-
-		return this.page
-			.getByRole("columnheader")
-			.filter({ hasText: `${milestoneName} (${dateString})` });
-	}
-
 	async toggleFeatureWIPConfiguration(): Promise<void> {
-		await this.page.getByLabel("toggle").nth(1).click();
+		await this.page.getByLabel("toggle").nth(0).click();
 	}
 
 	async changeFeatureWIPForTeam(teamName: string, featureWIP: number) {
@@ -88,6 +65,12 @@ export class PortfolioDetailPage {
 
 	async goToMetrics(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Metrics" }).click();
+	}
+
+	async goToDeliveries(): Promise<DeliveriesPage> {
+		await this.page.getByRole("tab", { name: "Deliveries" }).click();
+
+		return new DeliveriesPage(this.page);
 	}
 
 	get refreshFeatureButton(): Locator {
