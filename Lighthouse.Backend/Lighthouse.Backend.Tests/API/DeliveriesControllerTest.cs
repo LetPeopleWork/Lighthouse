@@ -364,7 +364,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(deliveryDto.TotalWork, Is.EqualTo(100));
                 Assert.That(deliveryDto.Features, Is.Not.Null);
                 
-                Assert.That(deliveryDto.Features.Count, Is.EqualTo(1));
+                Assert.That(deliveryDto.Features, Has.Count.EqualTo(1));
                 Assert.That(deliveryDto.Features[0], Is.EqualTo(1));
             }
         }
@@ -557,7 +557,7 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(notFound.Value, Is.EqualTo("Feature with ID 999 does not exist"));
         }
 
-        public Delivery GetTestDelivery()
+        private static Delivery GetTestDelivery()
         {
             return new Delivery("Existing Delivery", DateTime.UtcNow.AddDays(60), 1);
         }

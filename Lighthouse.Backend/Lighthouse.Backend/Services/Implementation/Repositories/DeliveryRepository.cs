@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     {
         public override Delivery? GetById(int id)
         {
-            logger.LogDebug("Get Delivery by Id. Id: {Id}", id);
-
             return GetAllDeliveriesWithIncludes()
                     .SingleOrDefault(x => x.Id == id);
         }
@@ -26,8 +24,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public IEnumerable<Delivery> GetByPortfolioAsync(int portfolioId)
         {
-            logger.LogDebug("Get Deliveries by Portfolio Id. PortfolioId: {PortfolioId}", portfolioId);
-
             return GetAllDeliveriesWithIncludes()
                     .Where(x => x.PortfolioId == portfolioId)
                     .ToList();

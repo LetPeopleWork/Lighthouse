@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             // Assert
             Assert.That(delivery.Features, Has.Count.EqualTo(1));
-            Assert.That(delivery.Features.Contains(feature), Is.True);
+            Assert.That(delivery.Features, Does.Contain(feature));
         }
     }
 }

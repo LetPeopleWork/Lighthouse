@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
@@ -6,7 +6,7 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 
 namespace Lighthouse.Backend.Data
 {
-    public class LighthouseAppContext(
+    public partial class LighthouseAppContext(
         DbContextOptions<LighthouseAppContext> options,
         ICryptoService cryptoService,
         ILogger<LighthouseAppContext> logger)
@@ -191,8 +191,11 @@ namespace Lighthouse.Backend.Data
             if (orphanedFeatures.Count != 0)
             {
                 Features.RemoveRange(orphanedFeatures);
-                logger.LogInformation("Removed {Count} orphaned features", orphanedFeatures.Count);
+                LogRemovedOrphanedFeatures(orphanedFeatures.Count);
             }
         }
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "Removed {count} orphaned features")]
+        private partial void LogRemovedOrphanedFeatures(int count);
     }
 }
