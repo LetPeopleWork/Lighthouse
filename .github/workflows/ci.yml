@@ -874,7 +874,7 @@ jobs:
             echo "=== Signing .dylib files ==="
             find "$MACOS_DIR" -name "*.dylib" -type f | while read file; do
               echo "Signing: $file"
-              cocodesign --sign "$IDENTITY" --timestamp --force --verbose "$file"
+              codesign --sign "$IDENTITY" --timestamp --force --verbose "$file"
               codesign --verify --strict --verbose=2 "$file"
               echo "✓ Signed and verified: $file"
             done
