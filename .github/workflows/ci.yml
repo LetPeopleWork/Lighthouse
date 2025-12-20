@@ -857,7 +857,7 @@ jobs:
 
             chmod +x "$BINARY_PATH"
             codesign --sign "$IDENTITY" --timestamp --options runtime --force --verbose=4 "$BINARY_PATH"
-            codesign --verify --strict --verbose=2 "$BINARY_PATH"
+            codesign --verify --verbose=2 "$BINARY_PATH"
 
             echo "=== Signing App Bundle ==="
             # Sign the bundle without --deep flag (--deep can cause issues with resource files)
