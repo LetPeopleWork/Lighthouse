@@ -974,9 +974,6 @@ jobs:
         run: |
           ./Lighthouse > lighthouse.log 2>&1 &
         working-directory: ./publish/Lighthouse-universal
-        env:
-          Database__Provider: sqlite
-          Database__ConnectionString: 'Data Source=lighthouse.db'
 
       - name: Wait for Lighthouse to start
         run: |
@@ -999,6 +996,44 @@ jobs:
         run: |
           pkill Lighthouse || true
           cat ./publish/Lighthouse-universal/lighthouse.log || true
+            
+      - name: Verify log files exist in correct directory
+        run: |
+          LOG_DIR="$HOME/Library/Logs/Lighthouse"
+          echo "Checking for log files in: $LOG_DIR"
+          if [ ! -d "$LOG_DIR" ]; then
+            echo "Error: Log directory $LOG_DIR does not exist"
+            exit 1
+          fi
+          
+          LOG_FILES=$(ls -la "$LOG_DIR"/*.txt 2>/dev/null | wc -l)
+          if [ "$LOG_FILES" -eq 0 ]; then
+            echo "Error: No log files found in $LOG_DIR"
+            ls -la "$LOG_DIR"
+            exit 1
+          fi
+          
+          echo "Found $LOG_FILES log file(s) in $LOG_DIR"
+          ls -la "$LOG_DIR"
+
+      - name: Verify database exists in correct directory
+        run: |
+          DB_DIR="$HOME/Library/Application Support/Lighthouse"
+          DB_FILE="$DB_DIR/LighthouseAppContext.db"
+          echo "Checking for database at: $DB_FILE"
+          if [ ! -d "$DB_DIR" ]; then
+            echo "Error: Database directory $DB_DIR does not exist"
+            exit 1
+          fi
+          
+          if [ ! -f "$DB_FILE" ]; then
+            echo "Error: Database file $DB_FILE does not exist"
+            ls -la "$DB_DIR"
+            exit 1
+          fi
+          
+          echo "Database file found: $DB_FILE"
+          ls -la "$DB_DIR"
 
   codesign-windows:
     name: Sign Windows Binaries
