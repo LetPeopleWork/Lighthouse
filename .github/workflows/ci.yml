@@ -901,7 +901,7 @@ jobs:
             chmod +x "$BINARY_PATH"
 
             echo "=== Signing App Bundle ==="
-            codesign --sign "$IDENTITY" --timestamp --options runtime --entitlements ./publish/entitlements.plist --force --verbose=4 "$APP_DIR"
+            codesign --sign "$IDENTITY" --timestamp --options runtime --entitlements ./publish/entitlements.plist --force --deep --verbose=4 "$APP_DIR"
             codesign --verify --deep --strict --verbose=2 "$APP_DIR"
             codesign -dvvv "$APP_DIR" | grep -E "(Signature|timestamp|runtime|Authority)" || true
             echo "✓ App bundle signed and verified successfully"
