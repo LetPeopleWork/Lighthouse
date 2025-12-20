@@ -1372,7 +1372,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: Lighthouse-osx-${{ needs.tag.outputs.version }}
-          path: LighthouseArtifacts/osx-universal-binary
+          path: LighthouseArtifacts/osx-dmg
 
       - uses: actions/download-artifact@v4
         with:
@@ -1389,14 +1389,13 @@ jobs:
           files: LighthouseArtifacts/linux-x64
           dest: Lighthouse-linux-x64.zip
 
-      # Dont re-zip macOS to preserve flags/attributes
       - name: Prepare macOS release zip
         run: |
-          cp LighthouseArtifacts/osx-universal-binary/Lighthouse-universal-macos.zip Lighthouse-osx.zip
+          cp LighthouseArtifacts/osx-dmg/Lighthouse-${{ needs.tag.outputs.version }}.dmg Lighthouse-osx-${{ needs.tag.outputs.version }}.dmg
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx.zip,Lighthouse-linux-x64.zip"
+          artifacts: "Lighthouse-win-x64.zip,Lighthouse-osx-${{ needs.tag.outputs.version }}.dmg,Lighthouse-linux-x64.zip"
           tag: ${{ needs.tag.outputs.version }}
           prerelease: true
           name: "Lighthouse ${{ needs.tag.outputs.version }}"
