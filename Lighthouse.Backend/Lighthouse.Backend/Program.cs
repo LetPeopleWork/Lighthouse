@@ -30,6 +30,7 @@ using Serilog;
 using Serilog.Settings.Configuration;
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.IO;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
@@ -324,6 +325,15 @@ namespace Lighthouse.Backend
                         }
                         break;
                     case "sqlite":
+                        // Ensure the directory for the SQLite database exists
+                        var connectionStringBuilder = new SqliteConnectionStringBuilder(dbConfig.ConnectionString);
+                        var dataSource = connectionStringBuilder.DataSource;
+                        var directory = Path.GetDirectoryName(dataSource);
+                        if (!string.IsNullOrEmpty(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                        }
+
                         // Create and configure SQLite connection with WAL mode
                         var connection = new SqliteConnection(dbConfig.ConnectionString);
                         connection.Open();
