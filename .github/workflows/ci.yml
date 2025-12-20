@@ -676,364 +676,489 @@ jobs:
         working-directory: ./Lighthouse
 
   codesign-macos:
-    name: Sign and Notarize macOS Binaries
-    runs-on: macos-latest
-    timeout-minutes: 45
-    needs:
-      - tag
+      name: Sign and Notarize macOS App Bundle
+      runs-on: macos-latest
+      timeout-minutes: 45
+      needs:
+        - tag
 
-    outputs:
-      submission_id: ${{ steps.notarize.outputs.submission_id }}
+      outputs:
+        submission_id: ${{ steps.notarize.outputs.submission_id }}
 
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+      if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
-    environment:
-      name: CodeSign
+      environment:
+        name: CodeSign
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: ${{env.DOTNET_VERSION}}
+        - name: Setup .NET SDK
+          uses: actions/setup-dotnet@v3
+          with:
+            dotnet-version: ${{env.DOTNET_VERSION}}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
+        - name: Setup pnpm
+          uses: pnpm/action-setup@v4
+          with:
+            version: latest
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      
-      - name: Install pnpm dependencies
-        run: pnpm install --frozen-lockfile
-        working-directory: ./Lighthouse.Frontend
+        - uses: actions/setup-node@v4
+          with:
+            node-version: 20
+        
+        - name: Install pnpm dependencies
+          run: pnpm install --frozen-lockfile
+          working-directory: ./Lighthouse.Frontend
 
-      - name: Build Frontend
-        run: pnpm run build
-        working-directory: ./Lighthouse.Frontend
+        - name: Build Frontend
+          run: pnpm run build
+          working-directory: ./Lighthouse.Frontend
 
-      - name: Restore dependencies
-        run: dotnet restore ./Lighthouse.Backend
+        - name: Restore dependencies
+          run: dotnet restore ./Lighthouse.Backend
 
-      - name: Build Backend Solution
-        run: dotnet build -c Release -p:Version=${{ needs.tag.outputs.fileversion }}
-        working-directory: ./Lighthouse.Backend
+        - name: Build Backend Solution
+          run: dotnet build -c Release -p:Version=${{ needs.tag.outputs.fileversion }}
+          working-directory: ./Lighthouse.Backend
 
-      # --- Publish x64 ---
-      - name: Publish osx-x64
-        run: |
-          dotnet publish -c Release -r osx-x64 \
-            --self-contained \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfContained=true \
-            -p:Version=${{ needs.tag.outputs.fileversion }} \
-            -o ./publish/osx-x64
-        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+        # --- Publish x64 ---
+        - name: Publish osx-x64
+          run: |
+            dotnet publish -c Release -r osx-x64 \
+              --self-contained \
+              -p:PublishSingleFile=true \
+              -p:IncludeNativeLibrariesForSelfContained=true \
+              -p:Version=${{ needs.tag.outputs.fileversion }} \
+              -o ./publish/osx-x64
+          working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
-      # --- Publish arm64 ---
-      - name: Publish osx-arm64
-        run: |
-          dotnet publish -c Release -r osx-arm64 \
-            --self-contained \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfContained=true \
-            -p:Version=${{ needs.tag.outputs.fileversion }} \
-            -o ./publish/osx-arm64
-        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+        # --- Publish arm64 ---
+        - name: Publish osx-arm64
+          run: |
+            dotnet publish -c Release -r osx-arm64 \
+              --self-contained \
+              -p:PublishSingleFile=true \
+              -p:IncludeNativeLibrariesForSelfContained=true \
+              -p:Version=${{ needs.tag.outputs.fileversion }} \
+              -o ./publish/osx-arm64
+          working-directory: ./Lighthouse.Backend/Lighthouse.Backend
 
-      # --- Create universal binary ---
-      - name: Create universal binary
-        run: |
-          UNIVERSAL_DIR="./publish/osx-universal"
-          mkdir -p "$UNIVERSAL_DIR"
+        # --- Create universal binary ---
+        - name: Create universal binary
+          run: |
+            UNIVERSAL_DIR="./publish/osx-universal"
+            mkdir -p "$UNIVERSAL_DIR"
 
-          # Merge single-file binaries
-          lipo -create ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse -output "$UNIVERSAL_DIR/Lighthouse"
+            # Merge single-file binaries
+            lipo -create ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse -output "$UNIVERSAL_DIR/Lighthouse"
 
-          # Copy remaining files from x64 build
-          cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/* "$UNIVERSAL_DIR/"
+            # Copy remaining files from x64 build
+            cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/* "$UNIVERSAL_DIR/"
 
-          # Set executable permission
-          chmod +x "$UNIVERSAL_DIR/Lighthouse"
+            # Set executable permission
+            chmod +x "$UNIVERSAL_DIR/Lighthouse"
 
-      # --- Remove development settings ---
-      - name: Remove development settings
-        run: rm -f ./publish/osx-universal/appsettings.Development.json
+        # --- Remove development settings ---
+        - name: Remove development settings
+          run: rm -f ./publish/osx-universal/appsettings.Development.json
 
-      # --- Adjust HTTP port ---
-      - name: Adjust HTTP port
-        run: |
-          sed -i '' 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./publish/osx-universal/appsettings.json
+        # --- Adjust HTTP port ---
+        - name: Adjust HTTP port
+          run: |
+            sed -i '' 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./publish/osx-universal/appsettings.json
 
-      - name: Import code signing certificates
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        # --- Create App Bundle Structure ---
+        - name: Create App Bundle
+          run: |
+            APP_NAME="Lighthouse.app"
+            APP_DIR="./publish/$APP_NAME"
+            CONTENTS_DIR="$APP_DIR/Contents"
+            MACOS_DIR="$CONTENTS_DIR/MacOS"
+            RESOURCES_DIR="$CONTENTS_DIR/Resources"
+            
+            # Create directory structure
+            mkdir -p "$MACOS_DIR"
+            mkdir -p "$RESOURCES_DIR"
+            
+            # Copy all binaries and resources
+            cp -R ./publish/osx-universal/* "$MACOS_DIR/"
+            
+            # Create Info.plist
+            cat > "$CONTENTS_DIR/Info.plist" << EOF
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>CFBundleExecutable</key>
+                <string>Lighthouse</string>
+                <key>CFBundleIdentifier</key>
+                <string>work.letpeople.lighthouse</string>
+                <key>CFBundleName</key>
+                <string>Lighthouse</string>
+                <key>CFBundlePackageType</key>
+                <string>APPL</string>
+                <key>CFBundleShortVersionString</key>
+                <string>${{ needs.tag.outputs.version }}</string>
+                <key>CFBundleVersion</key>
+                <string>${{ needs.tag.outputs.fileversion }}</string>
+                <key>LSMinimumSystemVersion</key>
+                <string>10.15</string>
+                <key>NSHighResolutionCapable</key>
+                <true/>
+                <key>LSUIElement</key>
+                <false/>
+            </dict>
+            </plist>
+            EOF
+            
+            echo "App bundle structure created at $APP_DIR"
+            ls -la "$APP_DIR"
+            ls -la "$CONTENTS_DIR"
+            ls -la "$MACOS_DIR"
 
-      - name: Sign all binaries and libraries
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
-          if [ -z "$IDENTITY" ]; then
-            echo "Error: No Developer ID Application certificate found in keychain"
-            security find-identity -v -p codesigning
-            exit 1
-          fi
-          echo "Signing identity: $IDENTITY"
+        - name: Import code signing certificates
+          uses: apple-actions/import-codesign-certs@v3
+          with:
+            p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+            p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
-          UNIVERSAL_DIR="./publish/osx-universal"
+        - name: Sign all binaries and app bundle
+          env:
+            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          run: |
+            IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+            if [ -z "$IDENTITY" ]; then
+              echo "Error: No Developer ID Application certificate found in keychain"
+              security find-identity -v -p codesigning
+              exit 1
+            fi
+            echo "Signing identity: $IDENTITY"
 
-          echo "=== Signing .dylib files ==="
-          find "$UNIVERSAL_DIR" -name "*.dylib" -type f | while read file; do
-            echo "Signing: $file"
-            codesign --sign "$IDENTITY" --timestamp --options runtime --force --verbose "$file"
-            codesign --verify --strict --verbose=2 "$file"
-            echo "✓ Signed and verified: $file"
-          done
+            APP_DIR="./publish/Lighthouse.app"
+            MACOS_DIR="$APP_DIR/Contents/MacOS"
 
-          echo "=== Signing main Lighthouse executable ==="
-          BINARY_PATH="$UNIVERSAL_DIR/Lighthouse"
-          if [ ! -f "$BINARY_PATH" ]; then
-            echo "Error: Lighthouse binary not found at $BINARY_PATH"
-            ls -la "$UNIVERSAL_DIR/"
-            exit 1
-          fi
+            echo "=== Signing .dylib files ==="
+            find "$MACOS_DIR" -name "*.dylib" -type f | while read file; do
+              echo "Signing: $file"
+              codesign --sign "$IDENTITY" --timestamp --options runtime --force --verbose "$file"
+              codesign --verify --strict --verbose=2 "$file"
+              echo "✓ Signed and verified: $file"
+            done
 
-          chmod +x "$BINARY_PATH"
-          codesign --sign "$IDENTITY" --timestamp --options runtime --force --verbose=4 "$BINARY_PATH"
-          codesign --verify --strict --verbose=2 "$BINARY_PATH"
-          codesign --verify --deep --strict --verbose=2 "$BINARY_PATH"
-          codesign -dvvv "$BINARY_PATH" | grep -E "(Signature|timestamp|runtime|Authority)" || true
-          echo "✓ All binaries signed and verified successfully"
+            echo "=== Signing main Lighthouse executable ==="
+            BINARY_PATH="$MACOS_DIR/Lighthouse"
+            if [ ! -f "$BINARY_PATH" ]; then
+              echo "Error: Lighthouse binary not found at $BINARY_PATH"
+              ls -la "$MACOS_DIR/"
+              exit 1
+            fi
 
-      - name: Notarize the universal binary
-        id: notarize
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          UNIVERSAL_DIR="./publish/osx-universal"
-          ZIP_PATH="./publish/Lighthouse-universal-macos.zip"
+            chmod +x "$BINARY_PATH"
+            codesign --sign "$IDENTITY" --timestamp --options runtime --force --verbose=4 "$BINARY_PATH"
+            codesign --verify --strict --verbose=2 "$BINARY_PATH"
 
-          echo "Creating Apple-correct zip archive with ditto..."
-          ditto -c -k \
-            --sequesterRsrc \
-            --preserveHFSCompression \
-            "$UNIVERSAL_DIR" \
-            "$ZIP_PATH"
+            echo "=== Signing App Bundle ==="
+            codesign --sign "$IDENTITY" --timestamp --options runtime --force --deep --verbose=4 "$APP_DIR"
+            codesign --verify --deep --strict --verbose=2 "$APP_DIR"
+            codesign -dvvv "$APP_DIR" | grep -E "(Signature|timestamp|runtime|Authority)" || true
+            echo "✓ App bundle signed and verified successfully"
 
-          echo "Submitting for notarization..."
-          SUBMIT_OUTPUT=$(xcrun notarytool submit "$ZIP_PATH" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --output-format json)
+        - name: Create DMG
+          run: |
+            APP_DIR="./publish/Lighthouse.app"
+            DMG_NAME="Lighthouse-${{ needs.tag.outputs.version }}.dmg"
+            DMG_PATH="./publish/$DMG_NAME"
+            TEMP_DMG="./publish/temp.dmg"
+            VOLUME_NAME="Lighthouse"
+            
+            # Create temporary DMG
+            hdiutil create -volname "$VOLUME_NAME" -srcfolder "$APP_DIR" -ov -format UDRW "$TEMP_DMG"
+            
+            # Mount the DMG
+            MOUNT_DIR=$(hdiutil attach "$TEMP_DMG" | grep Volumes | sed 's/.*\/Volumes/\/Volumes/')
+            
+            # Add Applications symlink (optional but recommended)
+            ln -s /Applications "$MOUNT_DIR/Applications"
+            
+            # Unmount
+            hdiutil detach "$MOUNT_DIR"
+            
+            # Convert to compressed read-only DMG
+            hdiutil convert "$TEMP_DMG" -format UDZO -o "$DMG_PATH"
+            
+            # Clean up
+            rm "$TEMP_DMG"
+            
+            echo "DMG created at $DMG_PATH"
+            ls -lh "$DMG_PATH"
 
-          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-          if [ -z "$SUBMISSION_ID" ]; then
-            echo "Error: Failed to get submission ID"
-            echo "$SUBMIT_OUTPUT"
-            exit 1
-          fi
+        - name: Sign DMG
+          env:
+            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          run: |
+            IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+            DMG_PATH="./publish/Lighthouse-${{ needs.tag.outputs.version }}.dmg"
+            
+            echo "Signing DMG: $DMG_PATH"
+            codesign --sign "$IDENTITY" --timestamp --force --verbose "$DMG_PATH"
+            codesign --verify --verbose=2 "$DMG_PATH"
+            echo "✓ DMG signed and verified"
 
-          echo "Submission ID: $SUBMISSION_ID"
-          echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
+        - name: Notarize DMG
+          id: notarize
+          env:
+            APPLE_ID: ${{ secrets.APPLE_ID }}
+            APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          run: |
+            DMG_PATH="./publish/Lighthouse-${{ needs.tag.outputs.version }}.dmg"
 
-          # Export the submission id as a step output so downstream jobs can use it
-          echo "submission_id=$SUBMISSION_ID" >> $GITHUB_OUTPUT
+            echo "Submitting DMG for notarization..."
+            SUBMIT_OUTPUT=$(xcrun notarytool submit "$DMG_PATH" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --output-format json)
 
-          echo "Waiting for notarization to complete (timeout: 30 minutes)..."
-          xcrun notarytool wait "$SUBMISSION_ID" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --timeout 30m \
-            --verbose
+            SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+            if [ -z "$SUBMISSION_ID" ]; then
+              echo "Error: Failed to get submission ID"
+              echo "$SUBMIT_OUTPUT"
+              exit 1
+            fi
 
-          STATUS_OUTPUT=$(xcrun notarytool info "$SUBMISSION_ID" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --output-format json)
-          STATUS=$(echo "$STATUS_OUTPUT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+            echo "Submission ID: $SUBMISSION_ID"
+            echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
+            echo "submission_id=$SUBMISSION_ID" >> $GITHUB_OUTPUT
 
-          if [ "$STATUS" != "Accepted" ]; then
-            echo "Error: Notarization failed with status: $STATUS"
-            exit 1
-          fi
+            echo "Waiting for notarization to complete (timeout: 30 minutes)..."
+            xcrun notarytool wait "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --timeout 30m \
+              --verbose
 
-          echo "Binary notarization successful!"
+            STATUS_OUTPUT=$(xcrun notarytool info "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --output-format json)
+            STATUS=$(echo "$STATUS_OUTPUT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
 
-      - name: Retrieve notarization log
-        if: always() && env.SUBMISSION_ID != ''
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          echo "Retrieving notarization log for submission: $SUBMISSION_ID"
-          xcrun notarytool log "$SUBMISSION_ID" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            notarization-log.json || echo "Failed to retrieve log"
-          
-          if [ -f notarization-log.json ]; then
-            echo "=== Notarization Log ==="
-            cat notarization-log.json
-            echo "======================="
-          fi
+            if [ "$STATUS" != "Accepted" ]; then
+              echo "Error: Notarization failed with status: $STATUS"
+              exit 1
+            fi
 
-      - name: Upload signed macOS universal zip artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lighthouse-osx-${{ needs.tag.outputs.version }}
-          path: ./publish/Lighthouse-universal-macos.zip
+            echo "DMG notarization successful!"
+
+        - name: Staple notarization ticket to DMG
+          run: |
+            DMG_PATH="./publish/Lighthouse-${{ needs.tag.outputs.version }}.dmg"
+            echo "Stapling notarization ticket to DMG..."
+            xcrun stapler staple "$DMG_PATH"
+            xcrun stapler validate "$DMG_PATH"
+            echo "✓ Notarization ticket stapled successfully"
+
+        - name: Retrieve notarization log
+          if: always() && env.SUBMISSION_ID != ''
+          env:
+            APPLE_ID: ${{ secrets.APPLE_ID }}
+            APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          run: |
+            echo "Retrieving notarization log for submission: $SUBMISSION_ID"
+            xcrun notarytool log "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              notarization-log.json || echo "Failed to retrieve log"
+            
+            if [ -f notarization-log.json ]; then
+              echo "=== Notarization Log ==="
+              cat notarization-log.json
+              echo "======================="
+            fi
+
+        - name: Upload signed DMG artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: Lighthouse-osx-${{ needs.tag.outputs.version }}
+            path: ./publish/Lighthouse-${{ needs.tag.outputs.version }}.dmg
 
   verifymacos:
-    name: Verify macOS version
-    runs-on: macos-latest
-    needs:
-      - codesign-macos
-      - tag
+      name: Verify macOS DMG
+      runs-on: macos-latest
+      needs:
+        - codesign-macos
+        - tag
 
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+      if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
-    steps:
-      - name: Download signed macOS universal binary
-        uses: actions/download-artifact@v4
-        with:
-          name: Lighthouse-osx-${{ needs.tag.outputs.version }}
-          path: ./publish
+      steps:
+        - name: Download signed DMG
+          uses: actions/download-artifact@v4
+          with:
+            name: Lighthouse-osx-${{ needs.tag.outputs.version }}
+            path: ./publish
 
-      - name: Extract the ditto zip
-        run: |
-          ZIP_FILE=./publish/Lighthouse-universal-macos.zip
-          EXTRACT_DIR=./publish/Lighthouse-universal
-          mkdir -p "$EXTRACT_DIR"
-          echo "Extracting $ZIP_FILE to $EXTRACT_DIR"
-          ditto -x -k "$ZIP_FILE" "$EXTRACT_DIR"
-
-      - name: Verify codesign on binary
-        run: |
-          BINARY=./publish/Lighthouse-universal/Lighthouse
-          if [ ! -f "$BINARY" ]; then
-            echo "Error: binary not found at $BINARY"
-            ls -la ./publish/Lighthouse-universal
-            exit 1
-          fi
-
-          echo "Verifying codesign for $BINARY"
-          codesign --verify --deep --strict --verbose=4 "$BINARY"
-          codesign -dvvv "$BINARY" || true
-          
-          echo "Checking if binary would pass Gatekeeper (standalone executable)..."
-          spctl --assess --type execute --verbose=4 "$BINARY" || echo "Note: spctl rejection is expected for standalone executables outside app bundles"
-
-      - name: Retrieve notarization info using submission id
-        id: notaryinfo
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          SUBMISSION_ID="${{ needs.codesign-macos.outputs.submission_id }}"
-          echo "Using submission id: $SUBMISSION_ID"
-
-          if [ -z "$SUBMISSION_ID" ]; then
-            echo "Error: submission id missing"
-            exit 1
-          fi
-
-          xcrun notarytool info "$SUBMISSION_ID" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --output-format json > notarization-info.json
-
-          cat notarization-info.json
-
-          STATUS=$(echo "$(cat notarization-info.json)" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
-          echo "Notarization status: $STATUS"
-          if [ "$STATUS" != "Accepted" ]; then
-            echo "Error: Notarization status is not Accepted"
-            exit 1
-          fi
-
-      - name: Set executable permission
-        run: chmod +x ./publish/Lighthouse-universal/Lighthouse
-
-      - name: Run Lighthouse (sqlite)
-        run: |
-          ./Lighthouse > lighthouse.log 2>&1 &
-        working-directory: ./publish/Lighthouse-universal
-
-      - name: Wait for Lighthouse to start
-        run: |
-          end=$((SECONDS+30))
-          while [ $SECONDS -lt $end ]; do
-            if curl --silent --fail --insecure https://localhost:5001; then
-              echo "Service is up!"
-              exit 0
+        - name: Verify DMG signature
+          run: |
+            DMG_FILE="./publish/Lighthouse-${{ needs.tag.outputs.version }}.dmg"
+            if [ ! -f "$DMG_FILE" ]; then
+              echo "Error: DMG not found at $DMG_FILE"
+              ls -la ./publish/
+              exit 1
             fi
-            sleep 1
-          done
-          echo "Timeout waiting for service"
-          exit 1
 
-          cat lighthouse.log
-        working-directory: ./publish/Lighthouse-universal
+            echo "Verifying DMG signature..."
+            codesign --verify --deep --strict --verbose=4 "$DMG_FILE"
+            codesign -dvvv "$DMG_FILE" || true
             
-      - name: Stop Lighthouse Server
-        if: always()
-        run: |
-          pkill Lighthouse || true
-          cat ./publish/Lighthouse-universal/lighthouse.log || true
+            echo "Verifying notarization staple..."
+            xcrun stapler validate "$DMG_FILE"
             
-      - name: Verify log files exist in correct directory
-        run: |
-          LOG_DIR="$HOME/Library/Logs/Lighthouse"
-          echo "Checking for log files in: $LOG_DIR"
-          if [ ! -d "$LOG_DIR" ]; then
-            echo "Error: Log directory $LOG_DIR does not exist"
+            echo "Checking if DMG would pass Gatekeeper..."
+            spctl --assess --type open --context context:primary-signature --verbose=4 "$DMG_FILE"
+
+        - name: Mount DMG and verify contents
+          run: |
+            DMG_FILE="./publish/Lighthouse-${{ needs.tag.outputs.version }}.dmg"
+            
+            echo "Mounting DMG..."
+            MOUNT_OUTPUT=$(hdiutil attach "$DMG_FILE" -nobrowse)
+            MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep Volumes | sed 's/.*\/Volumes/\/Volumes/')
+            
+            echo "Mounted at: $MOUNT_DIR"
+            ls -la "$MOUNT_DIR"
+            
+            APP_PATH="$MOUNT_DIR/Lighthouse.app"
+            if [ ! -d "$APP_PATH" ]; then
+              echo "Error: Lighthouse.app not found in DMG"
+              exit 1
+            fi
+            
+            echo "Verifying app bundle signature..."
+            codesign --verify --deep --strict --verbose=4 "$APP_PATH"
+            codesign -dvvv "$APP_PATH" || true
+            
+            echo "Checking if app would pass Gatekeeper..."
+            spctl --assess --type execute --verbose=4 "$APP_PATH"
+            
+            # Store mount dir for later steps
+            echo "MOUNT_DIR=$MOUNT_DIR" >> $GITHUB_ENV
+            echo "APP_PATH=$APP_PATH" >> $GITHUB_ENV
+
+        - name: Retrieve notarization info
+          env:
+            APPLE_ID: ${{ secrets.APPLE_ID }}
+            APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+            APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          run: |
+            SUBMISSION_ID="${{ needs.codesign-macos.outputs.submission_id }}"
+            echo "Using submission id: $SUBMISSION_ID"
+
+            if [ -z "$SUBMISSION_ID" ]; then
+              echo "Error: submission id missing"
+              exit 1
+            fi
+
+            xcrun notarytool info "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --output-format json > notarization-info.json
+
+            cat notarization-info.json
+
+            STATUS=$(cat notarization-info.json | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+            echo "Notarization status: $STATUS"
+            if [ "$STATUS" != "Accepted" ]; then
+              echo "Error: Notarization status is not Accepted"
+              exit 1
+            fi
+
+        - name: Install app to Applications folder
+          run: |
+            echo "Installing Lighthouse.app to Applications..."
+            cp -R "$APP_PATH" /Applications/Lighthouse.app
+            ls -la /Applications/Lighthouse.app
+
+        - name: Unmount DMG
+          if: always()
+          run: |
+            if [ -n "$MOUNT_DIR" ]; then
+              hdiutil detach "$MOUNT_DIR" || true
+            fi
+
+        - name: Run Lighthouse from Applications
+          run: |
+            /Applications/Lighthouse.app/Contents/MacOS/Lighthouse > lighthouse.log 2>&1 &
+            echo $! > lighthouse.pid
+
+        - name: Wait for Lighthouse to start
+          run: |
+            end=$((SECONDS+30))
+            while [ $SECONDS -lt $end ]; do
+              if curl --silent --fail --insecure https://localhost:5001; then
+                echo "Service is up!"
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "Timeout waiting for service"
+            cat lighthouse.log || true
             exit 1
-          fi
-          
-          LOG_FILES=$(ls -la "$LOG_DIR"/*.txt 2>/dev/null | wc -l)
-          if [ "$LOG_FILES" -eq 0 ]; then
-            echo "Error: No log files found in $LOG_DIR"
+
+        - name: Stop Lighthouse Server
+          if: always()
+          run: |
+            if [ -f lighthouse.pid ]; then
+              kill $(cat lighthouse.pid) || true
+            fi
+            pkill -f "Lighthouse.app" || true
+            cat lighthouse.log || true
+
+        - name: Verify log files exist in correct directory
+          run: |
+            LOG_DIR="$HOME/Library/Logs/Lighthouse"
+            echo "Checking for log files in: $LOG_DIR"
+            if [ ! -d "$LOG_DIR" ]; then
+              echo "Error: Log directory $LOG_DIR does not exist"
+              exit 1
+            fi
+            
+            LOG_FILES=$(ls -la "$LOG_DIR"/*.txt 2>/dev/null | wc -l)
+            if [ "$LOG_FILES" -eq 0 ]; then
+              echo "Error: No log files found in $LOG_DIR"
+              ls -la "$LOG_DIR"
+              exit 1
+            fi
+            
+            echo "Found $LOG_FILES log file(s) in $LOG_DIR"
             ls -la "$LOG_DIR"
-            exit 1
-          fi
-          
-          echo "Found $LOG_FILES log file(s) in $LOG_DIR"
-          ls -la "$LOG_DIR"
 
-      - name: Verify database exists in correct directory
-        run: |
-          DB_DIR="$HOME/Library/Application Support/Lighthouse"
-          DB_FILE="$DB_DIR/LighthouseAppContext.db"
-          echo "Checking for database at: $DB_FILE"
-          if [ ! -d "$DB_DIR" ]; then
-            echo "Error: Database directory $DB_DIR does not exist"
-            exit 1
-          fi
-          
-          if [ ! -f "$DB_FILE" ]; then
-            echo "Error: Database file $DB_FILE does not exist"
+        - name: Verify database exists in correct directory
+          run: |
+            DB_DIR="$HOME/Library/Application Support/Lighthouse"
+            DB_FILE="$DB_DIR/LighthouseAppContext.db"
+            echo "Checking for database at: $DB_FILE"
+            if [ ! -d "$DB_DIR" ]; then
+              echo "Error: Database directory $DB_DIR does not exist"
+              exit 1
+            fi
+            
+            if [ ! -f "$DB_FILE" ]; then
+              echo "Error: Database file $DB_FILE does not exist"
+              ls -la "$DB_DIR"
+              exit 1
+            fi
+            
+            echo "Database file found: $DB_FILE"
             ls -la "$DB_DIR"
-            exit 1
-          fi
-          
-          echo "Database file found: $DB_FILE"
-          ls -la "$DB_DIR"
 
   codesign-windows:
     name: Sign Windows Binaries
