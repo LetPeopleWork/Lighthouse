@@ -688,7 +688,7 @@ jobs:
       if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
       environment:
-        name: CodeSign
+        name: CodeSign-macOS
 
       steps:
         - name: Checkout repository
@@ -1174,7 +1174,7 @@ jobs:
       - verifypostgres
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
     environment:
-      name: CodeSign
+      name: CodeSign-Windows
 
     steps:
       - name: Checkout repository
