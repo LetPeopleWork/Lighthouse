@@ -8,18 +8,18 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class LighthouseReleaseService : ILighthouseReleaseService
     {
-        private readonly IHostEnvironment hostEnvironment;
         private readonly IGitHubService gitHubService;
         private readonly IAssemblyService assemblyService;
+        private readonly IPlatformService platformService;
         private readonly ILogger<LighthouseReleaseService> logger;
         private readonly HttpClient httpClient;
 
         public LighthouseReleaseService(
-            IHostEnvironment hostEnvironment, IGitHubService gitHubService, IAssemblyService assemblyService, ILogger<LighthouseReleaseService> logger)
+            IGitHubService gitHubService, IAssemblyService assemblyService, IPlatformService platformService, ILogger<LighthouseReleaseService> logger)
         {
-            this.hostEnvironment = hostEnvironment;
             this.gitHubService = gitHubService;
             this.assemblyService = assemblyService;
+            this.platformService = platformService;
             this.logger = logger;
             
             httpClient = new HttpClient();
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public string GetCurrentVersion()
         {
-            if (hostEnvironment.IsDevelopment())
+            if (platformService.IsDevEnvironment)
             {
                 return "DEV";
             }
@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public bool IsUpdateSupported()
         {
-            if (IsRunningInDocker())
+            if (platformService.Platform == SupportedPlatform.Docker || platformService.Platform == SupportedPlatform.MacOS)
             {
                 return false;
             }
@@ -395,14 +395,6 @@ exit 0";
             {
                 logger.LogError(ex, "Error executing update script");
             }
-        }
-
-        private static bool IsRunningInDocker()
-        {
-            // Check for common Docker environment indicators
-            return Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" ||
-                   File.Exists("/.dockerenv") ||
-                   Environment.GetEnvironmentVariable("LIGHTHOUSE_DOCKER") == "true";
         }
     }
 }

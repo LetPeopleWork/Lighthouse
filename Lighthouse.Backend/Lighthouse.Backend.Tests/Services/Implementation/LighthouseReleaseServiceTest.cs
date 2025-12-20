@@ -11,14 +11,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     public class LighthouseReleaseServiceTest
     {
         private Mock<IGitHubService> githubServiceMock;
-        private Mock<IHostEnvironment> hostEnvironmentMock;
+        private Mock<IPlatformService> platformServiceMock;
         private Mock<IAssemblyService> assemblyServiceMock;
 
         [SetUp]
         public void Setup()
         {
             githubServiceMock = new Mock<IGitHubService>();
-            hostEnvironmentMock = new Mock<IHostEnvironment>();
+            platformServiceMock = new Mock<IPlatformService>();
             assemblyServiceMock = new Mock<IAssemblyService>();
         }
 
@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetVersion_DevVersion_ReturnsDev()
         {
-            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
+            platformServiceMock.SetupGet(x => x.IsDevEnvironment).Returns(true);
             assemblyServiceMock.Setup(x => x.GetAssemblyVersion()).Returns("1.33.7");
 
             var subject = CreateSubject();
@@ -83,8 +83,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public async Task HasUpdateAvailable_DevVersion_ReturnsTrue()
         {
             githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync("0.0.0.1");
-            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
-
+            platformServiceMock.SetupGet(x => x.IsDevEnvironment).Returns(true);
+            
             var subject = CreateSubject();
 
             var updateAvailable = await subject.UpdateAvailable();
@@ -95,14 +95,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public async Task GetNewReleases_GetsAllReleasesFromGitHubService_ReturnsNewerReleases()
         {
-            var currentReleaseVersion = "13.3.7";
+            const string currentReleaseVersion = "13.3.7";
 
             var existingReleases = new List<LighthouseRelease>
             {
-                new LighthouseRelease { Name = "Release4", Version = "v18.8.6" },
-                new LighthouseRelease { Name = "Release3", Version = "v17.32.33" },
-                new LighthouseRelease { Name = "Release2", Version = $"v{currentReleaseVersion}" },
-                new LighthouseRelease { Name = "Release1", Version = "v10.2.32" },
+                new() { Name = "Release4", Version = "v18.8.6" },
+                new() { Name = "Release3", Version = "v17.32.33" },
+                new() { Name = "Release2", Version = $"v{currentReleaseVersion}" },
+                new() { Name = "Release1", Version = "v10.2.32" },
             };
 
             githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync("v18.8.6");
@@ -129,8 +129,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var existingReleases = new List<LighthouseRelease>
             {
-                new LighthouseRelease { Name = "Release2", Version = $"v{currentReleaseVersion}" },
-                new LighthouseRelease { Name = "Release1", Version = "v10.2.32" },
+                new() { Name = "Release2", Version = $"v{currentReleaseVersion}" },
+                new() { Name = "Release1", Version = "v10.2.32" },
             };
 
             githubServiceMock.Setup(x => x.GetLatestReleaseVersion()).ReturnsAsync($"v{currentReleaseVersion}");
@@ -147,7 +147,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void IsUpdateSupported_ProductionEnvironment_ReturnsTrue()
         {
-            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Production);
+            platformServiceMock.SetupGet(x => x.IsDevEnvironment).Returns(false);
 
             var subject = CreateSubject();
 
@@ -155,10 +155,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(isSupported, Is.True);
         }
+        
+        [Test]
+        [TestCase(SupportedPlatform.Docker, false)]
+        [TestCase(SupportedPlatform.MacOS, false)]
+        [TestCase(SupportedPlatform.Windows, true)]
+        [TestCase(SupportedPlatform.Linux, true)]
+        public void IsUpdateSupported_GivenPlatform_ReturnsTrueForWindowsAndLinux(SupportedPlatform platform, bool expectedResult)
+        {
+            platformServiceMock.SetupGet(x => x.IsDevEnvironment).Returns(false);
+            platformServiceMock.SetupGet(x => x.Platform).Returns(platform);
+
+            var subject = CreateSubject();
+
+            var isSupported = subject.IsUpdateSupported();
+
+            Assert.That(isSupported, Is.EqualTo(expectedResult));
+        }
 
         private LighthouseReleaseService CreateSubject()
         {
-            return new LighthouseReleaseService(hostEnvironmentMock.Object, githubServiceMock.Object, assemblyServiceMock.Object, Mock.Of<ILogger<LighthouseReleaseService>>());
+            return new LighthouseReleaseService(githubServiceMock.Object, assemblyServiceMock.Object, platformServiceMock.Object, Mock.Of<ILogger<LighthouseReleaseService>>());
         }
     }
 }
