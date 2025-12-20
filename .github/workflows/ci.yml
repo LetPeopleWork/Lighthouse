@@ -729,6 +729,7 @@ jobs:
             dotnet publish -c Release -r osx-x64 \
               --self-contained \
               -p:PublishSingleFile=true \
+              -p:IncludeNativeLibrariesForSelfContained=true \
               -p:Version=${{ needs.tag.outputs.fileversion }} \
               -o ./publish/osx-x64
           working-directory: ./Lighthouse.Backend/Lighthouse.Backend
@@ -739,6 +740,7 @@ jobs:
             dotnet publish -c Release -r osx-arm64 \
               --self-contained \
               -p:PublishSingleFile=true \
+              -p:IncludeNativeLibrariesForSelfContained=true \
               -p:Version=${{ needs.tag.outputs.fileversion }} \
               -o ./publish/osx-arm64
           working-directory: ./Lighthouse.Backend/Lighthouse.Backend
