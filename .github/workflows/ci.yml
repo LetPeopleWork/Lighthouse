@@ -818,20 +818,6 @@ jobs:
             ls -la "$CONTENTS_DIR"
             ls -la "$MACOS_DIR"
 
-        - name: Move wwwroot to Resources
-          run: |
-            APP_DIR="./publish/Lighthouse.app"
-            MACOS_DIR="$APP_DIR/Contents/MacOS"
-            RESOURCES_DIR="$APP_DIR/Contents/Resources"
-            
-            if [ -d "$MACOS_DIR/wwwroot" ]; then
-              mv "$MACOS_DIR/wwwroot" "$RESOURCES_DIR/wwwroot"
-              echo "Moved wwwroot to Resources"
-            fi
-
-            # Ensure an empty wwwroot exists in MacOS
-            mkdir -p "$MACOS_DIR/wwwroot"
-
         - name: Import code signing certificates
           uses: apple-actions/import-codesign-certs@v3
           with:
