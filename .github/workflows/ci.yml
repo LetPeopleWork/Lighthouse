@@ -889,10 +889,14 @@ jobs:
             APP_DIR="./publish/Lighthouse.app"
             MACOS_DIR="$APP_DIR/Contents/MacOS"
 
+            echo "=== Temporarily moving non-binary files ==="
+            mkdir -p ./temp_files
+            find "$MACOS_DIR" -type f \( -name "*.json" -o -name "*.xml" \) -exec mv {} ./temp_files/ \;
+
             echo "=== Signing .dylib files ==="
             find "$MACOS_DIR" -name "*.dylib" -type f | while read file; do
               echo "Signing: $file"
-              codesign --sign "$IDENTITY" --timestamp --force --verbose "$file"
+              codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose "$file"
               codesign --verify --strict --verbose=2 "$file"
               echo "✓ Signed and verified: $file"
             done
@@ -914,6 +918,11 @@ jobs:
               --force \
               --verbose=4 \
               "$BINARY_PATH"
+
+
+            echo "=== Restoring non-binary files ==="
+            mv ./temp_files/* "$MACOS_DIR/" 2>/dev/null || true
+            rmdir ./temp_files
 
             echo "=== Signing app bundle ==="
             codesign --sign "$IDENTITY" \
