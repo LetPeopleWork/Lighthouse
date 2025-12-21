@@ -1138,12 +1138,37 @@ jobs:
               hdiutil detach "$MOUNT_DIR" || true
             fi
 
-        - name: Run Lighthouse from Applications
+        - name: Run Lighthouse
           run: |
             echo "Starting Lighthouse..."
-            /Applications/Lighthouse.app/Contents/MacOS/Lighthouse &
-            echo $! > lighthouse.pid
-            echo "Started with PID: $(cat lighthouse.pid)"
+            # Redirect stdout and stderr to files
+            /Applications/Lighthouse.app/Contents/MacOS/Lighthouse > lighthouse_stdout.log 2> lighthouse_stderr.log &
+            PID=$!
+            echo $PID > lighthouse.pid
+            echo "Started with PID: $PID"
+            
+            # Wait a bit and check if it's still alive
+            sleep 5
+            
+            if ps -p $PID > /dev/null 2>&1; then
+              echo "✓ Process is still running after 5 seconds"
+            else
+              echo "❌ Process died within 5 seconds"
+              echo "=== STDOUT ==="
+              cat lighthouse_stdout.log || echo "No stdout"
+              echo "=== STDERR ==="
+              cat lighthouse_stderr.log || echo "No stderr"
+              exit 1
+            fi
+
+        - name: Show captured output
+          if: always()
+          run: |
+            echo "=== STDOUT ==="
+            cat lighthouse_stdout.log || echo "No stdout file"
+            echo ""
+            echo "=== STDERR ==="
+            cat lighthouse_stderr.log || echo "No stderr file"
 
         - name: Wait for Lighthouse to start
           run: |
@@ -1157,10 +1182,7 @@ jobs:
               fi
               
               # Try to connect to the service (try both possible ports)
-              if curl --silent --fail --insecure http://localhost:5002/health 2>/dev/null || \
-                curl --silent --fail --insecure https://localhost:5001/health 2>/dev/null || \
-                curl --silent --fail --insecure http://localhost:5002 2>/dev/null || \
-                curl --silent --fail --insecure https://localhost:5001 2>/dev/null; then
+              if curl --silent --fail --insecure https://localhost:5001 2>/dev/null; then
                 echo "✓ Service is up at ${SECONDS}s!"
                 exit 0
               fi
@@ -1172,13 +1194,6 @@ jobs:
             done
             
             echo "❌ Timeout waiting for service (process still running but not responding)"
-            
-            echo "=== Checking file system ==="
-            echo "Database directory:"
-            ls -la "$HOME/Library/Application Support/Lighthouse/" 2>/dev/null || echo "Database directory doesn't exist"
-            
-            echo "Log directory:"
-            ls -la "$HOME/Library/Logs/Lighthouse/" 2>/dev/null || echo "Log directory doesn't exist"
             
             exit 1
 
