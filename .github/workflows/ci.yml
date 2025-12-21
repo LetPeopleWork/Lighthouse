@@ -847,27 +847,31 @@ jobs:
             "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
             <dict>
+                <key>com.apple.security.cs.allow-jit</key>
+                <true/>
+                <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+                <true/>
+                
                 <!-- Allow self-contained .NET runtime to load native libraries -->
                 <key>com.apple.security.cs.disable-library-validation</key>
                 <true/>
-
+                
                 <!-- Network access for local web server -->
                 <key>com.apple.security.network.client</key>
                 <true/>
                 <key>com.apple.security.network.server</key>
                 <true/>
-
+                
                 <!-- File access for Library/Application Support and Library/Logs -->
-                <key>com.apple.security.files.library.application-support.read-write</key>
+                <key>com.apple.security.files.user-selected.read-write</key>
                 <true/>
-                <key>com.apple.security.files.library.logs.read-write</key>
+                <key>com.apple.security.files.downloads.read-write</key>
                 <true/>
             </dict>
             </plist>
             EOF
-
             echo "Entitlements created at $ENTITLEMENTS_FILE"
-            ls -lh "$ENTITLEMENTS_FILE"
+            cat "$ENTITLEMENTS_FILE"
 
 
         - name: Sign all binaries and app bundle
@@ -907,6 +911,10 @@ jobs:
             codesign --sign "$IDENTITY" --timestamp --options runtime --entitlements ./publish/entitlements.plist --force --deep --verbose=4 "$APP_DIR"
             codesign --verify --deep --strict --verbose=2 "$APP_DIR"
             codesign -dvvv "$APP_DIR" | grep -E "(Signature|timestamp|runtime|Authority)" || true
+
+            echo "=== Entitlements in signed app ==="
+            codesign -d --entitlements - "$APP_DIR/Contents/MacOS/Lighthouse"
+
             echo "✓ App bundle signed and verified successfully"
 
         - name: Create DMG
