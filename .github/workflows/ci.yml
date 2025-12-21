@@ -829,6 +829,9 @@ jobs:
               echo "Moved wwwroot to Resources"
             fi
 
+            # Ensure an empty wwwroot exists in MacOS
+            mkdir -p "$MACOS_DIR/wwwroot"
+
         - name: Import code signing certificates
           uses: apple-actions/import-codesign-certs@v3
           with:
