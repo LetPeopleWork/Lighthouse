@@ -1137,8 +1137,30 @@ jobs:
 
         - name: Run Lighthouse from Applications
           run: |
+            echo "=== Testing direct execution ==="
+            # Try running directly to see immediate errors
+            timeout 5 /Applications/Lighthouse.app/Contents/MacOS/Lighthouse 2>&1 || true
+            
+            echo "=== Checking executable permissions ==="
+            ls -la /Applications/Lighthouse.app/Contents/MacOS/Lighthouse
+            
+            echo "=== Checking library dependencies ==="
+            otool -L /Applications/Lighthouse.app/Contents/MacOS/Lighthouse | head -20
+            
+            echo "=== Starting as background process ==="
             /Applications/Lighthouse.app/Contents/MacOS/Lighthouse > lighthouse.log 2>&1 &
             echo $! > lighthouse.pid
+            
+            # Give it a moment to crash if it's going to
+            sleep 2
+            
+            if ps -p $(cat lighthouse.pid) > /dev/null 2>&1; then
+              echo "Process is running (PID: $(cat lighthouse.pid))"
+            else
+              echo "Process has already exited!"
+              echo "=== Checking system logs ==="
+              log show --predicate 'process == "Lighthouse"' --last 1m --info || true
+            fi
 
         - name: Wait for Lighthouse to start
           run: |
@@ -1162,6 +1184,15 @@ jobs:
             fi
             pkill -f "Lighthouse.app" || true
             cat lighthouse.log || true
+
+        - name: Check macOS crash reports
+          if: always()
+          run: |
+            echo "=== Checking for crash reports ==="
+            ls -lt ~/Library/Logs/DiagnosticReports/ | head -10 || true
+            
+            # Show any Lighthouse crash reports
+            find ~/Library/Logs/DiagnosticReports/ -name "*Lighthouse*" -exec cat {} \; || true
 
         - name: Verify log files exist in correct directory
           run: |
