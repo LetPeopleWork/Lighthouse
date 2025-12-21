@@ -889,10 +889,6 @@ jobs:
             APP_DIR="./publish/Lighthouse.app"
             MACOS_DIR="$APP_DIR/Contents/MacOS"
 
-            echo "=== Temporarily moving non-binary files ==="
-            mkdir -p ./temp_files
-            find "$MACOS_DIR" -type f \( -name "*.json" -o -name "*.xml" \) -exec mv {} ./temp_files/ \;
-
             echo "=== Signing .dylib files ==="
             find "$MACOS_DIR" -name "*.dylib" -type f | while read file; do
               echo "Signing: $file"
@@ -901,14 +897,11 @@ jobs:
               echo "✓ Signed and verified: $file"
             done
 
-            echo "=== Signing main Lighthouse executable ==="
+            echo "=== Moving main executable out temporarily ==="
             BINARY_PATH="$MACOS_DIR/Lighthouse"
-            if [ ! -f "$BINARY_PATH" ]; then
-              echo "Error: Lighthouse binary not found at $BINARY_PATH"
-              ls -la "$MACOS_DIR/"
-              exit 1
-            fi
-            chmod +x "$BINARY_PATH"
+            mkdir -p ./temp_binary
+            mv "$BINARY_PATH" ./temp_binary/
+            chmod +x ./temp_binary/Lighthouse
 
             echo "=== Signing executable with entitlements ==="
             codesign --sign "$IDENTITY" \
@@ -917,12 +910,11 @@ jobs:
               --entitlements ./publish/entitlements.plist \
               --force \
               --verbose=4 \
-              "$BINARY_PATH"
+              ./temp_binary/Lighthouse
 
-
-            echo "=== Restoring non-binary files ==="
-            mv ./temp_files/* "$MACOS_DIR/" 2>/dev/null || true
-            rmdir ./temp_files
+            echo "=== Moving executable back ==="
+            mv ./temp_binary/Lighthouse "$BINARY_PATH"
+            rmdir ./temp_binary
 
             echo "=== Signing app bundle ==="
             codesign --sign "$IDENTITY" \
