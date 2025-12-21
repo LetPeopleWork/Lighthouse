@@ -917,7 +917,7 @@ jobs:
             rmdir ./temp_binary
 
             echo "=== Signing app bundle ==="                       
-            codesign --sign "$IDENTITY" --timestamp --options runtime ---preserve-metadata=entitlements --force --deep --verbose=4 "$APP_DIR
+            codesign --sign "$IDENTITY" --timestamp --options runtime --preserve-metadata=entitlements --force --deep --verbose=4 "$APP_DIR
 
             echo "=== Verifying signatures ==="
             codesign --verify --deep --strict --verbose=2 "$APP_DIR"
