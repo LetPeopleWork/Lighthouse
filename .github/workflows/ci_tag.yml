@@ -13,7 +13,8 @@ on:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
 
     concurrency:
       group: tag-${{ github.workflow }}-${{ github.ref }}

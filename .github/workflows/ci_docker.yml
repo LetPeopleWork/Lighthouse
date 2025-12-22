@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
 
-    permissions: write-all
+    permissions:
+      packages: write
 
     steps:
       - uses: actions/checkout@v4

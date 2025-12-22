@@ -18,7 +18,11 @@ jobs:
     environment:
       name: Release
 
-    permissions: write-all
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4

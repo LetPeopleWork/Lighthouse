@@ -13,7 +13,8 @@ on:
 jobs:
   packageapp:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      actions: write
 
     steps:
       - uses: actions/checkout@v4
