@@ -32,28 +32,15 @@ jobs:
         run: |
           brew install jq
 
-      - name: Download & build Sparkle tools (fixes incompatible prebuilt binaries)
+      - name: Download Sparkle tools
         run: |
           SPARKLE_VERSION="2.6.3"
-          # Clone Sparkle and build the Tools so binaries match runner architecture
-          git clone --depth 1 https://github.com/sparkle-project/Sparkle.git sparkle
-          cd sparkle || exit 1
-          # Try to checkout a tagged release name that the tarball used (best-effort)
-          git checkout "Sparkle-${SPARKLE_VERSION}" || git checkout "${SPARKLE_VERSION}" || true
-
-          # Build the command-line tools for the current macOS runner architecture
-          cd Tools || exit 1
-          swift build -c release
-
-          # Copy the produced binaries to /usr/local/bin and ensure they are executable
-          sudo cp ./.build/release/generate_appcast /usr/local/bin/ || true
-          sudo cp ./.build/release/sign_update /usr/local/bin/ || true
-          sudo chmod +x /usr/local/bin/generate_appcast /usr/local/bin/sign_update || true
-
-          # Diagnostics: show architecture and file info to help debugging if needed
-          uname -a || true
-          /usr/bin/file /usr/local/bin/sign_update || true
-          ls -l /usr/local/bin/generate_appcast /usr/local/bin/sign_update || true
+          curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
+          tar -xf sparkle.tar.xz
+          sudo cp $(find . -name generate_appcast) /usr/local/bin/
+          sudo cp $(find . -name sign_update) /usr/local/bin/
+          chmod +x /usr/local/bin/generate_appcast
+          chmod +x /usr/local/bin/sign_update
 
       - name: Prepare private key
         run: |
