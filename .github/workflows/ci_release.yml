@@ -54,12 +54,11 @@ jobs:
           cosign sign --yes ghcr.io/$REPO_NAME:${{ inputs.fileversion }}
           cosign sign --yes ghcr.io/$REPO_NAME:latest
 
-      # Verify the signature (optional, for debugging)
       - name: Verify the signature
         run: |
           REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          cosign verify --certificate-identity="https://github.com/LetPeopleWork/Lighthouse/.github/workflows/ci.yml@refs/heads/main" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" ghcr.io/$REPO_NAME:${{ inputs.fileversion }}
-          cosign verify --certificate-identity="https://github.com/LetPeopleWork/Lighthouse/.github/workflows/ci.yml@refs/heads/main" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" ghcr.io/$REPO_NAME:latest
+          cosign verify --certificate-identity="https://github.com/LetPeopleWork/Lighthouse/.github/workflows/ci_release.yml@refs/heads/main" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" ghcr.io/$REPO_NAME:${{ inputs.fileversion }}
+          cosign verify --certificate-identity="https://github.com/LetPeopleWork/Lighthouse/.github/workflows/ci_release.yml@refs/heads/main" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" ghcr.io/$REPO_NAME:latest
 
       - uses: actions/download-artifact@v4
         with:
