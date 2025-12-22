@@ -46,16 +46,12 @@ jobs:
           
           if [ -n "$SPARKLE_BIN_DIR" ]; then
             echo "Found Sparkle tools at $SPARKLE_BIN_DIR"
+            chmod +x "$SPARKLE_BIN_DIR"/*
             echo "$SPARKLE_BIN_DIR" >> $GITHUB_PATH
           else
             echo "Could not find Sparkle tools"
             exit 1
           fi
-
-      - name: Prepare private key
-        run: |
-          echo "${{ secrets.SPARKLE_PRIVATE_KEY }}" | base64 -d > private_key.pem
-          chmod 600 private_key.pem
 
       - name: Get latest releases
         run: |
@@ -74,22 +70,15 @@ jobs:
 
       - name: Download DMGs and create notes
         run: |
-          # Helper: try native first, then Rosetta x86_64 if available
+          # Helper: EdDSA (Sparkle 2) signing
           get_signature() {
             local dmg="$1"
-            # Try native invocation
-            if sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
-              sign_update "$dmg" private_key.pem
+            local key="${{ secrets.SPARKLE_PRIVATE_KEY }}"
+            if sign_update -s "$key" "$dmg" 2>/dev/null; then
               return 0
             fi
-            # Try Rosetta/x86_64 if installed
-            if arch -x86_64 sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
-              arch -x86_64 sign_update "$dmg" private_key.pem
-              return 0
-            fi
-            echo "ERROR: sign_update not executable or failed" >&2
+            echo "ERROR: sign_update failed to sign $dmg" >&2
             which sign_update || true
-            file $(which sign_update) || true
             return 1
           }
 
@@ -132,20 +121,15 @@ jobs:
 
       - name: Generate appcast
         run: |
-          # Helper: try native then Rosetta for sign_update
+          # Helper: EdDSA (Sparkle 2) signing
           get_signature() {
             local dmg="$1"
-            if sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
-              sign_update "$dmg" private_key.pem
+            local key="${{ secrets.SPARKLE_PRIVATE_KEY }}"
+            if sign_update -s "$key" "$dmg" 2>/dev/null; then
               return 0
             fi
-            if arch -x86_64 sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
-              arch -x86_64 sign_update "$dmg" private_key.pem
-              return 0
-            fi
-            echo "ERROR: sign_update not executable or failed" >&2
+            echo "ERROR: sign_update failed to sign $dmg" >&2
             which sign_update || true
-            file $(which sign_update) || true
             return 1
           }
 
