@@ -36,36 +36,14 @@ jobs:
         run: |
           softwareupdate --install-rosetta --agree-to-license
 
-      - name: Download Sparkle tools
+      - name: Install Sparkle
         run: |
-          SPARKLE_VERSION="2.6.3"
-          curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
-          tar -xf sparkle.tar.xz
-          # Copy only executable tools (avoid picking up sign_update inside .dSYM debug bundles)
-          GEN_APPCAST=$(find . -type f -executable -name generate_appcast | head -1)
-          if [ -n "$GEN_APPCAST" ]; then
-            sudo cp "$GEN_APPCAST" /usr/local/bin/
-          else
-            echo "Warning: generate_appcast executable not found"
-          fi
-          SIGN_UPDATE_BIN=$(find . -type f -executable -name sign_update -not -path '*/.dSYM/*' | head -1)
-          if [ -n "$SIGN_UPDATE_BIN" ]; then
-            sudo cp "$SIGN_UPDATE_BIN" /usr/local/bin/
-          else
-            echo "Warning: sign_update executable not found"
-          fi
-          chmod +x /usr/local/bin/generate_appcast || true
-          chmod +x /usr/local/bin/sign_update || true
-
-      - name: Check sign_update binary
-        run: |
-          echo "Checking /usr/local/bin/sign_update"
-          ls -l /usr/local/bin/sign_update || true
-          file /usr/local/bin/sign_update || true
-          # lipo only exists on macOS; harmless if not universal
-          lipo -info /usr/local/bin/sign_update || true
-          otool -L /usr/local/bin/sign_update || true
-          head -c 64 /usr/local/bin/sign_update | hexdump -C | sed -n '1,20p' || true
+          echo "Installing Sparkle..."
+          brew install sparkle
+          
+          # Verify installation
+          which generate_appcast
+          which sign_update
 
       - name: Prepare private key
         run: |
