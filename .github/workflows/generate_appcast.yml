@@ -39,12 +39,42 @@ jobs:
       - name: Install Sparkle
         run: |
           echo "Installing Sparkle..."
-          brew install sparkle
-          
-          # Verify installation (don't fail the step if helper tools are missing)
+          if ! command -v sparkle &>/dev/null; then
+              echo "Installing Sparkle..."
+              brew install --cask sparkle
+          else
+              echo "Sparkle already installed."
+          fi
+
+          # Set Sparkle release version
+          SPARKLE_VERSION="2.8.1"
+          SPARKLE_TAR="Sparkle-${SPARKLE_VERSION}.tar.xz"
+          SPARKLE_URL="https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/${SPARKLE_TAR}"
+
+          # Download Sparkle release if not already downloaded
+          if [ ! -f "$SPARKLE_TAR" ]; then
+              echo "Downloading Sparkle ${SPARKLE_VERSION}..."
+              curl -L -O "$SPARKLE_URL"
+          fi
+
+          # Extract the binaries
+          echo "Extracting Sparkle binaries..."
+          tar -xf "$SPARKLE_TAR"
+
+          # Copy helper tools to /usr/local/bin
+          echo "Installing helper tools..."
+          cp "Sparkle-${SPARKLE_VERSION}/bin/generate_appcast" /usr/local/bin/
+          cp "Sparkle-${SPARKLE_VERSION}/bin/sign_update" /usr/local/bin/
+          chmod +x /usr/local/bin/generate_appcast /usr/local/bin/sign_update
+
+          # Verify installation
+          echo "Verifying installation..."
           command -v sparkle || echo "sparkle not found in PATH"
           command -v generate_appcast || echo "generate_appcast not found in PATH"
           command -v sign_update || echo "sign_update not found in PATH"
+
+          echo "✅ Sparkle installation complete!"
+
 
       - name: Prepare private key
         run: |
