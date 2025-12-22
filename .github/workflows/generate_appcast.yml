@@ -10,9 +10,6 @@ jobs:
     runs-on: macos-latest
     if: github.repository == 'LetPeopleWork/Lighthouse'
 
-    environment:
-      name: Release
-
     permissions:
       contents: write
 
