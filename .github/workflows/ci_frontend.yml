@@ -6,11 +6,6 @@ on:
       frontend:
         required: true
         type: string
-    secrets:
-      GITHUB_TOKEN:
-        required: true
-      SONAR_TOKEN:
-        required: true
 
 jobs:
   frontend:
@@ -69,7 +64,6 @@ jobs:
       - name: Frontend SonarCloud
         uses: sonarsource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: ./Lighthouse.Frontend

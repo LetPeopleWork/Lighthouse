@@ -9,16 +9,16 @@ on:
       dotnet_version:
         required: true
         type: string
-    secrets:
-      LIGHTHOUSE_LICENSE_PRIVATE_KEY:
-        required: true
-      SONAR_TOKEN:
-        required: true
 
 jobs:
   backend:
     if: inputs.backend == 'true'
     runs-on: ubuntu-latest
+    env:
+      AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEINTEGRATIONTESTTOKEN }}
+      JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
+      AzureDevOpsLighthouseE2ETestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEE2ETESTTOKEN }}
+      LinearAPIKey: ${{ secrets.LINEARAPIKEY }}
 
     steps:
     - uses: actions/checkout@v4

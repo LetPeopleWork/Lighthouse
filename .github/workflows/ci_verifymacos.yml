@@ -9,13 +9,6 @@ on:
       submission_id:
         required: true
         type: string
-    secrets:
-      APPLE_ID:
-        required: true
-      APPLE_APP_PASSWORD:
-        required: true
-      APPLE_TEAM_ID:
-        required: true
 
 jobs:
   verifymacos:
