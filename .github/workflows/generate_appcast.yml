@@ -32,49 +32,25 @@ jobs:
         run: |
           brew install jq
 
-      - name: Install Rosetta
-        run: |
-          softwareupdate --install-rosetta --agree-to-license
-
       - name: Install Sparkle
         run: |
           echo "Installing Sparkle..."
-          if ! command -v sparkle &>/dev/null; then
-              echo "Installing Sparkle..."
-              brew install --cask sparkle
+          brew install sparkle
+          
+          # Sparkle tools are not always linked to PATH by the cask
+          # Find where they are and add to GITHUB_PATH
+          SPARKLE_BIN_DIR=$(find /opt/homebrew/Caskroom/sparkle -name sign_update -type f -print -quit | xargs dirname)
+          if [ -z "$SPARKLE_BIN_DIR" ]; then
+            SPARKLE_BIN_DIR=$(find /usr/local/Caskroom/sparkle -name sign_update -type f -print -quit | xargs dirname)
+          fi
+          
+          if [ -n "$SPARKLE_BIN_DIR" ]; then
+            echo "Found Sparkle tools at $SPARKLE_BIN_DIR"
+            echo "$SPARKLE_BIN_DIR" >> $GITHUB_PATH
           else
-              echo "Sparkle already installed."
+            echo "Could not find Sparkle tools"
+            exit 1
           fi
-
-          # Set Sparkle release version
-          SPARKLE_VERSION="2.8.1"
-          SPARKLE_TAR="Sparkle-${SPARKLE_VERSION}.tar.xz"
-          SPARKLE_URL="https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/${SPARKLE_TAR}"
-
-          # Download Sparkle release if not already downloaded
-          if [ ! -f "$SPARKLE_TAR" ]; then
-              echo "Downloading Sparkle ${SPARKLE_VERSION}..."
-              curl -L -O "$SPARKLE_URL"
-          fi
-
-          # Extract the binaries
-          echo "Extracting Sparkle binaries..."
-          tar -xf "$SPARKLE_TAR"
-
-          # Copy helper tools to /usr/local/bin
-          echo "Installing helper tools..."
-          cp "Sparkle-${SPARKLE_VERSION}/bin/generate_appcast" /usr/local/bin/
-          cp "Sparkle-${SPARKLE_VERSION}/bin/sign_update" /usr/local/bin/
-          chmod +x /usr/local/bin/generate_appcast /usr/local/bin/sign_update
-
-          # Verify installation
-          echo "Verifying installation..."
-          command -v sparkle || echo "sparkle not found in PATH"
-          command -v generate_appcast || echo "generate_appcast not found in PATH"
-          command -v sign_update || echo "sign_update not found in PATH"
-
-          echo "✅ Sparkle installation complete!"
-
 
       - name: Prepare private key
         run: |
@@ -101,39 +77,19 @@ jobs:
           # Helper: try native first, then Rosetta x86_64 if available
           get_signature() {
             local dmg="$1"
-            # Try sign_update from PATH
-            if command -v sign_update >/dev/null 2>&1; then
+            # Try native invocation
+            if sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
               sign_update "$dmg" private_key.pem
               return 0
             fi
-
-            # Try known locations
-            if [ -x "/opt/homebrew/bin/sign_update" ]; then
-              /opt/homebrew/bin/sign_update "$dmg" private_key.pem
+            # Try Rosetta/x86_64 if installed
+            if arch -x86_64 sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
+              arch -x86_64 sign_update "$dmg" private_key.pem
               return 0
             fi
-            if [ -x "/usr/local/bin/sign_update" ]; then
-              /usr/local/bin/sign_update "$dmg" private_key.pem
-              return 0
-            fi
-
-            # Try the 'sparkle' binary with likely subcommands
-            if command -v sparkle >/dev/null 2>&1; then
-              if sparkle sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
-                sparkle sign_update "$dmg" private_key.pem
-                return 0
-              fi
-              if sparkle sign "$dmg" private_key.pem >/dev/null 2>&1; then
-                sparkle sign "$dmg" private_key.pem
-                return 0
-              fi
-            fi
-
-            echo "ERROR: sign_update not found or failed" >&2
-            file /usr/local/bin/sign_update || true
-            file /opt/homebrew/bin/sign_update || true
-            lipo -info /usr/local/bin/sign_update || true
-            otool -L /usr/local/bin/sign_update || true
+            echo "ERROR: sign_update not executable or failed" >&2
+            which sign_update || true
+            file $(which sign_update) || true
             return 1
           }
 
@@ -179,39 +135,17 @@ jobs:
           # Helper: try native then Rosetta for sign_update
           get_signature() {
             local dmg="$1"
-            # Try sign_update from PATH
-            if command -v sign_update >/dev/null 2>&1; then
+            if sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
               sign_update "$dmg" private_key.pem
               return 0
             fi
-
-            # Try known locations
-            if [ -x "/opt/homebrew/bin/sign_update" ]; then
-              /opt/homebrew/bin/sign_update "$dmg" private_key.pem
+            if arch -x86_64 sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
+              arch -x86_64 sign_update "$dmg" private_key.pem
               return 0
             fi
-            if [ -x "/usr/local/bin/sign_update" ]; then
-              /usr/local/bin/sign_update "$dmg" private_key.pem
-              return 0
-            fi
-
-            # Try the 'sparkle' binary with likely subcommands
-            if command -v sparkle >/dev/null 2>&1; then
-              if sparkle sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
-                sparkle sign_update "$dmg" private_key.pem
-                return 0
-              fi
-              if sparkle sign "$dmg" private_key.pem >/dev/null 2>&1; then
-                sparkle sign "$dmg" private_key.pem
-                return 0
-              fi
-            fi
-
-            echo "ERROR: sign_update not found or failed" >&2
-            file /usr/local/bin/sign_update || true
-            file /opt/homebrew/bin/sign_update || true
-            lipo -info /usr/local/bin/sign_update || true
-            otool -L /usr/local/bin/sign_update || true
+            echo "ERROR: sign_update not executable or failed" >&2
+            which sign_update || true
+            file $(which sign_update) || true
             return 1
           }
 
