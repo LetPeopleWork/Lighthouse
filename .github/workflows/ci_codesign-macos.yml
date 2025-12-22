@@ -153,7 +153,7 @@ jobs:
                 <key>SUFeedURL</key>
                 <string>https://github.com/LetPeopleWork/Lighthouse/releases/latest/download/appcast.xml</string>
                 <key>SUPublicEDKey</key>
-                <string>${{ secrets.SPARKLE_PUBLIC_KEY }}</string>
+                <string>ioMx+VhxxvrTbX1lQikOAMwgJ7g83XeQ4gRC6kQ+SQ0=</string>
                 <key>SUEnableAutomaticChecks</key>
                 <true/>
                 <key>SUScheduledCheckInterval</key>

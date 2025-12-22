@@ -74,11 +74,17 @@ jobs:
           get_signature() {
             local dmg="$1"
             local key="${{ secrets.SPARKLE_PRIVATE_KEY }}"
-            if sign_update -s "$key" "$dmg" 2>/dev/null; then
+            
+            # Run sign_update and capture output
+            local sig=$(sign_update -s "$key" "$dmg" 2>/dev/null)
+            if [ $? -eq 0 ] && [ -n "$sig" ]; then
+              echo "$sig"
               return 0
             fi
-            echo "ERROR: sign_update failed to sign $dmg" >&2
-            which sign_update || true
+            
+            echo "ERROR: sign_update failed for $dmg" >&2
+            # Show error in logs by running again without suppression
+            sign_update -s "$key" "$dmg" || true
             return 1
           }
 
@@ -125,11 +131,14 @@ jobs:
           get_signature() {
             local dmg="$1"
             local key="${{ secrets.SPARKLE_PRIVATE_KEY }}"
-            if sign_update -s "$key" "$dmg" 2>/dev/null; then
+            
+            local sig=$(sign_update -s "$key" "$dmg" 2>/dev/null)
+            if [ $? -eq 0 ] && [ -n "$sig" ]; then
+              echo "$sig"
               return 0
             fi
-            echo "ERROR: sign_update failed to sign $dmg" >&2
-            which sign_update || true
+            
+            echo "ERROR: sign_update failed for $dmg" >&2
             return 1
           }
 
@@ -158,7 +167,11 @@ jobs:
                 PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
                 BODY_HTML=$(cat "updates/notes-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
                 URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${asset}"
-                SIGNATURE=$(get_signature "$DMG_PATH" 2>/dev/null)
+                SIGNATURE=$(get_signature "$DMG_PATH")
+                if [ -z "$SIGNATURE" ]; then
+                  echo "Failed to get signature for $DMG_PATH"
+                  exit 1
+                fi
                 LENGTH=$(stat -f%z "$DMG_PATH")
                 
                 cat >> appcast.xml << EOF
@@ -185,7 +198,11 @@ jobs:
                 PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
                 BODY_HTML=$(cat "updates/notes-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
                 URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${ASSET}"
-                SIGNATURE=$(get_signature "$DMG_PATH" 2>/dev/null)
+                SIGNATURE=$(get_signature "$DMG_PATH")
+                if [ -z "$SIGNATURE" ]; then
+                  echo "Failed to get signature for $DMG_PATH"
+                  exit 1
+                fi
                 LENGTH=$(stat -f%z "$DMG_PATH")
                 
                 cat >> appcast.xml << EOF
