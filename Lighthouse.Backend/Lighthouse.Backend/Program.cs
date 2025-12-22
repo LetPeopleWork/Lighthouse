@@ -39,33 +39,10 @@ using Microsoft.Data.Sqlite;
 namespace Lighthouse.Backend
 {
     public class Program
-    {
-        private static string? OverrideWebRootPath
-        {
-            get
-            {
-                if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    // No need to override for normal, not annoying platforms
-                    return null;
-                }
-
-                // On macOS, the executable is inside the app bundle, while the wwwroot is in Resources
-                var executablePath = AppContext.BaseDirectory;
-                var resourcesPath = Path.Combine(executablePath, "..", "Resources", "wwwroot");
-                return Path.GetFullPath(resourcesPath);
-
-            }
-        }
-        
+    {        
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-                {
-                    Args = args,
-                    WebRootPath = OverrideWebRootPath,
-                }   
-                ) ?? throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
+            var builder = WebApplication.CreateBuilder(args) ?? throw new ArgumentNullException(nameof(args), "WebApplicationBuilder cannot be null");
 
             // Override paths for macOS
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
