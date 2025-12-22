@@ -1,0 +1,60 @@
+name: Sign Windows Binaries
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+jobs:
+  codesign-windows:
+    runs-on: [self-hosted, windows, codesign]
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    environment:
+      name: CodeSign-Windows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-win-x64-${{ inputs.version }}
+          path: ./artifacts/win-x64
+
+      - name: Sign EXE and DLL files
+        shell: pwsh
+        run: |
+          $thumbprint = $env:CERT_THUMBPRINT
+          if (-not $thumbprint) { throw "CERT_THUMBPRINT environment variable is not set" }
+
+          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe","Lighthouse*.dll"
+          foreach ($file in $files) {
+              Write-Host "Signing $file with certificate thumbprint $thumbprint"
+              & "signtool.exe" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $thumbprint $file.FullName
+          }
+
+      - name: Verify signatures
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path ./artifacts/win-x64/* -Include "Lighthouse*.exe","Lighthouse*.dll"
+          foreach ($file in $files) {
+              Write-Host "Verifying $file"
+              & "signtool.exe" verify /pa $file.FullName
+          }
+
+      - name: Delete unsigned artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: Lighthouse-win-x64-${{ inputs.version }}
+
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-win-x64-${{ inputs.version }}
+          path: ./artifacts/win-x64

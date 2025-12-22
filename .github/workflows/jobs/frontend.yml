@@ -1,0 +1,70 @@
+name: Verify Frontend
+
+on:
+  workflow_call:
+    inputs:
+      frontend:
+        required: true
+        type: string
+
+jobs:
+  frontend:
+    if: inputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+      
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
+            
+      - name: Cache Vitest
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./Lighthouse.Frontend/node_modules/.vitest
+            ./Lighthouse.Frontend/.vitest
+          key: ${{ runner.os }}-vitest-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-vitest-
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+      
+      - name: Build Frontend
+        run: pnpm run build
+        working-directory: ./Lighthouse.Frontend
+      
+      - name: Test Frontend
+        run: pnpm run sonarreport
+        working-directory: ./Lighthouse.Frontend
+        env:
+          CI: true
+      
+      - name: Setup SonarQube Scanner
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: |
+            ${{ runner.os }}-sonar
+      
+      - name: Frontend SonarCloud
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: ./Lighthouse.Frontend

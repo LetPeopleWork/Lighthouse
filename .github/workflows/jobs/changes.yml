@@ -1,0 +1,57 @@
+name: Check for changes
+
+on:
+  workflow_call:
+    outputs:
+      backend:
+        value: ${{ jobs.changes.outputs.backend }}
+      frontend:
+        value: ${{ jobs.changes.outputs.frontend }}
+      e2e:
+        value: ${{ jobs.changes.outputs.e2e }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.check.outputs.backend }}
+      frontend: ${{ steps.check.outputs.frontend }}
+      e2e: ${{ steps.check.outputs.e2e }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check for changes
+      id: check
+      run: |
+        base_ref=${{ github.base_ref }}
+        if [ -z "$base_ref" ]; then
+        if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          # On main branch, use the last version tag as base
+          base_ref=$(git describe --tags --abbrev=0)
+        else
+          # Default to checking against the previous commit on other branches
+          base_ref=$(git rev-parse HEAD^)
+        fi
+        else
+        git fetch origin $base_ref
+        base_ref="origin/$base_ref"
+        fi
+
+        # Print all changed files
+        echo "Changed files:"
+        git diff --name-only $base_ref HEAD
+
+        github_changes=$(git diff --name-only $base_ref HEAD | grep -q ^.github/workflows/ci.yml && echo 'true' || echo 'false')
+        backend=$(git diff --name-only $base_ref HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+        frontend=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+        e2e=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+
+        echo "backend=$backend"
+        echo "frontend=$frontend"
+        echo "e2e=$e2e"
+        echo "backend=$backend" >> $GITHUB_OUTPUT
+        echo "frontend=$frontend" >> $GITHUB_OUTPUT
+        echo "e2e=$e2e" >> $GITHUB_OUTPUT

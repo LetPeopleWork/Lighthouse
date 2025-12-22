@@ -1,0 +1,389 @@
+name: Sign and Notarize macOS App Bundle
+
+on:
+  workflow_call:
+    inputs:
+      fileversion:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+    outputs:
+      submission_id:
+        value: ${{ jobs.codesign-macos.outputs.submission_id }}
+
+jobs:
+  codesign-macos:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+
+    environment:
+      name: CodeSign-macOS
+
+    outputs:
+      submission_id: ${{ steps.notarize.outputs.submission_id }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{env.DOTNET_VERSION}}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Build Frontend
+        run: pnpm run build
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Restore dependencies
+        run: dotnet restore ./Lighthouse.Backend
+
+      - name: Build Backend Solution
+        run: dotnet build -c Release -p:Version=${{ inputs.fileversion }}
+        working-directory: ./Lighthouse.Backend
+
+      # --- Publish x64 ---
+      - name: Publish osx-x64
+        run: |
+          dotnet publish -c Release -r osx-x64 \
+            --self-contained \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfContained=true \
+            -p:Version=${{ inputs.fileversion }} \
+            -o ./publish/osx-x64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
+      # --- Publish arm64 ---
+      - name: Publish osx-arm64
+        run: |
+          dotnet publish -c Release -r osx-arm64 \
+            --self-contained \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfContained=true \
+            -p:Version=${{ inputs.fileversion }} \
+            -o ./publish/osx-arm64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
+      # --- Create universal binary ---
+      - name: Create universal binary
+        run: |
+          UNIVERSAL_DIR="./publish/osx-universal"
+          mkdir -p "$UNIVERSAL_DIR"
+
+          # Merge single-file binaries
+          lipo -create ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse -output "$UNIVERSAL_DIR/Lighthouse"
+
+          # Copy remaining files from x64 build
+          cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/* "$UNIVERSAL_DIR/"
+
+          # Set executable permission
+          chmod +x "$UNIVERSAL_DIR/Lighthouse"
+
+      # --- Remove development settings ---
+      - name: Remove development settings
+        run: rm -f ./publish/osx-universal/appsettings.Development.json
+
+      # --- Adjust HTTP port ---
+      - name: Adjust HTTP port
+        run: |
+          sed -i '' 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./publish/osx-universal/appsettings.json
+
+      # --- Create App Bundle Structure ---
+      - name: Create App Bundle
+        run: |
+          APP_NAME="Lighthouse.app"
+          APP_DIR="./publish/$APP_NAME"
+          CONTENTS_DIR="$APP_DIR/Contents"
+          MACOS_DIR="$CONTENTS_DIR/MacOS"
+          RESOURCES_DIR="$CONTENTS_DIR/Resources"
+          
+          # Create directory structure
+          mkdir -p "$MACOS_DIR"
+          mkdir -p "$RESOURCES_DIR"
+          
+          # Copy all binaries and resources
+          cp -R ./publish/osx-universal/* "$MACOS_DIR/"
+          
+          # Create Info.plist
+          cat > "$CONTENTS_DIR/Info.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>Lighthouse</string>
+              <key>CFBundleIdentifier</key>
+              <string>work.letpeople.lighthouse</string>
+              <key>CFBundleName</key>
+              <string>Lighthouse</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>${{ inputs.fileversion }}</string>
+              <key>CFBundleVersion</key>
+              <string>${{ inputs.fileversion }}</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>10.15</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>LSUIElement</key>
+              <false/>
+          </dict>
+          </plist>
+          EOF
+          
+          echo "App bundle structure created at $APP_DIR"
+          ls -la "$APP_DIR"
+          ls -la "$CONTENTS_DIR"
+          ls -la "$MACOS_DIR"
+
+      - name: Move wwwroot to Resources
+        run: |
+          APP_DIR="./publish/Lighthouse.app"
+          MACOS_DIR="$APP_DIR/Contents/MacOS"
+          RESOURCES_DIR="$APP_DIR/Contents/Resources"
+          
+          if [ -d "$MACOS_DIR/wwwroot" ]; then
+            mv "$MACOS_DIR/wwwroot" "$RESOURCES_DIR/wwwroot"
+            echo "Moved wwwroot to Resources"
+          fi
+
+          # Ensure an empty wwwroot exists in MacOS
+          mkdir -p "$MACOS_DIR/wwwroot"
+
+      - name: Import code signing certificates
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
+      - name: Create entitlements.plist
+        run: |
+          ENTITLEMENTS_FILE="./publish/entitlements.plist"
+          cat > "$ENTITLEMENTS_FILE" << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+          "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>com.apple.security.cs.allow-jit</key>
+              <true/>
+              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+              <true/>
+              
+              <!-- Allow self-contained .NET runtime to load native libraries -->
+              <key>com.apple.security.cs.disable-library-validation</key>
+              <true/>
+              
+              <!-- Network access for local web server -->
+              <key>com.apple.security.network.client</key>
+              <true/>
+              <key>com.apple.security.network.server</key>
+              <true/>
+              
+              <!-- File access for Library/Application Support and Library/Logs -->
+              <key>com.apple.security.files.user-selected.read-write</key>
+              <true/>
+              <key>com.apple.security.files.downloads.read-write</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          echo "Entitlements created at $ENTITLEMENTS_FILE"
+          cat "$ENTITLEMENTS_FILE"
+
+
+      - name: Sign all binaries and app bundle
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+          if [ -z "$IDENTITY" ]; then
+            echo "Error: No Developer ID Application certificate found in keychain"
+            security find-identity -v -p codesigning
+            exit 1
+          fi
+          echo "Signing identity: $IDENTITY"
+
+          APP_DIR="./publish/Lighthouse.app"
+          MACOS_DIR="$APP_DIR/Contents/MacOS"
+
+          echo "=== Signing .dylib files ==="
+          find "$MACOS_DIR" -name "*.dylib" -type f | while read file; do
+            echo "Signing: $file"
+            codesign --sign "$IDENTITY" --timestamp --force --options runtime --verbose "$file"
+            codesign --verify --strict --verbose=2 "$file"
+            echo "✓ Signed and verified: $file"
+          done
+
+          echo "=== Moving main executable out temporarily ==="
+          BINARY_PATH="$MACOS_DIR/Lighthouse"
+          mkdir -p ./temp_binary
+          mv "$BINARY_PATH" ./temp_binary/
+          chmod +x ./temp_binary/Lighthouse
+
+          echo "=== Signing executable with entitlements ==="
+          codesign --sign "$IDENTITY" \
+            --timestamp \
+            --options runtime \
+            --entitlements ./publish/entitlements.plist \
+            --force \
+            --verbose=4 \
+            ./temp_binary/Lighthouse
+
+          echo "=== Moving executable back ==="
+          mv ./temp_binary/Lighthouse "$BINARY_PATH"
+          rmdir ./temp_binary
+
+          echo "=== Signing app bundle ==="                       
+          codesign --sign "$IDENTITY" --timestamp --options runtime --preserve-metadata=entitlements --force --deep --verbose=4 "$APP_DIR"
+
+          echo "=== Verifying signatures ==="
+          codesign --verify --deep --strict --verbose=2 "$APP_DIR"
+          codesign -dvvv "$APP_DIR" | grep -E "(Signature|timestamp|runtime|Authority)" || true
+
+          echo "=== Entitlements in signed executable ==="
+          codesign -d --entitlements - "$BINARY_PATH"
+
+          echo "✓ App bundle signed and verified successfully"
+
+      - name: Create DMG
+        run: |
+          APP_DIR="./publish/Lighthouse.app"
+          DMG_NAME="Lighthouse-${{ inputs.version }}.dmg"
+          DMG_PATH="./publish/$DMG_NAME"
+          TEMP_DMG="./publish/temp.dmg"
+          VOLUME_NAME="Lighthouse"
+          
+          # Create temporary DMG
+          hdiutil create -volname "$VOLUME_NAME" -srcfolder "$APP_DIR" -ov -format UDRW "$TEMP_DMG"
+          
+          # Mount the DMG
+          MOUNT_DIR=$(hdiutil attach "$TEMP_DMG" -nobrowse)
+          
+          # Add Applications symlink (optional but recommended)
+          ln -s /Applications "$MOUNT_DIR/Applications"
+          
+          # Unmount
+          hdiutil detach "$MOUNT_DIR"
+          
+          # Convert to compressed read-only DMG
+          hdiutil convert "$TEMP_DMG" -format UDZO -o "$DMG_PATH"
+          
+          # Clean up
+          rm "$TEMP_DMG"
+          
+          echo "DMG created at $DMG_PATH"
+          ls -lh "$DMG_PATH"
+
+      - name: Sign DMG
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n 1 | sed -n 's/.*"\(.*\)".*/\1/p')
+          DMG_PATH="./publish/Lighthouse-${{ inputs.version }}.dmg"
+          
+          echo "Signing DMG: $DMG_PATH"
+          codesign --sign "$IDENTITY" --timestamp --force --verbose "$DMG_PATH"
+          codesign --verify --verbose=2 "$DMG_PATH"
+          echo "✓ DMG signed and verified"
+
+      - name: Notarize DMG
+        id: notarize
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          DMG_PATH="./publish/Lighthouse-${{ inputs.version }}.dmg"
+
+          echo "Submitting DMG for notarization..."
+          SUBMIT_OUTPUT=$(xcrun notarytool submit "$DMG_PATH" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --output-format json)
+
+          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+          if [ -z "$SUBMISSION_ID" ]; then
+            echo "Error: Failed to get submission ID"
+            echo "$SUBMIT_OUTPUT"
+            exit 1
+          fi
+
+          echo "Submission ID: $SUBMISSION_ID"
+          echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
+          echo "submission_id=$SUBMISSION_ID" >> $GITHUB_OUTPUT
+
+          echo "Waiting for notarization to complete (timeout: 30 minutes)..."
+          xcrun notarytool wait "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --timeout 30m \
+            --verbose
+
+          STATUS_OUTPUT=$(xcrun notarytool info "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --output-format json)
+          STATUS=$(echo "$STATUS_OUTPUT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "Error: Notarization failed with status: $STATUS"
+            exit 1
+          fi
+
+          echo "DMG notarization successful!"
+
+      - name: Staple notarization ticket to DMG
+        run: |
+          DMG_PATH="./publish/Lighthouse-${{ inputs.version }}.dmg"
+          echo "Stapling notarization ticket to DMG..."
+          xcrun stapler staple "$DMG_PATH"
+          xcrun stapler validate "$DMG_PATH"
+          echo "✓ Notarization ticket stapled successfully"
+
+      - name: Retrieve notarization log
+        if: always() && env.SUBMISSION_ID != ''
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          echo "Retrieving notarization log for submission: $SUBMISSION_ID"
+          xcrun notarytool log "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            notarization-log.json || echo "Failed to retrieve log"
+          
+          if [ -f notarization-log.json ]; then
+            echo "=== Notarization Log ==="
+            cat notarization-log.json
+            echo "======================="
+          fi
+
+      - name: Upload signed DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-osx-${{ inputs.version }}
+          path: ./publish/Lighthouse-${{ inputs.version }}.dmg

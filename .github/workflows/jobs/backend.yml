@@ -1,0 +1,58 @@
+name: Verify Backend
+
+on:
+  workflow_call:
+    inputs:
+      backend:
+        required: true
+        type: string
+
+jobs:
+  backend:
+    if: inputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: '0'
+
+    - name: Remove Frontend sonar-project.properties
+      run: |
+        rm ./Lighthouse.Frontend/sonar-project.properties
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{env.DOTNET_VERSION}}
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: 'zulu'
+
+    - name: Write private key to file
+      run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
+
+    - name: Generate license for backend Tests
+      run: |
+        python Scripts/generate_license.py private_key.pem Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+2 days' '+%Y-%m-%d')" "$(date -d '-3 days' '+%Y-%m-%d')"
+
+    - name: Install SonarCloud scanner
+      run: |
+        dotnet tool install --global dotnet-sonarscanner
+
+    - name: Begin SonarCloud analysis
+      run: |
+        dotnet sonarscanner begin /k:"LetPeopleWork_Lighthouse" /o:"letpeoplework" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**/*,**/Lighthouse.Migrations.Postgres/**/*,**/Lighthouse.Frontend/**/*,**/Lighthouse.EndToEndTests/**/*"
+
+    - name: Build and test
+      run: |
+        dotnet build ./Lighthouse.Backend
+
+        dotnet test ./Lighthouse.Backend --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: End SonarCloud analysis
+      run: |
+        dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

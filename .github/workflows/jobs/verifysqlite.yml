@@ -1,0 +1,111 @@
+name: Verify Standalone App against sqlite
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+jobs:
+  verifysqlite:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lighthouse-linux-x64-${{ inputs.version }}
+          path: ./Lighthouse/linux-x64
+
+      - name: Enable Corepack and prepare pnpm
+        run: |
+          mkdir -p "$HOME/.local/share/pnpm"
+          echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
+          corepack enable
+          corepack prepare pnpm@latest --activate
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Install E2E dependencies
+        run: pnpm install --frozen-lockfile
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+  
+      - name: Install Chromium
+        run: pnpm dlx playwright install chromium --with-deps
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install cryptography
+
+      - name: Set linux executable permission
+        run: sudo chmod -R +x ./linux-x64
+        working-directory: ./Lighthouse  
+
+      - name: Run Lighthouse
+        run: |
+          ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: ./Lighthouse/linux-x64
+        env:
+          Database__Provider: sqlite
+          Database__ConnectionString: 'Data Source=lighthouse.db'
+
+      - name: Write private key to file
+        run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
+
+      - name: Generate license for E2E Tests
+        run: |
+          python Scripts/generate_license.py private_key.pem license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+45 days' '+%Y-%m-%d')" "$(date -d '-3 days' '+%Y-%m-%d')"
+
+      - name: Wait for Lighthouse to start
+        run: |
+          echo "Waiting for server to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:5001; do sleep 1; done'
+          echo "Server is ready!"
+
+          cat lighthouse.log
+        working-directory: ./Lighthouse/linux-x64
+
+      - name: Upload license to Lighthouse
+        run: |
+          echo "Uploading license file..."
+          curl --insecure -X POST \
+            -F "file=@license.json" \
+            https://localhost:5001/api/license/import
+          echo "License uploaded successfully!"
+  
+      - name: Run Playwright tests
+        run: pnpm run test
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+        env:
+          LIGHTHOUSEURL: https://localhost:5001
+  
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-sqlite
+          path: ./Lighthouse.EndToEndTests/playwright-report/
+          retention-days: 30
+
+      - name: Stop Lighthouse Server
+        if: always()
+        run: |
+          pkill Lighthouse || true
+          cat ./linux-x64/lighthouse.log
+          rm -rf ./linux-x64/logs
+        working-directory: ./Lighthouse

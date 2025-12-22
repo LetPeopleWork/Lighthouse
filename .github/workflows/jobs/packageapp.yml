@@ -1,0 +1,84 @@
+name: Package App
+
+on:
+  workflow_call:
+    inputs:
+      fileversion:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  packageapp:
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+        
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{env.DOTNET_VERSION}}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack and prepare pnpm
+        run: |
+          mkdir -p "$HOME/.local/share/pnpm"
+          echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
+          corepack enable
+          corepack prepare pnpm@latest --activate
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Build Frontend
+        run: pnpm run build
+        working-directory: ./Lighthouse.Frontend
+
+      - name: Build Backend Solution
+        run: dotnet build -c Release -p:Version=${{ inputs.fileversion }}
+        working-directory: ./Lighthouse.Backend
+
+      - name: publish win-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./publish/win-x64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
+
+      - name: Remove development settings from win-x64
+        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json
+
+      - name: publish linux-x64
+        run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./publish/linux-x64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
+      - name: Remove development settings from linux-x64
+        run: rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/appsettings.Development.json
+
+      - name: Set linux executable permission
+        run: sudo chmod -R +x ./publish/linux-x64
+        working-directory: ./Lighthouse.Backend/Lighthouse.Backend
+
+      - name: Upload windows artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-win-x64-${{ inputs.version }}
+          path: ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64
+
+      - name: Upload linux artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lighthouse-linux-x64-${{ inputs.version }}
+          path: ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64

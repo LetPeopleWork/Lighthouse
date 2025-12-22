@@ -1,0 +1,40 @@
+name: Verify End to End Tests
+
+on:
+  workflow_call:
+    inputs:
+      e2e:
+        required: true
+        type: string
+
+jobs:
+  e2etests:
+    if: inputs.e2e == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: '0'
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+
+    - name: Enable Corepack and prepare pnpm
+      run: |
+        mkdir -p "$HOME/.local/share/pnpm"
+        echo "PNPM_HOME=$HOME/.local/share/pnpm" >> $GITHUB_ENV
+        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+        export PNPM_HOME="$HOME/.local/share/pnpm"
+        export PATH="$PNPM_HOME:$PATH"
+        corepack enable
+        corepack prepare pnpm@latest --activate
+      working-directory: ./Lighthouse.EndToEndTests
+
+    - name: Install pnpm dependencies
+      run: pnpm install --frozen-lockfile
+      working-directory: ./Lighthouse.EndToEndTests
+
+    - name: Build E2E Tests
+      run: pnpm run build
+      working-directory: ./Lighthouse.EndToEndTests
