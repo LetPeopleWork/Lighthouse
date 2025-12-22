@@ -73,12 +73,14 @@ jobs:
           # Helper: EdDSA (Sparkle 2) signing
           get_signature() {
             local dmg="$1"
-            # Clean the key and export it as the environment variable Sparkle expects
-            export SPARKLE_ED_PRIVATE_KEY=$(echo "${{ secrets.SPARKLE_PRIVATE_KEY }}" | tr -d '\n\r ')
+            # Sparkle 2 expects a 32-byte seed (Base64 encoded).
+            # If the secret is 64 bytes (seed + public key), we extract the first 32 bytes.
+            local seed=$(python3 -c "import base64; import sys; data = base64.b64decode(sys.argv[1].strip()); print(base64.b64encode(data[:32]).decode())" "${{ secrets.SPARKLE_PRIVATE_KEY }}")
             
-            # Run sign_update (it will automatically use the env var)
-            # Capture only the signature string from stdout
-            local sig=$(sign_update "$dmg" 2>/dev/null | tail -n 1 | tr -d '\n\r ')
+            # Run sign_update using stdin for the key to avoid keychain issues in CI
+            # -p: only print the signature
+            # --ed-key-file -: read key from stdin
+            local sig=$(echo "$seed" | sign_update -p --ed-key-file - "$dmg" 2>/dev/null | tr -d '\n\r ')
             
             if [[ -n "$sig" && "$sig" =~ ^[A-Za-z0-9+/=]{80,90}$ ]]; then
               echo "$sig"
@@ -87,7 +89,7 @@ jobs:
             
             echo "ERROR: sign_update failed to produce a valid signature for $dmg" >&2
             # Debug: show actual output without suppression
-            sign_update "$dmg" || true
+            echo "$seed" | sign_update --ed-key-file - "$dmg" || true
             return 1
           }
 
@@ -133,12 +135,11 @@ jobs:
           # Helper: EdDSA (Sparkle 2) signing
           get_signature() {
             local dmg="$1"
-            # Clean the key and export it as the environment variable Sparkle expects
-            export SPARKLE_ED_PRIVATE_KEY=$(echo "${{ secrets.SPARKLE_PRIVATE_KEY }}" | tr -d '\n\r ')
+            # Sparkle 2 expects a 32-byte seed (Base64 encoded).
+            local seed=$(python3 -c "import base64; import sys; data = base64.b64decode(sys.argv[1].strip()); print(base64.b64encode(data[:32]).decode())" "${{ secrets.SPARKLE_PRIVATE_KEY }}")
             
-            # Run sign_update (it will automatically use the env var)
-            # Capture only the signature string from stdout
-            local sig=$(sign_update "$dmg" 2>/dev/null | tail -n 1 | tr -d '\n\r ')
+            # Run sign_update using stdin for the key to avoid keychain issues in CI
+            local sig=$(echo "$seed" | sign_update -p --ed-key-file - "$dmg" 2>/dev/null | tr -d '\n\r ')
             
             if [[ -n "$sig" && "$sig" =~ ^[A-Za-z0-9+/=]{80,90}$ ]]; then
               echo "$sig"
