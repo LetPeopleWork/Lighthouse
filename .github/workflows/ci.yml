@@ -17,7 +17,7 @@ on:
       - "Lighthouse.Backend.Tests/**"
       - "Lighthouse.EndToEndTests/**"
       - "Lighthouse.Frontend/**"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/ci*.yml"
       - "examples/postgres/**"
   pull_request:
     branches: [ "main" ]
