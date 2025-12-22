@@ -1,8 +1,5 @@
 name: Build And Deploy Lighthouse
 
-env:
-  DOTNET_VERSION: '10'  
-
 on:
   push:
     branches: [ "main", "features/**" ]    
@@ -28,8 +25,6 @@ jobs:
     name: Verify Backend
     with:
       backend: ${{ needs.changes.outputs.backend }}
-      dotnet_version: ${{ env.DOTNET_VERSION }}
-      
     secrets: inherit
 
   frontend:
@@ -63,7 +58,6 @@ jobs:
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
       version: ${{ needs.tag.outputs.version }}
-      dotnet_version: ${{ env.DOTNET_VERSION }}
   
   docker:
     needs: tag
@@ -106,7 +100,6 @@ jobs:
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
       version: ${{ needs.tag.outputs.version }}
-      dotnet_version: ${{ env.DOTNET_VERSION }}
     secrets: inherit
 
   verifymacos:

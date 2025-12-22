@@ -7,8 +7,9 @@ on:
         required: true
         type: string
       dotnet_version:
-        required: true
+        required: false
         type: string
+        default: '10'
 
 jobs:
   backend:
