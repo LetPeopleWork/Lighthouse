@@ -28,6 +28,10 @@ jobs:
         run: |
           brew install pandoc
 
+      - name: Install jq
+        run: |
+          brew install jq
+
       # - name: Download Sparkle tools
       #  run: |
       #    SPARKLE_VERSION="2.6.3"
@@ -53,6 +57,8 @@ jobs:
           echo "$RELEASE_TAGS" > release_tags.txt
           LATEST_TAG=$(echo "$RELEASE_TAGS" | head -1)
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+          cat release_tags.txt
 
       - name: Download DMGs and create notes
         run: |
