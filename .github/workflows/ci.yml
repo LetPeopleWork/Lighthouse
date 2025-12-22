@@ -48,10 +48,14 @@ jobs:
   tag:
     needs: [frontend, backend, e2e]
     uses: ./.github/workflows/ci_tag.yml
+    permissions:
+      contents: write
 
   packageapp:
     needs: tag
     uses: ./.github/workflows/ci_packageapp.yml
+    permissions:
+      actions: write
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
       version: ${{ needs.tag.outputs.version }}
@@ -59,6 +63,8 @@ jobs:
   docker:
     needs: tag
     uses: ./.github/workflows/ci_docker.yml
+    permissions:
+      packages: write
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
   
@@ -66,11 +72,15 @@ jobs:
   verifysqlite:
     needs: [packageapp, tag]
     uses: ./.github/workflows/ci_verifysqlite.yml
+    permissions:
+      actions: read
     with:
       version: ${{ needs.tag.outputs.version }}
   verifypostgres:
     needs: [packageapp, tag]
     uses: ./.github/workflows/ci_verifypostgres.yml
+    permissions:
+      actions: read
     with:
       version: ${{ needs.tag.outputs.version }}
   
@@ -78,6 +88,8 @@ jobs:
   codesign-macos:
     needs: tag
     uses: ./.github/workflows/ci_codesign-macos.yml
+    permissions:
+      actions: write
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
       version: ${{ needs.tag.outputs.version }}
@@ -85,6 +97,8 @@ jobs:
   verifymacos:
     needs: [codesign-macos, tag]
     uses: ./.github/workflows/ci_verifymacos.yml
+    permissions:
+      actions: read
     with:
       version: ${{ needs.tag.outputs.version }}
       submission_id: ${{ needs.codesign-macos.outputs.submission_id }}
@@ -93,18 +107,27 @@ jobs:
   codesign-windows:
     needs: [tag, verifysqlite, verifypostgres]
     uses: ./.github/workflows/ci_codesign-windows.yml
+    permissions:
+      actions: write
     with:
       version: ${{ needs.tag.outputs.version }}
 
   verifywindows:
     needs: [codesign-windows, tag]
     uses: ./.github/workflows/ci_verifywindows.yml
+    permissions:
+      actions: read
     with:
       version: ${{ needs.tag.outputs.version }}
 
   release:
     needs: [tag, docker, verifymacos, verifywindows]
     uses: ./.github/workflows/ci_release.yml
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+      id-token: write
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
       version: ${{ needs.tag.outputs.version }}
