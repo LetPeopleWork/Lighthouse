@@ -1,0 +1,114 @@
+name: Generate Appcast
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  appcast:
+    runs-on: macos-latest
+    if: github.repository == 'LetPeopleWork/Lighthouse'
+
+    environment:
+      name: Release
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install GitHub CLI
+        run: |
+          brew install gh
+
+      - name: Install Pandoc
+        run: |
+          brew install pandoc
+
+      # - name: Download Sparkle tools
+      #   run: |
+      #     SPARKLE_VERSION="2.6.3"
+      #     curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
+      #     tar -xf sparkle.tar.xz
+      #     sudo cp Sparkle-${SPARKLE_VERSION}/bin/generate_appcast /usr/local/bin/
+      #     chmod +x /usr/local/bin/generate_appcast
+
+      # - name: Prepare private key
+      #   run: |
+      #     echo "${{ secrets.SPARKLE_PRIVATE_KEY }}" | base64 -d > private_key.pem
+      #     chmod 600 private_key.pem
+
+      - name: Get latest releases
+        run: |
+          mkdir -p updates
+          # Get latest 5 non-prerelease tags
+          RELEASE_TAGS=$(gh api repos/LetPeopleWork/Lighthouse/releases --jq '.[] | select(.prerelease == false) | .tag_name' | head -5)
+          if [ -z "$RELEASE_TAGS" ]; then
+            echo "No non-prerelease releases found, skipping appcast generation"
+            exit 0
+          fi
+          echo "$RELEASE_TAGS" > release_tags.txt
+          LATEST_TAG=$(echo "$RELEASE_TAGS" | head -1)
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+      - name: Download DMGs and create notes
+        run: |
+          while IFS= read -r tag; do
+            echo "Processing release $tag"
+            # For testing, skip DMG download since none exist yet
+            # gh release download "$tag" --pattern "Lighthouse-osx-*.dmg" --dir updates/
+            # Get release body and create HTML notes
+            RELEASE_BODY=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag" --jq -r .body)
+            NOTES_FILE="updates/Lighthouse-osx-${tag}.html"
+            if [ "$RELEASE_BODY" != "null" ] && [ -n "$RELEASE_BODY" ]; then
+              echo "$RELEASE_BODY" | pandoc -f markdown -t html > "$NOTES_FILE"
+            else
+              echo "<p>No release notes available.</p>" > "$NOTES_FILE"
+            fi
+          done < release_tags.txt
+
+      - name: Generate appcast (testing mode)
+        run: |
+          # For testing without DMGs, generate basic appcast XML
+          cat > appcast.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <channel>
+              <title>Lighthouse</title>
+              <description>Most recent changes with links to updates.</description>
+              <language>en</language>
+          EOF
+          
+          while IFS= read -r tag; do
+            RELEASE_INFO=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag")
+            TITLE=$(echo "$RELEASE_INFO" | jq -r .name)
+            PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
+            BODY_HTML=$(cat "updates/Lighthouse-osx-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
+            URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/Lighthouse-osx-${tag}.dmg"
+            # Dummy signature for testing
+            SIGNATURE="dummy_signature"
+            LENGTH="12345678"
+            
+            cat >> appcast.xml << EOF
+              <item>
+                <title>$TITLE</title>
+                <sparkle:version>$tag</sparkle:version>
+                <sparkle:shortVersionString>$tag</sparkle:shortVersionString>
+                <description><![CDATA[$BODY_HTML]]></description>
+                <pubDate>$PUB_DATE</pubDate>
+                <enclosure url="$URL" sparkle:version="$tag" sparkle:edSignature="$SIGNATURE" length="$LENGTH" type="application/octet-stream"/>
+              </item>
+          EOF
+          done < release_tags.txt
+          
+          cat >> appcast.xml << 'EOF'
+            </channel>
+          </rss>
+          EOF
+
+      - name: Upload appcast to latest release
+        run: |
+          gh release upload "$LATEST_TAG" appcast.xml --clobber
