@@ -20,8 +20,12 @@ jobs:
         run: |
           URL="https://github.com/LetPeopleWork/Lighthouse/releases/latest/download/appcast.xml"
           echo "Checking $URL"
-          # If the resource exists, quit early to save macOS runner time
-          if curl --head --silent --fail "$URL" >/dev/null; then
+          # Follow redirects and check final HTTP status code and final URL
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L "$URL" || echo "000")
+          FINAL_URL=$(curl -s -o /dev/null -w "%{url_effective}" -L "$URL" || echo "")
+          echo "Final URL: $FINAL_URL"
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" -eq 200 ]; then
             echo "Appcast already exists — nothing to do"
             echo "proceed=false" >> $GITHUB_OUTPUT
             exit 0
