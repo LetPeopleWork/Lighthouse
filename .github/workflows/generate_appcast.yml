@@ -41,10 +41,21 @@ jobs:
           SPARKLE_VERSION="2.6.3"
           curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
           tar -xf sparkle.tar.xz
-          sudo cp $(find . -name generate_appcast) /usr/local/bin/
-          sudo cp $(find . -name sign_update) /usr/local/bin/
-          chmod +x /usr/local/bin/generate_appcast
-          chmod +x /usr/local/bin/sign_update
+          # Copy only executable tools (avoid picking up sign_update inside .dSYM debug bundles)
+          GEN_APPCAST=$(find . -type f -executable -name generate_appcast | head -1)
+          if [ -n "$GEN_APPCAST" ]; then
+            sudo cp "$GEN_APPCAST" /usr/local/bin/
+          else
+            echo "Warning: generate_appcast executable not found"
+          fi
+          SIGN_UPDATE_BIN=$(find . -type f -executable -name sign_update -not -path '*/.dSYM/*' | head -1)
+          if [ -n "$SIGN_UPDATE_BIN" ]; then
+            sudo cp "$SIGN_UPDATE_BIN" /usr/local/bin/
+          else
+            echo "Warning: sign_update executable not found"
+          fi
+          chmod +x /usr/local/bin/generate_appcast || true
+          chmod +x /usr/local/bin/sign_update || true
 
       - name: Check sign_update binary
         run: |
