@@ -10,6 +10,10 @@ on:
 jobs:
   verifypostgres:
     runs-on: ubuntu-latest
+    env:
+      JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
+      AzureDevOpsLighthouseE2ETestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEE2ETESTTOKEN }}
+      LinearAPIKey: ${{ secrets.LINEARAPIKEY }}
 
     steps:
       - uses: actions/checkout@v4
