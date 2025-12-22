@@ -25,66 +25,66 @@ on:
 
 jobs:
   changes:
-    uses: ./.github/workflows/jobs/changes.yml
+    uses: ./.github/workflows/ci_changes.yml
 
   backend:
     needs: changes
-    uses: ./.github/workflows/jobs/backend.yml
+    uses: ./.github/workflows/ci_backend.yml
     with:
       backend: ${{ needs.changes.outputs.backend }}
 
   frontend:
     needs: changes
-    uses: ./.github/workflows/jobs/frontend.yml
+    uses: ./.github/workflows/ci_frontend.yml
     with:
       frontend: ${{ needs.changes.outputs.frontend }}
 
   e2e:
     needs: changes
-    uses: ./.github/workflows/jobs/e2e.yml
+    uses: ./.github/workflows/ci_e2e.yml
     with:
       e2e: ${{ needs.changes.outputs.e2e }}
 
   tag:
     needs: [frontend, backend, e2e]
-    uses: ./.github/workflows/jobs/tag.yml
+    uses: ./.github/workflows/ci_tag.yml
 
   packageapp:
     needs: tag
-    uses: ./.github/workflows/jobs/packageapp.yml
+    uses: ./.github/workflows/ci_packageapp.yml
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
       version: ${{ needs.tag.outputs.version }}
   
   docker:
     needs: tag
-    uses: ./.github/workflows/jobs/docker.yml
+    uses: ./.github/workflows/ci_docker.yml
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
   
   # Linux verification with EndToEnd tests
   verifysqlite:
     needs: [packageapp, tag]
-    uses: ./.github/workflows/jobs/verifysqlite.yml
+    uses: ./.github/workflows/ci_verifysqlite.yml
     with:
       version: ${{ needs.tag.outputs.version }}
   verifypostgres:
     needs: [packageapp, tag]
-    uses: ./.github/workflows/jobs/verifypostgres.yml
+    uses: ./.github/workflows/ci_verifypostgres.yml
     with:
       version: ${{ needs.tag.outputs.version }}
   
   # macOS signing and verification
   codesign-macos:
     needs: tag
-    uses: ./.github/workflows/jobs/codesign-macos.yml
+    uses: ./.github/workflows/ci_codesign-macos.yml
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
       version: ${{ needs.tag.outputs.version }}
 
   verifymacos:
     needs: [codesign-macos, tag]
-    uses: ./.github/workflows/jobs/verifymacos.yml
+    uses: ./.github/workflows/ci_verifymacos.yml
     with:
       version: ${{ needs.tag.outputs.version }}
       submission_id: ${{ needs.codesign-macos.outputs.submission_id }}
@@ -92,19 +92,19 @@ jobs:
   # Windows signing and verification
   codesign-windows:
     needs: [tag, verifysqlite, verifypostgres]
-    uses: ./.github/workflows/jobs/codesign-windows.yml
+    uses: ./.github/workflows/ci_codesign-windows.yml
     with:
       version: ${{ needs.tag.outputs.version }}
 
   verifywindows:
     needs: [codesign-windows, tag]
-    uses: ./.github/workflows/jobs/verifywindows.yml
+    uses: ./.github/workflows/ci_verifywindows.yml
     with:
       version: ${{ needs.tag.outputs.version }}
 
   release:
     needs: [tag, docker, verifymacos, verifywindows]
-    uses: ./.github/workflows/jobs/release.yml
+    uses: ./.github/workflows/ci_release.yml
     with:
       fileversion: ${{ needs.tag.outputs.fileversion }}
       version: ${{ needs.tag.outputs.version }}
