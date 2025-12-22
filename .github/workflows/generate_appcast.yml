@@ -46,6 +46,16 @@ jobs:
           chmod +x /usr/local/bin/generate_appcast
           chmod +x /usr/local/bin/sign_update
 
+      - name: Check sign_update binary
+        run: |
+          echo "Checking /usr/local/bin/sign_update"
+          ls -l /usr/local/bin/sign_update || true
+          file /usr/local/bin/sign_update || true
+          # lipo only exists on macOS; harmless if not universal
+          lipo -info /usr/local/bin/sign_update || true
+          otool -L /usr/local/bin/sign_update || true
+          head -c 64 /usr/local/bin/sign_update | hexdump -C | sed -n '1,20p' || true
+
       - name: Prepare private key
         run: |
           echo "${{ secrets.SPARKLE_PRIVATE_KEY }}" | base64 -d > private_key.pem
@@ -68,6 +78,26 @@ jobs:
 
       - name: Download DMGs and create notes
         run: |
+          # Helper: try native first, then Rosetta x86_64 if available
+          get_signature() {
+            local dmg="$1"
+            # Try native invocation
+            if /usr/local/bin/sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
+              /usr/local/bin/sign_update "$dmg" private_key.pem
+              return 0
+            fi
+            # Try Rosetta/x86_64 if installed
+            if arch -x86_64 /usr/local/bin/sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
+              arch -x86_64 /usr/local/bin/sign_update "$dmg" private_key.pem
+              return 0
+            fi
+            echo "ERROR: /usr/local/bin/sign_update not executable or failed" >&2
+            file /usr/local/bin/sign_update || true
+            lipo -info /usr/local/bin/sign_update || true
+            otool -L /usr/local/bin/sign_update || true
+            return 1
+          }
+
           if [ ! -f release_tags.txt ]; then
             echo "No releases to process"
             exit 0
@@ -83,8 +113,11 @@ jobs:
               echo "DMG found for $tag: $ASSET_NAME, downloading..."
               gh release download "$tag" --pattern "$ASSET_NAME" --dir updates/dmg/
               DMG_PATH="updates/dmg/$ASSET_NAME"
-              # Sign the DMG
-              arch -x86_64 sign_update "$DMG_PATH" private_key.pem
+              # Sign the DMG (try native then Rosetta)
+              if ! get_signature "$DMG_PATH" >/dev/null; then
+                echo "Signing failed for $DMG_PATH"
+                exit 1
+              fi
 
               # Get release body and create HTML notes (one notes file per tag)
               RELEASE_BODY=$(gh api repos/LetPeopleWork/Lighthouse/releases/tags/"$tag" | jq -r '.body')
@@ -104,6 +137,24 @@ jobs:
 
       - name: Generate appcast
         run: |
+          # Helper: try native then Rosetta for sign_update
+          get_signature() {
+            local dmg="$1"
+            if /usr/local/bin/sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
+              /usr/local/bin/sign_update "$dmg" private_key.pem
+              return 0
+            fi
+            if arch -x86_64 /usr/local/bin/sign_update "$dmg" private_key.pem >/dev/null 2>&1; then
+              arch -x86_64 /usr/local/bin/sign_update "$dmg" private_key.pem
+              return 0
+            fi
+            echo "ERROR: /usr/local/bin/sign_update not executable or failed" >&2
+            file /usr/local/bin/sign_update || true
+            lipo -info /usr/local/bin/sign_update || true
+            otool -L /usr/local/bin/sign_update || true
+            return 1
+          }
+
           if [ ! -f release_tags.txt ]; then
             echo "No releases to process"
             exit 0
@@ -129,7 +180,7 @@ jobs:
                 PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
                 BODY_HTML=$(cat "updates/notes-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
                 URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${asset}"
-                SIGNATURE=$(sign_update "$DMG_PATH" private_key.pem 2>/dev/null)
+                SIGNATURE=$(get_signature "$DMG_PATH" 2>/dev/null)
                 LENGTH=$(stat -f%z "$DMG_PATH")
                 
                 cat >> appcast.xml << EOF
@@ -156,7 +207,7 @@ jobs:
                 PUB_DATE=$(echo "$RELEASE_INFO" | jq -r .published_at | sed 's/T/ /' | sed 's/Z//' | xargs -I {} date -j -f "%Y-%m-%d %H:%M:%S" {} +"%a, %d %b %Y %H:%M:%S +0000")
                 BODY_HTML=$(cat "updates/notes-${tag}.html" 2>/dev/null || echo "<p>No notes</p>")
                 URL="https://github.com/LetPeopleWork/Lighthouse/releases/download/${tag}/${ASSET}"
-                SIGNATURE=$(sign_update "$DMG_PATH" private_key.pem 2>/dev/null)
+                SIGNATURE=$(get_signature "$DMG_PATH" 2>/dev/null)
                 LENGTH=$(stat -f%z "$DMG_PATH")
                 
                 cat >> appcast.xml << EOF
