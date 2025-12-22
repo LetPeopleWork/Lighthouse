@@ -108,6 +108,16 @@ jobs:
           run: |
             sed -i '' 's|"Url": "http://\*:5000"|"Url": "http://*:5002"|' ./publish/osx-universal/appsettings.json
 
+        # --- Download Sparkle Framework ---
+        - name: Download Sparkle Framework
+          run: |
+            SPARKLE_VERSION="2.6.4"
+            echo "Downloading Sparkle ${SPARKLE_VERSION}..."
+            curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
+            tar -xf sparkle.tar.xz
+            echo "Sparkle framework extracted"
+            ls -la Sparkle.framework/
+
         # --- Create App Bundle Structure ---
         - name: Create App Bundle
           run: |
@@ -116,10 +126,16 @@ jobs:
             CONTENTS_DIR="$APP_DIR/Contents"
             MACOS_DIR="$CONTENTS_DIR/MacOS"
             RESOURCES_DIR="$CONTENTS_DIR/Resources"
+            FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
             
             # Create directory structure
             mkdir -p "$MACOS_DIR"
             mkdir -p "$RESOURCES_DIR"
+            mkdir -p "$FRAMEWORKS_DIR"
+            
+            # Copy Sparkle framework
+            echo "Copying Sparkle.framework to app bundle..."
+            cp -R Sparkle.framework "$FRAMEWORKS_DIR/"
             
             # Copy all binaries and resources
             cp -R ./publish/osx-universal/* "$MACOS_DIR/"
@@ -166,6 +182,7 @@ jobs:
             ls -la "$APP_DIR"
             ls -la "$CONTENTS_DIR"
             ls -la "$MACOS_DIR"
+            ls -la "$FRAMEWORKS_DIR"
 
         - name: Import code signing certificates
           uses: apple-actions/import-codesign-certs@v3
@@ -208,7 +225,6 @@ jobs:
             echo "Entitlements created at $ENTITLEMENTS_FILE"
             cat "$ENTITLEMENTS_FILE"
 
-
         - name: Sign all binaries and app bundle
           env:
             APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -223,6 +239,12 @@ jobs:
 
             APP_DIR="./publish/Lighthouse.app"
             MACOS_DIR="$APP_DIR/Contents/MacOS"
+            FRAMEWORKS_DIR="$APP_DIR/Contents/Frameworks"
+
+            echo "=== Signing Sparkle.framework ==="
+            codesign --sign "$IDENTITY" --timestamp --force --options runtime --deep --verbose "$FRAMEWORKS_DIR/Sparkle.framework"
+            codesign --verify --deep --strict --verbose=2 "$FRAMEWORKS_DIR/Sparkle.framework"
+            echo "✓ Sparkle.framework signed and verified"
 
             echo "=== Signing .dylib files ==="
             find "$MACOS_DIR" -name "*.dylib" -type f | while read file; do
