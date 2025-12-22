@@ -6,6 +6,9 @@ on:
       version:
         required: true
         type: string
+    secrets:
+      LIGHTHOUSE_LICENSE_PRIVATE_KEY:
+        required: true
 
 jobs:
   verifysqlite:

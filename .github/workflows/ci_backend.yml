@@ -6,6 +6,14 @@ on:
       backend:
         required: true
         type: string
+      dotnet_version:
+        required: true
+        type: string
+    secrets:
+      LIGHTHOUSE_LICENSE_PRIVATE_KEY:
+        required: true
+      SONAR_TOKEN:
+        required: true
 
 jobs:
   backend:
@@ -24,7 +32,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: ${{env.DOTNET_VERSION}}
+        dotnet-version: ${{ inputs.dotnet_version }}
 
     - name: Set up JDK 17
       uses: actions/setup-java@v3

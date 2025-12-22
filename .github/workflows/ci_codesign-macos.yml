@@ -9,9 +9,23 @@ on:
       version:
         required: true
         type: string
+      dotnet_version:
+        required: true
+        type: string
     outputs:
       submission_id:
         value: ${{ jobs.codesign-macos.outputs.submission_id }}
+    secrets:
+      APPLE_CERTIFICATE_BASE64:
+        required: true
+      APPLE_CERTIFICATE_PASSWORD:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
+      APPLE_ID:
+        required: true
+      APPLE_APP_PASSWORD:
+        required: true
 
 jobs:
   codesign-macos:
@@ -32,7 +46,7 @@ jobs:
         - name: Setup .NET SDK
           uses: actions/setup-dotnet@v3
           with:
-            dotnet-version: ${{env.DOTNET_VERSION}}
+            dotnet-version: ${{ inputs.dotnet_version }}
 
         - name: Setup pnpm
           uses: pnpm/action-setup@v4
