@@ -120,6 +120,7 @@ jobs:
     name: Code Sign Windows App
     permissions:
       actions: write
+    secrets: inherit
     with:
       version: ${{ needs.tag.outputs.version }}
 
